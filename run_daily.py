@@ -29,7 +29,7 @@ def main() -> int:
     p.add_argument("--full", action="store_true",
                    help="force full mode (default)")
     p.add_argument("--sources", nargs="+",
-                   choices=["yahoo", "fred", "binance", "macro_panel"],
+                   choices=["yahoo", "fred", "binance", "macro_panel", "factors"],
                    help="limit to the given sources")
     p.add_argument("--end", help="end date (default: today UTC)")
     p.add_argument("--db", help="DuckDB DB path (override settings)")

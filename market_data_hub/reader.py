@@ -229,6 +229,48 @@ def read_macro_panel(indicators: Union[str, List[str]],
         con.close()
 
 
+def read_factors(factors: Optional[Union[str, List[str]]] = None,
+                 factor_set: Optional[str] = None, start: Optional[str] = None,
+                 end: Optional[str] = None, wide: bool = True,
+                 db_path: Optional[str] = None) -> pd.DataFrame:
+    """Fama-French / momentum factor returns (decimal).
+
+    wide=True -> date index, factor columns (filter to one factor_set to avoid
+    collapsing same-named factors across datasets). wide=False -> long format.
+    """
+    con = _con(db_path)
+    try:
+        clauses: list = []
+        params: list = []
+        if factor_set:
+            clauses.append("factor_set = ?"); params.append(factor_set)
+        if factors:
+            if isinstance(factors, str):
+                factors = [factors]
+            clauses.append("factor IN (" + ",".join(["?"] * len(factors)) + ")")
+            params += list(factors)
+        if start:
+            clauses.append("date >= ?"); params.append(start)
+        if end:
+            clauses.append("date <= ?"); params.append(end)
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        if wide:
+            df = con.execute(
+                f"SELECT date, factor, value FROM factor_returns{where} "
+                f"ORDER BY date", params).fetch_df()
+            if df.empty:
+                return pd.DataFrame()
+            out = df.pivot_table(index="date", columns="factor", values="value",
+                                 aggfunc="last")
+            out.index = pd.to_datetime(out.index)
+            return out.sort_index()
+        return con.execute(
+            f"SELECT * FROM factor_returns{where} "
+            f"ORDER BY factor_set, factor, date", params).fetch_df()
+    finally:
+        con.close()
+
+
 def get_coverage(symbols: Optional[List[str]] = None,
                  db_path: Optional[str] = None) -> pd.DataFrame:
     """coverage_report table (optionally filtered on a list of symbols)."""

@@ -33,6 +33,7 @@ from market_data_hub.sources import yahoo as yh
 from market_data_hub.sources import fred as fr
 from market_data_hub.sources import binance as bn
 from market_data_hub.sources import macro_panel as mp
+from market_data_hub.sources import factors as fac
 
 
 def _today() -> str:
@@ -306,6 +307,39 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
     _log(f"MACRO PANEL: ok={n_ok} fallback={n_fb} empty={n_empty}")
 
 
+# --------------------------------------------------------------- FACTORS
+def run_factors(con, cfg: dict, run_id: str) -> None:
+    """Download Fama-French / momentum factors (Ken French Data Library)."""
+    fcfg = cfg.get("factors", {})
+    if not fcfg.get("enabled", True):
+        _log("FACTORS: disabled in settings")
+        return
+    sets = fcfg.get("datasets") or list(fac.CATALOG)
+    start = cfg["backfill_start"].get("factors", "1990-01-01")
+    http = cfg["http"]
+    _log(f"FACTORS: {len(sets)} dataset(s) {sets}")
+    for fs in sets:
+        st = datetime.now(timezone.utc)
+        try:
+            df = fac.fetch_french(fs, start=start, timeout=http["timeout"],
+                                  retries=http["max_retries"],
+                                  base_sleep=http["retry_base_sleep"])
+            if df.empty:
+                log_run(con, run_id=run_id, started_at=st, source="factors",
+                        symbol=fs, rows_added=0, rows_updated=0,
+                        status="empty", error_msg=None, duration_sec=0)
+            else:
+                added, updated = upsert(con, "factor_returns", df)
+                log_run(con, run_id=run_id, started_at=st, source="factors",
+                        symbol=fs, rows_added=added, rows_updated=updated,
+                        status="ok", error_msg=None, duration_sec=0)
+        except Exception as ex:
+            log_run(con, run_id=run_id, started_at=st, source="factors",
+                    symbol=fs, rows_added=0, rows_updated=0,
+                    status="error", error_msg=str(ex), duration_sec=0)
+    _log("FACTORS: completed")
+
+
 # --------------------------------------------------------------- LIVE
 def run_live(con, cfg: dict, run_id: str) -> None:
     """Update the 'today' row with live prices mapped into the adjusted space."""
@@ -368,7 +402,7 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
         if mode == "live-only":
             run_live(con, cfg, run_id)
         else:
-            active = sources or ["yahoo", "fred", "binance", "macro_panel"]
+            active = sources or ["yahoo", "fred", "binance", "macro_panel", "factors"]
             if "yahoo" in active:
                 run_yahoo(con, cfg, run_id, start_override=start_override, end=end)
             if "fred" in active:
@@ -377,6 +411,8 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
                 run_binance(con, cfg, run_id, start_override=start_override, end=end)
             if "macro_panel" in active:
                 run_macro_panel(con, cfg, run_id)
+            if "factors" in active:
+                run_factors(con, cfg, run_id)
             if mode == "full" and cfg.get("live", {}).get("enabled"):
                 run_live(con, cfg, run_id)
 
@@ -394,7 +430,7 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
 
     # --- Ray Dalio analytical layer (after the panel: cycle phases + regime) ---
     macro_done = mode != "live-only" and "macro_panel" in (
-        sources or ["yahoo", "fred", "binance", "macro_panel"])
+        sources or ["yahoo", "fred", "binance", "macro_panel", "factors"])
     if macro_done:
         try:
             from market_data_hub.dalio import run_dalio

@@ -17,7 +17,7 @@ jobs:
 
       - name: Install dependencies
         # Lean set sufficient for the offline test suite (no live data sources).
-        run: pip install pandas numpy duckdb pyyaml openpyxl pytest
+        run: pip install pandas numpy duckdb pyyaml openpyxl requests pytest
 
       - name: Validate config catalogs
         run: python validate_config.py

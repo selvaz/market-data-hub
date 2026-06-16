@@ -22,6 +22,7 @@ pipeline.
 | Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
 | FRED | 38 macro series (US/EA rates, CPI, GDP, credit spreads, ...) | `macro_series` | D/M/Q |
 | World Bank + IMF + BIS | 69 cross-country indicators (WDI/WGI/WEO/BIS) × 64 countries | `macro_panel` | annual |
+| Ken French Data Library | Fama-French 5 factors + momentum (Mkt-RF, SMB, HML, RMW, CMA, Mom, RF) | `factor_returns` | D/M |
 
 ## Setup
 
