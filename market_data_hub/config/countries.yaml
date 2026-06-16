@@ -1,0 +1,722 @@
+countries:
+- iso3: USA
+  iso2: US
+  name: United States
+  wb: USA
+  imf: USA
+  region_group: G7
+  region_geo: North America
+  income: High income
+  development: DM
+  g7: true
+  fx_regime: float
+- iso3: JPN
+  iso2: JP
+  name: Japan
+  wb: JPN
+  imf: JPN
+  region_group: G7
+  region_geo: East Asia & Pacific
+  income: High income
+  development: DM
+  g7: true
+  fx_regime: float
+- iso3: DEU
+  iso2: DE
+  name: Germany
+  wb: DEU
+  imf: DEU
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  g7: true
+  eu: true
+  fx_regime: float
+- iso3: GBR
+  iso2: GB
+  name: United Kingdom
+  wb: GBR
+  imf: GBR
+  region_group: G7
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  g7: true
+  fx_regime: float
+- iso3: FRA
+  iso2: FR
+  name: France
+  wb: FRA
+  imf: FRA
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  g7: true
+  eu: true
+  fx_regime: float
+- iso3: ITA
+  iso2: IT
+  name: Italy
+  wb: ITA
+  imf: ITA
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  g7: true
+  eu: true
+  fx_regime: float
+- iso3: CAN
+  iso2: CA
+  name: Canada
+  wb: CAN
+  imf: CAN
+  region_group: G7
+  region_geo: North America
+  income: High income
+  development: DM
+  g7: true
+  fx_regime: float
+- iso3: CHN
+  iso2: CN
+  name: China
+  wb: CHN
+  imf: CHN
+  region_group: Emerging and Developing Asia
+  region_geo: East Asia & Pacific
+  income: Upper middle income
+  development: EM
+  fx_regime: managed_float
+- iso3: IND
+  iso2: IN
+  name: India
+  wb: IND
+  imf: IND
+  region_group: Emerging and Developing Asia
+  region_geo: South Asia
+  income: Lower middle income
+  development: Frontier
+  fx_regime: managed_float
+- iso3: BRA
+  iso2: BR
+  name: Brazil
+  wb: BRA
+  imf: BRA
+  region_group: Latin America and the Caribbean (LAC)
+  region_geo: Latin America & Caribbean
+  income: Upper middle income
+  development: EM
+  fx_regime: float
+- iso3: RUS
+  iso2: RU
+  name: Russia
+  wb: RUS
+  imf: RUS
+  region_group: Emerging and Developing Europe
+  region_geo: Europe & Central Asia
+  income: High income
+  development: EM
+  fx_regime: managed_float
+- iso3: KOR
+  iso2: KR
+  name: Korea, Rep.
+  wb: KOR
+  imf: KOR
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: East Asia & Pacific
+  income: High income
+  development: DM
+  fx_regime: float
+- iso3: AUS
+  iso2: AU
+  name: Australia
+  wb: AUS
+  imf: AUS
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: East Asia & Pacific
+  income: High income
+  development: DM
+  fx_regime: float
+- iso3: MEX
+  iso2: MX
+  name: Mexico
+  wb: MEX
+  imf: MEX
+  region_group: Latin America and the Caribbean (LAC)
+  region_geo: Latin America & Caribbean
+  income: Upper middle income
+  development: EM
+  fx_regime: float
+- iso3: IDN
+  iso2: ID
+  name: Indonesia
+  wb: IDN
+  imf: IDN
+  region_group: Emerging and Developing Asia
+  region_geo: East Asia & Pacific
+  income: Upper middle income
+  development: EM
+  asean5: true
+  fx_regime: managed_float
+- iso3: SAU
+  iso2: SA
+  name: Saudi Arabia
+  wb: SAU
+  imf: SAU
+  region_group: Middle East and Central Asia
+  region_geo: Middle East, North Africa, Afghanistan & Pakistan
+  income: High income
+  development: EM
+  fx_regime: pegged
+- iso3: TUR
+  iso2: TR
+  name: Turkiye
+  wb: TUR
+  imf: TUR
+  region_group: Emerging and Developing Europe
+  region_geo: Europe & Central Asia
+  income: Upper middle income
+  development: EM
+  fx_regime: float
+- iso3: ARG
+  iso2: AR
+  name: Argentina
+  wb: ARG
+  imf: ARG
+  region_group: Latin America and the Caribbean (LAC)
+  region_geo: Latin America & Caribbean
+  income: Upper middle income
+  development: EM
+  fx_regime: managed_float
+  imf_program: true
+  imf_program_type: EFF
+- iso3: ZAF
+  iso2: ZA
+  name: South Africa
+  wb: ZAF
+  imf: ZAF
+  region_group: Sub-Saharan Africa (SSA)
+  region_geo: Sub-Saharan Africa
+  income: Upper middle income
+  development: EM
+  fx_regime: float
+- iso3: CHE
+  iso2: CH
+  name: Switzerland
+  wb: CHE
+  imf: CHE
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  fx_regime: float
+- iso3: NLD
+  iso2: NL
+  name: Netherlands
+  wb: NLD
+  imf: NLD
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: SWE
+  iso2: SE
+  name: Sweden
+  wb: SWE
+  imf: SWE
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: NOR
+  iso2: 'NO'
+  name: Norway
+  wb: NOR
+  imf: NOR
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  fx_regime: float
+- iso3: DNK
+  iso2: DK
+  name: Denmark
+  wb: DNK
+  imf: DNK
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: pegged
+- iso3: FIN
+  iso2: FI
+  name: Finland
+  wb: FIN
+  imf: FIN
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: BEL
+  iso2: BE
+  name: Belgium
+  wb: BEL
+  imf: BEL
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: AUT
+  iso2: AT
+  name: Austria
+  wb: AUT
+  imf: AUT
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: IRL
+  iso2: IE
+  name: Ireland
+  wb: IRL
+  imf: IRL
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: PRT
+  iso2: PT
+  name: Portugal
+  wb: PRT
+  imf: PRT
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: ESP
+  iso2: ES
+  name: Spain
+  wb: ESP
+  imf: ESP
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: GRC
+  iso2: GR
+  name: Greece
+  wb: GRC
+  imf: GRC
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: NZL
+  iso2: NZ
+  name: New Zealand
+  wb: NZL
+  imf: NZL
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: East Asia & Pacific
+  income: High income
+  development: DM
+  fx_regime: float
+- iso3: ISR
+  iso2: IL
+  name: Israel
+  wb: ISR
+  imf: ISR
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: Middle East, North Africa, Afghanistan & Pakistan
+  income: High income
+  development: DM
+  fx_regime: float
+- iso3: SGP
+  iso2: SG
+  name: Singapore
+  wb: SGP
+  imf: SGP
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: East Asia & Pacific
+  income: High income
+  development: DM
+  asean5: true
+  fx_regime: managed_float
+- iso3: HKG
+  iso2: HK
+  name: Hong Kong SAR
+  wb: HKG
+  imf: HKG
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: East Asia & Pacific
+  income: High income
+  development: DM
+  fx_regime: pegged
+- iso3: LUX
+  iso2: LU
+  name: Luxembourg
+  wb: LUX
+  imf: LUX
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: POL
+  iso2: PL
+  name: Poland
+  wb: POL
+  imf: POL
+  region_group: Emerging and Developing Europe
+  region_geo: Europe & Central Asia
+  income: High income
+  development: EM
+  eu: true
+  fx_regime: float
+- iso3: CZE
+  iso2: CZ
+  name: Czechia
+  wb: CZE
+  imf: CZE
+  region_group: Other Advanced Economies (Advanced Economies excluding G7 and Euro
+    Area countries)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: HUN
+  iso2: HU
+  name: Hungary
+  wb: HUN
+  imf: HUN
+  region_group: Emerging and Developing Europe
+  region_geo: Europe & Central Asia
+  income: High income
+  development: EM
+  eu: true
+  fx_regime: float
+- iso3: ROU
+  iso2: RO
+  name: Romania
+  wb: ROU
+  imf: ROU
+  region_group: Emerging and Developing Europe
+  region_geo: Europe & Central Asia
+  income: High income
+  development: EM
+  eu: true
+  fx_regime: managed_float
+- iso3: BGR
+  iso2: BG
+  name: Bulgaria
+  wb: BGR
+  imf: BGR
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: pegged
+- iso3: HRV
+  iso2: HR
+  name: Croatia
+  wb: HRV
+  imf: HRV
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: SVK
+  iso2: SK
+  name: Slovak Republic
+  wb: SVK
+  imf: SVK
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: SVN
+  iso2: SI
+  name: Slovenia
+  wb: SVN
+  imf: SVN
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: LTU
+  iso2: LT
+  name: Lithuania
+  wb: LTU
+  imf: LTU
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: LVA
+  iso2: LV
+  name: Latvia
+  wb: LVA
+  imf: LVA
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: EST
+  iso2: EE
+  name: Estonia
+  wb: EST
+  imf: EST
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: CYP
+  iso2: CY
+  name: Cyprus
+  wb: CYP
+  imf: CYP
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Europe & Central Asia
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: MLT
+  iso2: MT
+  name: Malta
+  wb: MLT
+  imf: MLT
+  euro: true
+  region_group: Euro Area (EA)
+  region_geo: Middle East, North Africa, Afghanistan & Pakistan
+  income: High income
+  development: DM
+  eu: true
+  fx_regime: float
+- iso3: THA
+  iso2: TH
+  name: Thailand
+  wb: THA
+  imf: THA
+  region_group: Emerging and Developing Asia
+  region_geo: East Asia & Pacific
+  income: Upper middle income
+  development: EM
+  asean5: true
+  fx_regime: managed_float
+- iso3: MYS
+  iso2: MY
+  name: Malaysia
+  wb: MYS
+  imf: MYS
+  region_group: Emerging and Developing Asia
+  region_geo: East Asia & Pacific
+  income: Upper middle income
+  development: EM
+  asean5: true
+  fx_regime: managed_float
+- iso3: PHL
+  iso2: PH
+  name: Philippines
+  wb: PHL
+  imf: PHL
+  region_group: Emerging and Developing Asia
+  region_geo: East Asia & Pacific
+  income: Lower middle income
+  development: Frontier
+  asean5: true
+  fx_regime: float
+- iso3: VNM
+  iso2: VN
+  name: Vietnam
+  wb: VNM
+  imf: VNM
+  region_group: Emerging and Developing Asia
+  region_geo: East Asia & Pacific
+  income: Lower middle income
+  development: Frontier
+  asean5: true
+  fx_regime: managed_float
+- iso3: PAK
+  iso2: PK
+  name: Pakistan
+  wb: PAK
+  imf: PAK
+  region_group: Middle East and Central Asia
+  region_geo: Middle East, North Africa, Afghanistan & Pakistan
+  income: Lower middle income
+  development: Frontier
+  fx_regime: managed_float
+  imf_program: true
+  imf_program_type: EFF
+- iso3: BGD
+  iso2: BD
+  name: Bangladesh
+  wb: BGD
+  imf: BGD
+  region_group: Emerging and Developing Asia
+  region_geo: South Asia
+  income: Lower middle income
+  development: Frontier
+  fx_regime: managed_float
+  imf_program: true
+  imf_program_type: ECF
+- iso3: EGY
+  iso2: EG
+  name: Egypt
+  wb: EGY
+  imf: EGY
+  region_group: Middle East and Central Asia
+  region_geo: Middle East, North Africa, Afghanistan & Pakistan
+  income: Lower middle income
+  development: Frontier
+  fx_regime: managed_float
+  imf_program: true
+  imf_program_type: EFF
+- iso3: NGA
+  iso2: NG
+  name: Nigeria
+  wb: NGA
+  imf: NGA
+  region_group: Sub-Saharan Africa (SSA)
+  region_geo: Sub-Saharan Africa
+  income: Lower middle income
+  development: Frontier
+  fx_regime: float
+- iso3: COL
+  iso2: CO
+  name: Colombia
+  wb: COL
+  imf: COL
+  region_group: Latin America and the Caribbean (LAC)
+  region_geo: Latin America & Caribbean
+  income: Upper middle income
+  development: EM
+  fx_regime: float
+- iso3: CHL
+  iso2: CL
+  name: Chile
+  wb: CHL
+  imf: CHL
+  region_group: Latin America and the Caribbean (LAC)
+  region_geo: Latin America & Caribbean
+  income: High income
+  development: EM
+  fx_regime: float
+- iso3: PER
+  iso2: PE
+  name: Peru
+  wb: PER
+  imf: PER
+  region_group: Latin America and the Caribbean (LAC)
+  region_geo: Latin America & Caribbean
+  income: Upper middle income
+  development: EM
+  fx_regime: managed_float
+- iso3: UKR
+  iso2: UA
+  name: Ukraine
+  wb: UKR
+  imf: UKR
+  region_group: Emerging and Developing Europe
+  region_geo: Europe & Central Asia
+  income: Upper middle income
+  development: EM
+  fx_regime: managed_float
+  imf_program: true
+  imf_program_type: EFF
+- iso3: ARE
+  iso2: AE
+  name: United Arab Emirates
+  wb: ARE
+  imf: ARE
+  region_group: Middle East and Central Asia
+  region_geo: Middle East, North Africa, Afghanistan & Pakistan
+  income: High income
+  development: EM
+  fx_regime: pegged
+- iso3: QAT
+  iso2: QA
+  name: Qatar
+  wb: QAT
+  imf: QAT
+  region_group: Middle East and Central Asia
+  region_geo: Middle East, North Africa, Afghanistan & Pakistan
+  income: High income
+  development: EM
+  fx_regime: pegged
+- iso3: KWT
+  iso2: KW
+  name: Kuwait
+  wb: KWT
+  imf: KWT
+  region_group: Middle East and Central Asia
+  region_geo: Middle East, North Africa, Afghanistan & Pakistan
+  income: High income
+  development: EM
+  fx_regime: pegged

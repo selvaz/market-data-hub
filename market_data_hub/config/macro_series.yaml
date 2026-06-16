@@ -1,0 +1,229 @@
+fred:
+- symbol: DCOILBRENTEU
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Energy | Brent Spot Price
+  priority: 2
+  country: US
+- symbol: DCOILWTICO
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Energy | WTI Spot Price (Cushing OK)
+  priority: 2
+  country: US
+- symbol: VIXCLS
+  asset_class: ALTERNATIVES
+  area: USA
+  name: VOL | US | CBOE Volatility Index (VIX) Close
+  priority: 1
+  country: US
+- symbol: DGS10
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 10-Year Treasury Constant Maturity
+  priority: 2
+  country: US
+- symbol: DGS2
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 2-Year Treasury Constant Maturity
+  priority: 2
+  country: US
+- symbol: DGS30
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 30-Year Treasury Constant Maturity
+  priority: 2
+  country: US
+- symbol: DGS3MO
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 3-Month Treasury Constant Maturity
+  priority: 2
+  country: US
+- symbol: T10Y2Y
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 10Y minus 2Y Treasury Spread
+  priority: 2
+  country: US
+- symbol: EFFR
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | Effective Federal Funds Rate
+  priority: 2
+  country: US
+- symbol: ECBDFR
+  asset_class: MACRO
+  area: Euro Area
+  name: RATES | ECB | Deposit Facility Rate
+  priority: 2
+  country: EA
+- symbol: ECBMRRFR
+  asset_class: MACRO
+  area: Euro Area
+  name: RATES | ECB | Main Refinancing Operations Rate (fixed rate tenders)
+  priority: 2
+  country: EA
+- symbol: ECBMLFR
+  asset_class: MACRO
+  area: Euro Area
+  name: RATES | ECB | Marginal Lending Facility Rate
+  priority: 2
+  country: EA
+- symbol: T10YIE
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 10-Year Breakeven Inflation Rate
+  priority: 2
+  country: US
+- symbol: T5YIE
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 5-Year Breakeven Inflation Rate
+  priority: 2
+  country: US
+- symbol: CPIAUCSL
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | CPI-U All items (SA)
+  priority: 2
+  country: US
+- symbol: CPILFESL
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Core CPI (CPI ex Food & Energy SA)
+  priority: 2
+  country: US
+- symbol: PCEPI
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | PCE Price Index
+  priority: 2
+  country: US
+- symbol: PCEPILFE
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Core PCE Price Index
+  priority: 2
+  country: US
+- symbol: CP0000EZ19M086NEST
+  asset_class: MACRO
+  area: EA19
+  name: MACRO | EA | HICP All items (Index 2015=100)
+  priority: 2
+  country: EA
+- symbol: GDP
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | GDP (current $)
+  priority: 2
+  country: US
+- symbol: GDPC1
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Real GDP (SAAR chained 2017$)
+  priority: 2
+  country: US
+- symbol: INDPRO
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Industrial Production Index
+  priority: 2
+  country: US
+- symbol: CLVMEURSCAB1GQEA19
+  asset_class: MACRO
+  area: EA19
+  name: MACRO | EA | Real GDP (chained 2010 EUR)
+  priority: 2
+  country: EA
+- symbol: EUNNGDP
+  asset_class: MACRO
+  area: EA19
+  name: MACRO | EA | GDP (EUR/ECU series nominal)
+  priority: 2
+  country: EA
+- symbol: UNRATE
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Unemployment Rate
+  priority: 2
+  country: US
+- symbol: PAYEMS
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Nonfarm Payrolls (Total)
+  priority: 2
+  country: US
+- symbol: LRHUTTTTEZM156S
+  asset_class: MACRO
+  area: EA19
+  name: MACRO | EA | Harmonised Unemployment Rate (Total monthly)
+  priority: 2
+  country: EA
+- symbol: M2SL
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | M2 Money Stock
+  priority: 2
+  country: US
+- symbol: WALCL
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Fed Total Assets
+  priority: 2
+  country: US
+- symbol: BAMLC0A0CM
+  asset_class: MACRO
+  area: USA
+  name: CREDIT | US | ICE BofA US Corporate Master OAS
+  priority: 2
+  country: US
+- symbol: BAMLH0A0HYM2
+  asset_class: MACRO
+  area: USA
+  name: CREDIT | US | ICE BofA US High Yield OAS
+  priority: 2
+  country: US
+- symbol: AAA
+  asset_class: MACRO
+  area: USA
+  name: CREDIT | US | Moody's Seasoned Aaa Corporate Bond Yield
+  priority: 2
+  country: US
+- symbol: BAA
+  asset_class: MACRO
+  area: USA
+  name: CREDIT | US | Moody's Seasoned Baa Corporate Bond Yield
+  priority: 2
+  country: US
+- symbol: NFCI
+  asset_class: MACRO
+  area: USA
+  name: RISK | US | Chicago Fed National Financial Conditions Index
+  priority: 2
+  country: US
+- symbol: STLFSI4
+  asset_class: MACRO
+  area: USA
+  name: RISK | US | St. Louis Fed Financial Stress Index
+  priority: 2
+  country: US
+- symbol: HOUST
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Housing Starts
+  priority: 2
+  country: US
+- symbol: RSAFS
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Retail Sales (Total)
+  priority: 2
+  country: US
+- symbol: DTWEXBGS
+  asset_class: FX
+  area: USA
+  name: 'FX | USD | Trade Weighted US Dollar Index: Broad'
+  priority: 2
+  country: US

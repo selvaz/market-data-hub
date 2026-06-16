@@ -1,0 +1,769 @@
+indicators:
+- id: real_gdp_growth
+  name: Real GDP growth
+  pillar: growth
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: NY.GDP.MKTP.KD.ZG
+  orientation: 1
+  api_source_id: 2
+- id: gdp_current_usd
+  name: GDP current USD
+  pillar: growth
+  priority: 1
+  freq: A
+  unit: usd
+  source: WB
+  dataset: WDI
+  code: NY.GDP.MKTP.CD
+  orientation: 0
+  api_source_id: 2
+- id: gdp_per_capita_growth
+  name: GDP per capita growth
+  pillar: growth
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: NY.GDP.PCAP.KD.ZG
+  orientation: 1
+  api_source_id: 2
+- id: unemployment_rate
+  name: Unemployment (ILO modeled)
+  pillar: growth
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: SL.UEM.TOTL.ZS
+  orientation: -1
+  api_source_id: 2
+- id: investment_gdp
+  name: Gross capital formation %GDP
+  pillar: growth
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: NE.GDI.TOTL.ZS
+  orientation: 1
+  api_source_id: 2
+- id: gross_savings_gdp
+  name: Gross savings %GDP
+  pillar: growth
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: NY.GNS.ICTR.ZS
+  orientation: 1
+  api_source_id: 2
+- id: labor_productivity_level
+  name: GDP per person employed (const 2021 PPP $)
+  pillar: growth
+  priority: 2
+  freq: A
+  unit: usd
+  source: WB
+  dataset: WDI
+  code: SL.GDP.PCAP.EM.KD
+  orientation: 1
+  api_source_id: 2
+- id: high_tech_exports_share
+  name: High-tech exports %manufactured
+  pillar: growth
+  priority: 2
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: TX.VAL.TECH.MF.ZS
+  orientation: 1
+  api_source_id: 2
+- id: rnd_expenditure_gdp
+  name: R&D expenditure %GDP
+  pillar: growth
+  priority: 2
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: GB.XPD.RSDV.GD.ZS
+  orientation: 1
+  api_source_id: 2
+- id: population_growth
+  name: Population growth
+  pillar: growth
+  priority: 3
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: SP.POP.GROW
+  orientation: 0
+  api_source_id: 2
+- id: dependency_ratio
+  name: Age dependency ratio
+  pillar: growth
+  priority: 3
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: SP.POP.DPND
+  orientation: -1
+  api_source_id: 2
+- id: inflation_cpi
+  name: CPI inflation
+  pillar: liquidity
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: FP.CPI.TOTL.ZG
+  orientation: -1
+  api_source_id: 2
+- id: real_interest_rate
+  name: Real interest rate
+  pillar: liquidity
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: FR.INR.RINR
+  orientation: 0
+  api_source_id: 2
+- id: lending_interest_rate
+  name: Lending interest rate
+  pillar: liquidity
+  priority: 2
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: FR.INR.LEND
+  orientation: -1
+  api_source_id: 2
+- id: broad_money_gdp
+  name: Broad money %GDP
+  pillar: liquidity
+  priority: 2
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: FM.LBL.BMNY.GD.ZS
+  orientation: 0
+  api_source_id: 2
+- id: current_account_gdp
+  name: Current account balance %GDP
+  pillar: external
+  priority: 1
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: BCA_NGDPD
+  orientation: 1
+  fallback:
+    source: WB
+    dataset: WDI
+    code: BN.CAB.XOKA.GD.ZS
+    api_source_id: 2
+- id: fx_reserves_usd
+  name: Total reserves incl. gold (USD)
+  pillar: external
+  priority: 1
+  freq: A
+  unit: usd
+  source: WB
+  dataset: WDI
+  code: FI.RES.TOTL.CD
+  orientation: 1
+  api_source_id: 2
+- id: fx_reserves_months_imports
+  name: Reserves in months of imports
+  pillar: external
+  priority: 1
+  freq: A
+  unit: months
+  source: WB
+  dataset: WDI
+  code: FI.RES.TOTL.MO
+  orientation: 1
+  api_source_id: 2
+- id: official_fx_rate
+  name: Official exchange rate (LCU/USD)
+  pillar: external
+  priority: 1
+  freq: A
+  unit: lcu_per_usd
+  source: WB
+  dataset: WDI
+  code: PA.NUS.FCRF
+  orientation: 0
+  api_source_id: 2
+- id: exports_gdp
+  name: Exports %GDP
+  pillar: external
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: NE.EXP.GNFS.ZS
+  orientation: 1
+  api_source_id: 2
+- id: imports_gdp
+  name: Imports %GDP
+  pillar: external
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: NE.IMP.GNFS.ZS
+  orientation: 0
+  api_source_id: 2
+- id: fdi_inflows_gdp
+  name: FDI net inflows %GDP
+  pillar: external
+  priority: 2
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: BX.KLT.DINV.WD.GD.ZS
+  orientation: 1
+  api_source_id: 2
+- id: private_credit_gdp
+  name: Domestic credit to private sector %GDP
+  pillar: debt_cycle
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: FS.AST.PRVT.GD.ZS
+  orientation: 0
+  api_source_id: 2
+- id: public_debt_gdp
+  name: Govt gross debt %GDP
+  pillar: sovereign
+  priority: 1
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: GGXWDG_NGDP
+  orientation: -1
+  fallback:
+    source: WB
+    dataset: WDI
+    code: GC.DOD.TOTL.GD.ZS
+    api_source_id: 2
+- id: fiscal_balance_gdp
+  name: Govt net lending/borrowing %GDP
+  pillar: sovereign
+  priority: 1
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: GGXCNL_NGDP
+  orientation: 1
+  fallback:
+    source: WB
+    dataset: WDI
+    code: GC.NLD.TOTL.GD.ZS
+    api_source_id: 2
+- id: primary_balance_gdp
+  name: Govt primary balance %GDP
+  pillar: sovereign
+  priority: 2
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: pb
+  orientation: 1
+- id: government_revenue_gdp
+  name: Govt revenue %GDP
+  pillar: sovereign
+  priority: 2
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: rev
+  orientation: 0
+  fallback:
+    source: WB
+    dataset: WDI
+    code: GC.REV.XGRT.GD.ZS
+    api_source_id: 2
+- id: government_expenditure_gdp
+  name: Govt expenditure %GDP
+  pillar: sovereign
+  priority: 2
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: exp
+  orientation: 0
+  fallback:
+    source: WB
+    dataset: WDI
+    code: GC.XPN.TOTL.GD.ZS
+    api_source_id: 2
+- id: npl_ratio
+  name: Bank NPLs %gross loans
+  pillar: banking
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: FB.AST.NPER.ZS
+  orientation: -1
+  api_source_id: 2
+- id: bank_capital_ratio
+  name: Bank capital to assets ratio
+  pillar: banking
+  priority: 2
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: FB.BNK.CAPA.ZS
+  orientation: 1
+  api_source_id: 2
+- id: wgi_voice_accountability
+  name: Voice & accountability
+  pillar: governance
+  priority: 1
+  freq: A
+  unit: index
+  source: WB
+  dataset: WGI
+  code: GOV_WGI_VA.EST
+  orientation: 1
+  api_source_id: 3
+- id: wgi_political_stability
+  name: Political stability
+  pillar: governance
+  priority: 1
+  freq: A
+  unit: index
+  source: WB
+  dataset: WGI
+  code: GOV_WGI_PV.EST
+  orientation: 1
+  api_source_id: 3
+- id: wgi_government_effectiveness
+  name: Government effectiveness
+  pillar: governance
+  priority: 1
+  freq: A
+  unit: index
+  source: WB
+  dataset: WGI
+  code: GOV_WGI_GE.EST
+  orientation: 1
+  api_source_id: 3
+- id: wgi_regulatory_quality
+  name: Regulatory quality
+  pillar: governance
+  priority: 1
+  freq: A
+  unit: index
+  source: WB
+  dataset: WGI
+  code: GOV_WGI_RQ.EST
+  orientation: 1
+  api_source_id: 3
+- id: wgi_rule_of_law
+  name: Rule of law
+  pillar: governance
+  priority: 1
+  freq: A
+  unit: index
+  source: WB
+  dataset: WGI
+  code: GOV_WGI_RL.EST
+  orientation: 1
+  api_source_id: 3
+- id: wgi_control_corruption
+  name: Control of corruption
+  pillar: governance
+  priority: 1
+  freq: A
+  unit: index
+  source: WB
+  dataset: WGI
+  code: GOV_WGI_CC.EST
+  orientation: 1
+  api_source_id: 3
+- id: trade_openness
+  name: Trade %GDP
+  pillar: geopolitical
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: NE.TRD.GNFS.ZS
+  orientation: 0
+  api_source_id: 2
+- id: natural_resource_rents_gdp
+  name: Natural resource rents %GDP
+  pillar: geopolitical
+  priority: 2
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: NY.GDP.TOTL.RT.ZS
+  orientation: 0
+  api_source_id: 2
+- id: military_expenditure_gdp
+  name: Military expenditure %GDP
+  pillar: geopolitical
+  priority: 3
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: MS.MIL.XPND.GD.ZS
+  orientation: 0
+  api_source_id: 2
+- id: gdp_growth_weo
+  name: Real GDP growth (WEO, incl. forecast)
+  pillar: growth
+  priority: 1
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: NGDP_RPCH
+  orientation: 1
+- id: gdp_usd_weo
+  name: GDP current USD (WEO)
+  pillar: growth
+  priority: 2
+  freq: A
+  unit: usd
+  source: IMF
+  dataset: WEO
+  code: NGDPD
+  orientation: 0
+- id: gdp_per_capita_usd
+  name: GDP per capita current USD
+  pillar: growth
+  priority: 2
+  freq: A
+  unit: usd
+  source: IMF
+  dataset: WEO
+  code: NGDPDPC
+  orientation: 1
+- id: gdp_ppp
+  name: GDP PPP (current intl $)
+  pillar: growth
+  priority: 3
+  freq: A
+  unit: usd
+  source: IMF
+  dataset: WEO
+  code: PPPGDP
+  orientation: 0
+- id: gdp_per_capita_ppp
+  name: GDP per capita PPP
+  pillar: growth
+  priority: 2
+  freq: A
+  unit: usd
+  source: IMF
+  dataset: WEO
+  code: PPPPC
+  orientation: 1
+- id: gdp_ppp_world_share
+  name: GDP PPP share of world
+  pillar: geopolitical
+  priority: 3
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: PPPSH
+  orientation: 0
+- id: ppp_conversion_rate
+  name: Implied PPP conversion rate
+  pillar: external
+  priority: 3
+  freq: A
+  unit: lcu_per_usd
+  source: IMF
+  dataset: WEO
+  code: PPPEX
+  orientation: 0
+- id: inflation_avg_weo
+  name: Inflation avg CPI (WEO, incl. forecast)
+  pillar: liquidity
+  priority: 1
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: PCPIPCH
+  orientation: -1
+- id: inflation_eop_weo
+  name: Inflation end-of-period CPI (WEO)
+  pillar: liquidity
+  priority: 2
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: PCPIEPCH
+  orientation: -1
+- id: population
+  name: Population (millions)
+  pillar: growth
+  priority: 3
+  freq: A
+  unit: persons_mn
+  source: IMF
+  dataset: WEO
+  code: LP
+  orientation: 0
+- id: current_account_usd
+  name: Current account balance (USD)
+  pillar: external
+  priority: 2
+  freq: A
+  unit: usd
+  source: IMF
+  dataset: WEO
+  code: BCA
+  orientation: 0
+- id: unemployment_weo
+  name: Unemployment rate (WEO, incl. forecast)
+  pillar: growth
+  priority: 1
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: LUR
+  orientation: -1
+- id: remittances_gdp
+  name: Personal remittances received %GDP
+  pillar: external
+  priority: 2
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: BX.TRF.PWKR.DT.GD.ZS
+  orientation: 1
+  api_source_id: 2
+- id: total_external_debt_usd
+  name: Total external debt stocks (USD)
+  pillar: sovereign
+  priority: 1
+  freq: A
+  unit: usd
+  source: WB
+  dataset: WDI
+  code: DT.DOD.DECT.CD
+  orientation: -1
+  api_source_id: 2
+- id: external_debt_gni
+  name: External debt stocks %GNI
+  pillar: sovereign
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: DT.DOD.DECT.GN.ZS
+  orientation: -1
+  api_source_id: 2
+- id: ppg_external_debt_usd
+  name: PPG external debt (USD)
+  pillar: sovereign
+  priority: 2
+  freq: A
+  unit: usd
+  source: WB
+  dataset: WDI
+  code: DT.DOD.DPPG.CD
+  orientation: 0
+  api_source_id: 2
+- id: short_term_debt_usd
+  name: Short-term external debt (USD)
+  pillar: external
+  priority: 2
+  freq: A
+  unit: usd
+  source: WB
+  dataset: WDI
+  code: DT.DOD.DSTC.CD
+  orientation: -1
+  api_source_id: 2
+- id: short_term_debt_reserves
+  name: Short-term debt %reserves
+  pillar: external
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: DT.DOD.DSTC.IR.ZS
+  orientation: -1
+  api_source_id: 2
+- id: debt_service_exports
+  name: Total debt service %exports
+  pillar: sovereign
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: DT.TDS.DECT.EX.ZS
+  orientation: -1
+  api_source_id: 2
+- id: interest_revenue
+  name: Interest payments %revenue
+  pillar: sovereign
+  priority: 1
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: GC.XPN.INTP.RV.ZS
+  orientation: -1
+  api_source_id: 2
+- id: tourism_receipts_usd
+  name: Intl tourism receipts (USD)
+  pillar: external
+  priority: 3
+  freq: A
+  unit: usd
+  source: WB
+  dataset: WDI
+  code: ST.INT.RCPT.CD
+  orientation: 1
+  api_source_id: 2
+- id: tourism_exports_share
+  name: Tourism receipts %exports
+  pillar: external
+  priority: 3
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: ST.INT.RCPT.XP.ZS
+  orientation: 0
+  api_source_id: 2
+- id: food_imports_share
+  name: Food imports %merch imports
+  pillar: external
+  priority: 3
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: TM.VAL.FOOD.ZS.UN
+  orientation: 0
+  api_source_id: 2
+- id: fuel_imports_share
+  name: Fuel imports %merch imports
+  pillar: external
+  priority: 2
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: TM.VAL.FUEL.ZS.UN
+  orientation: 0
+  api_source_id: 2
+- id: food_exports_share
+  name: Food exports %merch exports
+  pillar: geopolitical
+  priority: 3
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: TX.VAL.FOOD.ZS.UN
+  orientation: 0
+  api_source_id: 2
+- id: fuel_exports_share
+  name: Fuel exports %merch exports
+  pillar: geopolitical
+  priority: 2
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: TX.VAL.FUEL.ZS.UN
+  orientation: 0
+  api_source_id: 2
+- id: metals_exports_share
+  name: Ores & metals exports %merch exports
+  pillar: geopolitical
+  priority: 3
+  freq: A
+  unit: percent
+  source: WB
+  dataset: WDI
+  code: TX.VAL.MMTL.ZS.UN
+  orientation: 0
+  api_source_id: 2
+- id: bis_dsr_private
+  name: Debt service ratio - private (BIS)
+  pillar: debt_cycle
+  priority: 1
+  freq: Q
+  unit: percent
+  source: BIS
+  dataset: WS_DSR
+  code: Q.{iso2}.P
+  orientation: -1
+  dalio_role: 'Fase ciclo debito: picco DSR = top/depression'
+- id: bis_credit_gap
+  name: Credit-to-GDP gap - private (BIS, HP)
+  pillar: debt_cycle
+  priority: 1
+  freq: Q
+  unit: percent_points
+  source: BIS
+  dataset: WS_CREDIT_GAP
+  code: Q.{iso2}.P.A.C
+  orientation: -1
+  dalio_role: Bubble se > +10pp (soglia archetipale Dalio)
+- id: bis_policy_rate
+  name: Central bank policy rate (BIS)
+  pillar: liquidity
+  priority: 1
+  freq: M
+  unit: percent
+  source: BIS
+  dataset: WS_CBPOL
+  code: M.{iso2}
+  bis_country_dim: REF_AREA
+  orientation: 0
+  dalio_role: Tasso nominale (nom_growth vs nom_rate); ~0 = pushing on a string
+  euro_aggregate: XM

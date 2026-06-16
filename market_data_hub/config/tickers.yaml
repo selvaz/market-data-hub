@@ -1,0 +1,594 @@
+yahoo:
+- symbol: ACWI
+  asset_class: EQUITY
+  area: Global
+  name: EQUITY | Global | MSCI ACWI
+  priority: 1
+- symbol: VEA
+  asset_class: EQUITY
+  area: Developed Markets
+  name: EQUITY | DM | Vanguard FTSE Developed Markets
+  priority: 1
+- symbol: IEMG
+  asset_class: EQUITY
+  area: Emerging Markets
+  name: EQUITY | EM | iShares Core MSCI Emerging Markets
+  priority: 1
+- symbol: EMXC
+  asset_class: EQUITY
+  area: Emerging Markets
+  name: EQUITY | EM | iShares MSCI EM ex China
+  priority: 1
+- symbol: SPY
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | S&P 500
+  priority: 1
+- symbol: QQQ
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Nasdaq 100
+  priority: 1
+- symbol: IWM
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Russell 2000
+  priority: 1
+- symbol: VUG
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Vanguard Growth
+  priority: 1
+- symbol: VTV
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Vanguard Value
+  priority: 1
+- symbol: VGT
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Vanguard Information Technology
+  priority: 1
+- symbol: XLV
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Health Care Select Sector SPDR
+  priority: 1
+- symbol: XLF
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Financial Select Sector SPDR
+  priority: 1
+- symbol: XLY
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Consumer Discretionary Select Sector SPDR
+  priority: 1
+- symbol: XLC
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Communication Services Select Sector SPDR
+  priority: 1
+- symbol: XLI
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Industrial Select Sector SPDR
+  priority: 1
+- symbol: XLP
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Consumer Staples Select Sector SPDR
+  priority: 1
+- symbol: XLE
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Energy Select Sector SPDR
+  priority: 1
+- symbol: XLU
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Utilities Select Sector SPDR
+  priority: 1
+- symbol: XLB
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Materials Select Sector SPDR
+  priority: 1
+- symbol: EXSA.DE
+  asset_class: EQUITY
+  area: Europe
+  name: EQUITY | Europe | STOXX Europe 600
+  priority: 1
+- symbol: VGK
+  asset_class: EQUITY
+  area: Europe
+  name: EQUITY | Europe | Vanguard FTSE Europe
+  priority: 1
+- symbol: EXV1.DE
+  asset_class: EQUITY
+  area: Europe
+  name: EQUITY | Europe | STOXX Europe 600 Banks
+  priority: 1
+- symbol: EXV3.DE
+  asset_class: EQUITY
+  area: Europe
+  name: EQUITY | Europe | STOXX Europe 600 Technology
+  priority: 1
+- symbol: EXV4.DE
+  asset_class: EQUITY
+  area: Europe
+  name: EQUITY | Europe | STOXX Europe 600 Health Care
+  priority: 1
+- symbol: EXH4.DE
+  asset_class: EQUITY
+  area: Europe
+  name: EQUITY | Europe | STOXX Europe 600 Industrials
+  priority: 1
+- symbol: EXH1.DE
+  asset_class: EQUITY
+  area: Europe
+  name: EQUITY | Europe | STOXX Europe 600 Oil & Gas
+  priority: 1
+- symbol: EXH9.DE
+  asset_class: EQUITY
+  area: Europe
+  name: EQUITY | Europe | STOXX Europe 600 Utilities
+  priority: 1
+- symbol: EWU
+  asset_class: EQUITY
+  area: United Kingdom
+  name: EQUITY | Europe | iShares MSCI United Kingdom
+  priority: 1
+- symbol: EWG
+  asset_class: EQUITY
+  area: Germany
+  name: EQUITY | Europe | iShares MSCI Germany
+  priority: 1
+- symbol: EWQ
+  asset_class: EQUITY
+  area: France
+  name: EQUITY | Europe | iShares MSCI France
+  priority: 1
+- symbol: EWI
+  asset_class: EQUITY
+  area: Italy
+  name: EQUITY | Europe | iShares MSCI Italy
+  priority: 1
+- symbol: EWJ
+  asset_class: EQUITY
+  area: Japan
+  name: EQUITY | Japan | iShares MSCI Japan
+  priority: 1
+- symbol: EWC
+  asset_class: EQUITY
+  area: Canada
+  name: EQUITY | Canada | iShares MSCI Canada
+  priority: 1
+- symbol: EWA
+  asset_class: EQUITY
+  area: Australia
+  name: EQUITY | Australia | iShares MSCI Australia
+  priority: 1
+- symbol: AAXJ
+  asset_class: EQUITY
+  area: Asia-Pacific
+  name: EQUITY | Asia-Pac | iShares MSCI All Country Asia ex Japan
+  priority: 1
+- symbol: FXI
+  asset_class: EQUITY
+  area: China
+  name: EQUITY | China | iShares China Large-Cap
+  priority: 1
+- symbol: MCHI
+  asset_class: EQUITY
+  area: China
+  name: EQUITY | China | iShares MSCI China
+  priority: 1
+- symbol: KWEB
+  asset_class: EQUITY
+  area: China
+  name: EQUITY | China | KraneShares CSI China Internet
+  priority: 1
+- symbol: KBUY
+  asset_class: EQUITY
+  area: China
+  name: EQUITY | China | KraneShares China Consumer Leaders
+  priority: 1
+- symbol: KURE
+  asset_class: EQUITY
+  area: China
+  name: EQUITY | China | KraneShares MSCI China Health Care
+  priority: 1
+- symbol: CQQQ
+  asset_class: EQUITY
+  area: China
+  name: EQUITY | China | Invesco China Technology
+  priority: 1
+- symbol: INDA
+  asset_class: EQUITY
+  area: India
+  name: EQUITY | India | iShares MSCI India
+  priority: 1
+- symbol: EWY
+  asset_class: EQUITY
+  area: South Korea
+  name: EQUITY | South Korea | iShares MSCI South Korea
+  priority: 1
+- symbol: EWT
+  asset_class: EQUITY
+  area: Taiwan
+  name: EQUITY | Taiwan | iShares MSCI Taiwan
+  priority: 1
+- symbol: EWZ
+  asset_class: EQUITY
+  area: Brazil
+  name: EQUITY | Brazil | iShares MSCI Brazil
+  priority: 1
+- symbol: EWW
+  asset_class: EQUITY
+  area: Mexico
+  name: EQUITY | Mexico | iShares MSCI Mexico
+  priority: 1
+- symbol: ILF
+  asset_class: EQUITY
+  area: Latin America
+  name: EQUITY | Latin America | iShares Latin America 40
+  priority: 1
+- symbol: AGG
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | iShares Core US Aggregate Bond
+  priority: 1
+- symbol: SHY
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | iShares 1-3 Year Treasury Bond
+  priority: 1
+- symbol: IEI
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | iShares 3-7 Year Treasury Bond
+  priority: 1
+- symbol: IEF
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | iShares 7-10 Year Treasury Bond
+  priority: 1
+- symbol: TLT
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | iShares 20+ Year Treasury Bond
+  priority: 1
+- symbol: BIL
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | SPDR Bloomberg 1-3 Month T-Bill
+  priority: 1
+- symbol: SHV
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | iShares Short Treasury Bond
+  priority: 1
+- symbol: TIP
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | iShares TIPS Bond
+  priority: 1
+- symbol: BNDX
+  asset_class: FIXED_INCOME
+  area: Global ex-US
+  name: FI | Global | Vanguard Total International Bond (hedged)
+  priority: 1
+- symbol: BWX
+  asset_class: FIXED_INCOME
+  area: Global
+  name: FI | Global | SPDR Bloomberg International Treasury
+  priority: 1
+- symbol: LQD
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | iShares iBoxx $ Investment Grade Corporate
+  priority: 1
+- symbol: VCSH
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | Vanguard Short-Term Corporate
+  priority: 1
+- symbol: HYG
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | iShares iBoxx $ High Yield Corporate
+  priority: 1
+- symbol: EUHY
+  asset_class: FIXED_INCOME
+  area: Europe
+  name: FI | Europe | iShares € High Yield Corporate
+  priority: 1
+- symbol: HYXU
+  asset_class: FIXED_INCOME
+  area: Global
+  name: FI | Global | iShares Global ex USD High Yield Corporate
+  priority: 1
+- symbol: EMB
+  asset_class: FIXED_INCOME
+  area: Emerging Markets
+  name: FI | EM | iShares JP Morgan USD Emerging Markets Bond
+  priority: 1
+- symbol: EMLC
+  asset_class: FIXED_INCOME
+  area: Emerging Markets
+  name: FI | EM | VanEck Emerging Markets Local Currency Bond
+  priority: 1
+- symbol: CEMB
+  asset_class: FIXED_INCOME
+  area: Emerging Markets
+  name: FI | EM | iShares Emerging Markets Corporate Bond
+  priority: 1
+- symbol: HYEM
+  asset_class: FIXED_INCOME
+  area: Emerging Markets
+  name: FI | EM | VanEck Emerging Markets High Yield Bond
+  priority: 1
+- symbol: MUB
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | iShares National Muni Bond
+  priority: 1
+- symbol: HYD
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | VanEck High Yield Muni
+  priority: 1
+- symbol: DBC
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Broad | Invesco DB Commodity Index Tracking
+  priority: 2
+- symbol: PDBC
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Broad | Invesco Optimum Yield Diversified Commodity
+  priority: 2
+- symbol: USO
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Energy | United States Oil Fund
+  priority: 2
+- symbol: UNG
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Energy | United States Natural Gas Fund
+  priority: 2
+- symbol: UGA
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Energy | United States Gasoline Fund
+  priority: 2
+- symbol: GLD
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Metals | SPDR Gold Trust
+  priority: 2
+- symbol: SLV
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Metals | iShares Silver Trust
+  priority: 2
+- symbol: PPLT
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Metals | abrdn Physical Platinum Shares
+  priority: 2
+- symbol: PALL
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Metals | abrdn Physical Palladium Shares
+  priority: 2
+- symbol: DBB
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Metals | Invesco DB Base Metals Fund
+  priority: 2
+- symbol: CPER
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Metals | United States Copper Index Fund
+  priority: 2
+- symbol: DBA
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Agriculture | Invesco DB Agriculture Fund
+  priority: 2
+- symbol: CORN
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Agriculture | Teucrium Corn Fund
+  priority: 2
+- symbol: WEAT
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Agriculture | Teucrium Wheat Fund
+  priority: 2
+- symbol: SOYB
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Agriculture | Teucrium Soybean Fund
+  priority: 2
+- symbol: VNQ
+  asset_class: REAL_ESTATE
+  area: USA
+  name: RE | US | Vanguard Real Estate
+  priority: 3
+- symbol: VNQI
+  asset_class: REAL_ESTATE
+  area: Global
+  name: RE | Global | Vanguard Global ex-US Real Estate
+  priority: 3
+- symbol: BTC-USD
+  asset_class: ALTERNATIVES
+  area: Global
+  name: CRYPTO | Bitcoin | BTC-USD
+  priority: 1
+- symbol: IBIT
+  asset_class: ALTERNATIVES
+  area: USA
+  name: CRYPTO | Bitcoin | iShares Bitcoin Trust
+  priority: 1
+- symbol: ETH-USD
+  asset_class: ALTERNATIVES
+  area: Global
+  name: CRYPTO | Ethereum | ETH-USD
+  priority: 1
+- symbol: ETHA
+  asset_class: ALTERNATIVES
+  area: USA
+  name: CRYPTO | Ethereum | iShares Ethereum Trust
+  priority: 1
+- symbol: SOL-USD
+  asset_class: ALTERNATIVES
+  area: Global
+  name: CRYPTO | Solana | SOL-USD
+  priority: 1
+- symbol: VIXY
+  asset_class: ALTERNATIVES
+  area: USA
+  name: VOL | US | ProShares VIX Short-Term Futures
+  priority: 1
+- symbol: IGF
+  asset_class: ALTERNATIVES
+  area: Global
+  name: ALT | Infrastructure | iShares Global Infrastructure
+  priority: 1
+- symbol: IFRA
+  asset_class: ALTERNATIVES
+  area: USA
+  name: ALT | Infrastructure | iShares US Infrastructure
+  priority: 1
+- symbol: EURUSD=X
+  asset_class: FX
+  area: Global
+  name: FX | Yahoo | EUR/USD
+  priority: 2
+- symbol: GBPUSD=X
+  asset_class: FX
+  area: Global
+  name: FX | Yahoo | GBP/USD
+  priority: 2
+- symbol: USDJPY=X
+  asset_class: FX
+  area: Global
+  name: FX | Yahoo | USD/JPY
+  priority: 2
+- symbol: AUDUSD=X
+  asset_class: FX
+  area: Global
+  name: FX | Yahoo | AUD/USD
+  priority: 2
+- symbol: USDCAD=X
+  asset_class: FX
+  area: Global
+  name: FX | Yahoo | USD/CAD
+  priority: 2
+- symbol: USDCHF=X
+  asset_class: FX
+  area: Global
+  name: FX | Yahoo | USD/CHF
+  priority: 2
+- symbol: EURGBP=X
+  asset_class: FX
+  area: Global
+  name: FX | Yahoo | EUR/GBP
+  priority: 2
+- symbol: EURJPY=X
+  asset_class: FX
+  area: Global
+  name: FX | Yahoo | EUR/JPY
+  priority: 2
+- symbol: EURCHF=X
+  asset_class: FX
+  area: Global
+  name: FX | Yahoo | EUR/CHF
+  priority: 2
+- symbol: ^VIX
+  asset_class: ALTERNATIVES
+  area: US
+  name: VIX term structure ^VIX
+  priority: 1
+- symbol: ^VIX9D
+  asset_class: ALTERNATIVES
+  area: US
+  name: VIX term structure ^VIX9D
+  priority: 1
+- symbol: ^VIX3M
+  asset_class: ALTERNATIVES
+  area: US
+  name: VIX term structure ^VIX3M
+  priority: 1
+- symbol: ^VIX6M
+  asset_class: ALTERNATIVES
+  area: US
+  name: VIX term structure ^VIX6M
+  priority: 1
+- symbol: ^VVIX
+  asset_class: ALTERNATIVES
+  area: US
+  name: VIX term structure ^VVIX
+  priority: 1
+- symbol: ^VXN
+  asset_class: ALTERNATIVES
+  area: US
+  name: VIX term structure ^VXN
+  priority: 1
+- symbol: FEZ
+  asset_class: EQUITY
+  area: Europe
+  name: FEZ
+  priority: 1
+- symbol: UUP
+  asset_class: FX
+  area: USD
+  name: UUP
+  priority: 2
+- symbol: VWO
+  asset_class: EQUITY
+  area: Emerging Markets
+  name: VWO
+  priority: 1
+- symbol: DCOILBRENTEU
+- symbol: DCOILWTICO
+- symbol: VIXCLS
+- symbol: DGS10
+- symbol: DGS2
+- symbol: DGS30
+- symbol: DGS3MO
+- symbol: T10Y2Y
+- symbol: EFFR
+- symbol: ECBDFR
+- symbol: ECBMRRFR
+- symbol: ECBMLFR
+- symbol: T10YIE
+- symbol: T5YIE
+- symbol: CPIAUCSL
+- symbol: CPILFESL
+- symbol: PCEPI
+- symbol: PCEPILFE
+- symbol: CP0000EZ19M086NEST
+- symbol: GDP
+- symbol: GDPC1
+- symbol: INDPRO
+- symbol: CLVMEURSCAB1GQEA19
+- symbol: EUNNGDP
+- symbol: UNRATE
+- symbol: PAYEMS
+- symbol: LRHUTTTTEZM156S
+- symbol: M2SL
+- symbol: WALCL
+- symbol: BAMLC0A0CM
+- symbol: BAMLH0A0HYM2
+- symbol: AAA
+- symbol: BAA
+- symbol: NFCI
+- symbol: STLFSI4
+- symbol: HOUST
+- symbol: RSAFS
+- symbol: DTWEXBGS

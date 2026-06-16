@@ -1,0 +1,141 @@
+Ticker,Area,Layer1_AssetClass,Layer1_Benchmark,Layer2_SubAssetClass,Layer3_Geographic,Layer4_Granular,Priority,Asset_Class_YAML,Name
+ACWI,Global,EQUITY,ACWI,Global,World,All-Cap,1,EQUITY,EQUITY | Global | MSCI ACWI
+VEA,Developed Markets,EQUITY,ACWI,Developed,Broad,All-Cap,1,EQUITY,EQUITY | DM | Vanguard FTSE Developed Markets
+IEMG,Emerging Markets,EQUITY,ACWI,Emerging,Broad,All-Cap,1,EQUITY,EQUITY | EM | iShares Core MSCI Emerging Markets
+EMXC,Emerging Markets,EQUITY,ACWI,Emerging,Broad,Ex-China,1,EQUITY,EQUITY | EM | iShares MSCI EM ex China
+SPY,USA,EQUITY,ACWI,Developed,US,Large-Cap-Broad,1,EQUITY,EQUITY | US | S&P 500
+QQQ,USA,EQUITY,ACWI,Developed,US,Large-Cap-Tech,1,EQUITY,EQUITY | US | Nasdaq 100
+IWM,USA,EQUITY,ACWI,Developed,US,Small-Cap,1,EQUITY,EQUITY | US | Russell 2000
+VUG,USA,EQUITY,ACWI,Developed,US,Growth,1,EQUITY,EQUITY | US | Vanguard Growth
+VTV,USA,EQUITY,ACWI,Developed,US,Value,1,EQUITY,EQUITY | US | Vanguard Value
+VGT,USA,EQUITY,ACWI,Developed,US,Technology,1,EQUITY,EQUITY | US | Vanguard Information Technology
+XLV,USA,EQUITY,ACWI,Developed,US,Health-Care,1,EQUITY,EQUITY | US | Health Care Select Sector SPDR
+XLF,USA,EQUITY,ACWI,Developed,US,Financials,1,EQUITY,EQUITY | US | Financial Select Sector SPDR
+XLY,USA,EQUITY,ACWI,Developed,US,Consumer-Discretionary,1,EQUITY,EQUITY | US | Consumer Discretionary Select Sector SPDR
+XLC,USA,EQUITY,ACWI,Developed,US,Communication,1,EQUITY,EQUITY | US | Communication Services Select Sector SPDR
+XLI,USA,EQUITY,ACWI,Developed,US,Industrials,1,EQUITY,EQUITY | US | Industrial Select Sector SPDR
+XLP,USA,EQUITY,ACWI,Developed,US,Consumer-Staples,1,EQUITY,EQUITY | US | Consumer Staples Select Sector SPDR
+XLE,USA,EQUITY,ACWI,Developed,US,Energy,1,EQUITY,EQUITY | US | Energy Select Sector SPDR
+XLU,USA,EQUITY,ACWI,Developed,US,Utilities,1,EQUITY,EQUITY | US | Utilities Select Sector SPDR
+XLB,USA,EQUITY,ACWI,Developed,US,Materials,1,EQUITY,EQUITY | US | Materials Select Sector SPDR
+EXSA.DE,Europe,EQUITY,ACWI,Developed,Europe,Broad,1,EQUITY,EQUITY | Europe | STOXX Europe 600
+VGK,Europe,EQUITY,ACWI,Developed,Europe,Broad-Alternative,1,EQUITY,EQUITY | Europe | Vanguard FTSE Europe
+EXV1.DE,Europe,EQUITY,ACWI,Developed,Europe,Banks,1,EQUITY,EQUITY | Europe | STOXX Europe 600 Banks
+EXV3.DE,Europe,EQUITY,ACWI,Developed,Europe,Technology,1,EQUITY,EQUITY | Europe | STOXX Europe 600 Technology
+EXV4.DE,Europe,EQUITY,ACWI,Developed,Europe,Health-Care,1,EQUITY,EQUITY | Europe | STOXX Europe 600 Health Care
+EXH4.DE,Europe,EQUITY,ACWI,Developed,Europe,Industrials,1,EQUITY,EQUITY | Europe | STOXX Europe 600 Industrials
+EXH1.DE,Europe,EQUITY,ACWI,Developed,Europe,Energy,1,EQUITY,EQUITY | Europe | STOXX Europe 600 Oil & Gas
+EXH9.DE,Europe,EQUITY,ACWI,Developed,Europe,Utilities,1,EQUITY,EQUITY | Europe | STOXX Europe 600 Utilities
+EWU,United Kingdom,EQUITY,ACWI,Developed,Europe,UK,1,EQUITY,EQUITY | Europe | iShares MSCI United Kingdom
+EWG,Germany,EQUITY,ACWI,Developed,Europe,Germany,1,EQUITY,EQUITY | Europe | iShares MSCI Germany
+EWQ,France,EQUITY,ACWI,Developed,Europe,France,1,EQUITY,EQUITY | Europe | iShares MSCI France
+EWI,Italy,EQUITY,ACWI,Developed,Europe,Italy,1,EQUITY,EQUITY | Europe | iShares MSCI Italy
+EWJ,Japan,EQUITY,ACWI,Developed,Japan,Broad,1,EQUITY,EQUITY | Japan | iShares MSCI Japan
+EWC,Canada,EQUITY,ACWI,Developed,Canada,Broad,1,EQUITY,EQUITY | Canada | iShares MSCI Canada
+EWA,Australia,EQUITY,ACWI,Developed,Australia,Broad,1,EQUITY,EQUITY | Australia | iShares MSCI Australia
+AAXJ,Asia-Pacific,EQUITY,ACWI,Developed,Asia-Pacific,Ex-Japan,1,EQUITY,EQUITY | Asia-Pac | iShares MSCI All Country Asia ex Japan
+FXI,China,EQUITY,ACWI,Emerging,China,Large-Cap,1,EQUITY,EQUITY | China | iShares China Large-Cap
+MCHI,China,EQUITY,ACWI,Emerging,China,Broad,1,EQUITY,EQUITY | China | iShares MSCI China
+KWEB,China,EQUITY,ACWI,Emerging,China,Internet,1,EQUITY,EQUITY | China | KraneShares CSI China Internet
+KBUY,China,EQUITY,ACWI,Emerging,China,Consumer,1,EQUITY,EQUITY | China | KraneShares China Consumer Leaders
+KURE,China,EQUITY,ACWI,Emerging,China,Health-Care,1,EQUITY,EQUITY | China | KraneShares MSCI China Health Care
+CQQQ,China,EQUITY,ACWI,Emerging,China,Technology,1,EQUITY,EQUITY | China | Invesco China Technology
+INDA,India,EQUITY,ACWI,Emerging,India,Broad,1,EQUITY,EQUITY | India | iShares MSCI India
+EWY,South Korea,EQUITY,ACWI,Emerging,South-Korea,Broad,1,EQUITY,EQUITY | South Korea | iShares MSCI South Korea
+EWT,Taiwan,EQUITY,ACWI,Emerging,Taiwan,Broad,1,EQUITY,EQUITY | Taiwan | iShares MSCI Taiwan
+EWZ,Brazil,EQUITY,ACWI,Emerging,Brazil,Broad,1,EQUITY,EQUITY | Brazil | iShares MSCI Brazil
+EWW,Mexico,EQUITY,ACWI,Emerging,Mexico,Broad,1,EQUITY,EQUITY | Mexico | iShares MSCI Mexico
+ILF,Latin America,EQUITY,ACWI,Emerging,Latin-America,Broad,1,EQUITY,EQUITY | Latin America | iShares Latin America 40
+AGG,USA,FIXED_INCOME,AGG,Government,US-Treasury,Aggregate,1,FIXED_INCOME,FI | US | iShares Core US Aggregate Bond
+SHY,USA,FIXED_INCOME,AGG,Government,US-Treasury,1-3Y,1,FIXED_INCOME,FI | US | iShares 1-3 Year Treasury Bond
+IEI,USA,FIXED_INCOME,AGG,Government,US-Treasury,3-7Y,1,FIXED_INCOME,FI | US | iShares 3-7 Year Treasury Bond
+IEF,USA,FIXED_INCOME,AGG,Government,US-Treasury,7-10Y,1,FIXED_INCOME,FI | US | iShares 7-10 Year Treasury Bond
+TLT,USA,FIXED_INCOME,AGG,Government,US-Treasury,20+Y,1,FIXED_INCOME,FI | US | iShares 20+ Year Treasury Bond
+BIL,USA,FIXED_INCOME,AGG,Government,US-Treasury,T-Bills,1,FIXED_INCOME,FI | US | SPDR Bloomberg 1-3 Month T-Bill
+SHV,USA,FIXED_INCOME,AGG,Government,US-Treasury,Cash-Proxy,1,FIXED_INCOME,FI | US | iShares Short Treasury Bond
+TIP,USA,FIXED_INCOME,AGG,Government,US-TIPS,Broad,1,FIXED_INCOME,FI | US | iShares TIPS Bond
+BNDX,Global ex-US,FIXED_INCOME,AGG,Government,International,Hedged,1,FIXED_INCOME,FI | Global | Vanguard Total International Bond (hedged)
+BWX,Global,FIXED_INCOME,AGG,Government,International,Unhedged,1,FIXED_INCOME,FI | Global | SPDR Bloomberg International Treasury
+LQD,USA,FIXED_INCOME,AGG,Corporate,US-IG,Broad,1,FIXED_INCOME,FI | US | iShares iBoxx $ Investment Grade Corporate
+VCSH,USA,FIXED_INCOME,AGG,Corporate,US-IG,Short-Term,1,FIXED_INCOME,FI | US | Vanguard Short-Term Corporate
+HYG,USA,FIXED_INCOME,AGG,Corporate,US-HY,Broad,1,FIXED_INCOME,FI | US | iShares iBoxx $ High Yield Corporate
+EUHY,Europe,FIXED_INCOME,AGG,Corporate,Europe-HY,Broad,1,FIXED_INCOME,FI | Europe | iShares € High Yield Corporate
+HYXU,Global,FIXED_INCOME,AGG,Corporate,Global-HY,Ex-USD,1,FIXED_INCOME,FI | Global | iShares Global ex USD High Yield Corporate
+EMB,Emerging Markets,FIXED_INCOME,AGG,Emerging,EM-Sovereign,Hard-Currency,1,FIXED_INCOME,FI | EM | iShares JP Morgan USD Emerging Markets Bond
+EMLC,Emerging Markets,FIXED_INCOME,AGG,Emerging,EM-Sovereign,Local-Currency,1,FIXED_INCOME,FI | EM | VanEck Emerging Markets Local Currency Bond
+CEMB,Emerging Markets,FIXED_INCOME,AGG,Emerging,EM-Corporate,Hard-Currency,1,FIXED_INCOME,FI | EM | iShares Emerging Markets Corporate Bond
+HYEM,Emerging Markets,FIXED_INCOME,AGG,Emerging,EM-HY,Hard-Currency,1,FIXED_INCOME,FI | EM | VanEck Emerging Markets High Yield Bond
+MUB,USA,FIXED_INCOME,AGG,Municipal,US-Muni,Broad,1,FIXED_INCOME,FI | US | iShares National Muni Bond
+HYD,USA,FIXED_INCOME,AGG,Municipal,US-Muni,High-Yield,1,FIXED_INCOME,FI | US | VanEck High Yield Muni
+DBC,Global,COMMODITIES,DBC,Broad,Multi-Commodity,Broad-Index,2,COMMODITIES,CMDTY | Broad | Invesco DB Commodity Index Tracking
+PDBC,Global,COMMODITIES,DBC,Broad,Multi-Commodity,Optimized,2,COMMODITIES,CMDTY | Broad | Invesco Optimum Yield Diversified Commodity
+USO,USA,COMMODITIES,DBC,Energy,Oil,WTI-Crude,2,COMMODITIES,CMDTY | Energy | United States Oil Fund
+DCOILBRENTEU,Global,COMMODITIES,DBC,Energy,Oil,Brent-Spot,2,,
+DCOILWTICO,USA,COMMODITIES,DBC,Energy,Oil,WTI-Spot,2,,
+UNG,USA,COMMODITIES,DBC,Energy,Natural-Gas,Futures,2,COMMODITIES,CMDTY | Energy | United States Natural Gas Fund
+UGA,USA,COMMODITIES,DBC,Energy,Gasoline,Futures,2,COMMODITIES,CMDTY | Energy | United States Gasoline Fund
+GLD,Global,COMMODITIES,DBC,Metals,Precious,Gold-ETF,2,COMMODITIES,CMDTY | Metals | SPDR Gold Trust
+SLV,Global,COMMODITIES,DBC,Metals,Precious,Silver,2,COMMODITIES,CMDTY | Metals | iShares Silver Trust
+PPLT,Global,COMMODITIES,DBC,Metals,Precious,Platinum,2,COMMODITIES,CMDTY | Metals | abrdn Physical Platinum Shares
+PALL,Global,COMMODITIES,DBC,Metals,Precious,Palladium,2,COMMODITIES,CMDTY | Metals | abrdn Physical Palladium Shares
+DBB,Global,COMMODITIES,DBC,Metals,Industrial,Broad-Base,2,COMMODITIES,CMDTY | Metals | Invesco DB Base Metals Fund
+CPER,Global,COMMODITIES,DBC,Metals,Industrial,Copper-ETF,2,COMMODITIES,CMDTY | Metals | United States Copper Index Fund
+DBA,Global,COMMODITIES,DBC,Agriculture,Broad,Multi-Ag,2,COMMODITIES,CMDTY | Agriculture | Invesco DB Agriculture Fund
+CORN,USA,COMMODITIES,DBC,Agriculture,Grains,Corn,2,COMMODITIES,CMDTY | Agriculture | Teucrium Corn Fund
+WEAT,USA,COMMODITIES,DBC,Agriculture,Grains,Wheat,2,COMMODITIES,CMDTY | Agriculture | Teucrium Wheat Fund
+SOYB,USA,COMMODITIES,DBC,Agriculture,Grains,Soybeans,2,COMMODITIES,CMDTY | Agriculture | Teucrium Soybean Fund
+VNQ,USA,REAL_ESTATE,VNQ,REITs,US,Broad,3,REAL_ESTATE,RE | US | Vanguard Real Estate
+VNQI,Global,REAL_ESTATE,VNQ,REITs,Global,Ex-US,3,REAL_ESTATE,RE | Global | Vanguard Global ex-US Real Estate
+BTC-USD,Global,ALTERNATIVES,Multi-Asset,Crypto,Bitcoin,Spot-Data,1,ALTERNATIVES,CRYPTO | Bitcoin | BTC-USD
+IBIT,USA,ALTERNATIVES,Multi-Asset,Crypto,Bitcoin,Spot-ETF,1,ALTERNATIVES,CRYPTO | Bitcoin | iShares Bitcoin Trust
+ETH-USD,Global,ALTERNATIVES,Multi-Asset,Crypto,Ethereum,Spot-Data,1,ALTERNATIVES,CRYPTO | Ethereum | ETH-USD
+ETHA,USA,ALTERNATIVES,Multi-Asset,Crypto,Ethereum,Spot-ETF,1,ALTERNATIVES,CRYPTO | Ethereum | iShares Ethereum Trust
+SOL-USD,Global,ALTERNATIVES,Multi-Asset,Crypto,Other,Solana,1,ALTERNATIVES,CRYPTO | Solana | SOL-USD
+VIXCLS,USA,ALTERNATIVES,Multi-Asset,Volatility,VIX,Spot-Index,2,,
+VIXY,USA,ALTERNATIVES,Multi-Asset,Volatility,VIX,Short-Term-ETF,1,ALTERNATIVES,VOL | US | ProShares VIX Short-Term Futures
+IGF,Global,ALTERNATIVES,Multi-Asset,Infrastructure,Global,Broad,1,ALTERNATIVES,ALT | Infrastructure | iShares Global Infrastructure
+IFRA,USA,ALTERNATIVES,Multi-Asset,Infrastructure,US,Broad,1,ALTERNATIVES,ALT | Infrastructure | iShares US Infrastructure
+DGS10,USA,MACRO,Indicators,Rates,US-Treasury,10Y,2,,
+DGS2,USA,MACRO,Indicators,Rates,US-Treasury,2Y,2,,
+DGS30,USA,MACRO,Indicators,Rates,US-Treasury,30Y,2,,
+DGS3MO,USA,MACRO,Indicators,Rates,US-Treasury,3M,2,,
+T10Y2Y,USA,MACRO,Indicators,Rates,US-Treasury,10Y-2Y-Spread,2,,
+EFFR,USA,MACRO,Indicators,Rates,US-Fed,Fed-Funds,2,,
+ECBDFR,Euro Area,MACRO,Indicators,Rates,ECB,Deposit-Facility,2,,
+ECBMRRFR,Euro Area,MACRO,Indicators,Rates,ECB,Main-Refinancing,2,,
+ECBMLFR,Euro Area,MACRO,Indicators,Rates,ECB,Marginal-Lending,2,,
+T10YIE,USA,MACRO,Indicators,Inflation,US,Breakeven-10Y,2,,
+T5YIE,USA,MACRO,Indicators,Inflation,US,Breakeven-5Y,2,,
+CPIAUCSL,USA,MACRO,Indicators,Inflation,US,CPI-All,2,,
+CPILFESL,USA,MACRO,Indicators,Inflation,US,CPI-Core,2,,
+PCEPI,USA,MACRO,Indicators,Inflation,US,PCE-All,2,,
+PCEPILFE,USA,MACRO,Indicators,Inflation,US,PCE-Core,2,,
+CP0000EZ19M086NEST,EA19,MACRO,Indicators,Inflation,Eurozone,HICP,2,,
+GDP,USA,MACRO,Indicators,Activity,US,GDP-Nominal,2,,
+GDPC1,USA,MACRO,Indicators,Activity,US,GDP-Real,2,,
+INDPRO,USA,MACRO,Indicators,Activity,US,Industrial-Production,2,,
+CLVMEURSCAB1GQEA19,EA19,MACRO,Indicators,Activity,Eurozone,GDP-Real,2,,
+EUNNGDP,EA19,MACRO,Indicators,Activity,Eurozone,GDP-Nominal,2,,
+UNRATE,USA,MACRO,Indicators,Labor,US,Unemployment,2,,
+PAYEMS,USA,MACRO,Indicators,Labor,US,Payrolls,2,,
+LRHUTTTTEZM156S,EA19,MACRO,Indicators,Labor,Eurozone,Unemployment,2,,
+M2SL,USA,MACRO,Indicators,Monetary,US,M2,2,,
+WALCL,USA,MACRO,Indicators,Monetary,US,Fed-Balance-Sheet,2,,
+BAMLC0A0CM,USA,MACRO,Indicators,Credit,US,Corp-IG-OAS,2,,
+BAMLH0A0HYM2,USA,MACRO,Indicators,Credit,US,HY-OAS,2,,
+AAA,USA,MACRO,Indicators,Credit,US,AAA-Yield,2,,
+BAA,USA,MACRO,Indicators,Credit,US,BAA-Yield,2,,
+NFCI,USA,MACRO,Indicators,Risk,US,Financial-Conditions,2,,
+STLFSI4,USA,MACRO,Indicators,Risk,US,Financial-Stress,2,,
+HOUST,USA,MACRO,Indicators,Housing,US,Housing-Starts,2,,
+RSAFS,USA,MACRO,Indicators,Retail,US,Retail-Sales,2,,
+DTWEXBGS,USA,FX,Indicators,Currency,USD,Broad-Index,2,,
+EURUSD=X,Global,FX,Indicators,Currency,EUR-USD,Yahoo,2,FX,FX | Yahoo | EUR/USD
+GBPUSD=X,Global,FX,Indicators,Currency,GBP-USD,Yahoo,2,FX,FX | Yahoo | GBP/USD
+USDJPY=X,Global,FX,Indicators,Currency,USD-JPY,Yahoo,2,FX,FX | Yahoo | USD/JPY
+AUDUSD=X,Global,FX,Indicators,Currency,AUD-USD,Yahoo,2,FX,FX | Yahoo | AUD/USD
+USDCAD=X,Global,FX,Indicators,Currency,USD-CAD,Yahoo,2,FX,FX | Yahoo | USD/CAD
+USDCHF=X,Global,FX,Indicators,Currency,USD-CHF,Yahoo,2,FX,FX | Yahoo | USD/CHF
+EURGBP=X,Global,FX,Indicators,Currency,EUR-GBP,Yahoo,2,FX,FX | Yahoo | EUR/GBP
+EURJPY=X,Global,FX,Indicators,Currency,EUR-JPY,Yahoo,2,FX,FX | Yahoo | EUR/JPY
+EURCHF=X,Global,FX,Indicators,Currency,EUR-CHF,Yahoo,2,FX,FX | Yahoo | EUR/CHF

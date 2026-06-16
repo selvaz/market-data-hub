@@ -1,0 +1,36 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Database
+*.duckdb
+*.db
+
+# Generated outputs
+data_dictionary.xlsx
+data_master.xlsx
+macro_panel_validation.csv
+reports/
+logs/
+*.log
+
+# SSL certs / credentials
+ca_bundle.pem
+*.pem
+
+# Antivirus artifacts
+_avast_/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Env
+.env
+*.env

@@ -1,0 +1,565 @@
+# -*- coding: utf-8 -*-
+"""
+make_dalio_report.py — interactive Ray Dalio dashboard (single-file HTML, English).
+
+Tabs:
+  1. Overview     — four-box matrix, debt-cycle phase distribution, cross-country table
+  2. Countries    — per-country sheet: classification, phase/regime, pillar scores,
+                    historical charts (click any chart -> interactive modal with tooltip),
+                    stale-data alerts
+  3. Methodology  — the Ray Dalio method explained
+  4. Statistics   — every statistic used + its economic meaning
+
+Self-contained: data embedded as JSON, charts in vanilla-JS SVG, no external deps.
+
+Usage:
+    python make_dalio_report.py [--open] [--calc]
+"""
+from __future__ import annotations
+import argparse
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).parent))
+from market_data_hub.db.connection import get_conn  # noqa: E402
+
+REPORT_DIR = Path(__file__).parent / "reports"
+CFG = Path(__file__).parent / "market_data_hub" / "config"
+# a country's indicator is flagged stale only if it lags the cross-country
+# FRONTIER (the most recent year available for that indicator, across countries)
+# by more than this many years. Globally-laggy series (tourism, resource rents)
+# therefore do NOT flag everyone — only genuine country-specific gaps do.
+STALE_GAP = 3
+
+# indicators shown as historical charts on each country sheet (label)
+CHART_INDICATORS = [
+    ("public_debt_gdp",     "Public debt (% GDP)"),
+    ("gdp_growth_weo",      "Real GDP growth (%)"),
+    ("inflation_avg_weo",   "Inflation (%)"),
+    ("bis_policy_rate",     "Policy rate (%)"),
+    ("bis_credit_gap",      "Credit-to-GDP gap (pp)"),
+    ("bis_dsr_private",     "Debt service ratio (%)"),
+    ("current_account_gdp", "Current account (% GDP)"),
+    ("fiscal_balance_gdp",  "Fiscal balance (% GDP)"),
+]
+# additional analysis inputs to check for staleness (mostly laggy WDI series)
+STALE_CHECK = {
+    "tourism_exports_share": "Tourism (% of exports)",
+    "natural_resource_rents_gdp": "Natural resource rents (% GDP)",
+    "fuel_exports_share": "Fuel exports (% merch. exports)",
+    "fuel_imports_share": "Fuel imports (% merch. imports)",
+    "remittances_gdp": "Remittances (% GDP)",
+    "metals_exports_share": "Metals exports (% merch. exports)",
+    "npl_ratio": "Bank NPLs (% loans)",
+    "bank_capital_ratio": "Bank capital ratio",
+}
+
+
+def _country_names():
+    try:
+        import yaml
+        c = yaml.safe_load(open(CFG / "countries.yaml", encoding="utf-8"))["countries"]
+        return {x["iso3"]: x.get("name", x["iso3"]) for x in c}
+    except Exception:
+        return {}
+
+
+def collect(con) -> dict:
+    names = _country_names()
+    reg = con.execute("SELECT * FROM regime_state").fetch_df()
+    comp = con.execute(
+        "SELECT country_iso3, score AS composite, debt_cycle_phase, short_cycle_pos, "
+        "gi_regime FROM pillar_scores WHERE pillar='COMPOSITE'").fetch_df()
+    pil = con.execute(
+        "SELECT country_iso3, pillar, score FROM pillar_scores WHERE pillar<>'COMPOSITE'"
+    ).fetch_df()
+
+    ids = [i for i, _ in CHART_INDICATORS]
+    hist = con.execute(
+        "SELECT country_iso3, indicator_id, year(date) AS y, value FROM macro_panel "
+        "WHERE indicator_id IN (" + ",".join("?" * len(ids)) + ") AND value IS NOT NULL "
+        "QUALIFY row_number() OVER (PARTITION BY country_iso3, indicator_id, year(date) "
+        "ORDER BY date DESC)=1", ids).fetch_df()
+
+    # data freshness: latest actual year per (country, indicator). A country is
+    # flagged only if it lags the cross-country FRONTIER for that indicator by
+    # > STALE_GAP years (so globally-laggy series don't flag everyone).
+    labels = {**dict(CHART_INDICATORS), **STALE_CHECK}
+    chk_ids = list(labels)
+    fresh = con.execute(
+        "SELECT country_iso3, indicator_id, max(year(date)) AS ly FROM macro_panel "
+        "WHERE indicator_id IN (" + ",".join("?" * len(chk_ids)) + ") AND value IS NOT NULL "
+        "GROUP BY 1,2", chk_ids).fetch_df()
+    cur_year = datetime.now().year
+    frontier = fresh.groupby("indicator_id")["ly"].max().to_dict()   # most recent across countries
+    stale_by = {}
+    for _, r in fresh.iterrows():
+        ly, fr = int(r["ly"]), int(frontier[r["indicator_id"]])
+        if fr - ly > STALE_GAP:
+            stale_by.setdefault(r["country_iso3"], []).append(
+                {"label": labels[r["indicator_id"]], "year": ly, "frontier": fr})
+
+    try:
+        cls = con.execute("SELECT * FROM country_classification").fetch_df()
+        cls_by = {r["country_iso3"]: r.to_dict() for _, r in cls.iterrows()}
+    except Exception:
+        cls_by = {}
+
+    h = con.execute("SELECT max(date) FROM macro_panel WHERE provider_dataset='WEO'").fetchone()[0]
+    weo_horizon = pd.Timestamp(h).year if h is not None else None
+
+    reg_by = {r["country_iso3"]: r for _, r in reg.iterrows()}
+    comp_by = {r["country_iso3"]: r for _, r in comp.iterrows()}
+    pil_by = {}
+    for _, r in pil.iterrows():
+        pil_by.setdefault(r["country_iso3"], {})[r["pillar"]] = (
+            None if pd.isna(r["score"]) else round(float(r["score"]), 3))
+    ser_by = {}
+    for _, r in hist.iterrows():
+        ser_by.setdefault(r["country_iso3"], {}).setdefault(r["indicator_id"], []).append(
+            [int(r["y"]), round(float(r["value"]), 2)])
+    for iso in ser_by:
+        for ind in ser_by[iso]:
+            ser_by[iso][ind].sort()
+
+    def _v(x):
+        return None if x is None or pd.isna(x) else round(float(x), 2)
+
+    countries = {}
+    for iso in sorted(reg_by):
+        r = reg_by[iso]
+        c = comp_by.get(iso, {})
+        countries[iso] = {
+            "name": names.get(iso, iso),
+            "phase": r["debt_cycle_phase"], "quadrant": r["quadrant"],
+            "delev": r["deleveraging_quality"],
+            "nom_growth": _v(r["nom_growth"]), "nom_rate": _v(r["nom_rate"]),
+            "credit_gap": _v(r["credit_gap"]), "dsr": _v(r["dsr"]),
+            "debt_income_gap": _v(r["debt_income_gap"]), "debt_trend": _v(r["debt_trend"]),
+            "composite": _v(c.get("composite")) if len(c) else None,
+            "pillars": pil_by.get(iso, {}),
+            "series": ser_by.get(iso, {}),
+            "stale": stale_by.get(iso, []),
+            "cls": {k: (None if pd.isna(v) else v) for k, v in cls_by.get(iso, {}).items()
+                    if k not in ("country_iso3", "name", "computed_at")},
+        }
+
+    return {
+        "now": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "cur_year": cur_year, "weo_horizon": weo_horizon,
+        "phase_counts": reg["debt_cycle_phase"].value_counts().to_dict(),
+        "quad_counts": reg["quadrant"].value_counts(dropna=True).to_dict(),
+        "countries": countries,
+        "chart_indicators": CHART_INDICATORS,
+    }
+
+
+# ----------------------------------------------------------------- HTML/JS
+_TEMPLATE = r"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Macro Dashboard — Ray Dalio</title>
+<style>
+ :root{--blue:#1d4ed8;--ink:#1a1a2e;--mut:#64748b;--bg:#f8fafc;--card:#fff;--bd:#e2e8f0}
+ *{box-sizing:border-box}
+ body{font-family:-apple-system,Segoe UI,Arial,sans-serif;color:var(--ink);margin:0;background:var(--bg);font-size:14px}
+ header{background:linear-gradient(120deg,#1e3a8a,#1d4ed8);color:#fff;padding:18px 24px}
+ header h1{margin:0;font-size:20px} header p{margin:4px 0 0;opacity:.85;font-size:12px}
+ nav{display:flex;gap:2px;background:#1e293b;padding:0 12px;flex-wrap:wrap}
+ nav button{background:none;border:0;color:#cbd5e1;padding:12px 18px;cursor:pointer;font-size:14px;border-bottom:3px solid transparent}
+ nav button.active{color:#fff;border-bottom-color:#60a5fa;font-weight:600}
+ main{max-width:1080px;margin:0 auto;padding:20px}
+ .tab{display:none} .tab.active{display:block}
+ h2{font-size:16px;color:var(--blue);border-bottom:1px solid var(--bd);padding-bottom:6px;margin-top:26px}
+ h3{color:var(--blue);margin-top:22px;font-size:15px}
+ table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0}
+ th{background:#eef2ff;text-align:left;padding:7px 8px;border-bottom:2px solid var(--bd)}
+ td{padding:5px 8px;border-bottom:1px solid #f1f5f9} td.n{text-align:right;font-variant-numeric:tabular-nums}
+ tr.clk:hover td{background:#f8fafc;cursor:pointer}
+ .kpi{display:inline-block;background:#eff6ff;border-radius:8px;padding:10px 16px;margin:4px 8px 4px 0}
+ .kpi b{display:block;font-size:20px;color:var(--blue)} .kpi span{font-size:11px;color:var(--mut)}
+ .qgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+ .box{border:1px solid #cbd5e1;border-radius:10px;padding:12px;min-height:80px}
+ .q1{background:#ecfdf5;border-color:#a7f3d0} .q2{background:#fefce8;border-color:#fde68a}
+ .q3{background:#fef2f2;border-color:#fecaca} .q4{background:#eff6ff;border-color:#bfdbfe}
+ .box b{font-size:13px} .box .cc{margin-top:6px;font-size:12px;color:#334155;line-height:1.5}
+ select{font-size:15px;padding:8px 12px;border:1px solid var(--bd);border-radius:8px;min-width:300px}
+ .card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-top:14px}
+ .badges{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+ .badge{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;color:#fff}
+ .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
+ .metric{background:var(--bg);border-radius:8px;padding:8px 10px}
+ .metric .l{font-size:11px;color:var(--mut)} .metric .v{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+ .pbar{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12px}
+ .pbar .pl{width:90px;color:#334155} .pbar .pt{flex:1;background:#eef2ff;border-radius:4px;height:16px;position:relative}
+ .pbar .pf{position:absolute;top:0;height:16px;border-radius:4px}
+ .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
+ .chart{border:1px solid var(--bd);border-radius:10px;padding:10px;cursor:pointer;transition:box-shadow .15s}
+ .chart:hover{box-shadow:0 2px 10px rgba(29,78,216,.18)}
+ .chart h4{margin:0 0 4px;font-size:12.5px;color:#334155} .chart .hint{font-size:10px;color:var(--mut)}
+ .meth{line-height:1.65} .meth code{background:#eef2ff;padding:1px 5px;border-radius:4px;font-size:12px}
+ .note{background:#fffbeb;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:4px;margin:10px 0;font-size:13px}
+ .stale{background:#fef2f2;border-left:4px solid #dc2626;padding:8px 12px;border-radius:4px;margin:10px 0;font-size:12.5px;color:#991b1b}
+ .ok{color:#16a34a} .warn{color:#dc2626} .muted{color:var(--mut);font-size:12px}
+ /* modal */
+ #modal{display:none;position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:50;align-items:center;justify-content:center}
+ #modal.show{display:flex}
+ #modalbox{background:#fff;border-radius:12px;padding:18px;width:min(760px,92vw)}
+ #modalbox h3{margin:0 0 2px} #mclose{float:right;cursor:pointer;color:var(--mut);font-size:20px;border:0;background:none}
+ #mtip{font-size:13px;color:#334155;height:18px;margin-top:6px}
+</style></head><body>
+<header><h1>Macro Analysis Framework — Ray Dalio Dashboard</h1><p id="sub"></p></header>
+<nav>
+ <button class="active" onclick="tab('ov',this)">Overview</button>
+ <button onclick="tab('ct',this)">Country sheets</button>
+ <button onclick="tab('me',this)">Methodology</button>
+ <button onclick="tab('st',this)">Statistics</button>
+</nav>
+<main>
+ <section id="ov" class="tab active"></section>
+ <section id="ct" class="tab">
+   <h2>Country sheet</h2>
+   <select id="csel" onchange="showCountry(this.value)"></select>
+   <div id="card" class="card"></div>
+ </section>
+ <section id="me" class="tab meth"></section>
+ <section id="st" class="tab meth"></section>
+</main>
+<div id="modal" onclick="if(event.target.id=='modal')closeModal()">
+ <div id="modalbox"><button id="mclose" onclick="closeModal()">&times;</button>
+  <h3 id="mtitle"></h3><div id="mtip"></div><div id="mchart"></div>
+  <p class="muted" id="mfoot"></p></div>
+</div>
+<script>
+const DATA = __DATA__;
+const PHASE = {
+ EARLY_EXPANSION:["#16a34a","Healthy expansion: positive growth, no credit excess"],
+ HIGH_DEBT_STABLE:["#d97706","High but stabilized debt (plateau): elevated, not deteriorating, not yet deleveraging"],
+ LATE_LONG_CYCLE:["#b91c1c","Late LONG-TERM debt cycle: very high or deteriorating sovereign debt (Dalio's US thesis)"],
+ LATE_LEVERAGING:["#ca8a04","Leveraging up: (private) credit accelerating toward a bubble"],
+ BUBBLE:["#ea580c","Bubble: credit-to-GDP gap > +10pp, euphoria"],
+ CONTRACTION:["#dc2626","Contraction: negative growth"],
+ DEPRESSION:["#7f1d1d","Depression: negative growth + debt service at its peak"],
+ BEAUTIFUL_DELEVERAGING:["#0891b2","Managed deleveraging: nominal growth > nominal rate"],
+ UGLY_DELEVERAGING:["#9333ea","Painful deleveraging: nominal rate > nominal growth"],
+ INDETERMINATE:["#94a3b8","Insufficient data"]
+};
+const QUAD = {
+ Q1:["#16a34a","Growth up / Inflation down","Risk assets: DM equity, corporate credit"],
+ Q2:["#ca8a04","Growth up / Inflation up","Commodities, EM equity, inflation-linked bonds"],
+ Q3:["#dc2626","Growth down / Inflation up","Stagflation: gold, inflation hedges, defensives"],
+ Q4:["#2563eb","Growth down / Inflation down","Nominal long-duration bonds, cash"]
+};
+const PILLAR_W={growth:20,debt_cycle:20,liquidity:15,external:15,sovereign:10,banking:10,governance:5,geopolitical:5};
+const ENC={strong_exporter:["#065f46","oil: strong exporter"],exporter:["#16a34a","oil: exporter"],
+ neutral:["#64748b","oil: neutral"],importer:["#ca8a04","oil: importer"],strong_importer:["#b91c1c","oil: strong importer"]};
+const CAVEAT={
+ SGP:"GROSS debt (172%) is very high but NET debt is ~zero: Singapore issues to invest (asset-backed). Read the 'late cycle' phase alongside the strong composite.",
+ ARG:"Debt/GDP is falling partly via INFLATIONARY erosion, not only growth: 'beautiful deleveraging' is context-dependent (composite very weak).",
+ HKG:"Late-leveraging refers to PRIVATE credit (among the world's highest), not public debt (low).",
+ NOR:"Low gross debt plus a huge sovereign wealth fund: external strength understated by debt/GDP alone."
+};
+const ILABEL={}; DATA.chart_indicators.forEach(ci=>ILABEL[ci[0]]=ci[1]);
+
+function tab(id,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+function fmt(v,d=1){return (v===null||v===undefined||isNaN(v))?'—':Number(v).toFixed(d);}
+
+// ---- SVG line chart (vanilla). interactive=true adds hover crosshair+tooltip ----
+function lineChart(series,W,H,interactive,id){
+ const pl=40,pr=12,pt=12,pb=24;
+ if(!series||series.length<2) return '<svg viewBox="0 0 '+W+' '+H+'"><text x="12" y="'+(H/2)+'" fill="#94a3b8" font-size="12">no data</text></svg>';
+ const xs=series.map(p=>p[0]),ys=series.map(p=>p[1]);
+ const x0=Math.min(...xs),x1=Math.max(...xs);let y0=Math.min(...ys),y1=Math.max(...ys);
+ if(y0===y1){y0-=1;y1+=1;} const pad=(y1-y0)*0.1;y0-=pad;y1+=pad;
+ const sx=v=>pl+(v-x0)/(x1-x0||1)*(W-pl-pr), sy=v=>pt+(1-(v-y0)/(y1-y0||1))*(H-pt-pb);
+ let d=series.map((p,i)=>(i?'L':'M')+sx(p[0]).toFixed(1)+' '+sy(p[1]).toFixed(1)).join(' ');
+ let zl='';if(y0<0&&y1>0){const zy=sy(0).toFixed(1);zl='<line x1="'+pl+'" y1="'+zy+'" x2="'+(W-pr)+'" y2="'+zy+'" stroke="#cbd5e1" stroke-dasharray="3 3"/>';}
+ const yl='<text x="3" y="'+(pt+6)+'" font-size="9" fill="#94a3b8">'+y1.toFixed(0)+'</text>'+
+          '<text x="3" y="'+(H-pb)+'" font-size="9" fill="#94a3b8">'+y0.toFixed(0)+'</text>';
+ const xl='<text x="'+pl+'" y="'+(H-7)+'" font-size="9" fill="#94a3b8">'+x0+'</text>'+
+          '<text x="'+(W-pr-26)+'" y="'+(H-7)+'" font-size="9" fill="#94a3b8">'+x1+'</text>';
+ const last=series[series.length-1];
+ const dot='<circle cx="'+sx(last[0]).toFixed(1)+'" cy="'+sy(last[1]).toFixed(1)+'" r="3" fill="#1d4ed8"/>';
+ let pts='';
+ if(interactive){ // dati per l'hover
+   pts=series.map(p=>'<circle class="hp" cx="'+sx(p[0]).toFixed(1)+'" cy="'+sy(p[1]).toFixed(1)+'" r="9" fill="transparent" data-y="'+p[0]+'" data-v="'+p[1]+'"/>').join('');
+ }
+ const cl=interactive?' onmousemove="hoverChart(event)" onmouseleave="document.getElementById(\'hx\').style.display=\'none\'"':'';
+ const cross=interactive?'<line id="hx" style="display:none" stroke="#1d4ed8" stroke-width="1" y1="'+pt+'" y2="'+(H-pb)+'"/>':'';
+ return '<svg viewBox="0 0 '+W+' '+H+'" width="100%"'+cl+'>'+zl+'<path d="'+d+'" fill="none" stroke="#1d4ed8" stroke-width="1.8"/>'+cross+dot+pts+yl+xl+'</svg>';
+}
+
+function openChart(iso,ind){
+ const c=DATA.countries[iso]; if(!c)return; const s=c.series[ind];
+ document.getElementById('mtitle').textContent=c.name+' — '+(ILABEL[ind]||ind);
+ document.getElementById('mtip').textContent='Hover the chart to read values';
+ document.getElementById('mchart').innerHTML=lineChart(s,720,320,true,'m');
+ const yrs=s&&s.length?(' · '+s[0][0]+'–'+s[s.length-1][0]+' · last '+fmt(s[s.length-1][1])):'';
+ document.getElementById('mfoot').textContent='Annual values (WEO incl. projections beyond '+DATA.cur_year+')'+yrs;
+ document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function hoverChart(e){
+ const svg=e.currentTarget, hps=[...svg.querySelectorAll('.hp')]; if(!hps.length)return;
+ const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY;
+ const loc=pt.matrixTransform(svg.getScreenCTM().inverse());
+ let best=null,bd=1e9; hps.forEach(h=>{const dx=Math.abs(+h.getAttribute('cx')-loc.x); if(dx<bd){bd=dx;best=h;}});
+ if(!best)return; const hx=document.getElementById('hx');
+ hx.setAttribute('x1',best.getAttribute('cx'));hx.setAttribute('x2',best.getAttribute('cx'));hx.style.display='';
+ document.getElementById('mtip').textContent=best.dataset.y+': '+fmt(best.dataset.v,2);
+}
+
+function showCountry(iso){
+ const c=DATA.countries[iso]; if(!c)return;
+ const ph=PHASE[c.phase]||['#94a3b8',c.phase], q=QUAD[c.quadrant]||['#94a3b8','',''];
+ let h='<h3 style="margin:0">'+c.name+' <span class="muted">('+iso+')</span></h3>';
+ h+='<div class="badges">';
+ h+='<span class="badge" style="background:'+ph[0]+'">Phase: '+c.phase+'</span>';
+ h+='<span class="badge" style="background:'+q[0]+'">Regime: '+(c.quadrant||'—')+'</span>';
+ if(c.delev&&c.delev!=='NA')h+='<span class="badge" style="background:#475569">Deleveraging: '+c.delev+'</span>';
+ h+='</div>';
+ h+='<p class="muted">'+ph[1]+'</p>';
+ if(c.quadrant)h+='<p class="muted">'+q[1]+' → '+q[2]+'</p>';
+ if(CAVEAT[iso])h+='<div class="note">&#9888; '+CAVEAT[iso]+'</div>';
+ if(c.stale&&c.stale.length){h+='<div class="stale">&#9888; <b>Stale data</b> — this country lags peers '+
+   'on: '+c.stale.map(s=>s.label+' (latest '+s.year+' vs '+s.frontier+' elsewhere)').join('; ')+'</div>';}
+ // classification
+ const cl=c.cls||{};
+ if(Object.keys(cl).length){
+   const tags=[];
+   if(cl.development)tags.push(['#1e293b',cl.development]);
+   if(cl.region_group)tags.push(['#475569',cl.region_group.replace(/\(.*\)/,'').trim()]);
+   if(cl.income)tags.push(['#64748b',cl.income]);
+   if(cl.fx_regime)tags.push(['#0f766e','FX: '+cl.fx_regime]);
+   if(cl.imf_program)tags.push(['#b45309','IMF program']);
+   if(cl.energy_position&&ENC[cl.energy_position])tags.push([ENC[cl.energy_position][0],ENC[cl.energy_position][1]+(cl.net_fuel_gdp!=null?' ('+fmt(cl.net_fuel_gdp,0)+'% GDP)':'')]);
+   if(cl.resource_dependence==='resource_driven')tags.push(['#92400e','resource-driven']);
+   if(cl.tourism_dependence&&['significant','dominant'].includes(cl.tourism_dependence))tags.push(['#7c3aed','tourism: '+cl.tourism_dependence]);
+   if(cl.remittance_dependence==='high')tags.push(['#be185d','high remittances']);
+   h+='<div class="badges" style="margin-top:4px">';
+   tags.forEach(t=>{h+='<span class="badge" style="background:'+t[0]+';font-weight:500">'+t[1]+'</span>';});
+   h+='</div>';
+ }
+ const M=[['Composite',c.composite,2],['Debt/GDP trend (pp/yr)',c.debt_trend,2],
+   ['Nominal growth %',c.nom_growth,1],['Nominal rate %',c.nom_rate,1],
+   ['Credit gap (pp)',c.credit_gap,1],['DSR %',c.dsr,1]];
+ h+='<div class="metrics">';
+ M.forEach(m=>{h+='<div class="metric"><div class="l">'+m[0]+'</div><div class="v">'+fmt(m[1],m[2])+'</div></div>';});
+ h+='</div>';
+ h+='<div style="margin:12px 0"><b style="font-size:12px;color:#334155">Pillar scores (cross-country z × direction)</b>';
+ Object.keys(PILLAR_W).forEach(p=>{const z=c.pillars[p];
+   if(z===undefined||z===null)return;
+   const w=Math.min(50,Math.abs(z)*25),col=z>=0?'#16a34a':'#dc2626',left=z>=0?50:50-w;
+   h+='<div class="pbar"><span class="pl">'+p+'</span><span class="pt">'+
+      '<span class="pf" style="left:'+left+'%;width:'+w+'%;background:'+col+'"></span>'+
+      '<span style="position:absolute;left:50%;top:0;height:16px;border-left:1px solid #94a3b8"></span></span>'+
+      '<span style="width:42px;text-align:right">'+fmt(z,2)+'</span></div>';});
+ h+='</div>';
+ h+='<div class="charts">';
+ DATA.chart_indicators.forEach(ci=>{const s=c.series[ci[0]];
+   h+='<div class="chart" onclick="openChart(\''+iso+'\',\''+ci[0]+'\')"><h4>'+ci[1]+
+      ' <span class="hint">▸ click to enlarge</span></h4>'+lineChart(s,300,140,false)+'</div>';});
+ h+='</div>';
+ document.getElementById('card').innerHTML=h;
+}
+
+function buildOverview(){
+ document.getElementById('sub').textContent='Generated '+DATA.now+' · '+Object.keys(DATA.countries).length+
+   ' countries · WEO forecast horizon '+DATA.weo_horizon;
+ const cs=Object.entries(DATA.countries);
+ const quadCell=q=>cs.filter(([k,v])=>v.quadrant===q).map(([k])=>k).sort().join(', ')||'—';
+ const pc=DATA.phase_counts,qc=DATA.quad_counts;
+ let h='<h2>State of the world (Dalio synthesis)</h2><div>';
+ h+='<div class="kpi"><b>'+cs.length+'</b><span>countries</span></div>';
+ h+='<div class="kpi"><b>'+(pc.BEAUTIFUL_DELEVERAGING||0)+'</b><span>beautiful deleveraging</span></div>';
+ h+='<div class="kpi"><b>'+((pc.LATE_LONG_CYCLE||0)+(pc.HIGH_DEBT_STABLE||0))+'</b><span>high sovereign debt</span></div>';
+ h+='<div class="kpi"><b>'+(qc.Q3||0)+'</b><span>stagflation (Q3)</span></div></div>';
+ h+='<h2>Growth / Inflation matrix (Bridgewater four-box)</h2>';
+ h+='<div class="qgrid">';
+ [['q1','Q1'],['q2','Q2'],['q3','Q3'],['q4','Q4']].forEach(([cl,q])=>{
+   const Q=QUAD[q];h+='<div class="box '+cl+'"><b>'+q+' · '+Q[1]+'</b><div class="muted">'+Q[2]+'</div><div class="cc">'+quadCell(q)+'</div></div>';});
+ h+='</div>';
+ h+='<h2>Debt-cycle phase distribution</h2><table><tr><th>Phase</th><th>N</th><th>Meaning</th></tr>';
+ Object.entries(pc).sort((a,b)=>b[1]-a[1]).forEach(([p,n])=>{
+   h+='<tr><td><b style="color:'+(PHASE[p]?PHASE[p][0]:'#000')+'">'+p+'</b></td><td class=n>'+n+'</td><td class="muted">'+(PHASE[p]?PHASE[p][1]:'')+'</td></tr>';});
+ h+='</table>';
+ h+='<h2>Cross-country snapshot <span class="muted">(click a row for the country sheet)</span></h2>';
+ h+='<table><tr><th>Country</th><th>Composite</th><th>Phase</th><th>Regime</th><th>Delev.</th><th>Debt/GDP trend</th><th>nom.g</th><th>nom.r</th><th>cg</th><th>dsr</th></tr>';
+ cs.sort((a,b)=>((b[1].composite??-99)-(a[1].composite??-99)));
+ cs.forEach(([iso,c])=>{const q=QUAD[c.quadrant];
+   const dt=c.debt_trend, dtc=(dt===null||dt===undefined)?'#000':(dt>1.5?'#b91c1c':dt>0.7?'#ca8a04':dt<0?'#16a34a':'#334155');
+   const star=(c.stale&&c.stale.length)?' <span title="has stale data" style="color:#dc2626">&#9888;</span>':'';
+   h+='<tr class="clk" onclick="gotoCountry(\''+iso+'\')"><td><b>'+iso+'</b> <span class="muted">'+c.name+'</span>'+star+'</td>'+
+     '<td class=n>'+fmt(c.composite,2)+'</td><td style="color:'+(PHASE[c.phase]?PHASE[c.phase][0]:'#000')+'">'+c.phase+'</td>'+
+     '<td style="color:'+(q?q[0]:'#000')+';font-weight:600">'+(c.quadrant||'—')+'</td><td>'+(c.delev||'—')+'</td>'+
+     '<td class=n style="color:'+dtc+';font-weight:600">'+fmt(dt,2)+'</td>'+
+     '<td class=n>'+fmt(c.nom_growth)+'</td><td class=n>'+fmt(c.nom_rate)+'</td>'+
+     '<td class=n>'+fmt(c.credit_gap)+'</td><td class=n>'+fmt(c.dsr)+'</td></tr>';});
+ h+='</table>';
+ document.getElementById('ov').innerHTML=h;
+}
+function gotoCountry(iso){document.querySelectorAll('nav button')[1].click();
+ document.getElementById('csel').value=iso;showCountry(iso);window.scrollTo(0,0);}
+function buildSelect(){
+ const sel=document.getElementById('csel');
+ Object.entries(DATA.countries).sort((a,b)=>a[1].name.localeCompare(b[1].name)).forEach(([iso,c])=>{
+   const o=document.createElement('option');o.value=iso;o.textContent=c.name+' ('+iso+')';sel.appendChild(o);});
+ showCountry(sel.value);
+}
+document.getElementById('me').innerHTML=__METH__;
+document.getElementById('st').innerHTML=__STATS__;
+buildOverview();buildSelect();
+</script></body></html>"""
+
+# methodology (English)
+_METH = r"""
+<h2>The Ray Dalio method in detail</h2>
+<p>This system does not merely collect indicators: it places every country in a <b>debt-cycle phase</b>
+and a <b>growth/inflation regime</b> — which is what Dalio actually does. The number (composite) says
+<i>how</i> strong/weak; the labels say <i>what kind of world</i> the country is in.</p>
+
+<h3>1. The three drivers of an economy</h3>
+<table><tr><th>Driver</th><th>Horizon</th><th>What it measures</th></tr>
+<tr><td>Productivity growth</td><td>Decades</td><td>Long-run baseline (real GDP per capita)</td></tr>
+<tr><td>SHORT-term debt cycle</td><td>5–8 years</td><td>Credit + monetary policy (output gap, rates)</td></tr>
+<tr><td>LONG-term debt cycle</td><td>50–100 years</td><td>Debt accumulated across many short cycles (debt/GDP, DSR)</td></tr></table>
+<div class="note"><b>Dalio's #1 signal:</b> the <code>debt-to-income gap</code> — when debt keeps growing
+faster than income, the country approaches the limit of the long cycle. Here it is captured by the
+multi-year <b>debt/GDP trajectory</b> (slope, including WEO projections).</div>
+
+<h3>2. Debt-cycle phases</h3>
+<p>Each country is classified by a threshold tree (parameters in <code>settings.yaml → dalio</code>):</p>
+<table><tr><th>Phase</th><th>Condition</th><th>Reading</th></tr>
+<tr><td><b>EARLY_EXPANSION</b></td><td>growth &gt; 0, no credit excess, debt &lt; 100% GDP</td><td>healthy expansion</td></tr>
+<tr><td><b>LATE_LEVERAGING</b></td><td>credit gap &gt; +5pp or debt rising &gt; +1.5pp/yr</td><td>(private) credit accelerating</td></tr>
+<tr><td><b>BUBBLE</b></td><td>credit-to-GDP gap &gt; +10pp</td><td>euphoria, excess leverage</td></tr>
+<tr><td><b>HIGH_DEBT_STABLE</b></td><td>debt &gt; 100% GDP but stable (not rising, contained deficit)</td><td>high but plateaued (e.g. UK)</td></tr>
+<tr><td><b>LATE_LONG_CYCLE</b></td><td>debt &gt; 130%, or &gt; 100% and deteriorating (rising / large deficit)</td><td>late long-term debt cycle (Dalio's US thesis)</td></tr>
+<tr><td><b>CONTRACTION</b></td><td>growth &lt; 0</td><td>recession</td></tr>
+<tr><td><b>DEPRESSION</b></td><td>growth &lt; 0 + DSR at its historical peak</td><td>debt crisis</td></tr>
+<tr><td><b>BEAUTIFUL_DELEVERAGING</b></td><td>debt/GDP falling, nominal growth &gt; nominal rate</td><td>managed deleveraging (the ideal)</td></tr>
+<tr><td><b>UGLY_DELEVERAGING</b></td><td>debt/GDP falling, nominal rate &gt; nominal growth</td><td>painful/deflationary deleveraging</td></tr></table>
+<div class="note"><b>Beautiful vs ugly:</b> Dalio's operating rule is <code>nominal growth &gt; nominal rate</code>.
+If nominal growth exceeds the cost of debt, debt/GDP can fall with positive growth (beautiful); the
+opposite is painful.</div>
+
+<h3>3. The Growth / Inflation matrix (Bridgewater four-box)</h3>
+<p>Two axes, each measured with the most appropriate statistic:</p>
+<ul>
+<li><b>Growth = output gap</b>: current real growth vs the country's own <b>potential</b> (WEO
+medium-term average). A fast-growing economy <i>above</i> potential is "growth up" (Vietnam); a
+slow-growing one <i>below</i> trend is "down" (Italy) — regardless of absolute level.</li>
+<li><b>Inflation = direction</b>: current inflation vs the <b>previous 3-year average</b>
+(reflation vs disinflation), e.g. Turkey strongly disinflating = "inflation down".</li>
+</ul>
+<table><tr><th>Quadrant</th><th>Environment</th><th>Favoured assets</th></tr>
+<tr><td><b>Q1</b></td><td>Growth ↑ Inflation ↓</td><td>DM equity, corporate credit, risk assets</td></tr>
+<tr><td><b>Q2</b></td><td>Growth ↑ Inflation ↑</td><td>Commodities, EM equity, inflation-linked</td></tr>
+<tr><td><b>Q3</b></td><td>Growth ↓ Inflation ↑</td><td>Gold, inflation hedges, defensives</td></tr>
+<tr><td><b>Q4</b></td><td>Growth ↓ Inflation ↓</td><td>Nominal long-duration bonds, cash</td></tr></table>
+
+<h3>4. How to read a country sheet</h3>
+<p>Each sheet mirrors a Bridgewater country template: which <b>phase</b> of the debt cycle, which
+growth/inflation <b>quadrant</b>, the <b>deleveraging quality</b>, the <b>pillar scores</b>
+(cross-country z × direction) and the weighted <b>composite</b>. Historical charts show debt, growth,
+inflation, rates, credit gap and external/fiscal balances — click any chart to enlarge with tooltips.</p>
+
+<h3>5. Caveats & known limits</h3>
+<table><tr><th>Limit</th><th>Effect</th></tr>
+<tr><td>Gross vs net debt</td><td>We use gross public debt (WEO). Asset-backed countries (Singapore net ~0; Norway sovereign fund) look more "late cycle" than they are — mitigated by the composite.</td></tr>
+<tr><td>Deleveraging via inflation</td><td>Debt/GDP falling via inflation erosion (Argentina) is tagged deleveraging even when the adjustment is painful; the composite stays weak.</td></tr>
+<tr><td>Private vs public credit cycle</td><td>BUBBLE/LATE_LEVERAGING use private credit (BIS); LATE_LONG_CYCLE uses sovereign debt. A country can be in private late-leveraging with low public debt (Hong Kong).</td></tr>
+<tr><td>Energy classification</td><td>Trade-based; an "exporter" with no resource rents (re-export hub like Cyprus) is downgraded to neutral via a rents sanity check.</td></tr>
+<tr><td>nom_rate = policy rate</td><td>Proxy for the cost of debt (the spec allows policy or 10Y); the euro area uses the ECB rate.</td></tr></table>
+<p class="muted">All thresholds live in <code>market_data_hub/config/settings.yaml</code> under <code>dalio</code>.
+Source: Dalio_Macro_Framework_Spec_v3.</p>
+"""
+
+# statistics glossary (English) — every statistic + economic meaning
+_STATS = r"""
+<h2>Statistics used — definitions & economic meaning</h2>
+<p>Every metric in this dashboard, how it is computed, and why it matters economically.</p>
+
+<h3>Scoring statistics</h3>
+<table><tr><th>Statistic</th><th>Computation</th><th>Economic meaning</th></tr>
+<tr><td><b>Cross-country z-score</b></td><td>(x − mean across countries) / std across countries, × direction, clipped to ±3, at the current year</td><td>How far a country sits above/below its peers on an indicator. "× direction" flips indicators where high is bad (debt, unemployment, HY spread) so that <b>higher z = better</b>. Clipping stops one extreme (e.g. Turkish inflation) from dominating.</td></tr>
+<tr><td><b>Pillar score</b></td><td>Mean of the cross-country z-scores of the indicators in that pillar</td><td>Relative strength of a country on a theme (growth, debt cycle, liquidity, external, sovereign, banking, governance, geopolitical).</td></tr>
+<tr><td><b>Composite</b></td><td>Weighted mean of pillar scores (growth 20, debt_cycle 20, liquidity 15, external 15, sovereign 10, banking 10, governance 5, geopolitical 5; weights renormalised over available pillars)</td><td>Overall <b>relative strength / risk</b> of a country vs peers. NOT a cyclical signal — the cycle is captured by the phase and the regime.</td></tr>
+<tr><td><b>Direction (+1/−1/0)</b></td><td>Sign attached to each indicator</td><td>+1 = higher is healthier (reserves, growth); −1 = higher is worse (debt, unemployment, credit spreads); 0 = level/neutral.</td></tr></table>
+
+<h3>Debt-cycle statistics</h3>
+<table><tr><th>Statistic</th><th>Computation</th><th>Economic meaning</th></tr>
+<tr><td><b>Debt/GDP trajectory (trend)</b></td><td>OLS slope of public debt/GDP over [year−3, year+5], in pp/year, <b>including WEO projections</b></td><td>Dalio's #1 signal: is debt growing faster than income? Forward-looking because the projected path is what matters for sustainability. &gt;+1.5 = rising fast; &lt;0 = deleveraging.</td></tr>
+<tr><td><b>Debt level (% GDP)</b></td><td>General government gross debt, current year (WEO)</td><td>Where the country sits in the LONG-term debt cycle. &gt;100% elevated, &gt;130% very high.</td></tr>
+<tr><td><b>Credit-to-GDP gap</b></td><td>BIS, private non-financial sector, deviation of credit/GDP from its long-run trend (HP filter, λ=400000)</td><td>The classic bubble gauge: &gt;+10pp signals a credit boom / leverage excess in the private sector.</td></tr>
+<tr><td><b>Debt service ratio (DSR)</b></td><td>BIS, private non-financial sector: interest + principal as % of income. Stress read as a <b>percentile of its own history</b> (&gt;80th = peak)</td><td>Affordability of private debt. Read relative to each country's history because ~20% is normal for high-mortgage economies (NL, CH) but high for others. A DSR at its own peak precedes tops/depressions.</td></tr>
+<tr><td><b>Nominal growth − nominal rate</b></td><td>(real growth + inflation) − policy rate</td><td>Whether debt dynamics are favourable: if nominal growth &gt; the cost of debt, debt/GDP can fall while growing (beautiful deleveraging); otherwise it is painful.</td></tr></table>
+
+<h3>Growth / inflation statistics</h3>
+<table><tr><th>Statistic</th><th>Computation</th><th>Economic meaning</th></tr>
+<tr><td><b>Output gap (growth Δ)</b></td><td>Current real growth − potential (WEO medium-term average, [year+2, year+5])</td><td>Is the economy running above or below its own potential? The right normalisation across very different growth profiles (DM vs EM).</td></tr>
+<tr><td><b>Inflation direction (inflation Δ)</b></td><td>Current inflation − average of the previous 3 years</td><td>Reflation vs disinflation — the inflation regime in motion, which drives asset returns more than the level.</td></tr></table>
+
+<h3>Country classification statistics</h3>
+<table><tr><th>Statistic</th><th>Computation</th><th>Economic meaning</th></tr>
+<tr><td><b>Net fuel position (% GDP)</b></td><td>fuel_exports% × exports/GDP − fuel_imports% × imports/GDP</td><td>Net energy trade balance. &gt;+10% strong exporter (Gulf, Norway), &lt;−10% strong importer. Drives terms-of-trade sensitivity to oil.</td></tr>
+<tr><td><b>Resource dependence</b></td><td>Natural resource rents (% GDP)</td><td>Exposure to commodity cycles; also the sanity check that an "exporter" is a real producer, not a re-export hub.</td></tr>
+<tr><td><b>Development tier</b></td><td>From the analytical region group + income (static)</td><td>DM / EM / Frontier — the structural market category.</td></tr>
+<tr><td><b>FX regime, IMF program</b></td><td>Curated static inputs</td><td>Float / managed / pegged / dollarized; whether under an IMF program — both shape policy room and crisis risk.</td></tr></table>
+
+<h3>Data-quality statistics</h3>
+<table><tr><th>Statistic</th><th>Meaning</th></tr>
+<tr><td><b>Stale-data flag</b></td><td>An indicator whose latest <b>actual</b> observation is older than 3 years (e.g. tourism receipts, resource rents often lag in WDI). Shown per country so the reader knows which inputs are dated.</td></tr>
+<tr><td><b>WEO forecast horizon</b></td><td>The last year of IMF WEO projections in the database; the debt trajectory and the charts use these forward-looking values.</td></tr></table>
+
+<p class="muted">Sources: IMF WEO (DataMapper), BIS (stats.bis.org), World Bank WDI/WGI, FRED. All values
+anchored to the current year for the "state" metrics; projections used only for the forward-looking
+debt trajectory and the charts.</p>
+"""
+
+
+def render_html(d: dict) -> str:
+    return (_TEMPLATE
+            .replace("__DATA__", json.dumps(d, ensure_ascii=False))
+            .replace("__METH__", json.dumps(_METH, ensure_ascii=False))
+            .replace("__STATS__", json.dumps(_STATS, ensure_ascii=False)))
+
+
+def main() -> int:
+    p = argparse.ArgumentParser(description="Ray Dalio dashboard")
+    p.add_argument("--db")
+    p.add_argument("--open", action="store_true")
+    p.add_argument("--calc", action="store_true", help="recompute (run_dalio) first")
+    args = p.parse_args()
+
+    if args.calc:
+        from market_data_hub.dalio import run_dalio
+        from market_data_hub.classify import classify_countries
+        s = run_dalio(args.db)
+        classify_countries(args.db)
+        print(f"Recomputed: {s['countries']} countries, phases {s['phases']}")
+
+    REPORT_DIR.mkdir(exist_ok=True)
+    con = get_conn(args.db, read_only=True)
+    try:
+        d = collect(con)
+    finally:
+        con.close()
+
+    stamp = datetime.now().strftime("%Y%m%d")
+    out = REPORT_DIR / f"dalio_report_{stamp}.html"
+    out.write_text(render_html(d), encoding="utf-8")
+    print(f"Dashboard: {out}")
+    print(f"Countries: {len(d['countries'])} | phases: {d['phase_counts']}")
+    if args.open:
+        import webbrowser
+        webbrowser.open(out.as_uri())
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
