@@ -183,18 +183,30 @@ to `macro_series_vintage` / `macro_panel_vintage` (stamped with the ingest
 `read_macro` / `read_macro_panel`. Note: history only exists from when ingestion
 began — there is no pre-existing vintage for periods before first ingest.
 
-**Integration note.** Each indicator carries metadata the current schema does
-not model: `pillar`, `orientation` (+1 healthier / −1 worse / 0 neutral),
-`priority`, multi-provider `fallback_sources`, and per-country provider codes.
-A future `macro_panel(date, country_iso3, indicator_id, value, pillar,
-orientation, source, provider_dataset, provider_code, unit, status)` would carry
-them and let the same coverage engine score cross-country availability. The
-"select best source" logic (highest coverage_score, IMF↔WB fallback) is already
-implemented in `macro_dashboard.py::select_best_observations` and can be ported.
+**Integration note (implemented).** Each row already carries `pillar`,
+`orientation` (+1 healthier / −1 worse / 0 neutral), `source`,
+`provider_dataset`, `provider_code` and `unit` (see the table above), so the
+metadata travels with the data.
 
-> **Status:** documented as a proposed extension. The data providers (World
-> Bank, IMF DataMapper, BIS/DBnomics) are all keyless REST APIs reachable from
-> this network; only the FRED CSV endpoint is proxy-blocked.
+- **Cross-country coverage scoring.** `macro_panel_coverage` (one row per
+  indicator) scores how many of the expected countries carry each indicator,
+  the freshest date, declared vs detected frequency, and a freq-aware stalled
+  flag — computed by `coverage.report.rebuild_macro_panel_coverage()` using the
+  same coverage engine as `coverage_report`. Read via
+  `reader.get_macro_panel_coverage()`. (The panel is a `(date, country,
+  indicator)` table, so it is scored here rather than mixed into the per-symbol
+  `coverage_report`.)
+- **Select best source.** `sources.macro_panel.fetch_indicator(..., select_best=True)`
+  fetches both the primary and the fallback and keeps whichever covers more
+  countries (the IMF↔WB "best source" idea). Enabled with
+  `macro_panel.select_best_source: true` in `settings.yaml` (default off — it
+  costs one extra API call per indicator that has a fallback). The default still
+  uses the cheap primary→fallback-on-empty path.
+
+> **Note on providers:** World Bank, IMF DataMapper and BIS/DBnomics are keyless
+> REST APIs reachable from this network; only the FRED CSV endpoint is
+> proxy-blocked here, so the live `select_best` path is exercised on the user's
+> machine (the selection logic itself is unit-tested with synthetic frames).
 
 ---
 

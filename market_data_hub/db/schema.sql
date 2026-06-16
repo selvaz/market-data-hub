@@ -177,9 +177,33 @@ CREATE TABLE IF NOT EXISTS coverage_report (
     PRIMARY KEY (symbol, source)
 );
 
--- ============================================================================
--- 5. factor_returns — Fama-French / momentum factors (Ken French Data Library)
--- ============================================================================
+-- macro_panel_coverage — cross-country availability score per indicator.
+-- The macro_panel is a (date, country, indicator) panel, so the standard
+-- per-symbol coverage_report does not fit. This scores, for each indicator,
+-- how many of the expected countries have data, the freshest date, detected
+-- frequency, and a freq-aware stalled flag — using the same coverage engine.
+CREATE TABLE IF NOT EXISTS macro_panel_coverage (
+    indicator_id      VARCHAR NOT NULL,
+    pillar            VARCHAR,
+    source            VARCHAR,            -- distinct provider(s) actually used
+    n_sources         INTEGER,
+    frequency         VARCHAR,            -- declared (A/Q/M)
+    freq_detected     VARCHAR,            -- detected on the densest country
+    n_countries       INTEGER,            -- countries with >=1 non-null value
+    n_countries_total INTEGER,            -- expected (config country universe)
+    coverage_pct      DOUBLE,             -- 100 * n_countries / n_countries_total
+    first_date        DATE,
+    last_date         DATE,
+    lag_days          INTEGER,
+    stalled           BOOLEAN,
+    obs_count         INTEGER,
+    status            VARCHAR,            -- 'ok' | 'stalled' | 'empty'
+    last_run_id       VARCHAR,
+    updated_at        TIMESTAMP,
+    PRIMARY KEY (indicator_id)
+);
+
+
 -- Long format: one row per (date, factor_set, factor). Values are DECIMAL
 -- returns (Ken French publishes percent; the source converts). factor_set
 -- identifies the dataset+frequency, e.g. 'FF5_daily' with factors Mkt-RF, SMB,

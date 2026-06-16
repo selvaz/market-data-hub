@@ -111,16 +111,9 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
             rows.append(_row_for(key, "binance", g, "date",
                                  {"asset_class": "CRYPTO", "priority": 1}, run_id))
 
-    # --- macro_panel — one record per indicator (dates aggregated across countries) ---
-    mpdf = con.execute(
-        "SELECT date, indicator_id, pillar, value FROM macro_panel "
-        "ORDER BY indicator_id, date"
-    ).fetch_df()
-    if not mpdf.empty:
-        for iid, g in mpdf.groupby("indicator_id"):
-            pillar = g["pillar"].iloc[0] if "pillar" in g else ""
-            rows.append(_row_for(iid, "macro_panel", g, "date",
-                                 {"asset_class": pillar, "priority": 2}, run_id))
+    # macro_panel is scored separately by rebuild_macro_panel_coverage() — it is a
+    # (date, country, indicator) panel, not a per-symbol series, so it does not
+    # belong in coverage_report.
 
     if not rows:
         return 0
@@ -128,3 +121,55 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
     cov = pd.DataFrame(rows)
     upsert(con, "coverage_report", cov)
     return len(cov)
+
+
+def rebuild_macro_panel_coverage(con: duckdb.DuckDBPyConnection, run_id: str,
+                                 n_countries_total: int) -> int:
+    """Score cross-country availability of the macro_panel, one row per indicator.
+
+    Reuses the same coverage engine (frequency detection, lag/stalled, date span)
+    but on the panel's natural grain: how many of the expected countries carry the
+    indicator, the freshest date, and a freq-aware stalled flag.
+    """
+    df = con.execute(
+        "SELECT date, country_iso3, indicator_id, pillar, source, frequency "
+        "FROM macro_panel WHERE value IS NOT NULL"
+    ).fetch_df()
+    if df.empty:
+        return 0
+
+    now = datetime.now(timezone.utc)
+    rows = []
+    for iid, g in df.groupby("indicator_id"):
+        first, last, obs = date_span(g["date"])
+        # declared frequency (config) and detected frequency on the densest country
+        declared = g["frequency"].mode().iloc[0] if g["frequency"].notna().any() else None
+        densest = g.groupby("country_iso3").size().idxmax()
+        freq_detected = detect_frequency(g.loc[g["country_iso3"] == densest, "date"])
+        n_countries = int(g["country_iso3"].nunique())
+        stalled = is_stalled(last, declared or freq_detected)
+        status = "stalled" if stalled else "ok"
+        rows.append({
+            "indicator_id": iid,
+            "pillar": g["pillar"].iloc[0],
+            "source": ",".join(sorted(s for s in g["source"].dropna().unique())),
+            "n_sources": int(g["source"].nunique()),
+            "frequency": declared,
+            "freq_detected": freq_detected,
+            "n_countries": n_countries,
+            "n_countries_total": int(n_countries_total),
+            "coverage_pct": round(100.0 * n_countries / n_countries_total, 1)
+            if n_countries_total else None,
+            "first_date": first,
+            "last_date": last,
+            "lag_days": lag_days(last),
+            "stalled": stalled,
+            "obs_count": int(obs),
+            "status": status,
+            "last_run_id": run_id,
+            "updated_at": now,
+        })
+
+    con.execute("DELETE FROM macro_panel_coverage")   # full rebuild each run
+    upsert(con, "macro_panel_coverage", pd.DataFrame(rows))
+    return len(rows)

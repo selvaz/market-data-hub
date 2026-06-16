@@ -287,6 +287,17 @@ def get_coverage(symbols: Optional[List[str]] = None,
         con.close()
 
 
+def get_macro_panel_coverage(db_path: Optional[str] = None) -> pd.DataFrame:
+    """Cross-country availability per macro_panel indicator (ordered worst first)."""
+    con = _con(db_path)
+    try:
+        return con.execute(
+            "SELECT * FROM macro_panel_coverage ORDER BY coverage_pct, last_date"
+        ).fetch_df()
+    finally:
+        con.close()
+
+
 def get_stalled(db_path: Optional[str] = None) -> pd.DataFrame:
     """Only the stalled symbols."""
     con = _con(db_path)
