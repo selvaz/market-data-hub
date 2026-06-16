@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-diagnose.py — report diagnostico di coverage e qualita' dati.
+diagnose.py — diagnostic report on coverage and data quality.
 
-Uso:
-    python diagnose.py                 # tabella coverage completa
-    python diagnose.py --stalled       # solo serie ferme
-    python diagnose.py --symbol SPY    # dettaglio singolo simbolo
-    python diagnose.py --runs          # ultimi run dal download_log
-    python diagnose.py --summary       # statistiche aggregate
+Usage:
+    python diagnose.py                 # full coverage table
+    python diagnose.py --stalled       # stalled series only
+    python diagnose.py --symbol SPY    # detail for a single symbol
+    python diagnose.py --runs          # latest runs from download_log
+    python diagnose.py --summary       # aggregate statistics
 """
 import argparse
 import sys
@@ -37,14 +37,14 @@ def cmd_coverage(con, only_stalled: bool):
         f"SELECT {cols} FROM coverage_report {where} "
         f"ORDER BY stalled DESC, coverage_score ASC").fetch_df()
     if df.empty:
-        print("Nessun dato in coverage_report. Esegui prima run_daily.py o run_backfill.py.")
+        print("No data in coverage_report. Run run_daily.py or run_backfill.py first.")
         return
-    print(f"\n=== COVERAGE REPORT {'(solo stalled)' if only_stalled else ''} "
-          f"— {len(df)} serie ===\n")
+    print(f"\n=== COVERAGE REPORT {'(stalled only)' if only_stalled else ''} "
+          f"— {len(df)} series ===\n")
     print(df.to_string(index=False))
     print(f"\nStalled: {int(df['stalled'].sum())} | "
-          f"Score medio: {df['coverage_score'].mean():.1f} | "
-          f"Obs totali: {int(df['obs_count'].sum()):,}")
+          f"Average score: {df['coverage_score'].mean():.1f} | "
+          f"Total obs: {int(df['obs_count'].sum()):,}")
 
 
 def cmd_symbol(con, symbol: str):
@@ -52,19 +52,19 @@ def cmd_symbol(con, symbol: str):
                       [symbol]).fetch_df()
     print(f"\n=== {symbol} ===\n")
     if cov.empty:
-        print("Non presente in coverage_report.")
+        print("Not present in coverage_report.")
     else:
         for k, v in cov.iloc[0].items():
             print(f"  {k:16s}: {v}")
 
-    # storia download recente
+    # recent download history
     log = con.execute(
         "SELECT started_at, source, rows_added, rows_updated, status, error_msg "
         "FROM download_log WHERE symbol = ? OR symbol = ? "
         "ORDER BY started_at DESC LIMIT 10",
         [symbol, symbol + ":1h"]).fetch_df()
     if not log.empty:
-        print("\n  Ultimi download:")
+        print("\n  Latest downloads:")
         print(log.to_string(index=False))
 
 
@@ -74,8 +74,8 @@ def cmd_runs(con):
         "sum(rows_added) AS added, sum(rows_updated) AS updated, "
         "sum(CASE WHEN status='error' THEN 1 ELSE 0 END) AS errors "
         "FROM download_log GROUP BY run_id ORDER BY start DESC LIMIT 15").fetch_df()
-    print("\n=== ULTIMI RUN ===\n")
-    print(df.to_string(index=False) if not df.empty else "Nessun run registrato.")
+    print("\n=== LATEST RUNS ===\n")
+    print(df.to_string(index=False) if not df.empty else "No run recorded.")
 
 
 def cmd_summary(con):
@@ -89,14 +89,14 @@ def cmd_summary(con):
             f"FROM {tbl}").fetch_df()
         if not r.empty and r.iloc[0]["rows"]:
             x = r.iloc[0]
-            print(f"  {tbl:16s}: {int(x['rows']):>10,} righe | "
-                  f"{int(x['syms']):>4} serie | {x['mn']} -> {x['mx']}")
+            print(f"  {tbl:16s}: {int(x['rows']):>10,} rows | "
+                  f"{int(x['syms']):>4} series | {x['mn']} -> {x['mx']}")
         else:
-            print(f"  {tbl:16s}: vuoto")
+            print(f"  {tbl:16s}: empty")
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Diagnostica market_data_hub")
+    p = argparse.ArgumentParser(description="market_data_hub diagnostics")
     p.add_argument("--stalled", action="store_true")
     p.add_argument("--symbol")
     p.add_argument("--runs", action="store_true")

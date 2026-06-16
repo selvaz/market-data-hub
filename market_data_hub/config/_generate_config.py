@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-_generate_config.py — genera tickers.yaml e macro_series.yaml dall'Excel 4-layer
-di quant_timeseries_suite, aggiungendo gli indici VIX term-structure e i ticker
-extra da zero_noise_pipeline. Eseguito una sola volta (rigenerabile).
+_generate_config.py — generates tickers.yaml and macro_series.yaml from the
+4-layer Excel of quant_timeseries_suite, adding the VIX term-structure indices
+and the extra tickers from zero_noise_pipeline. Run once (regenerable).
 """
 from pathlib import Path
 import pandas as pd
@@ -11,23 +11,23 @@ import yaml
 EXCEL = r"D:\SALVATI_CLEAN\quant_timeseries_suite\ts1_downloader\database_4layer_FINAL.xlsx"
 OUT = Path(__file__).parent
 
-# Indici VIX term-structure usati da quant_vix_calibrator / zero_noise (Yahoo ^ index)
+# VIX term-structure indices used by quant_vix_calibrator / zero_noise (Yahoo ^ index)
 VIX_INDICES = ["^VIX", "^VIX9D", "^VIX3M", "^VIX6M", "^VVIX", "^VXN"]
-# Extra da zero_noise non presenti nell'Excel
+# Extras from zero_noise not present in the Excel
 ZERO_NOISE_EXTRA = {
     "FEZ":  ("EQUITY", "Europe"),
     "UUP":  ("FX", "USD"),
     "VWO":  ("EQUITY", "Emerging Markets"),
 }
-# Priority tier per coverage_score (1=alta importanza .. 4=bassa)
+# Priority tier for coverage_score (1=high importance .. 4=low)
 PRIORITY_BY_CLASS = {
     "EQUITY": 1, "FIXED_INCOME": 1, "ALTERNATIVES": 1,
     "MACRO": 2, "FX": 2, "COMMODITIES": 2, "REAL_ESTATE": 3,
 }
 
 
-def src_of(fonte: str) -> str:
-    f = str(fonte).lower()
+def src_of(source: str) -> str:
+    f = str(source).lower()
     if "fred" in f:
         return "FRED"
     if "ecb.europa" in f:
@@ -55,7 +55,7 @@ def main():
         if r["SRC"] == "YAHOO":
             yahoo.append(entry)
         elif r["SRC"] == "FRED":
-            # paese: EA se la serie e' area euro, altrimenti US
+            # country: EA if the series is euro area, otherwise US
             area = entry["area"]
             entry["country"] = "EA" if area in ("EA", "ECB") else "US"
             fred.append(entry)
@@ -78,8 +78,8 @@ def main():
         yaml.safe_dump({"fred": fred}, sort_keys=False, allow_unicode=True),
         encoding="utf-8")
 
-    print(f"tickers.yaml: {len(yahoo)} simboli Yahoo")
-    print(f"macro_series.yaml: {len(fred)} serie FRED")
+    print(f"tickers.yaml: {len(yahoo)} Yahoo symbols")
+    print(f"macro_series.yaml: {len(fred)} FRED series")
 
 
 if __name__ == "__main__":

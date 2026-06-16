@@ -1,21 +1,26 @@
 # -*- coding: utf-8 -*-
 """
-_generate_macro_panel.py — genera countries.yaml e macro_panel.yaml.
+_generate_macro_panel.py — generates countries.yaml and macro_panel.yaml.
 
-countries.yaml : country map estesa (~65 paesi) con iso3/iso2/name/wb/imf.
-macro_panel.yaml : catalogo indicatori cross-country (WDI/WEO/WGI/IDS) portato
-                   da macro_dashboard_v2_bundle, con metadati (pillar, orientation,
+countries.yaml : extended country map (~65 countries) with iso3/iso2/name/wb/imf.
+macro_panel.yaml : cross-country indicator catalog (WDI/WEO/WGI/IDS) ported
+                   from macro_dashboard_v2_bundle, with metadata (pillar, orientation,
                    priority, dataset, code, freq, source, api_source_id, fallback).
 
-Eseguito una volta (rigenerabile). I codici vengono poi VALIDATI live da
-validate_macro_panel.py prima dell'uso in produzione.
+One-shot bootstrap. The live YAMLs have since been extended (BIS series, extra
+IMF/WB indicators, per-country classification fields) via the Excel round-trip
+and manual edits, so this script refuses to overwrite them when that would drop
+live data (use --force to override). The codes are VALIDATED live by
+validate_macro_panel.py before use in production.
 """
+import argparse
+import sys
 from pathlib import Path
 import yaml
 
 OUT = Path(__file__).parent
 
-# (iso3, iso2, name) — wb e imf coincidono con iso3 per tutti questi paesi.
+# (iso3, iso2, name) — wb and imf coincide with iso3 for all these countries.
 COUNTRIES = [
     # G7
     ("USA","US","United States"),("JPN","JP","Japan"),("DEU","DE","Germany"),
@@ -102,9 +107,9 @@ SPECS = [
     # DEBT CYCLE (WDI)
     dict(id="private_credit_gdp", name="Domestic credit to private sector %GDP", pillar="debt_cycle", priority=1,
          freq="A", unit="percent", source="WB", dataset="WDI", code="FS.AST.PRVT.GD.ZS", orientation=0, api_source_id=2),
-    # SOVEREIGN / FISCAL (IMF WEO primario, World Bank fallback)
-    # IMF = "general government" (standard comparativo); WB = "central government"
-    # (coverage piu' sottile) usato solo se IMF e' irraggiungibile/bloccato.
+    # SOVEREIGN / FISCAL (IMF WEO primary, World Bank fallback)
+    # IMF = "general government" (comparative standard); WB = "central government"
+    # (thinner coverage) used only if IMF is unreachable/blocked.
     dict(id="public_debt_gdp", name="Govt gross debt %GDP", pillar="sovereign", priority=1,
          freq="A", unit="percent", source="IMF", dataset="WEO", code="GGXWDG_NGDP", orientation=-1,
          fallback=dict(source="WB", dataset="WDI", code="GC.DOD.TOTL.GD.ZS", api_source_id=2)),
@@ -124,7 +129,7 @@ SPECS = [
          freq="A", unit="percent", source="WB", dataset="WDI", code="FB.AST.NPER.ZS", orientation=-1, api_source_id=2),
     dict(id="bank_capital_ratio", name="Bank capital to assets ratio", pillar="banking", priority=2,
          freq="A", unit="percent", source="WB", dataset="WDI", code="FB.BNK.CAPA.ZS", orientation=1, api_source_id=2),
-    # GOVERNANCE (WGI, source=3) — codici migrati a GOV_WGI_*.EST (verificato live)
+    # GOVERNANCE (WGI, source=3) — codes migrated to GOV_WGI_*.EST (verified live)
     dict(id="wgi_voice_accountability", name="Voice & accountability", pillar="governance", priority=1,
          freq="A", unit="index", source="WB", dataset="WGI", code="GOV_WGI_VA.EST", orientation=1, api_source_id=3),
     dict(id="wgi_political_stability", name="Political stability", pillar="governance", priority=1,
@@ -147,21 +152,78 @@ SPECS = [
 ]
 
 
-def main():
+def _load_yaml(path: Path) -> dict:
+    if path.exists():
+        return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    return {}
+
+
+def _data_loss(countries: list) -> list:
+    """Return a list of human-readable warnings for live data this bootstrap
+    catalog would discard if it overwrote the YAMLs (extra indicators, extra
+    per-row fields, extra countries). Empty list = safe to (re)generate."""
+    warns = []
+
+    panel = _load_yaml(OUT / "macro_panel.yaml").get("indicators", [])
+    spec_ids = {s["id"] for s in SPECS}
+    dropped = [i.get("id") for i in panel if i.get("id") not in spec_ids]
+    if dropped:
+        warns.append(f"macro_panel.yaml: {len(dropped)} indicators would be removed: {dropped}")
+    spec_fields = {k for s in SPECS for k in s} | {"fallback"}
+    extra_fields = sorted({k for i in panel for k in i} - spec_fields)
+    if extra_fields:
+        warns.append(f"macro_panel.yaml: indicator fields not reproduced: {extra_fields}")
+
+    countries_live = _load_yaml(OUT / "countries.yaml").get("countries", [])
+    spec_iso3 = {c["iso3"] for c in countries}
+    dropped_c = [c.get("iso3") for c in countries_live if c.get("iso3") not in spec_iso3]
+    if dropped_c:
+        warns.append(f"countries.yaml: {len(dropped_c)} countries would be removed: {dropped_c}")
+    spec_ckeys = {"iso3", "iso2", "name", "wb", "imf"}
+    extra_ckeys = sorted({k for c in countries_live for k in c} - spec_ckeys)
+    if extra_ckeys:
+        warns.append(f"countries.yaml: per-country fields not reproduced: {extra_ckeys}")
+    return warns
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(
+        description="(Re)generate countries.yaml and macro_panel.yaml from the "
+                    "bootstrap catalog in this file.")
+    ap.add_argument("--force", action="store_true",
+                    help="overwrite even if it would discard live data added since bootstrap")
+    args = ap.parse_args(argv)
+
     countries = [{"iso3": a, "iso2": b, "name": c, "wb": a, "imf": a}
                  for a, b, c in COUNTRIES]
+
+    # The live YAMLs have been extended beyond this bootstrap catalog (BIS series,
+    # extra IMF/WB indicators, per-country classification fields) via the Excel
+    # round-trip (export_to_excel.py / import_from_excel.py) and manual edits.
+    # Blindly overwriting would silently drop that data, so refuse unless --force.
+    warns = _data_loss(countries)
+    if warns and not args.force:
+        print("ABORT: regenerating from this bootstrap catalog would DISCARD live data:")
+        for w in warns:
+            print("  -", w)
+        print("\nThe YAMLs are now maintained via export_to_excel.py / import_from_excel.py")
+        print("(Excel round-trip) and manual enrichment. Re-run with --force only to")
+        print("reset both files to the bootstrap catalog.")
+        return 1
+
     (OUT / "countries.yaml").write_text(
         yaml.safe_dump({"countries": countries}, sort_keys=False, allow_unicode=True),
         encoding="utf-8")
     (OUT / "macro_panel.yaml").write_text(
         yaml.safe_dump({"indicators": SPECS}, sort_keys=False, allow_unicode=True),
         encoding="utf-8")
-    print(f"countries.yaml: {len(countries)} paesi")
-    print(f"macro_panel.yaml: {len(SPECS)} indicatori")
+    print(f"countries.yaml: {len(countries)} countries")
+    print(f"macro_panel.yaml: {len(SPECS)} indicators")
     print("  per pillar:", end=" ")
     from collections import Counter
     print(dict(Counter(s["pillar"] for s in SPECS)))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

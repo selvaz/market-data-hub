@@ -1,50 +1,50 @@
 # ============================================================================
-# market_data_hub — impostazioni globali
+# market_data_hub — global settings
 # ============================================================================
 
-# Path del database DuckDB (override con env MARKET_DATA_DB)
+# Path of the DuckDB database (override with env MARKET_DATA_DB)
 db_path: "D:\\market_data\\market_data.duckdb"
 
-# --- date di backfill storico ---
+# --- historical backfill dates ---
 backfill_start:
   yahoo: "2010-01-01"
   fred:  "2000-01-01"
   binance: "2018-01-01"
 
-# --- download incrementale ---
+# --- incremental download ---
 incremental:
-  tail_refresh_days: 3        # ri-scarica ultimi N giorni (corporate actions late)
-  fred_tail_periods: 2        # FRED: ri-scarica per coprire revisioni
+  tail_refresh_days: 3        # re-download the last N days (late corporate actions)
+  fred_tail_periods: 2        # FRED: re-download to cover revisions
 
-# --- parallelismo ---
+# --- parallelism ---
 parallelism:
   yahoo_workers: 5
   binance_workers: 4
-  yahoo_batch_sleep: 0.25     # pausa tra batch group Yahoo
-  fred_sleep: 0.15            # pausa tra serie FRED (rate limit 120/min)
-  imf_sleep: 0.5              # pausa tra chiamate IMF (WAF risolto da curl_cffi)
-  wb_workers: 5               # fetch World Bank paralleli (macro_panel)
+  yahoo_batch_sleep: 0.25     # pause between Yahoo batch groups
+  fred_sleep: 0.15            # pause between FRED series (rate limit 120/min)
+  imf_sleep: 0.5              # seconds between sequential IMF/BIS calls (WAF handled by per-call backoff)
+  wb_workers: 5               # parallel World Bank fetches (macro_panel)
 
 # --- HTTP / retry ---
 http:
   timeout: 30
   max_retries: 3
-  retry_base_sleep: 1.0       # backoff esponenziale: 1, 4, 16s
+  retry_base_sleep: 1.0       # exponential backoff: 1, 4, 16s
 
 # --- FRED API ---
-# Inserire la propria API key (https://fred.stlouisfed.org/docs/api/api_key.html)
-# Se vuota, si usa l'endpoint pubblico CSV (fredgraph.csv) senza chiave.
+# Enter your own API key (https://fred.stlouisfed.org/docs/api/api_key.html)
+# If empty, the public CSV endpoint (fredgraph.csv) is used without a key.
 fred_api_key: "22a818467cbf49b94e936f79804aa7ba"
 
 # --- Report via email ---
-# Compilare smtp_user e smtp_password per abilitare l'invio automatico.
-# Per Gmail: generare una "App Password" in https://myaccount.google.com/apppasswords
-# (richiede 2FA attiva). Inserire l'app password qui, NON la password Google.
+# Fill in smtp_user and smtp_password to enable automatic sending.
+# For Gmail: generate an "App Password" at https://myaccount.google.com/apppasswords
+# (requires 2FA enabled). Enter the app password here, NOT the Google password.
 email:
   smtp_host: smtp.gmail.com
   smtp_port: 587
-  smtp_user: ""             # es. tuoindirizzo@gmail.com
-  smtp_password: ""         # app password Gmail (16 caratteri senza spazi)
+  smtp_user: ""             # e.g. youraddress@gmail.com
+  smtp_password: ""         # Gmail app password (16 characters without spaces)
   from: "market_data_hub <noreply@market-data>"
   to:
     - doctor.selva@gmail.com
@@ -57,38 +57,38 @@ crypto:
 # --- live price injection (intraday) ---
 live:
   enabled: true
-  # solo questi asset class ricevono l'aggiornamento intraday (mercati liquidi)
+  # only these asset classes receive the intraday update (liquid markets)
   asset_classes: ["EQUITY", "ALTERNATIVES", "FIXED_INCOME", "COMMODITIES", "REAL_ESTATE", "FX"]
 
-# --- framework Ray Dalio (soglie configurabili, NON hard-coded — vedi spec v3) ---
+# --- Ray Dalio framework (configurable thresholds, NOT hard-coded — see spec v3) ---
 dalio:
-  z_window_years: 10          # finestra z-score (stessa frequenza)
-  z_min_obs: 5                # minimo osservazioni per z-score (sotto -> NULL)
-  z_pos: 1.0                  # soglia z per segnale POS
-  z_neg: -1.0                 # soglia z per segnale NEG
-  # soglie archetipali del ciclo del debito (Dalio)
+  z_window_years: 10          # z-score window (same frequency)
+  z_min_obs: 5                # minimum observations for z-score (below -> NULL)
+  z_pos: 1.0                  # z threshold for POS signal
+  z_neg: -1.0                 # z threshold for NEG signal
+  # archetypal debt cycle thresholds (Dalio)
   credit_gap_bubble: 10.0     # credit-to-GDP gap > +10pp = bubble
-  credit_gap_near_zero: 2.0   # |gap| < 2pp = vicino all'equilibrio
-  debt_income_gap_high: 2.0   # debito cresce >2pp/anno piu' del reddito
+  credit_gap_near_zero: 2.0   # |gap| < 2pp = near equilibrium
+  debt_income_gap_high: 2.0   # debt grows >2pp/year faster than income
   debt_income_gap_low: 1.0    # |debt-income gap| < 1 = early/normalization
-  dsr_high: 20.0              # (fallback assoluto se manca storia)
-  dsr_peak_pct: 0.80          # DSR "stressato" se > 80° percentile della SUA storia
-                              # (Dalio: conta il picco vs se stesso, non il livello)
+  dsr_high: 20.0              # (absolute fallback if history is missing)
+  dsr_peak_pct: 0.80          # DSR "stressed" if > 80th percentile of ITS history
+                              # (Dalio: the peak vs itself matters, not the level)
   rate_near_zero: 1.0         # policy rate < 1% = pushing on a string
-  credit_gap_late: 5.0        # gap 5-10pp = late/leveraging (verso la bolla)
-  weak_growth: 1.5            # crescita < 1.5% = debole (per pushing on a string)
-  # ciclo del debito LUNGO/sovrano (la tesi-chiave di Dalio sugli USA):
-  # conta il LIVELLO del debito, non solo la variazione.
-  debt_high_level: 100.0      # debito pubblico > 100% PIL = alto
-  debt_crisis_level: 130.0    # > 130% = molto alto (tardo ciclo a prescindere)
-  deficit_large: -4.5         # deficit fiscale < -4.5% PIL = ampio
-  # TREND del debito/PIL (segnale #1 di Dalio: debito vs reddito). Slope su
-  # finestra [ref-3, ref+5] (include le proiezioni WEO, forward-looking).
-  debt_trend_window_back: 3   # anni indietro
-  debt_trend_window_fwd: 5    # anni avanti (forecast)
-  debt_trend_high: 1.5        # > +1.5 pp/anno = traiettoria in salita marcata
-  debt_trend_moderate: 0.7    # > +0.7 pp/anno = in salita
-  # pesi del composite per pilastro (la somma viene rinormalizzata sui disponibili)
+  credit_gap_late: 5.0        # gap 5-10pp = late/leveraging (toward the bubble)
+  weak_growth: 1.5            # growth < 1.5% = weak (for pushing on a string)
+  # LONG/sovereign debt cycle (Dalio's key thesis on the US):
+  # the LEVEL of debt matters, not just the change.
+  debt_high_level: 100.0      # public debt > 100% GDP = high
+  debt_crisis_level: 130.0    # > 130% = very high (late cycle regardless)
+  deficit_large: -4.5         # fiscal deficit < -4.5% GDP = large
+  # debt/GDP TREND (Dalio's signal #1: debt vs income). Slope over
+  # window [ref-3, ref+5] (includes the WEO projections, forward-looking).
+  debt_trend_window_back: 3   # years back
+  debt_trend_window_fwd: 5    # years forward (forecast)
+  debt_trend_high: 1.5        # > +1.5 pp/year = markedly rising trajectory
+  debt_trend_moderate: 0.7    # > +0.7 pp/year = rising
+  # composite weights per pillar (the sum is renormalized over the available ones)
   pillar_weights:
     growth: 20
     debt_cycle: 20

@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-reader.py — API pubblica di lettura per gli altri progetti.
+reader.py — public read API for the other projects.
 
-Apre il DB in sola lettura (piu' processi possono leggere in parallelo).
-I DataFrame restituiti hanno una struttura compatibile con i parquet/CSV usati
-finora dai progetti (indice data, colonne = simboli) per minimizzare le modifiche.
+Opens the DB in read-only mode (multiple processes can read in parallel).
+The returned DataFrames have a structure compatible with the parquet/CSV files
+used so far by the projects (date index, columns = symbols) to minimize changes.
 
-Esempi:
+Examples:
     from market_data_hub.reader import read_prices, read_macro, read_crypto
     px = read_prices(["SPY", "^VIX"], start="2020-01-01")          # wide adj_close
     vix = read_prices(["^VIX9D","^VIX","^VIX3M"], field="adj_close")
@@ -31,8 +31,8 @@ def read_prices(symbols: Union[str, List[str]], start: Optional[str] = None,
                 wide: bool = True, include_live: bool = False,
                 db_path: Optional[str] = None) -> pd.DataFrame:
     """
-    Prezzi giornalieri. wide=True -> indice date, colonne simboli (campo `field`).
-    wide=False -> formato lungo con tutte le colonne OHLCV.
+    Daily prices. wide=True -> date index, symbol columns (field `field`).
+    wide=False -> long format with all OHLCV columns.
     """
     if isinstance(symbols, str):
         symbols = [symbols]
@@ -68,7 +68,7 @@ def read_prices(symbols: Union[str, List[str]], start: Optional[str] = None,
 def read_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,
                end: Optional[str] = None, wide: bool = True,
                db_path: Optional[str] = None) -> pd.DataFrame:
-    """Serie macro. wide=True -> indice date, colonne series_id."""
+    """Macro series. wide=True -> date index, series_id columns."""
     if isinstance(series_ids, str):
         series_ids = [series_ids]
     con = _con(db_path)
@@ -100,7 +100,7 @@ def read_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,
 def read_crypto(symbols: Union[str, List[str]], timeframe: str = "1h",
                 start: Optional[str] = None, end: Optional[str] = None,
                 db_path: Optional[str] = None) -> pd.DataFrame:
-    """OHLCV crypto in formato lungo per uno o piu' simboli a un dato timeframe."""
+    """Crypto OHLCV in long format for one or more symbols at a given timeframe."""
     if isinstance(symbols, str):
         symbols = [symbols]
     con = _con(db_path)
@@ -125,9 +125,9 @@ def read_macro_panel(indicators: Union[str, List[str]],
                      start: Optional[str] = None, end: Optional[str] = None,
                      wide: bool = False, db_path: Optional[str] = None) -> pd.DataFrame:
     """
-    Panel macro cross-country (World Bank / IMF).
-    wide=False -> formato lungo (date, country_iso3, indicator_id, value, ...).
-    wide=True  -> pivot date×country per UN solo indicatore.
+    Cross-country macro panel (World Bank / IMF).
+    wide=False -> long format (date, country_iso3, indicator_id, value, ...).
+    wide=True  -> date×country pivot for a SINGLE indicator.
     """
     if isinstance(indicators, str):
         indicators = [indicators]
@@ -150,7 +150,7 @@ def read_macro_panel(indicators: Union[str, List[str]],
             f"country_iso3, date", params).fetch_df()
         if wide and not df.empty:
             if len(indicators) != 1:
-                raise ValueError("wide=True richiede un solo indicatore")
+                raise ValueError("wide=True requires a single indicator")
             out = df.pivot_table(index="date", columns="country_iso3",
                                  values="value", aggfunc="last")
             out.index = pd.to_datetime(out.index)
@@ -162,7 +162,7 @@ def read_macro_panel(indicators: Union[str, List[str]],
 
 def get_coverage(symbols: Optional[List[str]] = None,
                  db_path: Optional[str] = None) -> pd.DataFrame:
-    """Tabella coverage_report (opzionalmente filtrata su una lista di simboli)."""
+    """coverage_report table (optionally filtered on a list of symbols)."""
     con = _con(db_path)
     try:
         if symbols:
@@ -177,7 +177,7 @@ def get_coverage(symbols: Optional[List[str]] = None,
 
 
 def get_stalled(db_path: Optional[str] = None) -> pd.DataFrame:
-    """Solo i simboli fermi."""
+    """Only the stalled symbols."""
     con = _con(db_path)
     try:
         return con.execute("SELECT * FROM v_stalled").fetch_df()
@@ -186,7 +186,7 @@ def get_stalled(db_path: Optional[str] = None) -> pd.DataFrame:
 
 
 def get_latest(symbol: str, db_path: Optional[str] = None) -> dict:
-    """Ultimo dato + metriche coverage per un simbolo."""
+    """Latest data point + coverage metrics for a symbol."""
     con = _con(db_path)
     try:
         px = con.execute(

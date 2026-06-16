@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-yahoo_direct.py — download OHLCV da Yahoo SENZA yfinance.
+yahoo_direct.py — download OHLCV from Yahoo WITHOUT yfinance.
 
-Chiama direttamente l'endpoint chart v8 di Yahoo via curl_cffi (impersona
-Chrome, rispetta CURL_CA_BUNDLE per la rete MITM). L'endpoint chart NON
-richiede crumb/cookie/cache, quindi e' immune ai problemi di yfinance
-(versione 1.2.1 fasulla, cache SQLite bloccata, 'str' object has no attribute
-'name', 429 sul crumb).
+Calls Yahoo's chart v8 endpoint directly via curl_cffi (impersonates Chrome,
+respects CURL_CA_BUNDLE for the MITM network). The chart endpoint does NOT
+require crumb/cookie/cache, so it is immune to yfinance issues (bogus version
+1.2.1, locked SQLite cache, 'str' object has no attribute 'name', 429 on the
+crumb).
 
-Output canonico identico a sources/yahoo.py:
+Canonical output identical to sources/yahoo.py:
   [date, symbol, open, high, low, close, adj_close, volume]
 """
 from __future__ import annotations
@@ -30,7 +30,7 @@ _OUT_COLS = ["date", "symbol", "open", "high", "low", "close", "adj_close", "vol
 _BASE = "https://query1.finance.yahoo.com/v8/finance/chart/"
 _BASE2 = "https://query2.finance.yahoo.com/v8/finance/chart/"
 
-# Sessione curl_cffi per-thread (le Session non sono thread-safe: una per thread)
+# Per-thread curl_cffi session (Sessions are not thread-safe: one per thread)
 _local = threading.local()
 
 
@@ -45,12 +45,12 @@ def _session():
 def _epoch(d: str, end: bool = False) -> int:
     ts = pd.Timestamp(d)
     if end:
-        ts = ts + pd.Timedelta(days=1)  # period2 esclusivo -> +1 giorno
+        ts = ts + pd.Timedelta(days=1)  # period2 exclusive -> +1 day
     return int(ts.replace(tzinfo=None).timestamp())
 
 
 def _parse(symbol: str, j: dict) -> pd.DataFrame:
-    """Estrae il frame OHLCV dal JSON chart di Yahoo."""
+    """Extract the OHLCV frame from Yahoo's chart JSON."""
     try:
         res = (j.get("chart", {}).get("result") or [None])[0]
         if not res:
@@ -85,18 +85,18 @@ def _parse(symbol: str, j: dict) -> pd.DataFrame:
 
 def _fetch_one(symbol: str, params: dict, *, retries: int = 3,
                base_sleep: float = 1.5) -> pd.DataFrame:
-    """Scarica un singolo simbolo con retry. Ritorna frame (vuoto se ko)."""
+    """Download a single symbol with retry. Returns frame (empty on failure)."""
     if _creq is None:
-        raise RuntimeError("curl_cffi non installato. pip install curl_cffi")
+        raise RuntimeError("curl_cffi not installed. pip install curl_cffi")
     last_exc = None
     for attempt in range(1, retries + 1):
-        for base in (_BASE, _BASE2):  # fallback host
+        for base in (_BASE, _BASE2):  # host fallback
             try:
                 r = _session().get(base + symbol, params=params, timeout=30)
                 if r.status_code == 200:
                     return _parse(symbol, r.json())
                 if r.status_code in (404, 400):
-                    return pd.DataFrame(columns=_OUT_COLS)  # delisted/non valido
+                    return pd.DataFrame(columns=_OUT_COLS)  # delisted/invalid
             except Exception as e:
                 last_exc = e
         if attempt < retries:
@@ -106,10 +106,10 @@ def _fetch_one(symbol: str, params: dict, *, retries: int = 3,
 
 def yahoo_batch(tickers: List[str], start: str, end: str, *,
                 workers: int = 8, retries: int = 3) -> Dict[str, pd.DataFrame]:
-    """Scarica OHLCV daily per piu' ticker; ritorna {symbol: frame OHLCV}.
+    """Download daily OHLCV for multiple tickers; returns {symbol: OHLCV frame}.
 
-    Drop-in di sources.yahoo.yahoo_batch ma via API chart diretta (no yfinance).
-    Parallelo (curl_cffi e' veloce); ogni thread ha la sua Session.
+    Drop-in for sources.yahoo.yahoo_batch but via the direct chart API (no yfinance).
+    Parallel (curl_cffi is fast); each thread has its own Session.
     """
     if not tickers:
         return {}
@@ -148,7 +148,7 @@ def yahoo_batch(tickers: List[str], start: str, end: str, *,
 
 def get_live_prices_batch(tickers: List[str], *, workers: int = 8
                           ) -> Dict[str, float]:
-    """Ultimo prezzo intraday per molti ticker via chart API 1m (no yfinance)."""
+    """Last intraday price for many tickers via the 1m chart API (no yfinance)."""
     if not tickers:
         return {}
     params = {"range": "1d", "interval": "1m", "includePrePost": "true"}
@@ -166,7 +166,7 @@ def get_live_prices_batch(tickers: List[str], *, workers: int = 8
                 res = (r.json().get("chart", {}).get("result") or [None])[0]
                 if not res:
                     continue
-                # prima prova meta.regularMarketPrice, poi ultimo close 1m
+                # first try meta.regularMarketPrice, then last 1m close
                 meta = res.get("meta", {})
                 p = meta.get("regularMarketPrice")
                 if p is None:

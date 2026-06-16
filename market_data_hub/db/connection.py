@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-connection.py — accesso centralizzato al database DuckDB.
+connection.py — centralized access to the DuckDB database.
 
-Il path del DB e' configurabile via settings.yaml o variabile d'ambiente
-MARKET_DATA_DB. Lo schema viene applicato (idempotente) alla prima apertura.
+The DB path is configurable via settings.yaml or the MARKET_DATA_DB environment
+variable. The schema is applied (idempotently) on first open.
 """
 from __future__ import annotations
 
@@ -14,7 +14,18 @@ from typing import Optional
 import duckdb
 
 _SCHEMA_PATH = Path(__file__).parent / "schema.sql"
-_DEFAULT_DB = r"D:\market_data\market_data.duckdb"
+
+
+def _default_db() -> str:
+    """Last-resort DB path when neither db_path, MARKET_DATA_DB nor settings.yaml
+    provide one. Windows keeps the historical D:\\market_data location; other
+    platforms fall back to a portable path under the user's home."""
+    if os.name == "nt":
+        return r"D:\market_data\market_data.duckdb"
+    return str(Path.home() / ".market_data" / "market_data.duckdb")
+
+
+_DEFAULT_DB = _default_db()
 
 
 def _resolve_db_path(db_path: Optional[str] = None) -> str:
@@ -23,7 +34,7 @@ def _resolve_db_path(db_path: Optional[str] = None) -> str:
     env = os.environ.get("MARKET_DATA_DB")
     if env:
         return env
-    # settings.yaml ha la precedenza sul default hard-coded
+    # settings.yaml takes precedence over the hard-coded default
     try:
         from market_data_hub.config_loader import get_settings
         s = get_settings()
@@ -35,7 +46,7 @@ def _resolve_db_path(db_path: Optional[str] = None) -> str:
 
 
 def apply_schema(con: duckdb.DuckDBPyConnection) -> None:
-    """Applica lo schema SQL (idempotente)."""
+    """Apply the SQL schema (idempotent)."""
     sql = _SCHEMA_PATH.read_text(encoding="utf-8")
     con.execute(sql)
 
@@ -43,16 +54,16 @@ def apply_schema(con: duckdb.DuckDBPyConnection) -> None:
 def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
              ) -> duckdb.DuckDBPyConnection:
     """
-    Apre (creando se assente) il database DuckDB e garantisce lo schema.
+    Open (creating if absent) the DuckDB database and ensure the schema.
 
-    read_only=True per i lettori (reader.py, diagnose.py) cosi' piu' processi
-    possono leggere in parallelo senza lock.
+    read_only=True for readers (reader.py, diagnose.py) so multiple processes
+    can read in parallel without locking.
     """
     path = _resolve_db_path(db_path)
     Path(path).parent.mkdir(parents=True, exist_ok=True)
 
     if read_only and not os.path.exists(path):
-        # un reader su DB inesistente: crealo una volta in scrittura
+        # a reader on a nonexistent DB: create it once in write mode
         tmp = duckdb.connect(path)
         apply_schema(tmp)
         tmp.close()

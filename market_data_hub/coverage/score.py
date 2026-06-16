@@ -2,14 +2,14 @@
 """
 score.py — coverage score 0-100, freq-aware.
 
-Porta fedelmente coverage_score() da macro_dashboard_v2_bundle/macro_dashboard.py.
-Composizione:
-    obs_component       (max 40) — osservazioni vs minimo atteso per freq
-    missing_component   (max 25) — completezza (1 - missing_pct)
-    freshness_component (max 25) — quanto e' recente l'ultimo dato vs tolleranza
-    priority_component  (max 10) — tier di importanza del simbolo
-La soglia di freshness scala con la frequenza, cosi' una serie annuale non viene
-penalizzata per un normale ritardo di ~12 mesi.
+Faithfully ports coverage_score() from macro_dashboard_v2_bundle/macro_dashboard.py.
+Composition:
+    obs_component       (max 40) — observations vs expected minimum per freq
+    missing_component   (max 25) — completeness (1 - missing_pct)
+    freshness_component (max 25) — how recent the last data point is vs tolerance
+    priority_component  (max 10) — importance tier of the symbol
+The freshness threshold scales with the frequency, so an annual series is not
+penalized for a normal delay of ~12 months.
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ def _base_freq(freq: Optional[str]) -> str:
 def coverage_score(obs_count: int, missing_pct: float,
                    latest_lag_days: Optional[float], priority: int,
                    freq: str) -> float:
-    """0-100. Vedi docstring del modulo."""
+    """0-100. See the module docstring."""
     if obs_count <= 0:
         return 0.0
     f = _base_freq(freq)

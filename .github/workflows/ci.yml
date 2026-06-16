@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        # Lean set sufficient for the offline test suite (no live data sources).
+        run: pip install pandas numpy duckdb pyyaml openpyxl pytest
+
+      - name: Validate config catalogs
+        run: python validate_config.py
+
+      - name: Byte-compile all modules
+        run: python -m compileall -q market_data_hub *.py
+
+      - name: Run tests
+        run: pytest -q

@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-make_report.py — genera un report (HTML + Markdown) con i risultati dell'ultimo
-download e le statistiche del database. Pensato per essere inviato via email.
+make_report.py — generates a report (HTML + Markdown) with the results of the last
+download and the database statistics. Intended to be sent by email.
 
-Uso:
-    python make_report.py                 # legge il DB di default
-    python make_report.py --db <path>     # DB specifico
-    python make_report.py --open          # apre l'HTML nel browser al termine
+Usage:
+    python make_report.py                 # reads the default DB
+    python make_report.py --db <path>     # specific DB
+    python make_report.py --open          # open the HTML in the browser when finished
 
 Output (in reports/):
-    market_data_report_YYYYMMDD.html      # versione email-ready
-    market_data_report_YYYYMMDD.md        # versione testo
+    market_data_report_YYYYMMDD.html      # email-ready version
+    market_data_report_YYYYMMDD.md        # text version
 """
 from __future__ import annotations
 
@@ -37,7 +37,7 @@ def collect(con) -> dict:
     d: dict = {}
     d["now"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
-    # volumi per tabella
+    # volumes per table
     tbl_stats = []
     for tbl, key, dcol in [("prices_daily", "symbol", "date"),
                            ("crypto_ohlcv", "symbol", "ts"),
@@ -52,7 +52,7 @@ def collect(con) -> dict:
     d["tables"] = tbl_stats
     d["total_rows"] = sum(t["rows"] for t in tbl_stats)
 
-    # ultimo run
+    # last run
     last = con.execute(
         "SELECT run_id, min(started_at) AS run_start, max(ended_at) AS run_end, "
         "count(*) AS calls, sum(rows_added) AS added, sum(rows_updated) AS updated, "
@@ -61,7 +61,7 @@ def collect(con) -> dict:
         "FROM download_log GROUP BY run_id ORDER BY run_start DESC LIMIT 1").fetch_df()
     d["last_run"] = last.iloc[0].to_dict() if not last.empty else {}
 
-    # esito ultimo run per sorgente
+    # last run outcome by source
     if not last.empty:
         rid = last.iloc[0]["run_id"]
         d["by_source"] = con.execute(
@@ -95,26 +95,26 @@ def collect(con) -> dict:
                     "last_date", "lag_days", "coverage_score", "status"]].head(15)
                   if not cov.empty else pd.DataFrame())
 
-    # --- freschezza: serie aggiornate vs ferme, per sorgente, con range date ---
+    # --- freshness: updated vs stalled series, per source, with date range ---
     if not cov.empty:
         c = cov.copy()
         c["last_date"] = pd.to_datetime(c["last_date"], errors="coerce")
         c["fresh"] = ~c["stalled"].astype(bool)
         fr = (c.groupby("source")
-              .agg(n_serie=("symbol", "count"),
-                   aggiornate=("fresh", "sum"),
-                   ferme=("stalled", "sum"),
-                   ultima_min=("last_date", "min"),
-                   ultima_max=("last_date", "max")).reset_index())
-        for col in ("ultima_min", "ultima_max"):
+              .agg(n_series=("symbol", "count"),
+                   updated=("fresh", "sum"),
+                   stalled=("stalled", "sum"),
+                   last_min=("last_date", "min"),
+                   last_max=("last_date", "max")).reset_index())
+        for col in ("last_min", "last_max"):
             fr[col] = fr[col].dt.strftime("%Y-%m-%d")
         d["freshness"] = fr
-        # ripartizione per anno dell'ultima osservazione
-        c["anno_ultimo"] = c["last_date"].dt.year
-        byyear = (c.groupby("anno_ultimo")
-                  .agg(n_serie=("symbol", "count")).reset_index()
-                  .sort_values("anno_ultimo", ascending=False))
-        byyear["anno_ultimo"] = byyear["anno_ultimo"].astype("Int64").astype(str)
+        # breakdown by year of the last observation
+        c["last_year"] = c["last_date"].dt.year
+        byyear = (c.groupby("last_year")
+                  .agg(n_series=("symbol", "count")).reset_index()
+                  .sort_values("last_year", ascending=False))
+        byyear["last_year"] = byyear["last_year"].astype("Int64").astype(str)
         d["by_year"] = byyear
     else:
         d["freshness"] = pd.DataFrame()
@@ -150,66 +150,66 @@ def render_html(d: dict) -> str:
  .kpi span{{font-size:11px;color:#555}}
  .ok{{color:#16a34a;font-weight:600}} .warn{{color:#d97706;font-weight:600}} .err{{color:#dc2626;font-weight:600}}
 </style></head><body>
-<h1>market_data_hub — Report download &amp; database</h1>
-<p style="color:#666">Generato: {d['now']}</p>
+<h1>market_data_hub — Download &amp; database report</h1>
+<p style="color:#666">Generated: {d['now']}</p>
 
 <div>
- <div class="kpi"><b>{d['total_rows']:,}</b><span>righe totali nel DB</span></div>
- <div class="kpi"><b>{sum(x['series'] for x in t)}</b><span>serie/strumenti</span></div>
- <div class="kpi"><b>{d['score_avg']}</b><span>coverage score medio</span></div>
- <div class="kpi"><b>{len(d['stalled'])}</b><span>serie ferme (stalled)</span></div>
+ <div class="kpi"><b>{d['total_rows']:,}</b><span>total rows in DB</span></div>
+ <div class="kpi"><b>{sum(x['series'] for x in t)}</b><span>series/instruments</span></div>
+ <div class="kpi"><b>{d['score_avg']}</b><span>average coverage score</span></div>
+ <div class="kpi"><b>{len(d['stalled'])}</b><span>stalled series</span></div>
 </div>
 
-<h2>Volumi per tabella</h2>
-<table class="t"><tr><th>Tabella</th><th>Righe</th><th>Serie</th><th>Da</th><th>A</th></tr>{rows_tbl}</table>
+<h2>Volumes per table</h2>
+<table class="t"><tr><th>Table</th><th>Rows</th><th>Series</th><th>From</th><th>To</th></tr>{rows_tbl}</table>
 
-<h2>Ultimo download</h2>
-<p>Run <code>{lr.get('run_id','—')}</code> &middot; {lr.get('calls',0)} chiamate &middot;
- <span class="ok">{int(lr.get('added',0) or 0):,} righe aggiunte</span> &middot;
- <span class="warn">{int(lr.get('empty',0) or 0)} vuote</span> &middot;
- <span class="err">{int(lr.get('errors',0) or 0)} errori</span></p>
-<h3 style="font-size:13px">Per sorgente</h3>
+<h2>Last download</h2>
+<p>Run <code>{lr.get('run_id','—')}</code> &middot; {lr.get('calls',0)} calls &middot;
+ <span class="ok">{int(lr.get('added',0) or 0):,} rows added</span> &middot;
+ <span class="warn">{int(lr.get('empty',0) or 0)} empty</span> &middot;
+ <span class="err">{int(lr.get('errors',0) or 0)} errors</span></p>
+<h3 style="font-size:13px">By source</h3>
 {_df_html(d['by_source'])}
 
-<h2>Freschezza per sorgente</h2>
-<p style="color:#666;font-size:12px">Serie aggiornate vs ferme e intervallo di ultima osservazione per ciascuna sorgente.</p>
+<h2>Freshness per source</h2>
+<p style="color:#666;font-size:12px">Updated vs stalled series and the range of the last observation for each source.</p>
 {_df_html(d.get('freshness', pd.DataFrame()))}
 
-<h2>Serie per anno dell'ultima osservazione</h2>
+<h2>Series by year of last observation</h2>
 {_df_html(d.get('by_year', pd.DataFrame()))}
 
 <h2>Coverage per asset class</h2>
 {_df_html(d['score_by_class'].round(1) if not d['score_by_class'].empty else d['score_by_class'])}
 
-<h2>15 serie con coverage piu' basso</h2>
+<h2>15 series with the lowest coverage</h2>
 {_df_html(d['worst'])}
 
-<h2>Serie ferme (stalled)</h2>
+<h2>Stalled series</h2>
 {_df_html(d['stalled'][['symbol','source','asset_class','freq_detected','last_date','lag_days','coverage_score']] if not d['stalled'].empty else d['stalled'])}
 
-<h2>Errori ultimo run</h2>
+<h2>Last run errors</h2>
 {_df_html(d['errors'])}
 
-<p style="color:#888;font-size:11px;margin-top:30px">market_data_hub &middot; report automatico</p>
+<p style="color:#888;font-size:11px;margin-top:30px">market_data_hub &middot; automatic report</p>
 </body></html>"""
 
 
 def render_md(d: dict) -> str:
-    lines = [f"# market_data_hub — Report download & DB", f"_Generato: {d['now']}_", ""]
-    lines += [f"- **Righe totali:** {d['total_rows']:,}",
-              f"- **Serie/strumenti:** {sum(x['series'] for x in d['tables'])}",
-              f"- **Coverage score medio:** {d['score_avg']}",
-              f"- **Serie ferme:** {len(d['stalled'])}", ""]
-    lines.append("## Volumi per tabella\n")
-    lines.append("| Tabella | Righe | Serie | Da | A |")
+    lines = [f"# market_data_hub — Download & DB report", f"_Generated: {d['now']}_", ""]
+    lines += [f"- **Total rows:** {d['total_rows']:,}",
+              f"- **Series/instruments:** {sum(x['series'] for x in d['tables'])}",
+              f"- **Average coverage score:** {d['score_avg']}",
+              f"- **Stalled series:** {len(d['stalled'])}", ""]
+    lines.append("## Volumes per table\n")
+    lines.append("| Table | Rows | Series | From | To |")
     lines.append("|---|---:|---:|---|---|")
     for x in d["tables"]:
         lines.append(f"| {x['table']} | {x['rows']:,} | {x['series']} | {x['first']} | {x['last']} |")
     lr = d["last_run"]
-    lines += ["", "## Ultimo download",
-              f"Run `{lr.get('run_id','—')}` — {lr.get('calls',0)} chiamate, "
-              f"{int(lr.get('added',0) or 0):,} righe aggiunte, "
-              f"{int(lr.get('empty',0) or 0)} vuote, {int(lr.get('errors',0) or 0)} errori.", ""]
+    lines += ["", "## Last download",
+              f"Run `{lr.get('run_id','—')}` — {lr.get('calls',0)} calls, "
+              f"{int(lr.get('added',0) or 0):,} rows added, "
+              f"{int(lr.get('empty',0) or 0)} empty, {int(lr.get('errors',0) or 0)} errors.", ""]
     if not d["by_source"].empty:
         try:
             lines.append(d["by_source"].to_markdown(index=False))
@@ -221,28 +221,28 @@ def render_md(d: dict) -> str:
 # ---------------------------------------------------------------- email sender
 
 def send_email(html_content: str, d: dict) -> bool:
-    """Invia il report HTML via SMTP. Ritorna True se inviato, False se saltato/errore."""
+    """Send the HTML report via SMTP. Returns True if sent, False if skipped/error."""
     cfg = get_settings().get("email", {})
     user = cfg.get("smtp_user", "").strip()
     pwd = cfg.get("smtp_password", "").strip()
     if not user or not pwd:
-        print("Email: smtp_user/smtp_password non configurati in settings.yaml — invio saltato")
+        print("Email: smtp_user/smtp_password not configured in settings.yaml — sending skipped")
         return False
 
     to_list = cfg.get("to", [])
     if isinstance(to_list, str):
         to_list = [to_list]
     if not to_list:
-        print("Email: nessun destinatario configurato — invio saltato")
+        print("Email: no recipient configured — sending skipped")
         return False
 
     lr = d.get("last_run", {})
     added = int(lr.get("added", 0) or 0)
     errors = int(lr.get("errors", 0) or 0)
-    status_tag = "OK" if errors == 0 else f"ATTENZIONE ({errors} errori)"
+    status_tag = "OK" if errors == 0 else f"WARNING ({errors} errors)"
     subject = (
         f"[market_data_hub] Report {d['now'][:10]} — "
-        f"{d['total_rows']:,} righe | {d['score_avg']} score | {status_tag}"
+        f"{d['total_rows']:,} rows | {d['score_avg']} score | {status_tag}"
     )
 
     msg = MIMEMultipart("alternative")
@@ -259,19 +259,19 @@ def send_email(html_content: str, d: dict) -> bool:
             srv.starttls()
             srv.login(user, pwd)
             srv.sendmail(user, to_list, msg.as_bytes())
-        print(f"Email inviata a {', '.join(to_list)}")
+        print(f"Email sent to {', '.join(to_list)}")
         return True
     except Exception as e:
-        print(f"Email ERRORE: {e}")
+        print(f"Email ERROR: {e}")
         return False
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Genera report download + statistiche DB")
+    p = argparse.ArgumentParser(description="Generate download report + DB statistics")
     p.add_argument("--db")
     p.add_argument("--open", action="store_true")
     p.add_argument("--send-email", action="store_true",
-                   help="Invia il report via email (config SMTP in settings.yaml)")
+                   help="Send the report by email (SMTP config in settings.yaml)")
     args = p.parse_args()
 
     REPORT_DIR.mkdir(exist_ok=True)
@@ -290,8 +290,8 @@ def main() -> int:
 
     print(f"Report HTML: {html_path}")
     print(f"Report MD:   {md_path}")
-    print(f"Righe totali: {d['total_rows']:,} | Serie: "
-          f"{sum(x['series'] for x in d['tables'])} | Score medio: {d['score_avg']}")
+    print(f"Total rows: {d['total_rows']:,} | Series: "
+          f"{sum(x['series'] for x in d['tables'])} | Average score: {d['score_avg']}")
     if args.send_email:
         send_email(html_content, d)
     if args.open:

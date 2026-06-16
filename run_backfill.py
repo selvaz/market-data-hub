@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-run_backfill.py — caricamento storico iniziale.
+run_backfill.py — initial historical load.
 
-Forza il download dalle date di backfill_start in settings.yaml ignorando
-l'incrementale. Le date di partenza: Yahoo 2010, FRED 2000, Binance 2018.
-Idempotente: l'upsert sostituisce eventuali righe gia' presenti, quindi e'
-sicuro rilanciarlo se interrotto.
+Forces the download from the backfill_start dates in settings.yaml, ignoring
+the incremental logic. Start dates: Yahoo 2010, FRED 2000, Binance 2018.
+Idempotent: the upsert replaces any rows already present, so it is
+safe to re-run if interrupted.
 
-Uso:
-    python run_backfill.py                       # tutte le sorgenti
+Usage:
+    python run_backfill.py                       # all sources
     python run_backfill.py --sources yahoo
     python run_backfill.py --sources binance --start 2020-01-01
 """
@@ -27,12 +27,12 @@ import uuid  # noqa: E402
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Backfill storico market_data_hub")
+    p = argparse.ArgumentParser(description="market_data_hub historical backfill")
     p.add_argument("--sources", nargs="+",
                    choices=["yahoo", "fred", "binance", "macro_panel"],
                    default=["yahoo", "fred", "binance", "macro_panel"])
-    p.add_argument("--start", help="override start per TUTTE le sorgenti")
-    p.add_argument("--db", help="path DB DuckDB")
+    p.add_argument("--start", help="override start date for ALL sources")
+    p.add_argument("--db", help="DuckDB DB path")
     args = p.parse_args()
 
     cfg = get_settings()
@@ -52,9 +52,9 @@ def main() -> int:
             sy = int((args.start or cfg["backfill_start"]["fred"])[:4])
             run_macro_panel(con, cfg, run_id, start_year=sy)
 
-        _log("Ricostruzione coverage_report...")
+        _log("Rebuilding coverage_report...")
         n = rebuild_coverage(con, run_id)
-        _log(f"coverage_report: {n} serie")
+        _log(f"coverage_report: {n} series")
     finally:
         con.close()
     return 0

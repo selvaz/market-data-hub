@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-_ssl_bootstrap.py — risolve la verifica SSL su reti con MITM/proxy aziendale.
+_ssl_bootstrap.py — fixes SSL verification on networks with corporate MITM/proxy.
 
-Sul PC dell'utente il Python di sistema non riesce a verificare i certificati
-(`unable to get local issuer certificate`) perche' il traffico HTTPS e' firmato
-da una root CA aziendale presente nel cert store di Windows ma assente da
-certifi. yfinance usa curl_cffi (non la stdlib ssl), quindi non basta
-truststore: serve un bundle PEM esplicito puntato via env var.
+On the user's PC the system Python cannot verify the certificates
+(`unable to get local issuer certificate`) because the HTTPS traffic is signed
+by a corporate root CA present in the Windows cert store but absent from
+certifi. yfinance uses curl_cffi (not the stdlib ssl), so truststore alone is
+not enough: an explicit PEM bundle pointed to via env var is required.
 
-Strategia: costruiamo una sola volta un bundle = certifi + root/CA di Windows e
-lo esponiamo a tutte le librerie (requests, curl_cffi, urllib/stdlib) tramite
+Strategy: we build a bundle once = certifi + Windows root/CA and expose it to
+all the libraries (requests, curl_cffi, urllib/stdlib) via
 SSL_CERT_FILE / REQUESTS_CA_BUNDLE / CURL_CA_BUNDLE.
 
-Import-safe e idempotente: chiamare ensure_ssl() all'avvio degli entry point,
-PRIMA di importare yfinance/requests.
+Import-safe and idempotent: call ensure_ssl() at the startup of the entry
+points, BEFORE importing yfinance/requests.
 """
 from __future__ import annotations
 
@@ -45,8 +45,8 @@ def _build_bundle() -> bool:
 
 
 def ensure_ssl(force_rebuild: bool = False) -> str | None:
-    """Garantisce un CA bundle valido e configura le env var. Ritorna il path."""
-    # solo su Windows c'e' enum_certificates; altrove certifi basta di solito
+    """Ensure a valid CA bundle and configure the env vars. Returns the path."""
+    # only Windows has enum_certificates; elsewhere certifi is usually enough
     if force_rebuild or not _BUNDLE.exists():
         if not _build_bundle() and not _BUNDLE.exists():
             return None
@@ -55,7 +55,7 @@ def ensure_ssl(force_rebuild: bool = False) -> str | None:
     for var in ("SSL_CERT_FILE", "REQUESTS_CA_BUNDLE", "CURL_CA_BUNDLE"):
         os.environ.setdefault(var, path)
 
-    # belt-and-suspenders: usa anche il cert store di Windows per la stdlib ssl
+    # belt-and-suspenders: also use the Windows cert store for the stdlib ssl
     try:
         import truststore
         truststore.inject_into_ssl()

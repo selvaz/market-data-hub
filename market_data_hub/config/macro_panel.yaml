@@ -742,7 +742,7 @@ indicators:
   dataset: WS_DSR
   code: Q.{iso2}.P
   orientation: -1
-  dalio_role: 'Fase ciclo debito: picco DSR = top/depression'
+  dalio_role: 'Debt-cycle phase: DSR peak = top/depression'
 - id: bis_credit_gap
   name: Credit-to-GDP gap - private (BIS, HP)
   pillar: debt_cycle
@@ -753,7 +753,7 @@ indicators:
   dataset: WS_CREDIT_GAP
   code: Q.{iso2}.P.A.C
   orientation: -1
-  dalio_role: Bubble se > +10pp (soglia archetipale Dalio)
+  dalio_role: Bubble if > +10pp (Dalio archetypal threshold)
 - id: bis_policy_rate
   name: Central bank policy rate (BIS)
   pillar: liquidity
@@ -765,5 +765,5 @@ indicators:
   code: M.{iso2}
   bis_country_dim: REF_AREA
   orientation: 0
-  dalio_role: Tasso nominale (nom_growth vs nom_rate); ~0 = pushing on a string
+  dalio_role: Nominal rate (nom_growth vs nom_rate); ~0 = pushing on a string
   euro_aggregate: XM

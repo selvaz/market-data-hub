@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-base.py — contratto comune dei moduli sorgente.
+base.py — common contract for the source modules.
 
-Ogni sorgente espone funzioni che ritornano DataFrame nel formato canonico
-della tabella di destinazione, piu' una SourceResult per il logging.
+Each source exposes functions that return DataFrames in the canonical format
+of the destination table, plus a SourceResult for logging.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import pandas as pd
 
 @dataclass
 class SourceResult:
-    """Esito standardizzato del download di un singolo simbolo/serie."""
+    """Standardized outcome of downloading a single symbol/series."""
     symbol: str
     source: str
     status: str = "ok"            # 'ok' | 'error' | 'empty' | 'skipped'

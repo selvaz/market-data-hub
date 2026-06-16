@@ -285,7 +285,7 @@ function lineChart(series,W,H,interactive,id){
  const last=series[series.length-1];
  const dot='<circle cx="'+sx(last[0]).toFixed(1)+'" cy="'+sy(last[1]).toFixed(1)+'" r="3" fill="#1d4ed8"/>';
  let pts='';
- if(interactive){ // dati per l'hover
+ if(interactive){ // data for the hover
    pts=series.map(p=>'<circle class="hp" cx="'+sx(p[0]).toFixed(1)+'" cy="'+sy(p[1]).toFixed(1)+'" r="9" fill="transparent" data-y="'+p[0]+'" data-v="'+p[1]+'"/>').join('');
  }
  const cl=interactive?' onmousemove="hoverChart(event)" onmouseleave="document.getElementById(\'hx\').style.display=\'none\'"':'';

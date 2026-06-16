@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-fred.py — sorgente FRED (St. Louis Fed) per serie macro single-value.
+fred.py — FRED (St. Louis Fed) source for single-value macro series.
 
-Usa l'API ufficiale JSON se e' configurata una API key, altrimenti l'endpoint
-pubblico CSV (fredgraph.csv) che non richiede chiave. Tutte le serie macro del
-progetto (tassi US, CPI, GDP, credit spreads, e le serie area-euro replicate da
-FRED) passano da qui.
+Uses the official JSON API if an API key is configured, otherwise the public
+CSV endpoint (fredgraph.csv) which requires no key. All of the project's macro
+series (US rates, CPI, GDP, credit spreads, and the euro-area series replicated
+from FRED) go through here.
 
-Output canonico per macro_series:
+Canonical output for macro_series:
   [date, series_id, value, series_name, unit, frequency, source, country]
 """
 from __future__ import annotations
@@ -25,8 +25,8 @@ _CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 
 def _http_get(url: str, params: dict, timeout: int, retries: int,
               base_sleep: float) -> requests.Response:
-    # Connection: close evita il riuso di connessioni keep-alive "morte"
-    # attraverso proxy aziendali (causa frequente di RemoteDisconnected).
+    # Connection: close avoids reusing "dead" keep-alive connections
+    # through corporate proxies (a frequent cause of RemoteDisconnected).
     headers = {"User-Agent": "market-data-hub/0.1", "Connection": "close"}
     last = None
     for attempt in range(retries):
@@ -46,7 +46,7 @@ def fetch_fred(series_id: str, start: str, end: str, *,
                api_key: Optional[str] = None, timeout: int = 30,
                retries: int = 3, base_sleep: float = 1.0,
                meta: Optional[dict] = None) -> pd.DataFrame:
-    """Scarica una serie FRED tra start ed end (inclusi)."""
+    """Download a FRED series between start and end (inclusive)."""
     meta = meta or {}
 
     if api_key:
@@ -61,7 +61,7 @@ def fetch_fred(series_id: str, start: str, end: str, *,
             return _empty()
         df = df[["date", "value"]]
     else:
-        # endpoint pubblico CSV (nessuna chiave)
+        # public CSV endpoint (no key)
         params = {"id": series_id, "cosd": start, "coed": end}
         r = _http_get(_CSV_URL, params, timeout, retries, base_sleep)
         df = pd.read_csv(StringIO(r.text))
@@ -78,7 +78,7 @@ def fetch_fred(series_id: str, start: str, end: str, *,
     df["series_id"] = series_id
     df["series_name"] = meta.get("name", series_id)
     df["unit"] = meta.get("unit")
-    df["frequency"] = None  # inferita dal coverage engine
+    df["frequency"] = None  # inferred by the coverage engine
     df["source"] = "fred"
     df["country"] = meta.get("country", "US")
     return df[["date", "series_id", "value", "series_name", "unit",

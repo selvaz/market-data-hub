@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-worldbank.py — sorgente World Bank (WDI / WGI / IDS) per il panel cross-country.
+worldbank.py — World Bank (WDI / WGI / IDS) source for the cross-country panel.
 
-Porta fetch_worldbank() da macro_dashboard_v2_bundle. Una chiamata REST per
-(indicatore, paese). api_source_id seleziona il database WB: 2=WDI, 3=WGI.
+Ports fetch_worldbank() from macro_dashboard_v2_bundle. One REST call per
+(indicator, country). api_source_id selects the WB database: 2=WDI, 3=WGI.
 
-Output canonico per macro_panel:
+Canonical output for macro_panel:
   [date, country_iso3, indicator_id, value, indicator_name, pillar, orientation,
    source, provider_dataset, provider_code, unit, frequency, status]
 """
@@ -55,20 +55,20 @@ def fetch_worldbank(spec: Dict, countries: List[Dict], *,
                     timeout: int = 30, retries: int = 3, base_sleep: float = 1.0,
                     batch_size: int = 70) -> pd.DataFrame:
     """
-    Scarica un indicatore WB per TUTTI i paesi richiesti.
+    Download a WB indicator for ALL requested countries.
 
-    L'API World Bank accetta piu' paesi in una sola chiamata
-    (country/USA;ITA;BRA/...), quindi facciamo 1-2 chiamate per indicatore
-    invece di una per paese: enorme riduzione di latenza dietro proxy lenti.
+    The World Bank API accepts multiple countries in a single call
+    (country/USA;ITA;BRA/...), so we make 1-2 calls per indicator instead of one
+    per country: a huge latency reduction behind slow proxies.
     """
     end_year = end_year or datetime.now().year
     code = spec["code"]
-    # mappa wb_code -> iso3 per riassegnare i paesi nella risposta
+    # map wb_code -> iso3 to reassign countries in the response
     wb_to_iso3 = {(c.get("wb") or c["iso3"]): c["iso3"] for c in countries}
     wb_codes = list(wb_to_iso3.keys())
     rows = []
 
-    # batch di paesi (l'URL ha un limite di lunghezza; 50 e' sicuro)
+    # batch of countries (the URL has a length limit; 50 is safe)
     for i in range(0, len(wb_codes), batch_size):
         chunk = wb_codes[i:i + batch_size]
         country_path = ";".join(chunk)
@@ -104,7 +104,7 @@ def fetch_worldbank(spec: Dict, countries: List[Dict], *,
                     "provider_code": code, "unit": spec.get("unit"),
                     "frequency": spec.get("freq", "A"), "status": "ok",
                 })
-            # paginazione
+            # pagination
             pages = int(header.get("pages", 1) or 1)
             if page >= pages:
                 break
@@ -112,7 +112,7 @@ def fetch_worldbank(spec: Dict, countries: List[Dict], *,
 
     if not rows:
         return pd.DataFrame(columns=_COLS)
-    # alcuni paesi possono mancare nel batch: teniamo solo quelli richiesti
+    # some countries may be missing from the batch: keep only the requested ones
     valid = {c["iso3"] for c in countries}
     df = pd.DataFrame(rows)
     df = df[df["country_iso3"].isin(valid)]
