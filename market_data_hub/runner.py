@@ -27,7 +27,7 @@ from market_data_hub.config_loader import (
     get_settings, get_yahoo_tickers, get_fred_series,
     get_countries, get_macro_panel_specs)
 from market_data_hub.db.connection import get_conn
-from market_data_hub.db.upsert import upsert, log_run
+from market_data_hub.db.upsert import upsert, log_run, record_vintage
 from market_data_hub.coverage.report import rebuild_coverage
 from market_data_hub.sources import yahoo as yh
 from market_data_hub.sources import fred as fr
@@ -149,6 +149,7 @@ def run_fred(con, cfg: dict, run_id: str, *, start_override: Optional[str] = Non
                         status="empty", error_msg=None, duration_sec=0)
             else:
                 added, updated = upsert(con, "macro_series", df)
+                record_vintage(con, "macro_series", df, _today())
                 log_run(con, run_id=run_id, started_at=st, source="fred",
                         symbol=sid, rows_added=added, rows_updated=updated,
                         status="ok", error_msg=None, duration_sec=0)
@@ -255,6 +256,7 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
                     duration_sec=0)
             return
         added, updated = upsert(con, "macro_panel", df)
+        record_vintage(con, "macro_panel", df, _today())
         if status == "fallback":
             n_fb += 1
         else:

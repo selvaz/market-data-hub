@@ -124,7 +124,8 @@ mirror the parquet/CSV layout the projects already used.
 | Function | Returns |
 |----------|---------|
 | `read_prices(symbols, start, end, field="adj_close", wide=True, include_live=False)` | wide frame (date × symbol) of `field`, or long OHLCV when `wide=False` |
-| `read_macro(series_ids, start, end, wide=True)` | wide frame (date × series_id) of macro values |
+| `read_macro(series_ids, start, end, wide=True, asof=None)` | wide frame (date × series_id) of macro values; `asof=<date>` reads the point-in-time vintage (value as known then) |
+| `read_macro_panel(indicators, countries, start, end, wide=False, asof=None)` | cross-country panel; `wide=True` pivots a single indicator by country; `asof=<date>` for point-in-time |
 | `read_crypto(symbols, timeframe="1h", start, end)` | long OHLCV from `crypto_ohlcv` |
 | `get_coverage(symbols=None)` | the `coverage_report` table (quality per series) |
 | `get_stalled()` | only series flagged `stalled` |
@@ -168,6 +169,7 @@ btc = read_crypto("BTCUSDT", "1h", start="2024-01-01")
 |----------|---------|
 | `db.connection.get_conn(db_path=None, read_only=False)` | open DuckDB, apply schema, resolve path from settings/env |
 | `db.upsert.upsert(con, table, df)` | atomic `INSERT OR REPLACE`; returns `(added, updated)` |
+| `db.upsert.record_vintage(con, table, df, vintage_date)` | append-on-change to `{table}_vintage` for point-in-time history (macro_series, macro_panel) |
 | `db.upsert.log_run(con, …)` | append one row to `download_log` |
 
 ---
