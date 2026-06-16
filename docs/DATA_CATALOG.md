@@ -4,7 +4,7 @@
 > frequency, typical update lag, history depth, and which table/column holds it.
 > For the engine and DB internals see [ARCHITECTURE.md](ARCHITECTURE.md).
 
-Totals: **111 Yahoo symbols** + **38 FRED series** + **6 crypto × 3 timeframes**.
+Totals: **111 Yahoo symbols** + **45 FRED series** + **6 crypto × 3 timeframes**.
 
 Legend — *Stalled-after* is the freshness threshold from the coverage engine:
 beyond it a series is flagged `stalled`. *Typical lag* is how old the newest
@@ -92,16 +92,19 @@ VNQ, VNQI
 - **Access:** official API with key (public CSV blocked by proxy — see notes)
 
 ### US rates & curve — daily (lag 1–2 d, stalled-after 3 d)
-DGS3MO, DGS2, DGS10, DGS30, T10Y2Y, T10YIE, T5YIE, EFFR, VIXCLS
+DGS3MO, DGS2, DGS10, DGS30, T10Y2Y, T10YIE, T5YIE, T5YIFR (5y5y fwd inflation),
+DFII5, DFII10 (TIPS real yields), EFFR, VIXCLS
 
 ### US credit — daily/weekly
-BAMLC0A0CM (IG OAS), BAMLH0A0HYM2 (HY OAS), AAA, BAA, NFCI (weekly), STLFSI4 (weekly)
+BAMLC0A0CM (IG OAS), BAMLC0A4CBBB (BBB OAS), BAMLH0A0HYM2 (HY OAS),
+BAMLH0A3HYC (CCC & lower OAS), AAA, BAA, NFCI (weekly), STLFSI4 (weekly)
 
 ### US activity & prices — monthly (lag 15–45 d, stalled-after 45 d)
 CPIAUCSL, CPILFESL, PCEPI, PCEPILFE, INDPRO, UNRATE, PAYEMS, HOUST, RSAFS
 
-### US money / Fed — monthly / weekly
-M2SL (monthly), WALCL (weekly)
+### US money / Fed / liquidity — monthly / weekly / daily
+M2SL (monthly), WALCL (weekly), WTREGEN (TGA, weekly), RRPONTSYD (overnight RRP, daily)
+— net liquidity ≈ WALCL − WTREGEN − RRPONTSYD
 
 ### US GDP — quarterly (lag 30–90 d, stalled-after 120 d)
 GDP, GDPC1

@@ -20,7 +20,7 @@ pipeline.
 |----------|------|---------|-----------|
 | Yahoo Finance | 111 symbols (ETFs, equity, FX, VIX indices, daily crypto) — OHLCV + adj_close | `prices_daily` | daily |
 | Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
-| FRED | 38 macro series (US/EA rates, CPI, GDP, credit spreads, ...) | `macro_series` | D/M/Q |
+| FRED | 45 macro series (US/EA rates, real yields, CPI, GDP, credit spreads, financial-conditions & liquidity) | `macro_series` | D/M/Q |
 | World Bank + IMF + BIS | 69 cross-country indicators (WDI/WGI/WEO/BIS) × 64 countries | `macro_panel` | annual |
 | Ken French Data Library | Fama-French 5 factors + momentum (Mkt-RF, SMB, HML, RMW, CMA, Mom, RF) | `factor_returns` | D/M |
 
@@ -100,7 +100,7 @@ market_data_hub/
   sources/    yahoo.py  binance.py  fred.py  base.py
   coverage/   freq_detector  stalled_detector  gap_detector  quality_checks  score  report
   db/         schema.sql  connection.py  upsert.py
-  config/     tickers.yaml (111)  macro_series.yaml (38)  settings.yaml
+  config/     tickers.yaml (111)  macro_series.yaml (45)  settings.yaml
   reader.py   config_loader.py  runner.py  _ssl_bootstrap.py
 run_daily.py  run_backfill.py  diagnose.py  setup_scheduler.ps1
 ```

@@ -227,3 +227,45 @@ fred:
   name: 'FX | USD | Trade Weighted US Dollar Index: Broad'
   priority: 2
   country: US
+- symbol: DFII10
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 10-Year TIPS Real Yield
+  priority: 2
+  country: US
+- symbol: DFII5
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 5-Year TIPS Real Yield
+  priority: 2
+  country: US
+- symbol: T5YIFR
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 5Y5Y Forward Inflation Expectation
+  priority: 2
+  country: US
+- symbol: WTREGEN
+  asset_class: MACRO
+  area: USA
+  name: LIQ | US | Treasury General Account (net liquidity)
+  priority: 2
+  country: US
+- symbol: RRPONTSYD
+  asset_class: MACRO
+  area: USA
+  name: LIQ | US | Overnight Reverse Repo (RRP, net liquidity)
+  priority: 2
+  country: US
+- symbol: BAMLC0A4CBBB
+  asset_class: MACRO
+  area: USA
+  name: CREDIT | US | ICE BofA BBB Corporate OAS
+  priority: 2
+  country: US
+- symbol: BAMLH0A3HYC
+  asset_class: MACRO
+  area: USA
+  name: CREDIT | US | ICE BofA CCC & Lower HY OAS
+  priority: 2
+  country: US
