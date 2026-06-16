@@ -60,6 +60,11 @@ factors:
   enabled: true
   datasets: ["FF5_daily", "MOM_daily"]   # keys from sources/factors.py CATALOG
 
+# --- cross-country macro panel ---
+macro_panel:
+  select_best_source: false   # true = fetch primary+fallback, keep wider country coverage
+                              # (costs one extra API call per indicator that has a fallback)
+
 # --- live price injection (intraday) ---
 live:
   enabled: true

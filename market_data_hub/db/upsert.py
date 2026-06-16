@@ -43,6 +43,12 @@ _COLUMNS = {
         "date", "factor_set", "factor", "value", "frequency", "source",
         "updated_at",
     ],
+    "macro_panel_coverage": [
+        "indicator_id", "pillar", "source", "n_sources", "frequency",
+        "freq_detected", "n_countries", "n_countries_total", "coverage_pct",
+        "first_date", "last_date", "lag_days", "stalled", "obs_count",
+        "status", "last_run_id", "updated_at",
+    ],
 }
 
 _PK = {
@@ -52,6 +58,7 @@ _PK = {
     "macro_panel": ["date", "country_iso3", "indicator_id"],
     "coverage_report": ["symbol", "source"],
     "factor_returns": ["date", "factor_set", "factor"],
+    "macro_panel_coverage": ["indicator_id"],
 }
 
 

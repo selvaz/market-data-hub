@@ -129,6 +129,7 @@ mirror the parquet/CSV layout the projects already used.
 | `read_crypto(symbols, timeframe="1h", start, end)` | long OHLCV from `crypto_ohlcv` |
 | `read_factors(factors, factor_set, start, end, wide=True)` | Fama-French / momentum factor returns from `factor_returns` |
 | `get_coverage(symbols=None)` | the `coverage_report` table (quality per series) |
+| `get_macro_panel_coverage()` | cross-country availability per macro_panel indicator (`macro_panel_coverage`) |
 | `get_stalled()` | only series flagged `stalled` |
 | `get_latest(symbol)` | last close/adj_close + lag_days + coverage_score |
 
@@ -163,6 +164,7 @@ btc = read_crypto("BTCUSDT", "1h", start="2024-01-01")
 | `coverage.quality_checks.check_prices(df)` | flags: zero price, negative, adj/close ratio anomaly |
 | `coverage.score.coverage_score(obs, missing, lag, priority, freq)` | composite 0–100 |
 | `coverage.report.rebuild_coverage(con, run_id)` | rebuild the whole `coverage_report` table |
+| `coverage.report.rebuild_macro_panel_coverage(con, run_id, n_countries_total)` | score cross-country availability into `macro_panel_coverage` |
 
 ### 4.4 DB layer
 

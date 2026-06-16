@@ -14,7 +14,8 @@ import pandas as pd
 from market_data_hub.db.connection import get_conn
 from market_data_hub.db.upsert import upsert
 from market_data_hub import reader as R
-from market_data_hub.coverage.report import rebuild_coverage
+from market_data_hub.coverage.report import (
+    rebuild_coverage, rebuild_macro_panel_coverage)
 from market_data_hub.dalio import run_dalio
 from market_data_hub.classify import classify_countries
 
@@ -61,11 +62,18 @@ def test_full_pipeline(tmp_db):
     con = get_conn()
     _seed(con)
     cov_rows = rebuild_coverage(con, "testrun")
+    panel_cov = rebuild_macro_panel_coverage(con, "testrun", n_countries_total=10)
     con.commit()
     con.close()
 
-    # 2 yahoo + 1 fred + 1 crypto + 18 panel indicators = 22 coverage rows
-    assert cov_rows == 22
+    # coverage_report now holds only per-symbol series: 2 yahoo + 1 fred + 1 crypto
+    assert cov_rows == 4
+    # macro_panel scored separately, cross-country: 18 indicators in the seed
+    assert panel_cov == 18
+    mpc = R.get_macro_panel_coverage()
+    assert len(mpc) == 18
+    assert (mpc["n_countries"] == 3).all()          # USA/ITA/CHE seeded
+    assert (mpc["coverage_pct"] == 30.0).all()       # 3 / 10
 
     # readers (read-only handles, opened after the writer is closed)
     assert R.read_prices(["SPY", "^VIX"]).shape == (40, 2)
@@ -73,7 +81,7 @@ def test_full_pipeline(tmp_db):
     assert R.read_crypto("BTCUSDT", "1h").shape[0] == 48
     assert R.read_macro_panel("public_debt_gdp", wide=True).shape == (16, 3)
     assert "coverage_score" in R.get_latest("SPY")
-    assert R.get_coverage().shape == (22, 18)
+    assert R.get_coverage().shape == (4, 18)
     assert not R.get_stalled().empty   # view resolves
 
     # analytics

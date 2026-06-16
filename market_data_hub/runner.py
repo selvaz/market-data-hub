@@ -28,7 +28,8 @@ from market_data_hub.config_loader import (
     get_countries, get_macro_panel_specs)
 from market_data_hub.db.connection import get_conn
 from market_data_hub.db.upsert import upsert, log_run, record_vintage
-from market_data_hub.coverage.report import rebuild_coverage
+from market_data_hub.coverage.report import (
+    rebuild_coverage, rebuild_macro_panel_coverage)
 from market_data_hub.sources import yahoo as yh
 from market_data_hub.sources import fred as fr
 from market_data_hub.sources import binance as bn
@@ -237,6 +238,7 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
     sy = start_year or int(cfg["backfill_start"]["fred"][:4])
     imf_sleep = cfg.get("parallelism", {}).get("imf_sleep", 0.5)
     wb_workers = cfg.get("parallelism", {}).get("wb_workers", 5)
+    select_best = cfg.get("macro_panel", {}).get("select_best_source", False)
 
     # World Bank indicators are downloaded in parallel (concurrent fetches);
     # all the other sources (IMF, BIS) are sequential and spaced out.
@@ -269,7 +271,8 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
     # --- WB in parallel: concurrent fetch, serialized upsert ---
     def _fetch_wb(spec):
         st = datetime.now(timezone.utc)
-        df, _src, status = mp.fetch_indicator(spec, countries, start_year=sy, http=http)
+        df, _src, status = mp.fetch_indicator(spec, countries, start_year=sy, http=http,
+                                              select_best=select_best)
         return spec, df, status, st
 
     with ThreadPoolExecutor(max_workers=wb_workers) as ex:
@@ -296,7 +299,8 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
         st = datetime.now(timezone.utc)
         time.sleep(imf_sleep)
         try:
-            df, _src, status = mp.fetch_indicator(spec, countries, start_year=sy, http=http)
+            df, _src, status = mp.fetch_indicator(spec, countries, start_year=sy, http=http,
+                                              select_best=select_best)
             _upsert_result(spec, df, status, st)
         except Exception as ex:
             n_empty += 1
@@ -419,6 +423,9 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
         _log("Rebuilding coverage_report...")
         n = rebuild_coverage(con, run_id)
         _log(f"coverage_report: {n} series")
+        npc = rebuild_macro_panel_coverage(con, run_id, len(get_countries()))
+        if npc:
+            _log(f"macro_panel_coverage: {npc} indicators scored cross-country")
 
         # stalled alert
         st = con.execute(
