@@ -26,6 +26,44 @@ def _con(db_path: Optional[str]):
     return get_conn(db_path, read_only=True)
 
 
+def _asof_query(table: str, part_keys: List[str], filters: dict, asof: str,
+                start: Optional[str], end: Optional[str]):
+    """Build the (sql, params) for a point-in-time read of a *_vintage table:
+    for each partition (part_keys) keep the row with the greatest
+    vintage_date <= asof, then apply the date window. ``filters`` maps a column
+    to a list of allowed values."""
+    sel = ", ".join(part_keys + ["value"])
+    clauses, params = ["vintage_date <= ?"], [asof]
+    for col, vals in filters.items():
+        clauses.append(f"{col} IN (" + ",".join(["?"] * len(vals)) + ")")
+        params += list(vals)
+    inner = (f"SELECT {sel}, row_number() OVER (PARTITION BY {', '.join(part_keys)} "
+             f"ORDER BY vintage_date DESC) AS rn FROM {table} "
+             f"WHERE {' AND '.join(clauses)}")
+    outer = ["rn = 1"]
+    if start:
+        outer.append("date >= ?"); params.append(start)
+    if end:
+        outer.append("date <= ?"); params.append(end)
+    return (f"SELECT {sel} FROM ({inner}) t WHERE {' AND '.join(outer)} "
+            f"ORDER BY {', '.join(part_keys)}"), params
+
+
+def _read_asof(con, table: str, id_col: str, ids: List[str],
+               start: Optional[str], end: Optional[str], wide: bool,
+               asof: str) -> pd.DataFrame:
+    """Point-in-time macro_series read (one id column, pivoted by it when wide)."""
+    q, params = _asof_query(table, ["date", id_col], {id_col: ids}, asof, start, end)
+    df = con.execute(q, params).fetch_df()
+    if not wide:
+        return df
+    if df.empty:
+        return pd.DataFrame()
+    out = df.pivot_table(index="date", columns=id_col, values="value", aggfunc="last")
+    out.index = pd.to_datetime(out.index)
+    return out.sort_index()
+
+
 def read_prices(symbols: Union[str, List[str]], start: Optional[str] = None,
                 end: Optional[str] = None, field: str = "adj_close",
                 wide: bool = True, include_live: bool = False,
@@ -67,12 +105,22 @@ def read_prices(symbols: Union[str, List[str]], start: Optional[str] = None,
 
 def read_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,
                end: Optional[str] = None, wide: bool = True,
+               asof: Optional[str] = None,
                db_path: Optional[str] = None) -> pd.DataFrame:
-    """Macro series. wide=True -> date index, series_id columns."""
+    """Macro series. wide=True -> date index, series_id columns.
+
+    asof=<YYYY-MM-DD> -> point-in-time read from macro_series_vintage: the value
+    as it was known on that date (greatest vintage_date <= asof), avoiding
+    revision look-ahead in backtests. Without asof, the latest values are used.
+    """
     if isinstance(series_ids, str):
         series_ids = [series_ids]
     con = _con(db_path)
     try:
+        if asof:
+            return _read_asof(
+                con, "macro_series_vintage", "series_id", series_ids,
+                start, end, wide, asof)
         clauses = ["series_id IN (" + ",".join(["?"] * len(series_ids)) + ")"]
         params: list = list(series_ids)
         if start:
@@ -123,16 +171,37 @@ def read_crypto(symbols: Union[str, List[str]], timeframe: str = "1h",
 def read_macro_panel(indicators: Union[str, List[str]],
                      countries: Optional[Union[str, List[str]]] = None,
                      start: Optional[str] = None, end: Optional[str] = None,
-                     wide: bool = False, db_path: Optional[str] = None) -> pd.DataFrame:
+                     wide: bool = False, asof: Optional[str] = None,
+                     db_path: Optional[str] = None) -> pd.DataFrame:
     """
-    Cross-country macro panel (World Bank / IMF).
+    Cross-country macro panel (World Bank / IMF / BIS).
     wide=False -> long format (date, country_iso3, indicator_id, value, ...).
     wide=True  -> date×country pivot for a SINGLE indicator.
+    asof=<YYYY-MM-DD> -> point-in-time read from macro_panel_vintage (value as
+    known on that date), avoiding revision look-ahead in backtests.
     """
     if isinstance(indicators, str):
         indicators = [indicators]
+    if isinstance(countries, str):
+        countries = [countries]
     con = _con(db_path)
     try:
+        if asof:
+            filters = {"indicator_id": indicators}
+            if countries:
+                filters["country_iso3"] = countries
+            q, params = _asof_query(
+                "macro_panel_vintage", ["date", "country_iso3", "indicator_id"],
+                filters, asof, start, end)
+            df = con.execute(q, params).fetch_df()
+            if wide and not df.empty:
+                if len(indicators) != 1:
+                    raise ValueError("wide=True requires a single indicator")
+                out = df.pivot_table(index="date", columns="country_iso3",
+                                     values="value", aggfunc="last")
+                out.index = pd.to_datetime(out.index)
+                return out.sort_index()
+            return df
         clauses = ["indicator_id IN (" + ",".join(["?"] * len(indicators)) + ")"]
         params: list = list(indicators)
         if countries:

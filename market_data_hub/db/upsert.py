@@ -97,6 +97,56 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
     return added, updated
 
 
+# Revisable tables that carry a point-in-time vintage history:
+#   table -> (key columns, vintage table)
+_VINTAGE = {
+    "macro_series": (["date", "series_id"], "macro_series_vintage"),
+    "macro_panel": (["date", "country_iso3", "indicator_id"], "macro_panel_vintage"),
+}
+
+
+def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
+                   df: pd.DataFrame, vintage_date) -> int:
+    """Append point-in-time rows to ``{table}_vintage`` for any key whose value
+    is new or differs from the latest stored vintage (append-on-change).
+
+    ``vintage_date`` is the date our ingest observed these values. Backtests can
+    then query the value as-known on a past date (greatest vintage_date <= as-of),
+    avoiding revision look-ahead. Returns the number of vintage rows written.
+    Tables without a vintage history are silently ignored.
+    """
+    if df is None or df.empty or table not in _VINTAGE:
+        return 0
+    keys, vt = _VINTAGE[table]
+
+    src = df.copy()
+    if "source" not in src.columns:
+        src["source"] = None
+    src = src[keys + ["value", "source"]].drop_duplicates(subset=keys, keep="last")
+
+    con.register("_vtsrc", src)
+    key_list = ", ".join(keys)
+    join_sl = " AND ".join(f"s.{k} = l.{k}" for k in keys)
+    join_vm = " AND ".join(f"v.{k} = m.{k}" for k in keys)
+    sel_keys = ", ".join(f"s.{k}" for k in keys)
+    n0 = con.execute(f"SELECT count(*) FROM {vt}").fetchone()[0]
+    con.execute(
+        f"INSERT OR REPLACE INTO {vt} ({key_list}, value, vintage_date, source) "
+        f"WITH latest AS ("
+        f"  SELECT v.* FROM {vt} v JOIN ("
+        f"    SELECT {key_list}, max(vintage_date) AS md FROM {vt} GROUP BY {key_list}"
+        f"  ) m ON {join_vm} AND v.vintage_date = m.md"
+        f") "
+        f"SELECT {sel_keys}, s.value, ?::DATE, s.source "
+        f"FROM _vtsrc s LEFT JOIN latest l ON {join_sl} "
+        f"WHERE l.{keys[0]} IS NULL OR l.value IS DISTINCT FROM s.value",
+        [str(vintage_date)],
+    )
+    con.unregister("_vtsrc")
+    n1 = con.execute(f"SELECT count(*) FROM {vt}").fetchone()[0]
+    return n1 - n0
+
+
 def log_run(con: duckdb.DuckDBPyConnection, *, run_id: str, started_at: datetime,
             source: str, symbol: str, rows_added: int, rows_updated: int,
             status: str, error_msg: str | None, duration_sec: float) -> None:

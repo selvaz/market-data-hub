@@ -172,6 +172,14 @@ months, stalled-after 400 d) and **quarterly** (BIS DSR / credit gap —
 stalled-after 120 d). The existing `coverage_score` already handles these
 freq-aware lags, so the engine works unchanged.
 
+**Point-in-time (revisions).** FRED/WEO/WDI values are revised after first
+release, so `macro_series` / `macro_panel` keep only the latest figure. To make
+macro-signal backtests revision-safe, every ingest also appends changed values
+to `macro_series_vintage` / `macro_panel_vintage` (stamped with the ingest
+`vintage_date`). Read as-known-then with the `asof=<date>` argument of
+`read_macro` / `read_macro_panel`. Note: history only exists from when ingestion
+began — there is no pre-existing vintage for periods before first ingest.
+
 **Integration note.** Each indicator carries metadata the current schema does
 not model: `pillar`, `orientation` (+1 healthier / −1 worse / 0 neutral),
 `priority`, multi-provider `fallback_sources`, and per-country provider codes.

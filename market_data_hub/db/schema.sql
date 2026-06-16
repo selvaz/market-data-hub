@@ -178,6 +178,38 @@ CREATE TABLE IF NOT EXISTS coverage_report (
 );
 
 -- ============================================================================
+-- POINT-IN-TIME VINTAGES (revisable macro data)
+-- ============================================================================
+-- FRED/WEO/WDI series are revised after first release. The main macro_series /
+-- macro_panel tables keep only the LATEST value, which is correct for monitoring
+-- but injects look-ahead bias into backtests. These append-on-change history
+-- tables record each distinct value together with the vintage_date on which our
+-- ingest first observed it, so a backtest can ask "what was known as of date X".
+-- A reader picks the row with the greatest vintage_date <= the as-of date.
+
+CREATE TABLE IF NOT EXISTS macro_series_vintage (
+    date         DATE    NOT NULL,
+    series_id    VARCHAR NOT NULL,
+    value        DOUBLE,
+    vintage_date DATE    NOT NULL,    -- ingest date this value was first seen
+    source       VARCHAR,
+    PRIMARY KEY (date, series_id, vintage_date)
+);
+CREATE INDEX IF NOT EXISTS idx_msv ON macro_series_vintage (series_id, date);
+
+CREATE TABLE IF NOT EXISTS macro_panel_vintage (
+    date          DATE    NOT NULL,
+    country_iso3  VARCHAR NOT NULL,
+    indicator_id  VARCHAR NOT NULL,
+    value         DOUBLE,
+    vintage_date  DATE    NOT NULL,
+    source        VARCHAR,
+    PRIMARY KEY (date, country_iso3, indicator_id, vintage_date)
+);
+CREATE INDEX IF NOT EXISTS idx_mpv ON macro_panel_vintage (indicator_id, country_iso3, date);
+
+
+-- ============================================================================
 -- VIEWS
 -- ============================================================================
 
