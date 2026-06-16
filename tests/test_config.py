@@ -15,7 +15,7 @@ def test_live_config_is_valid():
 def test_catalog_counts():
     # Yahoo list (FRED IDs filtered out by get_yahoo_tickers)
     assert len(get_yahoo_tickers()) == 111
-    assert len(get_fred_series()) == 38
+    assert len(get_fred_series()) == 45
     assert len(get_macro_panel_specs()) == 69
     assert len(get_countries()) == 64
 
