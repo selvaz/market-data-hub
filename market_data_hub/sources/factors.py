@@ -19,7 +19,6 @@ import zipfile
 from typing import Dict, List, Optional
 
 import pandas as pd
-import requests
 
 _BASE = "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp"
 
@@ -92,6 +91,8 @@ def fetch_french(factor_set: str, *, start: Optional[str] = None,
                  timeout: int = 30, retries: int = 3, base_sleep: float = 1.0
                  ) -> pd.DataFrame:
     """Download and parse one Ken French dataset into the factor_returns shape."""
+    import requests   # lazy: keeps the module (and the parser) importable without it
+
     if factor_set not in CATALOG:
         raise ValueError(f"Unknown factor_set: {factor_set} (have {list(CATALOG)})")
     spec = CATALOG[factor_set]
