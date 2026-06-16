@@ -386,15 +386,8 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
                          None if pd.isna(composite) else composite, len(zdf),
                          phase, short, quadrant, now))
 
-    # ---- idempotent write (regime_state recreated: added debt_trend col) ----
-    con.execute("DROP TABLE IF EXISTS regime_state")
-    con.execute("""CREATE TABLE regime_state (
-        country_iso3 VARCHAR NOT NULL, ref_date DATE NOT NULL,
-        growth_delta DOUBLE, infl_delta DOUBLE, quadrant VARCHAR,
-        debt_cycle_phase VARCHAR, nom_growth DOUBLE, nom_rate DOUBLE,
-        deleveraging_quality VARCHAR, credit_gap DOUBLE, dsr DOUBLE,
-        debt_income_gap DOUBLE, debt_trend DOUBLE, computed_at TIMESTAMP,
-        PRIMARY KEY (country_iso3, ref_date))""")
+    # ---- idempotent write (tables come from schema.sql, applied by get_conn) ----
+    con.execute("DELETE FROM regime_state")
     con.execute("DELETE FROM dalio_signals")
     con.execute("DELETE FROM pillar_scores")
     con.executemany(

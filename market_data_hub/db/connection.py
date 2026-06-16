@@ -14,7 +14,18 @@ from typing import Optional
 import duckdb
 
 _SCHEMA_PATH = Path(__file__).parent / "schema.sql"
-_DEFAULT_DB = r"D:\market_data\market_data.duckdb"
+
+
+def _default_db() -> str:
+    """Last-resort DB path when neither db_path, MARKET_DATA_DB nor settings.yaml
+    provide one. Windows keeps the historical D:\\market_data location; other
+    platforms fall back to a portable path under the user's home."""
+    if os.name == "nt":
+        return r"D:\market_data\market_data.duckdb"
+    return str(Path.home() / ".market_data" / "market_data.duckdb")
+
+
+_DEFAULT_DB = _default_db()
 
 
 def _resolve_db_path(db_path: Optional[str] = None) -> str:

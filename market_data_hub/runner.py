@@ -233,7 +233,7 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
     countries = get_countries()
     http = cfg["http"]
     sy = start_year or int(cfg["backfill_start"]["fred"][:4])
-    imf_sleep = cfg.get("parallelism", {}).get("imf_sleep", 8.0)
+    imf_sleep = cfg.get("parallelism", {}).get("imf_sleep", 0.5)
     wb_workers = cfg.get("parallelism", {}).get("wb_workers", 5)
 
     # World Bank indicators are downloaded in parallel (concurrent fetches);
