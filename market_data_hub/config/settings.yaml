@@ -10,6 +10,7 @@ backfill_start:
   yahoo: "2010-01-01"
   fred:  "2000-01-01"
   binance: "2018-01-01"
+  factors: "1990-01-01"   # Fama-French (Ken French) history start
 
 # --- incremental download ---
 incremental:
@@ -53,6 +54,11 @@ email:
 crypto:
   symbols: ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "ADAUSDT", "XRPUSDT"]
   timeframes: ["1h", "4h", "1d"]
+
+# --- Fama-French factors (Ken French Data Library) ---
+factors:
+  enabled: true
+  datasets: ["FF5_daily", "MOM_daily"]   # keys from sources/factors.py CATALOG
 
 # --- live price injection (intraday) ---
 live:

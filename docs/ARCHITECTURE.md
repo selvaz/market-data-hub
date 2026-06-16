@@ -127,6 +127,7 @@ mirror the parquet/CSV layout the projects already used.
 | `read_macro(series_ids, start, end, wide=True, asof=None)` | wide frame (date × series_id) of macro values; `asof=<date>` reads the point-in-time vintage (value as known then) |
 | `read_macro_panel(indicators, countries, start, end, wide=False, asof=None)` | cross-country panel; `wide=True` pivots a single indicator by country; `asof=<date>` for point-in-time |
 | `read_crypto(symbols, timeframe="1h", start, end)` | long OHLCV from `crypto_ohlcv` |
+| `read_factors(factors, factor_set, start, end, wide=True)` | Fama-French / momentum factor returns from `factor_returns` |
 | `get_coverage(symbols=None)` | the `coverage_report` table (quality per series) |
 | `get_stalled()` | only series flagged `stalled` |
 | `get_latest(symbol)` | last close/adj_close + lag_days + coverage_score |

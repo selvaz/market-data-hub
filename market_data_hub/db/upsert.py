@@ -39,6 +39,10 @@ _COLUMNS = {
         "missing_pct", "coverage_score", "has_zero_price", "has_negative",
         "status", "error_msg", "last_run_id", "updated_at",
     ],
+    "factor_returns": [
+        "date", "factor_set", "factor", "value", "frequency", "source",
+        "updated_at",
+    ],
 }
 
 _PK = {
@@ -47,6 +51,7 @@ _PK = {
     "macro_series": ["date", "series_id"],
     "macro_panel": ["date", "country_iso3", "indicator_id"],
     "coverage_report": ["symbol", "source"],
+    "factor_returns": ["date", "factor_set", "factor"],
 }
 
 

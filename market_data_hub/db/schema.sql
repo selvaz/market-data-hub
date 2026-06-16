@@ -178,6 +178,26 @@ CREATE TABLE IF NOT EXISTS coverage_report (
 );
 
 -- ============================================================================
+-- 5. factor_returns — Fama-French / momentum factors (Ken French Data Library)
+-- ============================================================================
+-- Long format: one row per (date, factor_set, factor). Values are DECIMAL
+-- returns (Ken French publishes percent; the source converts). factor_set
+-- identifies the dataset+frequency, e.g. 'FF5_daily' with factors Mkt-RF, SMB,
+-- HML, RMW, CMA, RF; 'MOM_daily' with Mom.
+CREATE TABLE IF NOT EXISTS factor_returns (
+    date        DATE    NOT NULL,
+    factor_set  VARCHAR NOT NULL,
+    factor      VARCHAR NOT NULL,
+    value       DOUBLE,                 -- decimal return (e.g. 0.0123 = 1.23%)
+    frequency   VARCHAR,                -- 'D' | 'M'
+    source      VARCHAR,
+    updated_at  TIMESTAMP,
+    PRIMARY KEY (date, factor_set, factor)
+);
+CREATE INDEX IF NOT EXISTS idx_factor_returns ON factor_returns (factor_set, factor);
+
+
+-- ============================================================================
 -- POINT-IN-TIME VINTAGES (revisable macro data)
 -- ============================================================================
 -- FRED/WEO/WDI series are revised after first release. The main macro_series /

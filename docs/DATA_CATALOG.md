@@ -192,3 +192,25 @@ implemented in `macro_dashboard.py::select_best_observations` and can be ported.
 > **Status:** documented as a proposed extension. The data providers (World
 > Bank, IMF DataMapper, BIS/DBnomics) are all keyless REST APIs reachable from
 > this network; only the FRED CSV endpoint is proxy-blocked.
+
+---
+
+## 6. factor_returns — Fama-French / momentum factors (Ken French Data Library)
+
+Daily/monthly factor returns used for factor-based allocation, risk
+decomposition and quant backtests. Long format keyed `(date, factor_set,
+factor)`; values are **decimal returns** (Ken French publishes percent — the
+source converts).
+
+- **Table:** `factor_returns` · **Backfill start:** 1990 (configurable)
+- **Source:** Ken French Data Library (keyless CSV zips)
+- **Read API:** `reader.read_factors(factors=…, factor_set=…, wide=…)`
+
+| factor_set | Freq | Factors |
+|------------|------|---------|
+| `FF5_daily` | D | Mkt-RF, SMB, HML, RMW, CMA, RF |
+| `MOM_daily` | D | Mom |
+| `FF5_monthly` | M | Mkt-RF, SMB, HML, RMW, CMA, RF |
+
+Datasets to download are listed under `factors.datasets` in `settings.yaml`; the
+catalog of available sets lives in `sources/factors.py::CATALOG`.
