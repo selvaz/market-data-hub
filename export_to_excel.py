@@ -26,6 +26,7 @@ import pandas as pd
 import yaml
 
 BASE = Path(__file__).parent
+sys.path.insert(0, str(BASE))
 CFG = BASE / "market_data_hub" / "config"
 OUT = BASE / "data_master.xlsx"
 TICKERS_CSV = BASE / "tickers_master.csv"   # Layer taxonomy (read-only)
@@ -39,8 +40,8 @@ def _db_panel_info():
     """Countries covered + last date per indicator (read-only, from the DB)."""
     info = {}
     try:
-        import duckdb
-        con = duckdb.connect(str(BASE / "market_data.duckdb"), read_only=True)
+        from market_data_hub.db.connection import get_conn
+        con = get_conn(read_only=True)
         for r in con.execute("SELECT indicator_id, count(DISTINCT country_iso3), "
                              "max(date) FROM macro_panel GROUP BY indicator_id").fetchall():
             info[r[0]] = (r[1], str(r[2]))

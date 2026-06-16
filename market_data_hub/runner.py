@@ -291,7 +291,7 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
     # small courtesy pause between calls. ---
     for spec in seq_specs:
         st = datetime.now(timezone.utc)
-        time.sleep(min(imf_sleep, 0.5))
+        time.sleep(imf_sleep)
         try:
             df, _src, status = mp.fetch_indicator(spec, countries, start_year=sy, http=http)
             _upsert_result(spec, df, status, st)

@@ -25,8 +25,8 @@ def _y(name):
 def db_freshness():
     out = {}
     try:
-        import duckdb
-        con = duckdb.connect(str(BASE / "market_data.duckdb"), read_only=True)
+        from market_data_hub.db.connection import get_conn
+        con = get_conn(read_only=True)
         for r in con.execute("SELECT symbol, source, freq_detected, last_date "
                              "FROM coverage_report").fetchall():
             out[r[0]] = (r[2], str(r[1]) if r[1] is not None else "")

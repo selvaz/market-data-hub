@@ -105,7 +105,7 @@ market_data_hub/
 └── config/
     ├── tickers.yaml         111 Yahoo symbols (symbol/asset_class/area/priority)
     ├── macro_series.yaml    38 FRED series (symbol/country/name/priority)
-    ├── macro_panel.yaml     39 cross-country indicators (validated codes)
+    ├── macro_panel.yaml     69 cross-country indicators (WB/WDI+WGI, IMF/WEO, BIS)
     ├── countries.yaml       64 countries (iso3/iso2/wb/imf)
     └── settings.yaml        db_path, backfill dates, parallelism, FRED key, crypto
 

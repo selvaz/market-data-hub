@@ -22,7 +22,7 @@ parallelism:
   binance_workers: 4
   yahoo_batch_sleep: 0.25     # pause between Yahoo batch groups
   fred_sleep: 0.15            # pause between FRED series (rate limit 120/min)
-  imf_sleep: 0.5              # pause between IMF calls (WAF solved by curl_cffi)
+  imf_sleep: 0.5              # seconds between sequential IMF/BIS calls (WAF handled by per-call backoff)
   wb_workers: 5               # parallel World Bank fetches (macro_panel)
 
 # --- HTTP / retry ---

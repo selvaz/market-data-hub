@@ -145,7 +145,7 @@ provider APIs (see `validate_macro_panel.py` / `macro_panel_validation.csv`).
 
 - **Table:** `macro_panel` · **Frequency:** annual (A) · **Backfill start:** 2000
 - **Typical lag:** 3–18 months (WDI/WEO/WGI) · **Stalled-after:** 400 days
-- **Sources:** World Bank REST (WDI db, WGI db) + IMF DataMapper (WEO)
+- **Sources:** World Bank REST (WDI db, WGI db) + IMF DataMapper (WEO) + BIS SDMX (DSR, credit-gap, policy rate)
 - **Read API:** `reader.read_macro_panel(indicators, countries, wide=…)`
 - **Extra metadata per row:** `pillar`, `orientation` (+1 healthier / −1 worse /
   0), `provider_dataset`, `provider_code`, `unit`
@@ -154,18 +154,18 @@ provider APIs (see `validate_macro_panel.py` / `macro_panel_validation.csv`).
 ISR, SGP, HKG, …) + major EM (THA, MYS, PHL, VNM, PAK, BGD, EGY, NGA, COL, CHL,
 PER, UKR, ARE, QAT, KWT, …).
 
-**Indicator catalogue (~50, by pillar):**
+**Indicator catalogue (69, by pillar):**
 
-| Pillar | Provider/dataset | Indicators (provider code) |
-|--------|------------------|----------------------------|
-| growth | WB / WDI | real_gdp_growth (NY.GDP.MKTP.KD.ZG), gdp_current_usd (NY.GDP.MKTP.CD), gdp_per_capita_growth (NY.GDP.PCAP.KD.ZG), unemployment_rate (SL.UEM.TOTL.ZS), investment_gdp (NE.GDI.TOTL.ZS), gross_savings_gdp (NY.GNS.ICTR.ZS), labor_productivity_growth (SL.GDP.PCAP.EM.KD.ZG), high_tech_exports_share (TX.VAL.TECH.MF.ZS), rnd_expenditure_gdp (GB.XPD.RSDV.GD.ZS), population_growth (SP.POP.GROW), dependency_ratio (SP.POP.DPND) |
-| liquidity | WB / WDI | inflation_cpi (FP.CPI.TOTL.ZG), real_interest_rate (FR.INR.RINR), lending_interest_rate (FR.INR.LEND), broad_money_gdp (FM.LBL.BMNY.GD.ZS) |
-| external | IMF / WEO + WB / WDI·IDS | current_account_gdp (WEO BCA_NGDPD; fallback WDI BN.CAB.XOKA.GD.ZS), fx_reserves_usd (FI.RES.TOTL.CD), fx_reserves_months_imports (FI.RES.TOTL.MO), official_fx_rate (PA.NUS.FCRF), exports_gdp (NE.EXP.GNFS.ZS), imports_gdp (NE.IMP.GNFS.ZS), fdi_inflows_gdp (BX.KLT.DINV.WD.GD.ZS), short_term_external_debt_reserves (IDS DT.DOD.DSTC.IR.ZS), debt_service_exports (IDS DT.TDS.DECT.EX.ZS) |
-| debt_cycle | WB + BIS | private_credit_gdp (FS.AST.PRVT.GD.ZS), external_debt_gni (IDS DT.DOD.DECT.GN.ZS), **BIS** credit_to_gdp_gap, household_dsr, corporate_dsr, private_nonfinancial_dsr (quarterly) |
-| sovereign | IMF / WEO | public_debt_gdp (GGXWDG_NGDP), fiscal_balance_gdp (GGXCNL_NGDP), primary_balance_gdp (GGXONLB_NGDP), government_revenue_gdp (GGR_NGDP), government_expenditure_gdp (GGX_NGDP), interest_revenue (WDI GC.XPN.INTP.RV.ZS) |
-| banking | WB / WDI | npl_ratio (FB.AST.NPER.ZS), bank_capital_ratio (FB.BNK.CAPA.ZS), bank_liquid_reserves_assets (FD.RES.LIQU.AS.ZS) |
-| governance | WB / WGI | wgi_voice_accountability (VA.EST), wgi_political_stability (PV.EST), wgi_government_effectiveness (GE.EST), wgi_regulatory_quality (RQ.EST), wgi_rule_of_law (RL.EST), wgi_control_corruption (CC.EST) |
-| geopolitical | WB / WDI | trade_openness (NE.TRD.GNFS.ZS), natural_resource_rents_gdp (NY.GDP.TOTL.RT.ZS), military_expenditure_gdp (MS.MIL.XPND.GD.ZS) |
+| Pillar | Count | Indicators (source/dataset · provider code; fb = fallback) |
+|--------|-------|------------------------------------------------------------|
+| growth | 18 | real_gdp_growth (WB/WDI NY.GDP.MKTP.KD.ZG), gdp_current_usd (WB/WDI NY.GDP.MKTP.CD), gdp_per_capita_growth (WB/WDI NY.GDP.PCAP.KD.ZG), unemployment_rate (WB/WDI SL.UEM.TOTL.ZS), investment_gdp (WB/WDI NE.GDI.TOTL.ZS), gross_savings_gdp (WB/WDI NY.GNS.ICTR.ZS), labor_productivity_level (WB/WDI SL.GDP.PCAP.EM.KD), high_tech_exports_share (WB/WDI TX.VAL.TECH.MF.ZS), rnd_expenditure_gdp (WB/WDI GB.XPD.RSDV.GD.ZS), population_growth (WB/WDI SP.POP.GROW), dependency_ratio (WB/WDI SP.POP.DPND), gdp_growth_weo (IMF/WEO NGDP_RPCH), gdp_usd_weo (IMF/WEO NGDPD), gdp_per_capita_usd (IMF/WEO NGDPDPC), gdp_ppp (IMF/WEO PPPGDP), gdp_per_capita_ppp (IMF/WEO PPPPC), population (IMF/WEO LP), unemployment_weo (IMF/WEO LUR) |
+| liquidity | 7 | inflation_cpi (WB/WDI FP.CPI.TOTL.ZG), real_interest_rate (WB/WDI FR.INR.RINR), lending_interest_rate (WB/WDI FR.INR.LEND), broad_money_gdp (WB/WDI FM.LBL.BMNY.GD.ZS), inflation_avg_weo (IMF/WEO PCPIPCH), inflation_eop_weo (IMF/WEO PCPIEPCH), bis_policy_rate (BIS/WS_CBPOL M.{iso2}) |
+| external | 16 | current_account_gdp (IMF/WEO BCA_NGDPD; fb WB/WDI BN.CAB.XOKA.GD.ZS), fx_reserves_usd (WB/WDI FI.RES.TOTL.CD), fx_reserves_months_imports (WB/WDI FI.RES.TOTL.MO), official_fx_rate (WB/WDI PA.NUS.FCRF), exports_gdp (WB/WDI NE.EXP.GNFS.ZS), imports_gdp (WB/WDI NE.IMP.GNFS.ZS), fdi_inflows_gdp (WB/WDI BX.KLT.DINV.WD.GD.ZS), ppp_conversion_rate (IMF/WEO PPPEX), current_account_usd (IMF/WEO BCA), remittances_gdp (WB/WDI BX.TRF.PWKR.DT.GD.ZS), short_term_debt_usd (WB/WDI DT.DOD.DSTC.CD), short_term_debt_reserves (WB/WDI DT.DOD.DSTC.IR.ZS), tourism_receipts_usd (WB/WDI ST.INT.RCPT.CD), tourism_exports_share (WB/WDI ST.INT.RCPT.XP.ZS), food_imports_share (WB/WDI TM.VAL.FOOD.ZS.UN), fuel_imports_share (WB/WDI TM.VAL.FUEL.ZS.UN) |
+| debt_cycle | 3 | private_credit_gdp (WB/WDI FS.AST.PRVT.GD.ZS), bis_dsr_private (BIS/WS_DSR Q.{iso2}.P), bis_credit_gap (BIS/WS_CREDIT_GAP Q.{iso2}.P.A.C) |
+| sovereign | 10 | public_debt_gdp (IMF/WEO GGXWDG_NGDP; fb WB/WDI GC.DOD.TOTL.GD.ZS), fiscal_balance_gdp (IMF/WEO GGXCNL_NGDP; fb WB/WDI GC.NLD.TOTL.GD.ZS), primary_balance_gdp (IMF/WEO GGXONLB_NGDP), government_revenue_gdp (IMF/WEO GGR_NGDP; fb WB/WDI GC.REV.XGRT.GD.ZS), government_expenditure_gdp (IMF/WEO GGX_NGDP; fb WB/WDI GC.XPN.TOTL.GD.ZS), total_external_debt_usd (WB/WDI DT.DOD.DECT.CD), external_debt_gni (WB/WDI DT.DOD.DECT.GN.ZS), ppg_external_debt_usd (WB/WDI DT.DOD.DPPG.CD), debt_service_exports (WB/WDI DT.TDS.DECT.EX.ZS), interest_revenue (WB/WDI GC.XPN.INTP.RV.ZS) |
+| banking | 2 | npl_ratio (WB/WDI FB.AST.NPER.ZS), bank_capital_ratio (WB/WDI FB.BNK.CAPA.ZS) |
+| governance | 6 | wgi_voice_accountability (WB/WGI GOV_WGI_VA.EST), wgi_political_stability (WB/WGI GOV_WGI_PV.EST), wgi_government_effectiveness (WB/WGI GOV_WGI_GE.EST), wgi_regulatory_quality (WB/WGI GOV_WGI_RQ.EST), wgi_rule_of_law (WB/WGI GOV_WGI_RL.EST), wgi_control_corruption (WB/WGI GOV_WGI_CC.EST) |
+| geopolitical | 7 | trade_openness (WB/WDI NE.TRD.GNFS.ZS), natural_resource_rents_gdp (WB/WDI NY.GDP.TOTL.RT.ZS), military_expenditure_gdp (WB/WDI MS.MIL.XPND.GD.ZS), gdp_ppp_world_share (IMF/WEO PPPSH), food_exports_share (WB/WDI TX.VAL.FOOD.ZS.UN), fuel_exports_share (WB/WDI TX.VAL.FUEL.ZS.UN), metals_exports_share (WB/WDI TX.VAL.MMTL.ZS.UN) |
 
 **Frequency / lag of this panel:** mostly **annual** (WDI/WEO/WGI — lag 3–18
 months, stalled-after 400 d) and **quarterly** (BIS DSR / credit gap —

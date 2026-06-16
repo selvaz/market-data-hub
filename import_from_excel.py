@@ -142,12 +142,22 @@ def import_tickers(df: pd.DataFrame, validate_only: bool = False,
     entries: list[dict] = existing.get("yahoo", [])
     by_symbol = {e["symbol"]: e for e in entries}
 
+    # Cross-catalog guard: FRED series IDs (DGS10, CPIAUCSL, ...) are not Yahoo
+    # tickers. If they leak into the Tickers sheet they would pollute the Yahoo
+    # universe and be requested from Yahoo (which 404s). Skip such collisions.
+    fred_ids = {e["symbol"] for e in _read_yaml(FRED_YAML).get("fred", [])}
+
     added, updated, skipped, errors = 0, 0, 0, []
 
     for idx, row in df.iterrows():
         symbol = _clean(row.get(key_col, ""))
         if not symbol:
             errors.append(f"Row {idx}: empty symbol, skipped")
+            skipped += 1
+            continue
+
+        if symbol in fred_ids:
+            errors.append(f"{symbol}: FRED series ID, not a Yahoo ticker — skipped")
             skipped += 1
             continue
 

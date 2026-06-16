@@ -21,7 +21,7 @@ pipeline.
 | Yahoo Finance | 111 symbols (ETFs, equity, FX, VIX indices, daily crypto) — OHLCV + adj_close | `prices_daily` | daily |
 | Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
 | FRED | 38 macro series (US/EA rates, CPI, GDP, credit spreads, ...) | `macro_series` | D/M/Q |
-| World Bank + IMF | 39 cross-country indicators (WDI/WGI/WEO) × 64 countries | `macro_panel` | annual |
+| World Bank + IMF + BIS | 69 cross-country indicators (WDI/WGI/WEO/BIS) × 64 countries | `macro_panel` | annual |
 
 ## Setup
 
