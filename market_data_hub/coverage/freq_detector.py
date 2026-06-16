@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-freq_detector.py — inferenza della frequenza di una serie temporale.
+freq_detector.py — inference of a time series' frequency.
 
-Porta la logica di:
+Ports the logic of:
   - quant_timeseries_suite/checks1_improved.py :: guess_freq()
   - macro_dashboard_v2_bundle/macro_dashboard.py :: detect_frequency()
 
-Restituisce un codice canonico: 'D' | 'W' | 'M' | 'Q' | 'A' | 'irregular_Xd' | 'UNKNOWN'
+Returns a canonical code: 'D' | 'W' | 'M' | 'Q' | 'A' | 'irregular_Xd' | 'UNKNOWN'
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import pandas as pd
 
 
 def detect_frequency(dates) -> str:
-    """Inferisce D/W/M/Q/A dallo spacing mediano delle date (pandas 3.x safe)."""
+    """Infer D/W/M/Q/A from the median spacing of the dates (pandas 3.x safe)."""
     ds = (pd.to_datetime(pd.Series(list(dates)), errors="coerce")
           .dropna().sort_values().unique())
     if len(ds) < 2:
@@ -34,15 +34,15 @@ def detect_frequency(dates) -> str:
         return "Q"
     if med <= 400:
         return "A"
-    # spacing molto largo ma non riconducibile: segnala come irregolare
+    # very wide spacing but not classifiable: flag as irregular
     return f"irregular_{int(med)}d"
 
 
-# soglie di osservazioni minime attese per frequenza (per coverage_score)
+# minimum expected observation thresholds per frequency (for coverage_score)
 MIN_OBS_BY_FREQ = {"A": 10, "Q": 20, "M": 36, "W": 52, "D": 250, "UNKNOWN": 10}
 
-# tolleranza di freshness (giorni) per frequenza
+# freshness tolerance (days) per frequency
 LAG_TOLERANCE = {"A": 500, "Q": 270, "M": 120, "W": 45, "D": 21, "UNKNOWN": 500}
 
-# giorni attesi tra osservazioni consecutive (per gap detection)
+# expected days between consecutive observations (for gap detection)
 EXPECTED_SPACING_DAYS = {"D": 1, "W": 7, "M": 30, "Q": 91, "A": 365}

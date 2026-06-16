@@ -1,18 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-classify.py — classificazione dei paesi su due livelli:
-  - STATICA   : geografia, sviluppo (DM/EM/Frontier), income, regime di cambio,
-                programma IMF, flag G7/EU/ASEAN (da config/countries.yaml)
-  - DATA-DRIVEN: posizione energetica (oil exporter/importer), dipendenza da
-                risorse naturali, turismo, rimesse — derivata da macro_panel.
+classify.py — country classification on two levels:
+  - STATIC     : geography, development (DM/EM/Frontier), income, FX regime,
+                IMF program, G7/EU/ASEAN flags (from config/countries.yaml)
+  - DATA-DRIVEN: energy position (oil exporter/importer), dependence on
+                natural resources, tourism, remittances — derived from macro_panel.
 
-Scrive la tabella country_classification (statica + data-driven, una riga per
-paese), ricalcolata a ogni run.
+Writes the country_classification table (static + data-driven, one row per
+country), recomputed on every run.
 
-Formula oil/energia (corretta rispetto a FRONTIER, che usava un solo
-denominatore): le importazioni di carburante si scalano sulle IMPORTAZIONI/PIL,
-le esportazioni sulle ESPORTAZIONI/PIL.
-    net_fuel_gdp = fuel_exp%·(export/PIL)/100  −  fuel_imp%·(import/PIL)/100
+Oil/energy formula (corrected relative to FRONTIER, which used a single
+denominator): fuel imports are scaled on IMPORTS/GDP, exports on EXPORTS/GDP.
+    net_fuel_gdp = fuel_exp%·(export/GDP)/100  −  fuel_imp%·(import/GDP)/100
 """
 from __future__ import annotations
 
@@ -24,14 +23,14 @@ import pandas as pd
 from market_data_hub.config_loader import get_countries
 from market_data_hub.db.connection import get_conn
 
-# indicatori macro_panel usati per la classificazione data-driven
+# macro_panel indicators used for the data-driven classification
 _NEED = ["fuel_exports_share", "fuel_imports_share", "exports_gdp", "imports_gdp",
          "natural_resource_rents_gdp", "tourism_exports_share", "remittances_gdp",
          "metals_exports_share"]
 
 
 def _bucket(v, edges, labels, unknown="unknown"):
-    """Assegna v a un bucket dati gli edge crescenti e le label (len+1)."""
+    """Assign v to a bucket given the increasing edges and the labels (len+1)."""
     if v is None or pd.isna(v):
         return unknown
     for e, lab in zip(edges, labels):
@@ -41,23 +40,23 @@ def _bucket(v, edges, labels, unknown="unknown"):
 
 
 def energy_position(fe, fi, ex, im):
-    """Posizione energetica. Primario: net fuel %PIL (formula corretta). Se
-    mancano export/import %PIL (es. Nigeria in WDI), fallback sulle QUOTE:
-    se il carburante domina l'export il paese e' esportatore comunque.
-    Ritorna (label, net_fuel_gdp | None)."""
+    """Energy position. Primary: net fuel %GDP (corrected formula). If
+    export/import %GDP are missing (e.g. Nigeria in WDI), fall back on the
+    SHARES: if fuel dominates exports the country is an exporter anyway.
+    Returns (label, net_fuel_gdp | None)."""
     if None not in (fe, fi, ex, im):
         net = fe * ex / 100 - fi * im / 100
         return _bucket(net, [-10, -3, 3, 10],
                       ["strong_importer", "importer", "neutral", "exporter",
                        "strong_exporter"]), round(net, 2)
-    # --- fallback su quote dell'export (manca scaling su PIL) ---
+    # --- fallback on export shares (no GDP scaling available) ---
     if fe is not None:
         if fe > 50:
-            return "strong_exporter", None      # export dominato dal carburante
+            return "strong_exporter", None      # exports dominated by fuel
         if fe > 20:
             return "exporter", None
         if fi is not None and fi > 15 and fe < 10:
-            return "importer", None             # importa carburante, non esporta
+            return "importer", None             # imports fuel, does not export
         return "neutral", None
     return "unknown", None
 
@@ -80,7 +79,7 @@ def classify_countries(db_path: Optional[str] = None,
     now = datetime.now(timezone.utc)
     ry = ref_year or now.year
 
-    # ultimo valore <= anno corrente per ogni (paese, indicatore) necessario
+    # latest value <= current year for each required (country, indicator)
     df = con.execute(
         "SELECT country_iso3, indicator_id, date, value FROM macro_panel "
         "WHERE indicator_id IN (" + ",".join("?" * len(_NEED)) + ") "
@@ -106,9 +105,9 @@ def classify_countries(db_path: Optional[str] = None,
         ex, im = g("exports_gdp"), g("imports_gdp")
         energy, net_fuel = energy_position(fe, fi, ex, im)
         rents = g("natural_resource_rents_gdp")
-        # sanita': un "esportatore" senza rendite da risorse naturali (~0) NON e'
-        # un produttore ma un hub di ri-esportazione/bunkeraggio (es. Cipro) ->
-        # declassa a neutro. Gli esportatori veri hanno rendite > ~2% PIL.
+        # sanity: an "exporter" with no natural-resource rents (~0) is NOT a
+        # producer but a re-export/bunkering hub (e.g. Cyprus) -> downgrade to
+        # neutral. Real exporters have rents > ~2% GDP.
         if energy in ("exporter", "strong_exporter") and rents is not None and rents < 2.0:
             energy = "neutral"
         tour = g("tourism_exports_share")
@@ -116,7 +115,7 @@ def classify_countries(db_path: Optional[str] = None,
 
         rows.append((
             iso, c.get("name", iso),
-            # --- statica ---
+            # --- static ---
             c.get("region_group", ""), c.get("region_geo", ""),
             c.get("income", ""), c.get("development", ""),
             c.get("fx_regime", ""), bool(c.get("imf_program", False)),

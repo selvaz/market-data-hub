@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-config_loader.py — caricamento (cached) dei file YAML di configurazione.
+config_loader.py — (cached) loading of the YAML configuration files.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ def _load_yaml(name: str) -> Any:
 @lru_cache(maxsize=1)
 def get_settings() -> Dict[str, Any]:
     s = _load_yaml("settings.yaml")
-    # override FRED key da env se presente
+    # override FRED key from env if present
     if os.environ.get("FRED_API_KEY"):
         s["fred_api_key"] = os.environ["FRED_API_KEY"]
     return s

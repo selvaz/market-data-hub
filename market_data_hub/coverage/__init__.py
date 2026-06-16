@@ -1,1 +1,1 @@
-# coverage engine — feature di qualita' dati portate dai progetti esistenti
+# coverage engine — data-quality features ported from the existing projects

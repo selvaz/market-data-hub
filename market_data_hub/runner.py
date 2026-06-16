@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-runner.py — orchestratore del download giornaliero incrementale.
+runner.py — orchestrator of the incremental daily download.
 
-Modalita':
+Modes:
   full      : Yahoo + FRED + Binance (default EOD)
-  live-only : solo live price injection intraday (asset liquidi)
-  sources   : sottoinsieme {yahoo, fred, binance}
+  live-only : intraday live price injection only (liquid assets)
+  sources   : subset of {yahoo, fred, binance}
 
-Flusso per ogni sorgente:
-  1. leggi last_date dal DB per ogni simbolo
-  2. scarica solo i dati mancanti (con tail refresh per revisioni)
-  3. upsert atomico + riga in download_log
-  4. a fine run ricostruisce coverage_report
+Flow for each source:
+  1. read last_date from the DB for each symbol
+  2. download only the missing data (with tail refresh for revisions)
+  3. atomic upsert + row in download_log
+  4. at the end of the run, rebuild coverage_report
 """
 from __future__ import annotations
 
@@ -75,14 +75,14 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
     gstart = cfg["backfill_start"]["yahoo"]
     last = _last_prices(con)
 
-    # raggruppa per effective_start (batch efficiente)
+    # group by effective_start (efficient batching)
     groups: Dict[str, List[str]] = {}
     for e in tickers:
         sym = e["symbol"]
         s = start_override or yh.effective_start(last.get(sym), gstart, tail)
         groups.setdefault(s, []).append(sym)
 
-    _log(f"YAHOO: {len(tickers)} simboli in {len(groups)} gruppi (end={end})")
+    _log(f"YAHOO: {len(tickers)} symbols in {len(groups)} groups (end={end})")
     sleep = cfg["parallelism"]["yahoo_batch_sleep"]
 
     for gstart_k, syms in sorted(groups.items()):
@@ -90,7 +90,7 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
         try:
             batch = yh.yahoo_batch(syms, gstart_k, end)
         except Exception as ex:
-            _log(f"  ! batch start={gstart_k} fallito: {ex}")
+            _log(f"  ! batch start={gstart_k} failed: {ex}")
             for s in syms:
                 log_run(con, run_id=run_id, started_at=datetime.now(timezone.utc),
                         source="yahoo", symbol=s, rows_added=0, rows_updated=0,
@@ -111,7 +111,7 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
             log_run(con, run_id=run_id, started_at=st, source="yahoo",
                     symbol=sym, rows_added=added, rows_updated=updated,
                     status="ok", error_msg=None, duration_sec=0)
-        _log(f"  gruppo start={gstart_k} n={len(syms)} ok ({time.time()-t0:.1f}s)")
+        _log(f"  group start={gstart_k} n={len(syms)} ok ({time.time()-t0:.1f}s)")
         time.sleep(sleep)
 
 
@@ -126,14 +126,14 @@ def run_fred(con, cfg: dict, run_id: str, *, start_override: Optional[str] = Non
     sleep = cfg["parallelism"]["fred_sleep"]
     last = _last_macro(con)
 
-    _log(f"FRED: {len(series)} serie (api_key={'si' if api_key else 'no/CSV'})")
+    _log(f"FRED: {len(series)} series (api_key={'yes' if api_key else 'no/CSV'})")
 
     for e in series:
         sid = e["symbol"]
         if start_override:
             s = start_override
         elif sid in last:
-            # tail refresh ~95gg per coprire revisioni macro
+            # tail refresh ~95 days to cover macro revisions
             s = max(gstart, (last[sid] - timedelta(days=95)).date().isoformat())
         else:
             s = gstart
@@ -157,7 +157,7 @@ def run_fred(con, cfg: dict, run_id: str, *, start_override: Optional[str] = Non
                     symbol=sid, rows_added=0, rows_updated=0,
                     status="error", error_msg=str(ex), duration_sec=0)
         time.sleep(sleep)
-    _log("FRED: completato")
+    _log("FRED: completed")
 
 
 # --------------------------------------------------------------- BINANCE
@@ -171,7 +171,7 @@ def run_binance(con, cfg: dict, run_id: str, *, start_override: Optional[str] = 
     workers = cfg["parallelism"]["binance_workers"]
     last = _last_crypto(con)
 
-    # lookback per refresh candele recenti: 3 step del timeframe
+    # lookback to refresh recent candles: 3 steps of the timeframe
     lookback = {"1h": timedelta(hours=10), "4h": timedelta(hours=40),
                 "1d": timedelta(days=3), "5m": timedelta(minutes=50),
                 "15m": timedelta(minutes=150), "1m": timedelta(minutes=10)}
@@ -187,7 +187,7 @@ def run_binance(con, cfg: dict, run_id: str, *, start_override: Optional[str] = 
                 s = gstart
             jobs.append((sym, tf, s))
 
-    _log(f"BINANCE: {len(jobs)} job ({len(syms)} simboli x {len(tfs)} tf)")
+    _log(f"BINANCE: {len(jobs)} jobs ({len(syms)} symbols x {len(tfs)} tf)")
 
     def _do(job):
         sym, tf, s = job
@@ -217,17 +217,17 @@ def run_binance(con, cfg: dict, run_id: str, *, start_override: Optional[str] = 
                 log_run(con, run_id=run_id, started_at=st, source="binance",
                         symbol=f"{sym}:{tf}", rows_added=0, rows_updated=0,
                         status="error", error_msg=str(exc), duration_sec=0)
-    _log("BINANCE: completato")
+    _log("BINANCE: completed")
 
 
 # --------------------------------------------------------------- MACRO PANEL
 def run_macro_panel(con, cfg: dict, run_id: str, *,
                     start_year: Optional[int] = None) -> None:
-    """Scarica il panel cross-country (World Bank + IMF) con fallback.
+    """Download the cross-country panel (World Bank + IMF) with fallback.
 
-    Le chiamate IMF sono spaziate (il WAF IMF blocca i burst). La logica
-    primario->fallback garantisce dati anche quando IMF e' temporaneamente
-    bloccato (fallback World Bank).
+    IMF calls are spaced out (the IMF WAF blocks bursts). The primary->fallback
+    logic guarantees data even when IMF is temporarily blocked (World Bank
+    fallback).
     """
     specs = get_macro_panel_specs()
     countries = get_countries()
@@ -236,13 +236,13 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
     imf_sleep = cfg.get("parallelism", {}).get("imf_sleep", 8.0)
     wb_workers = cfg.get("parallelism", {}).get("wb_workers", 5)
 
-    # Gli indicatori World Bank si scaricano in parallelo (fetch concorrenti);
-    # tutte le altre fonti (IMF, BIS) sono sequenziali e spaziate.
-    # L'upsert su DuckDB e' SEMPRE serializzato nel thread principale.
+    # World Bank indicators are downloaded in parallel (concurrent fetches);
+    # all the other sources (IMF, BIS) are sequential and spaced out.
+    # The upsert into DuckDB is ALWAYS serialized in the main thread.
     wb_specs = [s for s in specs if s["source"] == "WB"]
-    seq_specs = [s for s in specs if s["source"] != "WB"]   # IMF + BIS + altre
-    _log(f"MACRO PANEL: {len(specs)} indicatori x {len(countries)} paesi "
-         f"(WB paralleli x{wb_workers}, {len(seq_specs)} sequenziali)")
+    seq_specs = [s for s in specs if s["source"] != "WB"]   # IMF + BIS + others
+    _log(f"MACRO PANEL: {len(specs)} indicators x {len(countries)} countries "
+         f"(WB parallel x{wb_workers}, {len(seq_specs)} sequential)")
     n_ok = n_fb = n_empty = 0
 
     def _upsert_result(spec, df, status, st):
@@ -263,7 +263,7 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
                 symbol=spec["id"], rows_added=added, rows_updated=updated,
                 status=status, error_msg=None, duration_sec=0)
 
-    # --- WB in parallelo: fetch concorrente, upsert serializzato ---
+    # --- WB in parallel: concurrent fetch, serialized upsert ---
     def _fetch_wb(spec):
         st = datetime.now(timezone.utc)
         df, _src, status = mp.fetch_indicator(spec, countries, start_year=sy, http=http)
@@ -285,10 +285,10 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
                         duration_sec=0)
             done += 1
             if done % 5 == 0:
-                _log(f"  WB {done}/{len(wb_specs)} completati")
+                _log(f"  WB {done}/{len(wb_specs)} completed")
 
-    # --- Fonti sequenziali (IMF, BIS, ...): stesso identico percorso, una
-    # piccola pausa di cortesia tra le chiamate. ---
+    # --- Sequential sources (IMF, BIS, ...): exactly the same path, with a
+    # small courtesy pause between calls. ---
     for spec in seq_specs:
         st = datetime.now(timezone.utc)
         time.sleep(min(imf_sleep, 0.5))
@@ -306,15 +306,15 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
 
 # --------------------------------------------------------------- LIVE
 def run_live(con, cfg: dict, run_id: str) -> None:
-    """Aggiorna la riga 'oggi' con prezzi live mappati nello spazio adjusted."""
+    """Update the 'today' row with live prices mapped into the adjusted space."""
     if not cfg.get("live", {}).get("enabled", False):
-        _log("LIVE: disabilitato in settings")
+        _log("LIVE: disabled in settings")
         return
     allowed = set(cfg["live"]["asset_classes"])
     tickers = [e for e in get_yahoo_tickers() if e.get("asset_class") in allowed]
     today = pd.Timestamp(_today())
 
-    # ultimo EOD (adj_close, close) per simbolo
+    # latest EOD (adj_close, close) per symbol
     eod = con.execute(
         "SELECT p.symbol, p.adj_close, p.close FROM prices_daily p "
         "JOIN (SELECT symbol, max(date) d FROM prices_daily "
@@ -323,7 +323,7 @@ def run_live(con, cfg: dict, run_id: str) -> None:
         "WHERE p.is_live = FALSE").fetch_df()
     eod_map = {r.symbol: (r.adj_close, r.close) for r in eod.itertuples()}
 
-    # prezzi live in UNA sola download batch (no loop per-ticker -> niente 429)
+    # live prices in a SINGLE download batch (no per-ticker loop -> no 429)
     syms = [e["symbol"] for e in tickers if e["symbol"] in eod_map]
     live_prices = yh.get_live_prices_batch(syms)
 
@@ -346,7 +346,7 @@ def run_live(con, cfg: dict, run_id: str) -> None:
 
     if rows:
         upsert(con, "prices_daily", pd.DataFrame(rows))
-    _log(f"LIVE: aggiornati {n_ok}/{len(tickers)} simboli")
+    _log(f"LIVE: updated {n_ok}/{len(tickers)} symbols")
     log_run(con, run_id=run_id, started_at=datetime.now(timezone.utc),
             source="live", symbol="*", rows_added=n_ok, rows_updated=0,
             status="ok", error_msg=None, duration_sec=0)
@@ -378,38 +378,38 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
             if mode == "full" and cfg.get("live", {}).get("enabled"):
                 run_live(con, cfg, run_id)
 
-        _log("Ricostruzione coverage_report...")
+        _log("Rebuilding coverage_report...")
         n = rebuild_coverage(con, run_id)
-        _log(f"coverage_report: {n} serie")
+        _log(f"coverage_report: {n} series")
 
-        # alert stalled
+        # stalled alert
         st = con.execute(
             "SELECT count(*) FROM coverage_report WHERE stalled = TRUE").fetchone()[0]
         if st:
-            _log(f"  ATTENZIONE: {st} serie risultano ferme (vedi diagnose.py --stalled)")
+            _log(f"  WARNING: {st} series are stalled (see diagnose.py --stalled)")
     finally:
         con.close()
 
-    # --- layer analitico Ray Dalio (dopo il panel: fasi ciclo + regime) ---
+    # --- Ray Dalio analytical layer (after the panel: cycle phases + regime) ---
     macro_done = mode != "live-only" and "macro_panel" in (
         sources or ["yahoo", "fred", "binance", "macro_panel"])
     if macro_done:
         try:
             from market_data_hub.dalio import run_dalio
             s = run_dalio(db_path)
-            _log(f"DALIO: {s['countries']} paesi | fasi {s['phases']} | regimi {s['regimes']}")
-            _log(f"DALIO: orizzonte forecast WEO = {s['weo_horizon']}")
+            _log(f"DALIO: {s['countries']} countries | phases {s['phases']} | regimes {s['regimes']}")
+            _log(f"DALIO: WEO forecast horizon = {s['weo_horizon']}")
             if s["forecast_stale"]:
-                _log("  ATTENZIONE: forecast WEO NON aggiornati (orizzonte <= anno "
-                     "corrente). Verificare il download macro_panel/IMF.")
+                _log("  WARNING: WEO forecasts NOT up to date (horizon <= current "
+                     "year). Check the macro_panel/IMF download.")
         except Exception as ex:
-            _log(f"DALIO: errore (non bloccante): {ex}")
+            _log(f"DALIO: error (non-blocking): {ex}")
         try:
             from market_data_hub.classify import classify_countries
             cl = classify_countries(db_path)
-            _log(f"CLASSIFY: {cl['countries']} paesi | sviluppo {cl['development']} "
-                 f"| energia {cl['energy']}")
+            _log(f"CLASSIFY: {cl['countries']} countries | development {cl['development']} "
+                 f"| energy {cl['energy']}")
         except Exception as ex:
-            _log(f"CLASSIFY: errore (non bloccante): {ex}")
+            _log(f"CLASSIFY: error (non-blocking): {ex}")
 
-    _log(f"=== FINE {run_id} ({time.time()-t0:.1f}s) ===")
+    _log(f"=== END {run_id} ({time.time()-t0:.1f}s) ===")

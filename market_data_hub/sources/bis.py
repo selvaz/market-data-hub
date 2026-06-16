@@ -1,19 +1,19 @@
 # -*- coding: utf-8 -*-
 """
-bis.py — sorgente BIS (API nativa stats.bis.org v2) per il panel cross-country.
+bis.py — BIS source (native stats.bis.org v2 API) for the cross-country panel.
 
-Si usa l'API NATIVA BIS (non il mirror DBnomics, che e' ~1 anno indietro):
+We use the NATIVE BIS API (not the DBnomics mirror, which is ~1 year behind):
   https://stats.bis.org/api/v2/data/dataflow/BIS/{dataset}/1.0/{key}?format=csv
-La chiave SDMX con la posizione-paese vuota = wildcard "tutti i paesi" in una
-sola chiamata (es. 'Q..P' = tutti i paesi, settore privato). Si mappa poi
-l'ISO2 BIS sul nostro ISO3 e si filtrano i nostri paesi.
+The SDMX key with an empty country position = wildcard "all countries" in a
+single call (e.g. 'Q..P' = all countries, private sector). We then map the BIS
+ISO2 to our ISO3 and filter our countries.
 
-Serie chiave per il ciclo del debito (metodo Dalio):
-  - WS_DSR        : debt service ratio privato        key Q.{iso2}.P
-  - WS_CREDIT_GAP : credit-to-GDP gap privato (HP)     key Q.{iso2}.P.A.C
-  - WS_CBPOL      : tasso di policy banca centrale      key M.{iso2}
+Key series for the debt cycle (Dalio method):
+  - WS_DSR        : private debt service ratio          key Q.{iso2}.P
+  - WS_CREDIT_GAP : private credit-to-GDP gap (HP)       key Q.{iso2}.P.A.C
+  - WS_CBPOL      : central bank policy rate             key M.{iso2}
 
-Output canonico per macro_panel (stesse colonne di worldbank.py/imf.py).
+Canonical output for macro_panel (same columns as worldbank.py/imf.py).
 """
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ _COLS = ["date", "country_iso3", "indicator_id", "value", "indicator_name",
 
 
 def _period_end(period: str) -> Optional[pd.Timestamp]:
-    """'2025-Q4' (trimestre), '2026-05' (mese), '2025' (anno) -> fine periodo."""
+    """'2025-Q4' (quarter), '2026-05' (month), '2025' (year) -> end of period."""
     try:
         if "Q" in period:
             y, q = period.split("-Q")
@@ -66,14 +66,14 @@ def _get_csv(url: str, timeout: int, retries: int, base_sleep: float) -> Optiona
 def fetch_bis(spec: Dict, countries: List[Dict], *,
               start_year: int = 1990, timeout: int = 60,
               retries: int = 3, base_sleep: float = 1.0) -> pd.DataFrame:
-    """Scarica un indicatore BIS (API nativa) per i paesi richiesti.
+    """Download a BIS indicator (native API) for the requested countries.
 
-    Lo spec deve contenere:
+    The spec must contain:
       dataset         : 'WS_DSR' | 'WS_CREDIT_GAP' | 'WS_CBPOL'
-      code            : chiave SDMX con {iso2} (es. 'Q.{iso2}.P'); {iso2} viene
-                        svuotato per fetchare tutti i paesi in una chiamata
-      bis_country_dim : colonna CSV con il codice paese
-                        (BORROWERS_CTY per DSR/gap, REF_AREA per policy)
+      code            : SDMX key with {iso2} (e.g. 'Q.{iso2}.P'); {iso2} is
+                        emptied to fetch all countries in one call
+      bis_country_dim : CSV column with the country code
+                        (BORROWERS_CTY for DSR/gap, REF_AREA for policy)
     """
     dataset = spec.get("dataset")
     key_tpl = spec.get("code", "")
@@ -83,19 +83,19 @@ def fetch_bis(spec: Dict, countries: List[Dict], *,
     cty_dim = spec.get("bis_country_dim", "BORROWERS_CTY")
     freq = spec.get("freq", "Q")
 
-    # ISO2 BIS -> nostro ISO3
+    # BIS ISO2 -> our ISO3
     iso2_to_iso3 = {c["iso2"]: c["iso3"] for c in countries if c.get("iso2")}
     wanted = set(iso2_to_iso3)
 
-    # Broadcast area euro: i membri euro non hanno un policy rate individuale
-    # (vale quello ECB). Se spec['euro_aggregate'] e' valorizzato (es. 'XM'),
-    # le osservazioni di quel codice BIS vengono replicate su tutti i nostri
-    # paesi con euro=True. Zero nuove fonti: e' lo stesso WS_CBPOL.
+    # Euro-area broadcast: euro members do not have an individual policy rate
+    # (the ECB's applies). If spec['euro_aggregate'] is set (e.g. 'XM'), the
+    # observations of that BIS code are replicated across all our countries with
+    # euro=True. Zero new sources: it is the same WS_CBPOL.
     euro_agg = spec.get("euro_aggregate")
     euro_members = [c["iso3"] for c in countries if c.get("euro")]
-    agg_obs = []  # (date, value) dell'aggregato
+    agg_obs = []  # (date, value) of the aggregate
 
-    # chiave wildcard: posizione-paese vuota = tutti i paesi
+    # wildcard key: empty country position = all countries
     wild_key = key_tpl.replace("{iso2}", "")
     url = f"{_BASE}/{dataset}/1.0/{wild_key}?format=csv"
     try:
@@ -126,12 +126,12 @@ def fetch_bis(spec: Dict, countries: List[Dict], *,
         if dt is None or dt.year < start_year:
             continue
         if euro_agg and iso2 == euro_agg:
-            agg_obs.append((dt, float(val)))   # cattura aggregato euro
+            agg_obs.append((dt, float(val)))   # capture euro aggregate
         if iso2 not in wanted:
             continue
         rows.append(_mkrow(dt, iso2_to_iso3[iso2], val))
 
-    # replica l'aggregato euro su ogni membro euro privo di serie propria
+    # replicate the euro aggregate onto each euro member lacking its own series
     if euro_agg and agg_obs and euro_members:
         for iso3 in euro_members:
             for dt, val in agg_obs:

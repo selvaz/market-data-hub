@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-run_daily.py — entry point del download giornaliero incrementale.
+run_daily.py — entry point for the incremental daily download.
 
-Uso:
+Usage:
     python run_daily.py                          # full: yahoo + fred + binance + macro_panel + live
-    python run_daily.py --report --open          # full + report HTML + apre nel browser
-    python run_daily.py --report --send-email    # full + report + invio email
-    python run_daily.py --live-only              # solo live price injection intraday
-    python run_daily.py --sources yahoo fred     # sorgenti specifiche
+    python run_daily.py --report --open          # full + HTML report + open in browser
+    python run_daily.py --report --send-email    # full + report + send email
+    python run_daily.py --live-only              # live intraday price injection only
+    python run_daily.py --sources yahoo fred     # specific sources
     python run_daily.py --end 2024-12-31
 
-Nota: senza --sources scarica TUTTE le sorgenti (yahoo, fred, binance,
+Note: without --sources it downloads ALL sources (yahoo, fred, binance,
 macro_panel) + live injection.
 """
 import argparse
@@ -23,25 +23,25 @@ from market_data_hub.runner import run  # noqa: E402
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Download giornaliero market_data_hub")
+    p = argparse.ArgumentParser(description="market_data_hub daily download")
     p.add_argument("--live-only", action="store_true",
-                   help="solo live price injection intraday")
+                   help="live intraday price injection only")
     p.add_argument("--full", action="store_true",
-                   help="forza modalita' full (default)")
+                   help="force full mode (default)")
     p.add_argument("--sources", nargs="+",
                    choices=["yahoo", "fred", "binance", "macro_panel"],
-                   help="limita alle sorgenti indicate")
-    p.add_argument("--end", help="data finale (default: oggi UTC)")
-    p.add_argument("--db", help="path DB DuckDB (override settings)")
+                   help="limit to the given sources")
+    p.add_argument("--end", help="end date (default: today UTC)")
+    p.add_argument("--db", help="DuckDB DB path (override settings)")
     p.add_argument("--report", action="store_true",
-                   help="genera report HTML/MD al termine del download")
+                   help="generate HTML/MD report when the download finishes")
     p.add_argument("--send-email", action="store_true",
-                   help="invia il report via email (implica --report)")
+                   help="send the report by email (implies --report)")
     p.add_argument("--open", dest="open_browser", action="store_true",
-                   help="apre il report HTML nel browser al termine (implica --report)")
+                   help="open the HTML report in the browser when finished (implies --report)")
     args = p.parse_args()
 
-    # --send-email e --open implicano --report
+    # --send-email and --open imply --report
     if args.send_email or args.open_browser:
         args.report = True
 
@@ -50,17 +50,17 @@ def main() -> int:
     try:
         run(mode=mode, sources=args.sources, end=args.end, db_path=args.db)
     except Exception as e:
-        print(f"ERRORE durante il download: {e}", file=sys.stderr)
+        print(f"ERROR during download: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
-        # continua comunque verso il report se richiesto
+        # continue to the report anyway if requested
         if not args.report:
             return 1
 
     if args.report and not args.live_only:
-        print("\n--- Generazione report ---")
+        print("\n--- Generating report ---")
         try:
-            # import inline per non rallentare i run live-only
+            # inline import so live-only runs are not slowed down
             from make_report import main as _report_main, \
                 collect, render_html, render_md, send_email, REPORT_DIR
             from market_data_hub.db.connection import get_conn
@@ -80,15 +80,15 @@ def main() -> int:
             html_path.write_text(html_content, encoding="utf-8")
             md_path.write_text(render_md(d), encoding="utf-8")
             print(f"Report: {html_path}")
-            print(f"Righe: {d['total_rows']:,} | Serie: "
+            print(f"Rows: {d['total_rows']:,} | Series: "
                   f"{sum(x['series'] for x in d['tables'])} | "
-                  f"Score: {d['score_avg']} | Ferme: {len(d['stalled'])}")
+                  f"Score: {d['score_avg']} | Stalled: {len(d['stalled'])}")
 
             if args.send_email:
                 send_email(html_content, d)
 
-            # report Ray Dalio (fasi ciclo debito + regime) — il calcolo Dalio
-            # e' gia' stato fatto dentro run(); qui generiamo solo l'HTML.
+            # Ray Dalio report (debt-cycle phases + regime) — the Dalio
+            # computation was already done inside run(); here we only generate the HTML.
             dalio_path = None
             try:
                 from make_dalio_report import collect as dcollect, render_html as drender
@@ -99,20 +99,20 @@ def main() -> int:
                     con2.close()
                 dalio_path = REPORT_DIR / f"dalio_report_{stamp}.html"
                 dalio_path.write_text(drender(dd), encoding="utf-8")
-                print(f"Report Dalio: {dalio_path} "
-                      f"(fasi: {dd['phase_counts']})")
+                print(f"Dalio report: {dalio_path} "
+                      f"(phases: {dd['phase_counts']})")
             except Exception as e:
-                print(f"(report Dalio saltato: {e})")
+                print(f"(Dalio report skipped: {e})")
 
             if args.open_browser:
                 import webbrowser
                 webbrowser.open(html_path.as_uri())
                 if dalio_path:
                     webbrowser.open(dalio_path.as_uri())
-                print(f"Aperto nel browser: {html_path}")
+                print(f"Opened in browser: {html_path}")
 
         except Exception as e:
-            print(f"ERRORE generazione report: {e}", file=sys.stderr)
+            print(f"ERROR generating report: {e}", file=sys.stderr)
             import traceback
             traceback.print_exc()
 

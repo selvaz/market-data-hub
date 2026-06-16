@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-imf.py — sorgente IMF DataMapper (WEO) per il panel cross-country.
+imf.py — IMF DataMapper (WEO) source for the cross-country panel.
 
-Porta fetch_imf_datamapper() da macro_dashboard_v2_bundle. Una sola chiamata
-REST restituisce TUTTI i paesi per un indicatore, quindi e' molto efficiente:
-filtriamo poi sulla nostra lista. Tutti gli indicatori WEO sono annuali.
+Ports fetch_imf_datamapper() from macro_dashboard_v2_bundle. A single REST call
+returns ALL countries for an indicator, so it is very efficient: we then filter
+on our list. All WEO indicators are annual.
 
-Output canonico per macro_panel (stesse colonne di worldbank.py).
+Canonical output for macro_panel (same columns as worldbank.py).
 """
 from __future__ import annotations
 
@@ -23,22 +23,22 @@ _COLS = ["date", "country_iso3", "indicator_id", "value", "indicator_name",
          "pillar", "orientation", "source", "provider_dataset",
          "provider_code", "unit", "frequency", "status"]
 
-# IMPORTANTE sul WAF Akamai dell'IMF (verificato empiricamente):
-#   - UA custom tipo "market-data-hub/0.1"  -> 403
-#   - UA browser falsificato (Mozilla/Chrome) -> 403 (UA "browser" + fingerprint
-#     TLS di python = firma da bot, Akamai lo blocca)
-#   - NESSUN header custom (UA default di python-requests) -> 200  <-- usare questo
-# Stesso identico approccio del progetto FRONTIER/new_approach (gira senza
-# problemi). requests rispetta REQUESTS_CA_BUNDLE per la rete MITM.
+# IMPORTANT about the IMF's Akamai WAF (verified empirically):
+#   - custom UA like "market-data-hub/0.1"  -> 403
+#   - spoofed browser UA (Mozilla/Chrome) -> 403 ("browser" UA + python's TLS
+#     fingerprint = bot signature, Akamai blocks it)
+#   - NO custom header (python-requests default UA) -> 200  <-- use this
+# Exactly the same approach as the FRONTIER/new_approach project (runs without
+# issues). requests respects REQUESTS_CA_BUNDLE for the MITM network.
 
 
 def _get_json(url: str, timeout: int, retries: int, base_sleep: float):
-    # 403 = WAF/rate-limit Akamai. Con lo UA default di requests non e' lo UA il
-    # problema; un 403 residuo indica rate-limit temporaneo -> attesa piu' lunga.
+    # 403 = Akamai WAF/rate-limit. With requests' default UA the UA is not the
+    # problem; a residual 403 indicates a temporary rate-limit -> longer wait.
     last = None
     for attempt in range(retries):
         try:
-            r = requests.get(url, timeout=timeout)  # nessun header: UA default
+            r = requests.get(url, timeout=timeout)  # no headers: default UA
             if r.status_code == 403:
                 raise requests.HTTPError("403 WAF/rate-limit", response=r)
             r.raise_for_status()
@@ -58,16 +58,17 @@ def fetch_imf(spec: Dict, countries: List[Dict], *,
               start_year: int = 1990, end_year: Optional[int] = None,
               timeout: int = 30, retries: int = 3, base_sleep: float = 1.0
               ) -> pd.DataFrame:
-    """Scarica un indicatore WEO per i paesi richiesti. Ritorna frame macro_panel."""
-    # Il WEO include proiezioni ~5-6 anni oltre l'anno corrente: NON troncare
-    # all'anno corrente (perderemmo i forecast, che servono al forward-looking
-    # di Dalio). Default: anno corrente + 6 (il WEO si auto-limita al suo orizzonte).
+    """Download a WEO indicator for the requested countries. Returns a macro_panel frame."""
+    # The WEO includes projections ~5-6 years beyond the current year: do NOT
+    # truncate at the current year (we would lose the forecasts, needed for
+    # Dalio's forward-looking view). Default: current year + 6 (the WEO
+    # self-limits to its own horizon).
     end_year = end_year or (datetime.now().year + 6)
     code = spec["code"]
-    # Una sola chiamata {base}/{code} ritorna TUTTI i paesi (226): filtriamo i
-    # nostri lato client. NON mettere la lista paesi nel path: e' inaffidabile
-    # (il WAF Akamai blocca, e con molti paesi l'URL va in 404). Stesso pattern
-    # del progetto FRONTIER ("country filtering in URL is unreliable").
+    # A single {base}/{code} call returns ALL countries (226): we filter ours
+    # client-side. Do NOT put the country list in the path: it is unreliable
+    # (the Akamai WAF blocks it, and with many countries the URL 404s). Same
+    # pattern as the FRONTIER project ("country filtering in URL is unreliable").
     url = f"{_BASE}/{code}"
     try:
         data = _get_json(url, timeout, retries, base_sleep)

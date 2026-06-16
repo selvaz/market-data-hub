@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 """
-dalio.py — layer analitico "Ray Dalio" sopra macro_panel.
+dalio.py — "Ray Dalio" analytical layer on top of macro_panel.
 
-Implementa la Parte A della spec Dalio v3:
-  - signals z-score (x direction) per (paese, indicatore), finestra 10y
-  - calcoli derivati: debt-to-income gap, nominal growth vs nominal rate,
-    productivity trend, growth/inflation delta (sorprese vs trend)
-  - debt cycle phase classifier (7 fasi, soglie configurabili)
+Implements Part A of the Dalio v3 spec:
+  - z-score signals (x direction) per (country, indicator), 10y window
+  - derived calculations: debt-to-income gap, nominal growth vs nominal rate,
+    productivity trend, growth/inflation delta (surprises vs trend)
+  - debt cycle phase classifier (7 phases, configurable thresholds)
   - four-box growth/inflation regime (Q1-Q4)
-  - pillar_scores + composite pesato + 3 etichette categoriche
+  - pillar_scores + weighted composite + 3 categorical labels
 
-Scrive: dalio_signals, pillar_scores, regime_state.
-Robusto: indicatori mancanti -> NaN / fase INDETERMINATE, mai crash.
+Writes: dalio_signals, pillar_scores, regime_state.
+Robust: missing indicators -> NaN / INDETERMINATE phase, never crashes.
 
-Uso:
+Usage:
     from market_data_hub.dalio import run_dalio
-    run_dalio()                       # calcola e scrive nel DB
-    run_dalio(ref_year=2026)          # data di riferimento specifica
+    run_dalio()                       # computes and writes to the DB
+    run_dalio(ref_year=2026)          # specific reference date
 """
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ import pandas as pd
 from market_data_hub.config_loader import get_settings
 from market_data_hub.db.connection import get_conn
 
-# mappa indicatori-chiave Dalio -> id nel macro_panel (con fallback)
+# map of key Dalio indicators -> id in macro_panel (with fallback)
 IND = {
     "credit_gap": "bis_credit_gap",
     "dsr": "bis_dsr_private",
@@ -43,7 +43,7 @@ IND = {
 
 
 def _first_avail(series_by_ind: Dict[str, pd.DataFrame], ids):
-    """Ritorna la prima serie disponibile (non vuota) tra una lista di id."""
+    """Returns the first available (non-empty) series among a list of ids."""
     if isinstance(ids, str):
         ids = [ids]
     for i in ids:
@@ -61,7 +61,7 @@ def _latest(s: Optional[pd.DataFrame]):
 
 
 def _prev(s: Optional[pd.DataFrame]):
-    """Valore precedente (penultima osservazione annuale)."""
+    """Previous value (second-to-last annual observation)."""
     if s is None or len(s) < 2:
         return np.nan
     return float(s.sort_values("date").iloc[-2]["value"])
@@ -77,8 +77,8 @@ def _trailing_avg(s: Optional[pd.DataFrame], n: int):
 
 
 def _pct_in_range(s: Optional[pd.DataFrame]):
-    """Posizione del valore corrente nel range storico [0,1]. Per il DSR:
-    ~1 = al picco storico (stress, lettura Dalio). None se storia insufficiente."""
+    """Position of the current value in the historical range [0,1]. For the DSR:
+    ~1 = at the historical peak (stress, Dalio reading). None if insufficient history."""
     if s is None or s.empty:
         return float("nan")
     v = s.sort_values("date")["value"].dropna()
@@ -91,8 +91,8 @@ def _pct_in_range(s: Optional[pd.DataFrame]):
 
 
 def _slope(s: Optional[pd.DataFrame], y_lo: int, y_hi: int):
-    """Slope OLS (pp/anno) del valore vs anno nella finestra [y_lo, y_hi].
-    Usata per la TRAIETTORIA del debito/PIL (include i forecast WEO)."""
+    """OLS slope (pp/year) of value vs year in the window [y_lo, y_hi].
+    Used for the debt/GDP TRAJECTORY (includes WEO forecasts)."""
     if s is None or s.empty:
         return float("nan")
     d = s.copy()
@@ -106,7 +106,7 @@ def _slope(s: Optional[pd.DataFrame], y_lo: int, y_hi: int):
 
 
 def _zscore(s: Optional[pd.DataFrame], orient: int, win: int, min_obs: int):
-    """z = (x - mean)/std su finestra win, x orientation. None se < min_obs."""
+    """z = (x - mean)/std over window win, x orientation. None if < min_obs."""
     if s is None or s.empty:
         return np.nan, 0
     v = s.sort_values("date")["value"].dropna().tail(win)
@@ -126,21 +126,21 @@ def classify_regime(growth_delta, infl_delta):
     g_up = growth_delta >= 0
     i_up = infl_delta >= 0
     if g_up and not i_up:
-        return "Q1"   # crescita su, inflazione giu -> risk assets
+        return "Q1"   # growth up, inflation down -> risk assets
     if g_up and i_up:
-        return "Q2"   # reflation -> commodity, EM, linkers
+        return "Q2"   # reflation -> commodities, EM, linkers
     if not g_up and i_up:
-        return "Q3"   # stagflazione -> oro, difensivo
-    return "Q4"        # disinflazione/recessione -> bond, cash
+        return "Q3"   # stagflation -> gold, defensive
+    return "Q4"        # disinflation/recession -> bonds, cash
 
 
 def classify_cycle_phase(x: dict, th: dict) -> str:
-    """Albero a soglie del ciclo del debito (Dalio, spec 2.1 estesa).
+    """Threshold tree of the debt cycle (Dalio, extended spec 2.1).
 
-    Estende la logica della spec con le fasi "normali" che altrimenti cadrebbero
-    in INDETERMINATE: espansione sana, late-leveraging (verso la bolla),
-    contrazione lieve, ugly deleveraging. INDETERMINATE resta solo quando i dati
-    di base (crescita E credit_gap) mancano entrambi.
+    Extends the spec logic with the "normal" phases that would otherwise fall
+    into INDETERMINATE: healthy expansion, late-leveraging (toward the bubble),
+    mild contraction, ugly deleveraging. INDETERMINATE remains only when the
+    base data (growth AND credit_gap) are both missing.
     """
     cg = x.get("credit_gap")
     g = x.get("growth")
@@ -150,59 +150,59 @@ def classify_cycle_phase(x: dict, th: dict) -> str:
     debt_falling = x.get("debt_falling")
     debt_lvl = x.get("debt_level")
     fisc = x.get("fiscal_balance")
-    dtrend = x.get("debt_trend")          # traiettoria debito/PIL (pp/anno)
+    dtrend = x.get("debt_trend")          # debt/GDP trajectory (pp/year)
 
     def has(v):
         return v is not None and not pd.isna(v)
 
-    # il debito sta SALENDO se la traiettoria pluriennale e' positiva
+    # debt is RISING if the multi-year trajectory is positive
     debt_rising = has(dtrend) and dtrend > th["debt_trend_moderate"]
     debt_rising_fast = has(dtrend) and dtrend > th["debt_trend_high"]
 
-    # serve almeno crescita O credit_gap, altrimenti non si puo' dire nulla
+    # need at least growth OR credit_gap, otherwise nothing can be said
     if not has(g) and not has(cg):
         return "INDETERMINATE"
 
-    # 1) contrazione / depressione (crescita negativa). DEPRESSION se il debt
-    #    service ratio e' al PICCO della sua storia (Dalio), non a un livello
-    #    assoluto: 20% e' normale per CH/NL, alto per IT. Fallback assoluto se
-    #    manca storia.
+    # 1) contraction / depression (negative growth). DEPRESSION if the debt
+    #    service ratio is at the PEAK of its history (Dalio), not at an absolute
+    #    level: 20% is normal for CH/NL, high for IT. Absolute fallback if
+    #    history is missing.
     dsr_pct = x.get("dsr_pct")
     dsr_stressed = (dsr_pct > th["dsr_peak_pct"]) if has(dsr_pct) \
         else (has(dsr) and dsr > th["dsr_high"])
     if has(g) and g < 0:
         return "DEPRESSION" if dsr_stressed else "CONTRACTION"
 
-    # 2) deleveraging (debito/PIL in CALO sostenuto): beautiful vs ugly
-    #    Usa la traiettoria pluriennale, non la variazione di 1 anno.
-    #    Ha precedenza -> Giappone/Grecia (debito alto ma in discesa) qui.
+    # 2) deleveraging (debt/GDP in sustained DECLINE): beautiful vs ugly
+    #    Uses the multi-year trajectory, not the 1-year change.
+    #    Takes precedence -> Japan/Greece (high but declining debt) here.
     if (debt_falling or (has(dtrend) and dtrend < -th["debt_trend_moderate"])) \
             and has(gn) and has(rn):
         return "BEAUTIFUL_DELEVERAGING" if gn > rn else "UGLY_DELEVERAGING"
 
-    # 3) ciclo del debito LUNGO/sovrano (tesi-chiave di Dalio): un debito alto
-    #    (>100% PIL) e non in calo NON e' "espansione sana". Ma si distingue la
-    #    gradazione:
-    #      LATE_LONG_CYCLE   = debito molto alto (>130%) OPPURE in deterioramento
-    #                          (in salita o con deficit ampio) -> verso la resa dei conti
-    #      HIGH_DEBT_STABLE  = debito alto ma stabilizzato/plateau, non in peggioramento
+    # 3) LONG/sovereign debt cycle (Dalio's key thesis): high debt
+    #    (>100% GDP) that is not declining is NOT a "healthy expansion". But the
+    #    gradation is distinguished:
+    #      LATE_LONG_CYCLE   = very high debt (>130%) OR deteriorating
+    #                          (rising or with a large deficit) -> toward the reckoning
+    #      HIGH_DEBT_STABLE  = high but stabilized/plateaued debt, not worsening
     if has(debt_lvl) and not debt_falling and debt_lvl > th["debt_high_level"]:
         deteriorating = debt_rising or (has(fisc) and fisc < th["deficit_large"])
         if debt_lvl > th["debt_crisis_level"] or deteriorating:
             return "LATE_LONG_CYCLE"
         return "HIGH_DEBT_STABLE"
 
-    # 4) bolla / leveraging up (credito privato breve + traiettoria debito)
+    # 4) bubble / leveraging up (short-term private credit + debt trajectory)
     if has(cg) and cg > th["credit_gap_bubble"]:
         return "BUBBLE"
     if (has(cg) and cg > th["credit_gap_late"]) or debt_rising_fast:
         return "LATE_LEVERAGING"
 
-    # 4) politica monetaria esausta: tassi ~0 e crescita debole
+    # 4) exhausted monetary policy: rates ~0 and weak growth
     if has(rn) and rn < th["rate_near_zero"] and has(g) and g < th["weak_growth"]:
         return "PUSHING_ON_STRING"
 
-    # 5) espansione sana (il caso "normale": crescita positiva, niente eccessi)
+    # 5) healthy expansion (the "normal" case: positive growth, no excesses)
     if has(g) and g > 0:
         return "EARLY_EXPANSION"
 
@@ -210,10 +210,10 @@ def classify_cycle_phase(x: dict, th: dict) -> str:
 
 
 def _deleveraging_quality(g, gn, rn, debt_falling):
-    """Qualita' del deleveraging — ha senso SOLO se il debito sta scendendo.
-    Se il debito non cala, NON c'e' deleveraging -> NA (no contraddizioni col
-    tipo 'EARLY_EXPANSION + UGLY'). Beautiful: crescita nom. > tasso nom.;
-    Ugly: crescita nom. < tasso nom. (riduzione dolorosa/deflattiva)."""
+    """Deleveraging quality — only makes sense IF the debt is falling.
+    If debt is not falling, there is NO deleveraging -> NA (no contradictions
+    like 'EARLY_EXPANSION + UGLY'). Beautiful: nominal growth > nominal rate;
+    Ugly: nominal growth < nominal rate (painful/deflationary reduction)."""
     if not debt_falling:
         return "NA"
     if pd.isna(gn) or pd.isna(rn):
@@ -242,24 +242,24 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
         "frequency FROM macro_panel WHERE value IS NOT NULL").fetch_df()
     if panel.empty:
         con.close()
-        raise RuntimeError("macro_panel vuoto: lanciare prima il download.")
+        raise RuntimeError("macro_panel empty: run the download first.")
     panel["date"] = pd.to_datetime(panel["date"])
     now = datetime.now(timezone.utc)
 
     sig_rows, pil_rows, reg_rows = [], [], []
 
-    # ref_year = anno CORRENTE (non il max=ultimo forecast!). Le metriche di
-    # stato del paese vanno calcolate sul presente; i forecast (> ref_year)
-    # restano disponibili per i grafici ma NON sono il "valore corrente".
+    # ref_year = CURRENT year (not the max=latest forecast!). The country state
+    # metrics must be computed on the present; forecasts (> ref_year) remain
+    # available for the charts but are NOT the "current value".
     ry = ref_year or now.year
     ref_date = pd.Timestamp(ry, 12, 31)
 
-    # --- z-score CROSS-COUNTRY (forza relativa vs gli altri paesi) ---
-    # Per ogni indicatore: ultimo valore <= ref per ogni paese, poi z fra paesi
-    # (x-mean)/std x direction, clippato a [-3,3]. E' questo che rende il
-    # composite un punteggio di FORZA paese (Svizzera alta, EM stressati bassi),
-    # non un "vs propria storia". Lo z temporale resta per le letture cicliche
-    # (es. dsr_pct, gia' separato).
+    # --- CROSS-COUNTRY z-score (relative strength vs the other countries) ---
+    # For each indicator: latest value <= ref for each country, then z across
+    # countries (x-mean)/std x direction, clipped to [-3,3]. This is what makes
+    # the composite a country STRENGTH score (Switzerland high, stressed EM low),
+    # not a "vs its own history". The temporal z remains for the cyclical
+    # readings (e.g. dsr_pct, already separate).
     pref = panel[panel["date"] <= ref_date]
     xz = {}          # indicator -> {country: z_cross}
     ind_meta = {}    # indicator -> (pillar, orientation)
@@ -280,16 +280,16 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
         cdf = cdf_full[cdf_full["date"] <= ref_date]
         if cdf.empty:
             continue
-        # serie debito/PIL COMPLETA (incl. forecast) per la traiettoria
+        # FULL debt/GDP series (incl. forecast) for the trajectory
         debt_full = cdf_full[cdf_full["indicator_id"] == IND["pub_debt"]][["date", "value"]]
         debt_trend = _slope(debt_full, ry - tw_back, ry + tw_fwd)
-        # finestra z-score per frequenza (10y): A->10, Q->40, M->120
+        # z-score window by frequency (10y): A->10, Q->40, M->120
         by_ind = {i: g[["date", "value"]] for i, g in cdf.groupby("indicator_id")}
         meta = {i: (g["pillar"].iloc[-1], int(g["orientation"].iloc[-1] or 0),
                     g["frequency"].iloc[-1])
                 for i, g in cdf.groupby("indicator_id")}
 
-        # ---- signals: z-score CROSS-COUNTRY per ogni indicatore ----
+        # ---- signals: CROSS-COUNTRY z-score for each indicator ----
         for ind, s in by_ind.items():
             pillar, orient, freq = meta[ind]
             z = xz.get(ind, {}).get(country)
@@ -299,7 +299,7 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
             sig_rows.append((country, ref_date.date(), ind, pillar, val,
                              z, len(xz.get(ind, {})), sgl, now))
 
-        # ---- calcoli derivati Dalio ----
+        # ---- derived Dalio calculations ----
         s_cg = _first_avail(by_ind, IND["credit_gap"])
         s_dsr = _first_avail(by_ind, IND["dsr"])
         s_rate = _first_avail(by_ind, IND["policy_rate"])
@@ -310,7 +310,7 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
 
         credit_gap, _ = _latest(s_cg)
         dsr, _ = _latest(s_dsr)
-        dsr_pct = _pct_in_range(s_dsr)   # posizione DSR vs sua storia (Dalio)
+        dsr_pct = _pct_in_range(s_dsr)   # DSR position vs its history (Dalio)
         nom_rate, _ = _latest(s_rate)
         debt, _ = _latest(s_debt)
         debt_prev = _prev(s_debt)
@@ -319,14 +319,14 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
         infl, _ = _latest(s_i)
 
         debt_income_gap = (debt - debt_prev) if not (pd.isna(debt) or pd.isna(debt_prev)) else np.nan
-        # "debito in calo" = TRAIETTORIA pluriennale in discesa (non 1 anno)
+        # "debt falling" = multi-year TRAJECTORY declining (not 1 year)
         debt_falling = (not pd.isna(debt_trend)) and debt_trend < 0
         nom_growth = (growth + infl) if not (pd.isna(growth) or pd.isna(infl)) else np.nan
-        # four-box: crescita/inflazione correnti vs il PROPRIO POTENZIALE/trend
-        # (output gap), non momentum YoY. Il potenziale = media WEO di medio
-        # termine [ry+2, ry+5] (stima IMF dell'equilibrio, immune al COVID).
-        # Cosi' un paese ad alta crescita SOPRA il suo potenziale e' "crescita su"
-        # (es. Vietnam), uno a bassa crescita sotto il suo trend e' "giu" (Italia).
+        # four-box: current growth/inflation vs its OWN POTENTIAL/trend
+        # (output gap), not YoY momentum. The potential = medium-term WEO mean
+        # [ry+2, ry+5] (IMF estimate of equilibrium, immune to COVID).
+        # So a high-growth country ABOVE its potential is "growth up"
+        # (e.g. Vietnam), a low-growth one below its trend is "down" (Italy).
         def _potential(ind_ids):
             for iid in ([ind_ids] if isinstance(ind_ids, str) else ind_ids):
                 fs = cdf_full[cdf_full["indicator_id"] == iid]
@@ -337,12 +337,12 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
                 if len(med) >= 2:
                     return float(med.mean())
             return np.nan
-        # crescita: vs POTENZIALE (output gap -> forte/debole)
+        # growth: vs POTENTIAL (output gap -> strong/weak)
         pot_g = _potential(IND["growth"])
         growth_delta = (growth - pot_g) if not (pd.isna(growth) or pd.isna(pot_g)) else np.nan
-        # inflazione: vs media dei 3 anni PRECEDENTI (direzione -> reflazione/
-        # disinflazione). Il potenziale WEO assume disinflazione e renderebbe
-        # quasi tutti "in salita"; la direzione recente e' piu' informativa.
+        # inflation: vs mean of the 3 PRIOR years (direction -> reflation/
+        # disinflation). The WEO potential assumes disinflation and would make
+        # almost everyone "rising"; the recent direction is more informative.
         def _prior3(s):
             if s is None or s.empty:
                 return np.nan
@@ -366,7 +366,7 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
                          credit_gap, dsr, debt_income_gap,
                          None if pd.isna(debt_trend) else round(debt_trend, 2), now))
 
-        # ---- pillar_scores + composite (z CROSS-COUNTRY) ----
+        # ---- pillar_scores + composite (CROSS-COUNTRY z) ----
         zdf = pd.DataFrame([(meta[i][0], xz.get(i, {}).get(country))
                             for i in by_ind], columns=["pillar", "z"]).dropna()
         comp_num = comp_den = 0.0
@@ -379,14 +379,14 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
                 comp_num += w * sc
                 comp_den += w
         composite = comp_num / comp_den if comp_den else np.nan
-        # short cycle: proxy semplice da growth_delta
+        # short cycle: simple proxy from growth_delta
         short = ("late/contraction" if (not pd.isna(growth_delta) and growth_delta < 0)
                  else "mid/late upswing" if not pd.isna(growth_delta) else None)
         pil_rows.append((country, ref_date.date(), "COMPOSITE",
                          None if pd.isna(composite) else composite, len(zdf),
                          phase, short, quadrant, now))
 
-    # ---- scrittura idempotente (regime_state ricreata: aggiunta col debt_trend) ----
+    # ---- idempotent write (regime_state recreated: added debt_trend col) ----
     con.execute("DROP TABLE IF EXISTS regime_state")
     con.execute("""CREATE TABLE regime_state (
         country_iso3 VARCHAR NOT NULL, ref_date DATE NOT NULL,
@@ -409,7 +409,7 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
     phases = pd.DataFrame(reg_rows, columns=[
         "c", "d", "gd", "id_", "q", "phase", "ng", "nr", "dq", "cg", "dsr", "dig", "dtr", "t"])
 
-    # --- freschezza forecast WEO: l'orizzonte deve superare l'anno corrente ---
+    # --- WEO forecast freshness: the horizon must exceed the current year ---
     weo = panel[panel["indicator_id"].isin(["gdp_growth_weo", "public_debt_gdp"])]
     weo_horizon = int(pd.to_datetime(weo["date"]).dt.year.max()) if not weo.empty else None
     cur_year = datetime.now(timezone.utc).year

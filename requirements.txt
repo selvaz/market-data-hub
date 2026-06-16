@@ -8,4 +8,4 @@ pyarrow
 openpyxl
 pyyaml
 certifi
-truststore  # verifica SSL via cert store di Windows (reti con proxy/MITM)
+truststore  # SSL verification via the Windows cert store (networks with proxy/MITM)

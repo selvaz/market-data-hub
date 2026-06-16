@@ -1,20 +1,20 @@
 # -*- coding: utf-8 -*-
 """
-validate_macro_panel.py — verifica che OGNI codice indicatore del panel
-cross-country restituisca davvero dati dalle API live, prima di fidarsene.
+validate_macro_panel.py — verify that EVERY indicator code in the
+cross-country panel really returns data from the live APIs, before trusting it.
 
-Per ogni indicatore prova un piccolo set di paesi-sonda (default: USA, ITA, BRA,
-IND, CHN). Riporta:
-  OK       — almeno un paese restituisce osservazioni
-  PARTIAL  — alcuni paesi vuoti
-  EMPTY    — nessun dato per nessun paese sonda
-  FALLBACK — il codice primario fallisce ma il fallback funziona
-  FAIL     — eccezione/codice non valido
+For each indicator it tries a small set of probe countries (default: USA, ITA, BRA,
+IND, CHN). Reports:
+  OK       — at least one country returns observations
+  PARTIAL  — some countries empty
+  EMPTY    — no data for any probe country
+  FALLBACK — the primary code fails but the fallback works
+  FAIL     — exception/invalid code
 
-Uso:
-    python validate_macro_panel.py                 # tutti gli indicatori
+Usage:
+    python validate_macro_panel.py                 # all indicators
     python validate_macro_panel.py --probes USA ITA JPN
-    python validate_macro_panel.py --full          # tutti i paesi del catalogo
+    python validate_macro_panel.py --full          # all countries in the catalog
 """
 import argparse
 import sys
@@ -35,7 +35,7 @@ import time
 
 def _fetch(spec, countries):
     if spec["source"] == "IMF":
-        time.sleep(3)  # spaziare le chiamate IMF: il WAF blocca i burst
+        time.sleep(3)  # space out IMF calls: the WAF blocks bursts
         return im.fetch_imf(spec, countries, start_year=2015, retries=3)
     if spec["source"] == "BIS":
         return bs.fetch_bis(spec, countries, start_year=2015, retries=3)
@@ -61,9 +61,9 @@ def validate(probes, full=False):
             if n_obs > 0:
                 status = "OK" if n_countries >= max(1, len(probe_countries) // 2) else "PARTIAL"
                 latest = int(pd.to_datetime(df["date"]).dt.year.max())
-                detail = f"{n_obs} obs, {n_countries} paesi, ultimo {latest}"
+                detail = f"{n_obs} obs, {n_countries} countries, latest {latest}"
             else:
-                # prova fallback se definito
+                # try fallback if defined
                 fb = spec.get("fallback")
                 if fb:
                     fbspec = {**spec, **fb}
@@ -71,14 +71,14 @@ def validate(probes, full=False):
                     if not fdf.empty:
                         status = "FALLBACK"
                         latest = int(pd.to_datetime(fdf["date"]).dt.year.max())
-                        detail = (f"primario vuoto; fallback {fb['source']}/"
-                                  f"{fb['code']} ok ({len(fdf)} obs, ultimo {latest})")
+                        detail = (f"primary empty; fallback {fb['source']}/"
+                                  f"{fb['code']} ok ({len(fdf)} obs, latest {latest})")
                     else:
                         status = "EMPTY"
-                        detail = "primario e fallback vuoti"
+                        detail = "primary and fallback empty"
                 else:
                     status = "EMPTY"
-                    detail = "nessuna osservazione"
+                    detail = "no observations"
         except Exception as e:
             status = "FAIL"
             detail = f"{type(e).__name__}: {e}"
@@ -94,19 +94,19 @@ def validate(probes, full=False):
     rep.to_csv(out, index=False)
 
     print("\n" + "=" * 60)
-    print("RIEPILOGO:", dict(rep["status"].value_counts()))
+    print("SUMMARY:", dict(rep["status"].value_counts()))
     bad = rep[rep["status"].isin(["EMPTY", "FAIL"])]
     if not bad.empty:
-        print("\nDA CORREGGERE/RIMUOVERE:")
+        print("\nTO FIX/REMOVE:")
         print(bad[["indicator_id", "source", "code", "status", "detail"]].to_string(index=False))
-    print(f"\nReport completo: {out}")
+    print(f"\nFull report: {out}")
     return rep
 
 
 def main():
-    p = argparse.ArgumentParser(description="Valida i codici del macro panel")
+    p = argparse.ArgumentParser(description="Validate the macro panel codes")
     p.add_argument("--probes", nargs="+", default=PROBE_DEFAULT)
-    p.add_argument("--full", action="store_true", help="usa tutti i paesi")
+    p.add_argument("--full", action="store_true", help="use all countries")
     args = p.parse_args()
     validate(args.probes, full=args.full)
 

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-binance.py — sorgente Binance (klines OHLCV intraday/daily) via API pubblica.
+binance.py — Binance source (intraday/daily OHLCV klines) via public API.
 
-Porta da crypto_ml_features/binance_downloader_improved.py la logica di
-paginazione klines e i campi estesi (volume quote, n_trades, taker buy).
-Il refresh delle candele recenti incomplete e' gestito dal runner che riparte
-da (last_ts - lookback).
+Ports from crypto_ml_features/binance_downloader_improved.py the klines
+pagination logic and the extended fields (quote volume, n_trades, taker buy).
+Refreshing recent incomplete candles is handled by the runner, which restarts
+from (last_ts - lookback).
 
-Output canonico per crypto_ohlcv:
+Canonical output for crypto_ohlcv:
   [ts, symbol, timeframe, open, high, low, close, volume, volume_quote,
    n_trades, taker_buy_base, is_closed]
 """
@@ -40,9 +40,9 @@ def _to_ms(dt) -> int:
 def fetch_klines(symbol: str, timeframe: str, start, end, *,
                  timeout: int = 30, retries: int = 3, base_sleep: float = 1.0,
                  request_delay: float = 0.25) -> pd.DataFrame:
-    """Scarica klines paginate per symbol/timeframe tra start ed end (UTC)."""
+    """Download paginated klines for symbol/timeframe between start and end (UTC)."""
     if timeframe not in _TF_MS:
-        raise ValueError(f"Timeframe non supportato: {timeframe}")
+        raise ValueError(f"Unsupported timeframe: {timeframe}")
 
     symbol = symbol.upper().strip()
     start_ts, end_ts = _to_ms(start), _to_ms(end)
@@ -96,7 +96,7 @@ def fetch_klines(symbol: str, timeframe: str, start, end, *,
         "volume_quote": pd.to_numeric(df["quote_asset_volume"], errors="coerce"),
         "n_trades": pd.to_numeric(df["number_of_trades"], errors="coerce").astype("Int64"),
         "taker_buy_base": pd.to_numeric(df["taker_buy_base"], errors="coerce"),
-        # candela chiusa se il suo close_time e' gia' passato
+        # candle is closed if its close_time has already passed
         "is_closed": df["close_time"] < now_ms,
     })
     out = (out.dropna(subset=["ts"])

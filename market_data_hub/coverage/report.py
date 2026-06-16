@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-report.py — costruisce/aggiorna la tabella coverage_report leggendo il DB.
+report.py — builds/updates the coverage_report table by reading the DB.
 
-Per ogni (symbol, source) calcola: first/last date, obs, frequenza rilevata,
-lag_days, flag stalled, gap_count, missing_pct, coverage_score e flag di qualita'.
-Chiamato a fine di ogni run giornaliero.
+For each (symbol, source) it computes: first/last date, obs, detected frequency,
+lag_days, stalled flag, gap_count, missing_pct, coverage_score and quality flags.
+Called at the end of each daily run.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ from market_data_hub.db.upsert import upsert
 
 
 def _meta_lookup() -> Dict[str, dict]:
-    """Mappa symbol/series_id -> {asset_class, priority}."""
+    """Map symbol/series_id -> {asset_class, priority}."""
     m: Dict[str, dict] = {}
     for e in get_yahoo_tickers():
         m[e["symbol"]] = {"asset_class": e.get("asset_class", ""),
@@ -75,7 +75,7 @@ def _row_for(symbol: str, source: str, df: pd.DataFrame, date_col: str,
 
 
 def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
-    """Ricalcola coverage_report per tutte le serie nel DB. Ritorna n. righe."""
+    """Recompute coverage_report for all series in the DB. Returns the row count."""
     meta = _meta_lookup()
     rows = []
 
@@ -100,7 +100,7 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
                                  meta.get(sid, {"asset_class": "MACRO",
                                                 "priority": 2}), run_id))
 
-    # --- crypto_ohlcv (binance) — chiave symbol:timeframe ---
+    # --- crypto_ohlcv (binance) — key symbol:timeframe ---
     cdf = con.execute(
         "SELECT ts AS date, symbol, timeframe, open, high, low, close "
         "FROM crypto_ohlcv ORDER BY symbol, timeframe, ts"
@@ -111,7 +111,7 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
             rows.append(_row_for(key, "binance", g, "date",
                                  {"asset_class": "CRYPTO", "priority": 1}, run_id))
 
-    # --- macro_panel — un record per indicatore (date aggregate sui paesi) ---
+    # --- macro_panel — one record per indicator (dates aggregated across countries) ---
     mpdf = con.execute(
         "SELECT date, indicator_id, pillar, value FROM macro_panel "
         "ORDER BY indicator_id, date"

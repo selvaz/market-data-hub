@@ -1,21 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-export_to_excel.py — costruisce data_master.xlsx (master EDITABILE) dai YAML.
+export_to_excel.py — builds data_master.xlsx (EDITABLE master) from the YAMLs.
 
-E' l'inverso di import_from_excel.py. Genera un Excel con TUTTI i campi
-necessari a ricostruire i YAML senza perdita: l'utente puo' aggiungere righe in
-Excel e poi rifare l'import.
+It is the inverse of import_from_excel.py. It generates an Excel with ALL the
+fields needed to rebuild the YAMLs without loss: the user can add rows in
+Excel and then re-run the import.
 
-Flusso completo:
+Full flow:
     1. python export_to_excel.py                     # YAML -> data_master.xlsx
-    2. <l'utente modifica/aggiunge righe in Excel>
+    2. <the user edits/adds rows in Excel>
     3. python import_from_excel.py --file data_master.xlsx --type all   # Excel -> YAML
-    4. python run_daily.py --report --open           # scarica + report
+    4. python run_daily.py --report --open           # download + report
 
-Sheet generati:
-    Tickers      (Yahoo)   — tassonomia Layer + asset_class/area/priority
-    FRED                   — serie FRED
-    Macro_Panel  (cross-country) — TUTTI i campi: freq, unit, orientation,
+Generated sheets:
+    Tickers      (Yahoo)   — Layer taxonomy + asset_class/area/priority
+    FRED                   — FRED series
+    Macro_Panel  (cross-country) — ALL fields: freq, unit, orientation,
                  api_source_id, dalio_role, fallback_*, bis_dimensions, ...
 """
 from __future__ import annotations
@@ -28,7 +28,7 @@ import yaml
 BASE = Path(__file__).parent
 CFG = BASE / "market_data_hub" / "config"
 OUT = BASE / "data_master.xlsx"
-TICKERS_CSV = BASE / "tickers_master.csv"   # tassonomia Layer (sola lettura)
+TICKERS_CSV = BASE / "tickers_master.csv"   # Layer taxonomy (read-only)
 
 
 def _y(name):
@@ -36,7 +36,7 @@ def _y(name):
 
 
 def _db_panel_info():
-    """Countries coperti + ultima data per indicatore (sola lettura, dal DB)."""
+    """Countries covered + last date per indicator (read-only, from the DB)."""
     info = {}
     try:
         import duckdb
@@ -46,14 +46,14 @@ def _db_panel_info():
             info[r[0]] = (r[1], str(r[2]))
         con.close()
     except Exception as e:
-        print(f"(DB non accessibile: {str(e)[:50]})")
+        print(f"(DB not accessible: {str(e)[:50]})")
     return info
 
 
 def build_tickers() -> pd.DataFrame:
     tick = _y("tickers.yaml").get("yahoo", [])
     tmap = {e["symbol"]: e for e in tick}
-    # tassonomia Layer da tickers_master.csv (se presente)
+    # Layer taxonomy from tickers_master.csv (if present)
     layers = {}
     if TICKERS_CSV.exists():
         t = pd.read_csv(TICKERS_CSV)
@@ -69,7 +69,7 @@ def build_tickers() -> pd.DataFrame:
             "Layer2_SubAssetClass": L.get("Layer2_SubAssetClass", ""),
             "Layer3_Geographic": L.get("Layer3_Geographic", ""),
             "Layer4_Granular": L.get("Layer4_Granular", ""),
-            "Priority": e.get("priority", ""),   # vuoto se assente (round-trip fedele)
+            "Priority": e.get("priority", ""),   # empty if absent (faithful round-trip)
             "Asset_Class": e.get("asset_class", ""),
             "Name": e.get("name", ""),
         })
@@ -109,12 +109,12 @@ def build_macro_panel() -> pd.DataFrame:
             "Bis_Dimensions": json.dumps(bd) if bd else "",
             "Bis_Country_Dim": e.get("bis_country_dim", ""),
             "Euro_Aggregate": e.get("euro_aggregate", ""),
-            "Countries": nc, "Last_Date": ld,   # sola lettura (info dal DB)
+            "Countries": nc, "Last_Date": ld,   # read-only (info from the DB)
         })
     return pd.DataFrame(rows)
 
 
-# larghezze colonna per leggibilita'
+# column widths for readability
 _WIDTHS = {
     "Tickers": {"A": 12, "C": 18, "D": 14, "E": 20, "F": 18, "G": 14, "I": 16, "J": 42},
     "FRED": {"A": 20, "B": 46, "C": 14, "D": 12, "E": 10, "F": 9},
@@ -134,10 +134,10 @@ def main() -> int:
             for col, wd in widths.items():
                 ws.column_dimensions[col].width = wd
     print(f"OK -> {OUT}")
-    print(f"  Tickers     {len(tk)} righe ({len(tk.columns)} colonne)")
-    print(f"  FRED        {len(fr)} righe ({len(fr.columns)} colonne)")
-    print(f"  Macro_Panel {len(mp)} righe ({len(mp.columns)} colonne)")
-    print("\nColonne Macro_Panel:", list(mp.columns))
+    print(f"  Tickers     {len(tk)} rows ({len(tk.columns)} columns)")
+    print(f"  FRED        {len(fr)} rows ({len(fr.columns)} columns)")
+    print(f"  Macro_Panel {len(mp)} rows ({len(mp.columns)} columns)")
+    print("\nMacro_Panel columns:", list(mp.columns))
     return 0
 
 

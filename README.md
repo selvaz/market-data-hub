@@ -1,9 +1,10 @@
 # market_data_hub
 
-Downloader unificato di dati di mercato con database **DuckDB**, automazione
-giornaliera e coverage engine. Consolida i download sparsi nei progetti
+Unified market-data downloader with a **DuckDB** database, daily automation
+and a coverage engine. It consolidates the downloads scattered across the
 `quant_timeseries_suite`, `quant_vix_calibrator`, `zero_noise_pipeline`,
-`crypto_ml_features` e `macro_dashboard_v2_bundle` in un'unica pipeline.
+`crypto_ml_features` and `macro_dashboard_v2_bundle` projects into a single
+pipeline.
 
 ## Documentation (English)
 
@@ -13,14 +14,14 @@ giornaliera e coverage engine. Consolida i download sparsi nei progetti
   group, frequency, typical lag and history depth; plus the proposed
   cross-country WDI/WEO/WGI/BIS panel extension.
 
-## Cosa scarica
+## What it downloads
 
-| Sorgente | Cosa | Tabella | Frequenza |
+| Source | What | Table | Frequency |
 |----------|------|---------|-----------|
-| Yahoo Finance | 111 simboli (ETF, equity, FX, indici VIX, crypto daily) — OHLCV + adj_close | `prices_daily` | daily |
-| Binance | 6 simboli crypto × {1h, 4h, 1d} — OHLCV esteso | `crypto_ohlcv` | intraday |
-| FRED | 38 serie macro (tassi US/EA, CPI, GDP, credit spreads, ...) | `macro_series` | D/M/Q |
-| World Bank + IMF | 39 indicatori cross-country (WDI/WGI/WEO) × 64 paesi | `macro_panel` | annual |
+| Yahoo Finance | 111 symbols (ETFs, equity, FX, VIX indices, daily crypto) — OHLCV + adj_close | `prices_daily` | daily |
+| Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
+| FRED | 38 macro series (US/EA rates, CPI, GDP, credit spreads, ...) | `macro_series` | D/M/Q |
+| World Bank + IMF | 39 cross-country indicators (WDI/WGI/WEO) × 64 countries | `macro_panel` | annual |
 
 ## Setup
 
@@ -28,50 +29,50 @@ giornaliera e coverage engine. Consolida i download sparsi nei progetti
 pip install -r requirements.txt
 ```
 
-1. **FRED API key** (necessaria su questa rete): apri
-   `market_data_hub/config/settings.yaml` e imposta `fred_api_key: "LA_TUA_KEY"`.
-   In alternativa esporta la variabile d'ambiente `FRED_API_KEY`.
-   > Su questa macchina il proxy blocca l'endpoint pubblico CSV di FRED; l'API
-   > ufficiale (con key) e' invece raggiungibile.
+1. **FRED API key** (required on this network): open
+   `market_data_hub/config/settings.yaml` and set `fred_api_key: "YOUR_KEY"`.
+   Alternatively, export the `FRED_API_KEY` environment variable.
+   > On this machine the proxy blocks FRED's public CSV endpoint; the official
+   > API (with a key) is reachable instead.
 
-2. La verifica SSL e' gestita automaticamente: al primo import viene costruito
-   `ca_bundle.pem` (certifi + root CA di Windows) per superare il MITM/proxy
-   aziendale. Vale per yfinance (curl_cffi), requests e urllib.
+2. SSL verification is handled automatically: on the first import,
+   `ca_bundle.pem` is built (certifi + Windows root CA) to get past the
+   corporate MITM/proxy. This applies to yfinance (curl_cffi), requests and urllib.
 
-## Uso
+## Usage
 
 ```bash
-# caricamento storico iniziale (Yahoo 2010, FRED 2000, Binance 2018)
+# initial historical load (Yahoo 2010, FRED 2000, Binance 2018)
 python run_backfill.py
 
-# download giornaliero incrementale (yahoo + fred + binance + live)
+# incremental daily download (yahoo + fred + binance + live)
 python run_daily.py
 
-# solo live price injection intraday
+# intraday live price injection only
 python run_daily.py --live-only
 
-# diagnostica
-python diagnose.py                 # tabella coverage completa
-python diagnose.py --stalled       # solo serie ferme
-python diagnose.py --symbol SPY    # dettaglio simbolo
-python diagnose.py --summary       # statistiche DB
-python diagnose.py --runs          # ultimi run
+# diagnostics
+python diagnose.py                 # full coverage table
+python diagnose.py --stalled       # stalled series only
+python diagnose.py --symbol SPY    # symbol detail
+python diagnose.py --summary       # DB statistics
+python diagnose.py --runs          # latest runs
 
-# validazione codici cross-country (WDI/WGI/WEO) contro le API live
-python validate_macro_panel.py            # campione 5 paesi
-python validate_macro_panel.py --full     # tutti i 64 paesi
+# validation of cross-country codes (WDI/WGI/WEO) against the live APIs
+python validate_macro_panel.py            # sample of 5 countries
+python validate_macro_panel.py --full     # all 64 countries
 ```
 
-## Automazione (Windows Task Scheduler)
+## Automation (Windows Task Scheduler)
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File D:\market_data\setup_scheduler.ps1
 ```
 
-Crea 3 task: `MarketDataEOD` (22:00), `MarketDataWeekend` (sab 08:00, refresh
-FRED), `MarketDataLive` (16:00-22:00 ogni ora). Rimozione: aggiungi `-Remove`.
+Creates 3 tasks: `MarketDataEOD` (22:00), `MarketDataWeekend` (Sat 08:00, FRED
+refresh), `MarketDataLive` (16:00-22:00 every hour). To remove: add `-Remove`.
 
-## Lettura dai progetti esistenti
+## Reading from the existing projects
 
 ```python
 from market_data_hub.reader import read_prices, read_macro, read_crypto, get_coverage
@@ -80,18 +81,18 @@ px   = read_prices(["SPY", "^VIX"], start="2020-01-01")          # wide adj_clos
 vix  = read_prices(["^VIX9D","^VIX","^VIX3M","^VIX6M"])           # term structure
 mac  = read_macro(["DGS10", "CPIAUCSL"])
 btc  = read_crypto("BTCUSDT", "1h", start="2024-01-01")
-cov  = get_coverage()                                            # stato qualita'
+cov  = get_coverage()                                            # quality status
 ```
 
-## Coverage engine (qualita' dati)
+## Coverage engine (data quality)
 
-Ad ogni run viene ricostruita la tabella `coverage_report` con, per ogni serie:
-frequenza rilevata, `last_date`, `lag_days`, flag **stalled** (freq-aware:
-D=3gg, W=10, M=45, Q=120, A=400), conteggio gap, `missing_pct`, **coverage
-score 0-100** e flag di qualita' (zero/negative price, anomalie adj/close).
-Logica portata da `checks1_improved.py` e `macro_dashboard.py`.
+On every run the `coverage_report` table is rebuilt with, for each series:
+detected frequency, `last_date`, `lag_days`, **stalled** flag (freq-aware:
+D=3d, W=10, M=45, Q=120, A=400), gap count, `missing_pct`, **coverage
+score 0-100** and quality flags (zero/negative price, adj/close anomalies).
+Logic ported from `checks1_improved.py` and `macro_dashboard.py`.
 
-## Struttura
+## Structure
 
 ```
 market_data_hub/

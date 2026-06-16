@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-upsert.py — upsert atomico DataFrame -> DuckDB via INSERT OR REPLACE.
+upsert.py — atomic upsert DataFrame -> DuckDB via INSERT OR REPLACE.
 
-Tutte le tabelle hanno una PRIMARY KEY, quindi INSERT OR REPLACE sostituisce
-le righe in conflitto e inserisce le nuove. Ritorna (rows_added, rows_total).
+All tables have a PRIMARY KEY, so INSERT OR REPLACE replaces conflicting rows
+and inserts new ones. Returns (rows_added, rows_total).
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from typing import List
 import duckdb
 import pandas as pd
 
-# Colonne attese per tabella (ordine garantito nell'INSERT)
+# Expected columns per table (guaranteed order in the INSERT)
 _COLUMNS = {
     "prices_daily": [
         "date", "symbol", "open", "high", "low", "close",
@@ -52,7 +52,7 @@ _PK = {
 
 def _count_existing(con: duckdb.DuckDBPyConnection, table: str,
                     df: pd.DataFrame) -> int:
-    """Quante righe del df esistono gia' (per stimare added vs updated)."""
+    """How many rows of the df already exist (to estimate added vs updated)."""
     pk = _PK[table]
     con.register("_inc", df[pk])
     q = (f"SELECT COUNT(*) FROM {table} t "
@@ -65,13 +65,13 @@ def _count_existing(con: duckdb.DuckDBPyConnection, table: str,
 def upsert(con: duckdb.DuckDBPyConnection, table: str,
            df: pd.DataFrame) -> tuple[int, int]:
     """
-    Upsert atomico. Ritorna (rows_added, rows_updated).
-    Le colonne mancanti nel df vengono riempite con NULL; updated_at impostato.
+    Atomic upsert. Returns (rows_added, rows_updated).
+    Columns missing in the df are filled with NULL; updated_at is set.
     """
     if df is None or df.empty:
         return 0, 0
     if table not in _COLUMNS:
-        raise ValueError(f"Tabella non gestita da upsert(): {table}")
+        raise ValueError(f"Table not handled by upsert(): {table}")
 
     cols = _COLUMNS[table]
     out = df.copy()
@@ -100,7 +100,7 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
 def log_run(con: duckdb.DuckDBPyConnection, *, run_id: str, started_at: datetime,
             source: str, symbol: str, rows_added: int, rows_updated: int,
             status: str, error_msg: str | None, duration_sec: float) -> None:
-    """Inserisce una riga in download_log."""
+    """Insert a row into download_log."""
     con.execute(
         "INSERT INTO download_log "
         "(run_id, started_at, ended_at, source, symbol, rows_added, "

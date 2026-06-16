@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-stalled_detector.py — rilevamento serie ferme (stalled) e verifica last-date.
+stalled_detector.py — detection of stalled series and last-date check.
 
-Una serie e' "stalled" se il numero di giorni dall'ultima osservazione supera
-la soglia ammessa per la sua frequenza. Le soglie sono freq-aware: una serie
-annuale non viene marcata ferma per un normale ritardo di ~12 mesi.
+A series is "stalled" if the number of days since the last observation exceeds
+the allowed threshold for its frequency. The thresholds are freq-aware: an
+annual series is not flagged as stalled for a normal delay of ~12 months.
 """
 from __future__ import annotations
 
@@ -13,14 +13,14 @@ from typing import Optional
 
 import pandas as pd
 
-# Soglie di tolleranza prima di marcare "stalled" (giorni), per frequenza.
-# Daily 3gg copre weekend lungo + festivita'. Allineate a checks1_improved.py.
+# Tolerance thresholds before flagging "stalled" (days), per frequency.
+# Daily 3d covers a long weekend + holidays. Aligned with checks1_improved.py.
 STALLED_THRESHOLD_DAYS = {
     "D": 3,
     "W": 10,
     "M": 45,
     "Q": 120,
-    "A": 550,      # WDI/WGI pubblicano con ~18 mesi di lag (World Bank)
+    "A": 550,      # WDI/WGI publish with ~18 months of lag (World Bank)
     "UNKNOWN": 30,
 }
 
@@ -34,7 +34,7 @@ def _threshold_for(freq: Optional[str]) -> int:
 
 
 def lag_days(last_date, as_of: Optional[date] = None) -> Optional[int]:
-    """Giorni tra l'ultima osservazione e oggi (UTC). None se last_date assente."""
+    """Days between the last observation and today (UTC). None if last_date is absent."""
     if last_date is None or pd.isna(last_date):
         return None
     ld = pd.Timestamp(last_date).date()
@@ -44,8 +44,8 @@ def lag_days(last_date, as_of: Optional[date] = None) -> Optional[int]:
 
 def is_stalled(last_date, freq: Optional[str],
                as_of: Optional[date] = None) -> bool:
-    """True se la serie e' ferma oltre la soglia per la sua frequenza."""
+    """True if the series is stalled beyond the threshold for its frequency."""
     lag = lag_days(last_date, as_of)
     if lag is None:
-        return True  # nessun dato = di fatto fermo
+        return True  # no data = effectively stalled
     return lag > _threshold_for(freq)

@@ -1,24 +1,24 @@
 # -*- coding: utf-8 -*-
 """
-import_from_excel.py — round-trip Excel->YAML per tutti i cataloghi market_data_hub.
+import_from_excel.py — round-trip Excel->YAML for all market_data_hub catalogs.
 
-Uso:
-    # Importa tutte e 3 le sheet da data_master.xlsx (modalita' principale)
+Usage:
+    # Import all 3 sheets from data_master.xlsx (main mode)
     python import_from_excel.py --file data_master.xlsx --type all
 
-    # Singola sheet
+    # Single sheet
     python import_from_excel.py --file data_master.xlsx --type tickers
     python import_from_excel.py --file data_master.xlsx --type fred
     python import_from_excel.py --file data_master.xlsx --type macro_panel
 
-    # Dry run (no scrittura)
+    # Dry run (no writing)
     python import_from_excel.py --file data_master.xlsx --type all --validate-only
 
-    # Sheet personalizzata
+    # Custom sheet
     python import_from_excel.py --file data_master.xlsx --type tickers --sheet MySheet
 
-La logica e' MERGE: i campi Excel sovrascrivono quelli YAML corrispondenti,
-tutti gli altri campi YAML (fallback, api_source_id, ecc.) vengono preservati.
+The logic is MERGE: Excel fields overwrite the corresponding YAML fields,
+all other YAML fields (fallback, api_source_id, etc.) are preserved.
 """
 from __future__ import annotations
 
@@ -37,11 +37,11 @@ TICKERS_YAML = CONFIG_DIR / "tickers.yaml"
 FRED_YAML = CONFIG_DIR / "macro_series.yaml"
 MACRO_YAML = CONFIG_DIR / "macro_panel.yaml"
 
-# Mapping: colonna Excel -> campo YAML per ciascuna sheet
+# Mapping: Excel column -> YAML field for each sheet
 TICKER_COL_MAP = {
     "Ticker":       "symbol",
     "Name":         "name",
-    "Asset_Class":  "asset_class",   # colonna canonica (Layer1-4 = sola tassonomia)
+    "Asset_Class":  "asset_class",   # canonical column (Layer1-4 = taxonomy only)
     "Area":         "area",
     "Priority":     "priority",
 }
@@ -69,9 +69,9 @@ MACRO_COL_MAP = {
     "Bis_Country_Dim": "bis_country_dim",
     "Euro_Aggregate":  "euro_aggregate",
 }
-# campi interi del macro_panel (gestiti con _safe_int)
+# integer fields of macro_panel (handled with _safe_int)
 MACRO_INT_FIELDS = {"priority", "orientation", "api_source_id"}
-# colonne info di sola lettura (popolate dal DB, NON re-importate nel YAML)
+# read-only info columns (populated from the DB, NOT re-imported into the YAML)
 MACRO_READONLY = {"Countries", "Last_Date"}
 
 
@@ -85,7 +85,7 @@ def _load_file(filepath: str, sheet: Optional[str] = None) -> pd.DataFrame:
 
 
 def _load_all_sheets(filepath: str) -> dict[str, pd.DataFrame]:
-    """Legge tutte le sheet da Excel, ritorna dict nome->DataFrame."""
+    """Read all sheets from Excel, return dict name->DataFrame."""
     sheets = pd.read_excel(filepath, sheet_name=None)
     return {k: v for k, v in sheets.items()}
 
@@ -128,15 +128,15 @@ def _print_section(title: str) -> None:
 def import_tickers(df: pd.DataFrame, validate_only: bool = False,
                    col_map: Optional[dict] = None) -> int:
     """
-    Merge della sheet Tickers in tickers.yaml.
-    Campi aggiornati: symbol, name, asset_class, area, priority.
+    Merge the Tickers sheet into tickers.yaml.
+    Updated fields: symbol, name, asset_class, area, priority.
     """
     cmap = col_map or TICKER_COL_MAP
 
-    # Colonna chiave: Ticker o symbol
+    # Key column: Ticker or symbol
     key_col = next((c for c in ["Ticker", "symbol"] if c in df.columns), None)
     if key_col is None:
-        raise ValueError("Colonna 'Ticker' mancante nella sheet Tickers")
+        raise ValueError("Column 'Ticker' missing in the Tickers sheet")
 
     existing = _read_yaml(TICKERS_YAML)
     entries: list[dict] = existing.get("yahoo", [])
@@ -147,12 +147,12 @@ def import_tickers(df: pd.DataFrame, validate_only: bool = False,
     for idx, row in df.iterrows():
         symbol = _clean(row.get(key_col, ""))
         if not symbol:
-            errors.append(f"Riga {idx}: symbol vuoto, saltata")
+            errors.append(f"Row {idx}: empty symbol, skipped")
             skipped += 1
             continue
 
         existing_entry = by_symbol.get(symbol, {})
-        entry = dict(existing_entry)  # copia per preservare campi extra
+        entry = dict(existing_entry)  # copy to preserve extra fields
         entry["symbol"] = symbol
 
         for excel_col, yaml_field in cmap.items():
@@ -177,7 +177,7 @@ def import_tickers(df: pd.DataFrame, validate_only: bool = False,
         ordered = list(by_symbol.values())
         _write_yaml(TICKERS_YAML, {"yahoo": ordered})
 
-    print(f"  Ticker: {added} nuovi, {updated} aggiornati, {skipped} saltati")
+    print(f"  Ticker: {added} new, {updated} updated, {skipped} skipped")
     if errors:
         for e in errors[:10]:
             print(f"    WARN: {e}")
@@ -187,14 +187,14 @@ def import_tickers(df: pd.DataFrame, validate_only: bool = False,
 def import_fred(df: pd.DataFrame, validate_only: bool = False,
                 col_map: Optional[dict] = None) -> int:
     """
-    Merge della sheet FRED in macro_series.yaml.
-    Campi aggiornati: symbol, name, asset_class, area, country, priority.
+    Merge the FRED sheet into macro_series.yaml.
+    Updated fields: symbol, name, asset_class, area, country, priority.
     """
     cmap = col_map or FRED_COL_MAP
 
     key_col = next((c for c in ["SeriesID", "symbol"] if c in df.columns), None)
     if key_col is None:
-        raise ValueError("Colonna 'SeriesID' mancante nella sheet FRED")
+        raise ValueError("Column 'SeriesID' missing in the FRED sheet")
 
     existing = _read_yaml(FRED_YAML)
     entries: list[dict] = existing.get("fred", [])
@@ -205,7 +205,7 @@ def import_fred(df: pd.DataFrame, validate_only: bool = False,
     for idx, row in df.iterrows():
         symbol = _clean(row.get(key_col, ""))
         if not symbol:
-            errors.append(f"Riga {idx}: SeriesID vuoto, saltata")
+            errors.append(f"Row {idx}: empty SeriesID, skipped")
             skipped += 1
             continue
 
@@ -235,7 +235,7 @@ def import_fred(df: pd.DataFrame, validate_only: bool = False,
         ordered = list(by_symbol.values())
         _write_yaml(FRED_YAML, {"fred": ordered})
 
-    print(f"  FRED: {added} nuove, {updated} aggiornate, {skipped} saltate")
+    print(f"  FRED: {added} new, {updated} updated, {skipped} skipped")
     if errors:
         for e in errors[:10]:
             print(f"    WARN: {e}")
@@ -245,15 +245,15 @@ def import_fred(df: pd.DataFrame, validate_only: bool = False,
 def import_macro_panel(df: pd.DataFrame, validate_only: bool = False,
                        col_map: Optional[dict] = None) -> int:
     """
-    Merge della sheet Macro_Panel in macro_panel.yaml.
-    Campi aggiornati: id, name, pillar, priority, source, dataset, code.
-    Preserva: freq, unit, orientation, fallback, api_source_id.
+    Merge the Macro_Panel sheet into macro_panel.yaml.
+    Updated fields: id, name, pillar, priority, source, dataset, code.
+    Preserves: freq, unit, orientation, fallback, api_source_id.
     """
     cmap = col_map or MACRO_COL_MAP
 
     key_col = next((c for c in ["Indicator_ID", "id"] if c in df.columns), None)
     if key_col is None:
-        raise ValueError("Colonna 'Indicator_ID' mancante nella sheet Macro_Panel")
+        raise ValueError("Column 'Indicator_ID' missing in the Macro_Panel sheet")
 
     existing = _read_yaml(MACRO_YAML)
     entries: list[dict] = existing.get("indicators", [])
@@ -264,15 +264,15 @@ def import_macro_panel(df: pd.DataFrame, validate_only: bool = False,
     for idx, row in df.iterrows():
         ind_id = _clean(row.get(key_col, ""))
         if not ind_id:
-            errors.append(f"Riga {idx}: Indicator_ID vuoto, saltata")
+            errors.append(f"Row {idx}: empty Indicator_ID, skipped")
             skipped += 1
             continue
 
         existing_entry = by_id.get(ind_id, {})
-        entry = dict(existing_entry)  # preserva eventuali campi non in Excel
+        entry = dict(existing_entry)  # preserve any fields not in Excel
         entry["id"] = ind_id
 
-        # campi scalari (mappa colonna->campo)
+        # scalar fields (column->field map)
         for excel_col, yaml_field in cmap.items():
             if yaml_field == "id":
                 continue
@@ -284,7 +284,7 @@ def import_macro_panel(df: pd.DataFrame, validate_only: bool = False,
                     else:
                         entry[yaml_field] = _clean(raw)
 
-        # fallback annidato dalle colonne Fallback_* (se presenti e valorizzate)
+        # nested fallback from the Fallback_* columns (if present and filled)
         fb_src = _clean(row.get("Fallback_Source", ""))
         if fb_src:
             fb = {"source": fb_src,
@@ -295,16 +295,16 @@ def import_macro_panel(df: pd.DataFrame, validate_only: bool = False,
                 fb["api_source_id"] = _safe_int(fb_api)
             entry["fallback"] = fb
         elif "Fallback_Source" in df.columns and not fb_src:
-            entry.pop("fallback", None)  # svuotato in Excel -> rimuovi
+            entry.pop("fallback", None)  # emptied in Excel -> remove
 
-        # bis_dimensions da stringa JSON (se presente)
+        # bis_dimensions from JSON string (if present)
         bd = _clean(row.get("Bis_Dimensions", ""))
         if bd:
             try:
                 import json
                 entry["bis_dimensions"] = json.loads(bd)
             except Exception:
-                errors.append(f"{ind_id}: Bis_Dimensions JSON non valido, ignorato")
+                errors.append(f"{ind_id}: invalid Bis_Dimensions JSON, ignored")
 
         is_new = ind_id not in by_id
         by_id[ind_id] = entry
@@ -317,7 +317,7 @@ def import_macro_panel(df: pd.DataFrame, validate_only: bool = False,
         ordered = list(by_id.values())
         _write_yaml(MACRO_YAML, {"indicators": ordered})
 
-    print(f"  Macro_Panel: {added} nuovi, {updated} aggiornati, {skipped} saltati")
+    print(f"  Macro_Panel: {added} new, {updated} updated, {skipped} skipped")
     if errors:
         for e in errors[:10]:
             print(f"    WARN: {e}")
@@ -328,64 +328,64 @@ def import_macro_panel(df: pd.DataFrame, validate_only: bool = False,
 
 def main() -> int:
     p = argparse.ArgumentParser(
-        description="Round-trip Excel->YAML per tutti i cataloghi market_data_hub"
+        description="Round-trip Excel->YAML for all market_data_hub catalogs"
     )
     p.add_argument("--file", required=True,
-                   help="File Excel (.xlsx) — tipicamente data_master.xlsx")
+                   help="Excel file (.xlsx) — typically data_master.xlsx")
     p.add_argument("--type", required=True,
                    choices=["tickers", "fred", "macro_panel", "all"],
-                   help="Sheet da importare: tickers / fred / macro_panel / all")
+                   help="Sheet to import: tickers / fred / macro_panel / all")
     p.add_argument("--sheet",
-                   help="Nome sheet personalizzato (solo se --type != all)")
+                   help="Custom sheet name (only if --type != all)")
     p.add_argument("--validate-only", action="store_true",
-                   help="Dry run: legge e valida senza scrivere")
+                   help="Dry run: read and validate without writing")
     args = p.parse_args()
 
     if not Path(args.file).exists():
-        print(f"ERRORE: file non trovato: {args.file}")
+        print(f"ERROR: file not found: {args.file}")
         return 1
 
     if args.validate_only:
-        print("[DRY RUN — nessuna scrittura]")
+        print("[DRY RUN — no writing]")
 
     total = 0
 
     if args.type == "all":
-        # Legge tutte le sheet dal master Excel
+        # Read all sheets from the master Excel
         try:
             sheets = _load_all_sheets(args.file)
         except Exception as e:
-            print(f"ERRORE lettura Excel: {e}")
+            print(f"ERROR reading Excel: {e}")
             return 1
 
         sheet_names = list(sheets.keys())
-        print(f"Sheet trovate in {args.file}: {sheet_names}")
+        print(f"Sheets found in {args.file}: {sheet_names}")
 
         # Tickers
         ticker_sheet = next((k for k in sheet_names
                              if k.lower() in ("tickers", "ticker")), None)
         if ticker_sheet:
             _print_section(f"Sheet: {ticker_sheet} -> tickers.yaml")
-            print(f"  {len(sheets[ticker_sheet])} righe")
+            print(f"  {len(sheets[ticker_sheet])} rows")
             try:
                 total += import_tickers(sheets[ticker_sheet], args.validate_only)
             except Exception as e:
-                print(f"  ERRORE: {e}")
+                print(f"  ERROR: {e}")
         else:
-            print("WARN: nessuna sheet 'Tickers' trovata")
+            print("WARN: no 'Tickers' sheet found")
 
         # FRED
         fred_sheet = next((k for k in sheet_names
                            if k.lower() in ("fred", "macro_series")), None)
         if fred_sheet:
             _print_section(f"Sheet: {fred_sheet} -> macro_series.yaml")
-            print(f"  {len(sheets[fred_sheet])} righe")
+            print(f"  {len(sheets[fred_sheet])} rows")
             try:
                 total += import_fred(sheets[fred_sheet], args.validate_only)
             except Exception as e:
-                print(f"  ERRORE: {e}")
+                print(f"  ERROR: {e}")
         else:
-            print("WARN: nessuna sheet 'FRED' trovata")
+            print("WARN: no 'FRED' sheet found")
 
         # Macro_Panel
         macro_sheet = next((k for k in sheet_names
@@ -393,23 +393,23 @@ def main() -> int:
                                              "macropanel", "wdi_weo")), None)
         if macro_sheet:
             _print_section(f"Sheet: {macro_sheet} -> macro_panel.yaml")
-            print(f"  {len(sheets[macro_sheet])} righe")
+            print(f"  {len(sheets[macro_sheet])} rows")
             try:
                 total += import_macro_panel(sheets[macro_sheet], args.validate_only)
             except Exception as e:
-                print(f"  ERRORE: {e}")
+                print(f"  ERROR: {e}")
         else:
-            print("WARN: nessuna sheet 'Macro_Panel' trovata")
+            print("WARN: no 'Macro_Panel' sheet found")
 
     else:
-        # Singola sheet
+        # Single sheet
         try:
             df = _load_file(args.file, args.sheet)
         except Exception as e:
-            print(f"ERRORE lettura file: {e}")
+            print(f"ERROR reading file: {e}")
             return 1
 
-        print(f"Caricato {len(df)} righe da {args.file}"
+        print(f"Loaded {len(df)} rows from {args.file}"
               + (f" [sheet: {args.sheet}]" if args.sheet else ""))
 
         try:
@@ -423,13 +423,13 @@ def main() -> int:
                 _print_section("Macro_Panel -> macro_panel.yaml")
                 total = import_macro_panel(df, args.validate_only)
         except Exception as e:
-            print(f"ERRORE: {e}")
+            print(f"ERROR: {e}")
             return 1
 
-    action = "validati" if args.validate_only else "importati/aggiornati"
-    print(f"\nTotale: {total} record {action}")
+    action = "validated" if args.validate_only else "imported/updated"
+    print(f"\nTotal: {total} records {action}")
     if not args.validate_only:
-        print("YAML aggiornati — rilancia runner.py per scaricare eventuali nuovi ticker/serie")
+        print("YAML updated — re-run runner.py to download any new tickers/series")
     return 0
 
 

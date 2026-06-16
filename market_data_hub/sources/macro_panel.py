@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
-macro_panel.py — fetch di un indicatore cross-country con logica primario→fallback.
+macro_panel.py — fetch a cross-country indicator with primary→fallback logic.
 
-Astrae sopra worldbank.py e imf.py:
-  - prova la sorgente primaria dello spec
-  - se vuota e c'e' un fallback, prova il fallback
-Ritorna (DataFrame canonico macro_panel, source_used, status).
+Abstracts over worldbank.py and imf.py:
+  - tries the spec's primary source
+  - if empty and a fallback exists, tries the fallback
+Returns (canonical macro_panel DataFrame, source_used, status).
 """
 from __future__ import annotations
 
@@ -35,14 +35,14 @@ def _fetch_one(source: str, spec: Dict, countries: List[Dict], *,
 
 def fetch_indicator(spec: Dict, countries: List[Dict], *, start_year: int,
                     http: Dict) -> Tuple[pd.DataFrame, str, str]:
-    """Scarica un indicatore con fallback. Ritorna (df, source_used, status)."""
+    """Download an indicator with fallback. Returns (df, source_used, status)."""
     df = _fetch_one(spec["source"], spec, countries, start_year=start_year, http=http)
     if not df.empty:
         return df, spec["source"], "ok"
 
     fb = spec.get("fallback")
     if fb:
-        # lo spec del fallback eredita id/name/pillar/orientation/unit/freq
+        # the fallback spec inherits id/name/pillar/orientation/unit/freq
         fbspec = {**spec, **fb}
         fdf = _fetch_one(fb["source"], fbspec, countries, start_year=start_year, http=http)
         if not fdf.empty:
