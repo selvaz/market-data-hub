@@ -45,7 +45,12 @@ def db_write_lock(db_path: Optional[str] = None,
         yield
         return
 
-    lock = FileLock(db_lock_path(db_path), timeout=timeout)
+    lock_path = db_lock_path(db_path)
+    # The DB directory may not exist yet on a first run (get_conn() creates it,
+    # but only after this lock is taken). FileLock cannot create its file in a
+    # missing directory, so ensure the parent exists before acquiring.
+    Path(lock_path).parent.mkdir(parents=True, exist_ok=True)
+    lock = FileLock(lock_path, timeout=timeout)
     try:
         lock.acquire()
     except Timeout as exc:  # pragma: no cover - timing dependent

@@ -81,6 +81,16 @@ def test_yahoo_batch_forwards_workers(monkeypatch):
     assert captured.get("workers") == 5
 
 
+# --- lock acquires even when the DB directory does not exist yet --------------
+def test_db_write_lock_creates_missing_dir(tmp_path):
+    from market_data_hub.lock import db_write_lock
+    missing = tmp_path / "nope" / "deeper" / "market.duckdb"
+    assert not missing.parent.exists()
+    with db_write_lock(str(missing)):     # must not raise on a fresh path
+        pass
+    assert missing.parent.exists()
+
+
 # --- data correctness: epoch is UTC, not local-timezone dependent -------------
 def test_epoch_is_utc():
     # 2020-01-01T00:00:00Z == 1577836800
