@@ -542,15 +542,15 @@ yahoo:
 - symbol: FEZ
   asset_class: EQUITY
   area: Europe
-  name: FEZ
+  name: EQUITY | Europe | SPDR EURO STOXX 50
   priority: 1
 - symbol: UUP
   asset_class: FX
   area: USD
-  name: UUP
+  name: FX | USD | Invesco DB US Dollar Index Bullish Fund
   priority: 2
 - symbol: VWO
   asset_class: EQUITY
   area: Emerging Markets
-  name: VWO
+  name: EQUITY | EM | Vanguard FTSE Emerging Markets
   priority: 1

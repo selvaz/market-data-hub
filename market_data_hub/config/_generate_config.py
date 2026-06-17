@@ -15,9 +15,9 @@ OUT = Path(__file__).parent
 VIX_INDICES = ["^VIX", "^VIX9D", "^VIX3M", "^VIX6M", "^VVIX", "^VXN"]
 # Extras from zero_noise not present in the Excel
 ZERO_NOISE_EXTRA = {
-    "FEZ":  ("EQUITY", "Europe"),
-    "UUP":  ("FX", "USD"),
-    "VWO":  ("EQUITY", "Emerging Markets"),
+    "FEZ":  ("EQUITY", "Europe", "EQUITY | Europe | SPDR EURO STOXX 50"),
+    "UUP":  ("FX", "USD", "FX | USD | Invesco DB US Dollar Index Bullish Fund"),
+    "VWO":  ("EQUITY", "Emerging Markets", "EQUITY | EM | Vanguard FTSE Emerging Markets"),
 }
 # Priority tier for coverage_score (1=high importance .. 4=low)
 PRIORITY_BY_CLASS = {
@@ -66,10 +66,10 @@ def main():
             yahoo.append({"symbol": sym, "asset_class": "ALTERNATIVES",
                           "area": "US", "name": f"VIX term structure {sym}",
                           "priority": 1})
-    for sym, (cls, area) in ZERO_NOISE_EXTRA.items():
+    for sym, (cls, area, name) in ZERO_NOISE_EXTRA.items():
         if sym not in have:
             yahoo.append({"symbol": sym, "asset_class": cls, "area": area,
-                          "name": sym, "priority": PRIORITY_BY_CLASS.get(cls, 3)})
+                          "name": name, "priority": PRIORITY_BY_CLASS.get(cls, 3)})
 
     (OUT / "tickers.yaml").write_text(
         yaml.safe_dump({"yahoo": yahoo}, sort_keys=False, allow_unicode=True),

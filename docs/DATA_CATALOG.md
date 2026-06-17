@@ -184,35 +184,87 @@ point normally is on a healthy day.
 - **Access:** official API with key (public CSV blocked by proxy — see notes)
 
 ### US rates & curve — daily (lag 1–2 d, stalled-after 3 d)
-DGS3MO, DGS2, DGS10, DGS30, T10Y2Y, T10YIE, T5YIE, T5YIFR (5y5y fwd inflation),
-DFII5, DFII10 (TIPS real yields), EFFR, VIXCLS
+| Symbol | Series name |
+|--------|-------------|
+| DGS3MO | 3-Month Treasury Constant Maturity |
+| DGS2 | 2-Year Treasury Constant Maturity |
+| DGS10 | 10-Year Treasury Constant Maturity |
+| DGS30 | 30-Year Treasury Constant Maturity |
+| T10Y2Y | 10Y minus 2Y Treasury Spread |
+| T10YIE | 10-Year Breakeven Inflation Rate |
+| T5YIE | 5-Year Breakeven Inflation Rate |
+| T5YIFR | 5Y5Y Forward Inflation Expectation |
+| DFII5 | 5-Year TIPS Real Yield |
+| DFII10 | 10-Year TIPS Real Yield |
+| EFFR | Effective Federal Funds Rate |
+| VIXCLS | CBOE Volatility Index (VIX) Close |
 
 ### US credit — daily/weekly
-BAMLC0A0CM (IG OAS), BAMLC0A4CBBB (BBB OAS), BAMLH0A0HYM2 (HY OAS),
-BAMLH0A3HYC (CCC & lower OAS), AAA, BAA, NFCI (weekly), STLFSI4 (weekly)
+| Symbol | Series name | Freq |
+|--------|-------------|------|
+| BAMLC0A0CM | ICE BofA US Corporate Master OAS (IG) | daily |
+| BAMLC0A4CBBB | ICE BofA BBB Corporate OAS | daily |
+| BAMLH0A0HYM2 | ICE BofA US High Yield OAS | daily |
+| BAMLH0A3HYC | ICE BofA CCC & Lower HY OAS | daily |
+| AAA | Moody's Seasoned Aaa Corporate Bond Yield | daily |
+| BAA | Moody's Seasoned Baa Corporate Bond Yield | daily |
+| NFCI | Chicago Fed National Financial Conditions Index | weekly |
+| STLFSI4 | St. Louis Fed Financial Stress Index | weekly |
 
 ### US activity & prices — monthly (lag 15–45 d, stalled-after 45 d)
-CPIAUCSL, CPILFESL, PCEPI, PCEPILFE, INDPRO, UNRATE, PAYEMS, HOUST, RSAFS
+| Symbol | Series name |
+|--------|-------------|
+| CPIAUCSL | CPI-U All items (SA) |
+| CPILFESL | Core CPI (CPI ex Food & Energy, SA) |
+| PCEPI | PCE Price Index |
+| PCEPILFE | Core PCE Price Index |
+| INDPRO | Industrial Production Index |
+| UNRATE | Unemployment Rate |
+| PAYEMS | Nonfarm Payrolls (Total) |
+| HOUST | Housing Starts |
+| RSAFS | Retail Sales (Total) |
 
 ### US money / Fed / liquidity — monthly / weekly / daily
-M2SL (monthly), WALCL (weekly), WTREGEN (TGA, weekly), RRPONTSYD (overnight RRP, daily)
+| Symbol | Series name | Freq |
+|--------|-------------|------|
+| M2SL | M2 Money Stock | monthly |
+| WALCL | Fed Total Assets | weekly |
+| WTREGEN | Treasury General Account (TGA) | weekly |
+| RRPONTSYD | Overnight Reverse Repo (RRP) | daily |
+
 — net liquidity ≈ WALCL − WTREGEN − RRPONTSYD
 
 ### US GDP — quarterly (lag 30–90 d, stalled-after 120 d)
-GDP, GDPC1
+| Symbol | Series name |
+|--------|-------------|
+| GDP | GDP (current $) |
+| GDPC1 | Real GDP (SAAR, chained 2017$) |
 
 ### Energy spot — daily
-DCOILBRENTEU (Brent), DCOILWTICO (WTI)
+| Symbol | Series name |
+|--------|-------------|
+| DCOILBRENTEU | Brent Spot Price |
+| DCOILWTICO | WTI Spot Price (Cushing, OK) |
 
 ### USD index — daily
-DTWEXBGS (broad trade-weighted USD)
+| Symbol | Series name |
+|--------|-------------|
+| DTWEXBGS | Trade Weighted US Dollar Index: Broad |
 
 ### Euro-area policy rates (via FRED) — daily
-ECBDFR (deposit facility), ECBMRRFR (main refi), ECBMLFR (marginal lending)
+| Symbol | Series name |
+|--------|-------------|
+| ECBDFR | ECB Deposit Facility Rate |
+| ECBMRRFR | ECB Main Refinancing Operations Rate (fixed rate tenders) |
+| ECBMLFR | ECB Marginal Lending Facility Rate |
 
 ### Euro-area macro (via FRED) — monthly/quarterly
-CP0000EZ19M086NEST (HICP), CLVMEURSCAB1GQEA19 (real GDP, Q),
-EUNNGDP (nominal GDP), LRHUTTTTEZM156S (unemployment)
+| Symbol | Series name | Freq |
+|--------|-------------|------|
+| CP0000EZ19M086NEST | HICP All items (Index 2015=100) | monthly |
+| CLVMEURSCAB1GQEA19 | Real GDP (chained 2010 EUR) | quarterly |
+| EUNNGDP | GDP (EUR/ECU series, nominal) | quarterly |
+| LRHUTTTTEZM156S | Harmonised Unemployment Rate (Total, monthly) | monthly |
 
 ---
 
