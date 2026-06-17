@@ -105,8 +105,8 @@ catalog.list_symbols(asset_class="EQUITY", area="USA", sector="Energy")  # -> XL
 df, meta = extract.extract_returns(["SPY", "TLT", "^VIX"], frequency="W") # ready for LazyHMM
 ```
 
-See [`docs/extraction.md`](docs/extraction.md) and the agent skill
-`skills/query-market-data-hub/SKILL.md`. JSON tools live in
+See [`docs/EXTRACTION.md`](docs/EXTRACTION.md) (full reference) and the agent
+skill `skills/query-market-data-hub/SKILL.md`. JSON tools live in
 `market_data_hub.agent_tools` (optional LazyBridge `DataHubTools` via the
 `agent` extra).
 

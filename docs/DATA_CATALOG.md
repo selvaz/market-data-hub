@@ -2,7 +2,9 @@
 
 > The complete map of every series in the database: provider, group, native
 > frequency, typical update lag, history depth, and which table/column holds it.
-> For the engine and DB internals see [ARCHITECTURE.md](ARCHITECTURE.md).
+> For the engine and DB internals see [ARCHITECTURE.md](ARCHITECTURE.md); to
+> *query* this catalogue programmatically (by asset class, area, sector, pillar)
+> and pull analysis-ready series, see [EXTRACTION.md](EXTRACTION.md).
 
 Totals: **111 Yahoo symbols** + **45 FRED series** + **6 crypto × 3 timeframes**.
 

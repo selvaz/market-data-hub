@@ -2,7 +2,9 @@
 
 > Complete map of what the system does, how data flows, the main functions, and
 > the database structure. For the catalogue of every series (with frequency,
-> expected lag and group) see [DATA_CATALOG.md](DATA_CATALOG.md).
+> expected lag and group) see [DATA_CATALOG.md](DATA_CATALOG.md); for the
+> discovery + analysis-ready extraction API (for tools/LLMs) see
+> [EXTRACTION.md](EXTRACTION.md).
 
 ---
 
