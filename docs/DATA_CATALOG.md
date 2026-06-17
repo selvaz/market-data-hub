@@ -22,50 +22,142 @@ point normally is on a healthy day.
   FIXED_INCOME, COMMODITIES, REAL_ESTATE) → today's row with `is_live=TRUE`
 
 ### EQUITY (49) — `asset_class = EQUITY`
-| Sub-group | Symbols |
-|-----------|---------|
-| Global / broad | ACWI, VEA, IEMG, EMXC, VWO |
-| US core / size / style | SPY, QQQ, IWM, VUG, VTV, VGT |
-| US sectors (SPDR) | XLV, XLF, XLY, XLC, XLI, XLP, XLE, XLU, XLB |
-| Europe broad / sectors | EXSA.DE, VGK, FEZ, EXV1.DE, EXV3.DE, EXV4.DE, EXH4.DE, EXH1.DE, EXH9.DE |
-| Single-country DM | EWU, EWG, EWQ, EWI, EWJ, EWC, EWA |
-| Asia / China | AAXJ, FXI, MCHI, KWEB, KBUY, KURE, CQQQ, INDA, EWY, EWT |
-| LatAm | EWZ, EWW, ILF |
+| Sub-group | Symbol | Series name |
+|-----------|--------|-------------|
+| Global / broad | ACWI | MSCI ACWI |
+| | VEA | Vanguard FTSE Developed Markets |
+| | IEMG | iShares Core MSCI Emerging Markets |
+| | EMXC | iShares MSCI EM ex China |
+| | VWO | Vanguard FTSE Emerging Markets |
+| US core / size / style | SPY | S&P 500 (SPDR S&P 500 ETF Trust) |
+| | QQQ | Nasdaq 100 (Invesco QQQ Trust) |
+| | IWM | Russell 2000 (iShares Russell 2000) |
+| | VUG | Vanguard Growth |
+| | VTV | Vanguard Value |
+| | VGT | Vanguard Information Technology |
+| US sectors (SPDR) | XLV | Health Care Select Sector SPDR |
+| | XLF | Financial Select Sector SPDR |
+| | XLY | Consumer Discretionary Select Sector SPDR |
+| | XLC | Communication Services Select Sector SPDR |
+| | XLI | Industrial Select Sector SPDR |
+| | XLP | Consumer Staples Select Sector SPDR |
+| | XLE | Energy Select Sector SPDR |
+| | XLU | Utilities Select Sector SPDR |
+| | XLB | Materials Select Sector SPDR |
+| Europe broad / sectors | EXSA.DE | iShares STOXX Europe 600 |
+| | VGK | Vanguard FTSE Europe |
+| | FEZ | SPDR EURO STOXX 50 |
+| | EXV1.DE | iShares STOXX Europe 600 Banks |
+| | EXV3.DE | iShares STOXX Europe 600 Technology |
+| | EXV4.DE | iShares STOXX Europe 600 Health Care |
+| | EXH4.DE | iShares STOXX Europe 600 Industrial Goods & Services |
+| | EXH1.DE | iShares STOXX Europe 600 Oil & Gas |
+| | EXH9.DE | iShares STOXX Europe 600 Utilities |
+| Single-country DM | EWU | iShares MSCI United Kingdom |
+| | EWG | iShares MSCI Germany |
+| | EWQ | iShares MSCI France |
+| | EWI | iShares MSCI Italy |
+| | EWJ | iShares MSCI Japan |
+| | EWC | iShares MSCI Canada |
+| | EWA | iShares MSCI Australia |
+| Asia / China | AAXJ | iShares MSCI All Country Asia ex Japan |
+| | FXI | iShares China Large-Cap |
+| | MCHI | iShares MSCI China |
+| | KWEB | KraneShares CSI China Internet |
+| | KBUY | KraneShares China Consumer Leaders |
+| | KURE | KraneShares MSCI China Health Care |
+| | CQQQ | Invesco China Technology |
+| | INDA | iShares MSCI India |
+| | EWY | iShares MSCI South Korea |
+| | EWT | iShares MSCI Taiwan |
+| LatAm | EWZ | iShares MSCI Brazil |
+| | EWW | iShares MSCI Mexico |
+| | ILF | iShares Latin America 40 |
 
 ### FIXED_INCOME (21) — `asset_class = FIXED_INCOME`
-| Sub-group | Symbols |
-|-----------|---------|
-| US Treasuries (curve) | SHY, IEI, IEF, TLT, BIL, SHV |
-| Aggregate / TIPS / global | AGG, TIP, BNDX, BWX |
-| IG credit | LQD, VCSH |
-| High yield | HYG, EUHY, HYXU, HYEM, HYD |
-| EM debt | EMB, EMLC, CEMB |
-| Municipals | MUB |
+| Sub-group | Symbol | Series name |
+|-----------|--------|-------------|
+| US Treasuries (curve) | SHY | iShares 1-3 Year Treasury Bond |
+| | IEI | iShares 3-7 Year Treasury Bond |
+| | IEF | iShares 7-10 Year Treasury Bond |
+| | TLT | iShares 20+ Year Treasury Bond |
+| | BIL | SPDR Bloomberg 1-3 Month T-Bill |
+| | SHV | iShares Short Treasury Bond |
+| Aggregate / TIPS / global | AGG | iShares Core US Aggregate Bond |
+| | TIP | iShares TIPS Bond |
+| | BNDX | Vanguard Total International Bond (hedged) |
+| | BWX | SPDR Bloomberg International Treasury |
+| IG credit | LQD | iShares iBoxx $ Investment Grade Corporate |
+| | VCSH | Vanguard Short-Term Corporate |
+| High yield | HYG | iShares iBoxx $ High Yield Corporate |
+| | EUHY | iShares € High Yield Corporate |
+| | HYXU | iShares Global ex USD High Yield Corporate |
+| | HYEM | VanEck Emerging Markets High Yield Bond |
+| | HYD | VanEck High Yield Muni |
+| EM debt | EMB | iShares JP Morgan USD Emerging Markets Bond |
+| | EMLC | VanEck Emerging Markets Local Currency Bond |
+| | CEMB | iShares Emerging Markets Corporate Bond |
+| Municipals | MUB | iShares National Muni Bond |
 
 ### COMMODITIES (15) — `asset_class = COMMODITIES`
-| Sub-group | Symbols |
-|-----------|---------|
-| Broad baskets | DBC, PDBC |
-| Energy | USO, UNG, UGA |
-| Precious metals | GLD, SLV, PPLT, PALL |
-| Base metals | DBB, CPER |
-| Agriculture | DBA, CORN, WEAT, SOYB |
+| Sub-group | Symbol | Series name |
+|-----------|--------|-------------|
+| Broad baskets | DBC | Invesco DB Commodity Index Tracking |
+| | PDBC | Invesco Optimum Yield Diversified Commodity |
+| Energy | USO | United States Oil Fund |
+| | UNG | United States Natural Gas Fund |
+| | UGA | United States Gasoline Fund |
+| Precious metals | GLD | SPDR Gold Trust |
+| | SLV | iShares Silver Trust |
+| | PPLT | abrdn Physical Platinum Shares |
+| | PALL | abrdn Physical Palladium Shares |
+| Base metals | DBB | Invesco DB Base Metals Fund |
+| | CPER | United States Copper Index Fund |
+| Agriculture | DBA | Invesco DB Agriculture Fund |
+| | CORN | Teucrium Corn Fund |
+| | WEAT | Teucrium Wheat Fund |
+| | SOYB | Teucrium Soybean Fund |
 
 ### ALTERNATIVES (14) — `asset_class = ALTERNATIVES`
-| Sub-group | Symbols |
-|-----------|---------|
-| Crypto (Yahoo daily) | BTC-USD, ETH-USD, SOL-USD, IBIT, ETHA |
-| **VIX term structure** | **^VIX, ^VIX9D, ^VIX3M, ^VIX6M, ^VVIX, ^VXN** |
-| Vol / infra | VIXY, IGF, IFRA |
+| Sub-group | Symbol | Series name |
+|-----------|--------|-------------|
+| Crypto (Yahoo daily) | BTC-USD | Bitcoin (Yahoo USD spot) |
+| | ETH-USD | Ethereum (Yahoo USD spot) |
+| | SOL-USD | Solana (Yahoo USD spot) |
+| | IBIT | iShares Bitcoin Trust |
+| | ETHA | iShares Ethereum Trust |
+| **VIX term structure** | **^VIX** | CBOE Volatility Index (30-day) |
+| | **^VIX9D** | CBOE S&P 500 9-Day Volatility Index |
+| | **^VIX3M** | CBOE 3-Month Volatility Index |
+| | **^VIX6M** | CBOE S&P 500 6-Month Volatility Index |
+| | **^VVIX** | CBOE VVIX (VIX vol-of-vol) |
+| | **^VXN** | CBOE Nasdaq-100 Volatility Index |
+| Vol / infra | VIXY | ProShares VIX Short-Term Futures |
+| | IGF | iShares Global Infrastructure |
+| | IFRA | iShares US Infrastructure |
 
 > The 6 `^VIX*` indices feed the `v_vix_term_structure` view — the backbone for
 > `quant_vix_calibrator` / `quant_vix_dashboard`.
 
 ### FX (10) — `asset_class = FX`
-EURUSD=X, GBPUSD=X, USDJPY=X, AUDUSD=X, USDCAD=X, USDCHF=X, EURGBP=X, EURJPY=X, EURCHF=X, UUP
+| Symbol | Series name |
+|--------|-------------|
+| EURUSD=X | EUR/USD spot |
+| GBPUSD=X | GBP/USD spot |
+| USDJPY=X | USD/JPY spot |
+| AUDUSD=X | AUD/USD spot |
+| USDCAD=X | USD/CAD spot |
+| USDCHF=X | USD/CHF spot |
+| EURGBP=X | EUR/GBP spot |
+| EURJPY=X | EUR/JPY spot |
+| EURCHF=X | EUR/CHF spot |
+| UUP | Invesco DB US Dollar Index Bullish Fund |
 
 ### REAL_ESTATE (2) — `asset_class = REAL_ESTATE`
-VNQ, VNQI
+| Symbol | Series name |
+|--------|-------------|
+| VNQ | Vanguard Real Estate |
+| VNQI | Vanguard Global ex-US Real Estate |
 
 ---
 
