@@ -93,6 +93,23 @@ D=3d, W=10, M=45, Q=120, A=400), gap count, `missing_pct`, **coverage
 score 0-100** and quality flags (zero/negative price, adj/close anomalies).
 Logic ported from `checks1_improved.py` and `macro_dashboard.py`.
 
+## Extraction & discovery API (for tools / LLMs)
+
+Beyond the raw `reader.py`, the hub exposes a discovery + analysis-ready
+extraction layer, consumable from Python or by an LLM via function-calling:
+
+```python
+from market_data_hub import catalog, extract
+catalog.list_symbols(asset_class="EQUITY", area="Emerging Markets")
+catalog.list_symbols(asset_class="EQUITY", area="USA", sector="Energy")  # -> XLE
+df, meta = extract.extract_returns(["SPY", "TLT", "^VIX"], frequency="W") # ready for LazyHMM
+```
+
+See [`docs/extraction.md`](docs/extraction.md) and the agent skill
+`skills/query-market-data-hub/SKILL.md`. JSON tools live in
+`market_data_hub.agent_tools` (optional LazyBridge `DataHubTools` via the
+`agent` extra).
+
 ## Structure
 
 ```
@@ -101,6 +118,6 @@ market_data_hub/
   coverage/   freq_detector  stalled_detector  gap_detector  quality_checks  score  report
   db/         schema.sql  connection.py  upsert.py
   config/     tickers.yaml (111)  macro_series.yaml (45)  settings.yaml
-  reader.py   config_loader.py  runner.py  _ssl_bootstrap.py
+  reader.py   catalog.py  extract.py  agent_tools.py  config_loader.py  runner.py
 run_daily.py  run_backfill.py  diagnose.py  setup_scheduler.ps1
 ```

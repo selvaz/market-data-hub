@@ -34,3 +34,5 @@ Thumbs.db
 # Env
 .env
 *.env
+
+*.egg-info/
