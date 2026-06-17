@@ -14,3 +14,8 @@ warnings.filterwarnings(
 # import of yfinance/requests in the submodules.
 from market_data_hub._ssl_bootstrap import ensure_ssl as _ensure_ssl  # noqa: E402
 _ensure_ssl()
+
+# Public read / discovery / extraction API for downstream tools and LLMs.
+from market_data_hub import catalog, extract, reader  # noqa: E402,F401
+
+__all__ = ["catalog", "extract", "reader"]
