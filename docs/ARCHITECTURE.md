@@ -9,8 +9,10 @@
 ## 1. What the system does
 
 `market_data_hub` is a single, automatable pipeline that downloads market and
-macro data from three providers, stores it incrementally in one **DuckDB**
-database, and continuously measures the quality/coverage of every series.
+macro data from several providers — Yahoo Finance, FRED, Binance, World Bank,
+IMF (WEO), BIS and the Ken French Data Library (Fama-French factors) — stores it
+incrementally in one **DuckDB** database, and continuously measures the
+quality/coverage of every series.
 
 It replaces the scattered download scripts that previously lived inside
 `quant_timeseries_suite`, `quant_vix_calibrator`, `zero_noise_pipeline`,
@@ -50,19 +52,33 @@ runner.run(mode="full")
    │                     └─► fetch_klines() paginated, parallel (ThreadPool)
    │                         └─► upsert → crypto_ohlcv    + download_log row
    │
+   ├─ run_macro_panel()─► per indicator × countries (WB parallel, IMF/BIS spaced)
+   │                     └─► fetch_indicator() primary→fallback
+   │                         └─► upsert → macro_panel + *_vintage + download_log
+   │
+   ├─ run_factors() ───► Ken French datasets (FF5, momentum, …)
+   │                     └─► upsert → factor_returns   + download_log row
+   │
    ├─ run_live()  ─────► (full mode only) for liquid asset classes:
-   │                     get_last_price_live() 3-fallback → adjusted delta map
+   │                     get_live_prices_batch() → adjusted-ratio map
    │                     └─► upsert today's row (is_live=TRUE) → prices_daily
    │
-   └─ rebuild_coverage() ─► recompute coverage_report for every series,
-                            print a stalled-symbols alert
+   ├─ rebuild_coverage() ─► recompute coverage_report (EOD rows only, is_live=FALSE)
+   │                        + rebuild_macro_panel_coverage(); stalled alert
+   │
+   └─ dalio / classify ─► read-only analytical layer (cycle phases + regimes)
 ```
 
-**Run modes** (`run_daily.py` flags)
+The whole write path runs under a cross-process file lock (`market_data_hub.lock`)
+so the EOD and hourly-live tasks can never write the single-writer DuckDB file
+at the same time.
+
+**Run modes** (`run_daily.py` flags). The default `full` run activates
+`["yahoo", "fred", "binance", "macro_panel", "factors"]` plus the live injection.
 
 | Command | Effect |
 |---------|--------|
-| `python run_daily.py` | full: yahoo + fred + binance + live |
+| `python run_daily.py` | full: yahoo + fred + binance + macro_panel + factors + live |
 | `python run_daily.py --live-only` | only intraday live-price injection |
 | `python run_daily.py --sources yahoo fred` | restrict to listed sources |
 | `python run_daily.py --end 2024-12-31` | cap the end date |
@@ -148,7 +164,7 @@ btc = read_crypto("BTCUSDT", "1h", start="2024-01-01")
 | `sources.yahoo.yahoo_batch(tickers, start, end)` | one `yf.download` call → `{symbol: OHLCV frame}` |
 | `sources.yahoo.effective_start(last_date, global_start, tail)` | next start = `last_date − tail` (revision overlap) |
 | `sources.yahoo.get_last_price_live(ticker)` | 3-fallback live price: fast_info → regularMarketPrice → 1-min bar |
-| `sources.yahoo.adjusted_live_price(live, adj_eod, close_eod)` | map live price into adjusted space via additive delta |
+| `sources.yahoo.adjusted_live_price(live, adj_eod, close_eod)` | map live price into adjusted space via the multiplicative ratio `live × adj_eod / close_eod` |
 | `sources.binance.fetch_klines(symbol, tf, start, end)` | paginated klines → canonical `crypto_ohlcv` frame |
 | `sources.fred.fetch_fred(series_id, start, end, api_key=…)` | FRED series via official API (key) or public CSV |
 
@@ -306,9 +322,12 @@ An annual series is therefore not penalised for a normal ~12-month reporting lag
 
 | task | when | command |
 |------|------|---------|
-| MarketDataEOD | daily 22:00 | `run_daily.py` |
-| MarketDataWeekend | Sat 08:00 | `run_daily.py --sources fred` |
-| MarketDataLive | hourly 16:00–22:00 | `run_daily.py --live-only` |
+| MarketDataEOD | daily 22:00 | `run_daily.py --report --send-email` |
+| MarketDataWeekend | Sat 08:00 | `run_daily.py --sources fred --report --send-email` |
+| MarketDataLive | hourly 16:00–22:00, **Mon–Fri** | `run_daily.py --live-only` |
+
+The script prefers the project virtualenv interpreter (`.venv\Scripts\python.exe`)
+and falls back to the `python` on `PATH` only if the venv is absent.
 
 Logs rotate into `logs/<task>.log`. Remove with `setup_scheduler.ps1 -Remove`.
 

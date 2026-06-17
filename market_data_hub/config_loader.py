@@ -24,9 +24,20 @@ def _load_yaml(name: str) -> Any:
 @lru_cache(maxsize=1)
 def get_settings() -> Dict[str, Any]:
     s = _load_yaml("settings.yaml")
-    # override FRED key from env if present
+    # Secrets are injected from the environment, never read from the YAML file.
     if os.environ.get("FRED_API_KEY"):
         s["fred_api_key"] = os.environ["FRED_API_KEY"]
+
+    email = s.setdefault("email", {})
+    if os.environ.get("SMTP_USER"):
+        email["smtp_user"] = os.environ["SMTP_USER"]
+    if os.environ.get("SMTP_PASSWORD"):
+        email["smtp_password"] = os.environ["SMTP_PASSWORD"]
+    if os.environ.get("EMAIL_TO"):
+        # comma- or semicolon-separated list of recipients
+        email["to"] = [a.strip() for a in
+                       os.environ["EMAIL_TO"].replace(";", ",").split(",")
+                       if a.strip()]
     return s
 
 

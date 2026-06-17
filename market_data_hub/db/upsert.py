@@ -79,6 +79,9 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
     """
     Atomic upsert. Returns (rows_added, rows_updated).
     Columns missing in the df are filled with NULL; updated_at is set.
+
+    The count + INSERT OR REPLACE run inside an explicit transaction so a
+    failure mid-write rolls back cleanly and never leaves a partial batch.
     """
     if df is None or df.empty:
         return 0, 0
@@ -96,16 +99,22 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
             out[c] = None
     out = out[cols]
 
-    updated = _count_existing(con, table, out)
-    added = len(out) - updated
-
-    con.register("_upsert_src", out)
     col_list = ", ".join(cols)
-    con.execute(
-        f"INSERT OR REPLACE INTO {table} ({col_list}) "
-        f"SELECT {col_list} FROM _upsert_src"
-    )
-    con.unregister("_upsert_src")
+    con.register("_upsert_src", out)
+    con.execute("BEGIN TRANSACTION")
+    try:
+        updated = _count_existing(con, table, out)
+        added = len(out) - updated
+        con.execute(
+            f"INSERT OR REPLACE INTO {table} ({col_list}) "
+            f"SELECT {col_list} FROM _upsert_src"
+        )
+        con.execute("COMMIT")
+    except Exception:
+        con.execute("ROLLBACK")
+        raise
+    finally:
+        con.unregister("_upsert_src")
     return added, updated
 
 

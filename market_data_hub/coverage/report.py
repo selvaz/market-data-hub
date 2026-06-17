@@ -80,9 +80,12 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
     rows = []
 
     # --- prices_daily (yahoo) ---
+    # Exclude intraday live rows (is_live = TRUE): a stale EOD series with a
+    # fresh same-day live row must still register as stalled. Coverage measures
+    # the settled EOD history only.
     pdf = con.execute(
         "SELECT date, symbol, source, open, high, low, close, adj_close "
-        "FROM prices_daily ORDER BY symbol, date"
+        "FROM prices_daily WHERE is_live = FALSE ORDER BY symbol, date"
     ).fetch_df()
     if not pdf.empty:
         for symbol, g in pdf.groupby("symbol"):

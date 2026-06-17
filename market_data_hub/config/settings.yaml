@@ -15,7 +15,7 @@ backfill_start:
 # --- incremental download ---
 incremental:
   tail_refresh_days: 3        # re-download the last N days (late corporate actions)
-  fred_tail_periods: 2        # FRED: re-download to cover revisions
+  fred_tail_days: 95          # FRED: re-download the last N days to cover revisions
 
 # --- parallelism ---
 parallelism:
@@ -33,19 +33,25 @@ http:
   retry_base_sleep: 1.0       # exponential backoff: 1, 4, 16s
 
 # --- FRED API ---
-# Enter your own API key (https://fred.stlouisfed.org/docs/api/api_key.html)
-# If empty, the public CSV endpoint (fredgraph.csv) is used without a key.
-fred_api_key: "22a818467cbf49b94e936f79804aa7ba"
+# Do NOT commit a key here. Provide it via the FRED_API_KEY environment variable
+# (the loader overrides this field from the env). If both are empty, the public
+# CSV endpoint (fredgraph.csv) is used without a key.
+#   PowerShell:  setx FRED_API_KEY "your-key"
+fred_api_key: ""
 
 # --- Report via email ---
-# Fill in smtp_user and smtp_password to enable automatic sending.
-# For Gmail: generate an "App Password" at https://myaccount.google.com/apppasswords
-# (requires 2FA enabled). Enter the app password here, NOT the Google password.
+# Credentials must NEVER be stored here. The loader reads SMTP_USER,
+# SMTP_PASSWORD and (optionally) EMAIL_TO from the environment and injects them
+# at load time; this file holds only the non-sensitive host/port/template.
+#   PowerShell:  setx SMTP_USER "youraddress@gmail.com"
+#                setx SMTP_PASSWORD "gmail-app-password"   # 16 chars, no spaces
+# For Gmail generate an "App Password" at https://myaccount.google.com/apppasswords
+# (requires 2FA enabled) — NOT the Google account password.
 email:
   smtp_host: smtp.gmail.com
   smtp_port: 587
-  smtp_user: ""             # e.g. youraddress@gmail.com
-  smtp_password: ""         # Gmail app password (16 characters without spaces)
+  smtp_user: ""             # injected from SMTP_USER env (leave empty)
+  smtp_password: ""         # injected from SMTP_PASSWORD env (leave empty)
   from: "market_data_hub <noreply@market-data>"
   to:
     - doctor.selva@gmail.com
