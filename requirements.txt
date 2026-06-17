@@ -1,6 +1,7 @@
 # market_data_hub
 duckdb>=1.0
 yfinance>=0.2.40
+curl_cffi>=0.6      # direct Yahoo chart API (sources/yahoo_direct.py), no yfinance
 pandas>=2.0
 numpy
 requests
@@ -9,3 +10,4 @@ openpyxl
 pyyaml
 certifi
 truststore  # SSL verification via the Windows cert store (networks with proxy/MITM)
+filelock>=3.0      # cross-process writer lock on the DuckDB file (market_data_hub/lock.py)

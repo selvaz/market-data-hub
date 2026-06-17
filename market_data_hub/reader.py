@@ -21,6 +21,12 @@ import pandas as pd
 
 from market_data_hub.db.connection import get_conn
 
+# Columns of prices_daily that read_prices() may expose as the wide `field`.
+# `field` is interpolated into the SQL (it cannot be a bind parameter), so it
+# MUST be validated against this whitelist — reader.py is a public API for the
+# other projects.
+_ALLOWED_PRICE_FIELDS = {"open", "high", "low", "close", "adj_close", "volume"}
+
 
 def _con(db_path: Optional[str]):
     return get_conn(db_path, read_only=True)
@@ -74,6 +80,9 @@ def read_prices(symbols: Union[str, List[str]], start: Optional[str] = None,
     """
     if isinstance(symbols, str):
         symbols = [symbols]
+    if field not in _ALLOWED_PRICE_FIELDS:
+        raise ValueError(
+            f"Invalid field {field!r}; allowed: {sorted(_ALLOWED_PRICE_FIELDS)}")
     con = _con(db_path)
     try:
         clauses = ["symbol IN (" + ",".join(["?"] * len(symbols)) + ")"]

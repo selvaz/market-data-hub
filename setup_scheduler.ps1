@@ -13,7 +13,15 @@ param(
 
 $ErrorActionPreference = "Stop"
 $root   = "D:\market_data"
-$python = (Get-Command python).Source
+# Prefer the project virtualenv interpreter (pinned dependencies); fall back to
+# the python on PATH only if the venv has not been created yet.
+$venvPython = Join-Path $root ".venv\Scripts\python.exe"
+if (Test-Path $venvPython) {
+    $python = $venvPython
+} else {
+    $python = (Get-Command python).Source
+    Write-Warning "venv not found at $venvPython — falling back to $python. Create it with: py -m venv $root\.venv; $root\.venv\Scripts\pip install -r requirements.txt"
+}
 $logDir = Join-Path $root "logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
@@ -61,11 +69,15 @@ New-MdTask "MarketDataEOD" "22:00" "run_daily.py --report --send-email" `
 New-MdTask "MarketDataWeekend" "08:00" "run_daily.py --sources fred --report --send-email" `
     (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Saturday -At "08:00")
 
-# 3) Live intraday — every hour from 16:00 to 22:00 (US markets), Mon-Fri
-$liveTrigger = New-ScheduledTaskTrigger -Once -At "16:00" `
+# 3) Live intraday — every hour from 16:00 to 22:00 (US markets), Mon-Fri only.
+# A weekly weekday trigger carries the hourly repetition (a bare -Once trigger
+# would also fire on weekends, when markets are closed).
+$liveTrigger = New-ScheduledTaskTrigger -Weekly `
+    -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At "16:00"
+$liveTrigger.Repetition = (New-ScheduledTaskTrigger -Once -At "16:00" `
     -RepetitionInterval (New-TimeSpan -Hours 1) `
-    -RepetitionDuration (New-TimeSpan -Hours 6)
-New-MdTask "MarketDataLive" "16:00-22:00" "run_daily.py --live-only" $liveTrigger
+    -RepetitionDuration (New-TimeSpan -Hours 6)).Repetition
+New-MdTask "MarketDataLive" "16:00-22:00 Mon-Fri" "run_daily.py --live-only" $liveTrigger
 
 Write-Host ""
 Write-Host "Tasks created. Verify with: Get-ScheduledTask -TaskName MarketData*"

@@ -43,10 +43,17 @@ def _session():
 
 
 def _epoch(d: str, end: bool = False) -> int:
+    """Calendar date -> UNIX epoch seconds, interpreted in UTC.
+
+    A naive Timestamp.timestamp() would use the *local* timezone, shifting the
+    request window by the machine's UTC offset (wrong day boundaries for a
+    financial API). Pin the date to UTC explicitly so the result is portable.
+    """
     ts = pd.Timestamp(d)
     if end:
         ts = ts + pd.Timedelta(days=1)  # period2 exclusive -> +1 day
-    return int(ts.replace(tzinfo=None).timestamp())
+    ts = ts.tz_localize("UTC") if ts.tzinfo is None else ts.tz_convert("UTC")
+    return int(ts.timestamp())
 
 
 def _parse(symbol: str, j: dict) -> pd.DataFrame:

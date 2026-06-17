@@ -5,19 +5,36 @@ on:
     branches: ["**"]
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install dependencies
-        # Lean set sufficient for the offline test suite (no live data sources).
-        run: pip install pandas numpy duckdb pyyaml openpyxl requests pytest
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements.txt
+          pip install pytest ruff pip-audit
+
+      - name: Lint (ruff — syntax/undefined-name errors)
+        # Error-class rules only: catches real bugs without failing on style.
+        run: ruff check --select E9,F63,F7,F82 .
+
+      - name: Dependency audit (advisory, non-blocking)
+        continue-on-error: true
+        run: pip-audit
 
       - name: Validate config catalogs
         run: python validate_config.py

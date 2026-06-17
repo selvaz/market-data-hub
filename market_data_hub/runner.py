@@ -28,6 +28,7 @@ from market_data_hub.config_loader import (
     get_countries, get_macro_panel_specs)
 from market_data_hub.db.connection import get_conn
 from market_data_hub.db.upsert import upsert, log_run, record_vintage
+from market_data_hub.lock import db_write_lock, DBLockTimeout
 from market_data_hub.coverage.report import (
     rebuild_coverage, rebuild_macro_panel_coverage)
 from market_data_hub.sources import yahoo as yh
@@ -84,27 +85,33 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
         s = start_override or yh.effective_start(last.get(sym), gstart, tail)
         groups.setdefault(s, []).append(sym)
 
-    _log(f"YAHOO: {len(tickers)} symbols in {len(groups)} groups (end={end})")
+    workers = cfg.get("parallelism", {}).get("yahoo_workers", 5)
+    _log(f"YAHOO: {len(tickers)} symbols in {len(groups)} groups "
+         f"(end={end}, workers={workers})")
     sleep = cfg["parallelism"]["yahoo_batch_sleep"]
 
     for gstart_k, syms in sorted(groups.items()):
-        t0 = time.time()
+        t0 = time.perf_counter()
         try:
-            batch = yh.yahoo_batch(syms, gstart_k, end)
+            batch = yh.yahoo_batch(syms, gstart_k, end, workers=workers)
         except Exception as ex:
             _log(f"  ! batch start={gstart_k} failed: {ex}")
+            fetch_sec = time.perf_counter() - t0
             for s in syms:
                 log_run(con, run_id=run_id, started_at=datetime.now(timezone.utc),
                         source="yahoo", symbol=s, rows_added=0, rows_updated=0,
-                        status="error", error_msg=str(ex), duration_sec=0)
+                        status="error", error_msg=str(ex), duration_sec=fetch_sec)
             continue
 
+        # amortize the shared batch-fetch time across the symbols in the group
+        fetch_sec = (time.perf_counter() - t0) / max(len(syms), 1)
         for sym, df in batch.items():
             st = datetime.now(timezone.utc)
+            t_sym = time.perf_counter()
             if df is None or df.empty:
                 log_run(con, run_id=run_id, started_at=st, source="yahoo",
                         symbol=sym, rows_added=0, rows_updated=0,
-                        status="empty", error_msg=None, duration_sec=0)
+                        status="empty", error_msg=None, duration_sec=fetch_sec)
                 continue
             df = df.copy()
             df["source"] = "yahoo"
@@ -112,8 +119,9 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
             added, updated = upsert(con, "prices_daily", df)
             log_run(con, run_id=run_id, started_at=st, source="yahoo",
                     symbol=sym, rows_added=added, rows_updated=updated,
-                    status="ok", error_msg=None, duration_sec=0)
-        _log(f"  group start={gstart_k} n={len(syms)} ok ({time.time()-t0:.1f}s)")
+                    status="ok", error_msg=None,
+                    duration_sec=fetch_sec + (time.perf_counter() - t_sym))
+        _log(f"  group start={gstart_k} n={len(syms)} ok ({time.perf_counter()-t0:.1f}s)")
         time.sleep(sleep)
 
 
@@ -126,39 +134,43 @@ def run_fred(con, cfg: dict, run_id: str, *, start_override: Optional[str] = Non
     api_key = cfg.get("fred_api_key") or None
     http = cfg["http"]
     sleep = cfg["parallelism"]["fred_sleep"]
+    tail_days = int(cfg.get("incremental", {}).get("fred_tail_days", 95))
     last = _last_macro(con)
 
-    _log(f"FRED: {len(series)} series (api_key={'yes' if api_key else 'no/CSV'})")
+    _log(f"FRED: {len(series)} series (api_key={'yes' if api_key else 'no/CSV'}, "
+         f"tail={tail_days}d)")
 
     for e in series:
         sid = e["symbol"]
         if start_override:
             s = start_override
         elif sid in last:
-            # tail refresh ~95 days to cover macro revisions
-            s = max(gstart, (last[sid] - timedelta(days=95)).date().isoformat())
+            # tail refresh to cover macro revisions (configurable: fred_tail_days)
+            s = max(gstart, (last[sid] - timedelta(days=tail_days)).date().isoformat())
         else:
             s = gstart
 
         st = datetime.now(timezone.utc)
+        t_start = time.perf_counter()
         try:
             df = fr.fetch_fred(sid, s, end, api_key=api_key,
                                timeout=http["timeout"], retries=http["max_retries"],
                                base_sleep=http["retry_base_sleep"], meta=e)
             if df.empty:
                 log_run(con, run_id=run_id, started_at=st, source="fred",
-                        symbol=sid, rows_added=0, rows_updated=0,
-                        status="empty", error_msg=None, duration_sec=0)
+                        symbol=sid, rows_added=0, rows_updated=0, status="empty",
+                        error_msg=None, duration_sec=time.perf_counter() - t_start)
             else:
                 added, updated = upsert(con, "macro_series", df)
                 record_vintage(con, "macro_series", df, _today())
                 log_run(con, run_id=run_id, started_at=st, source="fred",
                         symbol=sid, rows_added=added, rows_updated=updated,
-                        status="ok", error_msg=None, duration_sec=0)
+                        status="ok", error_msg=None,
+                        duration_sec=time.perf_counter() - t_start)
         except Exception as ex:
             log_run(con, run_id=run_id, started_at=st, source="fred",
-                    symbol=sid, rows_added=0, rows_updated=0,
-                    status="error", error_msg=str(ex), duration_sec=0)
+                    symbol=sid, rows_added=0, rows_updated=0, status="error",
+                    error_msg=str(ex), duration_sec=time.perf_counter() - t_start)
         time.sleep(sleep)
     _log("FRED: completed")
 
@@ -194,32 +206,36 @@ def run_binance(con, cfg: dict, run_id: str, *, start_override: Optional[str] = 
 
     def _do(job):
         sym, tf, s = job
+        t_dl = time.perf_counter()
         df = bn.fetch_klines(sym, tf, s, end, timeout=http["timeout"],
                              retries=http["max_retries"],
                              base_sleep=http["retry_base_sleep"])
-        return sym, tf, df
+        return sym, tf, df, time.perf_counter() - t_dl
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futs = {ex.submit(_do, j): j for j in jobs}
         for fut in as_completed(futs):
             sym, tf, s = futs[fut]
             st = datetime.now(timezone.utc)
+            t_start = time.perf_counter()
             try:
-                _, _, df = fut.result()
+                _, _, df, dl_sec = fut.result()
                 if df is None or df.empty:
                     log_run(con, run_id=run_id, started_at=st, source="binance",
                             symbol=f"{sym}:{tf}", rows_added=0, rows_updated=0,
-                            status="empty", error_msg=None, duration_sec=0)
+                            status="empty", error_msg=None,
+                            duration_sec=dl_sec)
                 else:
                     added, updated = upsert(con, "crypto_ohlcv", df)
                     log_run(con, run_id=run_id, started_at=st, source="binance",
                             symbol=f"{sym}:{tf}", rows_added=added,
                             rows_updated=updated, status="ok", error_msg=None,
-                            duration_sec=0)
+                            duration_sec=dl_sec + (time.perf_counter() - t_start))
             except Exception as exc:
                 log_run(con, run_id=run_id, started_at=st, source="binance",
                         symbol=f"{sym}:{tf}", rows_added=0, rows_updated=0,
-                        status="error", error_msg=str(exc), duration_sec=0)
+                        status="error", error_msg=str(exc),
+                        duration_sec=time.perf_counter() - t_start)
     _log("BINANCE: completed")
 
 
@@ -249,14 +265,14 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
          f"(WB parallel x{wb_workers}, {len(seq_specs)} sequential)")
     n_ok = n_fb = n_empty = 0
 
-    def _upsert_result(spec, df, status, st):
+    def _upsert_result(spec, df, status, st, dl_sec):
         nonlocal n_ok, n_fb, n_empty
         if df is None or df.empty:
             n_empty += 1
             log_run(con, run_id=run_id, started_at=st, source="macro_panel",
                     symbol=spec["id"], rows_added=0, rows_updated=0,
                     status="empty", error_msg="no data (primary+fallback)",
-                    duration_sec=0)
+                    duration_sec=dl_sec)
             return
         added, updated = upsert(con, "macro_panel", df)
         record_vintage(con, "macro_panel", df, _today())
@@ -266,14 +282,15 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
             n_ok += 1
         log_run(con, run_id=run_id, started_at=st, source="macro_panel",
                 symbol=spec["id"], rows_added=added, rows_updated=updated,
-                status=status, error_msg=None, duration_sec=0)
+                status=status, error_msg=None, duration_sec=dl_sec)
 
     # --- WB in parallel: concurrent fetch, serialized upsert ---
     def _fetch_wb(spec):
         st = datetime.now(timezone.utc)
+        t_dl = time.perf_counter()
         df, _src, status = mp.fetch_indicator(spec, countries, start_year=sy, http=http,
                                               select_best=select_best)
-        return spec, df, status, st
+        return spec, df, status, st, time.perf_counter() - t_dl
 
     with ThreadPoolExecutor(max_workers=wb_workers) as ex:
         futs = {ex.submit(_fetch_wb, s): s for s in wb_specs}
@@ -281,8 +298,8 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
         for fut in as_completed(futs):
             spec = futs[fut]
             try:
-                sp, df, status, st = fut.result()
-                _upsert_result(sp, df, status, st)
+                sp, df, status, st, dl_sec = fut.result()
+                _upsert_result(sp, df, status, st, dl_sec)
             except Exception as exc:
                 n_empty += 1
                 log_run(con, run_id=run_id, started_at=datetime.now(timezone.utc),
@@ -298,15 +315,17 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
     for spec in seq_specs:
         st = datetime.now(timezone.utc)
         time.sleep(imf_sleep)
+        t_dl = time.perf_counter()
         try:
             df, _src, status = mp.fetch_indicator(spec, countries, start_year=sy, http=http,
                                               select_best=select_best)
-            _upsert_result(spec, df, status, st)
+            _upsert_result(spec, df, status, st, time.perf_counter() - t_dl)
         except Exception as ex:
             n_empty += 1
             log_run(con, run_id=run_id, started_at=st, source="macro_panel",
                     symbol=spec["id"], rows_added=0, rows_updated=0,
-                    status="error", error_msg=str(ex), duration_sec=0)
+                    status="error", error_msg=str(ex),
+                    duration_sec=time.perf_counter() - t_dl)
 
     _log(f"MACRO PANEL: ok={n_ok} fallback={n_fb} empty={n_empty}")
 
@@ -324,23 +343,25 @@ def run_factors(con, cfg: dict, run_id: str) -> None:
     _log(f"FACTORS: {len(sets)} dataset(s) {sets}")
     for fs in sets:
         st = datetime.now(timezone.utc)
+        t_start = time.perf_counter()
         try:
             df = fac.fetch_french(fs, start=start, timeout=http["timeout"],
                                   retries=http["max_retries"],
                                   base_sleep=http["retry_base_sleep"])
             if df.empty:
                 log_run(con, run_id=run_id, started_at=st, source="factors",
-                        symbol=fs, rows_added=0, rows_updated=0,
-                        status="empty", error_msg=None, duration_sec=0)
+                        symbol=fs, rows_added=0, rows_updated=0, status="empty",
+                        error_msg=None, duration_sec=time.perf_counter() - t_start)
             else:
                 added, updated = upsert(con, "factor_returns", df)
                 log_run(con, run_id=run_id, started_at=st, source="factors",
                         symbol=fs, rows_added=added, rows_updated=updated,
-                        status="ok", error_msg=None, duration_sec=0)
+                        status="ok", error_msg=None,
+                        duration_sec=time.perf_counter() - t_start)
         except Exception as ex:
             log_run(con, run_id=run_id, started_at=st, source="factors",
-                    symbol=fs, rows_added=0, rows_updated=0,
-                    status="error", error_msg=str(ex), duration_sec=0)
+                    symbol=fs, rows_added=0, rows_updated=0, status="error",
+                    error_msg=str(ex), duration_sec=time.perf_counter() - t_start)
     _log("FACTORS: completed")
 
 
@@ -350,6 +371,7 @@ def run_live(con, cfg: dict, run_id: str) -> None:
     if not cfg.get("live", {}).get("enabled", False):
         _log("LIVE: disabled in settings")
         return
+    t_start = time.perf_counter()
     allowed = set(cfg["live"]["asset_classes"])
     tickers = [e for e in get_yahoo_tickers() if e.get("asset_class") in allowed]
     today = pd.Timestamp(_today())
@@ -384,12 +406,13 @@ def run_live(con, cfg: dict, run_id: str) -> None:
                      "updated_at": datetime.now(timezone.utc)})
         n_ok += 1
 
+    st = datetime.now(timezone.utc)
     if rows:
         upsert(con, "prices_daily", pd.DataFrame(rows))
     _log(f"LIVE: updated {n_ok}/{len(tickers)} symbols")
-    log_run(con, run_id=run_id, started_at=datetime.now(timezone.utc),
-            source="live", symbol="*", rows_added=n_ok, rows_updated=0,
-            status="ok", error_msg=None, duration_sec=0)
+    log_run(con, run_id=run_id, started_at=st, source="live", symbol="*",
+            rows_added=n_ok, rows_updated=0, status="ok", error_msg=None,
+            duration_sec=time.perf_counter() - t_start)
 
 
 # --------------------------------------------------------------- ENTRY
@@ -399,8 +422,23 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
     cfg = get_settings()
     run_id = uuid.uuid4().hex[:12]
     t0 = time.time()
-    con = get_conn(db_path)
     _log(f"=== RUN {run_id} mode={mode} ===")
+
+    # Serialize writers: DuckDB allows a single writer per file, and the EOD
+    # task can overlap the hourly live task at the day boundary. A reader-only
+    # run never reaches here. If another writer holds the lock we skip cleanly.
+    try:
+        lock_ctx = db_write_lock(db_path)
+        lock_ctx.__enter__()
+    except DBLockTimeout as ex:
+        _log(f"SKIP: {ex}")
+        return
+
+    try:
+        con = get_conn(db_path)
+    except Exception:
+        lock_ctx.__exit__(None, None, None)
+        raise
 
     try:
         if mode == "live-only":
@@ -434,6 +472,8 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
             _log(f"  WARNING: {st} series are stalled (see diagnose.py --stalled)")
     finally:
         con.close()
+        # release the writer lock before the read-only analytical layer
+        lock_ctx.__exit__(None, None, None)
 
     # --- Ray Dalio analytical layer (after the panel: cycle phases + regime) ---
     macro_done = mode != "live-only" and "macro_panel" in (

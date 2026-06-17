@@ -146,7 +146,7 @@ def yahoo_batch(tickers: List[str], start: str, end: str,
     blocked cache, 'str' object, 429 on crumb). ~1-2s for 100+ tickers in parallel.
     """
     from market_data_hub.sources import yahoo_direct as _yd
-    return _yd.yahoo_batch(tickers, start, end)
+    return _yd.yahoo_batch(tickers, start, end, **kwargs)
 
 
 # ---------------------------------------------------------------- live prices
@@ -199,9 +199,16 @@ def get_live_prices_batch(tickers: List[str]) -> Dict[str, float]:
 def adjusted_live_price(live: float, adj_close_eod: float,
                         close_eod: float) -> Optional[float]:
     """
-    Map the live price into adjusted space via an additive delta:
-        adj_live = live + (adj_close_eod - close_eod)
+    Map the live (raw) price into adjusted space via the EOD adjustment ratio:
+        adj_live = live * (adj_close_eod / close_eod)
+
+    The adjustment factor (adj_close / close) is multiplicative — that is how
+    split/dividend adjustment works — so the live price must be scaled by the
+    same ratio. An additive delta distorts assets with large corporate actions
+    (e.g. close=100, adj_close=50, live=102 -> ratio gives 51, not 52).
     """
     if any(v is None or pd.isna(v) for v in (live, adj_close_eod, close_eod)):
         return None
-    return float(live) + (float(adj_close_eod) - float(close_eod))
+    if float(close_eod) == 0:
+        return None
+    return float(live) * (float(adj_close_eod) / float(close_eod))
