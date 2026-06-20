@@ -6,6 +6,15 @@
 CREATE SEQUENCE IF NOT EXISTS seq_log_id START 1;
 
 -- ----------------------------------------------------------------------------
+-- 0. schema_meta — schema version + bookkeeping (one row per key)
+--    Populated by connection.apply_schema(): schema_version, schema_applied_at.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS schema_meta (
+    key   VARCHAR PRIMARY KEY,
+    value VARCHAR
+);
+
+-- ----------------------------------------------------------------------------
 -- 1. prices_daily — daily OHLCV (equity, ETF, FX, VIX indices, crypto daily)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS prices_daily (

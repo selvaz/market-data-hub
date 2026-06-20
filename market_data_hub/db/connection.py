@@ -8,12 +8,17 @@ variable. The schema is applied (idempotently) on first open.
 from __future__ import annotations
 
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
 import duckdb
 
 _SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+
+# Current schema version. Bump this whenever schema.sql changes shape and add a
+# matching `if current < N:` branch in migrate() below.
+SCHEMA_VERSION = 1
 
 
 def _default_db() -> str:
@@ -46,9 +51,80 @@ def _resolve_db_path(db_path: Optional[str] = None) -> str:
 
 
 def apply_schema(con: duckdb.DuckDBPyConnection) -> None:
-    """Apply the SQL schema (idempotent)."""
+    """Apply the SQL schema (idempotent) and record schema metadata.
+
+    The ``schema_version`` is stamped only when it is *absent* (a fresh
+    database). Bumping the recorded version is migrate()'s job: opening an
+    existing, older DB under newer code — directly or via get_conn() — must not
+    pre-stamp it as current, or any `if current < N:` migration would be skipped
+    while the DB is still at the old shape. The applied-at timestamp is always
+    refreshed.
+    """
     sql = _SCHEMA_PATH.read_text(encoding="utf-8")
     con.execute(sql)
+    now = datetime.now(timezone.utc).isoformat()
+    con.execute(
+        "INSERT OR REPLACE INTO schema_meta (key, value) VALUES "
+        "('schema_applied_at', ?)",
+        [now],
+    )
+    if get_schema_version(con) is None:
+        con.execute(
+            "INSERT OR REPLACE INTO schema_meta (key, value) VALUES "
+            "('schema_version', ?)",
+            [str(SCHEMA_VERSION)],
+        )
+
+
+def get_schema_version(con: duckdb.DuckDBPyConnection) -> Optional[int]:
+    """Return the schema_version recorded in schema_meta, or None if absent
+    (table missing, or no row yet)."""
+    try:
+        row = con.execute(
+            "SELECT value FROM schema_meta WHERE key = 'schema_version'"
+        ).fetchone()
+    except duckdb.Error:
+        return None
+    if row is None or row[0] is None:
+        return None
+    return int(row[0])
+
+
+def migrate(con: duckdb.DuckDBPyConnection) -> int:
+    """Idempotent forward-migration entry point. Returns the resulting version.
+
+    The recorded version is read *before* the schema is applied, so an existing
+    DB walks the ordered ladder of `if current < N:` branches from its real
+    version rather than being pre-stamped as current (which would mask pending
+    migrations). A fresh DB is created at the baseline shape by apply_schema()
+    and needs no ladder steps. Running migrate() again on an already-current DB
+    is a no-op. To add a migration: raise SCHEMA_VERSION, append a new
+    `if current < N:` block here, and update schema.sql so a fresh DB lands at
+    the same shape.
+    """
+    recorded = get_schema_version(con)  # read BEFORE apply_schema stamps a baseline
+    apply_schema(con)  # ensures every table exists; stamps baseline only if absent
+
+    if recorded is None:
+        # Fresh DB: apply_schema() just stamped it at the current baseline shape.
+        return get_schema_version(con) or SCHEMA_VERSION
+
+    current = recorded
+    # Ordered ladder of forward migrations. Each future step runs its DDL/DML on
+    # the *old* shape, then advances `current`, e.g.:
+    #   if current < 2:
+    #       con.execute(...)  # migrate v1 -> v2
+    #       current = 2
+    # (No active steps yet — v1 is the baseline.)
+    if current < SCHEMA_VERSION:
+        current = SCHEMA_VERSION
+
+    con.execute(
+        "INSERT OR REPLACE INTO schema_meta (key, value) VALUES "
+        "('schema_version', ?)",
+        [str(current)],
+    )
+    return current
 
 
 def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
