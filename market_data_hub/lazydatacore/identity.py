@@ -20,9 +20,9 @@ Note (Python 3.9+): we use ``class X(str, Enum)`` rather than ``StrEnum``
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_serializer, model_validator
 
 # A three-letter uppercase ISO-4217 currency code (e.g. "USD"). Constrained
 # ``str`` rather than an enum because the currency universe is open. Kept here so
@@ -48,12 +48,34 @@ class Domain(str, Enum):
     ISIN = "isin"              # ISIN reference identity (reference only)
 
 
+def _parse_canonical(value: str) -> dict:
+    """Split a canonical ``"domain:key[@qualifier]"`` string into field values."""
+    if ":" not in value:
+        raise ValueError(
+            f"not a namespaced instrument id: {value!r} "
+            "(expected 'domain:key', e.g. 'price:AAPL')"
+        )
+    domain_str, rest = value.split(":", 1)
+    qualifier: Optional[str] = None
+    if "@" in rest:
+        rest, qualifier = rest.split("@", 1)
+    try:
+        domain = Domain(domain_str)
+    except ValueError as exc:
+        allowed = ", ".join(d.value for d in Domain)
+        raise ValueError(
+            f"unknown domain {domain_str!r}; allowed: {allowed}"
+        ) from exc
+    return {"domain": domain, "key": rest, "qualifier": qualifier}
+
+
 class InstrumentId(BaseModel):
     """An immutable, namespaced instrument identifier.
 
-    Construct from parts or parse from the canonical string with
-    :meth:`parse`; ``str(iid)`` returns the canonical string again, so it
-    round-trips through JSON and ``lazybridge.Store`` as a plain string field.
+    Construct from parts or parse from the canonical string with :meth:`parse`.
+    It *serialises* to that same canonical string, so it round-trips through
+    JSON and ``lazybridge.Store`` as a plain string field — matching LazyFin's
+    string identity (``ticker:AAPL``) rather than a nested object.
     """
 
     model_config = ConfigDict(frozen=True, extra="forbid")
@@ -62,14 +84,33 @@ class InstrumentId(BaseModel):
     key: str = Field(min_length=1)
     qualifier: Optional[str] = None  # e.g. crypto timeframe "1h"
 
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_canonical_string(cls, data: Any) -> Any:
+        # Accept the canonical string anywhere an InstrumentId is expected (e.g.
+        # nested in AnalysisResult JSON), so the string serializer round-trips.
+        if isinstance(data, str):
+            return _parse_canonical(data)
+        return data
+
     @model_validator(mode="after")
-    def _no_separators_in_key(self) -> "InstrumentId":
+    def _check_parts(self) -> "InstrumentId":
         # "@" is the qualifier separator and ":" the domain separator; neither
-        # may appear in key/qualifier or the string form would be ambiguous.
-        for part in (self.key, self.qualifier):
-            if part is not None and ("@" in part or ":" in part):
+        # may appear in key/qualifier, and an empty qualifier is malformed.
+        for label, part in (("key", self.key), ("qualifier", self.qualifier)):
+            if part is None:
+                continue
+            if part == "":
+                raise ValueError(f"{label} must not be empty")
+            if "@" in part or ":" in part:
                 raise ValueError("key/qualifier must not contain ':' or '@'")
         return self
+
+    @model_serializer
+    def _serialize(self) -> str:
+        # Serialise to the canonical string so InstrumentId round-trips as a
+        # plain string, interchangeable with LazyFin's string identity.
+        return str(self)
 
     def __str__(self) -> str:
         base = f"{self.domain.value}:{self.key}"
@@ -84,20 +125,4 @@ class InstrumentId(BaseModel):
         """
         if isinstance(value, InstrumentId):
             return value
-        if ":" not in value:
-            raise ValueError(
-                f"not a namespaced instrument id: {value!r} "
-                "(expected 'domain:key', e.g. 'price:AAPL')"
-            )
-        domain_str, rest = value.split(":", 1)
-        qualifier: Optional[str] = None
-        if "@" in rest:
-            rest, qualifier = rest.split("@", 1)
-        try:
-            domain = Domain(domain_str)
-        except ValueError as exc:
-            allowed = ", ".join(d.value for d in Domain)
-            raise ValueError(
-                f"unknown domain {domain_str!r}; allowed: {allowed}"
-            ) from exc
-        return cls(domain=domain, key=rest, qualifier=qualifier)
+        return cls(**_parse_canonical(value))

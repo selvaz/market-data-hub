@@ -62,10 +62,13 @@ def validate_wide_prices(df: "pd.DataFrame") -> "pd.DataFrame":
     """Validate a *wide* price frame: a DatetimeIndex, one column per symbol.
 
     This is the shape ``reader.read_prices(..., wide=True)`` returns. Returns the
-    frame unchanged on success; raises ``ValueError`` otherwise.
+    frame unchanged on success; raises ``ValueError`` otherwise. An empty frame
+    (the reader's no-data result) is accepted as-is.
     """
     import pandas as pd
 
+    if df.empty:
+        return df
     if not isinstance(df.index, pd.DatetimeIndex):
         raise ValueError("wide price frame must have a DatetimeIndex")
     if not df.index.is_monotonic_increasing:
@@ -77,8 +80,11 @@ def validate_long_prices(df: "pd.DataFrame") -> "pd.DataFrame":
     """Validate a *long* price frame: must carry ``date`` and ``symbol`` columns.
 
     This is the shape ``reader.read_prices(..., wide=False)`` returns. Returns the
-    frame unchanged on success; raises ``ValueError`` otherwise.
+    frame unchanged on success; raises ``ValueError`` otherwise. An empty frame
+    (the reader's no-data result) is accepted as-is.
     """
+    if df.empty:
+        return df
     required = {"date", "symbol"}
     missing = required - set(df.columns)
     if missing:

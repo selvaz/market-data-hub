@@ -22,5 +22,10 @@ _ensure_ssl()
 try:
     from market_data_hub import catalog, extract, reader  # noqa: E402,F401
     __all__ = ["catalog", "extract", "reader"]
-except ImportError:  # pragma: no cover - exercised only without pandas/duckdb
+except ModuleNotFoundError as _exc:  # pragma: no cover - only without the heavy stack
+    # Tolerate *only* the heavy optional stack being absent (so the pandas-free
+    # lazydatacore contract still imports); re-raise any other import failure so
+    # real breakage in catalog/extract/reader is not silently masked.
+    if _exc.name not in {"pandas", "duckdb", "numpy", "pyarrow"}:
+        raise
     __all__ = []

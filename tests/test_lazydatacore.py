@@ -8,6 +8,7 @@ from decimal import Decimal
 import pytest
 
 from market_data_hub.lazydatacore import (
+    OHLCV_COLUMNS,
     AnalysisResult,
     Domain,
     InstrumentId,
@@ -16,6 +17,7 @@ from market_data_hub.lazydatacore import (
     PriceBar,
     Provenance,
     ResolvedRef,
+    ResultKind,
     SourceRef,
     ensure_utc,
     now_utc,
@@ -63,10 +65,21 @@ def test_instrument_id_requires_namespace():
         InstrumentId.parse("AAPL")
 
 
-def test_instrument_id_json_roundtrip():
+def test_instrument_id_serializes_as_canonical_string():
+    # The whole point of the contract: serialise to a plain string, not a nested
+    # object, so it is interchangeable with LazyFin's string identity.
     iid = InstrumentId.parse("crypto:ETHUSDT@4h")
     dumped = iid.model_dump(mode="json")
+    assert dumped == "crypto:ETHUSDT@4h"
+    assert isinstance(dumped, str)
+    # ...and it coerces back from the string on validation.
     assert InstrumentId.model_validate(dumped) == iid
+    assert InstrumentId.model_validate("price:AAPL") == InstrumentId.parse("price:AAPL")
+
+
+def test_instrument_id_rejects_empty_qualifier():
+    with pytest.raises(ValueError, match="must not be empty"):
+        InstrumentId.parse("crypto:BTCUSDT@")
 
 
 # --------------------------------------------------------------------------- #
@@ -153,8 +166,12 @@ def test_analysis_result_envelope_roundtrips():
         ),
     )
     dumped = res.model_dump(mode="json")
+    # instruments serialise as plain canonical strings, not nested objects
+    assert dumped["instruments"] == ["price:SPY"]
+    assert dumped["kind"] == "signal"
     again = AnalysisResult.model_validate(dumped)
     assert again.instruments[0] == InstrumentId.parse("price:SPY")
+    assert again.kind is ResultKind.SIGNAL
     assert again.payload["state"] == 1
 
 
@@ -185,3 +202,18 @@ def test_wide_and_long_validators():
     assert validate_long_prices(long) is long
     with pytest.raises(ValueError):
         validate_long_prices(pd.DataFrame({"close": [1.0]}))
+
+
+def test_validators_accept_empty_reader_result():
+    # reader.read_prices() returns a bare empty DataFrame on no-data; the
+    # validators must accept it rather than raising.
+    pd = pytest.importorskip("pandas")
+    empty = pd.DataFrame()
+    assert validate_wide_prices(empty) is empty
+    assert validate_long_prices(empty) is empty
+
+
+def test_canonical_exports_present():
+    # ResultKind and OHLCV_COLUMNS are part of the public contract.
+    assert OHLCV_COLUMNS == ("open", "high", "low", "close", "adj_close", "volume")
+    assert ResultKind.SCORE.value == "score"

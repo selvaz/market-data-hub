@@ -37,9 +37,11 @@ from market_data_hub.lazydatacore.result import (
     LazyDataModel,
     Money,
     Provenance,
+    ResultKind,
     SourceRef,
 )
 from market_data_hub.lazydatacore.series import (
+    OHLCV_COLUMNS,
     Frequency,
     PriceBar,
     ReturnKind,
@@ -67,8 +69,10 @@ __all__ = [
     "LazyDataModel",
     "Money",
     "Provenance",
+    "ResultKind",
     "SourceRef",
     # series
+    "OHLCV_COLUMNS",
     "Frequency",
     "PriceBar",
     "ReturnKind",
