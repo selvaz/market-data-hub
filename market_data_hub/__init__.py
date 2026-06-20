@@ -16,6 +16,11 @@ from market_data_hub._ssl_bootstrap import ensure_ssl as _ensure_ssl  # noqa: E4
 _ensure_ssl()
 
 # Public read / discovery / extraction API for downstream tools and LLMs.
-from market_data_hub import catalog, extract, reader  # noqa: E402,F401
-
-__all__ = ["catalog", "extract", "reader"]
+# These pull pandas/duckdb. The import is guarded so that the pandas-free shared
+# data contract (market_data_hub.lazydatacore) stays importable on tools that do
+# not install the full data-core stack (e.g. LazyFin, which has no pandas).
+try:
+    from market_data_hub import catalog, extract, reader  # noqa: E402,F401
+    __all__ = ["catalog", "extract", "reader"]
+except ImportError:  # pragma: no cover - exercised only without pandas/duckdb
+    __all__ = []

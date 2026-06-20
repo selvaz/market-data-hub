@@ -23,6 +23,9 @@ dependencies = [
     "certifi",
     "truststore",
     "filelock>=3.0",
+    # lazydatacore: the shared data contract (identity, time, series, results)
+    # is pydantic-only and imported by every downstream tool.
+    "pydantic>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -32,7 +35,7 @@ agent = ["lazybridge"]
 dev = ["pytest>=7.0"]
 
 [tool.setuptools]
-packages = ["market_data_hub", "market_data_hub.db", "market_data_hub.sources", "market_data_hub.coverage"]
+packages = ["market_data_hub", "market_data_hub.db", "market_data_hub.sources", "market_data_hub.coverage", "market_data_hub.lazydatacore"]
 
 [tool.setuptools.package-data]
 market_data_hub = ["config/*.yaml"]

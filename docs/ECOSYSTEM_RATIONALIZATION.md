@@ -182,14 +182,14 @@ Pacchetto **solo Pydantic, senza pandas/numpy/matplotlib**, così *tutti* posson
 
 ## 9. Piano per fasi (incrementale, nessun big-bang)
 
-| Fase | Contenuto | Rischio |
-|------|-----------|---------|
-| **0** | Decisioni di fondazione (§5) | — *fatto* |
-| **1** | `lazydatacore` in market-data-hub: identità, tempo, schemi serie, envelope, resolver. Solo schemi, nessuna logica | basso |
-| **2** | Conformità del core: `reader.py`/`agent_tools.py` etichettano l'output con i tipi L0 (adapter sottili). DuckDB invariato | basso |
-| **3** | `lazyquant`: unifica le primitive di rendimento/rischio. market-data-hub e LazyFin ri-esportano da qui | medio |
-| **4** | `lazyviz`: estrazione PlotTheme; LazyHMM migra a usarlo; LazyFin produce grafici via `Memo` esteso | medio |
-| **5** | Registry di mapping simbolo ↔ security_id in `lazydatacore` per chiudere `AAPL` ↔ `ticker:AAPL` | basso |
+| Fase | Contenuto | Rischio | Stato |
+|------|-----------|---------|-------|
+| **0** | Decisioni di fondazione (§5) | — | ✅ fatto |
+| **1** | `lazydatacore` in market-data-hub: identità, tempo, schemi serie, envelope, resolver. Solo schemi, nessuna logica | basso | ✅ fatto (`market_data_hub/lazydatacore/`) |
+| **2** | Conformità del core: `reader.py`/`agent_tools.py` etichettano l'output con i tipi L0 (adapter sottili). DuckDB invariato | basso | da fare |
+| **3** | `lazyquant`: unifica le primitive di rendimento/rischio. market-data-hub e LazyFin ri-esportano da qui | medio | da fare |
+| **4** | `lazyviz`: estrazione PlotTheme; LazyHMM migra a usarlo; LazyFin produce grafici via `Memo` esteso | medio | da fare |
+| **5** | Registry di mapping simbolo ↔ security_id in `lazydatacore` per chiudere `AAPL` ↔ `ticker:AAPL` | basso | da fare |
 
 Ogni fase è indipendente e committabile da sola. Fermandosi alla Fase 3 sono già eliminati i
 due problemi peggiori (identità + returns duplicati).
