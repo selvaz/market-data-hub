@@ -10,6 +10,9 @@ pipeline.
 
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — what the process does, the
   data-flow, the main functions, the full DB schema, the coverage engine.
+- **[docs/LAZYDATACORE.md](docs/LAZYDATACORE.md)** — API reference for the shared
+  `lazydatacore` contract (identity, resolver/registry, quant primitives, series
+  schemas, result envelopes, time) that the rest of the ecosystem imports.
 - **[docs/DATA_CATALOG.md](docs/DATA_CATALOG.md)** — every series with provider,
   group, frequency, typical lag and history depth; plus the proposed
   cross-country WDI/WEO/WGI/BIS panel extension.
@@ -83,7 +86,14 @@ vix  = read_prices(["^VIX9D","^VIX","^VIX3M","^VIX6M"])           # term structu
 mac  = read_macro(["DGS10", "CPIAUCSL"])
 btc  = read_crypto("BTCUSDT", "1h", start="2024-01-01")
 cov  = get_coverage()                                            # quality status
+
+# Or read by canonical lazydatacore identity (resolver picks the right table):
+from market_data_hub.reader import read_instrument
+spy  = read_instrument("ticker:SPY", start="2020-01-01")
+btc2 = read_instrument("crypto:BTCUSDT@1h", start="2024-01-01")
 ```
+
+See [`docs/LAZYDATACORE.md`](docs/LAZYDATACORE.md) for the full shared-contract API.
 
 ## Coverage engine (data quality)
 
