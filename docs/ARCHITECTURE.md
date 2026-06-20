@@ -116,8 +116,9 @@ market_data_hub/
 │   └── report.py            rebuild_coverage() → coverage_report table
 │
 ├── db/
-│   ├── schema.sql           6 tables + indexes + 3 views (idempotent)
-│   ├── connection.py        get_conn() resolves path, applies schema
+│   ├── schema.sql           tables + indexes + views (idempotent); schema_meta
+│   ├── connection.py        get_conn() resolves path, applies schema; SCHEMA_VERSION, migrate()
+│   ├── retention.py         prune() — retention/pruning of log, crypto, vintages
 │   └── upsert.py            upsert() INSERT OR REPLACE, log_run()
 │
 └── config/
@@ -189,9 +190,30 @@ btc = read_crypto("BTCUSDT", "1h", start="2024-01-01")
 | Function | Purpose |
 |----------|---------|
 | `db.connection.get_conn(db_path=None, read_only=False)` | open DuckDB, apply schema, resolve path from settings/env |
+| `db.connection.migrate(con) -> int` | idempotent forward-migration ladder; ensures schema applied + version recorded; returns resulting version |
+| `db.connection.get_schema_version(con) -> int \| None` | read `schema_version` from `schema_meta` (None if absent) |
 | `db.upsert.upsert(con, table, df)` | atomic `INSERT OR REPLACE`; returns `(added, updated)` |
 | `db.upsert.record_vintage(con, table, df, vintage_date)` | append-on-change to `{table}_vintage` for point-in-time history (macro_series, macro_panel) |
 | `db.upsert.log_run(con, …)` | append one row to `download_log` |
+| `db.retention.prune(con, *, download_log_days=90, crypto_days=None, vintage_keep_per_key=None, dry_run=False, db_path=None) -> dict` | retention/pruning; returns `{target: rows_deleted}` (or would-delete when `dry_run`) |
+
+#### Schema versioning & retention
+
+**Versioning.** `schema.sql` defines a `schema_meta (key, value)` table.
+`apply_schema()` (run on every `get_conn()` open) upserts `schema_version =
+SCHEMA_VERSION` (module constant in `connection.py`, currently `1`) and
+`schema_applied_at` (UTC ISO timestamp) via `INSERT OR REPLACE`, so it is
+idempotent. `migrate(con)` is the forward-migration entry point: it applies the
+schema, then walks an ordered `if current < N:` ladder so future migrations slot
+in, and returns the resulting version. Running it twice is a no-op.
+
+**Retention.** `prune(con, …)` trims the fastest-growing tables, each target
+opt-in (`None` = skip): `download_log_days` deletes `download_log` rows older
+than N days (by `started_at`); `crypto_days` deletes `crypto_ohlcv` rows older
+than N days (by `ts`); `vintage_keep_per_key` keeps only the newest N
+`vintage_date` rows per logical key in `macro_series_vintage` /
+`macro_panel_vintage`. Deletes run in one transaction; `dry_run=True` returns the
+counts that *would* be removed without deleting. Explicit args are authoritative.
 
 ---
 
