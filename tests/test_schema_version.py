@@ -39,6 +39,31 @@ def test_apply_schema_does_not_overwrite_existing_version(tmp_db):
     con.close()
 
 
+def test_migrate_handles_unversioned_existing_db(tmp_db):
+    # Codex P2: a DB created before schema_meta existed (tables present, no
+    # schema_version row) must NOT be stamped current by apply_schema() — that
+    # would make it look up-to-date to migrate() and skip future `if current<N`
+    # steps. apply_schema() leaves it unstamped; migrate() advances it from the
+    # v1 baseline.
+    con = C.get_conn()  # creates the data tables (e.g. prices_daily)
+    con.execute("DELETE FROM schema_meta WHERE key = 'schema_version'")
+    assert C.get_schema_version(con) is None
+
+    C.apply_schema(con)  # existing/unversioned DB → must stay unstamped
+    assert C.get_schema_version(con) is None
+
+    assert C.migrate(con) == C.SCHEMA_VERSION
+    assert C.get_schema_version(con) == C.SCHEMA_VERSION
+    con.close()
+
+
+def test_fresh_db_is_stamped_by_apply_schema(tmp_db):
+    # A genuinely new database (no core tables yet) IS stamped at baseline.
+    con = C.get_conn()  # fresh open creates tables and stamps the version
+    assert C.get_schema_version(con) == C.SCHEMA_VERSION
+    con.close()
+
+
 def test_migrate_is_idempotent(tmp_db):
     con = C.get_conn()
     v1 = C.migrate(con)
