@@ -247,6 +247,14 @@ optional LazyBridge `ToolProvider`.
 | `tool_get_series` | `datahub_get_series` | `symbols, start, end, domain, field, transform, frequency` |
 | `tool_get_returns` | `datahub_get_returns` | `symbols, start, end, frequency` |
 | `tool_get_coverage` | `datahub_get_coverage` | `symbols` |
+| `tool_refresh` | `datahub_refresh` | `symbols, start, end` |
+
+`tool_refresh` (and the underlying `runner.refresh(symbols=None, start_override=None,
+end=None, db_path=None)`) **updates data already in the warehouse** through the
+official `run` pipeline — incrementally to the latest bar, or over a window. It
+introduces **no new symbols and no metadata** (so it needs no confirmation), which
+also makes the hub usable as a self-updating temporary DB. Adding a brand-new
+instrument (with `asset_class`/`area`/`name`) is a separate, confirmation-gated path.
 
 - All arguments are primitives; lists are passed **comma-separated** (`"SPY,TLT"`)
   because LLMs send strings.
