@@ -72,9 +72,9 @@ def test_routes_macro_panel_pair(captured):
 
 
 def test_routes_factor_pair(captured):
-    reader.read_instrument("factor:FF5_daily/MKT")
+    reader.read_instrument("factor:FF5_daily/Mkt-RF")
     assert captured["name"] == "read_factors"
-    assert captured["args"][0] == "MKT"
+    assert captured["args"][0] == "Mkt-RF"
     assert captured["kwargs"]["factor_set"] == "FF5_daily"
 
 

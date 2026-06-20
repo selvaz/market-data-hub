@@ -347,11 +347,11 @@ def read_instrument(instrument: "str | InstrumentId", start: Optional[str] = Non
     identifier (or its string) and the resolver routes it to the matching
     ``read_*`` function — the DuckDB layout is never touched. Examples::
 
-        read_instrument("price:AAPL")
+        read_instrument("ticker:AAPL")          # 'price:AAPL' is an accepted alias
         read_instrument("crypto:BTCUSDT@4h", start="2024-01-01")
         read_instrument("macro:FEDFUNDS")
         read_instrument("macro_panel:USA/real_gdp_growth")
-        read_instrument("factor:FF5_daily/MKT")
+        read_instrument("factor:FF5_daily/Mkt-RF")
 
     ``asof`` applies only to the macro datasets (point-in-time vintage reads);
     it is ignored for prices/crypto/factors. Reference identities (``cik:``,
