@@ -37,6 +37,16 @@ from market_data_hub.lazydatacore.registry import (
     from_symbol,
     to_symbol,
 )
+from market_data_hub.lazydatacore.quant import (
+    annualized_return,
+    annualized_volatility,
+    cumulative_return,
+    log_returns,
+    max_drawdown,
+    pct_change,
+    performance_summary,
+    simple_returns,
+)
 from market_data_hub.lazydatacore.result import (
     AnalysisResult,
     LazyDataModel,
@@ -73,6 +83,15 @@ __all__ = [
     "from_duckdb",
     "from_symbol",
     "to_symbol",
+    # quant primitives (single float return/risk implementation)
+    "log_returns",
+    "simple_returns",
+    "pct_change",
+    "cumulative_return",
+    "annualized_return",
+    "annualized_volatility",
+    "max_drawdown",
+    "performance_summary",
     # result envelopes
     "AnalysisResult",
     "LazyDataModel",

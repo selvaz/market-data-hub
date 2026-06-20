@@ -119,12 +119,14 @@ L0  CONTRATTI        lazydatacore  (in market-data-hub)  — pydantic puro, zero
                      ├─ Tempo (UTC tz-aware, helper ISO-8601)
                      ├─ Schemi serie (PriceBar, ReturnSeries, TS wide/long)
                      ├─ Envelope risultati (AnalysisResult + Provenance)
-                     └─ Resolver InstrumentId ⇄ (tabella, chiave) per il DuckDB
+                     ├─ Resolver + registry InstrumentId ⇄ (tabella, chiave) per il DuckDB
+                     └─ Primitive quant (returns/vol/drawdown, float)  ← era previsto in L2
 
 L1  DATA CORE        market-data-hub (DuckDB)            → output conforme a L0
 L1b STATO/RUNTIME    LazyBridge Store/EventLog (SQLite)  → invariato, resta agnostico
 
-L2  ANALISI COMUNE   lazyquant (in LazyTools, extra)     → returns, vol, drawdown, resample
+L2  ANALISI COMUNE   primitive quant in lazydatacore     → returns, vol, drawdown
+                     (resample pandas: eventuale extra)
 L2b GRAFICI COMUNI   lazyviz   (in LazyTools, extra)     → PlotTheme di LazyHMM promosso a lib
                                                            + chart-spec dichiarativo
 
@@ -182,10 +184,16 @@ Pacchetto **solo Pydantic, senza pandas/numpy/matplotlib**, così *tutti* posson
 
 ## 8. Analisi e grafici comuni
 
-- **`lazyquant`** (modulo in LazyTools, extra `lazytools[quant]`): assorbe e unifica
-  `extract.py` (market-data-hub) e `returns.py` (LazyFin). Una sola implementazione di
-  log-return, pct-change, volatilità annualizzata, drawdown, resample. Test di equivalenza
-  numerica prima dello switch.
+- **Primitive quant** — `lazydatacore/quant.py` (✅ fatto). Una sola implementazione float di
+  log-return, pct-change, volatilità annualizzata, drawdown; `extract.py` (market-data-hub,
+  pandas) e `returns.py` (LazyFin, Decimal) restano agganciati a queste formule via **test di
+  equivalenza numerica**.
+  > Scostamento dal piano: erano previste in LazyTools (`lazytools[quant]`), ma LazyTools **non**
+  > è una dipendenza di market-data-hub (anzi `lazytools[datahub]` → mdh) → far dipendere mdh da
+  > LazyTools avrebbe **invertito le dipendenze / rischiato un ciclo**. Vivono quindi nel leaf
+  > universale `lazydatacore`, già importato da mdh/LazyFin/LazyHMM: dedup vera senza inversione.
+  > Il `resample` (intrinsecamente pandas) resta in `extract.py`; un eventuale helper pandas
+  > potrà essere un extra futuro.
 - **`lazyviz`** (modulo in LazyTools, extra `lazytools[viz]`): estrazione e generalizzazione
   del `PlotTheme` di LazyHMM (temi + `plot_series_with_regimes`, barcode, small-multiples) +
   **chart-spec dichiarativo** così LazyFin chiede un grafico senza scrivere matplotlib.
@@ -199,7 +207,7 @@ Pacchetto **solo Pydantic, senza pandas/numpy/matplotlib**, così *tutti* posson
 | **1** | `lazydatacore` in market-data-hub: identità, tempo, schemi serie, envelope, resolver. Solo schemi, nessuna logica | basso | ✅ fatto (`market_data_hub/lazydatacore/`) |
 | **2** | Conformità del core: `reader.py`/`agent_tools.py` etichettano l'output con i tipi L0 (adapter sottili). DuckDB invariato | basso | ✅ fatto (`reader.read_instrument`) |
 | **2b** | **Adozione consumatori**: LazyFin adotta `InstrumentId` (identità, PR #9); LazyHMM emette `AnalysisResult` (envelope risultati, PR #5). Entrambi opzionali + import lazy | basso | ✅ fatto |
-| **3** | `lazyquant`: unifica le primitive di rendimento/rischio. market-data-hub e LazyFin ri-esportano da qui | medio | in corso |
+| **3** | Primitive di rendimento/rischio unificate (`log/simple returns`, vol, drawdown). Impl float unica, le varianti pandas (mdh) e Decimal (LazyFin) sono agganciate da test di equivalenza | medio | ✅ fatto (`lazydatacore/quant.py`) |
 | **4** | `lazyviz`: estrazione PlotTheme; LazyHMM migra a usarlo; LazyFin produce grafici via `Memo` esteso | medio | da fare |
 | **5** | Registry di mapping simbolo ↔ security_id in `lazydatacore` per chiudere `AAPL` ↔ `ticker:AAPL` | basso | ✅ fatto (`lazydatacore/registry.py`: `from_symbol`/`to_symbol`/`from_duckdb`) |
 
