@@ -35,13 +35,13 @@ from market_data_hub.lazydatacore import (
 @pytest.mark.parametrize(
     "text,domain,key,qualifier",
     [
-        ("price:AAPL", Domain.PRICE, "AAPL", None),
+        ("ticker:AAPL", Domain.TICKER, "AAPL", None),
         ("crypto:BTCUSDT@1h", Domain.CRYPTO, "BTCUSDT", "1h"),
         ("macro:FEDFUNDS", Domain.MACRO, "FEDFUNDS", None),
         ("macro_panel:USA/real_gdp_growth", Domain.MACRO_PANEL, "USA/real_gdp_growth", None),
-        ("factor:FF5_daily/MKT", Domain.FACTOR, "FF5_daily/MKT", None),
-        ("ticker:AAPL", Domain.TICKER, "AAPL", None),
+        ("factor:FF5_daily/Mkt-RF", Domain.FACTOR, "FF5_daily/Mkt-RF", None),
         ("cik:0000320193", Domain.CIK, "0000320193", None),
+        ("isin:US0378331005", Domain.ISIN, "US0378331005", None),
     ],
 )
 def test_instrument_id_parse_roundtrip(text, domain, key, qualifier):
@@ -53,6 +53,34 @@ def test_instrument_id_parse_roundtrip(text, domain, key, qualifier):
     assert str(iid) == text
     # parse is idempotent on already-parsed values
     assert InstrumentId.parse(iid) is iid
+
+
+def test_price_is_alias_for_ticker():
+    # 'price:' normalises to 'ticker:' — same id, same hash, same string.
+    p, t = InstrumentId.parse("price:AAPL"), InstrumentId.parse("ticker:AAPL")
+    assert p == t and hash(p) == hash(t)
+    assert str(p) == "ticker:AAPL"
+    assert p.domain is Domain.TICKER
+
+
+def test_cik_zero_padded_and_numeric():
+    assert InstrumentId.parse("cik:320193") == InstrumentId.parse("cik:0000320193")
+    assert str(InstrumentId.parse("cik:320193")) == "cik:0000320193"
+    with pytest.raises(ValueError, match="cik key"):
+        InstrumentId.parse("cik:AAPL")
+
+
+def test_isin_upper_and_format_checked():
+    assert str(InstrumentId.parse("isin:us0378331005")) == "isin:US0378331005"
+    with pytest.raises(ValueError, match="isin key"):
+        InstrumentId.parse("isin:NOTANISIN")
+
+
+def test_qualifier_only_for_crypto():
+    with pytest.raises(ValueError, match="only valid for the 'crypto'"):
+        InstrumentId.parse("macro:FEDFUNDS@2020-01-01")
+    with pytest.raises(ValueError, match="only valid for the 'crypto'"):
+        InstrumentId.parse("ticker:AAPL@x")
 
 
 def test_instrument_id_rejects_unknown_domain():
@@ -109,13 +137,13 @@ def test_resolve_macro_panel_pair():
 
 
 def test_resolve_factor_pair():
-    ref = to_duckdb("factor:FF5_daily/MKT")
-    assert ref.filters == {"factor_set": "FF5_daily", "factor": "MKT"}
+    ref = to_duckdb("factor:FF5_daily/Mkt-RF")
+    assert ref.filters == {"factor_set": "FF5_daily", "factor": "Mkt-RF"}
 
 
 def test_resolve_bad_pair_raises():
     with pytest.raises(NotResolvableError):
-        to_duckdb("factor:MKT")  # missing factor_set/factor split
+        to_duckdb("factor:Mkt-RF")  # missing factor_set/factor split
 
 
 def test_resolve_reference_identity_not_in_warehouse():
@@ -157,7 +185,7 @@ def test_analysis_result_envelope_roundtrips():
     res = AnalysisResult(
         kind="signal",
         produced_by="lazyhmm.regime.v1",
-        instruments=[InstrumentId.parse("price:SPY")],
+        instruments=[InstrumentId.parse("ticker:SPY")],
         payload={"state": 1, "prob_highvol": 0.8},
         provenance=Provenance(
             source=SourceRef(source="lazyhmm"),
@@ -167,10 +195,10 @@ def test_analysis_result_envelope_roundtrips():
     )
     dumped = res.model_dump(mode="json")
     # instruments serialise as plain canonical strings, not nested objects
-    assert dumped["instruments"] == ["price:SPY"]
+    assert dumped["instruments"] == ["ticker:SPY"]
     assert dumped["kind"] == "signal"
     again = AnalysisResult.model_validate(dumped)
-    assert again.instruments[0] == InstrumentId.parse("price:SPY")
+    assert again.instruments[0] == InstrumentId.parse("ticker:SPY")
     assert again.kind is ResultKind.SIGNAL
     assert again.payload["state"] == 1
 

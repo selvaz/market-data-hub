@@ -6,7 +6,7 @@ warehouse's physical layout. The warehouse schema is never changed: tools speak
 ``InstrumentId``, the resolver hands back the table, the column filters and the
 matching ``reader.py`` function to call.
 
-    >>> to_duckdb(InstrumentId.parse("price:AAPL"))
+    >>> to_duckdb(InstrumentId.parse("ticker:AAPL"))
     ResolvedRef(dataset='prices', table='prices_daily',
                 filters={'symbol': 'AAPL'}, reader='read_prices')
 
@@ -44,8 +44,8 @@ def to_duckdb(instrument: "str | InstrumentId") -> ResolvedRef:
     iid = InstrumentId.parse(instrument)
     domain = iid.domain
 
-    # PRICE and TICKER are the same physical dataset: prices_daily keyed by symbol.
-    if domain in (Domain.PRICE, Domain.TICKER):
+    # TICKER (and its 'price' alias, normalised to ticker) is prices_daily.
+    if domain in (Domain.TICKER, Domain.PRICE):
         return ResolvedRef(
             dataset="prices", table="prices_daily",
             filters={"symbol": iid.key}, reader="read_prices",
@@ -74,7 +74,7 @@ def to_duckdb(instrument: "str | InstrumentId") -> ResolvedRef:
         )
 
     if domain is Domain.FACTOR:
-        # Composite key "FACTOR_SET/FACTOR", e.g. "FF5_daily/MKT".
+        # Composite key "FACTOR_SET/FACTOR", e.g. "FF5_daily/Mkt-RF".
         factor_set, factor = _split_pair(iid.key, "factor", "factor_set/factor")
         return ResolvedRef(
             dataset="factors", table="factor_returns",

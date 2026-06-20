@@ -186,7 +186,7 @@ Pacchetto **solo Pydantic, senza pandas/numpy/matplotlib**, così *tutti* posson
 |------|-----------|---------|-------|
 | **0** | Decisioni di fondazione (§5) | — | ✅ fatto |
 | **1** | `lazydatacore` in market-data-hub: identità, tempo, schemi serie, envelope, resolver. Solo schemi, nessuna logica | basso | ✅ fatto (`market_data_hub/lazydatacore/`) |
-| **2** | Conformità del core: `reader.py`/`agent_tools.py` etichettano l'output con i tipi L0 (adapter sottili). DuckDB invariato | basso | da fare |
+| **2** | Conformità del core: `reader.py`/`agent_tools.py` etichettano l'output con i tipi L0 (adapter sottili). DuckDB invariato | basso | ✅ fatto (`reader.read_instrument`) |
 | **3** | `lazyquant`: unifica le primitive di rendimento/rischio. market-data-hub e LazyFin ri-esportano da qui | medio | da fare |
 | **4** | `lazyviz`: estrazione PlotTheme; LazyHMM migra a usarlo; LazyFin produce grafici via `Memo` esteso | medio | da fare |
 | **5** | Registry di mapping simbolo ↔ security_id in `lazydatacore` per chiudere `AAPL` ↔ `ticker:AAPL` | basso | da fare |

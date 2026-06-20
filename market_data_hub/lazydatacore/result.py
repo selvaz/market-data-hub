@@ -24,8 +24,12 @@ class LazyDataModel(BaseModel):
 
     ``extra="forbid"`` turns silent typos into validation errors — essential for
     a shared contract — and ``validate_default`` checks constrained defaults
-    (such as currency codes) too. Mirrors LazyFin's ``LazyFinModel`` so the two
-    contracts are interchangeable.
+    (such as currency codes) too. Same config as LazyFin's ``LazyFinModel`` and
+    the same field names/types for the shared types (``SourceRef``,
+    ``Provenance``, ``Money``); note that timestamps here are normalised to UTC
+    (LazyFin keeps the original offset), so values are equivalent but not always
+    byte-identical across a round-trip. These are independent definitions today,
+    not a single shared base — keep them in sync until one is extracted.
     """
 
     model_config = ConfigDict(extra="forbid", validate_default=True)

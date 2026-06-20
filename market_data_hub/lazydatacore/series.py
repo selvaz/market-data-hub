@@ -81,16 +81,19 @@ def validate_wide_prices(df: "pd.DataFrame") -> "pd.DataFrame":
 def validate_long_prices(df: "pd.DataFrame") -> "pd.DataFrame":
     """Validate a *long* price frame: must carry ``date`` and ``symbol`` columns.
 
-    This is the shape ``reader.read_prices(..., wide=False)`` returns. Returns the
-    frame unchanged on success; raises ``ValueError`` otherwise. An empty frame
-    (the reader's no-data result) is accepted as-is.
+    This is the shape ``reader.read_prices(..., wide=False)`` and ``read_crypto``
+    return: a ``symbol`` column plus a time column named ``date`` (prices_daily)
+    or ``ts`` (crypto_ohlcv). Returns the frame unchanged on success; raises
+    ``ValueError`` otherwise. An empty frame (the reader's no-data result) is
+    accepted as-is.
     """
     if df.empty:
         return df
-    required = {"date", "symbol"}
-    missing = required - set(df.columns)
-    if missing:
+    cols = set(df.columns)
+    if "symbol" not in cols:
+        raise ValueError("long price frame missing required column: 'symbol'")
+    if not ({"date", "ts"} & cols):
         raise ValueError(
-            f"long price frame missing required columns: {sorted(missing)}"
+            "long price frame missing a time column ('date' or 'ts')"
         )
     return df
