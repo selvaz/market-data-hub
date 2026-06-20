@@ -11,3 +11,4 @@ pyyaml
 certifi
 truststore  # SSL verification via the Windows cert store (networks with proxy/MITM)
 filelock>=3.0      # cross-process writer lock on the DuckDB file (market_data_hub/lock.py)
+pydantic>=2.0      # lazydatacore: the shared data contract (identity, time, series, results)
