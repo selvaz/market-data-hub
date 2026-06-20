@@ -20,6 +20,7 @@ from typing import List, Optional, Union
 import pandas as pd
 
 from market_data_hub.db.connection import get_conn
+from market_data_hub.lazydatacore import InstrumentId, to_duckdb  # noqa: F401
 
 # Columns of prices_daily that read_prices() may expose as the wide `field`.
 # `field` is interpolated into the SQL (it cannot be a bind parameter), so it
@@ -334,3 +335,44 @@ def get_latest(symbol: str, db_path: Optional[str] = None) -> dict:
         return out
     finally:
         con.close()
+
+
+def read_instrument(instrument: "str | InstrumentId", start: Optional[str] = None,
+                    end: Optional[str] = None, wide: bool = False,
+                    asof: Optional[str] = None,
+                    db_path: Optional[str] = None) -> pd.DataFrame:
+    """Read a single instrument addressed by its canonical ``InstrumentId``.
+
+    The thin lazydatacore (L0) adapter: downstream tools pass a namespaced
+    identifier (or its string) and the resolver routes it to the matching
+    ``read_*`` function — the DuckDB layout is never touched. Examples::
+
+        read_instrument("price:AAPL")
+        read_instrument("crypto:BTCUSDT@4h", start="2024-01-01")
+        read_instrument("macro:FEDFUNDS")
+        read_instrument("macro_panel:USA/real_gdp_growth")
+        read_instrument("factor:FF5_daily/MKT")
+
+    ``asof`` applies only to the macro datasets (point-in-time vintage reads);
+    it is ignored for prices/crypto/factors. Reference identities (``cik:``,
+    ``isin:``) raise :class:`~market_data_hub.lazydatacore.NotResolvableError`.
+    """
+    ref = to_duckdb(instrument)
+    f = ref.filters
+    if ref.dataset == "prices":
+        return read_prices(f["symbol"], start=start, end=end, wide=wide,
+                           db_path=db_path)
+    if ref.dataset == "crypto":
+        return read_crypto(f["symbol"], timeframe=f["timeframe"], start=start,
+                           end=end, db_path=db_path)
+    if ref.dataset == "macro":
+        return read_macro(f["series_id"], start=start, end=end, wide=wide,
+                          asof=asof, db_path=db_path)
+    if ref.dataset == "macro_panel":
+        return read_macro_panel(f["indicator_id"], countries=[f["country_iso3"]],
+                                start=start, end=end, wide=wide, asof=asof,
+                                db_path=db_path)
+    if ref.dataset == "factors":
+        return read_factors(f["factor"], factor_set=f["factor_set"], start=start,
+                            end=end, wide=wide, db_path=db_path)
+    raise ValueError(f"unsupported dataset {ref.dataset!r}")  # defensive
