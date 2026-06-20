@@ -156,11 +156,32 @@ def tool_get_coverage(symbols: str = "") -> str:
     return _json(_df_records(df))
 
 
+def tool_refresh(symbols: str = "", start: str = "", end: str = "") -> str:
+    """Update market data ALREADY in the warehouse — no new symbols, no metadata,
+    no confirmation needed. Refreshes existing series to the latest bar, or over an
+    optional [start, end] window, via the official run pipeline.
+
+    Use this to keep the hub current (it doubles as a self-updating temp DB). It
+    NEVER creates symbols: adding a brand-new instrument (with its asset_class /
+    area / name) is a separate, confirmation-gated path.
+
+    Args:
+        symbols: comma-separated EXISTING symbols to refresh (empty = all in warehouse).
+        start, end: optional 'YYYY-MM-DD' window (empty = incremental to the latest bar).
+    Returns JSON: {"refreshed": {symbol: rows_written}, "n": <count>}.
+    """
+    from market_data_hub.runner import refresh
+    out = refresh(symbols=_split(symbols) or None,
+                  start_override=start or None, end=end or None)
+    return _json({"refreshed": out, "n": len(out)})
+
+
 # All tool functions exposed to an agent, in the order an agent should prefer.
 TOOL_FUNCTIONS = [
     tool_list_datasets, tool_list_symbols, tool_list_sectors, tool_list_macro,
     tool_list_indicators, tool_list_countries, tool_describe, tool_search,
     tool_get_series, tool_get_returns, tool_get_coverage,
+    tool_refresh,
 ]
 
 

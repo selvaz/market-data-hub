@@ -71,9 +71,11 @@ def _last_crypto(con) -> Dict[tuple, pd.Timestamp]:
 
 # --------------------------------------------------------------- YAHOO
 def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None,
-              end: Optional[str] = None) -> None:
+              end: Optional[str] = None, tickers: Optional[List[dict]] = None) -> None:
     end = end or _today()
-    tickers = get_yahoo_tickers()
+    # Caller may pass an explicit ticker list (e.g. refresh() of symbols already
+    # in the warehouse); default to the full YAML catalog.
+    tickers = tickers if tickers is not None else get_yahoo_tickers()
     tail = cfg["incremental"]["tail_refresh_days"]
     gstart = cfg["backfill_start"]["yahoo"]
     last = _last_prices(con)
@@ -499,6 +501,60 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
                 _log(f"CLASSIFY: error (non-blocking): {ex}")
 
         _log(f"=== END {run_id} ({time.time()-t0:.1f}s) ===")
+    finally:
+        if con is not None:
+            con.close()
+        lock_ctx.__exit__(None, None, None)
+
+
+def refresh(symbols: Optional[List[str]] = None,
+            start_override: Optional[str] = None,
+            end: Optional[str] = None,
+            db_path: Optional[str] = None) -> Dict[str, int]:
+    """Update market data ALREADY present in the warehouse, via the official
+    yahoo pipeline (download → upsert → coverage).
+
+    Non-invasive by design: introduces **no new symbols and no metadata** — only
+    symbols already in ``prices_daily`` are refreshed, incrementally to the latest
+    bar (or over an explicit ``start_override``..``end`` window). This makes the
+    hub usable as a self-updating temp DB without any classification step.
+
+    ``symbols`` restricts the refresh to that subset of the existing symbols
+    (empty/None = every symbol currently in the warehouse). Returns
+    ``{symbol: rows_written}`` for the symbols actually refreshed.
+    """
+    cfg = get_settings()
+    run_id = uuid.uuid4().hex[:12]
+    _log(f"=== REFRESH {run_id} ===")
+    try:
+        lock_ctx = db_write_lock(db_path)
+        lock_ctx.__enter__()
+    except DBLockTimeout as ex:
+        _log(f"SKIP refresh: {ex}")
+        return {}
+    con = None
+    try:
+        con = get_conn(db_path)
+        existing = sorted(_last_prices(con).keys())          # already in prices_daily
+        want = set(symbols) if symbols else set(existing)
+        target = [s for s in existing if s in want]
+        if symbols:
+            missing = sorted(set(symbols) - set(existing))
+            if missing:
+                _log(f"refresh: not in warehouse, skipped: {missing}")
+        if not target:
+            _log("refresh: nothing to update")
+            return {}
+        run_yahoo(con, cfg, run_id, start_override=start_override, end=end,
+                  tickers=[{"symbol": s} for s in target])
+        rebuild_coverage(con, run_id)
+        df = con.execute(
+            "SELECT symbol, COALESCE(SUM(rows_added + rows_updated), 0) AS n "
+            "FROM download_log WHERE run_id = ? AND symbol IS NOT NULL "
+            "GROUP BY symbol", (run_id,)).fetch_df()
+        out = {r.symbol: int(r.n) for r in df.itertuples()}
+        _log(f"=== REFRESH END {run_id}: {len(out)} symbols ===")
+        return out
     finally:
         if con is not None:
             con.close()
