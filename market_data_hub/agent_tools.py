@@ -156,12 +156,61 @@ def tool_get_coverage(symbols: str = "") -> str:
     return _json(_df_records(df))
 
 
-# All tool functions exposed to an agent, in the order an agent should prefer.
+# All read-only tool functions exposed to an agent, in the order an agent
+# should prefer. The hub's agent surface is read-only by default (the data is
+# kept fresh by a separate downloader, run_daily.py).
 TOOL_FUNCTIONS = [
     tool_list_datasets, tool_list_symbols, tool_list_sectors, tool_list_macro,
     tool_list_indicators, tool_list_countries, tool_describe, tool_search,
     tool_get_series, tool_get_returns, tool_get_coverage,
 ]
+
+
+# ---------------------------------------------------------------------------
+# Write tools — opt-in only (they trigger a network download + DB write)
+# ---------------------------------------------------------------------------
+def tool_refresh_prices(symbols: str, start: str = "2010-01-01") -> str:
+    """Download price series from Yahoo and WRITE them into the hub DB, then
+    rebuild coverage. Use this when the hub has no (or insufficient) data for a
+    symbol: afterwards tool_get_series / tool_get_returns will see it.
+
+    symbols: comma-separated (e.g. "SPY,QQQ,NVDA").
+    start:   history start date "YYYY-MM-DD".
+    Returns JSON with the refreshed symbols and the rebuilt coverage count.
+
+    This is a thin wrapper over the official downloader (runner.run_yahoo); it
+    is NOT concurrency-safe (it temporarily narrows the Yahoo universe to the
+    requested symbols), so serialise calls. Yahoo needs no API key."""
+    import uuid
+
+    from market_data_hub import runner
+    from market_data_hub.config_loader import get_settings
+    from market_data_hub.coverage.report import rebuild_coverage
+    from market_data_hub.db.connection import get_conn
+
+    syms = [s.upper() for s in _split(symbols)]
+    if not syms:
+        return _json({"error": "no symbols provided"})
+
+    tickers = [{"symbol": s, "asset_class": "EQUITY", "area": "",
+                "name": s, "priority": 1} for s in syms]
+    # run_yahoo reads the universe via runner.get_yahoo_tickers(); narrow it to
+    # the requested symbols, then restore so a later full run is unaffected.
+    _orig = runner.get_yahoo_tickers
+    runner.get_yahoo_tickers = lambda: tickers
+    con = get_conn()
+    run_id = "refresh_" + uuid.uuid4().hex[:8]
+    try:
+        runner.run_yahoo(con, get_settings(), run_id, start_override=start)
+        n = rebuild_coverage(con, run_id)
+    finally:
+        runner.get_yahoo_tickers = _orig
+        con.close()
+    return _json({"refreshed": syms, "start": start,
+                  "coverage_series": int(n), "run_id": run_id})
+
+
+WRITE_TOOL_FUNCTIONS = [tool_refresh_prices]
 
 
 # ---------------------------------------------------------------------------
@@ -173,12 +222,25 @@ class DataHubTools:
 
         from market_data_hub.agent_tools import DataHubTools
         agent = Agent("claude-opus-4-8", tools=[DataHubTools()])
+
+    The surface is **read-only by default** (the data is kept fresh by a
+    separate downloader). Pass ``allow_refresh=True`` to additionally expose the
+    write tool ``datahub_refresh_prices`` so an agent can download+persist
+    missing series on demand:
+
+        agent = Agent("claude-opus-4-8", tools=[DataHubTools(allow_refresh=True)])
     """
 
     _is_lazy_tool_provider = True
 
+    def __init__(self, *, allow_refresh: bool = False) -> None:
+        self._allow_refresh = allow_refresh
+
     def as_tools(self) -> list:
         from lazybridge import Tool  # lazy: only needed when actually used
+        fns = list(TOOL_FUNCTIONS)
+        if self._allow_refresh:
+            fns += WRITE_TOOL_FUNCTIONS
         return [Tool.wrap(fn, name=fn.__name__.replace("tool_", "datahub_"),
                           description=(fn.__doc__ or "").strip())
-                for fn in TOOL_FUNCTIONS]
+                for fn in fns]
