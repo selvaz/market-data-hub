@@ -50,16 +50,32 @@ def _resolve_db_path(db_path: Optional[str] = None) -> str:
     return _DEFAULT_DB
 
 
+def _table_exists(con: duckdb.DuckDBPyConnection, name: str) -> bool:
+    """True if a base table ``name`` already exists in the database."""
+    try:
+        row = con.execute(
+            "SELECT 1 FROM information_schema.tables WHERE table_name = ?",
+            [name],
+        ).fetchone()
+    except duckdb.Error:
+        return False
+    return row is not None
+
+
 def apply_schema(con: duckdb.DuckDBPyConnection) -> None:
     """Apply the SQL schema (idempotent) and record schema metadata.
 
-    The ``schema_version`` is stamped only when it is *absent* (a fresh
-    database). Bumping the recorded version is migrate()'s job: opening an
-    existing, older DB under newer code — directly or via get_conn() — must not
-    pre-stamp it as current, or any `if current < N:` migration would be skipped
-    while the DB is still at the old shape. The applied-at timestamp is always
-    refreshed.
+    The ``schema_version`` is stamped here only for a *genuinely new* database
+    (no core tables yet and no recorded version). An existing DB that predates
+    ``schema_meta`` — unversioned but already populated — is deliberately left
+    unstamped: stamping it as the current version would make it look up-to-date
+    to migrate() and skip real `if current < N:` steps while `CREATE TABLE IF
+    NOT EXISTS` does not add missing columns. Version advancement for such DBs
+    is migrate()'s job. The applied-at timestamp is always refreshed.
     """
+    # Detect freshness BEFORE creating tables, using a representative core table
+    # as sentinel: if it is absent, this is a new database we may stamp.
+    fresh = not _table_exists(con, "prices_daily")
     sql = _SCHEMA_PATH.read_text(encoding="utf-8")
     con.execute(sql)
     now = datetime.now(timezone.utc).isoformat()
@@ -68,7 +84,7 @@ def apply_schema(con: duckdb.DuckDBPyConnection) -> None:
         "('schema_applied_at', ?)",
         [now],
     )
-    if get_schema_version(con) is None:
+    if fresh and get_schema_version(con) is None:
         con.execute(
             "INSERT OR REPLACE INTO schema_meta (key, value) VALUES "
             "('schema_version', ?)",
@@ -103,11 +119,16 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
     the same shape.
     """
     recorded = get_schema_version(con)  # read BEFORE apply_schema stamps a baseline
-    apply_schema(con)  # ensures every table exists; stamps baseline only if absent
+    apply_schema(con)  # ensures every table exists; stamps baseline only if fresh
 
     if recorded is None:
-        # Fresh DB: apply_schema() just stamped it at the current baseline shape.
-        return get_schema_version(con) or SCHEMA_VERSION
+        stamped = get_schema_version(con)
+        if stamped is not None:
+            # Fresh DB: apply_schema() stamped it at the current baseline shape.
+            return stamped
+        # Unversioned but pre-existing DB (tables present, no schema_version row):
+        # treat it as the v1 baseline and walk the ladder forward from there.
+        recorded = 1
 
     current = recorded
     # Ordered ladder of forward migrations. Each future step runs its DDL/DML on
