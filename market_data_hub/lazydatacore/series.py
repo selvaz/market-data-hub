@@ -14,7 +14,9 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Optional
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict
+
+from market_data_hub.lazydatacore.timeutil import UtcDatetime
 
 if TYPE_CHECKING:  # avoid importing pandas at module import time
     import pandas as pd
@@ -49,7 +51,7 @@ class PriceBar(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    ts: AwareDatetime  # timezone-aware UTC bar open time
+    ts: UtcDatetime  # timezone-aware, normalised to UTC bar open time
     open: Optional[float] = None
     high: Optional[float] = None
     low: Optional[float] = None

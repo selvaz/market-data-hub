@@ -188,6 +188,21 @@ def test_price_bar_requires_aware_ts():
     assert bar.close == 100.0
 
 
+def test_contract_timestamps_normalized_to_utc():
+    # An aware non-UTC timestamp must be converted to UTC, not stored with its
+    # offset, so shared results compare cleanly with the UTC warehouse.
+    east = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone(timedelta(hours=5)))
+    bar = PriceBar(ts=east, close=1.0)
+    assert bar.ts.tzinfo is timezone.utc
+    assert bar.ts.hour == 7
+
+    prov = Provenance(source=SourceRef(source="s", retrieved_at=east), as_of=east)
+    assert prov.as_of.utcoffset() == timezone.utc.utcoffset(None)
+    assert prov.source.retrieved_at.hour == 7
+    res = AnalysisResult(kind="report", produced_by="x", provenance=prov)
+    assert res.created_at.tzinfo is timezone.utc
+
+
 def test_wide_and_long_validators():
     pd = pytest.importorskip("pandas")
     wide = pd.DataFrame(

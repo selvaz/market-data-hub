@@ -13,10 +13,10 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from market_data_hub.lazydatacore.identity import CurrencyCode, InstrumentId
-from market_data_hub.lazydatacore.timeutil import now_utc
+from market_data_hub.lazydatacore.timeutil import UtcDatetime, now_utc
 
 
 class LazyDataModel(BaseModel):
@@ -42,7 +42,7 @@ class SourceRef(LazyDataModel):
     source: str
     source_id: Optional[str] = None
     url: Optional[str] = None
-    retrieved_at: Optional[AwareDatetime] = None
+    retrieved_at: Optional[UtcDatetime] = None
     content_is_untrusted: bool = True
 
 
@@ -54,7 +54,7 @@ class Provenance(LazyDataModel):
     """
 
     source: SourceRef
-    as_of: AwareDatetime
+    as_of: UtcDatetime
     tool_version: Optional[str] = None
 
 
@@ -94,4 +94,4 @@ class AnalysisResult(LazyDataModel):
     instruments: List[InstrumentId] = Field(default_factory=list)
     payload: Dict[str, Any] = Field(default_factory=dict)
     provenance: Optional[Provenance] = None
-    created_at: AwareDatetime = Field(default_factory=now_utc)
+    created_at: UtcDatetime = Field(default_factory=now_utc)

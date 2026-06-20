@@ -9,6 +9,9 @@ made aware, never silently localised.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Annotated
+
+from pydantic import AfterValidator, AwareDatetime
 
 
 def now_utc() -> datetime:
@@ -41,3 +44,10 @@ def parse_iso(value: str) -> datetime:
     if text.endswith("Z"):
         text = text[:-1] + "+00:00"
     return ensure_utc(datetime.fromisoformat(text))
+
+
+# A pydantic field type for contract timestamps: requires a timezone-aware
+# datetime (AwareDatetime) AND normalises it to UTC (ensure_utc). Using this
+# instead of bare AwareDatetime makes the "everything is UTC" invariant real —
+# an aware non-UTC input is converted rather than stored with its offset.
+UtcDatetime = Annotated[AwareDatetime, AfterValidator(ensure_utc)]
