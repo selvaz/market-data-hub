@@ -360,15 +360,25 @@ See [DATA_CATALOG.md §4](DATA_CATALOG.md) for the lag/stalled table per group.
 
 ---
 
-## 11. Roadmap (planned, not yet shipped)
+## 11. Downstream integrations
 
-- **LazyTools connector** — move `agent_tools` into `lazytools/connectors/datahub/`
-  (adapter→client→tools) with market-data-hub as an optional extra. The `tool_*`
-  functions are written as pure functions precisely so this is a re-wrap, not a
-  rewrite.
-- **LazyHMM loader** — a thin `lazyhmm.datasources.load_from_datahub(...)`. Not
-  required today: `extract_returns` already returns a frame `MSRegimeEngine.fit`
-  accepts.
+### Shipped
+
+- **LazyTools connector** — LazyTools now ships an official `datahub` connector
+  (`DataHubTools`, tools named `datahub_*`) that wraps this hub's `agent_tools`,
+  installable via `lazytoolkit[datahub]`. The wrapper lives on the LazyTools
+  side; `market_data_hub.agent_tools` keeps its own `tool_*` / `DataHubTools`
+  surface unchanged. Because the `tool_*` functions are pure functions, the
+  connector is a re-wrap, not a rewrite.
+- **LazyHMM loader** — LazyHMM now ships
+  `lazyhmm.datasources.load_from_datahub(...)`, installable via
+  `lazyhmm[datahub]`. It calls `market_data_hub.extract.extract_returns(...)` and
+  feeds `fit_regimes(data_key=...)`. (`extract_returns` already returns a frame
+  `MSRegimeEngine.fit` accepts, so the loader is a thin convenience layer on the
+  LazyHMM side.)
+
+### Planned (not yet shipped)
+
 - **MCP server** — expose the same tools over MCP for external clients
   (Claude Desktop / Claude Code).
 

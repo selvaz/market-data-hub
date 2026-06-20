@@ -89,6 +89,10 @@ df, meta = extract_returns(["SPY", "TLT", "^VIX"], start="2010-01-01", frequency
 run = MSRegimeEngine(S_max=4, n_starts=10, criterion="bic").fit(df, model="panel")
 ```
 
+LazyHMM also ships an official loader (`lazyhmm[datahub]`) that wraps this for
+you: `lazyhmm.datasources.load_from_datahub(...)` calls `extract_returns(...)`
+and feeds `fit_regimes(data_key=...)`.
+
 ## Recipe: US sectors for a regime scan
 
 ```python
@@ -107,6 +111,9 @@ from lazybridge import Agent
 from market_data_hub.agent_tools import DataHubTools
 agent = Agent("claude-opus-4-8", tools=[DataHubTools()])
 ```
+
+LazyTools also ships an official `datahub` connector (`lazytoolkit[datahub]`)
+that wraps these tools as `datahub_*` for use inside a LazyTools agent.
 
 ## Configuration
 

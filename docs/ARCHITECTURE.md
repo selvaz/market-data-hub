@@ -200,12 +200,16 @@ btc = read_crypto("BTCUSDT", "1h", start="2024-01-01")
 #### Schema versioning & retention
 
 **Versioning.** `schema.sql` defines a `schema_meta (key, value)` table.
-`apply_schema()` (run on every `get_conn()` open) upserts `schema_version =
-SCHEMA_VERSION` (module constant in `connection.py`, currently `1`) and
-`schema_applied_at` (UTC ISO timestamp) via `INSERT OR REPLACE`, so it is
-idempotent. `migrate(con)` is the forward-migration entry point: it applies the
-schema, then walks an ordered `if current < N:` ladder so future migrations slot
-in, and returns the resulting version. Running it twice is a no-op.
+`apply_schema()` (run on every `get_conn()` open) always refreshes
+`schema_applied_at` (UTC ISO timestamp), but records `schema_version =
+SCHEMA_VERSION` (module constant in `connection.py`, currently `1`) **only when
+it is absent** — a fresh DB gets stamped, an existing one keeps its recorded
+baseline so `migrate()` can tell a pre-versioning DB apart from a current one.
+`migrate(con)` is the forward-migration entry point: it reads the recorded
+version *before* applying the schema, then walks an ordered `if current < N:`
+ladder so future migrations slot in, stamps the resulting `schema_version`, and
+returns it. Running it twice is a no-op. `get_schema_version(con)` reads the
+recorded version (or `None` if the DB predates versioning).
 
 **Retention.** `prune(con, …)` trims the fastest-growing tables, each target
 opt-in (`None` = skip): `download_log_days` deletes `download_log` rows older
