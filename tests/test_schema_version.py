@@ -23,6 +23,22 @@ def test_get_schema_version_none_when_absent(tmp_db):
     con.close()
 
 
+def test_apply_schema_does_not_overwrite_existing_version(tmp_db):
+    # An existing DB recorded at an older version must NOT be re-stamped to the
+    # current SCHEMA_VERSION by apply_schema(): doing so would let an open via
+    # get_conn() mask a pending migration. migrate() is what walks it forward.
+    con = C.get_conn()
+    con.execute(
+        "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('schema_version', '0')"
+    )
+    C.apply_schema(con)  # re-applying schema keeps the recorded (older) version
+    assert C.get_schema_version(con) == 0
+    # migrate() brings the recorded version up to the code's SCHEMA_VERSION.
+    assert C.migrate(con) == C.SCHEMA_VERSION
+    assert C.get_schema_version(con) == C.SCHEMA_VERSION
+    con.close()
+
+
 def test_migrate_is_idempotent(tmp_db):
     con = C.get_conn()
     v1 = C.migrate(con)

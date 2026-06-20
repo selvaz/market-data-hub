@@ -51,17 +51,29 @@ def _resolve_db_path(db_path: Optional[str] = None) -> str:
 
 
 def apply_schema(con: duckdb.DuckDBPyConnection) -> None:
-    """Apply the SQL schema (idempotent) and record the schema version."""
+    """Apply the SQL schema (idempotent) and record schema metadata.
+
+    The ``schema_version`` is stamped only when it is *absent* (a fresh
+    database). Bumping the recorded version is migrate()'s job: opening an
+    existing, older DB under newer code — directly or via get_conn() — must not
+    pre-stamp it as current, or any `if current < N:` migration would be skipped
+    while the DB is still at the old shape. The applied-at timestamp is always
+    refreshed.
+    """
     sql = _SCHEMA_PATH.read_text(encoding="utf-8")
     con.execute(sql)
-    # Record the version + last-applied timestamp in schema_meta. INSERT OR
-    # REPLACE keeps this idempotent across repeated opens.
     now = datetime.now(timezone.utc).isoformat()
     con.execute(
         "INSERT OR REPLACE INTO schema_meta (key, value) VALUES "
-        "('schema_version', ?), ('schema_applied_at', ?)",
-        [str(SCHEMA_VERSION), now],
+        "('schema_applied_at', ?)",
+        [now],
     )
+    if get_schema_version(con) is None:
+        con.execute(
+            "INSERT OR REPLACE INTO schema_meta (key, value) VALUES "
+            "('schema_version', ?)",
+            [str(SCHEMA_VERSION)],
+        )
 
 
 def get_schema_version(con: duckdb.DuckDBPyConnection) -> Optional[int]:
@@ -81,20 +93,31 @@ def get_schema_version(con: duckdb.DuckDBPyConnection) -> Optional[int]:
 def migrate(con: duckdb.DuckDBPyConnection) -> int:
     """Idempotent forward-migration entry point. Returns the resulting version.
 
-    Migrations are applied as an ordered ladder of `if current < N:` branches.
-    Each branch performs its DDL/DML and bumps `current`; running migrate()
-    again on an already-current DB is a no-op. To add a migration: raise
-    SCHEMA_VERSION, append a new `if current < N:` block here, and update
-    schema.sql so a fresh DB lands at the same shape.
+    The recorded version is read *before* the schema is applied, so an existing
+    DB walks the ordered ladder of `if current < N:` branches from its real
+    version rather than being pre-stamped as current (which would mask pending
+    migrations). A fresh DB is created at the baseline shape by apply_schema()
+    and needs no ladder steps. Running migrate() again on an already-current DB
+    is a no-op. To add a migration: raise SCHEMA_VERSION, append a new
+    `if current < N:` block here, and update schema.sql so a fresh DB lands at
+    the same shape.
     """
-    apply_schema(con)  # ensures every table exists, including schema_meta
-    current = get_schema_version(con) or 0
+    recorded = get_schema_version(con)  # read BEFORE apply_schema stamps a baseline
+    apply_schema(con)  # ensures every table exists; stamps baseline only if absent
 
-    # v1 — baseline: schema applied and version recorded by apply_schema() above.
-    if current < 1:
-        current = 1
+    if recorded is None:
+        # Fresh DB: apply_schema() just stamped it at the current baseline shape.
+        return get_schema_version(con) or SCHEMA_VERSION
 
-    # Future: if current < 2: ...migrate to v2...; current = 2
+    current = recorded
+    # Ordered ladder of forward migrations. Each future step runs its DDL/DML on
+    # the *old* shape, then advances `current`, e.g.:
+    #   if current < 2:
+    #       con.execute(...)  # migrate v1 -> v2
+    #       current = 2
+    # (No active steps yet — v1 is the baseline.)
+    if current < SCHEMA_VERSION:
+        current = SCHEMA_VERSION
 
     con.execute(
         "INSERT OR REPLACE INTO schema_meta (key, value) VALUES "
