@@ -32,6 +32,11 @@ from market_data_hub.lazydatacore.resolver import (
     ResolvedRef,
     to_duckdb,
 )
+from market_data_hub.lazydatacore.registry import (
+    from_duckdb,
+    from_symbol,
+    to_symbol,
+)
 from market_data_hub.lazydatacore.result import (
     AnalysisResult,
     LazyDataModel,
@@ -64,6 +69,10 @@ __all__ = [
     "NotResolvableError",
     "ResolvedRef",
     "to_duckdb",
+    # registry (symbol <-> InstrumentId, inverse of the resolver)
+    "from_duckdb",
+    "from_symbol",
+    "to_symbol",
     # result envelopes
     "AnalysisResult",
     "LazyDataModel",
