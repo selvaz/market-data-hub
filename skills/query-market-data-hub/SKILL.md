@@ -115,6 +115,15 @@ agent = Agent("claude-opus-4-8", tools=[DataHubTools()])
 LazyTools also ships an official `datahub` connector (`lazytoolkit[datahub]`)
 that wraps these tools as `datahub_*` for use inside a LazyTools agent.
 
+The agent surface is **read-only by default**. To let an agent download and
+**persist** missing price series on demand, opt in with `allow_refresh=True`,
+which additionally exposes `datahub_refresh_prices(symbols, start)` (a thin
+wrapper over the official `runner.run_yahoo` downloader; Yahoo needs no key):
+
+```python
+agent = Agent("claude-opus-4-8", tools=[DataHubTools(allow_refresh=True)])
+```
+
 ## Configuration
 
 The DB path resolves from the `db_path` argument, then `MARKET_DATA_DB`, then
