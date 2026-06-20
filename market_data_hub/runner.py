@@ -535,7 +535,14 @@ def refresh(symbols: Optional[List[str]] = None,
     con = None
     try:
         con = get_conn(db_path)
-        existing = sorted(_last_prices(con).keys())          # already in prices_daily
+        # Existence set tolerant of NULL is_live: temp/seed rows written by other
+        # code via upsert() may leave is_live NULL (not the schema default FALSE),
+        # and `is_live = FALSE` would silently drop them. `IS NOT TRUE` keeps both
+        # FALSE and NULL, so a present symbol is never reported as "not in warehouse".
+        existing = sorted(
+            r[0] for r in con.execute(
+                "SELECT DISTINCT symbol FROM prices_daily WHERE is_live IS NOT TRUE"
+            ).fetchall())
         want = set(symbols) if symbols else set(existing)
         target = [s for s in existing if s in want]
         if symbols:

@@ -52,3 +52,20 @@ def test_refresh_skips_symbols_not_in_warehouse(tmp_path, monkeypatch) -> None:
     out = runner.refresh(symbols=["NOPE"], db_path=db)
     assert out == {}
     assert called["n"] == 0                           # nothing existing → no download attempted
+
+
+def test_refresh_includes_null_is_live_rows(tmp_path, monkeypatch) -> None:
+    """Rows seeded without is_live (NULL) must still count as 'in warehouse'."""
+    db = str(tmp_path / "seed.duckdb")
+    con = get_conn(db)
+    seed = _bars("SEED", ["2024-01-01", "2024-01-02"])
+    seed["source"] = "yahoo"                          # NOTE: no is_live column -> NULL
+    upsert(con, "prices_daily", seed)
+    con.close()
+
+    monkeypatch.setattr(runner.yh, "yahoo_batch",
+                        lambda tickers, start, end, **kw:
+                        {"SEED": _bars("SEED", ["2024-01-03"], 102.0)})
+
+    out = runner.refresh(symbols=["SEED"], db_path=db)
+    assert out.get("SEED", 0) > 0                     # not skipped despite NULL is_live
