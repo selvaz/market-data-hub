@@ -3,9 +3,11 @@
 runner.py — orchestrator of the incremental daily download.
 
 Modes:
-  full      : Yahoo + FRED + Binance (default EOD)
+  full      : Yahoo + FRED + Binance + panel + factors (default EOD, incremental)
+  backfill  : same sources, but forcing the per-source backfill_start dates
+              from settings.yaml instead of the incremental logic
   live-only : intraday live price injection only (liquid assets)
-  sources   : subset of {yahoo, fred, binance}
+  sources   : subset of {yahoo, fred, binance, macro_panel, factors}
 
 Flow for each source:
   1. read last_date from the DB for each symbol
@@ -416,11 +418,15 @@ def run_live(con, cfg: dict, run_id: str) -> None:
 
 
 # --------------------------------------------------------------- ENTRY
+# Default source set for a full run; also gates the analytical (dalio) layer.
+_DEFAULT_SOURCES = ["yahoo", "fred", "binance", "macro_panel", "factors"]
+
+
 def run(mode: str = "full", sources: Optional[List[str]] = None,
         start_override: Optional[str] = None, end: Optional[str] = None,
         db_path: Optional[str] = None) -> None:
     cfg = get_settings()
-    run_id = uuid.uuid4().hex[:12]
+    run_id = ("backfill_" if mode == "backfill" else "") + uuid.uuid4().hex[:12]
     t0 = time.time()
     _log(f"=== RUN {run_id} mode={mode} ===")
 
@@ -446,15 +452,24 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
         if mode == "live-only":
             run_live(con, cfg, run_id)
         else:
-            active = sources or ["yahoo", "fred", "binance", "macro_panel", "factors"]
+            active = sources or _DEFAULT_SOURCES
+            # backfill forces the per-source historical start dates; a --start
+            # override (start_override) wins in both modes.
+            bstart = cfg["backfill_start"] if mode == "backfill" else {}
+
+            def _start(src: str) -> Optional[str]:
+                return start_override or bstart.get(src)
+
             if "yahoo" in active:
-                run_yahoo(con, cfg, run_id, start_override=start_override, end=end)
+                run_yahoo(con, cfg, run_id, start_override=_start("yahoo"), end=end)
             if "fred" in active:
-                run_fred(con, cfg, run_id, start_override=start_override, end=end)
+                run_fred(con, cfg, run_id, start_override=_start("fred"), end=end)
             if "binance" in active:
-                run_binance(con, cfg, run_id, start_override=start_override, end=end)
+                run_binance(con, cfg, run_id, start_override=_start("binance"), end=end)
             if "macro_panel" in active:
-                run_macro_panel(con, cfg, run_id)
+                sy = _start("fred")
+                run_macro_panel(con, cfg, run_id,
+                                start_year=int(sy[:4]) if sy else None)
             if "factors" in active:
                 run_factors(con, cfg, run_id)
             if mode == "full" and cfg.get("live", {}).get("enabled"):
@@ -478,7 +493,7 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
 
         # --- Ray Dalio analytical layer (after the panel: cycle phases + regime) ---
         macro_done = mode != "live-only" and "macro_panel" in (
-            sources or ["yahoo", "fred", "binance", "macro_panel", "factors"])
+            sources or _DEFAULT_SOURCES)
         if macro_done:
             try:
                 from market_data_hub.dalio import run_dalio

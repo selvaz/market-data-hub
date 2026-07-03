@@ -19,10 +19,6 @@ English API reference.
 from market_data_hub.lazydatacore import (
     InstrumentId, Domain, CurrencyCode,                     # identity
     to_duckdb, ResolvedRef, NotResolvableError,            # resolver
-    from_symbol, to_symbol, from_duckdb,                   # registry
-    log_returns, simple_returns, pct_change,               # quant
-    cumulative_return, annualized_return,
-    annualized_volatility, max_drawdown, performance_summary,
     PriceBar, OHLCV_COLUMNS, Frequency, ReturnKind,        # series
     validate_wide_prices, validate_long_prices,
     AnalysisResult, ResultKind, Provenance, SourceRef,     # result envelopes
@@ -63,42 +59,6 @@ The single place namespaced identity is translated to the physical DuckDB layout
 to_duckdb("ticker:AAPL")
 # ResolvedRef(dataset='prices', table='prices_daily',
 #             filters={'symbol': 'AAPL'}, reader='read_prices')
-```
-
-## Registry — symbol ⇄ identity (inverse of the resolver)
-
-- **`from_symbol(symbol, *, domain=Domain.TICKER, qualifier=None) -> InstrumentId`**
-  — canonicalise a bare warehouse symbol (`"AAPL"` → `ticker:AAPL`); namespaced
-  strings / `InstrumentId` pass through.
-- **`from_duckdb(table, key, *, qualifier=None) -> InstrumentId`** — reconstruct
-  the canonical id from a warehouse row (the exact inverse of `to_duckdb`).
-- **`to_symbol(instrument) -> str`** — the flat warehouse key for an id.
-
-```python
-from_symbol("AAPL")                                  # ticker:AAPL
-from_duckdb("crypto_ohlcv", "BTCUSDT", qualifier="1h")  # crypto:BTCUSDT@1h
-to_symbol("factor:FF5_daily/Mkt-RF")                 # "FF5_daily/Mkt-RF"
-```
-
-## Quant — return / risk primitives (float)
-
-The single implementation of the return math (the pandas variant in
-`extract.py` and LazyFin's Decimal metrics are pinned to these by
-numeric-equivalence tests). Inputs: a value/price series, oldest first, finite
-and strictly positive.
-
-| Function | Returns |
-|---|---|
-| `log_returns(values)` | `ln(V_t/V_{t-1})` list |
-| `simple_returns(values)` / `pct_change` | `V_t/V_{t-1} - 1` list |
-| `cumulative_return(values)` | `V_n/V_0 - 1` |
-| `annualized_return(values, *, periods_per_year)` | geometric annualized |
-| `annualized_volatility(values, *, periods_per_year)` | annualized sample stdev (ddof=1) |
-| `max_drawdown(values)` | largest peak-to-trough fraction |
-| `performance_summary(values, *, periods_per_year=252)` | dict of the above |
-
-```python
-performance_summary([100, 102, 99, 105, 110], periods_per_year=252)
 ```
 
 ## Series schemas

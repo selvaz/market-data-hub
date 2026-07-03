@@ -67,6 +67,9 @@ def fetch_fred(series_id: str, start: str, end: str, *,
         df = pd.read_csv(StringIO(r.text))
         if df.shape[1] < 2:
             return _empty()
+        # keep only the first two columns: assigning 2 names to a >2-column
+        # frame raises; fredgraph.csv is (date, <series>) for single-id requests
+        df = df.iloc[:, :2]
         df.columns = ["date", "value"]
 
     df["date"] = pd.to_datetime(df["date"], errors="coerce")

@@ -1,6 +1,5 @@
 # market_data_hub
 duckdb>=1.0
-yfinance>=0.2.40
 curl_cffi>=0.6      # direct Yahoo chart API (sources/yahoo_direct.py), no yfinance
 pandas>=2.0
 numpy

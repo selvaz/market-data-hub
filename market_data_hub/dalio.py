@@ -60,20 +60,16 @@ def _latest(s: Optional[pd.DataFrame]):
     return float(r["value"]), pd.Timestamp(r["date"])
 
 
+def _orient(v) -> int:
+    """Indicator orientation as int; NULL/NaN (truthy in `v or 0`!) becomes 0."""
+    return 0 if pd.isna(v) else int(v)
+
+
 def _prev(s: Optional[pd.DataFrame]):
     """Previous value (second-to-last annual observation)."""
     if s is None or len(s) < 2:
         return np.nan
     return float(s.sort_values("date").iloc[-2]["value"])
-
-
-def _trailing_avg(s: Optional[pd.DataFrame], n: int):
-    if s is None or s.empty:
-        return np.nan
-    v = s.sort_values("date")["value"].dropna()
-    if len(v) < 2:
-        return np.nan
-    return float(v.tail(n).mean())
 
 
 def _pct_in_range(s: Optional[pd.DataFrame]):
@@ -103,20 +99,6 @@ def _slope(s: Optional[pd.DataFrame], y_lo: int, y_hi: int):
     import numpy as _np
     x = d["y"].values - d["y"].values.min()
     return float(_np.polyfit(x, d["value"].values, 1)[0])
-
-
-def _zscore(s: Optional[pd.DataFrame], orient: int, win: int, min_obs: int):
-    """z = (x - mean)/std over window win, x orientation. None if < min_obs."""
-    if s is None or s.empty:
-        return np.nan, 0
-    v = s.sort_values("date")["value"].dropna().tail(win)
-    if len(v) < min_obs:
-        return np.nan, len(v)
-    sd = v.std(ddof=0)
-    if sd == 0 or np.isnan(sd):
-        return 0.0, len(v)
-    z = (v.iloc[-1] - v.mean()) / sd
-    return float(z) * (orient if orient else 1), len(v)
 
 
 def classify_regime(growth_delta, infl_delta):
@@ -228,8 +210,7 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
     z_pos, z_neg = cfg.get("z_pos", 1.0), cfg.get("z_neg", -1.0)
     weights = cfg.get("pillar_weights", {})
     th = {k: cfg.get(k) for k in (
-        "credit_gap_bubble", "credit_gap_near_zero", "debt_income_gap_high",
-        "debt_income_gap_low", "dsr_high", "rate_near_zero",
+        "credit_gap_bubble", "dsr_high", "rate_near_zero",
         "credit_gap_late", "weak_growth",
         "debt_high_level", "debt_crisis_level", "deficit_large",
         "debt_trend_high", "debt_trend_moderate", "dsr_peak_pct")}
@@ -266,7 +247,7 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
     for ind, g in pref.groupby("indicator_id"):
         last = g.sort_values("date").groupby("country_iso3").tail(1)
         vals = dict(zip(last["country_iso3"], last["value"]))
-        orient = int(g["orientation"].iloc[-1] or 0) or 1
+        orient = _orient(g["orientation"].iloc[-1]) or 1
         ind_meta[ind] = (g["pillar"].iloc[-1], orient)
         arr = np.array([v for v in vals.values()], dtype=float)
         mean, std = np.nanmean(arr), np.nanstd(arr)
@@ -285,7 +266,7 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
         debt_trend = _slope(debt_full, ry - tw_back, ry + tw_fwd)
         # z-score window by frequency (10y): A->10, Q->40, M->120
         by_ind = {i: g[["date", "value"]] for i, g in cdf.groupby("indicator_id")}
-        meta = {i: (g["pillar"].iloc[-1], int(g["orientation"].iloc[-1] or 0),
+        meta = {i: (g["pillar"].iloc[-1], _orient(g["orientation"].iloc[-1]),
                     g["frequency"].iloc[-1])
                 for i, g in cdf.groupby("indicator_id")}
 

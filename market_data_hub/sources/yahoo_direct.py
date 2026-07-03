@@ -92,7 +92,11 @@ def _parse(symbol: str, j: dict) -> pd.DataFrame:
 
 def _fetch_one(symbol: str, params: dict, *, retries: int = 3,
                base_sleep: float = 1.5) -> pd.DataFrame:
-    """Download a single symbol with retry. Returns frame (empty on failure)."""
+    """Download a single symbol with retry.
+
+    Returns an empty frame for a *legitimately* empty symbol (delisted/invalid,
+    HTTP 404/400). A persistent network failure raises instead, so an outage is
+    not logged as "empty" downstream."""
     if _creq is None:
         raise RuntimeError("curl_cffi not installed. pip install curl_cffi")
     last_exc = None
@@ -108,6 +112,8 @@ def _fetch_one(symbol: str, params: dict, *, retries: int = 3,
                 last_exc = e
         if attempt < retries:
             time.sleep(base_sleep * attempt)
+    if last_exc is not None:
+        raise last_exc
     return pd.DataFrame(columns=_OUT_COLS)
 
 
@@ -142,14 +148,20 @@ def yahoo_batch(tickers: List[str], start: str, end: str, *,
             df = df.reset_index(drop=True)
         return sym, df
 
+    errors: Dict[str, Exception] = {}
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futs = {ex.submit(_do, s): s for s in tickers}
         for fut in as_completed(futs):
             try:
                 sym, df = fut.result()
-            except Exception:
+            except Exception as e:
                 sym, df = futs[fut], pd.DataFrame(columns=_OUT_COLS)
+                errors[sym] = e
             results[sym] = df
+    if errors and len(errors) == len(tickers):
+        # every symbol failed with a network error: a full outage must surface
+        # as an error batch (runner logs status="error"), not as empty frames
+        raise next(iter(errors.values()))
     return results
 
 

@@ -79,10 +79,10 @@ def fetch_worldbank(spec: Dict, countries: List[Dict], *,
             if spec.get("api_source_id"):
                 params["source"] = spec["api_source_id"]
             url = f"{_BASE}/country/{country_path}/indicator/{code}"
-            try:
-                data = _get_json(url, params, timeout, retries, base_sleep)
-            except Exception:
-                break
+            # A page failure (after retries) must propagate: swallowing it here
+            # would return a silently-truncated frame that the runner logs as
+            # "ok" and that blocks the fallback source from ever being tried.
+            data = _get_json(url, params, timeout, retries, base_sleep)
             if not (isinstance(data, list) and len(data) >= 2 and data[1]):
                 break
             header = data[0] if isinstance(data[0], dict) else {}

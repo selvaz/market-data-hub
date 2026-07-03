@@ -12,7 +12,6 @@ license = { text = "Proprietary" }
 authors = [{ name = "Marco Selva" }]
 dependencies = [
     "duckdb>=1.0",
-    "yfinance>=0.2.40",
     "curl_cffi>=0.6",
     "pandas>=2.0",
     "numpy",
@@ -29,9 +28,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# LazyBridge binding for the agent_tools ToolProvider (function-calling).
-# The plain JSON tool functions work without this extra; only DataHubTools needs it.
-agent = ["lazybridge"]
 dev = ["pytest>=7.0"]
 
 [tool.setuptools]
