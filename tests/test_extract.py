@@ -131,3 +131,15 @@ def test_extract_series_crypto_default_timeframe(tmp_db):
     df, meta = extract.extract_series(["BTCUSDT"], domain="crypto")
     assert meta["field"] == "1d"
     assert len(df) == 10 and list(df.columns) == ["BTCUSDT"]
+
+
+def test_extract_series_daily_frequency_keeps_monday_returns(tmp_db):
+    """frequency="D" is the native trading-day grid: a calendar-day resample
+    would insert NaN weekends and void every Monday return (Codex review)."""
+    _seed_prices(n=40)
+    native, meta_n = extract.extract_series(["SPY"], transform="log_return")
+    daily, meta_d = extract.extract_series(["SPY"], transform="log_return",
+                                           frequency="D")
+    assert meta_d["used_returns_view"] is True  # fast path restored for "D"
+    pd.testing.assert_frame_equal(native, daily)
+    assert len(daily) == len(native) > 30  # no Monday rows lost

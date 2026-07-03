@@ -38,8 +38,12 @@ def _as_list(symbols: Union[str, List[str]]) -> List[str]:
 def _resample(levels: pd.DataFrame, frequency: Optional[str]) -> pd.DataFrame:
     """Resample a wide LEVEL frame to the target frequency (last observation in
     each bucket). Transforms are applied *after* resampling, so W/M/Q returns
-    compound correctly (e.g. weekly log-return = log(last_w / last_w-1))."""
-    if not frequency:
+    compound correctly (e.g. weekly log-return = log(last_w / last_w-1)).
+
+    "D" means the native daily grid, NOT a calendar-day resample: reindexing
+    trading-day prices onto calendar days would insert NaN weekend rows and
+    void every Monday/post-holiday return computed via shift(1)."""
+    if not frequency or frequency == "D":
         return levels
     return levels.resample(_FREQ_RULE[frequency]).last()
 
@@ -154,7 +158,7 @@ def extract_series(symbols: Union[str, List[str]], start: Optional[str] = None,
     # Fast path: stored daily log-returns via the v_returns view (prices only).
     used_view = False
     if (domain == "prices" and transform == "log_return"
-            and field == "adj_close" and frequency is None):
+            and field == "adj_close" and frequency in (None, "D")):
         df = _read_returns_view(symbols, start, end, db_path)
         used_view = not df.empty
     else:
