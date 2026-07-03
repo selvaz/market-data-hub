@@ -38,6 +38,11 @@ jobs:
         run: mkdocs build --strict
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          # First run on a repo where Pages isn't enabled yet: create the
+          # Pages site (build_type: workflow) instead of failing. Uses the
+          # workflow's pages:write permission.
+          enablement: true
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
