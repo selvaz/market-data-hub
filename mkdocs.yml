@@ -1,0 +1,71 @@
+site_name: market-data-hub
+site_description: Unified market & macro data downloader with a DuckDB database, coverage engine and agent-ready extraction API
+site_author: Marco Selva
+site_url: https://selvaz.github.io/market-data-hub/
+repo_name: selvaz/market-data-hub
+repo_url: https://github.com/selvaz/market-data-hub
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; Marco Selva — Proprietary
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      accent: light blue
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      accent: blue
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - content.code.copy
+    - content.code.annotate
+    - search.suggest
+    - search.highlight
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Quick start: quickstart.md
+  - Architecture & process: ARCHITECTURE.md
+  - Data catalogue: DATA_CATALOG.md
+  - Extraction & agent tools: EXTRACTION.md
+  - lazydatacore contract: LAZYDATACORE.md
+  - Design notes:
+      - Ecosystem rationalization (IT): ECOSYSTEM_RATIONALIZATION.md
+      - Deep audit (2026-07): DEEP_AUDIT_2026-07.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/selvaz/market-data-hub

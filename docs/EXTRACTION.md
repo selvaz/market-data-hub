@@ -415,4 +415,4 @@ extract.extract_panel("real_gdp_growth", countries=["USA"], asof="2018-12-31")
 | `extract.py` | analysis-ready series | this doc §5 |
 | `agent_tools.py` | LLM JSON tools (`tool_*`) | this doc §6 |
 | `reader.py` | raw read API | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| agent how-to | step-by-step for an LLM | [`skills/query-market-data-hub/SKILL.md`](../skills/query-market-data-hub/SKILL.md) |
+| agent how-to | step-by-step for an LLM | [`skills/query-market-data-hub/SKILL.md`](https://github.com/selvaz/market-data-hub/blob/main/skills/query-market-data-hub/SKILL.md) |

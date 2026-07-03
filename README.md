@@ -8,6 +8,9 @@ pipeline.
 
 ## Documentation (English)
 
+Browsable site: **https://selvaz.github.io/market-data-hub/** (mkdocs, built
+from `docs/` by the `docs` workflow on every push to `main`).
+
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — what the process does, the
   data-flow, the main functions, the full DB schema, the coverage engine.
 - **[docs/LAZYDATACORE.md](docs/LAZYDATACORE.md)** — API reference for the shared
