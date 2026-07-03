@@ -103,17 +103,16 @@ df, _ = extract_returns(syms, start="2015-01-01", frequency="W")
 ## As LLM tools
 
 The same logic is exposed as JSON tools in `market_data_hub.agent_tools`
-(`tool_list_symbols`, `tool_search`, `tool_get_returns`, …). With the `agent`
-extra installed, `DataHubTools()` is a LazyBridge `ToolProvider`:
+(`tool_list_symbols`, `tool_search`, `tool_get_returns`, …) — plain functions,
+callable from any framework or MCP server. The one LazyBridge `ToolProvider`
+binding is the LazyTools `datahub` connector, which wraps them as `datahub_*`
+(install `lazytoolkit` plus this package):
 
 ```python
 from lazybridge import Agent
-from market_data_hub.agent_tools import DataHubTools
+from lazytools.connectors.datahub import DataHubTools
 agent = Agent("claude-opus-4-8", tools=[DataHubTools()])
 ```
-
-LazyTools also ships an official `datahub` connector (`lazytoolkit[datahub]`)
-that wraps these tools as `datahub_*` for use inside a LazyTools agent.
 
 The agent surface is **read-only by default**. To let an agent download and
 **persist** missing price series on demand, opt in with `allow_refresh=True`,

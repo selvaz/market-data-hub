@@ -35,18 +35,17 @@ def _as_list(symbols: Union[str, List[str]]) -> List[str]:
     return [symbols] if isinstance(symbols, str) else list(symbols)
 
 
-def _resample(df: pd.DataFrame, frequency: Optional[str], transform: str) -> pd.DataFrame:
-    """Resample a wide frame. Levels take the last observation in the bucket;
-    additive return series (log_return) are summed (correct compounding);
-    pct_change is recomputed after a `last()` resample to stay exact."""
-    if not frequency:
-        return df
-    if frequency not in _FREQ_RULE:
-        raise ValueError(f"Invalid frequency {frequency!r}; allowed: {sorted(_FREQ_RULE)}")
-    rule = _FREQ_RULE[frequency]
-    if transform == "log_return":
-        return df.resample(rule).sum(min_count=1)
-    return df.resample(rule).last()
+def _resample(levels: pd.DataFrame, frequency: Optional[str]) -> pd.DataFrame:
+    """Resample a wide LEVEL frame to the target frequency (last observation in
+    each bucket). Transforms are applied *after* resampling, so W/M/Q returns
+    compound correctly (e.g. weekly log-return = log(last_w / last_w-1)).
+
+    "D" means the native daily grid, NOT a calendar-day resample: reindexing
+    trading-day prices onto calendar days would insert NaN weekend rows and
+    void every Monday/post-holiday return computed via shift(1)."""
+    if not frequency or frequency == "D":
+        return levels
+    return levels.resample(_FREQ_RULE[frequency]).last()
 
 
 def _apply_transform(level: pd.DataFrame, transform: str) -> pd.DataFrame:
@@ -111,7 +110,7 @@ def _wide_levels(symbols: List[str], start: Optional[str], end: Optional[str],
         # crypto is long; pivot close by symbol (single timeframe at a time)
         frames = []
         for sym in symbols:
-            raw = reader.read_crypto(sym, timeframe=field or "1d",
+            raw = reader.read_crypto(sym, timeframe=field,
                                      start=start, end=end, db_path=db_path)
             if raw is None or raw.empty:
                 continue
@@ -151,12 +150,15 @@ def extract_series(symbols: Union[str, List[str]], start: Optional[str] = None,
     symbols = _as_list(symbols)
     if transform not in _TRANSFORMS:
         raise ValueError(f"Invalid transform {transform!r}; allowed: {sorted(_TRANSFORMS)}")
+    if frequency and frequency not in _FREQ_RULE:
+        raise ValueError(f"Invalid frequency {frequency!r}; allowed: {sorted(_FREQ_RULE)}")
+    if domain == "crypto" and field == "adj_close":
+        field = "1d"  # `field` carries the timeframe for crypto; map the price default
 
     # Fast path: stored daily log-returns via the v_returns view (prices only).
     used_view = False
     if (domain == "prices" and transform == "log_return"
             and field == "adj_close" and frequency in (None, "D")):
-        levels = None
         df = _read_returns_view(symbols, start, end, db_path)
         used_view = not df.empty
     else:
@@ -167,7 +169,7 @@ def extract_series(symbols: Union[str, List[str]], start: Optional[str] = None,
         if levels.empty:
             df = pd.DataFrame()
         else:
-            df = _apply_transform(levels, transform)
+            df = _apply_transform(_resample(levels, frequency), transform)
 
     if not df.empty:
         df = _fill(df, fillna)
@@ -244,26 +246,9 @@ def extract_returns(symbols: Union[str, List[str]], start: Optional[str] = None,
     When frequency is weekly/monthly the levels are resampled with last() and the
     log-return is computed on the resampled series.
     """
-    if frequency in (None, "D"):
-        return extract_series(symbols, start=start, end=end, domain="prices",
-                              field=field, transform="log_return",
-                              frequency=frequency, fillna=fillna, db_path=db_path)
-    # resample levels first, then take log-returns (correct for W/M/Q)
-    levels = reader.read_prices(_as_list(symbols), start=start, end=end,
-                                field=field, wide=True, db_path=db_path)
-    if levels.empty:
-        df = pd.DataFrame()
-    else:
-        rule = _FREQ_RULE[frequency]
-        levels = levels.resample(rule).last()
-        df = np.log(levels / levels.shift(1))
-        df = _fill(df, fillna).dropna(how="all")
-        cols = [s for s in _as_list(symbols) if s in df.columns]
-        if cols:
-            df = df[cols]
-    meta = _build_meta(df, _as_list(symbols), "prices", field, "log_return",
-                       frequency, fillna, False, db_path)
-    return df, meta
+    return extract_series(symbols, start=start, end=end, domain="prices",
+                          field=field, transform="log_return",
+                          frequency=frequency, fillna=fillna, db_path=db_path)
 
 
 def extract_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,

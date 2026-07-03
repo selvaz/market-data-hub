@@ -184,7 +184,11 @@ Pacchetto **solo Pydantic, senza pandas/numpy/matplotlib**, così *tutti* posson
 
 ## 8. Analisi e grafici comuni
 
-- **Primitive quant** — `lazydatacore/quant.py` (✅ fatto). Una sola implementazione float di
+- **Primitive quant** — `lazydatacore/quant.py` (↩️ rimosso, deep audit 2026-07: in un mese
+  nessun consumatore l'ha adottato — `extract.py` è rimasto sulle sue operazioni pandas e
+  LazyFin sul suo kernel Decimal, senza test di equivalenza — quindi era una *terza* copia
+  della stessa matematica, non l'unificazione. Recuperabile dalla history se il piano di
+  convergenza riparte, cablando *prima* i consumatori). Il piano originale: una sola implementazione float di
   log-return, pct-change, volatilità annualizzata, drawdown; `extract.py` (market-data-hub,
   pandas) e `returns.py` (LazyFin, Decimal) restano agganciati a queste formule via **test di
   equivalenza numerica**.
@@ -207,9 +211,9 @@ Pacchetto **solo Pydantic, senza pandas/numpy/matplotlib**, così *tutti* posson
 | **1** | `lazydatacore` in market-data-hub: identità, tempo, schemi serie, envelope, resolver. Solo schemi, nessuna logica | basso | ✅ fatto (`market_data_hub/lazydatacore/`) |
 | **2** | Conformità del core: `reader.py`/`agent_tools.py` etichettano l'output con i tipi L0 (adapter sottili). DuckDB invariato | basso | ✅ fatto (`reader.read_instrument`) |
 | **2b** | **Adozione consumatori**: LazyFin adotta `InstrumentId` (identità, PR #9); LazyHMM emette `AnalysisResult` (envelope risultati, PR #5). Entrambi opzionali + import lazy | basso | ✅ fatto |
-| **3** | Primitive di rendimento/rischio unificate (`log/simple returns`, vol, drawdown). Impl float unica, le varianti pandas (mdh) e Decimal (LazyFin) sono agganciate da test di equivalenza | medio | ✅ fatto (`lazydatacore/quant.py`) |
+| **3** | Primitive di rendimento/rischio unificate (`log/simple returns`, vol, drawdown). Impl float unica, le varianti pandas (mdh) e Decimal (LazyFin) sono agganciate da test di equivalenza | medio | ↩️ rimosso (deep audit 2026-07: mai adottato dai consumatori, era una terza copia) |
 | **4** | `lazyviz`: estrazione PlotTheme; LazyHMM migra a usarlo; LazyFin produce grafici via `Memo` esteso | medio | da fare |
-| **5** | Registry di mapping simbolo ↔ security_id in `lazydatacore` per chiudere `AAPL` ↔ `ticker:AAPL` | basso | ✅ fatto (`lazydatacore/registry.py`: `from_symbol`/`to_symbol`/`from_duckdb`) |
+| **5** | Registry di mapping simbolo ↔ security_id in `lazydatacore` per chiudere `AAPL` ↔ `ticker:AAPL` | basso | ↩️ rimosso (deep audit 2026-07: zero consumer — LazyHMM normalizza inline in `contract._as_instrument`) |
 
 Ogni fase è indipendente e committabile da sola. Fermandosi alla Fase 3 sono già eliminati i
 due problemi peggiori (identità + returns duplicati).

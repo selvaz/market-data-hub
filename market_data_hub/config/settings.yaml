@@ -85,9 +85,6 @@ dalio:
   z_neg: -1.0                 # z threshold for NEG signal
   # archetypal debt cycle thresholds (Dalio)
   credit_gap_bubble: 10.0     # credit-to-GDP gap > +10pp = bubble
-  credit_gap_near_zero: 2.0   # |gap| < 2pp = near equilibrium
-  debt_income_gap_high: 2.0   # debt grows >2pp/year faster than income
-  debt_income_gap_low: 1.0    # |debt-income gap| < 1 = early/normalization
   dsr_high: 20.0              # (absolute fallback if history is missing)
   dsr_peak_pct: 0.80          # DSR "stressed" if > 80th percentile of ITS history
                               # (Dalio: the peak vs itself matters, not the level)

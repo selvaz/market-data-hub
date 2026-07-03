@@ -26,8 +26,6 @@ def main() -> int:
     p = argparse.ArgumentParser(description="market_data_hub daily download")
     p.add_argument("--live-only", action="store_true",
                    help="live intraday price injection only")
-    p.add_argument("--full", action="store_true",
-                   help="force full mode (default)")
     p.add_argument("--sources", nargs="+",
                    choices=["yahoo", "fred", "binance", "macro_panel", "factors"],
                    help="limit to the given sources")

@@ -99,7 +99,6 @@ market_data_hub/
 ├── reader.py                PUBLIC read API for other projects
 │
 ├── sources/                 one module per provider, all return canonical frames
-│   ├── base.py              SourceResult dataclass (status/rows/error)
 │   ├── yahoo.py             yahoo_batch(), effective_start(), live prices
 │   ├── binance.py           fetch_klines() paginated OHLCV
 │   ├── fred.py              fetch_fred() API-key-or-CSV
@@ -111,7 +110,7 @@ market_data_hub/
 │   ├── freq_detector.py     detect_frequency() → D/W/M/Q/A; threshold tables
 │   ├── stalled_detector.py  lag_days(), is_stalled() (freq-aware)
 │   ├── gap_detector.py      missing_pct(), gap_count(), date_span()
-│   ├── quality_checks.py    clean_price_frame(), check_prices() flags
+│   ├── quality_checks.py    check_prices() price-quality flags
 │   ├── score.py             coverage_score() 0–100
 │   └── report.py            rebuild_coverage() → coverage_report table
 │
@@ -365,8 +364,8 @@ Logs rotate into `logs/<task>.log`. Remove with `setup_scheduler.ps1 -Remove`.
 
 - **SSL / corporate proxy** — HTTPS is MITM-intercepted; `_ssl_bootstrap.py`
   builds `ca_bundle.pem` (certifi + Windows ROOT/CA) and sets
-  `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `CURL_CA_BUNDLE`. yfinance uses
-  curl_cffi, so `CURL_CA_BUNDLE` is what makes it work.
+  `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `CURL_CA_BUNDLE`. The Yahoo source
+  uses curl_cffi, so `CURL_CA_BUNDLE` is what makes it work.
 - **FRED** — the public CSV endpoint (`fredgraph.csv`) is blocked by the proxy
   (systematic timeouts); the official API (`api.stlouisfed.org`) is reachable.
   Set `fred_api_key` in `settings.yaml` so FRED uses the API path.

@@ -122,6 +122,10 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
         return 0
 
     cov = pd.DataFrame(rows)
+    # Full rebuild: without the DELETE, a symbol removed from the universe (or
+    # whose rows were pruned) keeps its last coverage row forever, permanently
+    # inflating the stalled-series alert. Same policy as macro_panel_coverage.
+    con.execute("DELETE FROM coverage_report")
     upsert(con, "coverage_report", cov)
     return len(cov)
 

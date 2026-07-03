@@ -14,7 +14,7 @@ touch the top three; `reader.py` stays available for hand-written SQL-style pull
 
 ```
 ┌──────────────────────────────────────────────────────────────────────┐
-│ agent_tools.py   JSON tool functions + LazyBridge DataHubTools         │  ← LLMs
+│ agent_tools.py   JSON tool functions (LazyBridge wrap: LazyTools)      │  ← LLMs
 │                  (tool_list_symbols, tool_get_returns, tool_search …)   │
 ├──────────────────────────────────────────────────────────────────────┤
 │ catalog.py       DISCOVERY — the "map": what exists, by asset class,    │  ← humans
@@ -45,7 +45,7 @@ touch the top three; `reader.py` stays available for hand-written SQL-style pull
 
 ```bash
 pip install -e .            # core: catalog, extract, agent_tools (JSON functions)
-pip install -e ".[agent]"   # + LazyBridge binding (DataHubTools ToolProvider)
+pip install lazytoolkit     # + LazyBridge binding (LazyTools datahub connector)
 ```
 
 Point the library at a database (precedence: explicit arg → env → `settings.yaml`
@@ -262,11 +262,11 @@ tool_list_symbols(asset_class="EQUITY", area="Emerging Markets")  # -> JSON stri
 tool_get_returns("SPY,TLT,^VIX", start="2015-01-01", frequency="W")
 ```
 
-### 6.3 Use with LazyBridge (`agent` extra)
+### 6.3 Use with LazyBridge (LazyTools connector)
 
 ```python
 from lazybridge import Agent
-from market_data_hub.agent_tools import DataHubTools
+from lazytools.connectors.datahub import DataHubTools
 
 agent = Agent("claude-opus-4-8", tools=[DataHubTools()])
 agent("Find the US equity sectors and give me their weekly log-returns since 2018.")
@@ -274,8 +274,10 @@ agent("Find the US equity sectors and give me their weekly log-returns since 201
 # then datahub_get_returns(...)
 ```
 
-`DataHubTools` is a structural `ToolProvider` (`_is_lazy_tool_provider = True`,
-`as_tools()`), so it composes with any other tools in the same agent.
+`DataHubTools` (from LazyTools) is a structural `ToolProvider`
+(`_is_lazy_tool_provider = True`, `as_tools()`), so it composes with any other
+tools in the same agent. This hub deliberately ships **no** ToolProvider of its
+own: `agent_tools` stays framework-free and LazyTools owns the one binding.
 
 ---
 
@@ -356,7 +358,7 @@ See [DATA_CATALOG.md §4](DATA_CATALOG.md) for the lag/stalled table per group.
 | DB path | `db_path` arg → `MARKET_DATA_DB` env → `settings.yaml::db_path` → platform default |
 | Concurrency | all reads are `read_only=True`; never block the writer, never write |
 | Secrets | none required for reading; the extraction layer touches no network |
-| Dependencies | core needs only `duckdb`/`pandas`/`numpy`/`pyyaml`; `DataHubTools` needs `lazybridge` (`agent` extra) |
+| Dependencies | core needs only `duckdb`/`pandas`/`numpy`/`pyyaml`; the LazyBridge binding ships in LazyTools |
 
 ---
 
@@ -365,11 +367,11 @@ See [DATA_CATALOG.md §4](DATA_CATALOG.md) for the lag/stalled table per group.
 ### Shipped
 
 - **LazyTools connector** — LazyTools now ships an official `datahub` connector
-  (`DataHubTools`, tools named `datahub_*`) that wraps this hub's `agent_tools`,
-  installable via `lazytoolkit[datahub]`. The wrapper lives on the LazyTools
-  side; `market_data_hub.agent_tools` keeps its own `tool_*` / `DataHubTools`
-  surface unchanged. Because the `tool_*` functions are pure functions, the
-  connector is a re-wrap, not a rewrite.
+  (`DataHubTools`, tools named `datahub_*`) that wraps this hub's `agent_tools`.
+  The wrapper lives on the LazyTools side and is the **only** LazyBridge
+  binding; `market_data_hub.agent_tools` keeps the plain `tool_*` functions.
+  Because the `tool_*` functions are pure functions, the connector is a
+  re-wrap, not a rewrite.
 - **LazyHMM loader** — LazyHMM now ships
   `lazyhmm.datasources.load_from_datahub(...)`, installable via
   `lazyhmm[datahub]`. It calls `market_data_hub.extract.extract_returns(...)` and
@@ -411,6 +413,6 @@ extract.extract_panel("real_gdp_growth", countries=["USA"], asof="2018-12-31")
 |--------|------|-----------|
 | `catalog.py` | discovery / the map | this doc §4 |
 | `extract.py` | analysis-ready series | this doc §5 |
-| `agent_tools.py` | LLM JSON tools + `DataHubTools` | this doc §6 |
+| `agent_tools.py` | LLM JSON tools (`tool_*`) | this doc §6 |
 | `reader.py` | raw read API | [ARCHITECTURE.md](ARCHITECTURE.md) |
-| agent how-to | step-by-step for an LLM | [`skills/query-market-data-hub/SKILL.md`](../skills/query-market-data-hub/SKILL.md) |
+| agent how-to | step-by-step for an LLM | [`skills/query-market-data-hub/SKILL.md`](https://github.com/selvaz/market-data-hub/blob/main/skills/query-market-data-hub/SKILL.md) |

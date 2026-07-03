@@ -8,10 +8,13 @@ pipeline.
 
 ## Documentation (English)
 
+Browsable site: **https://selvaz.github.io/market-data-hub/** (mkdocs, built
+from `docs/` by the `docs` workflow on every push to `main`).
+
 - **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — what the process does, the
   data-flow, the main functions, the full DB schema, the coverage engine.
 - **[docs/LAZYDATACORE.md](docs/LAZYDATACORE.md)** — API reference for the shared
-  `lazydatacore` contract (identity, resolver/registry, quant primitives, series
+  `lazydatacore` contract (identity, resolver, series
   schemas, result envelopes, time) that the rest of the ecosystem imports.
 - **[docs/DATA_CATALOG.md](docs/DATA_CATALOG.md)** — every series with provider,
   group, frequency, typical lag and history depth; plus the proposed
@@ -41,7 +44,7 @@ pip install -r requirements.txt
 
 2. SSL verification is handled automatically: on the first import,
    `ca_bundle.pem` is built (certifi + Windows root CA) to get past the
-   corporate MITM/proxy. This applies to yfinance (curl_cffi), requests and urllib.
+   corporate MITM/proxy. This applies to curl_cffi, requests and urllib.
 
 ## Usage
 
@@ -117,14 +120,15 @@ df, meta = extract.extract_returns(["SPY", "TLT", "^VIX"], frequency="W") # read
 
 See [`docs/EXTRACTION.md`](docs/EXTRACTION.md) (full reference) and the agent
 skill `skills/query-market-data-hub/SKILL.md`. JSON tools live in
-`market_data_hub.agent_tools` (optional LazyBridge `DataHubTools` via the
-`agent` extra).
+`market_data_hub.agent_tools`; the LazyBridge `ToolProvider` binding
+(`DataHubTools`, `datahub_*` tool names) ships in LazyTools
+(`lazytools.connectors.datahub`).
 
 ## Structure
 
 ```
 market_data_hub/
-  sources/    yahoo.py  binance.py  fred.py  base.py
+  sources/    yahoo.py  binance.py  fred.py
   coverage/   freq_detector  stalled_detector  gap_detector  quality_checks  score  report
   db/         schema.sql  connection.py  upsert.py
   config/     tickers.yaml (111)  macro_series.yaml (45)  settings.yaml
