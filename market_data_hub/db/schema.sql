@@ -229,6 +229,28 @@ CREATE TABLE IF NOT EXISTS factor_returns (
 );
 CREATE INDEX IF NOT EXISTS idx_factor_returns ON factor_returns (factor_set, factor);
 
+-- ----------------------------------------------------------------------------
+-- 6. custom_series — user/app-published series (NOT written by the hub's own
+--    connectors). Downstream apps (e.g. LazyFin portfolio NAV histories,
+--    custom composite indicators, series from providers the hub has no
+--    connector for) expand the hub through market_data_hub.custom.store_series
+--    and read back via reader.read_custom / extract_series(domain="custom").
+--    Kept separate from macro_series so a custom series_id can never collide
+--    with (or silently overwrite) a curated FRED id.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS custom_series (
+    date        DATE        NOT NULL,
+    series_id   VARCHAR     NOT NULL,   -- publisher-chosen id, e.g. 'lazyfin:nav:pf-1'
+    value       DOUBLE,
+    series_name VARCHAR,
+    unit        VARCHAR,                -- free text: 'USD', 'index', 'ratio', ...
+    frequency   VARCHAR,                -- 'D' | 'W' | 'M' | 'Q' | 'A' (declared)
+    source      VARCHAR,                -- publishing app, e.g. 'lazyfin'
+    updated_at  TIMESTAMP,
+    PRIMARY KEY (date, series_id)
+);
+CREATE INDEX IF NOT EXISTS idx_custom_series ON custom_series (series_id);
+
 
 -- ============================================================================
 -- POINT-IN-TIME VINTAGES (revisable macro data)

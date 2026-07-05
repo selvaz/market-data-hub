@@ -18,7 +18,7 @@ _SCHEMA_PATH = Path(__file__).parent / "schema.sql"
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 def _default_db() -> str:
@@ -132,11 +132,12 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
 
     current = recorded
     # Ordered ladder of forward migrations. Each future step runs its DDL/DML on
-    # the *old* shape, then advances `current`, e.g.:
-    #   if current < 2:
-    #       con.execute(...)  # migrate v1 -> v2
-    #       current = 2
-    # (No active steps yet — v1 is the baseline.)
+    # the *old* shape, then advances `current`.
+    if current < 2:
+        # v1 -> v2: custom_series (app-published series). Purely additive —
+        # apply_schema() above already created it via CREATE TABLE IF NOT
+        # EXISTS; this step exists so the recorded version tracks the shape.
+        current = 2
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

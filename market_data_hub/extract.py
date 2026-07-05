@@ -103,6 +103,8 @@ def _wide_levels(symbols: List[str], start: Optional[str], end: Optional[str],
                                   wide=True, db_path=db_path)
     if domain == "macro":
         return reader.read_macro(symbols, start=start, end=end, wide=True, db_path=db_path)
+    if domain == "custom":
+        return reader.read_custom(symbols, start=start, end=end, wide=True, db_path=db_path)
     if domain == "factors":
         return reader.read_factors(factors=symbols, start=start, end=end,
                                    wide=True, db_path=db_path)
@@ -121,7 +123,8 @@ def _wide_levels(symbols: List[str], start: Optional[str], end: Optional[str],
         out = pd.concat(frames, axis=1)
         out.index = pd.to_datetime(out.index)
         return out.sort_index()
-    raise ValueError(f"Invalid domain {domain!r}; allowed: prices|macro|crypto|factors")
+    raise ValueError(
+        f"Invalid domain {domain!r}; allowed: prices|macro|custom|crypto|factors")
 
 
 def extract_series(symbols: Union[str, List[str]], start: Optional[str] = None,
@@ -134,8 +137,10 @@ def extract_series(symbols: Union[str, List[str]], start: Optional[str] = None,
 
     Parameters
     ----------
-    symbols   : one symbol or a list (prices/crypto symbols, FRED series_ids, or factor names).
-    domain    : "prices" | "macro" | "crypto" | "factors".
+    symbols   : one symbol or a list (prices/crypto symbols, FRED series_ids,
+                custom series_ids, or factor names).
+    domain    : "prices" | "macro" | "custom" | "crypto" | "factors" — "custom"
+                reads app-published series (market_data_hub.custom.store_series).
     field     : for prices, the OHLCV field (adj_close default); for crypto, the timeframe.
     transform : "level" | "log_return" | "pct_change" | "diff".
     frequency : None (native) | "D" | "W" (W-FRI) | "M" | "Q" — resampling target.
