@@ -155,6 +155,43 @@ def read_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,
         con.close()
 
 
+def read_custom(series_ids: Union[str, List[str]], start: Optional[str] = None,
+                end: Optional[str] = None, wide: bool = True,
+                db_path: Optional[str] = None) -> pd.DataFrame:
+    """App-published series (``custom_series``, written via
+    :func:`market_data_hub.custom.store_series`).
+
+    wide=True -> date index, series_id columns — same shape as read_macro so
+    the extract layer treats both domains uniformly.
+    """
+    if isinstance(series_ids, str):
+        series_ids = [series_ids]
+    con = _con(db_path)
+    try:
+        clauses = ["series_id IN (" + ",".join(["?"] * len(series_ids)) + ")"]
+        params: list = list(series_ids)
+        if start:
+            clauses.append("date >= ?"); params.append(start)
+        if end:
+            clauses.append("date <= ?"); params.append(end)
+        where = " AND ".join(clauses)
+        if wide:
+            df = con.execute(
+                f"SELECT date, series_id, value FROM custom_series "
+                f"WHERE {where} ORDER BY date", params).fetch_df()
+            if df.empty:
+                return pd.DataFrame()
+            out = df.pivot_table(index="date", columns="series_id",
+                                 values="value", aggfunc="last")
+            out.index = pd.to_datetime(out.index)
+            return out.sort_index()
+        return con.execute(
+            f"SELECT * FROM custom_series WHERE {where} ORDER BY series_id, date",
+            params).fetch_df()
+    finally:
+        con.close()
+
+
 def read_crypto(symbols: Union[str, List[str]], timeframe: str = "1h",
                 start: Optional[str] = None, end: Optional[str] = None,
                 db_path: Optional[str] = None) -> pd.DataFrame:

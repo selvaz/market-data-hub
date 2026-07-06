@@ -28,6 +28,10 @@ _COLUMNS = {
         "date", "series_id", "value", "series_name", "unit",
         "frequency", "source", "country", "updated_at",
     ],
+    "custom_series": [
+        "date", "series_id", "value", "series_name", "unit",
+        "frequency", "source", "updated_at",
+    ],
     "macro_panel": [
         "date", "country_iso3", "indicator_id", "value", "indicator_name",
         "pillar", "orientation", "source", "provider_dataset",
@@ -55,6 +59,7 @@ _PK = {
     "prices_daily": ["date", "symbol"],
     "crypto_ohlcv": ["ts", "symbol", "timeframe"],
     "macro_series": ["date", "series_id"],
+    "custom_series": ["date", "series_id"],
     "macro_panel": ["date", "country_iso3", "indicator_id"],
     "coverage_report": ["symbol", "source"],
     "factor_returns": ["date", "factor_set", "factor"],
