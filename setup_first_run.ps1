@@ -10,6 +10,7 @@
 param(
     [string]$Python = "C:\ProgramData\spyder-6\python.exe",
     [string]$DbPath = "market_data.duckdb",
+    [string]$ReportDir = "reports",
     [switch]$SkipInstall,
     [switch]$SkipTests,
     [switch]$RunBackfill,
@@ -59,6 +60,15 @@ if (!(Test-Path $Python)) {
 Set-Item -Path Env:MARKET_DATA_DB -Value $DbPath
 Write-Host "MARKET_DATA_DB=$DbPath"
 
+$reportAnswer = Read-Host "Report output directory [$ReportDir]"
+if ($reportAnswer) {
+    $ReportDir = $reportAnswer
+}
+[Environment]::SetEnvironmentVariable("MARKET_DATA_REPORT_DIR", $ReportDir, "User")
+Set-Item -Path Env:MARKET_DATA_REPORT_DIR -Value $ReportDir
+New-Item -ItemType Directory -Force -Path (Join-Path $Root $ReportDir) | Out-Null
+Write-Host "MARKET_DATA_REPORT_DIR=$ReportDir"
+
 Read-OptionalSecret "FRED API key" "FRED_API_KEY"
 Read-OptionalSecret "Telegram bot token" "TELEGRAM_BOT_TOKEN"
 Read-OptionalSecret "Telegram chat id / @channel" "TELEGRAM_CHAT_ID"
@@ -80,7 +90,7 @@ if (!$SkipInstall) {
 
 Write-Host ""
 Write-Host "Verifying configuration..."
-& $Python -c "from market_data_hub.config_loader import get_settings; s=get_settings(); print('db_path=' + str(s.get('db_path'))); print('fred_api_key_present=' + str(bool(s.get('fred_api_key'))))"
+& $Python -c "from market_data_hub.config_loader import get_settings; s=get_settings(); print('db_path=' + str(s.get('db_path'))); print('report_dir=' + str(s.get('reports', {}).get('dir'))); print('fred_api_key_present=' + str(bool(s.get('fred_api_key'))))"
 
 if (!$SkipTests) {
     Write-Host ""

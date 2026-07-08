@@ -28,6 +28,7 @@ function Import-PersistedEnvVar($Name) {
 }
 
 Import-PersistedEnvVar "MARKET_DATA_DB"
+Import-PersistedEnvVar "MARKET_DATA_REPORT_DIR"
 Import-PersistedEnvVar "FRED_API_KEY"
 Import-PersistedEnvVar "TELEGRAM_BOT_TOKEN"
 Import-PersistedEnvVar "TELEGRAM_CHAT_ID"

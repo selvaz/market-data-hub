@@ -5,6 +5,12 @@
 # Path of the DuckDB database (override with env MARKET_DATA_DB)
 db_path: "market_data.duckdb"
 
+# Report output directory (override with env MARKET_DATA_REPORT_DIR).
+# Relative paths are resolved from the repo root. This is used for the daily
+# market report, Ray Dalio report, and Telegram report attachments.
+reports:
+  dir: "reports"
+
 # — historical backfill dates ---
 backfill_start:
   yahoo: "2010-01-01"
@@ -54,7 +60,7 @@ email:
   smtp_password: ""         # injected from SMTP_PASSWORD env (leave empty)
   from: "market_data_hub <noreply@market-data>"
   to:
-    - doctor.selva@gmail.com
+    - 
 
 # — Binance crypto ---
 crypto:
@@ -68,7 +74,7 @@ factors:
 
 # — cross-country macro panel ---
 macro_panel:
-  select_best_source: false   # true = fetch primary+fallback, keep wider country coverage
+  select_best_source: true   # true = fetch primary+fallback, keep wider country coverage
                               # (costs one extra API call per indicator that has a fallback)
 
 # — live price injection (intraday) ---

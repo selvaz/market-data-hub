@@ -24,12 +24,23 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from lazytools.connectors.telegram import TelegramClient, split_message  # noqa: E402
+from lazytools.connectors.telegram import TelegramClient  # noqa: E402
+from market_data_hub.config_loader import get_settings  # noqa: E402
 from market_data_hub.db.connection import get_conn  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parent
-REPORT_DIR = ROOT / "reports" / "telegram"
+
+
+def _base_report_dir() -> Path:
+    cfg = get_settings().get("reports", {})
+    path = Path(cfg.get("dir") or "reports")
+    if not path.is_absolute():
+        path = ROOT / path
+    return path
+
+
+REPORT_DIR = _base_report_dir() / "telegram"
 
 
 def _fmt_int(value: Any) -> str:
@@ -266,10 +277,31 @@ def collect_report(db_path: str | None, run_id: str | None) -> tuple[str, str]:
         con.close()
 
 
-def send_report(text: str, *, token: str, chat_id: str) -> None:
+def save_report(title: str, content: str) -> Path:
+    REPORT_DIR.mkdir(parents=True, exist_ok=True)
+    safe_title = "".join(c if c.isalnum() or c in "._-" else "_" for c in title.lower())
+    safe_title = safe_title.strip("._-") or "market_data_hub_report"
+    out = REPORT_DIR / f"{safe_title}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
+    out.write_text(content, encoding="utf-8")
+    return out
+
+
+def send_report_document(file_path: Path, *, token: str, chat_id: str, caption: str) -> None:
+    blob = file_path.read_bytes()
     with TelegramClient.from_token(token) as client:
-        for chunk in split_message(text):
-            client.send_message(chat_id=chat_id, text=chunk)
+        client.send_document(
+            chat_id=chat_id,
+            document=blob,
+            filename=file_path.name,
+            caption=caption[:1024],
+        )
+
+
+def _latest_report(pattern: str) -> Path | None:
+    candidates = [p for p in _base_report_dir().glob(pattern) if p.is_file()]
+    if not candidates:
+        return None
+    return max(candidates, key=lambda p: p.stat().st_mtime)
 
 
 def main() -> int:
@@ -277,17 +309,12 @@ def main() -> int:
     p.add_argument("--db", help="DuckDB path; defaults to market_data_hub settings")
     p.add_argument("--run-id", help="Specific run_id; defaults to latest")
     p.add_argument("--dry-run", action="store_true", help="Print and save report, but do not send Telegram message")
-    p.add_argument("--save", action="store_true", help="Save report markdown under reports/telegram")
+    p.add_argument("--save", action="store_true", help="Deprecated: reports are always saved before sending")
     args = p.parse_args()
 
     title, report = collect_report(args.db, args.run_id)
-
-    if args.save or args.dry_run:
-        REPORT_DIR.mkdir(parents=True, exist_ok=True)
-        safe_run = (args.run_id or "latest").replace("/", "-").replace("\\", "-")
-        out = REPORT_DIR / f"telegram_run_report_{safe_run}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.md"
-        out.write_text(report, encoding="utf-8")
-        print(f"Saved report: {out}")
+    out = save_report(title, report)
+    print(f"Saved report: {out}")
 
     if args.dry_run:
         print(report)
@@ -297,11 +324,23 @@ def main() -> int:
     chat_id = os.environ.get("TELEGRAM_CHAT_ID")
     if not token or not chat_id:
         print("Telegram not configured: set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.", file=sys.stderr)
-        print("Report was generated but not sent.", file=sys.stderr)
+        print(f"Report was saved but not sent: {out}", file=sys.stderr)
         return 2
 
-    send_report(report, token=token, chat_id=chat_id)
-    print(f"Sent Telegram report: {title}")
+    send_report_document(out, token=token, chat_id=chat_id, caption=title)
+    print(f"Sent Telegram report attachment: {out.name}")
+
+    dalio = _latest_report("dalio_report_*.html")
+    if dalio:
+        send_report_document(
+            dalio,
+            token=token,
+            chat_id=chat_id,
+            caption="Ray Dalio dashboard",
+        )
+        print(f"Sent Telegram Dalio attachment: {dalio.name}")
+    else:
+        print("No Dalio report attachment found.")
     return 0
 
 
