@@ -3,21 +3,21 @@
 # ============================================================================
 
 # Path of the DuckDB database (override with env MARKET_DATA_DB)
-db_path: "D:\\market_data\\market_data.duckdb"
+db_path: "market_data.duckdb"
 
-# --- historical backfill dates ---
+# — historical backfill dates ---
 backfill_start:
   yahoo: "2010-01-01"
   fred:  "2000-01-01"
   binance: "2018-01-01"
   factors: "1990-01-01"   # Fama-French (Ken French) history start
 
-# --- incremental download ---
+# — incremental download ---
 incremental:
   tail_refresh_days: 3        # re-download the last N days (late corporate actions)
   fred_tail_days: 95          # FRED: re-download the last N days to cover revisions
 
-# --- parallelism ---
+# — parallelism ---
 parallelism:
   yahoo_workers: 5
   binance_workers: 4
@@ -26,20 +26,20 @@ parallelism:
   imf_sleep: 0.5              # seconds between sequential IMF/BIS calls (WAF handled by per-call backoff)
   wb_workers: 5               # parallel World Bank fetches (macro_panel)
 
-# --- HTTP / retry ---
+# — HTTP / retry ---
 http:
   timeout: 30
   max_retries: 3
   retry_base_sleep: 1.0       # exponential backoff: 1, 4, 16s
 
-# --- FRED API ---
+# — FRED API ---
 # Do NOT commit a key here. Provide it via the FRED_API_KEY environment variable
 # (the loader overrides this field from the env). If both are empty, the public
 # CSV endpoint (fredgraph.csv) is used without a key.
 #   PowerShell:  setx FRED_API_KEY "your-key"
 fred_api_key: ""
 
-# --- Report via email ---
+# — Report via email ---
 # Credentials must NEVER be stored here. The loader reads SMTP_USER,
 # SMTP_PASSWORD and (optionally) EMAIL_TO from the environment and injects them
 # at load time; this file holds only the non-sensitive host/port/template.
@@ -56,31 +56,31 @@ email:
   to:
     - doctor.selva@gmail.com
 
-# --- Binance crypto ---
+# — Binance crypto ---
 crypto:
   symbols: ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "ADAUSDT", "XRPUSDT"]
   timeframes: ["1h", "4h", "1d"]
 
-# --- Fama-French factors (Ken French Data Library) ---
+# — Fama-French factors (Ken French Data Library) ---
 factors:
   enabled: true
   datasets: ["FF5_daily", "MOM_daily"]   # keys from sources/factors.py CATALOG
 
-# --- cross-country macro panel ---
+# — cross-country macro panel ---
 macro_panel:
   select_best_source: false   # true = fetch primary+fallback, keep wider country coverage
                               # (costs one extra API call per indicator that has a fallback)
 
-# --- live price injection (intraday) ---
+# — live price injection (intraday) ---
 live:
   enabled: true
   # only these asset classes receive the intraday update (liquid markets)
   asset_classes: ["EQUITY", "ALTERNATIVES", "FIXED_INCOME", "COMMODITIES", "REAL_ESTATE", "FX"]
 
-# --- Ray Dalio framework (configurable thresholds, NOT hard-coded — see spec v3) ---
+# — Ray Dalio framework (configurable thresholds, NOT hard-coded — see spec v3) ---
 dalio:
   z_window_years: 10          # z-score window (same frequency)
-  z_min_obs: 5                # minimum observations for z-score (below -> NULL)
+  z_min_obs: 5                # minimum observations for z-score (below → NULL)
   z_pos: 1.0                  # z threshold for POS signal
   z_neg: -1.0                 # z threshold for NEG signal
   # archetypal debt cycle thresholds (Dalio)
@@ -112,3 +112,4 @@ dalio:
     banking: 10
     governance: 5
     geopolitical: 5
+

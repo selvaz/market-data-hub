@@ -23,11 +23,12 @@ SCHEMA_VERSION = 2
 
 def _default_db() -> str:
     """Last-resort DB path when neither db_path, MARKET_DATA_DB nor settings.yaml
-    provide one. Windows keeps the historical D:\\market_data location; other
-    platforms fall back to a portable path under the user's home."""
-    if os.name == "nt":
-        return r"D:\market_data\market_data.duckdb"
-    return str(Path.home() / ".market_data" / "market_data.duckdb")
+    provide one.
+
+    Keep the default repo-local so a clone is self-contained and does not depend
+    on machine-specific drive letters.
+    """
+    return "market_data.duckdb"
 
 
 _DEFAULT_DB = _default_db()
@@ -134,7 +135,7 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
     # Ordered ladder of forward migrations. Each future step runs its DDL/DML on
     # the *old* shape, then advances `current`.
     if current < 2:
-        # v1 -> v2: custom_series (app-published series). Purely additive —
+        # v1 -> v2: custom_series (app-published series). Purely additive ---
         # apply_schema() above already created it via CREATE TABLE IF NOT
         # EXISTS; this step exists so the recorded version tracks the shape.
         current = 2
@@ -170,3 +171,5 @@ def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
     if not read_only:
         apply_schema(con)
     return con
+
+

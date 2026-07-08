@@ -2,7 +2,6 @@
 """DB-path resolution and upsert behavior."""
 from __future__ import annotations
 
-import os
 import datetime as dt
 
 import pandas as pd
@@ -17,9 +16,8 @@ def test_resolve_prefers_explicit_then_env(monkeypatch, tmp_path):
     assert C._resolve_db_path() == str(tmp_path / "env.duckdb")
 
 
-def test_default_db_is_portable_off_windows():
-    if os.name != "nt":
-        assert C._default_db().endswith(os.path.join(".market_data", "market_data.duckdb"))
+def test_default_db_is_repo_local():
+    assert C._default_db() == "market_data.duckdb"
 
 
 def test_upsert_is_idempotent(tmp_db):
@@ -35,3 +33,5 @@ def test_upsert_is_idempotent(tmp_db):
     assert (added2, updated2) == (0, 1)
     assert con.execute("SELECT count(*) FROM prices_daily").fetchone()[0] == 1
     con.close()
+
+
