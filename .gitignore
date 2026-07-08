@@ -5,7 +5,9 @@ __pycache__/
 
 # Database
 *.duckdb
+*.duckdb.wal
 *.db
+*.lock
 
 # Generated outputs
 data_dictionary.xlsx

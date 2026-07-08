@@ -36,11 +36,19 @@ from `docs/` by the `docs` workflow on every push to `main`).
 pip install -r requirements.txt
 ```
 
-1. **FRED API key** (required on this network): open
-   `market_data_hub/config/settings.yaml` and set `fred_api_key: "YOUR_KEY"`.
-   Alternatively, export the `FRED_API_KEY` environment variable.
-   > On this machine the proxy blocks FRED's public CSV endpoint; the official
-   > API (with a key) is reachable instead.
+On Windows, prefer the guided first-run setup:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_first_run.ps1
+```
+
+It installs the package, asks for local secrets such as `FRED_API_KEY` and
+Telegram credentials, verifies the config, and can optionally configure the
+scheduled tasks or start the historical backfill.
+
+1. **FRED API key**: set the `FRED_API_KEY` environment variable. Do not commit
+   keys in `settings.yaml`. If no key is set, the public FRED CSV endpoint is
+   used, but some networks/proxies block or stall it.
 
 2. SSL verification is handled automatically: on the first import,
    `ca_bundle.pem` is built (certifi + Windows root CA) to get past the
@@ -73,11 +81,13 @@ python validate_macro_panel.py --full     # all 64 countries
 ## Automation (Windows Task Scheduler)
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File D:\market_data\setup_scheduler.ps1
+powershell -ExecutionPolicy Bypass -File C:\Users\Administrator\Documents\GitHub\market-data-hub\setup_scheduler.ps1
 ```
 
-Creates 3 tasks: `MarketDataEOD` (22:00), `MarketDataWeekend` (Sat 08:00, FRED
-refresh), `MarketDataLive` (16:00-22:00 every hour). To remove: add `-Remove`.
+Creates two tasks: `MarketData_EU18` (daily 09:00 Pacific, roughly 18:00
+Europe/Rome) and `MarketData_USClose` (Mon-Fri 13:15 Pacific, shortly after
+the US cash close). Both run the daily refresh and then send/save the Telegram
+run report. To remove: add `-Remove`.
 
 ## Reading from the existing projects
 
@@ -114,7 +124,7 @@ extraction layer, consumable from Python or by an LLM via function-calling:
 ```python
 from market_data_hub import catalog, extract
 catalog.list_symbols(asset_class="EQUITY", area="Emerging Markets")
-catalog.list_symbols(asset_class="EQUITY", area="USA", sector="Energy")  # -> XLE
+catalog.list_symbols(asset_class="EQUITY", area="USA", sector="Energy")  # → XLE
 df, meta = extract.extract_returns(["SPY", "TLT", "^VIX"], frequency="W") # ready for LazyHMM
 ```
 
@@ -135,3 +145,4 @@ market_data_hub/
   reader.py   catalog.py  extract.py  agent_tools.py  config_loader.py  runner.py
 run_daily.py  run_backfill.py  diagnose.py  setup_scheduler.ps1
 ```
+

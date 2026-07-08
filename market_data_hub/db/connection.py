@@ -15,6 +15,7 @@ from typing import Optional
 import duckdb
 
 _SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
@@ -23,28 +24,36 @@ SCHEMA_VERSION = 2
 
 def _default_db() -> str:
     """Last-resort DB path when neither db_path, MARKET_DATA_DB nor settings.yaml
-    provide one. Windows keeps the historical D:\\market_data location; other
-    platforms fall back to a portable path under the user's home."""
-    if os.name == "nt":
-        return r"D:\market_data\market_data.duckdb"
-    return str(Path.home() / ".market_data" / "market_data.duckdb")
+    provide one.
+
+    Keep the default repo-local so a clone is self-contained and does not depend
+    on machine-specific drive letters.
+    """
+    return str(_REPO_ROOT / "market_data.duckdb")
 
 
 _DEFAULT_DB = _default_db()
 
 
+def _repo_local(path: str) -> str:
+    p = Path(path)
+    if p.is_absolute():
+        return str(p)
+    return str(_REPO_ROOT / p)
+
+
 def _resolve_db_path(db_path: Optional[str] = None) -> str:
     if db_path:
-        return db_path
+        return _repo_local(db_path)
     env = os.environ.get("MARKET_DATA_DB")
     if env:
-        return env
+        return _repo_local(env)
     # settings.yaml takes precedence over the hard-coded default
     try:
         from market_data_hub.config_loader import get_settings
         s = get_settings()
         if s.get("db_path"):
-            return s["db_path"]
+            return _repo_local(s["db_path"])
     except Exception:
         pass
     return _DEFAULT_DB
@@ -134,7 +143,7 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
     # Ordered ladder of forward migrations. Each future step runs its DDL/DML on
     # the *old* shape, then advances `current`.
     if current < 2:
-        # v1 -> v2: custom_series (app-published series). Purely additive —
+        # v1 -> v2: custom_series (app-published series). Purely additive ---
         # apply_schema() above already created it via CREATE TABLE IF NOT
         # EXISTS; this step exists so the recorded version tracks the shape.
         current = 2
@@ -170,3 +179,5 @@ def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
     if not read_only:
         apply_schema(con)
     return con
+
+

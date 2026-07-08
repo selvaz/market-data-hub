@@ -28,6 +28,10 @@ def get_settings() -> Dict[str, Any]:
     if os.environ.get("FRED_API_KEY"):
         s["fred_api_key"] = os.environ["FRED_API_KEY"]
 
+    reports = s.setdefault("reports", {})
+    if os.environ.get("MARKET_DATA_REPORT_DIR"):
+        reports["dir"] = os.environ["MARKET_DATA_REPORT_DIR"]
+
     email = s.setdefault("email", {})
     if os.environ.get("SMTP_USER"):
         email["smtp_user"] = os.environ["SMTP_USER"]

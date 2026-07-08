@@ -8,6 +8,21 @@ cd market-data-hub
 pip install -e .          # or: pip install -r requirements.txt
 ```
 
+On Windows, the recommended first run is interactive:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_first_run.ps1
+```
+
+The script installs dependencies, asks for local secrets, writes user-level
+environment variables, verifies the configuration, and can optionally create
+scheduled tasks or start the historical backfill:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\setup_first_run.ps1 -ConfigureScheduler
+powershell -ExecutionPolicy Bypass -File .\setup_first_run.ps1 -RunBackfill
+```
+
 market-data-hub is a **private, git-installed package** (not on PyPI). Other
 projects that want the read API install it the same way:
 
@@ -18,13 +33,12 @@ pip install 'market-data-hub @ git+https://github.com/selvaz/market-data-hub.git
 ## Configure
 
 1. **FRED API key** (required on networks where the public CSV endpoint is
-   blocked): set `fred_api_key` in `market_data_hub/config/settings.yaml`, or
-   export `FRED_API_KEY`.
+   blocked): set the `FRED_API_KEY` environment variable. Do not commit keys in
+   `settings.yaml`.
 2. **Database path** — resolution order:
-   explicit `db_path=` argument → `MARKET_DATA_DB` env var →
-   `settings.yaml::db_path` → platform default
-   (`D:\market_data\market_data.duckdb` on Windows,
-   `~/.market_data/market_data.duckdb` elsewhere).
+   explicit `db_path=` argument — `MARKET_DATA_DB` env var ---
+   `settings.yaml::db_path` — platform default
+   (`.\market_data.duckdb`, relative to the repo root).
 3. **SSL / corporate proxy** — handled automatically on first import:
    `_ssl_bootstrap` builds a CA bundle (certifi + Windows root CAs) and exports
    it to `SSL_CERT_FILE` / `REQUESTS_CA_BUNDLE` / `CURL_CA_BUNDLE`, so
@@ -75,12 +89,13 @@ self-contained macro dashboard from `make_dalio_report.py`
 ## Automate (Windows Task Scheduler)
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File D:\market_data\setup_scheduler.ps1
+powershell -ExecutionPolicy Bypass -File C:\Users\Administrator\Documents\GitHub\market-data-hub\setup_scheduler.ps1
 ```
 
-Creates three tasks: `MarketDataEOD` (22:00), `MarketDataWeekend`
-(Sat 08:00, FRED refresh), `MarketDataLive` (16:00–22:00 hourly).
-Remove them with `-Remove`.
+Creates two tasks: `MarketData_EU18` (daily 09:00 Pacific, roughly 18:00
+Europe/Rome) and `MarketData_USClose` (Mon-Fri 13:15 Pacific, shortly after
+the US cash close). Both run the daily refresh and then send/save the Telegram
+run report. Remove them with `-Remove`.
 
 ## Read it from your code
 
@@ -105,3 +120,5 @@ The full API (all four layers, LLM tools included) is in
 [Extraction & discovery](EXTRACTION.md). For wiring the hub into a LazyBridge
 agent, install [LazyTools](https://github.com/selvaz/LazyTools) and use
 `lazytools.connectors.datahub.DataHubTools`.
+
+

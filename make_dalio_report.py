@@ -24,9 +24,19 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
+from market_data_hub.config_loader import get_settings  # noqa: E402
 from market_data_hub.db.connection import get_conn  # noqa: E402
 
-REPORT_DIR = Path(__file__).parent / "reports"
+
+def _report_dir() -> Path:
+    cfg = get_settings().get("reports", {})
+    path = Path(cfg.get("dir") or "reports")
+    if not path.is_absolute():
+        path = Path(__file__).parent / path
+    return path
+
+
+REPORT_DIR = _report_dir()
 CFG = Path(__file__).parent / "market_data_hub" / "config"
 # a country's indicator is flagged stale only if it lags the cross-country
 # FRONTIER (the most recent year available for that indicator, across countries)
