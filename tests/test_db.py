@@ -11,13 +11,15 @@ from market_data_hub.db.upsert import upsert
 
 
 def test_resolve_prefers_explicit_then_env(monkeypatch, tmp_path):
+    explicit = str(tmp_path / "explicit.duckdb")
     monkeypatch.setenv("MARKET_DATA_DB", str(tmp_path / "env.duckdb"))
-    assert C._resolve_db_path("/explicit/x.duckdb") == "/explicit/x.duckdb"
+    assert C._resolve_db_path(explicit) == explicit
     assert C._resolve_db_path() == str(tmp_path / "env.duckdb")
 
 
 def test_default_db_is_repo_local():
-    assert C._default_db() == "market_data.duckdb"
+    assert C._default_db().endswith("market_data.duckdb")
+    assert C._resolve_db_path("market_data.duckdb").endswith("market_data.duckdb")
 
 
 def test_upsert_is_idempotent(tmp_db):

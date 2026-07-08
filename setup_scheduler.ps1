@@ -2,19 +2,24 @@
 # setup_scheduler.ps1 — creates the Windows scheduled tasks for market_data_hub
 #
 # Run from PowerShell as administrator:
-#     powershell -ExecutionPolicy Bypass -File C:\Users\Administrator\Documents\GitHub\market-data-hub\setup_scheduler.ps1
+#     powershell -ExecutionPolicy Bypass -File .\setup_scheduler.ps1
 #
 # To remove the tasks:
-#     powershell -ExecutionPolicy Bypass -File C:\Users\Administrator\Documents\GitHub\market-data-hub\setup_scheduler.ps1 -Remove
+#     powershell -ExecutionPolicy Bypass -File .\setup_scheduler.ps1 -Remove
 # ============================================================================
 param(
-    [switch]$Remove
+    [switch]$Remove,
+    [string]$Root = "",
+    [string]$Python = "C:\ProgramData\spyder-6\python.exe"
 )
 
 $ErrorActionPreference = "Stop"
-$root   = "C:\Users\Administrator\Documents\GitHub\market-data-hub"
+if (!$Root) {
+    $Root = Split-Path -Parent $MyInvocation.MyCommand.Path
+}
+$root = $Root
 # Use the Spyder Python environment that is already configured for this workstation.
-$python = "C:\ProgramData\spyder-6\python.exe"
+$python = $Python
 $wrapper = Join-Path $root "run_daily_with_telegram.ps1"
 $logDir = Join-Path $root "logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null

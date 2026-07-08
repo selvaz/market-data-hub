@@ -8,7 +8,7 @@ param(
 )
 
 $ErrorActionPreference = 'Continue'
-$Root = 'C:\Users\Administrator\Documents\GitHub\market-data-hub'
+$Root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $Python = 'C:\ProgramData\spyder-6\python.exe'
 
 Set-Location $Root

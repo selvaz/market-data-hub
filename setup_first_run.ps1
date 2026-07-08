@@ -56,6 +56,9 @@ if (!(Test-Path $Python)) {
     }
 }
 
+if (!(Split-Path -Path $DbPath -IsAbsolute)) {
+    $DbPath = Join-Path $Root $DbPath
+}
 [Environment]::SetEnvironmentVariable("MARKET_DATA_DB", $DbPath, "User")
 Set-Item -Path Env:MARKET_DATA_DB -Value $DbPath
 Write-Host "MARKET_DATA_DB=$DbPath"
@@ -101,13 +104,13 @@ if (!$SkipTests) {
 if ($ConfigureScheduler) {
     Write-Host ""
     Write-Host "Creating/updating scheduled tasks..."
-    powershell -ExecutionPolicy Bypass -File (Join-Path $Root "setup_scheduler.ps1")
+    powershell -ExecutionPolicy Bypass -File (Join-Path $Root "setup_scheduler.ps1") -Root $Root -Python $Python
 }
 
 if ($RunBackfill) {
     Write-Host ""
     Write-Host "Starting full historical backfill. This can take a long time."
-    & $Python -c "from market_data_hub.runner import run; run(mode='backfill', sources=['yahoo','fred','binance','macro_panel','factors'], db_path='$DbPath')"
+    & $Python (Join-Path $Root "run_backfill.py") --db $DbPath
 }
 
 Write-Host ""

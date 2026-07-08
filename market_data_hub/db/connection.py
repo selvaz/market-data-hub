@@ -15,6 +15,7 @@ from typing import Optional
 import duckdb
 
 _SCHEMA_PATH = Path(__file__).parent / "schema.sql"
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
@@ -28,24 +29,31 @@ def _default_db() -> str:
     Keep the default repo-local so a clone is self-contained and does not depend
     on machine-specific drive letters.
     """
-    return "market_data.duckdb"
+    return str(_REPO_ROOT / "market_data.duckdb")
 
 
 _DEFAULT_DB = _default_db()
 
 
+def _repo_local(path: str) -> str:
+    p = Path(path)
+    if p.is_absolute():
+        return str(p)
+    return str(_REPO_ROOT / p)
+
+
 def _resolve_db_path(db_path: Optional[str] = None) -> str:
     if db_path:
-        return db_path
+        return _repo_local(db_path)
     env = os.environ.get("MARKET_DATA_DB")
     if env:
-        return env
+        return _repo_local(env)
     # settings.yaml takes precedence over the hard-coded default
     try:
         from market_data_hub.config_loader import get_settings
         s = get_settings()
         if s.get("db_path"):
-            return s["db_path"]
+            return _repo_local(s["db_path"])
     except Exception:
         pass
     return _DEFAULT_DB
