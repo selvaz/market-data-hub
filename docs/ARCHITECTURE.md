@@ -345,16 +345,13 @@ An annual series is therefore not penalised for a normal ~12-month reporting lag
 
 ## 7. Automation
 
-`setup_scheduler.ps1` registers three Windows scheduled tasks:
+`setup_scheduler.ps1` registers two Windows scheduled tasks, both running the
+daily refresh through `run_daily_with_telegram.ps1` (report + Telegram send):
 
 | task | when | command |
 |------|------|---------|
-| MarketDataEOD | daily 22:00 | `run_daily.py --report --send-email` |
-| MarketDataWeekend | Sat 08:00 | `run_daily.py --sources fred --report --send-email` |
-| MarketDataLive | hourly 16:00–22:00, **Mon–Fri** | `run_daily.py --live-only` |
-
-The script prefers the project virtualenv interpreter (`.venv\Scripts\python.exe`)
-and falls back to the `python` on `PATH` only if the venv is absent.
+| MarketData_EU18 | daily 09:00 Pacific (~18:00 Europe/Rome) | `run_daily_with_telegram.ps1 --report` |
+| MarketData_USClose | Mon–Fri 13:15 Pacific (shortly after US close) | `run_daily_with_telegram.ps1 --report` |
 
 Logs rotate into `logs/<task>.log`. Remove with `setup_scheduler.ps1 -Remove`.
 

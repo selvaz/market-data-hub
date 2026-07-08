@@ -5,7 +5,6 @@ run_daily.py — entry point for the incremental daily download.
 Usage:
     python run_daily.py                          # full: yahoo + fred + binance + macro_panel + live
     python run_daily.py --report --open          # full + HTML report + open in browser
-    python run_daily.py --report --send-email    # full + report + send email
     python run_daily.py --live-only              # live intraday price injection only
     python run_daily.py --sources yahoo fred     # specific sources
     python run_daily.py --end 2024-12-31
@@ -33,14 +32,12 @@ def main() -> int:
     p.add_argument("--db", help="DuckDB DB path (override settings)")
     p.add_argument("--report", action="store_true",
                    help="generate HTML/MD report when the download finishes")
-    p.add_argument("--send-email", action="store_true",
-                   help="send the report by email (implies --report)")
     p.add_argument("--open", dest="open_browser", action="store_true",
                    help="open the HTML report in the browser when finished (implies --report)")
     args = p.parse_args()
 
-    # --send-email and --open imply --report
-    if args.send_email or args.open_browser:
+    # --open implies --report
+    if args.open_browser:
         args.report = True
 
     mode = "live-only" if args.live_only else "full"
@@ -60,7 +57,7 @@ def main() -> int:
         try:
             # inline import so live-only runs are not slowed down
             from make_report import main as _report_main, \
-                collect, render_html, render_md, send_email, REPORT_DIR
+                collect, render_html, render_md, REPORT_DIR
             from market_data_hub.db.connection import get_conn
             from datetime import datetime
 
@@ -81,9 +78,6 @@ def main() -> int:
             print(f"Rows: {d['total_rows']:,} | Series: "
                   f"{sum(x['series'] for x in d['tables'])} | "
                   f"Score: {d['score_avg']} | Stalled: {len(d['stalled'])}")
-
-            if args.send_email:
-                send_email(html_content, d)
 
             # Ray Dalio report (debt-cycle phases + regime) — the Dalio
             # computation was already done inside run(); here we only generate the HTML.

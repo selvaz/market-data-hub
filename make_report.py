@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 make_report.py — generates a report (HTML + Markdown) with the results of the last
-download and the database statistics. Intended to be sent by email.
+download and the database statistics.
 
 Usage:
     python make_report.py                 # reads the default DB
@@ -9,17 +9,14 @@ Usage:
     python make_report.py --open          # open the HTML in the browser when finished
 
 Output (in reports/):
-    market_data_report_YYYYMMDD.html      # email-ready version
-    market_data_report_YYYYMMDD.md        # text version
+    market_data_report_YYYYMMDD.html
+    market_data_report_YYYYMMDD.md
 """
 from __future__ import annotations
 
 import argparse
-import smtplib
 import sys
 from datetime import datetime, timezone
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from pathlib import Path
 
 import pandas as pd
@@ -227,60 +224,10 @@ def render_md(d: dict) -> str:
     return "\n".join(lines)
 
 
-# ---------------------------------------------------------------- email sender
-
-def send_email(html_content: str, d: dict) -> bool:
-    """Send the HTML report via SMTP. Returns True if sent, False if skipped/error."""
-    cfg = get_settings().get("email", {})
-    user = cfg.get("smtp_user", "").strip()
-    pwd = cfg.get("smtp_password", "").strip()
-    if not user or not pwd:
-        print("Email: smtp_user/smtp_password not configured in settings.yaml — sending skipped")
-        return False
-
-    to_list = cfg.get("to", [])
-    if isinstance(to_list, str):
-        to_list = [to_list]
-    if not to_list:
-        print("Email: no recipient configured — sending skipped")
-        return False
-
-    lr = d.get("last_run", {})
-    added = int(lr.get("added", 0) or 0)
-    errors = int(lr.get("errors", 0) or 0)
-    status_tag = "OK" if errors == 0 else f"WARNING ({errors} errors)"
-    subject = (
-        f"[market_data_hub] Report {d['now'][:10]} — "
-        f"{d['total_rows']:,} rows | {d['score_avg']} score | {status_tag}"
-    )
-
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = cfg.get("from", user)
-    msg["To"] = ", ".join(to_list)
-    msg.attach(MIMEText(html_content, "html", "utf-8"))
-
-    host = cfg.get("smtp_host", "smtp.gmail.com")
-    port = int(cfg.get("smtp_port", 587))
-    try:
-        with smtplib.SMTP(host, port, timeout=30) as srv:
-            srv.ehlo()
-            srv.starttls()
-            srv.login(user, pwd)
-            srv.sendmail(user, to_list, msg.as_bytes())
-        print(f"Email sent to {', '.join(to_list)}")
-        return True
-    except Exception as e:
-        print(f"Email ERROR: {e}")
-        return False
-
-
 def main() -> int:
     p = argparse.ArgumentParser(description="Generate download report + DB statistics")
     p.add_argument("--db")
     p.add_argument("--open", action="store_true")
-    p.add_argument("--send-email", action="store_true",
-                   help="Send the report by email (SMTP config in settings.yaml)")
     args = p.parse_args()
 
     REPORT_DIR.mkdir(exist_ok=True)
@@ -301,8 +248,6 @@ def main() -> int:
     print(f"Report MD:   {md_path}")
     print(f"Total rows: {d['total_rows']:,} | Series: "
           f"{sum(x['series'] for x in d['tables'])} | Average score: {d['score_avg']}")
-    if args.send_email:
-        send_email(html_content, d)
     if args.open:
         import webbrowser
         webbrowser.open(html_path.as_uri())
