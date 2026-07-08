@@ -82,9 +82,10 @@ python validate_macro_panel.py            # sample of 5 countries
 python validate_macro_panel.py --full     # all 64 countries
 ```
 
-An HTML status report (and optional e-mail) comes from `make_report.py`; the
-self-contained macro dashboard from `make_dalio_report.py`
-(`python run_daily.py --report` bundles report generation into the daily run).
+An HTML status report comes from `make_report.py`; the self-contained macro
+dashboard from `make_dalio_report.py` (`python run_daily.py --report` bundles
+report generation into the daily run). `send_telegram_run_report.py` sends
+that report to Telegram instead — see `run_daily_with_telegram.ps1`.
 
 ## Automate (Windows Task Scheduler)
 

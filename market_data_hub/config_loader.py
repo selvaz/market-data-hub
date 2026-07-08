@@ -32,16 +32,6 @@ def get_settings() -> Dict[str, Any]:
     if os.environ.get("MARKET_DATA_REPORT_DIR"):
         reports["dir"] = os.environ["MARKET_DATA_REPORT_DIR"]
 
-    email = s.setdefault("email", {})
-    if os.environ.get("SMTP_USER"):
-        email["smtp_user"] = os.environ["SMTP_USER"]
-    if os.environ.get("SMTP_PASSWORD"):
-        email["smtp_password"] = os.environ["SMTP_PASSWORD"]
-    if os.environ.get("EMAIL_TO"):
-        # comma- or semicolon-separated list of recipients
-        email["to"] = [a.strip() for a in
-                       os.environ["EMAIL_TO"].replace(";", ",").split(",")
-                       if a.strip()]
     return s
 
 

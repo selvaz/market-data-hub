@@ -45,23 +45,6 @@ http:
 #   PowerShell:  setx FRED_API_KEY "your-key"
 fred_api_key: ""
 
-# — Report via email ---
-# Credentials must NEVER be stored here. The loader reads SMTP_USER,
-# SMTP_PASSWORD and (optionally) EMAIL_TO from the environment and injects them
-# at load time; this file holds only the non-sensitive host/port/template.
-#   PowerShell:  setx SMTP_USER "youraddress@gmail.com"
-#                setx SMTP_PASSWORD "gmail-app-password"   # 16 chars, no spaces
-# For Gmail generate an "App Password" at https://myaccount.google.com/apppasswords
-# (requires 2FA enabled) — NOT the Google account password.
-email:
-  smtp_host: smtp.gmail.com
-  smtp_port: 587
-  smtp_user: ""             # injected from SMTP_USER env (leave empty)
-  smtp_password: ""         # injected from SMTP_PASSWORD env (leave empty)
-  from: "market_data_hub <noreply@market-data>"
-  to:
-    - 
-
 # — Binance crypto ---
 crypto:
   symbols: ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "ADAUSDT", "XRPUSDT"]
