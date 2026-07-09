@@ -82,11 +82,16 @@ def _json_array(values) -> str:
     return json.dumps(np.asarray(values).tolist())
 
 
-def _existing_count(con: duckdb.DuckDBPyConnection, symbol: str) -> int:
+def _last_estimate(con: duckdb.DuckDBPyConnection, symbol: str):
+    """(max stored trading_date, n_states of the newest vintage) or (None, None).
+
+    n_states is constant within one estimation_date (one fit per day), so
+    arg_max over estimation_date is unambiguous despite the per-date rows."""
     row = con.execute(
-        "SELECT count(*) FROM hmm_regime_estimates WHERE symbol = ?", [symbol]
+        "SELECT max(trading_date), arg_max(n_states, estimation_date) "
+        "FROM hmm_regime_estimates WHERE symbol = ?", [symbol]
     ).fetchone()
-    return int(row[0]) if row else 0
+    return (row[0], row[1]) if row else (None, None)
 
 
 def write_regime_run(con: duckdb.DuckDBPyConnection, symbol: str, run: RegimeRun,
@@ -114,8 +119,23 @@ def write_regime_run(con: duckdb.DuckDBPyConnection, symbol: str, run: RegimeRun
                               for row in gamma.values],
     })
 
-    is_first_run = _existing_count(con, symbol) == 0
-    window = src if is_first_run else src.tail(retro_days)
+    last_td, last_S = _last_estimate(con, symbol)
+    is_first_run = last_td is None
+    # A BIC flip (e.g. 2 -> 3 states) renumbers every state: rewriting only the
+    # retro window would leave the latest vintage mixing two incompatible
+    # indexations, so the whole history is re-appended as one consistent
+    # vintage (old vintages stay, per the append-on-change semantics above).
+    model_flip = not is_first_run and last_S is not None and int(last_S) != S
+    if is_first_run or model_flip:
+        window = src
+    else:
+        # Eligible for insert: the retro window PLUS every row after the last
+        # stored trading_date, so a pause longer than retro_days trading days
+        # no longer leaves a permanent never-backfilled gap.
+        mask = src["trading_date"] > last_td
+        if retro_days > 0:
+            mask.iloc[-retro_days:] = True
+        window = src[mask]
 
     con.register("_hmm_src", window)
     inserted = con.execute(
@@ -184,6 +204,14 @@ def write_regime_run(con: duckdb.DuckDBPyConnection, symbol: str, run: RegimeRun
 
 def _write_error_run(con: duckdb.DuckDBPyConnection, symbol: str,
                      estimation_date: date, error_msg: str) -> None:
+    # PK is (symbol, estimation_date): a failed evening rerun must not
+    # INSERT OR REPLACE away the BIC/params of a successful same-day run.
+    prior = con.execute(
+        "SELECT status FROM hmm_model_runs WHERE symbol = ? AND estimation_date = ?",
+        [symbol, str(estimation_date)],
+    ).fetchone()
+    if prior and prior[0] == "ok":
+        return
     con.execute(
         """
         INSERT OR REPLACE INTO hmm_model_runs

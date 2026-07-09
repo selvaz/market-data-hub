@@ -22,6 +22,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 import pandas as pd  # noqa: E402
 
+from market_data_hub import catalog  # noqa: E402
 from market_data_hub.regime.estimate import SymbolRunResult  # noqa: E402
 
 _CSS = """
@@ -67,8 +68,19 @@ def _fig_to_base64(fig) -> str:
     return base64.b64encode(buf.getvalue()).decode("ascii")
 
 
+def _display_names() -> Dict[str, str]:
+    """symbol -> human-readable name from tickers.yaml (best-effort, one lookup)."""
+    try:
+        df = catalog.list_symbols(with_coverage=False)
+        return {s: str(n) for s, n in zip(df["symbol"], df["name"]) if n}
+    except Exception:
+        return {}
+
+
 def _chart_img(run, symbol: str) -> str:
-    run.plot_series_with_regimes(symbol, last_years=5)
+    # The fit is daily: lazyhmm's default points_per_year=52 (weekly) would
+    # slice ~1 year while the chart claims 5.
+    run.plot_series_with_regimes(symbol, last_years=5, points_per_year=252)
     fig = plt.gcf()
     b64 = _fig_to_base64(fig)
     return f'<img alt="{html.escape(symbol)} regimes" src="data:image/png;base64,{b64}"/>'
@@ -141,6 +153,11 @@ def generate_html_report(con: duckdb.DuckDBPyConnection,
 
     ok = {s: r for s, r in results.items() if r.status == "ok"}
     errored = {s: r for s, r in results.items() if r.status != "ok"}
+    names = _display_names()
+
+    def _name_div(symbol: str) -> str:
+        name = names.get(symbol)
+        return f'<div class="sub">{html.escape(name)}</div>' if name else ""
     changed = [s for s, r in ok.items() if r.changed_today]
     revised = [s for s, r in ok.items() if r.revised_last_n_days]
 
@@ -162,13 +179,13 @@ def generate_html_report(con: duckdb.DuckDBPyConnection,
             badge += f' <span class="badge rev">{r.revised_last_n_days} revised</span>'
         vol_badge = '<span class="badge hv">high-vol</span>' if r.is_high_vol else '<span class="badge calm">calm</span>'
         recap_rows.append(
-            f'<tr class="{cls}"><td><a href="#" onclick="show(\'sec-{symbol}\');return false;">{symbol}</a></td>'
+            f'<tr class="{cls}"><td><a href="#" onclick="show(\'sec-{symbol}\');return false;">{symbol}</a>{_name_div(symbol)}</td>'
             f"<td>{html.escape(r.current_label or '')} {vol_badge}</td>"
             f"<td>{r.prob_high_vol:.3f}</td><td>{r.n_states}</td><td>{badge}</td></tr>"
         )
     for symbol, r in errored.items():
         recap_rows.append(
-            f'<tr class="err"><td>{symbol}</td><td colspan="4">ERROR: {html.escape(r.error_msg or "")}</td></tr>'
+            f'<tr class="err"><td>{symbol}{_name_div(symbol)}</td><td colspan="4">ERROR: {html.escape(r.error_msg or "")}</td></tr>'
         )
 
     sections = []
@@ -180,6 +197,7 @@ def generate_html_report(con: duckdb.DuckDBPyConnection,
         sections.append(
             f'<section class="symbol" id="sec-{symbol}" style="display:none">'
             f"<h2>{symbol} &mdash; {html.escape(r.current_label or '')}</h2>"
+            f"{_name_div(symbol)}"
             f"{chart}{stats}{revs}</section>"
         )
 
