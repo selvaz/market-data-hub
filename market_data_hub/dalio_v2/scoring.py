@@ -162,6 +162,25 @@ def bucket_with_hysteresis(score: Optional[float], thresholds: Sequence[float],
     return labels[plain_idx] if score <= boundary - margin else prev_label  # moving to a better bucket
 
 
+def fresh_latest(pair, ref_ts, max_age_years: float = 4.0
+                 ) -> Tuple[Optional[float], Optional[str]]:
+    """Unpack a (value, date) pair from dalio._latest() into
+    (value, iso_date_str), forcing value to None when the observation is
+    older than `max_age_years` before `ref_ts`. Without this guard an
+    arbitrarily old print (a 2016 NPL ratio, say) is scored at full weight
+    as the current condition AND counts toward 'full' coverage. The date is
+    returned even for stale/missing values so components_json can record
+    why the input was dropped."""
+    value, obs = pair
+    if value is None or pd.isna(value) or obs is None or pd.isna(obs):
+        return None, None
+    obs_ts = pd.Timestamp(obs)
+    date_str = str(obs_ts.date())
+    if (pd.Timestamp(ref_ts) - obs_ts).days > max_age_years * 365.25:
+        return None, date_str
+    return float(value), date_str
+
+
 @lru_cache(maxsize=1)
 def git_short_sha() -> str:
     """Short git SHA of the running checkout, for the components_json

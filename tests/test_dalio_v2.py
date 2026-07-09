@@ -290,6 +290,8 @@ def _seed_private_credit(con):
     for y, v in zip((2025, 2026), (100, 101)):
         rows.append(_pc_row(dt.date(y, 12, 31), "USA", "private_debt_gdp", v))
     rows.append(_pc_row(dt.date(2026, 12, 31), "USA", "npl_ratio", 2.0))
+    # real credit growth = ratio change + real GDP growth (~1% + 2% = 3%, calm)
+    rows.append(_pc_row(dt.date(2026, 12, 31), "USA", "gdp_growth_weo", 2.0))
 
     # TUR: BIS-covered, textbook private credit boom
     rows.append(_pc_row(dt.date(2026, 12, 31), "TUR", "bis_credit_gap", 15.0))
@@ -299,6 +301,8 @@ def _seed_private_credit(con):
     for y, v in zip((2025, 2026), (100, 130)):
         rows.append(_pc_row(dt.date(y, 12, 31), "TUR", "private_debt_gdp", v))
     rows.append(_pc_row(dt.date(2026, 12, 31), "TUR", "npl_ratio", 12.0))
+    # ratio change +30% with real growth 4% -> unambiguous double-digit boom
+    rows.append(_pc_row(dt.date(2026, 12, 31), "TUR", "gdp_growth_weo", 4.0))
 
     # VNM: no BIS coverage at all (one of the 21 countries in the 2026-07
     # coverage audit) -> exercises the private_debt_gdp linear-detrend proxy
@@ -306,6 +310,7 @@ def _seed_private_credit(con):
     for y, v in zip(range(2017, 2027), debt_vnm):
         rows.append(_pc_row(dt.date(y, 12, 31), "VNM", "private_debt_gdp", v))
     rows.append(_pc_row(dt.date(2026, 12, 31), "VNM", "npl_ratio", 4.0))
+    rows.append(_pc_row(dt.date(2026, 12, 31), "VNM", "gdp_growth_weo", 6.0))
 
     upsert(con, "macro_panel", pd.DataFrame(rows))
 
@@ -344,6 +349,63 @@ def test_private_credit_bis_vs_proxy(tmp_db):
     # VNM has no BIS DSR at all -> that component must be reported missing,
     # not silently defaulted to a "safe" score
     assert "private_dsr" in vnm_audit["missing_components"]
+
+    # real credit growth = ratio change + real GDP growth, NOT the bare
+    # nominal change of the credit/GDP ratio (which nets out nominal GDP)
+    assert usa_audit["components"]["real_credit_growth"]["raw_value"] == 3.0   # 1% + 2%
+    assert json.loads(pc.loc["TUR", "components_json"])[
+        "components"]["real_credit_growth"]["raw_value"] == 34.0              # 30% + 4%
+    # every component carries its observation date in the audit trail
+    assert usa_audit["components"]["npl_ratio"]["obs_date"] == "2026-12-31"
+
+
+def test_own_history_percentile_is_outlier_immune():
+    from market_data_hub.dalio_v2.private_credit import _own_history_percentile
+    # one crisis spike (30) must not permanently rescale the component the
+    # way a min-max range position does: latest 15 sits above 8/9 of the
+    # history, so the percentile must read high, not (15-14)/(30-14) = 6%
+    s = pd.DataFrame({
+        "date": [dt.date(2016 + i, 12, 31) for i in range(9)],
+        "value": [14, 14, 14, 14, 14, 14, 14, 30, 15],
+    })
+    pct = _own_history_percentile(s)
+    assert pct is not None and pct > 85.0
+
+
+def test_yoy_level_change_rejects_multi_year_gaps():
+    from market_data_hub.dalio_v2.funding_liquidity import _yoy_level_change
+    # prior observation ~29 months back: a "12m" change spanning years must
+    # be treated as missing, not scored against 12-month thresholds
+    s = pd.DataFrame({"date": [pd.Timestamp("2024-01-31"), pd.Timestamp("2026-06-30")],
+                      "value": [2.0, 6.0]})
+    assert _yoy_level_change(s) is None
+    # a clean 12-month spacing still works
+    s2 = pd.DataFrame({"date": [pd.Timestamp("2025-06-30"), pd.Timestamp("2026-06-30")],
+                       "value": [2.0, 3.5]})
+    assert _yoy_level_change(s2) == 1.5
+
+
+def test_stale_observation_is_treated_as_missing(tmp_db):
+    # MEX's only debt print is from 2019; at ref 2026 (age 7y > the 4y
+    # staleness cap) it must not be scored as the current condition -- and
+    # the audit trail must still record the observation date that was dropped
+    con = get_conn()
+    upsert(con, "macro_panel", pd.DataFrame([
+        _row(dt.date(2019, 12, 31), "MEX", "public_debt_gdp", 50.0),
+    ]))
+    con.commit()
+    con.close()
+
+    run_dalio_v2(engines=["sovereign_solvency"], ref_year=2026)
+
+    con = get_conn(read_only=True)
+    audit = json.loads(con.execute(
+        "SELECT components_json FROM engine_scores WHERE engine = 'sovereign_solvency' "
+        "AND country_iso3 = 'MEX'").fetchone()[0])
+    con.close()
+    assert audit["components"]["debt_gdp"]["raw_value"] is None
+    assert audit["components"]["debt_gdp"]["obs_date"] == "2019-12-31"
+    assert "debt_gdp" in audit["missing_components"]
 
 
 # ---------------------------------------------------------------------------
