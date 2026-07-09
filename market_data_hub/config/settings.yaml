@@ -110,10 +110,11 @@ dalio:
                               # counting (they feed derived calcs like nom_rate).
 
 # Dalio v2 — 5-engine architecture (additive, see
-# docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md). Phase 1 only: Sovereign
-# Solvency + Political Execution. All thresholds/weights live here, never
-# hardcoded in Python, so Phase 6 sensitivity analysis can iterate without
-# touching code.
+# docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md). All 5 engines are live.
+# Thresholds/weights live here (exception: the reserve-currency country set,
+# still hardcoded in external_constraint.py pending the plan's Fase 0
+# countries.yaml flags), so Phase 6 sensitivity analysis can iterate without
+# touching code. validate_config.py checks this block's key sets.
 dalio_v2:
   # dead-band = 10% of the span from one bucket threshold below the crossed
   # boundary to one above it (4 points for the default 20-spaced cuts)
@@ -177,7 +178,10 @@ dalio_v2:
       # (ratio change nets out nominal GDP; adding real growth back recovers
       # the inflation-adjusted credit growth these thresholds are for)
       real_credit_growth: [5, 8, 12]
-      real_house_price_gap: [10, 20, 30]   # not wired yet (no BIS WS_SPP connector) -- always missing
+      # real_house_price_gap is not wired yet (no BIS WS_SPP connector): the
+      # component is always missing, so it keeps a weight (counts toward
+      # n_expected -> honest coverage) but carries no threshold until it has
+      # a data source
       npl_ratio: [3, 6, 10]                # ASSUMED, not from source proposal
     weights:
       credit_gap: 0.30

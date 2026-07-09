@@ -8,7 +8,7 @@ docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md §1 (non-goal).
 
 Usage:
     from market_data_hub.dalio_v2.runner import run_dalio_v2
-    run_dalio_v2()                      # both Phase-1 engines, current year
+    run_dalio_v2()                      # all 5 engines, current year
     run_dalio_v2(ref_year=2026)
     run_dalio_v2(engines=["sovereign_solvency"])
 """

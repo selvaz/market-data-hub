@@ -33,7 +33,7 @@ no unverified source id.
 THRESHOLDS: current_account_deficit_gdp, debt_service_exports,
 short_term_debt_reserves and reserves_months come from the source proposal
 (§12.4 — short_term_debt_reserves uses the proposal's own 50/100/150
-watch/stress/critical). The remaining three (net_external_liability_gdp,
+watch/stress/critical). The remaining four (net_external_liability_gdp,
 fx_debt_share, inflation, fx_overvaluation_pct) have no proposal thresholds
 and are ASSUMED — see config/settings.yaml's dalio_v2.external_constraint
 comment. Revisit once Fase 6 (historical backtest) gives real calibration

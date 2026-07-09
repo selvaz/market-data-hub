@@ -77,6 +77,23 @@ don't mean what their names claim, and (c) report/plumbing edge cases.
 
 ---
 
+## Remediation status (2026-07-09, same branch)
+
+All five phases below were implemented and committed on this branch the
+same day (commits "Fase A" … "Fase E"). Every P0/P1/P2/P3 item is fixed,
+with regression tests, EXCEPT:
+
+- **P1.5 (NIIP scale)**: the code-side fix is in (imf_sdmx now applies
+  UNIT_MULT), but the one-query sanity check against the live
+  `market_data.duckdb` (USA `net_external_liability_gdp` should read
+  ≈ +80, not ≈ 0) still needs to run on the machine that has the real DB.
+  If existing `iip_net_position` rows were fetched pre-fix and the feed
+  carries a non-zero multiplier, re-fetch that indicator.
+- **P4 Fase-0 backlog**: the reserve-currency/commodity/financial-center
+  flags in countries.yaml and the `dalio_cycle_v2` table remain unbuilt
+  (documented in the plan doc header note); the hardcoded reserve-currency
+  set stays for now.
+
 ## Remediation plan (branch `claude/datahub-market-order-check-7gmh1z`)
 
 **Fase A — P0 hotfixes** (one commit-series; small diffs, each with a

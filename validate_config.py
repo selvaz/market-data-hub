@@ -84,6 +84,53 @@ def validate() -> list[str]:
     if missing_w:
         errors.append(f"settings.yaml: dalio.pillar_weights missing pillars: {missing_w}")
 
+    # 7. dalio_v2: a typo'd weight key silently falls back to the code
+    # default -- invisible today precisely because defaults equal the yaml
+    # values, which is exactly when Phase-6 threshold tuning would edit yaml
+    # and change nothing. Validate key sets and shapes.
+    v2 = settings.get("dalio_v2", {})
+    v2_components = {
+        "sovereign_solvency": {"debt_gdp", "net_debt_gdp", "interest_revenue",
+                               "interest_gdp", "primary_deficit_gdp", "r_minus_g",
+                               "debt_trend_5y"},
+        "political_execution": {"government_effectiveness", "rule_of_law",
+                                "control_corruption", "political_stability",
+                                "regulatory_quality"},
+        "private_credit": {"credit_gap", "private_dsr", "real_credit_growth",
+                           "real_house_price_gap", "npl_ratio"},
+        "external_constraint": {"current_account_deficit_gdp", "net_external_liability_gdp",
+                                "short_term_debt_reserves", "debt_service_exports",
+                                "fx_debt_share", "inflation", "fx_overvaluation_pct",
+                                "reserves_months"},
+        "funding_liquidity": {"short_term_debt_reserves", "yield_change_12m_pp"},
+    }
+    for engine, expected in v2_components.items():
+        cfg = v2.get(engine) or {}
+        w = cfg.get("weights") or {}
+        unknown = sorted(set(w) - expected)
+        if unknown:
+            errors.append(f"settings.yaml: dalio_v2.{engine}.weights has unknown "
+                          f"component keys (typo?): {unknown}")
+        bad = sorted(k for k, v in w.items()
+                     if not isinstance(v, (int, float)) or v <= 0)
+        if bad:
+            errors.append(f"settings.yaml: dalio_v2.{engine}.weights must be "
+                          f"positive numbers: {bad}")
+        labels = cfg.get("bucket_labels") or []
+        cuts = cfg.get("bucket_thresholds") or []
+        if labels and cuts and len(labels) != len(cuts) + 1:
+            errors.append(f"settings.yaml: dalio_v2.{engine}: expected "
+                          f"len(bucket_labels) == len(bucket_thresholds)+1, "
+                          f"got {len(labels)} vs {len(cuts)}")
+        for name, t in (cfg.get("thresholds") or {}).items():
+            vals = t if isinstance(t, list) else []
+            monotonic = len(vals) == 3 and (
+                all(a < b for a, b in zip(vals, vals[1:]))
+                or all(a > b for a, b in zip(vals, vals[1:])))
+            if not monotonic:
+                errors.append(f"settings.yaml: dalio_v2.{engine}.thresholds.{name} "
+                              f"must be 3 strictly monotonic values, got {t}")
+
     return errors
 
 

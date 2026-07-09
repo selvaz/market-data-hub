@@ -3,12 +3,13 @@
 scoring.py — shared helpers for the Dalio v2 5-engine architecture.
 
 See docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md (Fase 0/Fase 3 design
-decisions) for the rationale: robust (median/MAD) cross-country z-scores
-instead of mean/std, linear threshold-to-score interpolation instead of
-crisp if/elif buckets, hysteresis on bucket transitions so a score
-oscillating near a boundary does not flip label every run, and an explicit
-coverage tier per engine score so partial data is never silently treated as
-full coverage.
+decisions) for the rationale: linear threshold-to-score interpolation
+instead of crisp if/elif buckets, hysteresis on bucket transitions so a
+score oscillating near a boundary does not flip label every run, and an
+explicit coverage tier per engine score so partial data is never silently
+treated as full coverage. (The plan's robust median/MAD z-score helper was
+removed as dead code in the 2026-07 audit -- no engine ended up using
+cross-country z's; political_execution uses percentile_rank instead.)
 """
 from __future__ import annotations
 
@@ -18,20 +19,6 @@ from pathlib import Path
 from typing import Dict, Optional, Sequence, Tuple
 
 import pandas as pd
-
-
-def robust_z(values: pd.Series, orientation: int = 1) -> pd.Series:
-    """Cross-country z-score via median/MAD (robust to fat tails/outliers),
-    oriented so higher = worse when orientation=1, clipped to +/-3.5 (the
-    conventional MAD-outlier cutoff). orientation=0 -> all zeros (no signal)."""
-    if orientation == 0 or values.dropna().empty:
-        return pd.Series(0.0, index=values.index)
-    median = values.median()
-    mad = (values - median).abs().median()
-    if not mad or pd.isna(mad):
-        return pd.Series(0.0, index=values.index)
-    z = 0.6745 * (values - median) / mad * orientation
-    return z.clip(-3.5, 3.5)
 
 
 def percentile_rank(values: pd.Series) -> pd.Series:

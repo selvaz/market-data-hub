@@ -620,3 +620,35 @@ def test_fx_overvaluation_ignores_post_ref_date_reer(tmp_db):
     # flat series through ref_date -> ~0% deviation; with the look-ahead bug
     # the 2024-2026 spike dragged this to a large positive number
     assert raw is not None and abs(raw) < 1.0
+
+
+def test_hysteresis_end_to_end_through_the_db(tmp_db):
+    # 5 countries so the middle one lands exactly on a bucket boundary
+    # (percentile 60 -> risk 40, the strong/adequate/watch cut): with a prior
+    # 'adequate' label stored in engine_scores, the 40 must NOT flip to
+    # 'watch' (needs >= boundary + margin = 44) -- the first test where
+    # prev_label() actually returns a value instead of None
+    wgi = ["wgi_government_effectiveness", "wgi_rule_of_law", "wgi_control_corruption",
+           "wgi_political_stability", "wgi_regulatory_quality"]
+    rows = []
+    for rank, iso in enumerate(["USA", "GBR", "DEU", "FRA", "JPN"], start=1):
+        for ind in wgi:
+            rows.append(_row(dt.date(2026, 12, 31), iso, ind, float(rank)))
+    con = get_conn()
+    upsert(con, "macro_panel", pd.DataFrame(rows))
+    con.execute(
+        "INSERT INTO engine_scores VALUES ('DEU', DATE '2025-12-31', "
+        "'political_execution', 38.0, 'adequate', 'full', 'high', 5, 5, '{}', now())")
+    con.commit()
+    con.close()
+
+    run_dalio_v2(engines=["political_execution"], ref_year=2026)
+
+    con = get_conn(read_only=True)
+    got = dict(con.execute(
+        "SELECT country_iso3, label FROM engine_scores "
+        "WHERE engine = 'political_execution' AND ref_date = DATE '2026-12-31' "
+        "AND country_iso3 IN ('DEU', 'FRA')").fetchall())
+    con.close()
+    assert got["DEU"] == "adequate"     # held by hysteresis at score 40
+    assert got["FRA"] == "adequate"     # plain assignment (risk 20 -> idx 1... sanity anchor)

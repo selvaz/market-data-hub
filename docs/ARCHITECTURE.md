@@ -111,7 +111,7 @@ market_data_hub/
 │   ├── yahoo.py             yahoo_batch(), effective_start(), live prices
 │   ├── binance.py           fetch_klines() paginated OHLCV
 │   ├── fred.py              fetch_fred() API-key-or-CSV
-│   ├── worldbank.py         fetch_worldbank() WDI/WGI/IDS per indicator×country
+│   ├── worldbank.py         fetch_worldbank() WDI/WGI per indicator×country
 │   ├── imf.py               fetch_imf() WEO DataMapper (WAF-aware backoff)
 │   ├── imf_sdmx.py          IMF SDMX 3.0 (MFS/IIP/IRFCL/IIPCC), per-country loop
 │   ├── bis.py                BIS SDMX v2 (credit gap, DSR, policy rate, REER), wildcard
@@ -153,7 +153,7 @@ market_data_hub/
 └── config/
     ├── tickers.yaml         111 Yahoo symbols (symbol/asset_class/area/priority)
     ├── macro_series.yaml    77 FRED series (symbol/country/name/priority)
-    ├── macro_panel.yaml     83 cross-country indicators (WB/WDI+WGI+IDS, IMF/WEO+SDMX, BIS, ECB)
+    ├── macro_panel.yaml     83 cross-country indicators (WB/WDI+WGI, IMF/WEO+SDMX, BIS, ECB)
     ├── countries.yaml       64 countries (iso3/iso2/wb/imf)
     └── settings.yaml        db_path, backfill dates, parallelism, FRED key, crypto, dalio_v2 thresholds/weights
 
