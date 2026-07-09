@@ -86,11 +86,12 @@ def to_csv(df: pd.DataFrame, out_path: Path) -> Path:
 
 
 _STYLE = """
-:root{--blue:#1d4ed8;--ink:#1a1a2e;--mut:#64748b;--bg:#f8fafc;--card:#fff;--bd:#e2e8f0}
+:root{--blue:#1d4ed8;--ink:#1a1a2e;--mut:#52606d;--bg:#f8fafc;--card:#fff;--bd:#e2e8f0;color-scheme:light}
 *{box-sizing:border-box}
 body{font-family:-apple-system,Segoe UI,Arial,sans-serif;color:var(--ink);margin:0;background:var(--bg);font-size:14px}
 header{background:linear-gradient(120deg,#1e3a8a,#1d4ed8);color:#fff;padding:18px 24px}
-header h1{margin:0;font-size:20px} header p{margin:4px 0 0;opacity:.85;font-size:12px}
+header h1{margin:0;font-size:20px;color:#fff}
+header p{margin:4px 0 0;font-size:12.5px;color:#e8edfc}
 main{max-width:1080px;margin:0 auto;padding:20px}
 h2{font-size:16px;color:var(--blue);border-bottom:1px solid var(--bd);padding-bottom:6px;margin-top:26px}
 table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0}
@@ -117,6 +118,7 @@ details{margin:4px 0 14px 218px} details summary{cursor:pointer;font-size:11px;c
 _HEADER_TMPL = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
 <title>Dalio v2 - engine scores ({ref_date})</title>
 <style>{style}</style></head><body>
 <header><h1>Dalio v2 &mdash; country risk engines</h1>
