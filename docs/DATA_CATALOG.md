@@ -6,7 +6,7 @@
 > *query* this catalogue programmatically (by asset class, area, sector, pillar)
 > and pull analysis-ready series, see [EXTRACTION.md](EXTRACTION.md).
 
-Totals: **111 Yahoo symbols** + **45 FRED series** + **6 crypto × 3 timeframes**.
+Totals: **111 Yahoo symbols** + **77 FRED series** + **6 crypto × 3 timeframes**.
 
 Legend — *Stalled-after* is the freshness threshold from the coverage engine:
 beyond it a series is flagged `stalled`. *Typical lag* is how old the newest
@@ -268,6 +268,17 @@ point normally is on a healthy day.
 | EUNNGDP | GDP (EUR/ECU series, nominal) | quarterly |
 | LRHUTTTTEZM156S | Harmonised Unemployment Rate (Total, monthly) | monthly |
 
+### Cross-country 10Y government bond yields (OECD long-term rates via FRED) — monthly
+
+32 single FRED series (one per country, like `DGS10`), id pattern
+`IRLTLT01{ISO2}M156N`. Stored in `macro_series` with `country` = **ISO3** so the
+`v_macro_panel_ext` view can remap them into panel shape (`indicator_id =
+bond_yield_10y`) for the Dalio layer. Countries (32, fresh through 2026):
+USA, JPN, DEU, GBR, FRA, ITA, CAN, KOR, AUS, MEX, ZAF, CHE, NLD, SWE, NOR, DNK,
+FIN, BEL, AUT, IRL, PRT, ESP, GRC, NZL, ISR, LUX, POL, CZE, HUN, SVK, SVN, CHL.
+*(RU exists on FRED but stalls in 2018 under sanctions → excluded; the ~30 other
+panel countries have no OECD long-rate series and stay uncovered.)*
+
 ---
 
 ## 4. Update-lag summary by group
@@ -294,8 +305,11 @@ provider APIs (see `validate_macro_panel.py` / `macro_panel_validation.csv`).
 
 - **Table:** `macro_panel` · **Frequency:** annual (A) · **Backfill start:** 2000
 - **Typical lag:** 3–18 months (WDI/WEO/WGI) · **Stalled-after:** 400 days
-- **Sources:** World Bank REST (WDI db, WGI db) + IMF DataMapper (WEO) + BIS SDMX (DSR, credit-gap, policy rate)
+- **Sources:** World Bank REST (WDI db, WGI db) + IMF DataMapper (WEO + Fiscal Monitor `ie`/`rltir` + Global Debt Database `NFC_LS`) + BIS SDMX (DSR, credit-gap, policy rate, REER) + ECB Data Portal SDMX (MIR cost-of-borrowing)
 - **Read API:** `reader.read_macro_panel(indicators, countries, wide=…)`
+- **Dalio read layer:** the `v_macro_panel_ext` view = `macro_panel` **+** single-country
+  FRED series remapped into panel shape (currently the 10Y bond yield). `dalio.py`
+  reads this view so cross-country FRED inputs are visible without moving storage.
 - **Extra metadata per row:** `pillar`, `orientation` (+1 healthier / −1 worse /
   0), `provider_dataset`, `provider_code`, `unit`
 
@@ -303,7 +317,7 @@ provider APIs (see `validate_macro_panel.py` / `macro_panel_validation.csv`).
 ISR, SGP, HKG, …) + major EM (THA, MYS, PHL, VNM, PAK, BGD, EGY, NGA, COL, CHL,
 PER, UKR, ARE, QAT, KWT, …).
 
-**Indicator catalogue (69, by pillar):**
+**Indicator catalogue (83, by pillar):**
 
 | Pillar | Count | Indicators (source/dataset · provider code; fb = fallback) |
 |--------|-------|------------------------------------------------------------|
@@ -315,6 +329,8 @@ PER, UKR, ARE, QAT, KWT, …).
 | banking | 2 | npl_ratio (WB/WDI FB.AST.NPER.ZS), bank_capital_ratio (WB/WDI FB.BNK.CAPA.ZS) |
 | governance | 6 | wgi_voice_accountability (WB/WGI GOV_WGI_VA.EST), wgi_political_stability (WB/WGI GOV_WGI_PV.EST), wgi_government_effectiveness (WB/WGI GOV_WGI_GE.EST), wgi_regulatory_quality (WB/WGI GOV_WGI_RQ.EST), wgi_rule_of_law (WB/WGI GOV_WGI_RL.EST), wgi_control_corruption (WB/WGI GOV_WGI_CC.EST) |
 | geopolitical | 7 | trade_openness (WB/WDI NE.TRD.GNFS.ZS), natural_resource_rents_gdp (WB/WDI NY.GDP.TOTL.RT.ZS), military_expenditure_gdp (WB/WDI MS.MIL.XPND.GD.ZS), gdp_ppp_world_share (IMF/WEO PPPSH), food_exports_share (WB/WDI TX.VAL.FOOD.ZS.UN), fuel_exports_share (WB/WDI TX.VAL.FUEL.ZS.UN), metals_exports_share (WB/WDI TX.VAL.MMTL.ZS.UN) |
+| social *(weight 5)* | 1 | gini (WB `SI.POV.GINI`, ~59) — income inequality, Dalio's internal-conflict / changing-world-order dimension. **WIRED into the composite** (the one genuinely new dimension; not double-counted by any existing pillar). |
+| markets *(unweighted)* | 10 | reer_broad (BIS/WS_EER, ~56), interest_on_debt_gdp (IMF/FM `ie`, ~60), real_long_rate (IMF/FM `rltir`, ~49), corporate_debt_gdp (IMF/GDD `NFC_LS`, ~58), ecb_cost_borrow_nfc + ecb_cost_borrow_house (ECB/MIR, ~21 EU), private_debt_gdp (IMF/GDD `PVD_LS`, 64 — raw material for a computed credit gap), household_debt_gdp (IMF/GDD `HH_LS`, ~58), govt_net_debt_gdp (IMF/WEO `GGXWDN`, ~47), imf_policy_rate (IMF SDMX `MFS166`, EM the BIS misses), iip_net_position (IMF SDMX `IIP NETAL_P.NIIP`, net external position, USD), ext_debt_nonres_usd + fx_debt_usd (IMF SDMX `IIPCC DLNRES_DIC`, ~19). Plus view-only `bond_yield_10y` (FRED), `implied_interest_rate`, and **`fx_debt_share`** (IIPCC `FC/_T×100` — Dalio's foreign-currency-debt signal: USA 8, IT 5 vs TUR 94, HRV 94; supersedes the manual Arslanalp-Tsuda ingest for the ~19 reporters). `markets` is unweighted (`markets: 0`) — redundant with existing pillars, so kept out of the composite to avoid double-counting. **NOTE:** `implied_interest_rate` IS consumed by `dalio.py` as the cost-of-debt (`nom_rate`), replacing the policy rate in the beautiful-vs-ugly / r-vs-g test. Two more are exposed **only through the `v_macro_panel_ext` view**, not stored as panel rows: `bond_yield_10y` (bridged from FRED IRLTLT01*) and `implied_interest_rate` (derived: `interest_on_debt_gdp / gross_debt × 100`, ~60). The `markets` pillar is intentionally **not** in the composite weights (`markets: 0`), so these staged inputs do not change any composite/phase until explicitly wired into the methodology. |
 
 **Frequency / lag of this panel:** mostly **annual** (WDI/WEO/WGI — lag 3–18
 months, stalled-after 400 d) and **quarterly** (BIS DSR / credit gap —

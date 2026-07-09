@@ -25,7 +25,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent))
 
 from market_data_hub.config_loader import get_countries, get_macro_panel_specs  # noqa: E402
-from market_data_hub.sources import worldbank as wb, imf as im, bis as bs  # noqa: E402
+from market_data_hub.sources import worldbank as wb, imf as im, bis as bs, ecb as ec, imf_sdmx as ims  # noqa: E402
 
 PROBE_DEFAULT = ["USA", "ITA", "BRA", "IND", "CHN"]
 
@@ -39,6 +39,10 @@ def _fetch(spec, countries):
         return im.fetch_imf(spec, countries, start_year=2015, retries=3)
     if spec["source"] == "BIS":
         return bs.fetch_bis(spec, countries, start_year=2015, retries=3)
+    if spec["source"] == "ECB":
+        return ec.fetch_ecb(spec, countries, start_year=2015, retries=3)
+    if spec["source"] == "IMF_SDMX":
+        return ims.fetch_imf_sdmx(spec, countries, start_year=2015, retries=3)
     return wb.fetch_worldbank(spec, countries, start_year=2015, retries=2)
 
 

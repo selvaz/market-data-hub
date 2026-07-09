@@ -262,7 +262,7 @@ const QUAD = {
  Q3:["#dc2626","Growth down / Inflation up","Stagflation: gold, inflation hedges, defensives"],
  Q4:["#2563eb","Growth down / Inflation down","Nominal long-duration bonds, cash"]
 };
-const PILLAR_W={growth:20,debt_cycle:20,liquidity:15,external:15,sovereign:10,banking:10,governance:5,geopolitical:5};
+const PILLAR_W={growth:20,debt_cycle:20,liquidity:15,external:15,sovereign:10,banking:10,governance:5,geopolitical:5,social:5};
 const ENC={strong_exporter:["#065f46","oil: strong exporter"],exporter:["#16a34a","oil: exporter"],
  neutral:["#64748b","oil: neutral"],importer:["#ca8a04","oil: importer"],strong_importer:["#b91c1c","oil: strong importer"]};
 const CAVEAT={

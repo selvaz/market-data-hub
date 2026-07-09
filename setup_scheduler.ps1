@@ -21,6 +21,7 @@ $root = $Root
 # Use the Spyder Python environment that is already configured for this workstation.
 $python = $Python
 $wrapper = Join-Path $root "run_daily_with_telegram.ps1"
+$regimeWrapper = Join-Path $root "run_regime_daily_with_telegram.ps1"
 $logDir = Join-Path $root "logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
@@ -30,7 +31,7 @@ $tasks = @(
 )
 
 if ($Remove) {
-    foreach ($name in @("MarketData_EU18", "MarketData_USClose", "MarketDataEOD", "MarketDataWeekend", "MarketDataLive")) {
+    foreach ($name in @("MarketData_EU18", "MarketData_USClose", "MarketDataEOD", "MarketDataWeekend", "MarketDataLive", "MarketData_HMMRegime")) {
         if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
             Unregister-ScheduledTask -TaskName $name -Confirm:$false
             Write-Host "Removed task $name"
@@ -40,10 +41,10 @@ if ($Remove) {
     return
 }
 
-function New-MdTask($name, $time, $runDailyArgs, $trigger) {
+function New-MdTask($name, $time, $runDailyArgs, $trigger, $wrapperPath = $wrapper, $argName = "RunDailyArgs") {
     $logFile = Join-Path $logDir "$name.log"
     $argText = ($runDailyArgs | ForEach-Object { '"' + $_ + '"' }) -join ","
-    $psArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$wrapper`" -RunDailyArgs $argText >> `"$logFile`" 2>&1"
+    $psArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$wrapperPath`" -$argName $argText >> `"$logFile`" 2>&1"
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $psArgs
     $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
         -DontStopOnIdleEnd -ExecutionTimeLimit (New-TimeSpan -Hours 4)
@@ -52,7 +53,7 @@ function New-MdTask($name, $time, $runDailyArgs, $trigger) {
     }
     Register-ScheduledTask -TaskName $name -Action $action -Trigger $trigger `
         -Settings $settings -Description "market_data_hub: daily refresh + Telegram report" | Out-Null
-    Write-Host "Created task '$name' ($time) -> run_daily_with_telegram.ps1 $($runDailyArgs -join ' ')"
+    Write-Host "Created task '$name' ($time) -> $(Split-Path -Leaf $wrapperPath) $($runDailyArgs -join ' ')"
 }
 
 # Machine time zone is expected to be Pacific on this workstation:
@@ -63,6 +64,13 @@ New-MdTask "MarketData_EU18" "09:00 daily" @("--report") `
 # 13:15 Pacific is ~15 minutes after the 16:00 New York cash close.
 New-MdTask "MarketData_USClose" "13:15 Mon-Fri" @("--report") `
     (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At "13:15")
+
+# 13:45 Pacific: 30 minutes after MarketData_USClose, once that day's prices have
+# landed. Runs as its own independent scheduled task (separate from the download
+# pipeline), via its own wrapper script.
+New-MdTask "MarketData_HMMRegime" "13:45 Mon-Fri" @("--send") `
+    (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At "13:45") `
+    $regimeWrapper "RunRegimeArgs"
 
 Write-Host ""
 Write-Host "Tasks created. Verify with: Get-ScheduledTask -TaskName MarketData*"

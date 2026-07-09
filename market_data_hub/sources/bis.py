@@ -97,7 +97,11 @@ def fetch_bis(spec: Dict, countries: List[Dict], *,
 
     # wildcard key: empty country position = all countries
     wild_key = key_tpl.replace("{iso2}", "")
-    url = f"{_BASE}/{dataset}/1.0/{wild_key}?format=csv"
+    # startPeriod bounds the response server-side. Without it a voluminous
+    # monthly dataflow (e.g. WS_EER, monthly since 1994 x 64 economies) is
+    # truncated by the API to an alphabetical slice of countries; passing the
+    # same start_year we already filter on client-side returns every country.
+    url = f"{_BASE}/{dataset}/1.0/{wild_key}?startPeriod={start_year}&format=csv"
     try:
         text = _get_csv(url, timeout, retries, base_sleep)
     except Exception:
