@@ -21,6 +21,7 @@ from datetime import date, datetime, timezone
 from typing import Dict, List, Optional
 
 import duckdb
+import numpy as np
 import pandas as pd
 
 from lazyhmm import MSRegimeEngine, RegimeRun
@@ -76,6 +77,11 @@ def fit_symbol_regime(symbol: str, *, db_path: Optional[str] = None,
     return engine.fit(df, model="panel", dropna="all")
 
 
+def _json_array(values) -> str:
+    """JSON-encode a NumPy array (or nested list of NumPy scalars) as native lists."""
+    return json.dumps(np.asarray(values).tolist())
+
+
 def _existing_count(con: duckdb.DuckDBPyConnection, symbol: str) -> int:
     row = con.execute(
         "SELECT count(*) FROM hmm_regime_estimates WHERE symbol = ?", [symbol]
@@ -112,10 +118,7 @@ def write_regime_run(con: duckdb.DuckDBPyConnection, symbol: str, run: RegimeRun
     window = src if is_first_run else src.tail(retro_days)
 
     con.register("_hmm_src", window)
-    n0 = con.execute(
-        "SELECT count(*) FROM hmm_regime_estimates WHERE symbol = ?", [symbol]
-    ).fetchone()[0]
-    con.execute(
+    inserted = con.execute(
         """
         INSERT OR REPLACE INTO hmm_regime_estimates
             (symbol, trading_date, estimation_date, n_states, state,
@@ -135,23 +138,24 @@ def write_regime_run(con: duckdb.DuckDBPyConnection, symbol: str, run: RegimeRun
            OR l.state IS DISTINCT FROM s.state
            OR l.n_states IS DISTINCT FROM s.n_states
            OR l.is_high_vol IS DISTINCT FROM s.is_high_vol
+        RETURNING trading_date
         """,
         [symbol, str(estimation_date)],
-    )
-    n1 = con.execute(
-        "SELECT count(*) FROM hmm_regime_estimates WHERE symbol = ?", [symbol]
-    ).fetchone()[0]
+    ).fetchall()
     con.unregister("_hmm_src")
 
-    rows_written = int(n1 - n0)
     # The newest trading_date always writes (it is new, not a revision); any
-    # further rows written are genuine retroactive revisions.
-    revised_count = max(0, rows_written - 1) if not is_first_run else 0
+    # other trading_date the INSERT actually touched is a genuine retroactive
+    # revision. Read those dates back from the INSERT itself instead of
+    # guessing the last N dates in the window, since a refit can revise
+    # non-contiguous dates.
     revised_dates: List[str] = []
-    if revised_count:
-        revised_dates = [
-            str(d) for d in window["trading_date"].tolist()[:-1]
-        ][-retro_days:][-revised_count:]
+    if not is_first_run and inserted:
+        newest_date = str(window["trading_date"].iloc[-1])
+        revised_dates = sorted(
+            str(row[0]) for row in inserted if str(row[0]) != newest_date
+        )
+    revised_count = len(revised_dates)
 
     cur_state = int(state.iloc[-1])
     changed_today = len(state) > 1 and int(state.iloc[-1]) != int(state.iloc[-2])
@@ -166,7 +170,7 @@ def write_regime_run(con: duckdb.DuckDBPyConnection, symbol: str, run: RegimeRun
         """,
         [symbol, str(estimation_date), S, "bic", float(m["bic"]), float(m["loglik"]),
          panel.index.min().date(), panel.index.max().date(), int(len(panel)),
-         json.dumps(m["transmat_"]), json.dumps(m["means_"]), json.dumps(m["covars_"]),
+         _json_array(m["transmat_"]), _json_array(m["means_"]), _json_array(m["covars_"]),
          json.dumps(labels), float(fit_seconds), datetime.now(timezone.utc)],
     )
 
