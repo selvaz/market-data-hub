@@ -30,6 +30,7 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
+import duckdb
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -134,10 +135,18 @@ def collect(con) -> dict:
     # failing the whole v1 report.
     v2_by = {}
     try:
+        # Latest ref_date PER ENGINE, not globally: a partial rerun of one
+        # engine in a new year must not make the other engines' (older but
+        # still latest) rows vanish from the dashboard.
         v2 = con.execute(
-            "SELECT country_iso3, engine, score, label, coverage_tier, confidence, "
-            "n_components, n_expected, components_json FROM engine_scores WHERE ref_date = "
-            "(SELECT max(ref_date) FROM engine_scores)").fetch_df()
+            "SELECT e.country_iso3, e.engine, e.score, e.label, e.coverage_tier, "
+            "e.confidence, e.n_components, e.n_expected, e.components_json "
+            "FROM engine_scores e JOIN (SELECT engine, max(ref_date) AS ref_date "
+            "FROM engine_scores GROUP BY engine) m "
+            "ON e.engine = m.engine AND e.ref_date = m.ref_date").fetch_df()
+    except duckdb.CatalogException:
+        v2 = None   # engine_scores doesn't exist yet: v2 never run on this DB
+    if v2 is not None:
         for _, r in v2.iterrows():
             try:
                 comps = json.loads(r["components_json"]).get("components", {})
@@ -146,13 +155,12 @@ def collect(con) -> dict:
             v2_by.setdefault(r["country_iso3"], {})[r["engine"]] = {
                 "score": None if pd.isna(r["score"]) else round(float(r["score"]), 2),
                 "label": None if pd.isna(r["label"]) else r["label"],
-                "coverage_tier": r["coverage_tier"],
-                "confidence": r["confidence"],
-                "n_components": int(r["n_components"]), "n_expected": int(r["n_expected"]),
+                "coverage_tier": None if pd.isna(r["coverage_tier"]) else r["coverage_tier"],
+                "confidence": None if pd.isna(r["confidence"]) else r["confidence"],
+                "n_components": None if pd.isna(r["n_components"]) else int(r["n_components"]),
+                "n_expected": None if pd.isna(r["n_expected"]) else int(r["n_expected"]),
                 "components": comps,
             }
-    except Exception:
-        pass
 
     h = con.execute("SELECT max(date) FROM macro_panel WHERE provider_dataset='WEO'").fetchone()[0]
     weo_horizon = pd.Timestamp(h).year if h is not None else None

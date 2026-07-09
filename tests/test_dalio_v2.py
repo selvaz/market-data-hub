@@ -32,9 +32,25 @@ def test_score_threshold_interpolates_and_flips_orientation():
     assert scoring.score_threshold(120, 90, 110, 130) == 75.0        # s..c interpolation
     assert scoring.score_threshold(200, 90, 110, 130) == 100.0       # above critical
     assert scoring.score_threshold(None, 90, 110, 130) is None
-    # orientation=-1: a LOW value is worse (e.g. primary balance)
-    assert scoring.score_threshold(-8, 2, 4, 6, orientation=-1) == 100.0
-    assert scoring.score_threshold(8, 2, 4, 6, orientation=-1) == 0.0
+    # orientation=-1: a LOW value is worse, so raw thresholds DESCEND
+    # (watch is always the mildest cut point), e.g. reserves_months [4, 3, 2]
+    assert scoring.score_threshold(5.0, 4, 3, 2, orientation=-1) == 0.0
+    assert scoring.score_threshold(3.5, 4, 3, 2, orientation=-1) == 25.0
+    assert scoring.score_threshold(3.0, 4, 3, 2, orientation=-1) == 50.0
+    assert scoring.score_threshold(2.5, 4, 3, 2, orientation=-1) == 75.0
+    assert scoring.score_threshold(1.0, 4, 3, 2, orientation=-1) == 100.0
+
+
+def test_score_threshold_rejects_misordered_thresholds():
+    # ascending thresholds under orientation=-1 used to silently degenerate
+    # into a 0/100 cliff at `watch` (stress/critical ignored); now they raise
+    import pytest
+    with pytest.raises(ValueError):
+        scoring.score_threshold(-8, 2, 4, 6, orientation=-1)
+    with pytest.raises(ValueError):
+        scoring.score_threshold(50, 130, 110, 90)      # descending with +1
+    with pytest.raises(ValueError):
+        scoring.score_threshold(50, 90, 90, 130)       # degenerate (equal)
 
 
 def test_weighted_average_drops_missing_and_reports_coverage():
@@ -48,6 +64,19 @@ def test_weighted_average_drops_missing_and_reports_coverage():
     assert scoring.coverage_tier(1, 3) == "insufficient"
     assert scoring.confidence_for("full") == "high"
     assert scoring.confidence_for("insufficient") == "low"
+
+
+def test_weighted_average_excludes_zero_weight_components_from_coverage():
+    # a present component whose weight key is missing/zero (e.g. a typo'd
+    # settings.yaml key) contributes nothing to the score, so it must not
+    # count as coverage either
+    components = {"a": 80.0, "b": 40.0}
+    score, n_avail, n_exp = scoring.weighted_average(components, {"a": 1})
+    assert score == 80.0 and n_avail == 1 and n_exp == 2
+    # all weights unknown -> no score AND no coverage (tier will be
+    # insufficient, never the contradictory score=None/tier=full row)
+    score, n_avail, n_exp = scoring.weighted_average(components, {})
+    assert score is None and n_avail == 0 and n_exp == 2
 
 
 def test_bucket_with_hysteresis_smooths_single_boundary_flutter():
@@ -455,3 +484,77 @@ def test_run_dalio_v2_empty_panel_returns_zero_counts(tmp_db):
     assert summary == {"sovereign_solvency": 0, "political_execution": 0,
                        "private_credit": 0, "external_constraint": 0,
                        "funding_liquidity": 0}
+
+
+def test_rerun_drops_stale_countries_and_is_idempotent(tmp_db):
+    # A country that produced a row in an earlier run and then drops out of
+    # the panel must NOT survive the re-run as a stale row (old score, old
+    # model_version) for the same (ref_date, engine).
+    con = get_conn()
+    _seed(con)                                       # USA / SGP / ARG
+    con.commit()
+    con.close()
+
+    run_dalio_v2(engines=["sovereign_solvency"], ref_year=2026)
+
+    con = get_conn()
+    con.execute("DELETE FROM macro_panel WHERE country_iso3 = 'ARG'")
+    con.commit()
+    con.close()
+
+    summary = run_dalio_v2(engines=["sovereign_solvency"], ref_year=2026)
+    assert summary == {"sovereign_solvency": 2}
+
+    con = get_conn(read_only=True)
+    left = [r[0] for r in con.execute(
+        "SELECT country_iso3 FROM engine_scores WHERE engine = 'sovereign_solvency' "
+        "ORDER BY country_iso3").fetchall()]
+    con.close()
+    assert left == ["SGP", "USA"]                    # ARG's stale row is gone
+
+    # and a plain re-run with unchanged data is idempotent
+    assert run_dalio_v2(engines=["sovereign_solvency"], ref_year=2026) == \
+        {"sovereign_solvency": 2}
+
+
+def test_prev_label_skips_null_label_gaps(tmp_db):
+    # hysteresis must survive a period of insufficient coverage: the last
+    # NON-NULL label is the anchor, not the most recent (possibly NULL) row
+    con = get_conn()
+    con.execute(
+        "INSERT INTO engine_scores VALUES "
+        "('USA', DATE '2024-12-31', 'sovereign_solvency', 41.0, 'watch', 'full', "
+        " 'high', 7, 7, '{}', now()), "
+        "('USA', DATE '2025-12-31', 'sovereign_solvency', NULL, NULL, 'insufficient', "
+        " 'low', 1, 7, '{}', now())")
+    assert scoring.prev_label(con, "USA", "sovereign_solvency",
+                              dt.date(2026, 12, 31)) == "watch"
+    con.close()
+
+
+def test_fx_overvaluation_ignores_post_ref_date_reer(tmp_db):
+    # REER is actual monthly data (no forecasts): a historical run must not
+    # anchor the overvaluation trend on observations after ref_date
+    rows = []
+    for y in range(2021, 2024):                      # flat REER through 2023
+        for m in range(1, 13):
+            rows.append(_row(dt.date(y, m, 28), "MEX", "reer_broad", 100.0))
+    for y in range(2024, 2027):                      # huge post-ref_date spike
+        for m in range(1, 13):
+            rows.append(_row(dt.date(y, m, 28), "MEX", "reer_broad", 200.0))
+    con = get_conn()
+    upsert(con, "macro_panel", pd.DataFrame(rows))
+    con.commit()
+    con.close()
+
+    run_dalio_v2(engines=["external_constraint"], ref_year=2023)
+
+    con = get_conn(read_only=True)
+    audit = json.loads(con.execute(
+        "SELECT components_json FROM engine_scores WHERE engine = 'external_constraint' "
+        "AND country_iso3 = 'MEX'").fetchone()[0])
+    con.close()
+    raw = audit["components"]["fx_overvaluation_pct"]["raw_value"]
+    # flat series through ref_date -> ~0% deviation; with the look-ahead bug
+    # the 2024-2026 spike dragged this to a large positive number
+    assert raw is not None and abs(raw) < 1.0

@@ -47,15 +47,21 @@ def score_threshold(value: Optional[float], watch: float, stress: float,
     three named thresholds: 0 at/below `watch`, 50 at `stress`, 100 at/above
     `critical`. orientation=-1 flips the direction (a LOW value is worse);
     pass the thresholds in the same order regardless of orientation (watch is
-    always the mildest cut point). Returns None if value is missing."""
+    always the mildest cut point — so for orientation=-1 the raw thresholds
+    are DESCENDING, e.g. reserves_months [4, 3, 2]). Thresholds that are not
+    strictly ordered after the flip raise: without this check the function
+    silently degenerates into a 0/100 cliff at `watch` and the other two
+    thresholds are ignored. Returns None if value is missing."""
     if value is None or pd.isna(value):
         return None
     if orientation >= 0:
         v, w, s, c = value, watch, stress, critical
     else:
         v, w, s, c = -value, -watch, -stress, -critical
-    if s == w or c == s:
-        return None  # degenerate thresholds
+    if not (w < s < c):
+        raise ValueError(
+            f"score_threshold: thresholds ({watch}, {stress}, {critical}) with "
+            f"orientation={orientation} are not strictly ordered mildest-to-worst")
     if v <= w:
         return 0.0
     if v <= s:
@@ -70,13 +76,18 @@ def weighted_average(components: Dict[str, Optional[float]],
     """Weighted average of the available (non-None) component scores. Missing
     components are simply dropped from the denominator (no silent
     redistribution beyond that) — caller reports n_available/n_expected via
-    the returned tuple so coverage_tier() can classify the row honestly."""
+    the returned tuple so coverage_tier() can classify the row honestly.
+    A component with zero/unknown weight is excluded from n_available too:
+    it contributes nothing to the score, so counting it as coverage would
+    let a weight-key typo in settings.yaml silently inflate the tier."""
     num = den = 0.0
     n_avail = 0
     for name, val in components.items():
         if val is None or pd.isna(val):
             continue
         w = weights.get(name, 0.0)
+        if w <= 0:
+            continue
         num += w * val
         den += w
         n_avail += 1
@@ -167,10 +178,14 @@ def git_short_sha() -> str:
 
 
 def prev_label(con, country_iso3: str, engine: str, before_date) -> Optional[str]:
-    """Last label assigned to (country, engine) strictly before `before_date`,
-    for bucket_with_hysteresis(). None if this is the first computation."""
+    """Last non-NULL label assigned to (country, engine) strictly before
+    `before_date`, for bucket_with_hysteresis(). NULL-label rows (periods of
+    insufficient coverage) are skipped, so hysteresis survives a data outage
+    instead of silently resetting to plain assignment. None if the pair has
+    never carried a label."""
     row = con.execute(
         "SELECT label FROM engine_scores WHERE country_iso3 = ? AND engine = ? "
-        "AND ref_date < ? ORDER BY ref_date DESC LIMIT 1",
+        "AND ref_date < ? AND label IS NOT NULL "
+        "ORDER BY ref_date DESC LIMIT 1",
         [country_iso3, engine, before_date]).fetchone()
     return row[0] if row else None
