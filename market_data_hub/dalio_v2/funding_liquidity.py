@@ -111,8 +111,12 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         short_term_reserves, strd_dt = fresh_latest(
             _latest(_first_avail(by_ind, _IND["short_term_debt_reserves"])), ref_ts, max_age)
         yield_series = by_ind.get(_IND["bond_yield_10y"])
-        yield_change = _yoy_level_change(yield_series)
-        _, yield_dt = fresh_latest(_latest(yield_series), ref_ts, max_age)
+        # the 12m change is only as current as the LATEST print: a series
+        # that stopped updating years ago still yields a numeric change
+        # (its last two prints stay 12-18 months apart forever), so gate on
+        # the latest observation's freshness, not just record its date
+        latest_yield, yield_dt = fresh_latest(_latest(yield_series), ref_ts, max_age)
+        yield_change = _yoy_level_change(yield_series) if latest_yield is not None else None
 
         raw_values = {
             "short_term_debt_reserves": None if pd.isna(short_term_reserves) else short_term_reserves,

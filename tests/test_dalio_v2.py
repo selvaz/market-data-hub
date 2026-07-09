@@ -652,3 +652,85 @@ def test_hysteresis_end_to_end_through_the_db(tmp_db):
     con.close()
     assert got["DEU"] == "adequate"     # held by hysteresis at score 40
     assert got["FRA"] == "adequate"     # plain assignment (risk 20 -> idx 1... sanity anchor)
+
+
+# ---------------------------------------------------------------------------
+# Codex review follow-ups (PR #24): the staleness gate must also cover
+# fallback lists and series-derived metrics, not only point reads
+# ---------------------------------------------------------------------------
+
+def test_stale_primary_does_not_shadow_fresh_fallback(tmp_db):
+    # gdp_growth_weo exists but is ancient; real_gdp_growth is current. The
+    # old behavior (_first_avail then freshness) dropped the component
+    # entirely; the fresh fallback must be used instead.
+    con = get_conn()
+    upsert(con, "macro_panel", pd.DataFrame([
+        _row(dt.date(2026, 12, 31), "USA", "public_debt_gdp", 50.0),
+        _row(dt.date(2026, 12, 31), "USA", "implied_interest_rate", 3.0),
+        _row(dt.date(2026, 12, 31), "USA", "inflation_avg_weo", 2.0),
+        _row(dt.date(2015, 12, 31), "USA", "gdp_growth_weo", -5.0),   # stale primary
+        _row(dt.date(2026, 12, 31), "USA", "real_gdp_growth", 3.0),   # fresh fallback
+    ]))
+    con.commit()
+    con.close()
+
+    run_dalio_v2(engines=["sovereign_solvency"], ref_year=2026)
+
+    con = get_conn(read_only=True)
+    audit = json.loads(con.execute(
+        "SELECT components_json FROM engine_scores WHERE engine = 'sovereign_solvency' "
+        "AND country_iso3 = 'USA'").fetchone()[0])
+    con.close()
+    rmg = audit["components"]["r_minus_g"]
+    # r_minus_g present and built on the FRESH +3% growth (g_nom ~ 5.06%,
+    # r-g ~ -2.06 -> below watch -> risk 0), not missing and not the stale -5%
+    assert rmg["raw_value"] is not None and rmg["raw_value"] < 0
+    assert rmg["score"] == 0.0
+
+
+def test_stale_yield_series_yields_no_12m_change(tmp_db):
+    # bond_yield_10y stopped printing in 2019: its last two prints are 12
+    # months apart, so _yoy_level_change alone returns a number -- but the
+    # engine must treat the whole metric as missing at ref 2026
+    rows = [_row(dt.date(2018, 6, 30), "MEX", "bond_yield_10y", 6.0),
+            _row(dt.date(2019, 6, 30), "MEX", "bond_yield_10y", 9.0),
+            _row(dt.date(2026, 12, 31), "MEX", "short_term_debt_reserves", 40.0)]
+    con = get_conn()
+    upsert(con, "macro_panel", pd.DataFrame(rows))
+    con.commit()
+    con.close()
+
+    run_dalio_v2(engines=["funding_liquidity"], ref_year=2026)
+
+    con = get_conn(read_only=True)
+    audit = json.loads(con.execute(
+        "SELECT components_json FROM engine_scores WHERE engine = 'funding_liquidity' "
+        "AND country_iso3 = 'MEX'").fetchone()[0])
+    con.close()
+    assert audit["components"]["yield_change_12m_pp"]["raw_value"] is None
+    assert "yield_change_12m_pp" in audit["missing_components"]
+
+
+def test_stale_private_debt_series_produces_no_derived_metrics(tmp_db):
+    # private_debt_gdp stopped updating in 2018: neither the detrend-proxy
+    # credit gap nor the ratio-growth leg of real_credit_growth may survive
+    # as the 2026 condition, even with a fresh GDP growth print available
+    rows = [_pc_row(dt.date(2009 + i, 12, 31), "VNM", "private_debt_gdp", 60.0 + i)
+            for i in range(10)]                                   # ends 2018
+    rows.append(_pc_row(dt.date(2026, 12, 31), "VNM", "gdp_growth_weo", 6.0))
+    rows.append(_pc_row(dt.date(2026, 12, 31), "VNM", "npl_ratio", 4.0))
+    con = get_conn()
+    upsert(con, "macro_panel", pd.DataFrame(rows))
+    con.commit()
+    con.close()
+
+    run_dalio_v2(engines=["private_credit"], ref_year=2026)
+
+    con = get_conn(read_only=True)
+    audit = json.loads(con.execute(
+        "SELECT components_json FROM engine_scores WHERE engine = 'private_credit' "
+        "AND country_iso3 = 'VNM'").fetchone()[0])
+    con.close()
+    assert audit["components"]["credit_gap"]["raw_value"] is None
+    assert audit["components"]["real_credit_growth"]["raw_value"] is None
+    assert {"credit_gap", "real_credit_growth"} <= set(audit["missing_components"])
