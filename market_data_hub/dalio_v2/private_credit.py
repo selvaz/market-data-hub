@@ -1,0 +1,171 @@
+# -*- coding: utf-8 -*-
+"""
+private_credit.py — Dalio v2 Engine 3: Private Credit Cycle.
+
+Separates the private-credit cycle from sovereign solvency: a country can
+have low public debt and a private credit bubble, or high public debt and a
+weak private credit cycle — these must not be conflated. See
+docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md Fase 2.
+
+credit_gap uses BIS bis_credit_gap where available (~43/64 countries per the
+2026-07-08 coverage audit); for the other ~21 it falls back to a linear-
+detrend proxy on private_debt_gdp (IMF GDD, 64/64) — deviation of the latest
+value from a 10y OLS trend, in the same pp-of-GDP units as the BIS gap, but
+structurally noisier (no HP filter, no seasonal handling). Whenever the
+proxy branch is used, coverage_tier is capped so this is never presented as
+equivalent to the real BIS series (see the plan's coverage_tier discipline).
+
+private_dsr has NO proxy: BIS is the only source, so it is simply missing
+(None) for the ~32/64 countries without it, dropped from the weighted
+average like any other missing component.
+
+npl_ratio thresholds ([3, 6, 10]) are NOT from the source proposal (it gives
+none for this indicator) — assumed IMF-typical stress benchmarks, flagged
+here and in components_json's "assumed" thresholds are not otherwise marked
+per-component; this docstring is the flag.
+"""
+from __future__ import annotations
+
+import json
+from datetime import datetime, timezone
+from typing import Optional
+
+import duckdb
+import numpy as np
+import pandas as pd
+
+from market_data_hub.config_loader import get_settings
+from market_data_hub.dalio import _first_avail, _latest, _pct_in_range
+from market_data_hub.dalio_v2.scoring import (
+    bucket_with_hysteresis, confidence_for, coverage_tier, git_short_sha,
+    prev_label, score_threshold, weighted_average,
+)
+
+ENGINE = "private_credit"
+
+_IND = {
+    "credit_gap_bis": "bis_credit_gap",
+    "dsr": "bis_dsr_private",
+    "private_debt": "private_debt_gdp",
+    "npl": "npl_ratio",
+}
+
+_COLUMNS = ["country_iso3", "ref_date", "engine", "score", "label", "coverage_tier",
+           "confidence", "n_components", "n_expected", "components_json", "computed_at"]
+
+_MIN_TREND_POINTS = 5
+
+
+def _linear_detrend_gap(s: Optional[pd.DataFrame], window_years: int = 10) -> Optional[float]:
+    """Proxy credit-to-GDP gap: latest value minus a linear (OLS) trend fit
+    over the trailing `window_years`, in the series' own units (pp of GDP).
+    A crude stand-in for the BIS one-sided HP-filter gap — noisier, no
+    seasonal/cycle handling, but usable where BIS coverage is absent."""
+    if s is None or s.empty:
+        return None
+    d = s.sort_values("date").copy()
+    d["y"] = pd.to_datetime(d["date"]).dt.year
+    d = d.dropna(subset=["value"]).tail(window_years)
+    if len(d) < _MIN_TREND_POINTS:
+        return None
+    x = d["y"].values - d["y"].values.min()
+    slope, intercept = np.polyfit(x, d["value"].values, 1)
+    trend_latest = slope * x[-1] + intercept
+    return float(d["value"].values[-1] - trend_latest)
+
+
+def _yoy_pct_change(s: Optional[pd.DataFrame]) -> Optional[float]:
+    """YoY % change of the latest two annual observations."""
+    if s is None or len(s) < 2:
+        return None
+    d = s.sort_values("date")
+    prev, cur = d["value"].iloc[-2], d["value"].iloc[-1]
+    if pd.isna(prev) or pd.isna(cur) or prev == 0:
+        return None
+    return float((cur / prev - 1.0) * 100.0)
+
+
+def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
+           ) -> pd.DataFrame:
+    settings = get_settings().get("dalio_v2", {})
+    cfg = cfg or settings.get("private_credit", {})
+    th = cfg.get("thresholds", {})
+    weights = cfg.get("weights", {})
+    bucket_thresholds = cfg.get("bucket_thresholds", [20, 40, 60, 80])
+    bucket_labels = cfg.get("bucket_labels", ["low", "moderate", "elevated", "high", "bubble"])
+    margin_pct = settings.get("hysteresis_margin_pct", 0.10)
+
+    panel = con.execute(
+        "SELECT date, country_iso3, indicator_id, value FROM v_macro_panel_ext "
+        "WHERE value IS NOT NULL").fetch_df()
+    if panel.empty:
+        return pd.DataFrame(columns=_COLUMNS)
+    panel["date"] = pd.to_datetime(panel["date"])
+    ref_ts = pd.Timestamp(ref_date)
+
+    sha = git_short_sha()
+    now = datetime.now(timezone.utc)
+    rows = []
+    for country, cdf_full in panel.groupby("country_iso3"):
+        cdf = cdf_full[cdf_full["date"] <= ref_ts]
+        if cdf.empty:
+            continue
+        by_ind = {i: g[["date", "value"]] for i, g in cdf.groupby("indicator_id")}
+
+        credit_gap_bis, _ = _latest(_first_avail(by_ind, _IND["credit_gap_bis"]))
+        used_proxy = pd.isna(credit_gap_bis)
+        if used_proxy:
+            credit_gap = _linear_detrend_gap(by_ind.get(_IND["private_debt"]))
+        else:
+            credit_gap = credit_gap_bis
+
+        s_dsr = _first_avail(by_ind, _IND["dsr"])
+        dsr_pct = _pct_in_range(s_dsr)          # [0,1] or nan
+        dsr_pct = None if pd.isna(dsr_pct) else dsr_pct * 100.0
+
+        real_credit_growth = _yoy_pct_change(by_ind.get(_IND["private_debt"]))
+        npl, _ = _latest(_first_avail(by_ind, _IND["npl"]))
+
+        raw_values = {
+            "credit_gap": credit_gap, "private_dsr": dsr_pct,
+            "real_credit_growth": real_credit_growth, "real_house_price_gap": None,
+            "npl_ratio": None if pd.isna(npl) else npl,
+        }
+        components = {
+            "credit_gap": None if credit_gap is None else
+                score_threshold(credit_gap, *th.get("credit_gap", [2, 5, 10])),
+            "private_dsr": None if dsr_pct is None else
+                score_threshold(dsr_pct, *th.get("private_dsr_pct", [75, 90, 95])),
+            "real_credit_growth": None if real_credit_growth is None else
+                score_threshold(real_credit_growth, *th.get("real_credit_growth", [5, 8, 12])),
+            "real_house_price_gap": None,   # not wired yet, always missing
+            "npl_ratio": None if pd.isna(npl) else
+                score_threshold(npl, *th.get("npl_ratio", [3, 6, 10])),
+        }
+        score, n_avail, n_exp = weighted_average(components, weights)
+        # a proxy credit_gap (no BIS series at all for this country) can never
+        # count as 'full' coverage even if every other component is present --
+        # the single most important input is structurally weaker here.
+        tier = coverage_tier(n_avail, n_exp)
+        if used_proxy and credit_gap is not None and tier == "full":
+            tier = "proxy"
+        conf = confidence_for(tier)
+        prev = prev_label(con, country, ENGINE, ref_date)
+        label = bucket_with_hysteresis(score, bucket_thresholds, bucket_labels, prev, margin_pct)
+
+        audit = {
+            "model_version": sha, "ref_date": str(ref_date), "asof": None,
+            "credit_gap_source": "proxy(private_debt_gdp linear detrend)" if used_proxy else "bis",
+            "components": {
+                k: {"raw_value": None if raw_values[k] is None else round(float(raw_values[k]), 4),
+                    "score": components[k], "weight": weights.get(k, 0)}
+                for k in components
+            },
+            "missing_components": [k for k, v in components.items() if v is None],
+            "coverage_tier": tier, "vintage_safe": False,
+        }
+        rows.append((country, ref_date, ENGINE,
+                    None if score is None else round(score, 2), label, tier, conf,
+                    n_avail, n_exp, json.dumps(audit), now))
+
+    return pd.DataFrame(rows, columns=_COLUMNS)

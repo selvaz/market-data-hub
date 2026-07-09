@@ -92,7 +92,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         audit = {
             "model_version": sha, "ref_date": str(ref_date), "asof": None,
             "components": {
-                k: {"wgi_raw": raw_values[k], "risk_percentile": components[k],
+                k: {"raw_value": raw_values[k], "score": components[k],
                     "weight": weights.get(k, 0)}
                 for k in _WGI
             },

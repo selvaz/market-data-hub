@@ -130,7 +130,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "model_version": sha, "ref_date": str(ref_date), "asof": None,
             "income_group": dev.get(country, "EM"),
             "components": {
-                k: {"value": None if pd.isna(raw_values[k]) else round(float(raw_values[k]), 4),
+                k: {"raw_value": None if pd.isna(raw_values[k]) else round(float(raw_values[k]), 4),
                     "score": components[k], "weight": weights.get(k, 0)}
                 for k in components
             },

@@ -158,3 +158,69 @@ dalio_v2:
     bucket_thresholds: [20, 40, 60, 80]   # strong/adequate/watch/weak/impaired
     bucket_labels: [strong, adequate, watch, weak, impaired]
 
+  private_credit:
+    # credit_gap: BIS bis_credit_gap where available (~43/64); elsewhere a
+    # linear-detrend proxy on private_debt_gdp (IMF GDD, 64/64) -> coverage_tier
+    # is forced to 'proxy' whenever the proxy branch is used (see module).
+    # npl_ratio thresholds are NOT from the source proposal (it gives none) --
+    # assumed IMF-typical stress benchmarks, flagged as such in the module.
+    thresholds:
+      credit_gap: [2, 5, 10]
+      private_dsr_pct: [75, 90, 95]        # percentile of the country's OWN history, 0-100
+      real_credit_growth: [5, 8, 12]
+      real_house_price_gap: [10, 20, 30]   # not wired yet (no BIS WS_SPP connector) -- always missing
+      npl_ratio: [3, 6, 10]                # ASSUMED, not from source proposal
+    weights:
+      credit_gap: 0.30
+      private_dsr: 0.25
+      real_credit_growth: 0.15
+      real_house_price_gap: 0.15
+      npl_ratio: 0.15
+    bucket_thresholds: [20, 40, 60, 80]
+    bucket_labels: [low, moderate, elevated, high, bubble]
+
+  external_constraint:
+    # thresholds marked ASSUMED are not in the source proposal (§12.4 only
+    # gives current_account/PIL, ext_debt_service/export, reserves/imports,
+    # FX depreciation) -- niip, fx_debt_share, short_term_share, inflation,
+    # fx_overvaluation thresholds are informed guesses (niip watch=-35%/GDP
+    # follows the EU Macroeconomic Imbalance Procedure alert threshold),
+    # flagged in the module docstring, revisit once real crisis episodes are
+    # backtested (Fase 6 of the plan doc).
+    thresholds:
+      current_account_deficit_gdp: [3, 5, 8]      # from source proposal §12.4
+      net_external_liability_gdp: [35, 50, 70]    # ASSUMED (EU MIP -35% alert threshold)
+      short_term_debt_share: [15, 25, 35]         # ASSUMED (different ratio than proposal's; see module)
+      debt_service_exports: [15, 25, 40]          # from source proposal §12.4
+      fx_debt_share: [30, 50, 70]                 # ASSUMED
+      inflation: [5, 10, 20]                      # ASSUMED
+      fx_overvaluation_pct: [10, 20, 30]           # ASSUMED
+      reserves_months: [4, 3, 2]                  # from source proposal §12.4 (descending: lower is worse)
+    weights:
+      current_account_deficit_gdp: 1
+      net_external_liability_gdp: 1
+      short_term_debt_share: 1
+      debt_service_exports: 1
+      fx_debt_share: 1
+      inflation: 1
+      fx_overvaluation_pct: 1
+      reserves_months: 1
+    reserve_currency_discount: 0.6   # multiplier applied to the score for reserve-currency issuers
+    bucket_thresholds: [20, 40, 60, 80]
+    bucket_labels: [low, moderate, elevated, high, severe]
+
+  funding_liquidity:
+    # REDUCED SCOPE vs the source proposal (see plan doc Fase 4 and the
+    # module docstring): real GFN/auction/maturity-wall data is free only for
+    # ~15-25 OECD/major economies and is NOT wired here. This is "ramo B"
+    # only -- a coverage_tier that is ALWAYS capped at 'proxy', never 'full',
+    # regardless of how many of the 2 available proxy inputs are present.
+    thresholds:
+      short_term_debt_share: [15, 25, 35]   # same assumed thresholds as external_constraint (same series)
+      yield_change_12m_pp: [1.0, 2.0, 3.5]  # from source proposal §12.2 (100bp/200bp/350bp)
+    weights:
+      short_term_debt_share: 1
+      yield_change_12m_pp: 1
+    bucket_thresholds: [20, 40, 60, 80]
+    bucket_labels: [easy, normal, watch, stress, severe]
+

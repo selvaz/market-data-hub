@@ -17,12 +17,18 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Dict, List, Optional
 
-from market_data_hub.dalio_v2 import political_execution, sovereign_solvency
+from market_data_hub.dalio_v2 import (
+    external_constraint, funding_liquidity, political_execution, private_credit,
+    sovereign_solvency,
+)
 from market_data_hub.db.connection import get_conn
 
 _ENGINES = {
     "sovereign_solvency": sovereign_solvency.compute,
     "political_execution": political_execution.compute,
+    "private_credit": private_credit.compute,
+    "external_constraint": external_constraint.compute,
+    "funding_liquidity": funding_liquidity.compute,
 }
 
 

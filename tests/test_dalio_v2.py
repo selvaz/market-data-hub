@@ -134,7 +134,7 @@ def test_sovereign_solvency_and_political_execution(tmp_db):
     con.commit()
     con.close()
 
-    summary = run_dalio_v2(ref_year=2026)
+    summary = run_dalio_v2(engines=["sovereign_solvency", "political_execution"], ref_year=2026)
     assert summary == {"sovereign_solvency": 3, "political_execution": 3}
 
     con = get_conn(read_only=True)
@@ -168,6 +168,204 @@ def test_sovereign_solvency_and_political_execution(tmp_db):
     assert "model_version" in audit and audit["model_version"]
 
 
+# ---------------------------------------------------------------------------
+# Private Credit Cycle: BIS-covered country vs BIS-uncovered (proxy) country
+# ---------------------------------------------------------------------------
+
+def _pc_row(date_, iso3, ind, val):
+    return {"date": date_, "country_iso3": iso3, "indicator_id": ind, "value": val,
+            "indicator_name": ind, "pillar": "debt_cycle", "orientation": -1,
+            "source": "test", "provider_dataset": "X", "provider_code": "Y",
+            "unit": "pct", "frequency": "A"}
+
+
+def _seed_private_credit(con):
+    rows = []
+    # USA: BIS-covered, calm profile
+    rows.append(_pc_row(dt.date(2026, 12, 31), "USA", "bis_credit_gap", 1.0))
+    dsr_usa = [10, 12, 13, 14, 15, 16, 15, 14, 15, 15]     # latest=15, min=10, max=16 -> pct=0.83? see below
+    for y, v in zip(range(2017, 2027), dsr_usa):
+        rows.append(_pc_row(dt.date(y, 12, 31), "USA", "bis_dsr_private", v))
+    for y, v in zip((2025, 2026), (100, 101)):
+        rows.append(_pc_row(dt.date(y, 12, 31), "USA", "private_debt_gdp", v))
+    rows.append(_pc_row(dt.date(2026, 12, 31), "USA", "npl_ratio", 2.0))
+
+    # TUR: BIS-covered, textbook private credit boom
+    rows.append(_pc_row(dt.date(2026, 12, 31), "TUR", "bis_credit_gap", 15.0))
+    dsr_tur = [30, 32, 34, 36, 38, 40, 42, 44, 46, 50]     # rising to a fresh peak
+    for y, v in zip(range(2017, 2027), dsr_tur):
+        rows.append(_pc_row(dt.date(y, 12, 31), "TUR", "bis_dsr_private", v))
+    for y, v in zip((2025, 2026), (100, 130)):
+        rows.append(_pc_row(dt.date(y, 12, 31), "TUR", "private_debt_gdp", v))
+    rows.append(_pc_row(dt.date(2026, 12, 31), "TUR", "npl_ratio", 12.0))
+
+    # VNM: no BIS coverage at all (one of the 21 countries in the 2026-07
+    # coverage audit) -> exercises the private_debt_gdp linear-detrend proxy
+    debt_vnm = [60, 62, 64, 66, 68, 72, 78, 86, 96, 110]   # accelerating late
+    for y, v in zip(range(2017, 2027), debt_vnm):
+        rows.append(_pc_row(dt.date(y, 12, 31), "VNM", "private_debt_gdp", v))
+    rows.append(_pc_row(dt.date(2026, 12, 31), "VNM", "npl_ratio", 4.0))
+
+    upsert(con, "macro_panel", pd.DataFrame(rows))
+
+
+def test_private_credit_bis_vs_proxy(tmp_db):
+    con = get_conn()
+    _seed_private_credit(con)
+    con.commit()
+    con.close()
+
+    summary = run_dalio_v2(engines=["private_credit"], ref_year=2026)
+    assert summary == {"private_credit": 3}
+
+    con = get_conn(read_only=True)
+    scores = con.execute(
+        "SELECT country_iso3, score, label, coverage_tier, components_json "
+        "FROM engine_scores WHERE engine = 'private_credit'").fetch_df()
+    con.close()
+    pc = scores.set_index("country_iso3")
+
+    # USA calm < TUR textbook boom (credit gap, DSR at a fresh peak, double
+    # digit real credit growth, high NPLs all firing at once)
+    assert pc.loc["USA", "score"] < pc.loc["TUR", "score"]
+    assert pc.loc["TUR", "label"] == "bubble"
+
+    # BIS-covered countries get full coverage; the BIS-blind country never
+    # does, even though every other input it has is populated
+    assert pc.loc["USA", "coverage_tier"] == "full"
+    assert pc.loc["TUR", "coverage_tier"] == "full"
+    assert pc.loc["VNM", "coverage_tier"] in ("proxy", "insufficient")
+
+    usa_audit = json.loads(pc.loc["USA", "components_json"])
+    vnm_audit = json.loads(pc.loc["VNM", "components_json"])
+    assert usa_audit["credit_gap_source"] == "bis"
+    assert vnm_audit["credit_gap_source"].startswith("proxy")
+    # VNM has no BIS DSR at all -> that component must be reported missing,
+    # not silently defaulted to a "safe" score
+    assert "private_dsr" in vnm_audit["missing_components"]
+
+
+# ---------------------------------------------------------------------------
+# External Currency Constraint: reserve-currency issuer vs FX-fragile EM
+# ---------------------------------------------------------------------------
+
+def _ec_row(date_, iso3, ind, val):
+    return {"date": date_, "country_iso3": iso3, "indicator_id": ind, "value": val,
+            "indicator_name": ind, "pillar": "markets", "orientation": 0,
+            "source": "test", "provider_dataset": "X", "provider_code": "Y",
+            "unit": "pct", "frequency": "A"}
+
+
+def _seed_external_constraint(con):
+    rows = []
+    # USA: reserve currency (via _EXPLICIT_RESERVE_CURRENCY), calm external
+    # position, has fx_debt_usd/ext_debt_nonres_usd -> fx_debt_share = 8%
+    # (matches the real-world figure cited throughout the docs)
+    usa = dict(current_account_gdp=-2.0, iip_net_position=-1000.0, gdp_current_usd=25000.0,
+              ext_debt_short_term_share=10.0, ext_debt_service_exports=5.0,
+              fx_debt_usd=8.0, ext_debt_nonres_usd=100.0, inflation_avg_weo=2.5,
+              fx_reserves_months_imports=5.0)
+    for ind, v in usa.items():
+        rows.append(_ec_row(dt.date(2026, 12, 31), "USA", ind, v))
+
+    # TUR: not a reserve currency, textbook FX-fragile profile, and
+    # deliberately WITHOUT fx_debt_usd/ext_debt_nonres_usd so fx_debt_share
+    # stays missing -> exercises the coverage-tier cap even though every
+    # other input is present
+    tur = dict(current_account_gdp=-6.0, iip_net_position=-500.0, gdp_current_usd=1000.0,
+              ext_debt_short_term_share=40.0, ext_debt_service_exports=35.0,
+              inflation_avg_weo=60.0, fx_reserves_months_imports=2.0)
+    for ind, v in tur.items():
+        rows.append(_ec_row(dt.date(2026, 12, 31), "TUR", ind, v))
+
+    upsert(con, "macro_panel", pd.DataFrame(rows))
+
+
+def test_external_constraint_reserve_currency_vs_fragile_em(tmp_db):
+    con = get_conn()
+    _seed_external_constraint(con)
+    con.commit()
+    con.close()
+
+    summary = run_dalio_v2(engines=["external_constraint"], ref_year=2026)
+    assert summary == {"external_constraint": 2}
+
+    con = get_conn(read_only=True)
+    scores = con.execute(
+        "SELECT country_iso3, score, label, coverage_tier, components_json "
+        "FROM engine_scores WHERE engine = 'external_constraint'").fetch_df()
+    con.close()
+    ec = scores.set_index("country_iso3")
+
+    assert ec.loc["USA", "score"] < ec.loc["TUR", "score"]
+    assert ec.loc["TUR", "label"] in ("high", "severe")
+
+    usa_audit = json.loads(ec.loc["USA", "components_json"])
+    tur_audit = json.loads(ec.loc["TUR", "components_json"])
+    assert usa_audit["is_reserve_currency"] is True
+    assert usa_audit["caveats"]                       # discount caveat recorded
+    assert tur_audit["is_reserve_currency"] is False
+    assert tur_audit["caveats"] == []
+
+    # USA has fx_debt_share (the highest-quality input) -> full coverage;
+    # TUR is missing exactly that input -> capped to proxy even though every
+    # other component is present
+    assert ec.loc["USA", "coverage_tier"] == "full"
+    assert ec.loc["TUR", "coverage_tier"] == "proxy"
+    assert "fx_debt_share" in tur_audit["missing_components"]
+
+
+# ---------------------------------------------------------------------------
+# Funding Liquidity: always proxy-tier, never full, regardless of coverage
+# ---------------------------------------------------------------------------
+
+def _fl_row(date_, iso3, ind, val):
+    return {"date": date_, "country_iso3": iso3, "indicator_id": ind, "value": val,
+            "indicator_name": ind, "pillar": "markets", "orientation": 0,
+            "source": "test", "provider_dataset": "X", "provider_code": "Y",
+            "unit": "pct", "frequency": "M" if ind == "bond_yield_10y" else "A"}
+
+
+def _seed_funding_liquidity(con):
+    rows = [
+        _fl_row(dt.date(2026, 12, 31), "DEU", "ext_debt_short_term_share", 10.0),
+        _fl_row(dt.date(2025, 12, 31), "DEU", "bond_yield_10y", 2.0),
+        _fl_row(dt.date(2026, 12, 31), "DEU", "bond_yield_10y", 2.5),      # +50bp, mild
+        _fl_row(dt.date(2026, 12, 31), "ITA", "ext_debt_short_term_share", 30.0),
+        _fl_row(dt.date(2025, 12, 31), "ITA", "bond_yield_10y", 4.0),
+        _fl_row(dt.date(2026, 12, 31), "ITA", "bond_yield_10y", 8.0),      # +400bp, spread blowout
+    ]
+    upsert(con, "macro_panel", pd.DataFrame(rows))
+
+
+def test_funding_liquidity_always_proxy_tier(tmp_db):
+    con = get_conn()
+    _seed_funding_liquidity(con)
+    con.commit()
+    con.close()
+
+    summary = run_dalio_v2(engines=["funding_liquidity"], ref_year=2026)
+    assert summary == {"funding_liquidity": 2}
+
+    con = get_conn(read_only=True)
+    scores = con.execute(
+        "SELECT country_iso3, score, label, coverage_tier, components_json "
+        "FROM engine_scores WHERE engine = 'funding_liquidity'").fetch_df()
+    con.close()
+    fl = scores.set_index("country_iso3")
+
+    assert fl.loc["DEU", "score"] < fl.loc["ITA", "score"]
+    assert fl.loc["ITA", "label"] in ("stress", "severe")
+    # both countries have full data for the 2 available proxy inputs, but
+    # this engine can never report 'full' -- it's a structural cap, not a
+    # per-country gap
+    assert fl.loc["DEU", "coverage_tier"] == "proxy"
+    assert fl.loc["ITA", "coverage_tier"] == "proxy"
+
+    audit = json.loads(fl.loc["ITA", "components_json"])
+    assert audit["scope"].startswith("proxy tier only")
+
+
 def test_run_dalio_v2_rejects_unknown_engine(tmp_db):
     con = get_conn()
     con.close()
@@ -182,4 +380,6 @@ def test_run_dalio_v2_empty_panel_returns_zero_counts(tmp_db):
     con = get_conn()
     con.close()
     summary = run_dalio_v2(ref_year=2026)
-    assert summary == {"sovereign_solvency": 0, "political_execution": 0}
+    assert summary == {"sovereign_solvency": 0, "political_execution": 0,
+                       "private_credit": 0, "external_constraint": 0,
+                       "funding_liquidity": 0}

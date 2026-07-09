@@ -269,6 +269,9 @@ unitari minimi per le 4 funzioni (valori noti in ingresso → output atteso).
 
 ### Fase 1 — Sovereign Solvency Engine + Political Execution Engine
 
+> ✅ **Implementata** (2026-07-09) — `market_data_hub/dalio_v2/{sovereign_solvency,political_execution}.py`,
+> config in `settings.yaml` (`dalio_v2:`), test in `tests/test_dalio_v2.py`.
+
 *(Raggruppate perché entrambe usano dati già presenti al 95%+, quindi è il
 lavoro a più alto ritorno/minimo rischio — farle insieme.)*
 
@@ -351,6 +354,10 @@ SGP strong, ARG stressed/critical).
 
 ### Fase 2 — Private Credit Cycle Engine
 
+> ✅ **Implementata** (2026-07-09) — `market_data_hub/dalio_v2/private_credit.py`.
+> `real_house_price_gap` resta sempre `None` (nessun connettore BIS WS_SPP —
+> segnato come lavoro opzionale non fatto, non bloccante).
+
 **Obiettivo:** score 0-100 da 5 componenti (proposta §7.4), con fallback
 esplicito per i 21 paesi senza dati BIS.
 
@@ -396,6 +403,13 @@ PAK, PER, PHL, QAT, ROU, SVK, SVN, UKR, VNM) risultino tutti `proxy`, non
 ---
 
 ### Fase 3 — External Currency Constraint Engine
+
+> ✅ **Implementata** (2026-07-09) — `market_data_hub/dalio_v2/external_constraint.py`.
+> `api_source_id: 6` per IDS **non verificato live** in questa sessione
+> (`api.worldbank.org` bloccato dalla policy di rete del sandbox, 403 sul
+> CONNECT) — verificare contro `https://api.worldbank.org/v2/sources?format=json`
+> prima del primo run in produzione. Se sbagliato, i valori tornano
+> semplicemente vuoti, non silenziosamente errati.
 
 **Obiettivo:** score 0-100 da 7 componenti (proposta §8.3), a due livelli di
 copertura come emerso da §2.2 sopra.
@@ -450,6 +464,13 @@ delle due fonti.
 ---
 
 ### Fase 4 — Funding Liquidity Engine (scope ridotto rispetto alla proposta)
+
+> ✅ **Implementata, solo ramo B** (2026-07-09) — `market_data_hub/dalio_v2/funding_liquidity.py`.
+> Il ramo A (OECD SDMX, dati GFN/aste reali per ~15-25 economie maggiori)
+> **non è stato costruito** — richiede la stessa verifica di rete non
+> disponibile in questa sessione, oltre a un nuovo connettore `sources/oecd.py`
+> da zero. `coverage_tier` è forzato a `proxy` (mai `full`) su ogni riga, per
+> disciplina esplicita.
 
 **Attenzione:** questa è l'unica fase dove il piano si discosta
 esplicitamente dalla proposta ChatGPT per limiti di dati reali (§2.2/§2.3
