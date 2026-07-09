@@ -83,5 +83,22 @@ def test_collect_with_v2_wires_engine_scores_onto_the_same_country(tmp_db):
     assert ita_v2["sovereign_solvency"]["coverage_tier"] == "insufficient"
     assert ita_v2["sovereign_solvency"]["score"] is None
 
+    # a country with v2 scores but no v1 regime_state row must still get a
+    # country sheet (v1 fields null) instead of being silently dropped
+    con = get_conn()
+    con.execute(
+        "INSERT INTO engine_scores VALUES ('MEX', DATE '2026-12-31', "
+        "'sovereign_solvency', 55.0, 'watch', 'proxy', 'medium', 5, 7, '{}', now())")
+    con.close()
+    con = get_conn(read_only=True)
+    d = mdr.collect(con)
+    con.close()
+    assert "MEX" in d["countries"]
+    assert d["countries"]["MEX"]["phase"] is None
+    assert d["countries"]["MEX"]["v2"]["sovereign_solvency"]["score"] == 55.0
+
     html = mdr.render_html(d)
     assert "Dalio v2" in html
+    # </script> inside embedded JSON is escaped so DB data can never
+    # terminate the script block and blank the page
+    assert "</script>" not in mdr._js_str({"x": "</script>"})
