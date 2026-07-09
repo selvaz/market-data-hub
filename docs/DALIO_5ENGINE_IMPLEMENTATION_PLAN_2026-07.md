@@ -405,11 +405,21 @@ PAK, PER, PHL, QAT, ROU, SVK, SVN, UKR, VNM) risultino tutti `proxy`, non
 ### Fase 3 — External Currency Constraint Engine
 
 > ✅ **Implementata** (2026-07-09) — `market_data_hub/dalio_v2/external_constraint.py`.
-> `api_source_id: 6` per IDS **non verificato live** in questa sessione
-> (`api.worldbank.org` bloccato dalla policy di rete del sandbox, 403 sul
-> CONNECT) — verificare contro `https://api.worldbank.org/v2/sources?format=json`
-> prima del primo run in produzione. Se sbagliato, i valori tornano
-> semplicemente vuoti, non silenziosamente errati.
+> **Correzione post-implementazione (stesso giorno):** il "Prerequisito —
+> nuovo connettore World Bank IDS" sotto si è rivelato **non necessario**.
+> `macro_panel.yaml` aveva già `external_debt_gni` e `debt_service_exports`
+> (WDI, `api_source_id: 2`, già live/verificati) con **lo stesso identico
+> codice World Bank** (`DT.DOD.DECT.GN.ZS` / `DT.TDS.DECT.EX.ZS`) dei nuovi
+> indicatori IDS aggiunti in un primo momento — e `short_term_debt_reserves`
+> (già presente, WDI `DT.DOD.DSTC.IR.ZS`) è esattamente il rapporto
+> "short-term external debt/reserves" richiesto dalla proposta (§12.4,
+> soglie 50/100/150), migliore del rapporto %-su-debito-estero-totale che
+> l'indicatore IDS rimosso usava. Il blocco IDS (`api_source_id: 6`, mai
+> verificato live) è stato rimosso da `macro_panel.yaml`; il motore ora
+> legge questi tre indicatori pre-esistenti. **Nessun nuovo connettore
+> serviva davvero** — il prerequisito sotto resta come nota storica di cosa
+> è stato *considerato* prima di scoprire la duplicazione, non come
+> descrizione dello stato finale.
 
 **Obiettivo:** score 0-100 da 7 componenti (proposta §8.3), a due livelli di
 copertura come emerso da §2.2 sopra.
@@ -467,10 +477,13 @@ delle due fonti.
 
 > ✅ **Implementata, solo ramo B** (2026-07-09) — `market_data_hub/dalio_v2/funding_liquidity.py`.
 > Il ramo A (OECD SDMX, dati GFN/aste reali per ~15-25 economie maggiori)
-> **non è stato costruito** — richiede la stessa verifica di rete non
-> disponibile in questa sessione, oltre a un nuovo connettore `sources/oecd.py`
-> da zero. `coverage_tier` è forzato a `proxy` (mai `full`) su ogni riga, per
-> disciplina esplicita.
+> **non è stato costruito** — richiede una verifica di rete non disponibile
+> in questa sessione, oltre a un nuovo connettore `sources/oecd.py` da zero.
+> `coverage_tier` è forzato a `proxy` (mai `full`) su ogni riga, per
+> disciplina esplicita. **Correzione:** il rapporto short-term-debt/reserves
+> usa `short_term_debt_reserves`, un indicatore WDI già presente (non un
+> nuovo indicatore World Bank IDS come inizialmente previsto) — vedi la nota
+> di correzione nella Fase 3 sopra, stesso indicatore condiviso.
 
 **Attenzione:** questa è l'unica fase dove il piano si discosta
 esplicitamente dalla proposta ChatGPT per limiti di dati reali (§2.2/§2.3

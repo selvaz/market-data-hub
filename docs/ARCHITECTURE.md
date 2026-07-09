@@ -75,6 +75,15 @@ The whole write path runs under a cross-process file lock (`market_data_hub.lock
 so the EOD and hourly-live tasks can never write the single-writer DuckDB file
 at the same time.
 
+**Dalio v2** (`dalio_v2/`, entry point `run_dalio_v2.py`) is a separate,
+additive analytical layer — 5 independent country risk engines (sovereign
+solvency, political execution, private credit cycle, external currency
+constraint, funding liquidity) writing to their own `engine_scores` table.
+It is not part of `run_daily.py`'s pipeline above and does not touch
+`dalio.py`'s tables (`dalio_signals`/`pillar_scores`/`regime_state`); run it
+separately. See
+[DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md](DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md).
+
 **Run modes** (`run_daily.py` flags). The default `full` run activates
 `["yahoo", "fred", "binance", "macro_panel", "factors"]` plus the live injection.
 
@@ -102,8 +111,11 @@ market_data_hub/
 │   ├── yahoo.py             yahoo_batch(), effective_start(), live prices
 │   ├── binance.py           fetch_klines() paginated OHLCV
 │   ├── fred.py              fetch_fred() API-key-or-CSV
-│   ├── worldbank.py         fetch_worldbank() WDI/WGI per indicator×country
+│   ├── worldbank.py         fetch_worldbank() WDI/WGI/IDS per indicator×country
 │   ├── imf.py               fetch_imf() WEO DataMapper (WAF-aware backoff)
+│   ├── imf_sdmx.py          IMF SDMX 3.0 (MFS/IIP/IRFCL/IIPCC), per-country loop
+│   ├── bis.py                BIS SDMX v2 (credit gap, DSR, policy rate, REER), wildcard
+│   ├── ecb.py                ECB Data Portal SDMX 2.1 (bank lending rates), wildcard
 │   └── macro_panel.py       fetch_indicator() primary→fallback orchestration
 │
 ├── coverage/                data-quality engine (one concern per module)
@@ -114,6 +126,24 @@ market_data_hub/
 │   ├── score.py             coverage_score() 0–100
 │   └── report.py            rebuild_coverage() → coverage_report table
 │
+├── dalio.py, classify.py    legacy analytical layer: single composite z-score +
+│                            debt-cycle phase / 4-box regime classifier, country
+│                            classification (DM/EM, energy position, …)
+│
+├── dalio_v2/                additive 5-engine country risk architecture (does
+│   ├── scoring.py           NOT replace dalio.py) — see
+│   ├── sovereign_solvency.py    docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md
+│   ├── political_execution.py
+│   ├── private_credit.py
+│   ├── external_constraint.py
+│   ├── funding_liquidity.py
+│   ├── runner.py            run_dalio_v2() orchestrates all 5, writes engine_scores
+│   └── report.py            HTML/CSV snapshot report (per-country cards)
+│
+├── regime/                  per-symbol HMM regime monitor (needs the sibling
+│   ├── estimate.py          LazyHMM package); separate from the country-level
+│   └── report.py            Dalio layers above — entry point run_regime_daily.py
+│
 ├── db/
 │   ├── schema.sql           tables + indexes + views (idempotent); schema_meta
 │   ├── connection.py        get_conn() resolves path, applies schema; SCHEMA_VERSION, migrate()
@@ -122,12 +152,13 @@ market_data_hub/
 │
 └── config/
     ├── tickers.yaml         111 Yahoo symbols (symbol/asset_class/area/priority)
-    ├── macro_series.yaml    45 FRED series (symbol/country/name/priority)
-    ├── macro_panel.yaml     69 cross-country indicators (WB/WDI+WGI, IMF/WEO, BIS)
+    ├── macro_series.yaml    77 FRED series (symbol/country/name/priority)
+    ├── macro_panel.yaml     83 cross-country indicators (WB/WDI+WGI+IDS, IMF/WEO+SDMX, BIS, ECB)
     ├── countries.yaml       64 countries (iso3/iso2/wb/imf)
-    └── settings.yaml        db_path, backfill dates, parallelism, FRED key, crypto
+    └── settings.yaml        db_path, backfill dates, parallelism, FRED key, crypto, dalio_v2 thresholds/weights
 
 run_daily.py · run_backfill.py · diagnose.py · validate_macro_panel.py · setup_scheduler.ps1
+run_dalio_v2.py · run_regime_daily.py · make_dalio_report.py · make_report.py
 ```
 
 ---

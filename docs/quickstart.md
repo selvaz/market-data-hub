@@ -87,6 +87,18 @@ dashboard from `make_dalio_report.py` (`python run_daily.py --report` bundles
 report generation into the daily run). `send_telegram_run_report.py` sends
 that report to Telegram instead — see `run_daily_with_telegram.ps1`.
 
+The newer, additive **Dalio v2** 5-engine country risk report is separate:
+
+```bash
+python run_dalio_v2.py            # refresh engine_scores + regenerate the HTML report
+python run_dalio_v2.py --csv      # also write a CSV snapshot
+python run_dalio_v2.py --engines sovereign_solvency,political_execution
+```
+
+It writes to its own `engine_scores` table and does not touch `dalio.py`'s
+tables or report — see
+[DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md](DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md).
+
 ## Automate (Windows Task Scheduler)
 
 ```powershell

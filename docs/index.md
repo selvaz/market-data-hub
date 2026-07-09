@@ -27,8 +27,8 @@ df, meta = extract.extract_returns(["SPY", "TLT", "^VIX"],
 |--------|------|-------|-----------|
 | Yahoo Finance | 111 symbols (ETFs, equity, FX, VIX indices) — OHLCV + adj_close, plus intraday live injection | `prices_daily` | daily |
 | Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
-| FRED | 45 macro series (rates, real yields, CPI, GDP, credit spreads, financial conditions, liquidity) | `macro_series` | D/M/Q |
-| World Bank + IMF + BIS | 69 cross-country indicators (WDI/WGI/WEO/BIS) × 64 countries, with primary→fallback source logic | `macro_panel` | annual |
+| FRED | 77 macro series (rates, real yields, CPI, GDP, credit spreads, financial conditions, liquidity, cross-country 10Y yields) | `macro_series` | D/M/Q |
+| World Bank + IMF + BIS + ECB | 83 cross-country indicators (WDI/WGI/WEO/BIS/IMF SDMX/ECB) × 64 countries, with primary→fallback source logic | `macro_panel` | annual |
 | Ken French Data Library | Fama-French 5 factors + momentum | `factor_returns` | D/M |
 
 The full series-by-series map (provider, group, native frequency, typical lag,
@@ -48,7 +48,13 @@ run_daily.py ──► runner.run("full")
                    │    fetch gap → upsert → download_log row (per series)
                    ├─ live price injection (adjusted-ratio mapping)
                    ├─ coverage engine: freshness, gaps, 0–100 score per series
-                   └─ analytical layer: debt-cycle phases + 4-box regimes (dalio)
+                   └─ analytical layer: debt-cycle phases + 4-box regimes (dalio.py)
+
+run_dalio_v2.py ─► dalio_v2.runner.run_dalio_v2()   (separate, additive entry point)
+                   └─ 5 independent country risk engines: sovereign solvency,
+                      political execution, private credit cycle, external
+                      currency constraint, funding liquidity → engine_scores
+                      table + HTML/CSV report
 ```
 
 After the downloads, the **coverage engine** recomputes, for every series: the
@@ -56,8 +62,11 @@ detected frequency, days of lag, gap count, missing %, price-quality flags and
 a 0–100 coverage score — so a stalled or degraded feed is visible immediately
 (`python diagnose.py --stalled`). The **analytical layer** then derives
 cross-country debt-cycle phases and growth/inflation regime boxes from the
-macro panel. The whole process map is in
-[Architecture & process](ARCHITECTURE.md).
+macro panel. **Dalio v2** (`dalio_v2/`, run via `run_dalio_v2.py`) is a
+separate, additive 5-engine risk architecture that does not replace
+`dalio.py` — see
+[DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md](DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md).
+The whole process map is in [Architecture & process](ARCHITECTURE.md).
 
 ## How you query it
 

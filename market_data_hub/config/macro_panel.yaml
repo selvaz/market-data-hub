@@ -953,61 +953,13 @@ indicators:
   dalio_role: External debt in FOREIGN currency; divided by ext_debt_nonres_usd
     gives fx_debt_share (view) — Dalio's top can-they-print-their-way-out signal
     (USA 8, IT 5 vs TUR 94, HRV 94). Official IMF IIPCC, supersedes manual AT.
-# --- World Bank International Debt Statistics (IDS), source id 6. Broadest
-#     free coverage (~120+ countries, mostly low/middle-income; advanced
-#     economies are largely absent from IDS) for rollover-risk proxies used
-#     by the Dalio v2 External Currency Constraint and Funding Liquidity
-#     engines where the IMF IIPCC fx_debt_share (~19 countries) or real
-#     GFN/auction data (~15-25 OECD/major economies) are not available. See
-#     docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md Fase 3/4.
-#     CAVEAT: api_source_id=6 for IDS is the historically documented World
-#     Bank source id, but could NOT be live-verified in the session that
-#     added this (api.worldbank.org was network-blocked by the sandbox's
-#     outbound policy, 403 on CONNECT) — verify against
-#     https://api.worldbank.org/v2/sources?format=json before relying on
-#     this in production; if it's wrong, values will simply come back empty
-#     rather than silently wrong (World Bank returns no rows for an unknown
-#     source id, not incorrect ones from a different one).
-- id: ext_debt_short_term_share
-  name: Short-term external debt (% of total external debt, World Bank IDS)
-  pillar: markets
-  priority: 2
-  freq: A
-  unit: percent
-  source: WB
-  dataset: IDS
-  code: DT.DOD.DSTC.ZS
-  orientation: -1
-  api_source_id: 6
-  dalio_role: Rollover-risk proxy for the External Constraint / Funding Liquidity
-    engines where fx_debt_share (IIPCC) or real GFN/maturity data are absent.
-    Broadest free coverage (~120+ countries) but external debt only, no
-    domestic-debt maturity wall, no auction data — a coarser proxy, not
-    equivalent to real GFN (see plan doc's explicit scoping-down of Funding
-    Liquidity).
-- id: ext_debt_gni
-  name: External debt stock (% of GNI, World Bank IDS)
-  pillar: markets
-  priority: 2
-  freq: A
-  unit: percent
-  source: WB
-  dataset: IDS
-  code: DT.DOD.DECT.GN.ZS
-  orientation: -1
-  api_source_id: 6
-  dalio_role: External leverage level for the External Currency Constraint engine.
-- id: ext_debt_service_exports
-  name: Total external debt service (% of exports of goods, services and
-    primary income, World Bank IDS)
-  pillar: markets
-  priority: 2
-  freq: A
-  unit: percent
-  source: WB
-  dataset: IDS
-  code: DT.TDS.DECT.EX.ZS
-  orientation: -1
-  api_source_id: 6
-  dalio_role: FX-stress proxy for the External Currency Constraint engine —
-    how much of export earnings goes to servicing external debt.
+# NOTE (2026-07-09): a World Bank IDS block (ext_debt_short_term_share,
+# ext_debt_gni, ext_debt_service_exports, api_source_id 6) was added here and
+# then REMOVED in the same session: external_debt_gni and debt_service_exports
+# below (WDI, api_source_id 2, already live/verified) carry the exact same WB
+# codes (DT.DOD.DECT.GN.ZS / DT.TDS.DECT.EX.ZS) and short_term_debt_reserves
+# below is the actual "short-term external debt/reserves" ratio the Dalio
+# proposal calls for (DT.DOD.DSTC.IR.ZS) — a better fit than the %-of-total-
+# external-debt ratio the removed block used. No new connector was ever
+# needed; the Dalio v2 engines (external_constraint.py, funding_liquidity.py)
+# were updated to read these three pre-existing indicators instead.

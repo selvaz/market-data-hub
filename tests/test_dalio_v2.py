@@ -262,7 +262,7 @@ def _seed_external_constraint(con):
     # position, has fx_debt_usd/ext_debt_nonres_usd -> fx_debt_share = 8%
     # (matches the real-world figure cited throughout the docs)
     usa = dict(current_account_gdp=-2.0, iip_net_position=-1000.0, gdp_current_usd=25000.0,
-              ext_debt_short_term_share=10.0, ext_debt_service_exports=5.0,
+              short_term_debt_reserves=20.0, debt_service_exports=5.0,
               fx_debt_usd=8.0, ext_debt_nonres_usd=100.0, inflation_avg_weo=2.5,
               fx_reserves_months_imports=5.0)
     for ind, v in usa.items():
@@ -273,7 +273,7 @@ def _seed_external_constraint(con):
     # stays missing -> exercises the coverage-tier cap even though every
     # other input is present
     tur = dict(current_account_gdp=-6.0, iip_net_position=-500.0, gdp_current_usd=1000.0,
-              ext_debt_short_term_share=40.0, ext_debt_service_exports=35.0,
+              short_term_debt_reserves=180.0, debt_service_exports=35.0,
               inflation_avg_weo=60.0, fx_reserves_months_imports=2.0)
     for ind, v in tur.items():
         rows.append(_ec_row(dt.date(2026, 12, 31), "TUR", ind, v))
@@ -328,10 +328,10 @@ def _fl_row(date_, iso3, ind, val):
 
 def _seed_funding_liquidity(con):
     rows = [
-        _fl_row(dt.date(2026, 12, 31), "DEU", "ext_debt_short_term_share", 10.0),
+        _fl_row(dt.date(2026, 12, 31), "DEU", "short_term_debt_reserves", 20.0),
         _fl_row(dt.date(2025, 12, 31), "DEU", "bond_yield_10y", 2.0),
         _fl_row(dt.date(2026, 12, 31), "DEU", "bond_yield_10y", 2.5),      # +50bp, mild
-        _fl_row(dt.date(2026, 12, 31), "ITA", "ext_debt_short_term_share", 30.0),
+        _fl_row(dt.date(2026, 12, 31), "ITA", "short_term_debt_reserves", 160.0),
         _fl_row(dt.date(2025, 12, 31), "ITA", "bond_yield_10y", 4.0),
         _fl_row(dt.date(2026, 12, 31), "ITA", "bond_yield_10y", 8.0),      # +400bp, spread blowout
     ]

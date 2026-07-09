@@ -26,8 +26,8 @@ from `docs/` by the `docs` workflow on every push to `main`).
 |----------|------|---------|-----------|
 | Yahoo Finance | 111 symbols (ETFs, equity, FX, VIX indices, daily crypto) — OHLCV + adj_close | `prices_daily` | daily |
 | Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
-| FRED | 45 macro series (US/EA rates, real yields, CPI, GDP, credit spreads, financial-conditions & liquidity) | `macro_series` | D/M/Q |
-| World Bank + IMF + BIS | 69 cross-country indicators (WDI/WGI/WEO/BIS) × 64 countries | `macro_panel` | annual |
+| FRED | 77 macro series (US/EA rates, real yields, CPI, GDP, credit spreads, financial-conditions & liquidity, cross-country 10Y yields) | `macro_series` | D/M/Q |
+| World Bank + IMF + BIS + ECB | 83 cross-country indicators (WDI/WGI/WEO/BIS/IMF SDMX/ECB) × 64 countries | `macro_panel` | annual |
 | Ken French Data Library | Fama-French 5 factors + momentum (Mkt-RF, SMB, HML, RMW, CMA, Mom, RF) | `factor_returns` | D/M |
 
 ## Setup
@@ -76,6 +76,10 @@ python diagnose.py --runs          # latest runs
 # validation of cross-country codes (WDI/WGI/WEO) against the live APIs
 python validate_macro_panel.py            # sample of 5 countries
 python validate_macro_panel.py --full     # all 64 countries
+
+# Dalio v2 — 5-engine country risk analysis (additive, see docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md)
+python run_dalio_v2.py                    # refresh scores + regenerate the HTML report
+python run_dalio_v2.py --csv              # also write a CSV snapshot
 ```
 
 ## Automation (Windows Task Scheduler)
@@ -138,11 +142,21 @@ skill `skills/query-market-data-hub/SKILL.md`. JSON tools live in
 
 ```
 market_data_hub/
-  sources/    yahoo.py  binance.py  fred.py
+  sources/    yahoo.py  binance.py  fred.py  worldbank.py  imf.py  imf_sdmx.py  bis.py  ecb.py
   coverage/   freq_detector  stalled_detector  gap_detector  quality_checks  score  report
   db/         schema.sql  connection.py  upsert.py
-  config/     tickers.yaml (111)  macro_series.yaml (45)  settings.yaml
+  config/     tickers.yaml (111)  macro_series.yaml (77)  macro_panel.yaml (83)  countries.yaml (64)  settings.yaml
+  dalio.py    classify.py                 legacy composite z-score + debt-cycle/regime classifier
+  dalio_v2/   sovereign_solvency.py  political_execution.py  private_credit.py  external_constraint.py
+              funding_liquidity.py  scoring.py  report.py    5-engine country risk architecture (additive)
+  regime/     estimate.py  report.py                         per-symbol HMM regime monitor (needs LazyHMM)
   reader.py   catalog.py  extract.py  agent_tools.py  config_loader.py  runner.py
 run_daily.py  run_backfill.py  diagnose.py  setup_scheduler.ps1
+run_dalio_v2.py  run_regime_daily.py  make_dalio_report.py  make_report.py
 ```
+
+See [`docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md`](docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md)
+for the `dalio_v2` design (5 independent risk engines per country, replacing
+`dalio.py`'s single composite score — additive for now, `dalio.py` keeps
+running unchanged).
 

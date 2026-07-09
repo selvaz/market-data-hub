@@ -13,9 +13,15 @@ SDMX API covers maturity structure but only ~34-38 OECD members).
 
 This module deliberately implements ONLY the plan's "ramo B" — the coarse
 proxy available for the FULL panel:
-  - short_term_debt_share: World Bank IDS ext_debt_short_term_share (same
-    series as external_constraint.py) as a rollover-risk proxy — external
-    debt only, no domestic-debt maturity wall, no auction data.
+  - short_term_debt_reserves: World Bank WDI short_term_debt_reserves (same
+    series as external_constraint.py; NOTE 2026-07-09: this used to be a
+    newly-added "World Bank IDS" indicator with an unverified source id —
+    on review that was an unnecessary duplicate, short_term_debt_reserves
+    already existed, already verified/live, and is literally the "short-term
+    external debt/reserves" ratio the source proposal specifies, not the
+    %-of-total-external-debt ratio the removed duplicate used) as a
+    rollover-risk proxy — external debt only, no domestic-debt maturity
+    wall, no auction data.
   - yield_change_12m_pp: 12-month change in the 10Y bond yield (FRED
     bond_yield_10y, ~32/64 coverage) as a funding-cost-shock proxy.
 
@@ -44,7 +50,7 @@ from market_data_hub.dalio_v2.scoring import (
 ENGINE = "funding_liquidity"
 
 _IND = {
-    "short_term_share": "ext_debt_short_term_share",
+    "short_term_debt_reserves": "short_term_debt_reserves",
     "bond_yield_10y": "bond_yield_10y",
 }
 
@@ -98,17 +104,17 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             continue
         by_ind = {i: g[["date", "value"]] for i, g in cdf.groupby("indicator_id")}
 
-        short_term_share, _ = _latest(_first_avail(by_ind, _IND["short_term_share"]))
+        short_term_reserves, _ = _latest(_first_avail(by_ind, _IND["short_term_debt_reserves"]))
         yield_series = by_ind.get(_IND["bond_yield_10y"])
         yield_change = _yoy_level_change(yield_series)
 
         raw_values = {
-            "short_term_debt_share": None if pd.isna(short_term_share) else short_term_share,
+            "short_term_debt_reserves": None if pd.isna(short_term_reserves) else short_term_reserves,
             "yield_change_12m_pp": yield_change,
         }
         components = {
-            "short_term_debt_share": None if raw_values["short_term_debt_share"] is None else
-                score_threshold(raw_values["short_term_debt_share"], *th.get("short_term_debt_share", [15, 25, 35])),
+            "short_term_debt_reserves": None if raw_values["short_term_debt_reserves"] is None else
+                score_threshold(raw_values["short_term_debt_reserves"], *th.get("short_term_debt_reserves", [50, 100, 150])),
             "yield_change_12m_pp": None if yield_change is None else
                 score_threshold(yield_change, *th.get("yield_change_12m_pp", [1.0, 2.0, 3.5])),
         }

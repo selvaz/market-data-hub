@@ -11,18 +11,33 @@ sector-of-holder external-debt dataset does not exist free at 60+ country
 breadth. This engine therefore mixes:
   - fx_debt_share (IMF IIPCC view, already in v_macro_panel_ext) — full
     quality, but only ~19 major economies;
-  - ext_debt_short_term_share / ext_debt_service_exports (World Bank IDS,
-    new in this pass, see macro_panel.yaml) — broader (~120+ countries) but
-    external debt only, no sector/holder detail;
+  - short_term_debt_reserves / debt_service_exports (World Bank WDI,
+    already in macro_panel.yaml — no new connector needed, see note below)
+    — broader (~120+ countries) but external debt only, no sector/holder
+    detail;
   - current_account_gdp, iip_net_position, fx_reserves_months_imports,
     reer_broad — already in macro_panel, DM+EM broad coverage.
 
-THRESHOLDS: only current_account_deficit_gdp, debt_service_exports and
-reserves_months come from the source proposal (§12.4). The other five
-(net_external_liability_gdp, short_term_debt_share, fx_debt_share,
-inflation, fx_overvaluation_pct) have no proposal thresholds and are
-ASSUMED — see config/settings.yaml's dalio_v2.external_constraint comment.
-Revisit once Fase 6 (historical backtest) gives real calibration evidence.
+NOTE (2026-07-09): this module originally read two new "World Bank IDS"
+indicators added in the same session, whose api_source_id could not be
+live-verified (network-blocked sandbox). On review, that was unnecessary —
+macro_panel.yaml already carried external_debt_gni and debt_service_exports
+(WDI, api_source_id 2, already live/verified) under the SAME World Bank
+codes, and short_term_debt_reserves (WDI, DT.DOD.DSTC.IR.ZS) is literally
+the "short-term external debt/reserves" ratio the source proposal asks for
+— a better fit than the %-of-total-external-debt ratio the removed IDS
+indicator used. The IDS block was deleted from macro_panel.yaml and this
+module now reads the pre-existing WDI indicators instead; no new connector,
+no unverified source id.
+
+THRESHOLDS: current_account_deficit_gdp, debt_service_exports,
+short_term_debt_reserves and reserves_months come from the source proposal
+(§12.4 — short_term_debt_reserves uses the proposal's own 50/100/150
+watch/stress/critical). The remaining three (net_external_liability_gdp,
+fx_debt_share, inflation, fx_overvaluation_pct) have no proposal thresholds
+and are ASSUMED — see config/settings.yaml's dalio_v2.external_constraint
+comment. Revisit once Fase 6 (historical backtest) gives real calibration
+evidence.
 
 Reserve-currency caveat (proposal §19.3/§8.5): for USA, JPN, GBR, CHE and
 euro-area members, the raw score is discounted (reserve_currency_discount)
@@ -55,8 +70,8 @@ _IND = {
     "current_account": "current_account_gdp",
     "niip": "iip_net_position",
     "gdp_usd": "gdp_current_usd",
-    "short_term_share": "ext_debt_short_term_share",
-    "debt_service_exports": "ext_debt_service_exports",
+    "short_term_debt_reserves": "short_term_debt_reserves",
+    "debt_service_exports": "debt_service_exports",
     "fx_debt_share": "fx_debt_share",
     "inflation": ["inflation_avg_weo", "inflation_cpi"],
     "reer": "reer_broad",
@@ -129,7 +144,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         current_account, _ = _latest(_first_avail(by_ind, _IND["current_account"]))
         niip, _ = _latest(_first_avail(by_ind, _IND["niip"]))
         gdp_usd, _ = _latest(_first_avail(by_ind, _IND["gdp_usd"]))
-        short_term_share, _ = _latest(_first_avail(by_ind, _IND["short_term_share"]))
+        short_term_reserves, _ = _latest(_first_avail(by_ind, _IND["short_term_debt_reserves"]))
         debt_service_exports, _ = _latest(_first_avail(by_ind, _IND["debt_service_exports"]))
         fx_debt_share, _ = _latest(_first_avail(by_ind, _IND["fx_debt_share"]))
         inflation, _ = _latest(_first_avail(by_ind, _IND["inflation"]))
@@ -146,7 +161,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         raw_values = {
             "current_account_deficit_gdp": current_account_deficit,
             "net_external_liability_gdp": net_external_liability,
-            "short_term_debt_share": None if pd.isna(short_term_share) else short_term_share,
+            "short_term_debt_reserves": None if pd.isna(short_term_reserves) else short_term_reserves,
             "debt_service_exports": None if pd.isna(debt_service_exports) else debt_service_exports,
             "fx_debt_share": None if pd.isna(fx_debt_share) else fx_debt_share,
             "inflation": None if pd.isna(inflation) else inflation,
@@ -158,8 +173,8 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
                 score_threshold(current_account_deficit, *th.get("current_account_deficit_gdp", [3, 5, 8])),
             "net_external_liability_gdp": None if net_external_liability is None else
                 score_threshold(net_external_liability, *th.get("net_external_liability_gdp", [35, 50, 70])),
-            "short_term_debt_share": None if raw_values["short_term_debt_share"] is None else
-                score_threshold(raw_values["short_term_debt_share"], *th.get("short_term_debt_share", [15, 25, 35])),
+            "short_term_debt_reserves": None if raw_values["short_term_debt_reserves"] is None else
+                score_threshold(raw_values["short_term_debt_reserves"], *th.get("short_term_debt_reserves", [50, 100, 150])),
             "debt_service_exports": None if raw_values["debt_service_exports"] is None else
                 score_threshold(raw_values["debt_service_exports"], *th.get("debt_service_exports", [15, 25, 40])),
             "fx_debt_share": None if raw_values["fx_debt_share"] is None else
