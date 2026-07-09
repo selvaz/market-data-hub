@@ -168,6 +168,30 @@ def fresh_latest(pair, ref_ts, max_age_years: float = 4.0
     return float(value), date_str
 
 
+def fresh_first_avail(by_ind: dict, ids, ref_ts, max_age_years: float = 4.0
+                      ) -> Tuple[Optional[float], Optional[str]]:
+    """fresh_latest() over a fallback list of indicator ids: return the first
+    candidate whose LATEST print is fresh. dalio._first_avail picks the first
+    NON-EMPTY series before any freshness check, so a stale primary (e.g. an
+    old gdp_growth_weo) would shadow a perfectly current fallback
+    (real_gdp_growth) and needlessly lower coverage. Single ids behave like
+    fresh_latest(_latest(...)). The first stale candidate's date is returned
+    when nothing is fresh, so the audit trail can still show why."""
+    from market_data_hub.dalio import _latest
+    if isinstance(ids, str):
+        ids = [ids]
+    stale_date = None
+    for i in ids:
+        s = by_ind.get(i)
+        if s is None or s.empty:
+            continue
+        value, obs = fresh_latest(_latest(s), ref_ts, max_age_years)
+        if value is not None:
+            return value, obs
+        stale_date = stale_date or obs
+    return None, stale_date
+
+
 @lru_cache(maxsize=1)
 def git_short_sha() -> str:
     """Short git SHA of the running checkout, for the components_json

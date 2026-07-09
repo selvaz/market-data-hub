@@ -132,11 +132,19 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             continue
         by_ind = {i: g[["date", "value"]] for i, g in cdf.groupby("indicator_id")}
 
+        # the private-debt series' latest print gates everything DERIVED from
+        # that series (detrend-proxy gap, ratio growth): a series that stopped
+        # updating years ago would otherwise keep producing numeric values
+        # scored as the current condition
+        s_debt = by_ind.get(_IND["private_debt"])
+        latest_debt, debt_dt = fresh_latest(_latest(s_debt), ref_ts, max_age)
+
         credit_gap_bis, gap_dt = fresh_latest(
             _latest(_first_avail(by_ind, _IND["credit_gap_bis"])), ref_ts, max_age)
         used_proxy = credit_gap_bis is None
         if used_proxy:
-            credit_gap, gap_dt = _linear_detrend_gap(by_ind.get(_IND["private_debt"])), None
+            credit_gap = _linear_detrend_gap(s_debt) if latest_debt is not None else None
+            gap_dt = debt_dt if credit_gap is not None else None
         else:
             credit_gap = credit_gap_bis
 
@@ -152,7 +160,10 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         # the quantity the [5, 8, 12] thresholds (proposal §12.3) are
         # calibrated for. The bare ratio change is neither real nor credit
         # growth (a boom matched by GDP scores 0; a GDP collapse reads as one).
-        ratio_growth = _yoy_pct_change(by_ind.get(_IND["private_debt"]))
+        # Gated on the debt series' latest print: a stale 2017->2018 ratio
+        # change must not combine with a fresh GDP print into a "current"
+        # number.
+        ratio_growth = _yoy_pct_change(s_debt) if latest_debt is not None else None
         real_gdp, growth_dt = fresh_latest(
             _latest(_first_avail(by_ind, _IND["real_growth"])), ref_ts, max_age)
         real_credit_growth = (ratio_growth + real_gdp) \

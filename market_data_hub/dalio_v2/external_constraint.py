@@ -161,9 +161,13 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         # REER history must come from the ref_date-filtered frame like every
         # other component: it is actual monthly BIS data (no forecasts), and
         # anchoring the trend on the unfiltered series would leak post-ref_date
-        # observations into a historical run.
+        # observations into a historical run. Same staleness gate as the other
+        # derived metrics: a series that stopped updating years ago must not
+        # keep producing a "current" overvaluation.
         reer_hist = cdf[cdf["indicator_id"] == _IND["reer"]][["date", "value"]]
-        fx_overvaluation = _pct_deviation_from_trend(reer_hist)
+        latest_reer, _ = fresh_latest(_latest(reer_hist), ref_ts, max_age)
+        fx_overvaluation = _pct_deviation_from_trend(reer_hist) \
+            if latest_reer is not None else None
 
         current_account_deficit = -current_account if not pd.isna(current_account) else None
         niip_gdp = (niip / gdp_usd * 100.0) \

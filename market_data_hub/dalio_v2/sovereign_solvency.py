@@ -27,9 +27,9 @@ import duckdb
 import pandas as pd
 
 from market_data_hub.config_loader import get_countries, get_settings
-from market_data_hub.dalio import _first_avail, _latest, _slope
+from market_data_hub.dalio import _slope
 from market_data_hub.dalio_v2.scoring import (
-    bucket_with_hysteresis, confidence_for, coverage_tier, fresh_latest,
+    bucket_with_hysteresis, confidence_for, coverage_tier, fresh_first_avail,
     git_short_sha, prev_label, score_threshold, suppress_insufficient,
     weighted_average,
 )
@@ -84,14 +84,16 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             continue
         by_ind = {i: g[["date", "value"]] for i, g in cdf.groupby("indicator_id")}
 
-        debt, debt_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["debt_gdp"])), ref_ts, max_age)
-        net_debt, net_debt_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["net_debt_gdp"])), ref_ts, max_age)
-        interest_gdp, interest_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["interest_gdp"])), ref_ts, max_age)
-        revenue_gdp, _ = fresh_latest(_latest(_first_avail(by_ind, _IND["revenue_gdp"])), ref_ts, max_age)
-        primary_balance, primary_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["primary_balance_gdp"])), ref_ts, max_age)
-        growth, _ = fresh_latest(_latest(_first_avail(by_ind, _IND["growth"])), ref_ts, max_age)
-        infl, _ = fresh_latest(_latest(_first_avail(by_ind, _IND["inflation"])), ref_ts, max_age)
-        r_eff, r_eff_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["r_effective"])), ref_ts, max_age)
+        # fresh_first_avail (not dalio._first_avail): a stale primary series
+        # must not shadow a fresh fallback (gdp_growth_weo vs real_gdp_growth)
+        debt, debt_dt = fresh_first_avail(by_ind, _IND["debt_gdp"], ref_ts, max_age)
+        net_debt, net_debt_dt = fresh_first_avail(by_ind, _IND["net_debt_gdp"], ref_ts, max_age)
+        interest_gdp, interest_dt = fresh_first_avail(by_ind, _IND["interest_gdp"], ref_ts, max_age)
+        revenue_gdp, _ = fresh_first_avail(by_ind, _IND["revenue_gdp"], ref_ts, max_age)
+        primary_balance, primary_dt = fresh_first_avail(by_ind, _IND["primary_balance_gdp"], ref_ts, max_age)
+        growth, _ = fresh_first_avail(by_ind, _IND["growth"], ref_ts, max_age)
+        infl, _ = fresh_first_avail(by_ind, _IND["inflation"], ref_ts, max_age)
+        r_eff, r_eff_dt = fresh_first_avail(by_ind, _IND["r_effective"], ref_ts, max_age)
 
         debt_full = cdf_full[cdf_full["indicator_id"] == _IND["debt_gdp"]][["date", "value"]]
         debt_trend = _slope(debt_full, ref_ts.year - 3, ref_ts.year + 5)
