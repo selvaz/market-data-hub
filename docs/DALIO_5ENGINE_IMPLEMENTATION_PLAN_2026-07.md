@@ -11,6 +11,8 @@
 > - [DALIO_CHATGPT_5ENGINE_PROPOSAL_2026-07.md](DALIO_CHATGPT_5ENGINE_PROPOSAL_2026-07.md) — proposta originale (ChatGPT) che ha innescato questo piano. Fonte di formule/soglie/pseudocodice citate qui.
 > - [DALIO_METHODOLOGY_REVIEW_2026-07.md](DALIO_METHODOLOGY_REVIEW_2026-07.md) — revisione statistica precedente del sistema attuale (`dalio.py`). I difetti che identifica (policy rate ≠ costo debito, look-ahead da forecast WEO, z-score fragili, nessuna isteresi, nessun backtest) restano validi e vanno tenuti a mente mentre si costruiscono i nuovi motori — **non riprodurli**.
 > - [DALIO_DATA_COVERAGE_2026-07.md](DALIO_DATA_COVERAGE_2026-07.md) — audit di copertura dati del sistema attuale (measurements 2026-07-08).
+> - [DALIO_VINTAGE_AND_AUDIT_PLAN_2026-07.md](DALIO_VINTAGE_AND_AUDIT_PLAN_2026-07.md) — addendum tecnico che precisa la Fase 6 (validazione) qui sotto: point-in-time correctness (riusa `macro_panel_vintage`/`reader.read_macro_panel(asof=...)`, già esistenti nel repo) e schema fisso per `engine_scores.components_json`. Leggerlo prima di eseguire la Fase 6.
+> - [DALIO_PYTHON_PORTFOLIO_FRAMEWORK_NOTES_2026-07.md](DALIO_PYTHON_PORTFOLIO_FRAMEWORK_NOTES_2026-07.md) — note su uno stack Python di portfolio construction (skfolio/Riskfolio-Lib/zipline/ecc.). **Deferred, non fa parte di questo piano** — i 5 motori producono diagnosi paese, non pesi di portafoglio.
 
 ---
 
@@ -536,11 +538,16 @@ solido del vecchio, non solo architetturalmente diverso.
    report (`dalio_cycle_v2` guadagna un campo `rank_stability` opzionale).
 2. **Backtest storico** (review §4, P2.8; proposta §20): per il sottoinsieme
    di paesi/periodi dove i dati storici sono disponibili (WEO ha vintage
-   storici via `macro_panel_vintage`, già in schema.sql), ricostruire
-   `dalio_cycle_v2` a data storica e verificare se avrebbe segnalato gli
-   episodi di §20.1 della proposta (Giappone, Asia 1997, Argentina, USA
-   2008, Eurozona 2010-12, Grecia, Turchia, Sri Lanka, UK gilt 2022) con
-   almeno 1 anno di anticipo. Riportare esplicitamente falsi positivi/negativi.
+   storici via `macro_panel_vintage`, già in schema.sql, con un'API di
+   lettura point-in-time già pronta — `reader.read_macro_panel(asof=...)`),
+   ricostruire `dalio_cycle_v2` a data storica e verificare se avrebbe
+   segnalato gli episodi di §20.1 della proposta (Giappone, Asia 1997,
+   Argentina, USA 2008, Eurozona 2010-12, Grecia, Turchia, Sri Lanka, UK
+   gilt 2022) con almeno 1 anno di anticipo. Riportare esplicitamente falsi
+   positivi/negativi. **Vedi
+   [DALIO_VINTAGE_AND_AUDIT_PLAN_2026-07.md](DALIO_VINTAGE_AND_AUDIT_PLAN_2026-07.md)
+   §3 Fase D per il protocollo esatto ("vintage replay test") — non
+   reinventarlo qui, è già specificato passo-passo lì.**
 3. **Nota di limiti nel report finale**: sezione obbligatoria (proposta
    §21.6/§21.7 "Methodology"/"Data Quality") che dichiari esplicitamente,
    per ogni motore: quanti paesi sono `full` vs `proxy` vs `insufficient`,
@@ -581,3 +588,9 @@ connettore esterno.
 - Non tornare a un singolo composite z-score pesato per il classificatore
   finale (Fase 5) — è esattamente il difetto che la struttura a 5 motori
   deve risolvere.
+- Non introdurre librerie di portfolio construction (skfolio, Riskfolio-Lib,
+  PyPortfolioOpt, bt, zipline-reloaded, vectorbt, pyfolio-reloaded,
+  empyrical-reloaded, alphalens-reloaded) o logica di risk parity/asset
+  allocation: i 5 motori producono diagnosi paese, non pesi di portafoglio,
+  e non c'è oggi un consumatore a valle. Deferred — vedi
+  [DALIO_PYTHON_PORTFOLIO_FRAMEWORK_NOTES_2026-07.md](DALIO_PYTHON_PORTFOLIO_FRAMEWORK_NOTES_2026-07.md).
