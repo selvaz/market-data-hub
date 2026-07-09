@@ -23,11 +23,11 @@ from typing import Optional, Sequence
 import duckdb
 import pandas as pd
 
-# (score < this value) -> (css class, hex color); last bucket catches the rest
-_COLOR_BUCKETS = [
-    (20, "s0", "#16a34a"), (40, "s1", "#84cc16"), (60, "s2", "#d97706"),
-    (80, "s3", "#ea580c"), (101, "s4", "#b91c1c"),
-]
+# (score < this value) -> hex color; last bucket catches the rest. Applied
+# via inline style="background:{color}" (never a CSS class) so it always
+# renders regardless of what stylesheet classes exist or don't.
+_COLOR_BUCKETS = [(20, "#16a34a"), (40, "#84cc16"), (60, "#d97706"),
+                  (80, "#ea580c"), (101, "#b91c1c")]
 _NA_COLOR = "#94a3b8"
 
 _ENGINE_NAMES = {
@@ -39,14 +39,14 @@ _ENGINE_NAMES = {
 }
 
 
-def _bucket(score: Optional[float]):
-    """Returns (css_class, hex_color) for a 0-100 score, or the n/a pair."""
+def _bucket_color(score: Optional[float]) -> str:
+    """Hex color for a 0-100 score (gray if missing)."""
     if score is None or pd.isna(score):
-        return "sna", _NA_COLOR
-    for limit, cls, color in _COLOR_BUCKETS:
+        return _NA_COLOR
+    for limit, color in _COLOR_BUCKETS:
         if score < limit:
-            return cls, color
-    return "s4", _COLOR_BUCKETS[-1][2]
+            return color
+    return _COLOR_BUCKETS[-1][1]
 
 
 def _country_names(cfg_dir: Path) -> dict:
@@ -169,6 +169,11 @@ _FOOTER = """
 
 def _comparison_table(pivot_score, pivot_label, pivot_tier, engines_present, names,
                       avg_score) -> str:
+    # Plain dark-gray text, no colored badge/pill here (that bug is what made
+    # this table unreadable: the badge relied on a CSS class (s0..s4) that
+    # was never defined, so white badge text sat on no background at all).
+    # td{color:#1a1a2e} from the stylesheet applies directly -- simplest and
+    # most robust option, no per-score styling to get wrong.
     header_row = "<th>Country</th>" + "".join(
         f"<th>{_ENGINE_NAMES.get(e, e)}</th>" for e in engines_present)
     rows = []
@@ -178,14 +183,11 @@ def _comparison_table(pivot_score, pivot_label, pivot_tier, engines_present, nam
             score = pivot_score.loc[iso3, e] if e in pivot_score.columns else None
             label = pivot_label.loc[iso3, e] if e in pivot_label.columns else None
             tier = pivot_tier.loc[iso3, e] if e in pivot_tier.columns else None
-            cls, _ = _bucket(score)
-            opacity = "0.75" if tier == "proxy" else "0.45" if tier == "insufficient" else "1"
             score_txt = "n/a" if score is None or pd.isna(score) else f"{score:.1f}"
             label_txt = "" if label is None or pd.isna(label) else str(label)
             tier_txt = tier if isinstance(tier, str) else "n/a"
-            cells.append(
-                f'<td><span class="badge {cls}" style="opacity:{opacity}" '
-                f'title="coverage: {tier_txt}">{score_txt} &middot; {label_txt}</span></td>')
+            tier_suffix = f" [{tier_txt}]" if tier_txt not in ("full", "n/a") else ""
+            cells.append(f"<td>{score_txt} &middot; {label_txt}{tier_suffix}</td>")
         rows.append(f"<tr>{''.join(cells)}</tr>")
     return _COMPARE_TMPL.format(header_row=header_row, body_rows="".join(rows))
 
@@ -210,7 +212,7 @@ def _country_card(iso3: str, name: str, rows: pd.DataFrame, engines_present, act
             continue
         r = r.iloc[0]
         score = r["score"]
-        cls, color = _bucket(score)
+        color = _bucket_color(score)
         pct = 0 if score is None or pd.isna(score) else max(0, min(100, score))
         score_txt = "n/a" if score is None or pd.isna(score) else f"{score:.1f}/100"
         label_txt = "" if pd.isna(r["label"]) else str(r["label"])

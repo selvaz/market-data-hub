@@ -17,6 +17,8 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Dict, List, Optional
 
+import pandas as pd
+
 from market_data_hub.dalio_v2 import (
     external_constraint, funding_liquidity, political_execution, private_credit,
     sovereign_solvency,
@@ -30,6 +32,19 @@ _ENGINES = {
     "external_constraint": external_constraint.compute,
     "funding_liquidity": funding_liquidity.compute,
 }
+
+
+def _records_with_real_nulls(df: pd.DataFrame):
+    """df.itertuples() straight from a mixed None/str DataFrame is not safe
+    to feed to executemany(): pandas' string-dtype inference silently turns
+    a column's `None` entries into its own NA sentinel, which itertuples()
+    then yields as a bare float('nan') -- and DuckDB writes THAT into a
+    VARCHAR column as the literal 3-character text "nan", not SQL NULL. That
+    "nan" text then survives every downstream `pd.isna(label)` check (it's a
+    normal string, not missing), so it leaks into the report untouched. Scan
+    every cell and coerce pandas/NumPy "missing" back to a real None."""
+    return [tuple(None if pd.isna(v) else v for v in row)
+            for row in df.itertuples(index=False, name=None)]
 
 
 def run_dalio_v2(engines: Optional[List[str]] = None, ref_year: Optional[int] = None,
@@ -53,7 +68,7 @@ def run_dalio_v2(engines: Optional[List[str]] = None, ref_year: Optional[int] = 
                 continue
             con.executemany(
                 "INSERT OR REPLACE INTO engine_scores VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                df.itertuples(index=False, name=None))
+                _records_with_real_nulls(df))
             summary[name] = len(df)
         con.commit()
         return summary

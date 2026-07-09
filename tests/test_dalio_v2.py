@@ -203,6 +203,43 @@ def test_sparse_coverage_suppresses_the_score_instead_of_faking_zero(tmp_db):
     assert label is None
 
 
+def test_missing_label_survives_as_real_null_not_literal_nan_string(tmp_db):
+    # Regression: pandas' string-dtype inference silently turns a mixed
+    # None/str "label" column's None entries into its own NA sentinel, which
+    # itertuples() yields as a bare float('nan') -- DuckDB then wrote that
+    # into the VARCHAR column as the literal text "nan", which survives
+    # every downstream pd.isna(label) check (it's a normal string) and
+    # leaked into the HTML report as visible "nan" text. Only reproduces
+    # with a MIX of populated and missing labels in the same DataFrame (a
+    # column of all-None doesn't trigger the buggy dtype inference) -- USA
+    # gets full data (a real label), MEX gets none (label must stay None).
+    con = get_conn()
+    rows = [_row(dt.date(2026, 12, 31), "USA", ind, v) for ind, v in
+           _LATEST["USA"].items()]
+    rows += [_row(dt.date(y, 12, 31), "USA", "public_debt_gdp", v)
+            for y, v in zip(range(2023, 2028), _DEBT_TRAJECTORY["USA"])]
+    rows.append(_row(dt.date(2026, 12, 31), "MEX", "public_debt_gdp", 50.0))
+    upsert(con, "macro_panel", pd.DataFrame(rows))
+    con.commit()
+    con.close()
+
+    run_dalio_v2(engines=["sovereign_solvency"], ref_year=2026)
+
+    # .fetchall() (not .fetch_df()) so a real SQL NULL comes back as Python
+    # None rather than being turned into a float NaN by the pandas bridge --
+    # that pandas-side NaN is a separate, expected conversion; what this test
+    # guards against is the literal 3-character STRING "nan" that the write
+    # path used to produce instead of ever writing SQL NULL at all.
+    con = get_conn(read_only=True)
+    rows = con.execute(
+        "SELECT country_iso3, label FROM engine_scores WHERE engine = 'sovereign_solvency' "
+        "AND country_iso3 IN ('USA', 'MEX')").fetchall()
+    con.close()
+    labels = dict(rows)
+    assert labels["USA"] == "strong"
+    assert labels["MEX"] is None    # real NULL, not the literal string "nan"
+
+
 # ---------------------------------------------------------------------------
 # Private Credit Cycle: BIS-covered country vs BIS-uncovered (proxy) country
 # ---------------------------------------------------------------------------
