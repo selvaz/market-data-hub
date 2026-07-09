@@ -607,6 +607,15 @@ limitato in una sessione, e fermarsi lì se serve: producono già 2 motori su
 5 pienamente funzionanti con dati che il repo ha già, senza nessun nuovo
 connettore esterno.
 
+> ✅ **Report unificato v1+v2** (2026-07-09) — `make_dalio_report.py` è ora il
+> dashboard unico: le classificazioni v1 (fase del ciclo, quadrante
+> growth/inflation, tag paese, grafici storici) e i punteggi dei 5 motori v2
+> convivono sulla stessa scheda paese (`python make_dalio_report.py --calc
+> --calc-v2`). `run_dalio_v2.py` resta come alternativa più leggera, solo-v2,
+> per un refresh veloce senza dover popolare le tabelle di classificazione v1.
+> `make_dalio_report.py` degrada in modo pulito (nessun crash, nota esplicita)
+> se `engine_scores` non è ancora popolata.
+
 ## 6. Cosa NON fare (promemoria esplicito)
 
 - Non tentare di costruire un CPIS/TIC/SHSS/COFER "unificato" a 64 paesi:

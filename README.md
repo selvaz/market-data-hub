@@ -80,6 +80,10 @@ python validate_macro_panel.py --full     # all 64 countries
 # Dalio v2 — 5-engine country risk analysis (additive, see docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md)
 python run_dalio_v2.py                    # refresh scores + regenerate the HTML report
 python run_dalio_v2.py --csv              # also write a CSV snapshot
+
+# Unified v1+v2 dashboard: classification/charts (v1) + 5-engine scores (v2)
+# on the same per-country sheet
+python make_dalio_report.py --calc --calc-v2 --open
 ```
 
 ## Automation (Windows Task Scheduler)

@@ -1,0 +1,87 @@
+# -*- coding: utf-8 -*-
+"""
+test_make_dalio_report.py — the unified v1+v2 dashboard: collect() must wire
+Dalio v2 engine scores onto the same per-country dict (has_v2 flag, v2 sub-
+dict) when engine_scores is populated, and degrade cleanly (has_v2=False,
+empty v2 dicts) when it isn't. See make_dalio_report.py's module docstring.
+"""
+from __future__ import annotations
+
+import datetime as dt
+import random
+
+import pandas as pd
+
+from market_data_hub.classify import classify_countries
+from market_data_hub.dalio import run_dalio
+from market_data_hub.dalio_v2.runner import run_dalio_v2
+from market_data_hub.db.connection import get_conn
+from market_data_hub.db.upsert import upsert
+from tests.test_dalio_v2 import _seed as seed_v2
+from tests.test_pipeline import _IND as V1_IND
+
+import make_dalio_report as mdr
+
+
+def _seed_v1_macro_panel(con):
+    random.seed(0)
+    upsert(con, "macro_panel", pd.DataFrame([{
+        "date": dt.date(y, 12, 31), "country_iso3": c, "indicator_id": i,
+        "value": random.uniform(1, 50), "indicator_name": i, "pillar": p,
+        "orientation": o, "source": "imf" if "weo" in i else "wb",
+        "provider_dataset": "X", "provider_code": "Y", "unit": "pct", "frequency": f}
+        for c in ["USA", "ITA", "CHE"] for i, p, o, f in V1_IND
+        for y in range(2015, 2031)]))
+
+
+def test_collect_without_v2_degrades_cleanly(tmp_db):
+    con = get_conn()
+    _seed_v1_macro_panel(con)
+    con.commit()
+    con.close()
+
+    run_dalio()
+    classify_countries()
+
+    con = get_conn(read_only=True)
+    d = mdr.collect(con)
+    con.close()
+
+    assert d["has_v2"] is False
+    assert "USA" in d["countries"]
+    assert d["countries"]["USA"]["v2"] == {}
+    # render_html must not choke on the empty-v2 case
+    html = mdr.render_html(d)
+    assert "V2_ENGINE_NAMES" in html
+
+
+def test_collect_with_v2_wires_engine_scores_onto_the_same_country(tmp_db):
+    con = get_conn()
+    _seed_v1_macro_panel(con)
+    seed_v2(con)   # adds USA/SGP/ARG dalio_v2 indicators (USA overlaps with v1's seed)
+    con.commit()
+    con.close()
+
+    run_dalio()
+    classify_countries()
+    run_dalio_v2(engines=["sovereign_solvency", "political_execution"])
+
+    con = get_conn(read_only=True)
+    d = mdr.collect(con)
+    con.close()
+
+    assert d["has_v2"] is True
+    usa_v2 = d["countries"]["USA"]["v2"]
+    assert set(usa_v2) == {"sovereign_solvency", "political_execution"}
+    assert usa_v2["sovereign_solvency"]["coverage_tier"] in ("full", "proxy", "insufficient")
+    # ITA shares public_debt_gdp/fiscal_balance_gdp with v1's seed, so the
+    # engine still emits a (2/7, insufficient, score=None) row for it -- the
+    # coverage-tier discipline, not a bug (see suppress_insufficient). It
+    # has no WGI data at all, so political_execution is absent entirely.
+    ita_v2 = d["countries"]["ITA"]["v2"]
+    assert set(ita_v2) == {"sovereign_solvency"}
+    assert ita_v2["sovereign_solvency"]["coverage_tier"] == "insufficient"
+    assert ita_v2["sovereign_solvency"]["score"] is None
+
+    html = mdr.render_html(d)
+    assert "Dalio v2" in html

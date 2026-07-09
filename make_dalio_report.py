@@ -1,19 +1,28 @@
 # -*- coding: utf-8 -*-
 """
 make_dalio_report.py — interactive Ray Dalio dashboard (single-file HTML, English).
+The unified v1+v2 report: v1's classification/charts plus the Dalio v2
+5-engine country risk scores (additive, see
+docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md) on the SAME country
+sheet, read straight from engine_scores if run_dalio_v2.py has been run
+against this DB (the section degrades to a hint if it hasn't, instead of
+failing). run_dalio_v2.py's own report.py remains a lighter, v2-only
+alternative for a fast refresh that doesn't need v1's regime_state/
+pillar_scores/country_classification to be populated.
 
 Tabs:
-  1. Overview     — four-box matrix, debt-cycle phase distribution, cross-country table
+  1. Overview     — four-box matrix, debt-cycle phase distribution, cross-country
+                    table (+ v2 risk column if v2 has been run)
   2. Countries    — per-country sheet: classification, phase/regime, pillar scores,
-                    historical charts (click any chart -> interactive modal with tooltip),
-                    stale-data alerts
+                    Dalio v2 5-engine scores, historical charts (click any chart ->
+                    interactive modal with tooltip), stale-data alerts
   3. Methodology  — the Ray Dalio method explained
   4. Statistics   — every statistic used + its economic meaning
 
 Self-contained: data embedded as JSON, charts in vanilla-JS SVG, no external deps.
 
 Usage:
-    python make_dalio_report.py [--open] [--calc]
+    python make_dalio_report.py [--open] [--calc] [--calc-v2]
 """
 from __future__ import annotations
 import argparse
@@ -118,6 +127,28 @@ def collect(con) -> dict:
     except Exception:
         cls_by = {}
 
+    # Dalio v2 (5-engine architecture, additive -- see
+    # docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md). Optional: the
+    # engine_scores table may not exist yet or be empty if run_dalio_v2.py
+    # was never run against this DB; degrade to "no v2 section" rather than
+    # failing the whole v1 report.
+    v2_by = {}
+    try:
+        v2 = con.execute(
+            "SELECT country_iso3, engine, score, label, coverage_tier, confidence, "
+            "n_components, n_expected FROM engine_scores WHERE ref_date = "
+            "(SELECT max(ref_date) FROM engine_scores)").fetch_df()
+        for _, r in v2.iterrows():
+            v2_by.setdefault(r["country_iso3"], {})[r["engine"]] = {
+                "score": None if pd.isna(r["score"]) else round(float(r["score"]), 2),
+                "label": None if pd.isna(r["label"]) else r["label"],
+                "coverage_tier": r["coverage_tier"],
+                "confidence": r["confidence"],
+                "n_components": int(r["n_components"]), "n_expected": int(r["n_expected"]),
+            }
+    except Exception:
+        pass
+
     h = con.execute("SELECT max(date) FROM macro_panel WHERE provider_dataset='WEO'").fetchone()[0]
     weo_horizon = pd.Timestamp(h).year if h is not None else None
 
@@ -155,6 +186,9 @@ def collect(con) -> dict:
             "stale": stale_by.get(iso, []),
             "cls": {k: (None if pd.isna(v) else v) for k, v in cls_by.get(iso, {}).items()
                     if k not in ("country_iso3", "name", "computed_at")},
+            # Dalio v2 5-engine scores, if run_dalio_v2.py has populated
+            # engine_scores for this DB; {} if not (section simply hides).
+            "v2": v2_by.get(iso, {}),
         }
 
     return {
@@ -164,6 +198,7 @@ def collect(con) -> dict:
         "quad_counts": reg["quadrant"].value_counts(dropna=True).to_dict(),
         "countries": countries,
         "chart_indicators": CHART_INDICATORS,
+        "has_v2": bool(v2_by),
     }
 
 
@@ -273,6 +308,22 @@ const CAVEAT={
 };
 const ILABEL={}; DATA.chart_indicators.forEach(ci=>ILABEL[ci[0]]=ci[1]);
 
+// Dalio v2 -- 5-engine architecture (additive; see
+// docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md). Higher score = worse,
+// 0-100, unlike the v1 composite (cross-country z, unbounded, higher=better).
+const V2_ENGINE_ORDER=["sovereign_solvency","funding_liquidity","private_credit","external_constraint","political_execution"];
+const V2_ENGINE_NAMES={sovereign_solvency:"Sovereign Solvency",political_execution:"Political Execution",
+ private_credit:"Private Credit Cycle",external_constraint:"External Currency Constraint",funding_liquidity:"Funding Liquidity"};
+function v2Color(score){
+ if(score===null||score===undefined||isNaN(score))return '#94a3b8';
+ if(score<20)return '#16a34a'; if(score<40)return '#84cc16'; if(score<60)return '#d97706';
+ if(score<80)return '#ea580c'; return '#b91c1c';
+}
+function v2AvgRisk(c){
+ const vals=V2_ENGINE_ORDER.map(e=>c.v2&&c.v2[e]?c.v2[e].score:null).filter(v=>v!==null&&v!==undefined);
+ return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+}
+
 function tab(id,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
  document.getElementById(id).classList.add('active');
  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
@@ -369,6 +420,27 @@ function showCountry(iso){
       '<span style="position:absolute;left:50%;top:0;height:16px;border-left:1px solid #94a3b8"></span></span>'+
       '<span style="width:42px;text-align:right">'+fmt(z,2)+'</span></div>';});
  h+='</div>';
+ const v2=c.v2||{};
+ if(Object.keys(v2).length){
+   h+='<div style="margin:12px 0"><b style="font-size:12px;color:#334155">Dalio v2 &mdash; country risk engines</b> '+
+      '<span class="muted">(0-100, higher = worse; separate from the v1 composite above)</span>';
+   V2_ENGINE_ORDER.forEach(e=>{
+     const r=v2[e]; if(!r)return;
+     const s=r.score, col=v2Color(s), pct=(s===null||s===undefined||isNaN(s))?0:Math.max(0,Math.min(100,s));
+     const txt=(s===null||s===undefined||isNaN(s))?'n/a':fmt(s,1)+'/100';
+     h+='<div class="pbar"><span class="pl" style="width:190px">'+(V2_ENGINE_NAMES[e]||e)+'</span><span class="pt">'+
+        '<span class="pf" style="left:0;width:'+pct+'%;background:'+col+'"></span></span>'+
+        '<span style="width:130px;text-align:right">'+txt+(r.label?' &middot; '+r.label:'')+'</span></div>';
+     h+='<div class="muted" style="margin:-2px 0 6px 198px;font-size:10.5px">coverage: '+r.coverage_tier+
+        ' &middot; confidence: '+r.confidence+' &middot; '+r.n_components+'/'+r.n_expected+' inputs</div>';
+   });
+   h+='</div>';
+ } else if(DATA.has_v2){
+   h+='<p class="muted">No Dalio v2 engine scores for this country yet.</p>';
+ } else {
+   h+='<div class="note">Dalio v2 (5-engine country risk architecture) has not been run against this '+
+      'database yet &mdash; run <code>python run_dalio_v2.py</code> and regenerate this report to see it here.</div>';
+ }
  h+='<div class="charts">';
  DATA.chart_indicators.forEach(ci=>{const s=c.series[ci[0]];
    h+='<div class="chart" onclick="openChart(\''+iso+'\',\''+ci[0]+'\')"><h4>'+ci[1]+
@@ -398,18 +470,24 @@ function buildOverview(){
    h+='<tr><td><b style="color:'+(PHASE[p]?PHASE[p][0]:'#000')+'">'+p+'</b></td><td class=n>'+n+'</td><td class="muted">'+(PHASE[p]?PHASE[p][1]:'')+'</td></tr>';});
  h+='</table>';
  h+='<h2>Cross-country snapshot <span class="muted">(click a row for the country sheet)</span></h2>';
- h+='<table><tr><th>Country</th><th>Composite</th><th>Phase</th><th>Regime</th><th>Delev.</th><th>Debt/GDP trend</th><th>nom.g</th><th>nom.r</th><th>cg</th><th>dsr</th></tr>';
+ const v2col=DATA.has_v2?'<th>v2 risk</th>':'';
+ h+='<table><tr><th>Country</th><th>Composite</th><th>Phase</th><th>Regime</th><th>Delev.</th><th>Debt/GDP trend</th><th>nom.g</th><th>nom.r</th><th>cg</th><th>dsr</th>'+v2col+'</tr>';
  cs.sort((a,b)=>((b[1].composite??-99)-(a[1].composite??-99)));
  cs.forEach(([iso,c])=>{const q=QUAD[c.quadrant];
    const dt=c.debt_trend, dtc=(dt===null||dt===undefined)?'#000':(dt>1.5?'#b91c1c':dt>0.7?'#ca8a04':dt<0?'#16a34a':'#334155');
    const star=(c.stale&&c.stale.length)?' <span title="has stale data" style="color:#dc2626">&#9888;</span>':'';
+   let v2cell='';
+   if(DATA.has_v2){const avg=v2AvgRisk(c);
+     v2cell='<td class=n style="color:'+v2Color(avg)+';font-weight:600">'+(avg===null?'—':fmt(avg,0))+'</td>';}
    h+='<tr class="clk" onclick="gotoCountry(\''+iso+'\')"><td><b>'+iso+'</b> <span class="muted">'+c.name+'</span>'+star+'</td>'+
      '<td class=n>'+fmt(c.composite,2)+'</td><td style="color:'+(PHASE[c.phase]?PHASE[c.phase][0]:'#000')+'">'+c.phase+'</td>'+
      '<td style="color:'+(q?q[0]:'#000')+';font-weight:600">'+(c.quadrant||'—')+'</td><td>'+(c.delev||'—')+'</td>'+
      '<td class=n style="color:'+dtc+';font-weight:600">'+fmt(dt,2)+'</td>'+
      '<td class=n>'+fmt(c.nom_growth)+'</td><td class=n>'+fmt(c.nom_rate)+'</td>'+
-     '<td class=n>'+fmt(c.credit_gap)+'</td><td class=n>'+fmt(c.dsr)+'</td></tr>';});
+     '<td class=n>'+fmt(c.credit_gap)+'</td><td class=n>'+fmt(c.dsr)+'</td>'+v2cell+'</tr>';});
  h+='</table>';
+ if(!DATA.has_v2)h+='<p class="muted">Dalio v2 (5-engine country risk) not yet run against this database &mdash; '+
+   'run <code>python run_dalio_v2.py</code> to add the v2 risk column and per-country engine detail.</p>';
  document.getElementById('ov').innerHTML=h;
 }
 function gotoCountry(iso){document.querySelectorAll('nav button')[1].click();
@@ -544,6 +622,9 @@ def main() -> int:
     p.add_argument("--db")
     p.add_argument("--open", action="store_true")
     p.add_argument("--calc", action="store_true", help="recompute (run_dalio) first")
+    p.add_argument("--calc-v2", action="store_true",
+                   help="also recompute the Dalio v2 5-engine scores first (additive, see "
+                        "docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md)")
     args = p.parse_args()
 
     if args.calc:
@@ -552,6 +633,11 @@ def main() -> int:
         s = run_dalio(args.db)
         classify_countries(args.db)
         print(f"Recomputed: {s['countries']} countries, phases {s['phases']}")
+
+    if args.calc_v2:
+        from market_data_hub.dalio_v2.runner import run_dalio_v2
+        v2s = run_dalio_v2(db_path=args.db)
+        print(f"Recomputed Dalio v2: {v2s}")
 
     REPORT_DIR.mkdir(exist_ok=True)
     con = get_conn(args.db, read_only=True)
