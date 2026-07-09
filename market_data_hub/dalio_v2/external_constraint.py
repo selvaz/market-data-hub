@@ -61,7 +61,7 @@ from market_data_hub.config_loader import get_countries, get_settings
 from market_data_hub.dalio import _first_avail, _latest
 from market_data_hub.dalio_v2.scoring import (
     bucket_with_hysteresis, confidence_for, coverage_tier, git_short_sha,
-    prev_label, score_threshold, weighted_average,
+    prev_label, score_threshold, suppress_insufficient, weighted_average,
 )
 
 ENGINE = "external_constraint"
@@ -205,6 +205,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         tier = coverage_tier(n_avail, n_exp)
         if components.get("fx_debt_share") is None and tier == "full":
             tier = "proxy"
+        score = suppress_insufficient(score, tier)
         conf = confidence_for(tier)
         prev = prev_label(con, country, ENGINE, ref_date)
         label = bucket_with_hysteresis(score, bucket_thresholds, bucket_labels, prev, margin_pct)

@@ -97,6 +97,18 @@ def coverage_tier(n_available: int, n_expected: int) -> str:
     return "insufficient"
 
 
+def suppress_insufficient(score: Optional[float], tier: str) -> Optional[float]:
+    """Enforce the coverage-tier discipline end to end: a row with
+    'insufficient' coverage must never carry a numeric score, no matter how
+    that score was computed. Without this, a country with e.g. 1 of 7
+    components available reads as a confident '0.0 / strong' if that one
+    lucky component happens to be safe -- the coverage badge would flag it,
+    but the number alone looks authoritative and isn't. Call this AFTER any
+    tier adjustment (proxy caps, discounts, etc.), right before bucket
+    assignment, in every engine."""
+    return None if tier == "insufficient" else score
+
+
 def confidence_for(tier: str) -> str:
     return {"full": "high", "proxy": "medium", "insufficient": "low"}.get(tier, "low")
 

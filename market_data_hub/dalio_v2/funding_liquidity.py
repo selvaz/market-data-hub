@@ -44,7 +44,7 @@ from market_data_hub.config_loader import get_settings
 from market_data_hub.dalio import _first_avail, _latest
 from market_data_hub.dalio_v2.scoring import (
     bucket_with_hysteresis, confidence_for, git_short_sha, prev_label,
-    score_threshold, weighted_average,
+    score_threshold, suppress_insufficient, weighted_average,
 )
 
 ENGINE = "funding_liquidity"
@@ -122,6 +122,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         # structural cap: this engine only ever implements the reduced-scope
         # proxy tier ("ramo B"), never real GFN/auction data -- see docstring.
         tier = "proxy" if n_avail > 0 else "insufficient"
+        score = suppress_insufficient(score, tier)   # defensive; tier already implies score is None here
         conf = confidence_for(tier)
         prev = prev_label(con, country, ENGINE, ref_date)
         label = bucket_with_hysteresis(score, bucket_thresholds, bucket_labels, prev, margin_pct)

@@ -22,7 +22,7 @@ import pandas as pd
 from market_data_hub.config_loader import get_settings
 from market_data_hub.dalio_v2.scoring import (
     bucket_with_hysteresis, confidence_for, coverage_tier, git_short_sha,
-    percentile_rank, prev_label, weighted_average,
+    percentile_rank, prev_label, suppress_insufficient, weighted_average,
 )
 
 ENGINE = "political_execution"
@@ -85,6 +85,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         }
         score, n_avail, n_exp = weighted_average(components, weights)
         tier = coverage_tier(n_avail, n_exp)
+        score = suppress_insufficient(score, tier)
         conf = confidence_for(tier)
         prev = prev_label(con, country, ENGINE, ref_date)
         label = bucket_with_hysteresis(score, bucket_thresholds, bucket_labels, prev, margin_pct)

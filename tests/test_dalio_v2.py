@@ -75,6 +75,14 @@ def test_git_short_sha_never_raises():
     assert isinstance(sha, str) and sha
 
 
+def test_suppress_insufficient_nulls_the_score():
+    # a lone "safe" component must not read as a confident 0/strong when
+    # coverage is too thin to trust it
+    assert scoring.suppress_insufficient(0.0, "insufficient") is None
+    assert scoring.suppress_insufficient(0.0, "proxy") == 0.0
+    assert scoring.suppress_insufficient(55.2, "full") == 55.2
+
+
 # ---------------------------------------------------------------------------
 # Full pipeline: seed -> run_dalio_v2 -> engine_scores
 # ---------------------------------------------------------------------------
@@ -166,6 +174,33 @@ def test_sovereign_solvency_and_political_execution(tmp_db):
     assert audit["vintage_safe"] is False
     assert set(audit["missing_components"]) == set()
     assert "model_version" in audit and audit["model_version"]
+
+
+def test_sparse_coverage_suppresses_the_score_instead_of_faking_zero(tmp_db):
+    # MEX gets exactly ONE of the 7 Sovereign Solvency inputs (a comfortably
+    # "safe" debt/GDP level). Before suppress_insufficient() this produced a
+    # confident-looking 0.0/"strong" row -- misleading, since 6 of 7 inputs
+    # are simply missing, not actually safe. It must now read as no score.
+    con = get_conn()
+    upsert(con, "macro_panel", pd.DataFrame([
+        _row(dt.date(2026, 12, 31), "MEX", "public_debt_gdp", 50.0),
+    ]))
+    con.commit()
+    con.close()
+
+    run_dalio_v2(engines=["sovereign_solvency"], ref_year=2026)
+
+    con = get_conn(read_only=True)
+    row = con.execute(
+        "SELECT score, label, coverage_tier, n_components, n_expected FROM engine_scores "
+        "WHERE engine = 'sovereign_solvency' AND country_iso3 = 'MEX'").fetchone()
+    con.close()
+
+    score, label, tier, n_comp, n_exp = row
+    assert tier == "insufficient"
+    assert n_comp == 1 and n_exp == 7
+    assert score is None
+    assert label is None
 
 
 # ---------------------------------------------------------------------------
