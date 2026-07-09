@@ -86,32 +86,33 @@ def to_csv(df: pd.DataFrame, out_path: Path) -> Path:
 
 
 _STYLE = """
-:root{--blue:#1d4ed8;--ink:#1a1a2e;--mut:#52606d;--bg:#f8fafc;--card:#fff;--bd:#e2e8f0;color-scheme:light}
+html{background:#f8fafc}
 *{box-sizing:border-box}
-body{font-family:-apple-system,Segoe UI,Arial,sans-serif;color:var(--ink);margin:0;background:var(--bg);font-size:14px}
-header{background:linear-gradient(120deg,#1e3a8a,#1d4ed8);color:#fff;padding:18px 24px}
-header h1{margin:0;font-size:20px;color:#fff}
-header p{margin:4px 0 0;font-size:12.5px;color:#e8edfc}
-main{max-width:1080px;margin:0 auto;padding:20px}
-h2{font-size:16px;color:var(--blue);border-bottom:1px solid var(--bd);padding-bottom:6px;margin-top:26px}
-table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0}
-th{background:#eef2ff;text-align:left;padding:7px 8px;border-bottom:2px solid var(--bd)}
-td{padding:5px 8px;border-bottom:1px solid #f1f5f9} td.n{text-align:right;font-variant-numeric:tabular-nums}
+body{font-family:-apple-system,Segoe UI,Arial,sans-serif;color:#1a1a2e;margin:0;background:#f8fafc;font-size:14px}
+header{background:#1d4ed8;color:#ffffff;padding:18px 24px}
+header h1{margin:0;font-size:20px;color:#ffffff}
+header p{margin:4px 0 0;font-size:12.5px;color:#ffffff}
+main{max-width:1080px;margin:0 auto;padding:20px;background:#f8fafc;color:#1a1a2e}
+h2{font-size:16px;color:#1d4ed8;border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin-top:26px}
+h3{color:#1a1a2e}
+table{border-collapse:collapse;width:100%;font-size:12.5px;margin:8px 0;background:#ffffff;color:#1a1a2e}
+th{background:#eef2ff;color:#1a1a2e;text-align:left;padding:7px 8px;border-bottom:2px solid #e2e8f0}
+td{padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#1a1a2e} td.n{text-align:right;font-variant-numeric:tabular-nums}
 .kpi{display:inline-block;background:#eff6ff;border-radius:8px;padding:10px 16px;margin:4px 8px 4px 0}
-.kpi b{display:block;font-size:20px;color:var(--blue)} .kpi span{font-size:11px;color:var(--mut)}
-select{font-size:15px;padding:8px 12px;border:1px solid var(--bd);border-radius:8px;min-width:280px}
-.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:18px;margin-top:14px}
-.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;color:#fff}
+.kpi b{display:block;font-size:20px;color:#1d4ed8} .kpi span{font-size:11px;color:#3f4b57}
+select{font-size:15px;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;min-width:280px;background:#ffffff;color:#1a1a2e}
+.card{background:#ffffff;color:#1a1a2e;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-top:14px}
+.badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;color:#ffffff}
 .pbar{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12px}
-.pbar .pl{width:210px;color:#334155;font-weight:600}
+.pbar .pl{width:210px;color:#1a1a2e;font-weight:600}
 .pbar .pt{flex:1;background:#eef2ff;border-radius:4px;height:16px;position:relative}
 .pbar .pf{position:absolute;top:0;left:0;height:16px;border-radius:4px}
-.pbar .pv{width:150px;text-align:right;color:var(--mut)}
-.tier-note{font-size:11px;color:var(--mut);margin:-4px 0 10px 218px}
-details{margin:4px 0 14px 218px} details summary{cursor:pointer;font-size:11px;color:var(--mut)}
-.comp-table td, .comp-table th{font-size:11.5px;padding:3px 8px}
-.note{background:#fffbeb;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:4px;margin:10px 0;font-size:13px}
-.muted{color:var(--mut);font-size:12px}
+.pbar .pv{width:150px;text-align:right;color:#3f4b57}
+.tier-note{font-size:11px;color:#3f4b57;margin:-4px 0 10px 218px}
+details{margin:4px 0 14px 218px;color:#1a1a2e} details summary{cursor:pointer;font-size:11px;color:#3f4b57}
+.comp-table td, .comp-table th{font-size:11.5px;padding:3px 8px;color:#1a1a2e}
+.note{background:#fffbeb;color:#1a1a2e;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:4px;margin:10px 0;font-size:13px}
+.muted{color:#3f4b57;font-size:12px}
 .country-card{display:none} .country-card.active{display:block}
 """
 
