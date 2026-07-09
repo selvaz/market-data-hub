@@ -110,12 +110,19 @@ dalio:
                               # counting (they feed derived calcs like nom_rate).
 
 # Dalio v2 — 5-engine architecture (additive, see
-# docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md). Phase 1 only: Sovereign
-# Solvency + Political Execution. All thresholds/weights live here, never
-# hardcoded in Python, so Phase 6 sensitivity analysis can iterate without
-# touching code.
+# docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md). All 5 engines are live.
+# Thresholds/weights live here (exception: the reserve-currency country set,
+# still hardcoded in external_constraint.py pending the plan's Fase 0
+# countries.yaml flags), so Phase 6 sensitivity analysis can iterate without
+# touching code. validate_config.py checks this block's key sets.
 dalio_v2:
-  hysteresis_margin_pct: 0.10   # dead-band = 10% of the gap between adjacent bucket thresholds
+  # dead-band = 10% of the span from one bucket threshold below the crossed
+  # boundary to one above it (4 points for the default 20-spaced cuts)
+  hysteresis_margin_pct: 0.10
+  # a point observation older than this (vs ref_date) is treated as missing
+  # instead of scored as the country's current condition; annual data with a
+  # 1-2y publication lag (WGI, IIP) passes, a decade-old print doesn't
+  staleness_max_age_years: 4
 
   sovereign_solvency:
     # score_threshold(value, watch, stress, critical): 0 below watch, 50 at
@@ -167,8 +174,14 @@ dalio_v2:
     thresholds:
       credit_gap: [2, 5, 10]
       private_dsr_pct: [75, 90, 95]        # percentile of the country's OWN history, 0-100
+      # real credit growth ~ YoY % change of credit/GDP + real GDP growth
+      # (ratio change nets out nominal GDP; adding real growth back recovers
+      # the inflation-adjusted credit growth these thresholds are for)
       real_credit_growth: [5, 8, 12]
-      real_house_price_gap: [10, 20, 30]   # not wired yet (no BIS WS_SPP connector) -- always missing
+      # real_house_price_gap is not wired yet (no BIS WS_SPP connector): the
+      # component is always missing, so it keeps a weight (counts toward
+      # n_expected -> honest coverage) but carries no threshold until it has
+      # a data source
       npl_ratio: [3, 6, 10]                # ASSUMED, not from source proposal
     weights:
       credit_gap: 0.30

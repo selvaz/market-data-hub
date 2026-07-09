@@ -33,12 +33,18 @@ from market_data_hub.db.connection import get_conn
 IND = {
     "credit_gap": "bis_credit_gap",
     "dsr": "bis_dsr_private",
-    # Cost of debt for the r-vs-g / beautiful-vs-ugly test. The effective rate on
-    # the debt STOCK (IMF implied_interest_rate = interest %GDP ÷ debt) is a
-    # truer "r" than the central-bank policy rate, and — unlike the ECB policy
-    # rate shared by the whole euro area — it is country-specific (Greece != DE).
-    # Falls back to the BIS policy rate where the implied rate is missing.
-    "policy_rate": ["implied_interest_rate", "bis_policy_rate"],
+    # Two DISTINCT rate series, split by what "r" means at each consumption site:
+    #  - policy_rate: the central-bank POLICY stance (BIS, IMF MFS fallback).
+    #    Reads that ask "can the CB still ease?" — rate_near_zero /
+    #    PUSHING_ON_STRING and the deleveraging-quality test — must use this
+    #    one: the implied stock rate never approaches zero.
+    #  - implied_rate: the effective rate on the debt STOCK (IMF
+    #    implied_interest_rate = interest %GDP ÷ debt), a truer "r" for the
+    #    r-vs-g debt-dynamics test ONLY, and — unlike the ECB policy rate
+    #    shared by the whole euro area — country-specific (Greece != DE).
+    #    Falls back to the policy rate where the implied rate is missing.
+    "policy_rate": ["bis_policy_rate", "imf_policy_rate"],
+    "implied_rate": ["implied_interest_rate", "bis_policy_rate", "imf_policy_rate"],
     "pub_debt": "public_debt_gdp",
     "fiscal": ["fiscal_balance_gdp"],
     "growth": ["gdp_growth_weo", "real_gdp_growth"],
@@ -132,7 +138,8 @@ def classify_cycle_phase(x: dict, th: dict) -> str:
     cg = x.get("credit_gap")
     g = x.get("growth")
     gn = x.get("nom_growth")
-    rn = x.get("nom_rate")
+    rn = x.get("nom_rate")           # effective rate on the debt stock (r-vs-g)
+    pr = x.get("policy_rate")        # central-bank policy rate (monetary stance)
     dsr = x.get("dsr")
     debt_falling = x.get("debt_falling")
     debt_lvl = x.get("debt_level")
@@ -185,8 +192,9 @@ def classify_cycle_phase(x: dict, th: dict) -> str:
     if (has(cg) and cg > th["credit_gap_late"]) or debt_rising_fast:
         return "LATE_LEVERAGING"
 
-    # 4) exhausted monetary policy: rates ~0 and weak growth
-    if has(rn) and rn < th["rate_near_zero"] and has(g) and g < th["weak_growth"]:
+    # 4) exhausted monetary policy: POLICY rate ~0 and weak growth. Must read
+    #    the policy rate, not the implied stock rate (which never nears zero).
+    if has(pr) and pr < th["rate_near_zero"] and has(g) and g < th["weak_growth"]:
         return "PUSHING_ON_STRING"
 
     # 5) healthy expansion (the "normal" case: positive growth, no excesses)
@@ -200,7 +208,9 @@ def _deleveraging_quality(g, gn, rn, debt_falling):
     """Deleveraging quality — only makes sense IF the debt is falling.
     If debt is not falling, there is NO deleveraging -> NA (no contradictions
     like 'EARLY_EXPANSION + UGLY'). Beautiful: nominal growth > nominal rate;
-    Ugly: nominal growth < nominal rate (painful/deflationary reduction)."""
+    Ugly: nominal growth < nominal rate (painful/deflationary reduction).
+    `rn` here is the POLICY rate (monetary conditions during the deleveraging),
+    not the implied stock rate."""
     if not debt_falling:
         return "NA"
     if pd.isna(gn) or pd.isna(rn):
@@ -257,8 +267,14 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
     for ind, g in pref.groupby("indicator_id"):
         last = g.sort_values("date").groupby("country_iso3").tail(1)
         vals = dict(zip(last["country_iso3"], last["value"]))
-        orient = _orient(g["orientation"].iloc[-1]) or 1
+        orient = _orient(g["orientation"].iloc[-1])
         ind_meta[ind] = (g["pillar"].iloc[-1], orient)
+        # orientation 0 = staged/derived input (bond_yield_10y, implied rate,
+        # fx_debt_share, ...), NOT a strength signal: coercing it to +1 would
+        # write wrong POS/NEG rows (highest 10Y yield = "strength"). No z ->
+        # the signal row stays NEUTRAL and the pillar mean skips it.
+        if orient == 0:
+            continue
         arr = np.array([v for v in vals.values()], dtype=float)
         mean, std = np.nanmean(arr), np.nanstd(arr)
         if not std or np.isnan(std):
@@ -294,6 +310,7 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
         s_cg = _first_avail(by_ind, IND["credit_gap"])
         s_dsr = _first_avail(by_ind, IND["dsr"])
         s_rate = _first_avail(by_ind, IND["policy_rate"])
+        s_impl = _first_avail(by_ind, IND["implied_rate"])
         s_debt = _first_avail(by_ind, IND["pub_debt"])
         s_fisc = _first_avail(by_ind, IND["fiscal"])
         s_g = _first_avail(by_ind, IND["growth"])
@@ -302,7 +319,8 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
         credit_gap, _ = _latest(s_cg)
         dsr, _ = _latest(s_dsr)
         dsr_pct = _pct_in_range(s_dsr)   # DSR position vs its history (Dalio)
-        nom_rate, _ = _latest(s_rate)
+        policy_rate, _ = _latest(s_rate)
+        nom_rate, _ = _latest(s_impl)    # stock rate: the r of the r-vs-g test
         debt, _ = _latest(s_debt)
         debt_prev = _prev(s_debt)
         fiscal_balance, _ = _latest(s_fisc)
@@ -348,9 +366,10 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
             "debt_level": debt, "fiscal_balance": fiscal_balance,
             "debt_trend": debt_trend,
             "growth": growth, "nom_growth": nom_growth, "nom_rate": nom_rate,
+            "policy_rate": policy_rate,
             "dsr": dsr, "dsr_pct": dsr_pct, "debt_falling": debt_falling}, th)
         quadrant = classify_regime(growth_delta, infl_delta)
-        delev = _deleveraging_quality(growth, nom_growth, nom_rate, debt_falling)
+        delev = _deleveraging_quality(growth, nom_growth, policy_rate, debt_falling)
 
         reg_rows.append((country, ref_date.date(), growth_delta, infl_delta,
                          quadrant, phase, nom_growth, nom_rate, delev,

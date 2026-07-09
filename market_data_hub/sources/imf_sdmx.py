@@ -24,11 +24,14 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
 import time
 from typing import Dict, List, Optional
 
 import pandas as pd
 import requests
+
+log = logging.getLogger(__name__)
 
 _BASE = "https://api.imf.org/external/sdmx/3.0/data/dataflow/IMF.STA"
 
@@ -95,7 +98,11 @@ def fetch_imf_sdmx(spec: Dict, countries: List[Dict], *,
         url = f"{_BASE}/{dataset}/+/{key}?startPeriod={start_year}"
         try:
             text = _get_csv(url, timeout, retries, base_sleep)
-        except Exception:
+        except Exception as e:
+            # exhausted retries: without this line a total fetch failure is
+            # indistinguishable from "no data for this key" (404/204 -> None)
+            log.warning("imf_sdmx: %s (%s) fetch failed for %s after retries: %s",
+                        spec.get("id"), spec.get("name"), iso3, e)
             continue
         if not text:
             continue
@@ -107,6 +114,14 @@ def fetch_imf_sdmx(spec: Dict, countries: List[Dict], *,
             val = pd.to_numeric(rec.get("OBS_VALUE"), errors="coerce")
             if not per or pd.isna(val):
                 continue
+            # SDMX scale metadata: OBS_VALUE is expressed in 10**UNIT_MULT
+            # units (e.g. 6 = millions). Absent column / non-numeric cell ->
+            # value stored as-is. NOTE: rows fetched before this fix may need
+            # a re-fetch if the feed carries a non-zero multiplier.
+            mult = pd.to_numeric(rec.get("UNIT_MULT", rec.get("UNIT_MULTIPLIER")),
+                                 errors="coerce")
+            if not pd.isna(mult):
+                val = val * 10.0 ** float(mult)
             dt = _period_end(per)
             if dt is None or dt.year < start_year:
                 continue

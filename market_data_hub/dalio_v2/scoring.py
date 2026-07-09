@@ -3,12 +3,13 @@
 scoring.py — shared helpers for the Dalio v2 5-engine architecture.
 
 See docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md (Fase 0/Fase 3 design
-decisions) for the rationale: robust (median/MAD) cross-country z-scores
-instead of mean/std, linear threshold-to-score interpolation instead of
-crisp if/elif buckets, hysteresis on bucket transitions so a score
-oscillating near a boundary does not flip label every run, and an explicit
-coverage tier per engine score so partial data is never silently treated as
-full coverage.
+decisions) for the rationale: linear threshold-to-score interpolation
+instead of crisp if/elif buckets, hysteresis on bucket transitions so a
+score oscillating near a boundary does not flip label every run, and an
+explicit coverage tier per engine score so partial data is never silently
+treated as full coverage. (The plan's robust median/MAD z-score helper was
+removed as dead code in the 2026-07 audit -- no engine ended up using
+cross-country z's; political_execution uses percentile_rank instead.)
 """
 from __future__ import annotations
 
@@ -18,20 +19,6 @@ from pathlib import Path
 from typing import Dict, Optional, Sequence, Tuple
 
 import pandas as pd
-
-
-def robust_z(values: pd.Series, orientation: int = 1) -> pd.Series:
-    """Cross-country z-score via median/MAD (robust to fat tails/outliers),
-    oriented so higher = worse when orientation=1, clipped to +/-3.5 (the
-    conventional MAD-outlier cutoff). orientation=0 -> all zeros (no signal)."""
-    if orientation == 0 or values.dropna().empty:
-        return pd.Series(0.0, index=values.index)
-    median = values.median()
-    mad = (values - median).abs().median()
-    if not mad or pd.isna(mad):
-        return pd.Series(0.0, index=values.index)
-    z = 0.6745 * (values - median) / mad * orientation
-    return z.clip(-3.5, 3.5)
 
 
 def percentile_rank(values: pd.Series) -> pd.Series:
@@ -47,15 +34,21 @@ def score_threshold(value: Optional[float], watch: float, stress: float,
     three named thresholds: 0 at/below `watch`, 50 at `stress`, 100 at/above
     `critical`. orientation=-1 flips the direction (a LOW value is worse);
     pass the thresholds in the same order regardless of orientation (watch is
-    always the mildest cut point). Returns None if value is missing."""
+    always the mildest cut point — so for orientation=-1 the raw thresholds
+    are DESCENDING, e.g. reserves_months [4, 3, 2]). Thresholds that are not
+    strictly ordered after the flip raise: without this check the function
+    silently degenerates into a 0/100 cliff at `watch` and the other two
+    thresholds are ignored. Returns None if value is missing."""
     if value is None or pd.isna(value):
         return None
     if orientation >= 0:
         v, w, s, c = value, watch, stress, critical
     else:
         v, w, s, c = -value, -watch, -stress, -critical
-    if s == w or c == s:
-        return None  # degenerate thresholds
+    if not (w < s < c):
+        raise ValueError(
+            f"score_threshold: thresholds ({watch}, {stress}, {critical}) with "
+            f"orientation={orientation} are not strictly ordered mildest-to-worst")
     if v <= w:
         return 0.0
     if v <= s:
@@ -70,13 +63,18 @@ def weighted_average(components: Dict[str, Optional[float]],
     """Weighted average of the available (non-None) component scores. Missing
     components are simply dropped from the denominator (no silent
     redistribution beyond that) — caller reports n_available/n_expected via
-    the returned tuple so coverage_tier() can classify the row honestly."""
+    the returned tuple so coverage_tier() can classify the row honestly.
+    A component with zero/unknown weight is excluded from n_available too:
+    it contributes nothing to the score, so counting it as coverage would
+    let a weight-key typo in settings.yaml silently inflate the tier."""
     num = den = 0.0
     n_avail = 0
     for name, val in components.items():
         if val is None or pd.isna(val):
             continue
         w = weights.get(name, 0.0)
+        if w <= 0:
+            continue
         num += w * val
         den += w
         n_avail += 1
@@ -151,6 +149,25 @@ def bucket_with_hysteresis(score: Optional[float], thresholds: Sequence[float],
     return labels[plain_idx] if score <= boundary - margin else prev_label  # moving to a better bucket
 
 
+def fresh_latest(pair, ref_ts, max_age_years: float = 4.0
+                 ) -> Tuple[Optional[float], Optional[str]]:
+    """Unpack a (value, date) pair from dalio._latest() into
+    (value, iso_date_str), forcing value to None when the observation is
+    older than `max_age_years` before `ref_ts`. Without this guard an
+    arbitrarily old print (a 2016 NPL ratio, say) is scored at full weight
+    as the current condition AND counts toward 'full' coverage. The date is
+    returned even for stale/missing values so components_json can record
+    why the input was dropped."""
+    value, obs = pair
+    if value is None or pd.isna(value) or obs is None or pd.isna(obs):
+        return None, None
+    obs_ts = pd.Timestamp(obs)
+    date_str = str(obs_ts.date())
+    if (pd.Timestamp(ref_ts) - obs_ts).days > max_age_years * 365.25:
+        return None, date_str
+    return float(value), date_str
+
+
 @lru_cache(maxsize=1)
 def git_short_sha() -> str:
     """Short git SHA of the running checkout, for the components_json
@@ -167,10 +184,14 @@ def git_short_sha() -> str:
 
 
 def prev_label(con, country_iso3: str, engine: str, before_date) -> Optional[str]:
-    """Last label assigned to (country, engine) strictly before `before_date`,
-    for bucket_with_hysteresis(). None if this is the first computation."""
+    """Last non-NULL label assigned to (country, engine) strictly before
+    `before_date`, for bucket_with_hysteresis(). NULL-label rows (periods of
+    insufficient coverage) are skipped, so hysteresis survives a data outage
+    instead of silently resetting to plain assignment. None if the pair has
+    never carried a label."""
     row = con.execute(
         "SELECT label FROM engine_scores WHERE country_iso3 = ? AND engine = ? "
-        "AND ref_date < ? ORDER BY ref_date DESC LIMIT 1",
+        "AND ref_date < ? AND label IS NOT NULL "
+        "ORDER BY ref_date DESC LIMIT 1",
         [country_iso3, engine, before_date]).fetchone()
     return row[0] if row else None

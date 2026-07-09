@@ -29,8 +29,9 @@ import pandas as pd
 from market_data_hub.config_loader import get_countries, get_settings
 from market_data_hub.dalio import _first_avail, _latest, _slope
 from market_data_hub.dalio_v2.scoring import (
-    bucket_with_hysteresis, confidence_for, coverage_tier, git_short_sha,
-    prev_label, score_threshold, suppress_insufficient, weighted_average,
+    bucket_with_hysteresis, confidence_for, coverage_tier, fresh_latest,
+    git_short_sha, prev_label, score_threshold, suppress_insufficient,
+    weighted_average,
 )
 
 ENGINE = "sovereign_solvency"
@@ -62,6 +63,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
     bucket_labels = cfg.get("bucket_labels",
                             ["strong", "stable", "watch", "stressed", "critical"])
     margin_pct = settings.get("hysteresis_margin_pct", 0.10)
+    max_age = settings.get("staleness_max_age_years", 4)
 
     dev = {c["iso3"]: c.get("development", "EM") for c in get_countries()}
 
@@ -82,17 +84,22 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             continue
         by_ind = {i: g[["date", "value"]] for i, g in cdf.groupby("indicator_id")}
 
-        debt, _ = _latest(_first_avail(by_ind, _IND["debt_gdp"]))
-        net_debt, _ = _latest(_first_avail(by_ind, _IND["net_debt_gdp"]))
-        interest_gdp, _ = _latest(_first_avail(by_ind, _IND["interest_gdp"]))
-        revenue_gdp, _ = _latest(_first_avail(by_ind, _IND["revenue_gdp"]))
-        primary_balance, _ = _latest(_first_avail(by_ind, _IND["primary_balance_gdp"]))
-        growth, _ = _latest(_first_avail(by_ind, _IND["growth"]))
-        infl, _ = _latest(_first_avail(by_ind, _IND["inflation"]))
-        r_eff, _ = _latest(_first_avail(by_ind, _IND["r_effective"]))
+        debt, debt_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["debt_gdp"])), ref_ts, max_age)
+        net_debt, net_debt_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["net_debt_gdp"])), ref_ts, max_age)
+        interest_gdp, interest_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["interest_gdp"])), ref_ts, max_age)
+        revenue_gdp, _ = fresh_latest(_latest(_first_avail(by_ind, _IND["revenue_gdp"])), ref_ts, max_age)
+        primary_balance, primary_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["primary_balance_gdp"])), ref_ts, max_age)
+        growth, _ = fresh_latest(_latest(_first_avail(by_ind, _IND["growth"])), ref_ts, max_age)
+        infl, _ = fresh_latest(_latest(_first_avail(by_ind, _IND["inflation"])), ref_ts, max_age)
+        r_eff, r_eff_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["r_effective"])), ref_ts, max_age)
 
         debt_full = cdf_full[cdf_full["indicator_id"] == _IND["debt_gdp"]][["date", "value"]]
         debt_trend = _slope(debt_full, ref_ts.year - 3, ref_ts.year + 5)
+        # Companion actuals-only slope (plan Fase 1 / methodology-review
+        # P1.2): the trajectory above deliberately includes WEO forecasts,
+        # so the audit trail must show how much of it is forecast-driven.
+        debt_hist = cdf[cdf["indicator_id"] == _IND["debt_gdp"]][["date", "value"]]
+        debt_trend_actuals = _slope(debt_hist, ref_ts.year - 5, ref_ts.year)
 
         g_nom = (((1 + growth / 100.0) * (1 + infl / 100.0)) - 1) * 100.0 \
             if not (pd.isna(growth) or pd.isna(infl)) else float("nan")
@@ -110,6 +117,14 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "debt_gdp": debt, "net_debt_gdp": net_debt, "interest_revenue": interest_revenue,
             "interest_gdp": interest_gdp, "primary_deficit_gdp": primary_deficit,
             "r_minus_g": r_minus_g, "debt_trend_5y": debt_trend,
+        }
+        # observation date of each component's primary input (None for the
+        # windowed trend); derived components inherit their numerator's date
+        obs_dates = {
+            "debt_gdp": debt_dt, "net_debt_gdp": net_debt_dt,
+            "interest_revenue": interest_dt, "interest_gdp": interest_dt,
+            "primary_deficit_gdp": primary_dt, "r_minus_g": r_eff_dt,
+            "debt_trend_5y": None,
         }
         components = {
             "debt_gdp": score_threshold(debt, *debt_th),
@@ -130,9 +145,17 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         audit = {
             "model_version": sha, "ref_date": str(ref_date), "asof": None,
             "income_group": dev.get(country, "EM"),
+            # forecast-dependence flag: how the scored (forecast-inclusive)
+            # trajectory compares with a slope over realized actuals only
+            "debt_trend_actuals_5y": None if pd.isna(debt_trend_actuals)
+                else round(float(debt_trend_actuals), 4),
+            "debt_trend_forecast_dependent": (
+                None if pd.isna(debt_trend) or pd.isna(debt_trend_actuals)
+                else bool(abs(debt_trend - debt_trend_actuals) > 1.0)),
             "components": {
                 k: {"raw_value": None if pd.isna(raw_values[k]) else round(float(raw_values[k]), 4),
-                    "score": components[k], "weight": weights.get(k, 0)}
+                    "score": components[k], "weight": weights.get(k, 0),
+                    "obs_date": obs_dates.get(k)}
                 for k in components
             },
             "missing_components": [k for k, v in components.items() if v is None],

@@ -8,7 +8,7 @@ docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md §1 (non-goal).
 
 Usage:
     from market_data_hub.dalio_v2.runner import run_dalio_v2
-    run_dalio_v2()                      # both Phase-1 engines, current year
+    run_dalio_v2()                      # all 5 engines, current year
     run_dalio_v2(ref_year=2026)
     run_dalio_v2(engines=["sovereign_solvency"])
 """
@@ -24,6 +24,7 @@ from market_data_hub.dalio_v2 import (
     sovereign_solvency,
 )
 from market_data_hub.db.connection import get_conn
+from market_data_hub.lock import db_write_lock
 
 _ENGINES = {
     "sovereign_solvency": sovereign_solvency.compute,
@@ -58,19 +59,34 @@ def run_dalio_v2(engines: Optional[List[str]] = None, ref_year: Optional[int] = 
         raise ValueError(f"Unknown engine(s): {sorted(unknown)}. Known: {sorted(_ENGINES)}")
 
     ref_date = date(ref_year or datetime.now().year, 12, 31)
-    con = get_conn(db_path)
-    try:
-        summary: Dict[str, int] = {}
-        for name in engines:
-            df = _ENGINES[name](con, ref_date)
-            if df.empty:
-                summary[name] = 0
-                continue
-            con.executemany(
-                "INSERT OR REPLACE INTO engine_scores VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                _records_with_real_nulls(df))
-            summary[name] = len(df)
-        con.commit()
-        return summary
-    finally:
-        con.close()
+    with db_write_lock(db_path):
+        con = get_conn(db_path)
+        try:
+            summary: Dict[str, int] = {}
+            # One explicit transaction across all engines: DuckDB autocommits
+            # each statement otherwise, so a failure at engine 3/5 would leave
+            # engine_scores in a mixed-vintage state for this ref_date.
+            con.execute("BEGIN TRANSACTION")
+            try:
+                for name in engines:
+                    df = _ENGINES[name](con, ref_date)
+                    # Replace this (ref_date, engine) batch wholesale: a country
+                    # that dropped out of coverage since the last run must not
+                    # survive as a stale row with an old score/model_version.
+                    con.execute(
+                        "DELETE FROM engine_scores WHERE ref_date = ? AND engine = ?",
+                        [ref_date, name])
+                    if df.empty:
+                        summary[name] = 0
+                        continue
+                    con.executemany(
+                        "INSERT INTO engine_scores VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                        _records_with_real_nulls(df))
+                    summary[name] = len(df)
+                con.execute("COMMIT")
+            except Exception:
+                con.execute("ROLLBACK")
+                raise
+            return summary
+        finally:
+            con.close()

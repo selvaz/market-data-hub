@@ -10,7 +10,7 @@ implements sovereign_solvency + political_execution; more engines land in
 later phases and appear automatically in the report once they do).
 
 Usage:
-    python run_dalio_v2.py                          # both Phase-1 engines, current year
+    python run_dalio_v2.py                          # all 5 engines, current year
     python run_dalio_v2.py --ref-year 2025
     python run_dalio_v2.py --engines sovereign_solvency
     python run_dalio_v2.py --csv                     # also write a CSV snapshot

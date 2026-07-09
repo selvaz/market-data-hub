@@ -33,7 +33,7 @@ no unverified source id.
 THRESHOLDS: current_account_deficit_gdp, debt_service_exports,
 short_term_debt_reserves and reserves_months come from the source proposal
 (§12.4 — short_term_debt_reserves uses the proposal's own 50/100/150
-watch/stress/critical). The remaining three (net_external_liability_gdp,
+watch/stress/critical). The remaining four (net_external_liability_gdp,
 fx_debt_share, inflation, fx_overvaluation_pct) have no proposal thresholds
 and are ASSUMED — see config/settings.yaml's dalio_v2.external_constraint
 comment. Revisit once Fase 6 (historical backtest) gives real calibration
@@ -60,8 +60,9 @@ import pandas as pd
 from market_data_hub.config_loader import get_countries, get_settings
 from market_data_hub.dalio import _first_avail, _latest
 from market_data_hub.dalio_v2.scoring import (
-    bucket_with_hysteresis, confidence_for, coverage_tier, git_short_sha,
-    prev_label, score_threshold, suppress_insufficient, weighted_average,
+    bucket_with_hysteresis, confidence_for, coverage_tier, fresh_latest,
+    git_short_sha, prev_label, score_threshold, suppress_insufficient,
+    weighted_average,
 )
 
 ENGINE = "external_constraint"
@@ -120,6 +121,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
     bucket_thresholds = cfg.get("bucket_thresholds", [20, 40, 60, 80])
     bucket_labels = cfg.get("bucket_labels", ["low", "moderate", "elevated", "high", "severe"])
     margin_pct = settings.get("hysteresis_margin_pct", 0.10)
+    max_age = settings.get("staleness_max_age_years", 4)
     reserve_discount = cfg.get("reserve_currency_discount", 0.6)
 
     reserve_currencies = _reserve_currency_iso3s()
@@ -141,17 +143,27 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             continue
         by_ind = {i: g[["date", "value"]] for i, g in cdf.groupby("indicator_id")}
 
-        current_account, _ = _latest(_first_avail(by_ind, _IND["current_account"]))
-        niip, _ = _latest(_first_avail(by_ind, _IND["niip"]))
-        gdp_usd, _ = _latest(_first_avail(by_ind, _IND["gdp_usd"]))
-        short_term_reserves, _ = _latest(_first_avail(by_ind, _IND["short_term_debt_reserves"]))
-        debt_service_exports, _ = _latest(_first_avail(by_ind, _IND["debt_service_exports"]))
-        fx_debt_share, _ = _latest(_first_avail(by_ind, _IND["fx_debt_share"]))
-        inflation, _ = _latest(_first_avail(by_ind, _IND["inflation"]))
-        reserves_months, _ = _latest(_first_avail(by_ind, _IND["reserves_months"]))
+        current_account, ca_dt = fresh_latest(
+            _latest(_first_avail(by_ind, _IND["current_account"])), ref_ts, max_age)
+        niip, niip_dt = fresh_latest(_latest(_first_avail(by_ind, _IND["niip"])), ref_ts, max_age)
+        gdp_usd, _ = fresh_latest(_latest(_first_avail(by_ind, _IND["gdp_usd"])), ref_ts, max_age)
+        short_term_reserves, strd_dt = fresh_latest(
+            _latest(_first_avail(by_ind, _IND["short_term_debt_reserves"])), ref_ts, max_age)
+        debt_service_exports, dse_dt = fresh_latest(
+            _latest(_first_avail(by_ind, _IND["debt_service_exports"])), ref_ts, max_age)
+        fx_debt_share, fxd_dt = fresh_latest(
+            _latest(_first_avail(by_ind, _IND["fx_debt_share"])), ref_ts, max_age)
+        inflation, infl_dt = fresh_latest(
+            _latest(_first_avail(by_ind, _IND["inflation"])), ref_ts, max_age)
+        reserves_months, resm_dt = fresh_latest(
+            _latest(_first_avail(by_ind, _IND["reserves_months"])), ref_ts, max_age)
 
-        reer_full = cdf_full[cdf_full["indicator_id"] == _IND["reer"]][["date", "value"]]
-        fx_overvaluation = _pct_deviation_from_trend(reer_full)
+        # REER history must come from the ref_date-filtered frame like every
+        # other component: it is actual monthly BIS data (no forecasts), and
+        # anchoring the trend on the unfiltered series would leak post-ref_date
+        # observations into a historical run.
+        reer_hist = cdf[cdf["indicator_id"] == _IND["reer"]][["date", "value"]]
+        fx_overvaluation = _pct_deviation_from_trend(reer_hist)
 
         current_account_deficit = -current_account if not pd.isna(current_account) else None
         niip_gdp = (niip / gdp_usd * 100.0) \
@@ -167,6 +179,12 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "inflation": None if pd.isna(inflation) else inflation,
             "fx_overvaluation_pct": fx_overvaluation,
             "reserves_months": None if pd.isna(reserves_months) else reserves_months,
+        }
+        obs_dates = {
+            "current_account_deficit_gdp": ca_dt, "net_external_liability_gdp": niip_dt,
+            "short_term_debt_reserves": strd_dt, "debt_service_exports": dse_dt,
+            "fx_debt_share": fxd_dt, "inflation": infl_dt,
+            "fx_overvaluation_pct": None, "reserves_months": resm_dt,
         }
         components = {
             "current_account_deficit_gdp": None if current_account_deficit is None else
@@ -215,7 +233,8 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "is_reserve_currency": is_reserve_currency, "caveats": caveats,
             "components": {
                 k: {"raw_value": None if raw_values.get(k) is None else round(float(raw_values[k]), 4),
-                    "score": components[k], "weight": weights.get(k, 0)}
+                    "score": components[k], "weight": weights.get(k, 0),
+                    "obs_date": obs_dates.get(k)}
                 for k in components
             },
             "missing_components": [k for k, v in components.items() if v is None],

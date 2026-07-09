@@ -1,5 +1,27 @@
 # Piano di implementazione — Dalio 5-engine architecture (2026-07-09)
 
+> **AGGIORNAMENTO 2026-07-09 (post-audit):** un deep audit indipendente
+> ([DALIO_V2_DEEP_AUDIT_2026-07.md](DALIO_V2_DEEP_AUDIT_2026-07.md)) ha
+> passato in rassegna l'implementazione delle Fasi 1-4 e il report unificato.
+> Le issue trovate (look-ahead REER, real_credit_growth mal misurato,
+> private_dsr min-max invece di percentile, nessun guard di staleness,
+> writer senza lock, ecc.) sono state corrette nelle "Fasi A-E" descritte in
+> quel documento. Precisazioni sullo stato dei ✅ qui sotto:
+> - **Fase 0 non è mai stata eseguita**: i flag `reserve_currency_status`/
+>   `commodity_exporter_flag`/`financial_center_flag` in countries.yaml e la
+>   tabella `dalio_cycle_v2` NON esistono. Il set reserve-currency è
+>   hardcoded in `external_constraint.py` (USA/JPN/GBR/CHE + membri euro);
+>   i caveat vanno in `components_json`, non in `dalio_cycle_v2.caveats_json`.
+> - Deviazioni di metodo rispetto al testo del piano (documentate nei moduli):
+>   trend REER via OLS (non media mobile 10y); npl_ratio a soglie assolute
+>   (non percentile cross-country); la componente "FX depreciation 12m" del
+>   §12.4 è sostituita da fx_overvaluation_pct; il fallback
+>   DT.DOD.DSTC.ZS per fx_debt_share non è implementato (cap di tier al suo
+>   posto). Il doppio trend actuals-only della Fase 1 è stato aggiunto
+>   nell'audit trail (campo `debt_trend_actuals_5y` + flag).
+> - `robust_z` (design decision #5) è stato rimosso come dead code: nessun
+>   motore usa z-score cross-country; political_execution usa percentile.
+
 > **Come usare questo documento in un'altra sessione:** è scritto per essere
 > autosufficiente. Non serve rileggere la conversazione originale. Leggi in
 > ordine: §1 (contesto), §2 (verdetto di fattibilità dati — il cuore del

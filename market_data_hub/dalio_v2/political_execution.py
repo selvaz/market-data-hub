@@ -63,7 +63,15 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
 
     latest = (panel.sort_values("date")
                     .groupby(["country_iso3", "indicator_id"]).tail(1))
+    # staleness guard: a WGI print older than max_age before ref_date must
+    # not enter the cross-country percentile as the country's current state
+    max_age = settings.get("staleness_max_age_years", 4)
+    cutoff = pd.Timestamp(ref_date) - pd.Timedelta(days=max_age * 365.25)
+    latest = latest[latest["date"] >= cutoff]
+    if latest.empty:
+        return pd.DataFrame(columns=_COLUMNS)
     wide = latest.pivot(index="country_iso3", columns="indicator_id", values="value")
+    obs_wide = latest.pivot(index="country_iso3", columns="indicator_id", values="date")
 
     # cross-country percentile per indicator (100 = best governance), then
     # inverted so a HIGHER engine score = worse, consistent with the other
@@ -80,7 +88,12 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
                      for k in _WGI}
         raw_values = {
             k: (None if ind not in wide.columns or pd.isna(wide.loc[country, ind])
-                else float(wide.loc[country, ind]))
+                else round(float(wide.loc[country, ind]), 4))
+            for k, ind in _WGI.items()
+        }
+        obs_dates = {
+            k: (None if ind not in obs_wide.columns or pd.isna(obs_wide.loc[country, ind])
+                else str(pd.Timestamp(obs_wide.loc[country, ind]).date()))
             for k, ind in _WGI.items()
         }
         score, n_avail, n_exp = weighted_average(components, weights)
@@ -94,7 +107,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "model_version": sha, "ref_date": str(ref_date), "asof": None,
             "components": {
                 k: {"raw_value": raw_values[k], "score": components[k],
-                    "weight": weights.get(k, 0)}
+                    "weight": weights.get(k, 0), "obs_date": obs_dates.get(k)}
                 for k in _WGI
             },
             "missing_components": [k for k, v in components.items() if v is None],

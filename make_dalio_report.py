@@ -30,6 +30,7 @@ import json
 import sys
 from datetime import datetime
 from pathlib import Path
+import duckdb
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -134,10 +135,18 @@ def collect(con) -> dict:
     # failing the whole v1 report.
     v2_by = {}
     try:
+        # Latest ref_date PER ENGINE, not globally: a partial rerun of one
+        # engine in a new year must not make the other engines' (older but
+        # still latest) rows vanish from the dashboard.
         v2 = con.execute(
-            "SELECT country_iso3, engine, score, label, coverage_tier, confidence, "
-            "n_components, n_expected, components_json FROM engine_scores WHERE ref_date = "
-            "(SELECT max(ref_date) FROM engine_scores)").fetch_df()
+            "SELECT e.country_iso3, e.engine, e.score, e.label, e.coverage_tier, "
+            "e.confidence, e.n_components, e.n_expected, e.components_json "
+            "FROM engine_scores e JOIN (SELECT engine, max(ref_date) AS ref_date "
+            "FROM engine_scores GROUP BY engine) m "
+            "ON e.engine = m.engine AND e.ref_date = m.ref_date").fetch_df()
+    except duckdb.CatalogException:
+        v2 = None   # engine_scores doesn't exist yet: v2 never run on this DB
+    if v2 is not None:
         for _, r in v2.iterrows():
             try:
                 comps = json.loads(r["components_json"]).get("components", {})
@@ -146,13 +155,12 @@ def collect(con) -> dict:
             v2_by.setdefault(r["country_iso3"], {})[r["engine"]] = {
                 "score": None if pd.isna(r["score"]) else round(float(r["score"]), 2),
                 "label": None if pd.isna(r["label"]) else r["label"],
-                "coverage_tier": r["coverage_tier"],
-                "confidence": r["confidence"],
-                "n_components": int(r["n_components"]), "n_expected": int(r["n_expected"]),
+                "coverage_tier": None if pd.isna(r["coverage_tier"]) else r["coverage_tier"],
+                "confidence": None if pd.isna(r["confidence"]) else r["confidence"],
+                "n_components": None if pd.isna(r["n_components"]) else int(r["n_components"]),
+                "n_expected": None if pd.isna(r["n_expected"]) else int(r["n_expected"]),
                 "components": comps,
             }
-    except Exception:
-        pass
 
     h = con.execute("SELECT max(date) FROM macro_panel WHERE provider_dataset='WEO'").fetchone()[0]
     weo_horizon = pd.Timestamp(h).year if h is not None else None
@@ -175,16 +183,23 @@ def collect(con) -> dict:
         return None if x is None or pd.isna(x) else round(float(x), 2)
 
     countries = {}
-    for iso in sorted(reg_by):
-        r = reg_by[iso]
+    # union of v1 (regime_state) and v2 (engine_scores) coverage: a country
+    # scored only by the v2 engines must still get a sheet, not be silently
+    # dropped because v1's classification never ran for it
+    for iso in sorted(set(reg_by) | set(v2_by)):
+        r = reg_by.get(iso)
         c = comp_by.get(iso, {})
         countries[iso] = {
             "name": names.get(iso, iso),
-            "phase": r["debt_cycle_phase"], "quadrant": r["quadrant"],
-            "delev": r["deleveraging_quality"],
-            "nom_growth": _v(r["nom_growth"]), "nom_rate": _v(r["nom_rate"]),
-            "credit_gap": _v(r["credit_gap"]), "dsr": _v(r["dsr"]),
-            "debt_income_gap": _v(r["debt_income_gap"]), "debt_trend": _v(r["debt_trend"]),
+            "phase": r["debt_cycle_phase"] if r is not None else None,
+            "quadrant": r["quadrant"] if r is not None else None,
+            "delev": r["deleveraging_quality"] if r is not None else None,
+            "nom_growth": _v(r["nom_growth"]) if r is not None else None,
+            "nom_rate": _v(r["nom_rate"]) if r is not None else None,
+            "credit_gap": _v(r["credit_gap"]) if r is not None else None,
+            "dsr": _v(r["dsr"]) if r is not None else None,
+            "debt_income_gap": _v(r["debt_income_gap"]) if r is not None else None,
+            "debt_trend": _v(r["debt_trend"]) if r is not None else None,
             "composite": _v(c.get("composite")) if len(c) else None,
             "pillars": pil_by.get(iso, {}),
             "series": ser_by.get(iso, {}),
@@ -249,10 +264,10 @@ _TEMPLATE = r"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
  details{margin:2px 0 10px 198px} details summary{cursor:pointer;font-size:11px;color:var(--mut)}
  .comp-table{margin:4px 0 0;max-width:100%;overflow-x:auto;display:block}
  .comp-table td,.comp-table th{font-size:11px;padding:3px 6px;color:#1a1a2e;white-space:nowrap}
- .v2note{margin:-2px 0 2px 198px;font-size:10.5px}
+ .muted.v2note{margin:-2px 0 2px 198px;font-size:10.5px}
  @media (max-width:640px){
    .pbar .pl2{width:100%;font-weight:600} .pbar .pv2{width:100%;text-align:left}
-   details,.v2note{margin-left:4px}
+   details,.muted.v2note{margin-left:4px}
  }
  .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
  .chart{border:1px solid var(--bd);border-radius:10px;padding:10px;cursor:pointer;transition:box-shadow .15s}
@@ -362,9 +377,12 @@ function v2Color(score){
  if(score<20)return '#16a34a'; if(score<40)return '#84cc16'; if(score<60)return '#d97706';
  if(score<80)return '#ea580c'; return '#b91c1c';
 }
+// Mean of the AVAILABLE engines only (insufficient-coverage engines carry no
+// score): a navigation aid for sorting, not a fifth signal -- the methodology
+// keeps the 5 engines separate, so the n/5 count is always shown next to it.
 function v2AvgRisk(c){
  const vals=V2_ENGINE_ORDER.map(e=>c.v2&&c.v2[e]?c.v2[e].score:null).filter(v=>v!==null&&v!==undefined);
- return vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:null;
+ return vals.length?{avg:vals.reduce((a,b)=>a+b,0)/vals.length,n:vals.length}:null;
 }
 
 function tab(id,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -422,7 +440,7 @@ function showCountry(iso){
  const ph=PHASE[c.phase]||['#94a3b8',c.phase], q=QUAD[c.quadrant]||['#94a3b8','',''];
  let h='<h3 style="margin:0">'+c.name+' <span class="muted">('+iso+')</span></h3>';
  h+='<div class="badges">';
- h+='<span class="badge" style="background:'+ph[0]+'">Phase: '+c.phase+'</span>';
+ h+='<span class="badge" style="background:'+ph[0]+'">Phase: '+(c.phase||'—')+'</span>';
  h+='<span class="badge" style="background:'+q[0]+'">Regime: '+(c.quadrant||'—')+'</span>';
  if(c.delev&&c.delev!=='NA')h+='<span class="badge" style="background:#475569">Deleveraging: '+c.delev+'</span>';
  h+='</div>';
@@ -481,10 +499,14 @@ function showCountry(iso){
        h+='<details><summary>components</summary><table class="comp-table"><thead><tr>'+
           '<th>input</th><th class=n>raw value</th><th class=n>risk score</th><th class=n>weight</th></tr></thead><tbody>';
        Object.entries(comps).forEach(([name,cc])=>{
-         const raw=(cc.raw_value===null||cc.raw_value===undefined)?'n/a':cc.raw_value;
+         const raw=(cc.raw_value===null||cc.raw_value===undefined)?'n/a'
+           :(typeof cc.raw_value==='number'?String(+cc.raw_value.toFixed(2)):cc.raw_value);
          const sc=(cc.score===null||cc.score===undefined)?'n/a':fmt(cc.score,1);
-         const desc=V2_INPUT_DESC[name]||'';
-         h+='<tr><td'+(desc?' title="'+desc+'"':'')+'>'+name+'</td><td class=n>'+raw+'</td><td class=n>'+sc+'</td><td class=n>'+(cc.weight??0)+'</td></tr>';
+         const wt=(typeof cc.weight==='number')?String(+cc.weight.toFixed(2)):(cc.weight??0);
+         const age=cc.obs_date?' <span class="muted">('+cc.obs_date+')</span>':'';
+         const desc=(V2_INPUT_DESC[name]||'').replace(/"/g,'&quot;');
+         h+='<tr><td'+(desc?' title="'+desc+'"':'')+'>'+name+age+'</td><td class=n>'+raw+
+            '</td><td class=n>'+sc+'</td><td class=n>'+wt+'</td></tr>';
        });
        h+='</tbody></table></details>';
      }
@@ -518,9 +540,10 @@ function buildOverview(){
  if(DATA.has_v2){
    // plain dark-gray text, no colored badge/pill (that previously relied on
    // a CSS class that was never defined -> invisible white-on-nothing text)
-   h+='<h2>Dalio v2 &mdash; engine comparison <span class="muted">(0-100, higher = worse; click a row for the country sheet)</span></h2>';
+   h+='<h2>Dalio v2 &mdash; engine comparison <span class="muted">(0-100, higher = worse; sorted by the mean of the AVAILABLE engines '+
+      '&mdash; a navigation aid, the 5 engines are never combined into one signal; click a row for the country sheet)</span></h2>';
    h+='<table><tr><th>Country</th>'+V2_ENGINE_ORDER.map(e=>'<th>'+V2_ENGINE_NAMES[e]+'</th>').join('')+'</tr>';
-   cs.slice().sort((a,b)=>((v2AvgRisk(b[1])??-1)-(v2AvgRisk(a[1])??-1))).forEach(([iso,c])=>{
+   cs.slice().sort((a,b)=>((v2AvgRisk(b[1])?.avg??-1)-(v2AvgRisk(a[1])?.avg??-1))).forEach(([iso,c])=>{
      h+='<tr class="clk" onclick="gotoCountry(\''+iso+'\')"><td><b>'+iso+'</b> <span class="muted">'+c.name+'</span></td>';
      V2_ENGINE_ORDER.forEach(e=>{
        const r=c.v2&&c.v2[e];
@@ -543,17 +566,18 @@ function buildOverview(){
    h+='<tr><td><b style="color:'+(PHASE[p]?PHASE[p][0]:'#000')+'">'+p+'</b></td><td class=n>'+n+'</td><td class="muted">'+(PHASE[p]?PHASE[p][1]:'')+'</td></tr>';});
  h+='</table>';
  h+='<h2>Cross-country snapshot <span class="muted">(click a row for the country sheet)</span></h2>';
- const v2col=DATA.has_v2?'<th>v2 risk</th>':'';
+ const v2col=DATA.has_v2?'<th title="mean of the available v2 engines (count shown); not a combined signal">v2 risk (n/5)</th>':'';
  h+='<table><tr><th>Country</th><th>Composite</th><th>Phase</th><th>Regime</th><th>Delev.</th><th>Debt/GDP trend</th><th>nom.g</th><th>nom.r</th><th>cg</th><th>dsr</th>'+v2col+'</tr>';
  cs.sort((a,b)=>((b[1].composite??-99)-(a[1].composite??-99)));
  cs.forEach(([iso,c])=>{const q=QUAD[c.quadrant];
    const dt=c.debt_trend, dtc=(dt===null||dt===undefined)?'#000':(dt>1.5?'#b91c1c':dt>0.7?'#ca8a04':dt<0?'#16a34a':'#334155');
    const star=(c.stale&&c.stale.length)?' <span title="has stale data" style="color:#dc2626">&#9888;</span>':'';
    let v2cell='';
-   if(DATA.has_v2){const avg=v2AvgRisk(c);
-     v2cell='<td class=n style="color:'+v2Color(avg)+';font-weight:600">'+(avg===null?'—':fmt(avg,0))+'</td>';}
+   if(DATA.has_v2){const a=v2AvgRisk(c);
+     v2cell='<td class=n style="color:'+v2Color(a?a.avg:null)+';font-weight:600">'+
+       (a===null?'—':fmt(a.avg,0)+' <span class="muted">('+a.n+'/5)</span>')+'</td>';}
    h+='<tr class="clk" onclick="gotoCountry(\''+iso+'\')"><td><b>'+iso+'</b> <span class="muted">'+c.name+'</span>'+star+'</td>'+
-     '<td class=n>'+fmt(c.composite,2)+'</td><td style="color:'+(PHASE[c.phase]?PHASE[c.phase][0]:'#000')+'">'+c.phase+'</td>'+
+     '<td class=n>'+fmt(c.composite,2)+'</td><td style="color:'+(PHASE[c.phase]?PHASE[c.phase][0]:'#000')+'">'+(c.phase||'—')+'</td>'+
      '<td style="color:'+(q?q[0]:'#000')+';font-weight:600">'+(c.quadrant||'—')+'</td><td>'+(c.delev||'—')+'</td>'+
      '<td class=n style="color:'+dtc+';font-weight:600">'+fmt(dt,2)+'</td>'+
      '<td class=n>'+fmt(c.nom_growth)+'</td><td class=n>'+fmt(c.nom_rate)+'</td>'+
@@ -775,11 +799,21 @@ listed weight. See section 6 above for the full engine methodology.</p>
 """
 
 
+def _js_str(x) -> str:
+    """json.dumps for embedding inside a <script> block: '</' is escaped to
+    '<\\/' (identical once the JS string is parsed) so a stray '</script>'
+    in any data/label can never terminate the script element and blank the
+    whole page."""
+    return json.dumps(x, ensure_ascii=False).replace("</", "<\\/")
+
+
 def render_html(d: dict) -> str:
+    # __DATA__ is substituted LAST so a literal "__METH__"/"__STATS__" inside
+    # the (DB-derived) data can never be picked up by a later replace
     return (_TEMPLATE
-            .replace("__DATA__", json.dumps(d, ensure_ascii=False))
-            .replace("__METH__", json.dumps(_METH, ensure_ascii=False))
-            .replace("__STATS__", json.dumps(_STATS, ensure_ascii=False)))
+            .replace("__METH__", _js_str(_METH))
+            .replace("__STATS__", _js_str(_STATS))
+            .replace("__DATA__", _js_str(d)))
 
 
 def main() -> int:

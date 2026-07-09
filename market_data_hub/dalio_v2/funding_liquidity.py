@@ -43,8 +43,8 @@ import pandas as pd
 from market_data_hub.config_loader import get_settings
 from market_data_hub.dalio import _first_avail, _latest
 from market_data_hub.dalio_v2.scoring import (
-    bucket_with_hysteresis, confidence_for, git_short_sha, prev_label,
-    score_threshold, suppress_insufficient, weighted_average,
+    bucket_with_hysteresis, confidence_for, fresh_latest, git_short_sha,
+    prev_label, score_threshold, suppress_insufficient, weighted_average,
 )
 
 ENGINE = "funding_liquidity"
@@ -60,7 +60,10 @@ _COLUMNS = ["country_iso3", "ref_date", "engine", "score", "label", "coverage_ti
 
 def _yoy_level_change(s: Optional[pd.DataFrame]) -> Optional[float]:
     """Latest value minus the value closest to 12 months earlier (level
-    change, e.g. percentage points for a yield series)."""
+    change, e.g. percentage points for a yield series). The prior print must
+    fall within 12-18 months of the latest: on a gappy series the "12m"
+    change would otherwise silently span years, scored against thresholds
+    calibrated for 12 months."""
     if s is None or s.empty:
         return None
     d = s.sort_values("date").dropna(subset=["value"])
@@ -68,7 +71,7 @@ def _yoy_level_change(s: Optional[pd.DataFrame]) -> Optional[float]:
         return None
     latest_date, latest_val = d["date"].iloc[-1], d["value"].iloc[-1]
     target = latest_date - pd.DateOffset(months=12)
-    prior = d[d["date"] <= target]
+    prior = d[(d["date"] <= target) & (d["date"] >= latest_date - pd.DateOffset(months=18))]
     if prior.empty:
         return None
     prior_val = prior["value"].iloc[-1]
@@ -86,6 +89,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
     bucket_thresholds = cfg.get("bucket_thresholds", [20, 40, 60, 80])
     bucket_labels = cfg.get("bucket_labels", ["easy", "normal", "watch", "stress", "severe"])
     margin_pct = settings.get("hysteresis_margin_pct", 0.10)
+    max_age = settings.get("staleness_max_age_years", 4)
 
     panel = con.execute(
         "SELECT date, country_iso3, indicator_id, value FROM v_macro_panel_ext "
@@ -104,14 +108,17 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             continue
         by_ind = {i: g[["date", "value"]] for i, g in cdf.groupby("indicator_id")}
 
-        short_term_reserves, _ = _latest(_first_avail(by_ind, _IND["short_term_debt_reserves"]))
+        short_term_reserves, strd_dt = fresh_latest(
+            _latest(_first_avail(by_ind, _IND["short_term_debt_reserves"])), ref_ts, max_age)
         yield_series = by_ind.get(_IND["bond_yield_10y"])
         yield_change = _yoy_level_change(yield_series)
+        _, yield_dt = fresh_latest(_latest(yield_series), ref_ts, max_age)
 
         raw_values = {
             "short_term_debt_reserves": None if pd.isna(short_term_reserves) else short_term_reserves,
             "yield_change_12m_pp": yield_change,
         }
+        obs_dates = {"short_term_debt_reserves": strd_dt, "yield_change_12m_pp": yield_dt}
         components = {
             "short_term_debt_reserves": None if raw_values["short_term_debt_reserves"] is None else
                 score_threshold(raw_values["short_term_debt_reserves"], *th.get("short_term_debt_reserves", [50, 100, 150])),
@@ -133,7 +140,8 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
                     "data not wired, see module docstring",
             "components": {
                 k: {"raw_value": None if raw_values.get(k) is None else round(float(raw_values[k]), 4),
-                    "score": components[k], "weight": weights.get(k, 0)}
+                    "score": components[k], "weight": weights.get(k, 0),
+                    "obs_date": obs_dates.get(k)}
                 for k in components
             },
             "missing_components": [k for k, v in components.items() if v is None],

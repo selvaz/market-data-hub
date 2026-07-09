@@ -103,14 +103,19 @@ td{padding:5px 8px;border-bottom:1px solid #f1f5f9;color:#1a1a2e} td.n{text-alig
 select{font-size:15px;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;min-width:280px;background:#ffffff;color:#1a1a2e}
 .card{background:#ffffff;color:#1a1a2e;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-top:14px}
 .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;color:#ffffff}
-.pbar{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12px}
-.pbar .pl{width:210px;color:#1a1a2e;font-weight:600}
-.pbar .pt{flex:1;background:#eef2ff;border-radius:4px;height:16px;position:relative}
+.pbar{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:12px;flex-wrap:wrap}
+.pbar .pl{width:210px;flex-shrink:0;color:#1a1a2e;font-weight:600}
+.pbar .pt{flex:1;min-width:80px;background:#eef2ff;border-radius:4px;height:16px;position:relative}
 .pbar .pf{position:absolute;top:0;left:0;height:16px;border-radius:4px}
-.pbar .pv{width:150px;text-align:right;color:#3f4b57}
+.pbar .pv{width:150px;text-align:right;flex-shrink:0;color:#3f4b57}
 .tier-note{font-size:11px;color:#3f4b57;margin:-4px 0 10px 218px}
 details{margin:4px 0 14px 218px;color:#1a1a2e} details summary{cursor:pointer;font-size:11px;color:#3f4b57}
-.comp-table td, .comp-table th{font-size:11.5px;padding:3px 8px;color:#1a1a2e}
+.comp-table{margin:4px 0 0;max-width:100%;overflow-x:auto;display:block}
+.comp-table td, .comp-table th{font-size:11.5px;padding:3px 8px;color:#1a1a2e;white-space:nowrap}
+@media (max-width:640px){
+ .pbar .pl{width:100%} .pbar .pv{width:100%;text-align:left}
+ details,.tier-note{margin-left:4px}
+}
 .note{background:#fffbeb;color:#1a1a2e;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:4px;margin:10px 0;font-size:13px}
 .muted{color:#3f4b57;font-size:12px}
 .country-card{display:none} .country-card.active{display:block}
@@ -187,7 +192,8 @@ def _comparison_table(pivot_score, pivot_label, pivot_tier, engines_present, nam
             label_txt = "" if label is None or pd.isna(label) else str(label)
             tier_txt = tier if isinstance(tier, str) else "n/a"
             tier_suffix = f" [{tier_txt}]" if tier_txt not in ("full", "n/a") else ""
-            cells.append(f"<td>{score_txt} &middot; {label_txt}{tier_suffix}</td>")
+            sep = " &middot; " if label_txt else ""
+            cells.append(f"<td>{score_txt}{sep}{label_txt}{tier_suffix}</td>")
         rows.append(f"<tr>{''.join(cells)}</tr>")
     return _COMPARE_TMPL.format(header_row=header_row, body_rows="".join(rows))
 
@@ -196,10 +202,16 @@ def _component_rows(components: dict) -> str:
     rows = []
     for name, c in components.items():
         raw = c.get("raw_value")
-        raw_txt = "n/a" if raw is None else f"{raw:g}"
+        # one malformed (non-numeric) raw_value must degrade to text, not
+        # abort the whole report with an unhandled format error
+        raw_txt = ("n/a" if raw is None
+                   else f"{raw:g}" if isinstance(raw, (int, float)) else str(raw))
         score = c.get("score")
-        score_txt = "n/a" if score is None else f"{score:.1f}"
-        rows.append(f"<tr><td>{name}</td><td class=n>{raw_txt}</td>"
+        score_txt = "n/a" if score is None or not isinstance(score, (int, float)) \
+            else f"{score:.1f}"
+        obs = c.get("obs_date")
+        obs_txt = f' <span class="muted">({obs})</span>' if obs else ""
+        rows.append(f"<tr><td>{name}{obs_txt}</td><td class=n>{raw_txt}</td>"
                    f"<td class=n>{score_txt}</td><td class=n>{c.get('weight', 0)}</td></tr>")
     return "".join(rows)
 
@@ -216,12 +228,17 @@ def _country_card(iso3: str, name: str, rows: pd.DataFrame, engines_present, act
         pct = 0 if score is None or pd.isna(score) else max(0, min(100, score))
         score_txt = "n/a" if score is None or pd.isna(score) else f"{score:.1f}/100"
         label_txt = "" if pd.isna(r["label"]) else str(r["label"])
+        sep = " &middot; " if label_txt else ""
+        tier_txt = r["coverage_tier"] if isinstance(r["coverage_tier"], str) else "n/a"
+        conf_txt = r["confidence"] if isinstance(r["confidence"], str) else "n/a"
+        n_comp = "?" if pd.isna(r["n_components"]) else int(r["n_components"])
+        n_exp = "?" if pd.isna(r["n_expected"]) else int(r["n_expected"])
         bars.append(
             f'<div class="pbar"><div class="pl">{_ENGINE_NAMES.get(e, e)}</div>'
             f'<div class="pt"><div class="pf" style="width:{pct}%;background:{color}"></div></div>'
-            f'<div class="pv">{score_txt} &middot; {label_txt}</div></div>'
-            f'<div class="tier-note">coverage: {r["coverage_tier"]} &middot; '
-            f'confidence: {r["confidence"]} &middot; {r["n_components"]}/{r["n_expected"]} inputs</div>')
+            f'<div class="pv">{score_txt}{sep}{label_txt}</div></div>'
+            f'<div class="tier-note">coverage: {tier_txt} &middot; '
+            f'confidence: {conf_txt} &middot; {n_comp}/{n_exp} inputs</div>')
         try:
             components = json.loads(r["components_json"]).get("components", {})
         except Exception:
@@ -261,13 +278,17 @@ def generate_html_report(con: duckdb.DuckDBPyConnection, ref_date, out_dir: Path
     pivot_tier = df.pivot(index="country_iso3", columns="engine", values="coverage_tier")
     avg_score = pivot_score.mean(axis=1, skipna=True).sort_values(ascending=False)
 
+    # count rows sitting in each engine's TERMINAL bucket (from config), not
+    # rows sharing whatever label the max-score row happens to carry -- when
+    # nobody is in the terminal bucket the KPI must read 0, not count the
+    # mildest achieved label as "worst"
+    from market_data_hub.config_loader import get_settings
+    v2cfg = get_settings().get("dalio_v2", {})
     n_worst = 0
     for e in engines_present:
-        eng_df = df[df["engine"] == e]
-        labels = eng_df["label"].dropna()
-        worst_label = eng_df.loc[eng_df["score"].idxmax(), "label"] if not eng_df["score"].dropna().empty else None
-        if worst_label is not None:
-            n_worst += int((labels == worst_label).sum())
+        terminal = (v2cfg.get(e, {}).get("bucket_labels") or [None])[-1]
+        if terminal is not None:
+            n_worst += int((df.loc[df["engine"] == e, "label"] == terminal).sum())
 
     header_html = _HEADER_TMPL.format(
         ref_date=ref_date, generated_at=datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),

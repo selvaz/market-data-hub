@@ -19,11 +19,15 @@ from __future__ import annotations
 
 import csv
 import io
+import logging
+import re
 import time
 from typing import Dict, List, Optional
 
 import pandas as pd
 import requests
+
+log = logging.getLogger(__name__)
 
 _BASE = "https://data-api.ecb.europa.eu/service/data"
 
@@ -33,16 +37,23 @@ _COLS = ["date", "country_iso3", "indicator_id", "value", "indicator_name",
 
 
 def _period_end(period: str) -> Optional[pd.Timestamp]:
-    """'2026-05' (month), '2026-Q1' (quarter), '2026' (year) -> end of period."""
+    """'2026-05' (month), '2026-Q1' (quarter), '2026' (year) -> end of period.
+
+    The monthly branch is strict (^\\d{4}-\\d{2}$): a sub-monthly period like
+    '2026-05-04' (daily/weekly flows) must NOT be silently binned to month-end.
+    Unrecognized formats are skipped with a log line."""
     try:
         if "Q" in period:
             y, q = period.split("-Q")
             return pd.Period(f"{y}Q{q}", freq="Q").end_time.normalize()
-        if "-" in period:
+        if re.fullmatch(r"\d{4}-\d{2}", period):
             return pd.Period(period, freq="M").end_time.normalize()
         if len(period) == 4 and period.isdigit():
             return pd.Timestamp(int(period), 12, 31)
-        return pd.Timestamp(period).normalize()
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", period):
+            return pd.Timestamp(period).normalize()
+        log.warning("ecb: unrecognized TIME_PERIOD %r, skipping", period)
+        return None
     except Exception:
         return None
 
@@ -93,7 +104,11 @@ def fetch_ecb(spec: Dict, countries: List[Dict], *,
            f"?startPeriod={start_year}-01&format=csvdata")
     try:
         text = _get_csv(url, timeout, retries, base_sleep)
-    except Exception:
+    except Exception as e:
+        # exhausted retries: without this line a total fetch failure is
+        # indistinguishable from "no data for this key" (404 -> None)
+        log.warning("ecb: %s (%s) fetch failed after retries: %s",
+                    spec.get("id"), spec.get("name"), e)
         return pd.DataFrame(columns=_COLS)
     if not text:
         return pd.DataFrame(columns=_COLS)

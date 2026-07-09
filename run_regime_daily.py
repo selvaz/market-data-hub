@@ -28,7 +28,7 @@ from market_data_hub.db.connection import get_conn  # noqa: E402
 from market_data_hub.lock import db_write_lock  # noqa: E402
 from market_data_hub.regime.estimate import (  # noqa: E402
     DEFAULT_N_STARTS, DEFAULT_RETRO_DAYS, DEFAULT_S_MAX,
-    run_daily_regime_estimation, summary_dataframe,
+    priority_symbols, run_daily_regime_estimation, summary_dataframe,
 )
 from market_data_hub.regime.report import generate_html_report  # noqa: E402
 
@@ -59,8 +59,17 @@ def main() -> int:
     symbols = [s.strip() for s in args.tickers.split(",")] if args.tickers else None
     asof = datetime.strptime(args.asof, "%Y-%m-%d").date() if args.asof else datetime.now().date()
 
+    # Resolve the universe up front: an empty one would otherwise reach
+    # summary_dataframe({}) whose frame has no 'status' column (KeyError).
+    if symbols is None:
+        symbols = priority_symbols(args.priority, db_path=args.db)
+    if not symbols:
+        print(f"No symbols to fit (priority={args.priority} universe is empty); "
+              "nothing to do.")
+        return 0
+
     print(f"Fitting regimes as of {asof.isoformat()} "
-          f"({'custom tickers' if symbols else f'priority={args.priority}'})...")
+          f"({'custom tickers' if args.tickers else f'priority={args.priority}'})...")
     with db_write_lock(args.db):
         results = run_daily_regime_estimation(
             symbols=symbols, priority=args.priority, S_max=args.s_max,

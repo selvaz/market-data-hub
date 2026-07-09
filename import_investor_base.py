@@ -34,7 +34,8 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent))
 from market_data_hub.config_loader import get_countries          # noqa: E402
 from market_data_hub.db.connection import get_conn                # noqa: E402
-from market_data_hub.db.upsert import upsert                      # noqa: E402
+from market_data_hub.db.upsert import record_vintage, upsert      # noqa: E402
+from market_data_hub.lock import db_write_lock                    # noqa: E402
 
 INDICATOR_ID = "nonresident_debt_share"
 INDICATOR_NAME = "Sovereign debt held by non-residents (% of total, Arslanalp-Tsuda)"
@@ -119,12 +120,19 @@ def main() -> int:
     if args.dry_run:
         print("(dry-run: nothing written)")
         return 0
-    con = get_conn(args.db)
-    try:
-        added, updated = upsert(con, "macro_panel", df)
-        print(f"macro_panel <- nonresident_debt_share: +{added}/{updated}")
-    finally:
-        con.close()
+    # Same writer discipline as runner.py: serialize on the advisory file lock
+    # (DuckDB allows a single writer) and record the point-in-time vintage so
+    # nonresident_debt_share lands in macro_panel_vintage like every other
+    # macro_panel write.
+    with db_write_lock(args.db):
+        con = get_conn(args.db)
+        try:
+            added, updated = upsert(con, "macro_panel", df)
+            record_vintage(con, "macro_panel", df,
+                           datetime.now(timezone.utc).date().isoformat())
+            print(f"macro_panel <- nonresident_debt_share: +{added}/{updated}")
+        finally:
+            con.close()
     return 0
 
 
