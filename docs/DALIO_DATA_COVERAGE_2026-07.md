@@ -255,3 +255,30 @@ con pull reali**.
 2. **Adattatore SDMX IMF** (`sources/imf_sdmx.py`): policy-rate EM, broad money, `IIP` (debito estero DM), `MFS_CBS` (bilancio CB). Loop per-paese, riusa `imf`/`iso3`.
 3. **Mappare IIPCC** per il gap FX-denominated (dataset specialistico, sessione dedicata).
 4. **Metodologia**: cablare gli input `markets` nello scoring / test beautiful-ugly → *lì* le etichette cambiano (con diff prima/dopo).
+
+---
+
+## 9. Aggiunte sessione 2 — adattatore SDMX, scoring, ingest manuale
+
+**#4 — Adattatore IMF SDMX 3.0** (`sources/imf_sdmx.py`): parla il servizio ufficiale
+`api.imf.org/external/sdmx/3.0` (MFS/IIP/IRFCL/IIPCC), ISO3, per-paese (niente wildcard).
+Cablato in router+validator. Primo indicatore live: `imf_policy_rate` (MFS166) → riempie
+i **5 EM** senza BIS (BGD, BGR, EGY, NGA, QAT), verificato con pull reale. IIP (debito
+estero DM) / MFS_CBS (bilancio CB) / IIPCC (debito in FX) **non ancora mappati** — le chiavi
+multi-dimensione non si indovinano, servono i codelist letti in una sessione dedicata;
+l'adattatore le accetta via config appena mappate.
+
+**#3 — Disuguaglianza cablata nello scoring**: `gini` spostato su un nuovo pilastro
+**`social` pesato 5** (Dalio: conflitto interno / changing-world-order). È l'unica
+dimensione *genuinamente nuova* — gli altri indicatori `markets` (tassi/debito) sono
+ridondanti coi pilastri esistenti e restano staged per non fare **double-counting**.
+Effetto misurato (diff before/after su dati veri): **37/64 composite cambiano** — scendono
+i paesi ad alta disuguaglianza (Sudafrica −0,13, Colombia −0,13, Brasile −0,10, USA −0,07),
+salgono gli egualitari (Slovacchia +0,08, Slovenia/Cechia/Olanda +0,06/0,07). Report JS
+aggiornato (`PILLAR_W` include `social`).
+
+**#5 — Non-residenti (Arslanalp–Tsuda)**: verificato che **non esiste API** (solo XLSX
+periodico). Creato `import_investor_base.py` — scaffold di ingest **manuale** documentato
+(scarica l'XLSX AT → `nonresident_debt_share` nel panel, staged). Il mapping colonne va
+verificato sul file reale (il layout cambia tra vintage); è un template onesto, non codice
+finto-testato. La **quota non-residenti** resta l'unico vero gap senza fonte automatizzabile.

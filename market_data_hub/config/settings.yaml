@@ -101,7 +101,11 @@ dalio:
     banking: 10
     governance: 5
     geopolitical: 5
-    markets: 0                # staged market inputs (REER, 10Y yield): declared
-                              # but UNWEIGHTED — visible to the Dalio layer without
-                              # affecting the composite until explicitly wired in.
+    social: 5                 # NEW dimension: inequality (Gini) — Dalio's internal
+                              # -conflict / changing-world-order pillar. Genuinely
+                              # new (not in the other 8 pillars), so no double count.
+    markets: 0                # staged market inputs (rates, debt, REER, 10Y):
+                              # declared but UNWEIGHTED — redundant with existing
+                              # pillars, kept out of the composite to avoid double
+                              # counting (they feed derived calcs like nom_rate).
 

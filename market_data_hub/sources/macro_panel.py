@@ -17,6 +17,7 @@ from market_data_hub.sources import worldbank as wb
 from market_data_hub.sources import imf as im
 from market_data_hub.sources import bis as bs
 from market_data_hub.sources import ecb as ec
+from market_data_hub.sources import imf_sdmx as ims
 
 
 def _fetch_one(source: str, spec: Dict, countries: List[Dict], *,
@@ -25,6 +26,10 @@ def _fetch_one(source: str, spec: Dict, countries: List[Dict], *,
         return im.fetch_imf(spec, countries, start_year=start_year,
                             timeout=http["timeout"], retries=http["max_retries"],
                             base_sleep=http["retry_base_sleep"])
+    if source == "IMF_SDMX":
+        return ims.fetch_imf_sdmx(spec, countries, start_year=start_year,
+                                  timeout=http["timeout"], retries=http["max_retries"],
+                                  base_sleep=http["retry_base_sleep"])
     if source == "BIS":
         return bs.fetch_bis(spec, countries, start_year=start_year,
                             timeout=http["timeout"], retries=http["max_retries"],

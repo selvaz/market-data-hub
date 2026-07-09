@@ -889,7 +889,7 @@ indicators:
     asset-backed sovereigns (Norway; SGP not reported). Complements public_debt_gdp.
 - id: gini
   name: Gini index (World Bank)
-  pillar: markets
+  pillar: social
   priority: 2
   freq: A
   unit: index
@@ -899,4 +899,20 @@ indicators:
   orientation: -1
   api_source_id: 2
   dalio_role: Income inequality — the "internal conflict" pillar of Dalio's
-    changing-world-order thesis. 59/64 via the existing WB connector.
+    changing-world-order thesis. WIRED into the composite via the weighted
+    'social' pillar (the one genuinely new dimension; rates/debt stay on the
+    unweighted 'markets' pillar to avoid double-counting existing pillars).
+# --- IMF SDMX 3.0 (api.imf.org, per-country, no wildcards). Fills the EM policy
+#     rates the BIS does not carry. Key = full SDMX key with {iso3}.
+- id: imf_policy_rate
+  name: Monetary policy-related rate (IMF MFS)
+  pillar: markets
+  priority: 2
+  freq: M
+  unit: percent
+  source: IMF_SDMX
+  dataset: MFS_IR
+  code: '{iso3}.MFS166_RT_PT_A_PT.M'
+  orientation: 0
+  dalio_role: Official policy rate for the EM the BIS series miss (BGD, BGR, EGY,
+    NGA, QAT) — supplements bis_policy_rate.

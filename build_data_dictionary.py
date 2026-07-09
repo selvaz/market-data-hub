@@ -175,11 +175,12 @@ MP_MEANING = {
  "household_debt_gdp": "Household debt, loans & securities %GDP (IMF Global Debt Database): household leverage. Staged ('markets').",
  "govt_net_debt_gdp": "General government NET debt %GDP (IMF WEO): corrects the gross-vs-net caveat for asset-backed sovereigns (Norway). Staged ('markets').",
  "gini": "Gini index (World Bank SI.POV.GINI): income inequality — the internal-conflict pillar of Dalio's changing-world-order thesis. Staged ('markets').",
+ "imf_policy_rate": "Monetary policy-related rate (IMF MFS SDMX, MFS166): official policy rate for the EM the BIS series miss (BGD, BGR, EGY, NGA, QAT). Staged ('markets').",
 }
 
 PROVIDER = {"IMF": "IMF WEO", "WB": "World Bank", "fred": "FRED (St. Louis Fed)",
             "yahoo": "Yahoo Finance", "BIS": "BIS", "FRED": "FRED (St. Louis Fed)",
-            "ECB": "ECB Data Portal"}
+            "ECB": "ECB Data Portal", "IMF_SDMX": "IMF SDMX (MFS/IIP)"}
 ASSET_LABEL = {"EQUITY": "Equity", "FIXED_INCOME": "Fixed Income",
                "COMMODITIES": "Commodities", "FX": "FX/Currencies",
                "ALTERNATIVES": "Alternatives/Volatility", "REAL_ESTATE": "Real Estate",
