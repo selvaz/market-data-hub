@@ -136,15 +136,20 @@ def collect(con) -> dict:
     try:
         v2 = con.execute(
             "SELECT country_iso3, engine, score, label, coverage_tier, confidence, "
-            "n_components, n_expected FROM engine_scores WHERE ref_date = "
+            "n_components, n_expected, components_json FROM engine_scores WHERE ref_date = "
             "(SELECT max(ref_date) FROM engine_scores)").fetch_df()
         for _, r in v2.iterrows():
+            try:
+                comps = json.loads(r["components_json"]).get("components", {})
+            except Exception:
+                comps = {}
             v2_by.setdefault(r["country_iso3"], {})[r["engine"]] = {
                 "score": None if pd.isna(r["score"]) else round(float(r["score"]), 2),
                 "label": None if pd.isna(r["label"]) else r["label"],
                 "coverage_tier": r["coverage_tier"],
                 "confidence": r["confidence"],
                 "n_components": int(r["n_components"]), "n_expected": int(r["n_expected"]),
+                "components": comps,
             }
     except Exception:
         pass
@@ -240,6 +245,8 @@ _TEMPLATE = r"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
  .pbar{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12px}
  .pbar .pl{width:90px;color:#334155} .pbar .pt{flex:1;background:#eef2ff;border-radius:4px;height:16px;position:relative}
  .pbar .pf{position:absolute;top:0;height:16px;border-radius:4px}
+ details{margin:2px 0 10px 198px} details summary{cursor:pointer;font-size:11px;color:var(--mut)}
+ .comp-table{margin:4px 0 0} .comp-table td,.comp-table th{font-size:11px;padding:3px 6px;color:#1a1a2e}
  .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
  .chart{border:1px solid var(--bd);border-radius:10px;padding:10px;cursor:pointer;transition:box-shadow .15s}
  .chart:hover{box-shadow:0 2px 10px rgba(29,78,216,.18)}
@@ -431,8 +438,19 @@ function showCountry(iso){
      h+='<div class="pbar"><span class="pl" style="width:190px">'+(V2_ENGINE_NAMES[e]||e)+'</span><span class="pt">'+
         '<span class="pf" style="left:0;width:'+pct+'%;background:'+col+'"></span></span>'+
         '<span style="width:130px;text-align:right">'+txt+(r.label?' &middot; '+r.label:'')+'</span></div>';
-     h+='<div class="muted" style="margin:-2px 0 6px 198px;font-size:10.5px">coverage: '+r.coverage_tier+
+     h+='<div class="muted" style="margin:-2px 0 2px 198px;font-size:10.5px">coverage: '+r.coverage_tier+
         ' &middot; confidence: '+r.confidence+' &middot; '+r.n_components+'/'+r.n_expected+' inputs</div>';
+     const comps=r.components||{};
+     if(Object.keys(comps).length){
+       h+='<details><summary>components</summary><table class="comp-table"><thead><tr>'+
+          '<th>input</th><th class=n>raw value</th><th class=n>risk score</th><th class=n>weight</th></tr></thead><tbody>';
+       Object.entries(comps).forEach(([name,cc])=>{
+         const raw=(cc.raw_value===null||cc.raw_value===undefined)?'n/a':cc.raw_value;
+         const sc=(cc.score===null||cc.score===undefined)?'n/a':fmt(cc.score,1);
+         h+='<tr><td>'+name+'</td><td class=n>'+raw+'</td><td class=n>'+sc+'</td><td class=n>'+(cc.weight??0)+'</td></tr>';
+       });
+       h+='</tbody></table></details>';
+     }
    });
    h+='</div>';
  } else if(DATA.has_v2){
@@ -460,6 +478,24 @@ function buildOverview(){
  h+='<div class="kpi"><b>'+(pc.BEAUTIFUL_DELEVERAGING||0)+'</b><span>beautiful deleveraging</span></div>';
  h+='<div class="kpi"><b>'+((pc.LATE_LONG_CYCLE||0)+(pc.HIGH_DEBT_STABLE||0))+'</b><span>high sovereign debt</span></div>';
  h+='<div class="kpi"><b>'+(qc.Q3||0)+'</b><span>stagflation (Q3)</span></div></div>';
+ if(DATA.has_v2){
+   // plain dark-gray text, no colored badge/pill (that previously relied on
+   // a CSS class that was never defined -> invisible white-on-nothing text)
+   h+='<h2>Dalio v2 &mdash; engine comparison <span class="muted">(0-100, higher = worse; click a row for the country sheet)</span></h2>';
+   h+='<table><tr><th>Country</th>'+V2_ENGINE_ORDER.map(e=>'<th>'+V2_ENGINE_NAMES[e]+'</th>').join('')+'</tr>';
+   cs.slice().sort((a,b)=>((v2AvgRisk(b[1])??-1)-(v2AvgRisk(a[1])??-1))).forEach(([iso,c])=>{
+     h+='<tr class="clk" onclick="gotoCountry(\''+iso+'\')"><td><b>'+iso+'</b> <span class="muted">'+c.name+'</span></td>';
+     V2_ENGINE_ORDER.forEach(e=>{
+       const r=c.v2&&c.v2[e];
+       if(!r){h+='<td class="muted">&mdash;</td>';return;}
+       const s=r.score, txt=(s===null||s===undefined||isNaN(s))?'n/a':fmt(s,1);
+       const tierSuffix=(r.coverage_tier&&r.coverage_tier!=='full')?' ['+r.coverage_tier+']':'';
+       h+='<td>'+txt+(r.label?' &middot; '+r.label:'')+tierSuffix+'</td>';
+     });
+     h+='</tr>';
+   });
+   h+='</table>';
+ }
  h+='<h2>Growth / Inflation matrix (Bridgewater four-box)</h2>';
  h+='<div class="qgrid">';
  [['q1','Q1'],['q2','Q2'],['q3','Q3'],['q4','Q4']].forEach(([cl,q])=>{
@@ -565,6 +601,48 @@ inflation, rates, credit gap and external/fiscal balances — click any chart to
 <tr><td>nom_rate = policy rate</td><td>Proxy for the cost of debt (the spec allows policy or 10Y); the euro area uses the ECB rate.</td></tr></table>
 <p class="muted">All thresholds live in <code>market_data_hub/config/settings.yaml</code> under <code>dalio</code>.
 Source: Dalio_Macro_Framework_Spec_v3.</p>
+
+<h2>6. Dalio v2 &mdash; 5-engine country risk architecture</h2>
+<p>The sections above (phase, quadrant, composite) are <b>v1</b>: one threshold tree plus one
+weighted composite z-score. v1's own limits — a single number that can compensate a real risk
+(strong governance masking weak debt dynamics) with an unrelated strength, and thresholds applied
+uniformly regardless of how much underlying data actually supports them — motivated a second,
+<b>additive</b> layer: five independent risk engines, each scored 0-100 (higher = worse) on its
+own dimension, never combined into a single number. v1 is untouched; v2 lives in its own
+<code>engine_scores</code> table. Full design: <code>docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md</code>.</p>
+
+<h3>6.1 The five engines</h3>
+<table><tr><th>Engine</th><th>Question it answers</th><th>Core inputs</th></tr>
+<tr><td><b>Sovereign Solvency</b></td><td>Can the state service its debt without default, repression, or destabilizing austerity?</td><td>Debt/GDP (gross &amp; net, income-group-specific thresholds), interest/revenue, interest/GDP, primary deficit, r&minus;g, 5y debt trend</td></tr>
+<tr><td><b>Political Execution</b></td><td>Can the country make the adjustment its debt situation requires, without a political crisis?</td><td>5 World Bank Worldwide Governance Indicators (government effectiveness, rule of law, corruption control, political stability, regulatory quality), cross-country percentile</td></tr>
+<tr><td><b>Private Credit Cycle</b></td><td>Is private-sector credit overheating, independent of public debt?</td><td>BIS credit-to-GDP gap &amp; debt service ratio where available (~43/~32 of 64 countries); a linear-detrend proxy on total private debt elsewhere, always flagged as a proxy</td></tr>
+<tr><td><b>External Currency Constraint</b></td><td>Could a fiscal problem turn into a currency/BoP crisis?</td><td>Current account, NIIP, FX-denominated debt share (IMF IIPCC, ~19 countries full quality), short-term debt/reserves, REER deviation, reserve adequacy; reserve-currency issuers get a discounted score with an explicit caveat, not a silent zero</td></tr>
+<tr><td><b>Funding Liquidity</b></td><td>Can the country place the debt it needs to, without a rate/currency shock?</td><td><b>Deliberately reduced scope</b>: real Gross Financing Needs and auction data are free only for ~15-25 OECD/major economies and are NOT wired here. This engine is the coarse proxy tier only (short-term debt/reserves + 12-month bond yield change) &mdash; its coverage tier is always "proxy", never "full".</td></tr></table>
+
+<h3>6.2 How a score is built</h3>
+<p>Each raw input is mapped to 0-100 by linear interpolation between three named thresholds
+(0 at/below "watch", 50 at "stress", 100 at/above "critical"), then the available components are
+averaged with configured weights (<code>settings.yaml &rarr; dalio_v2</code>). Category label
+(e.g. strong/stable/watch/stressed/critical) uses a dead-band around each boundary so a score
+oscillating near a cut point does not flip label on every run (hysteresis); a move spanning more
+than one bucket still applies immediately.</p>
+
+<h3>6.3 Coverage tiers &mdash; read this before trusting a number</h3>
+<table><tr><th>Tier</th><th>Meaning</th></tr>
+<tr><td><b>full</b></td><td>&ge;80% of the engine's expected inputs are present for this country.</td></tr>
+<tr><td><b>proxy</b></td><td>40-80% present, or the engine structurally only ever produces a coarser substitute for the real input (Private Credit's non-BIS countries; all of Funding Liquidity).</td></tr>
+<tr><td><b>insufficient</b></td><td>&lt;40% of inputs present. The score is <code>null</code> (shown as "n/a") &mdash; a single lucky/safe available component is never allowed to read as a confident "0.0/strong" on its own.</td></tr></table>
+
+<h3>6.4 Known limits (do not skip this)</h3>
+<table><tr><th>Limit</th><th>Detail</th></tr>
+<tr><td>Not vintage-aware</td><td>Reads the current known value for every indicator, not the point-in-time value as of the report date &mdash; the same look-ahead risk v1 has for its forecast-dependent slope. A vintage-aware backtest is planned (<code>DALIO_VINTAGE_AND_AUDIT_PLAN_2026-07.md</code>) but not built yet.</td></tr>
+<tr><td>Many thresholds are ASSUMED, not calibrated</td><td>Only a subset come from the source methodology proposal (with citations in the code); the rest are informed guesses (e.g. NIIP&nbsp;&minus;35%/GDP follows the EU Macroeconomic Imbalance Procedure alert threshold) pending real calibration.</td></tr>
+<tr><td>Weights are equal/arbitrary</td><td>No sensitivity analysis has been run yet on any engine's component weights.</td></tr>
+<tr><td>No historical backtest</td><td>These engines have not been validated against known crisis episodes (Greece 2010, Argentina, UK gilt 2022, etc.). Treat the scores as a structured, auditable starting point &mdash; not a validated predictive signal.</td></tr>
+<tr><td>Funding Liquidity is a placeholder for most countries</td><td>Its "proxy" tier (short-term debt/reserves + yield change) is a real but coarse substitute for actual financing-need/auction data, which is only free for a minority of economies.</td></tr></table>
+<p class="muted">Every engine score in the country sheet has an expandable "components" panel
+showing the exact raw value, sub-score and weight behind it &mdash; use it before trusting any
+single number.</p>
 """
 
 # statistics glossary (English) — every statistic + economic meaning
