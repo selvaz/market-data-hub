@@ -269,3 +269,199 @@ fred:
   name: CREDIT | US | ICE BofA CCC & Lower HY OAS
   priority: 2
   country: US
+
+# --- Cross-country 10Y government bond yields (OECD long-term rates via FRED).
+#     Single FRED series each (like DGS10); country = ISO3 so the
+#     v_macro_panel_ext view can map them into panel shape for the Dalio layer.
+- symbol: IRLTLT01USM156N
+  asset_class: MACRO
+  area: USA
+  name: RATES | USA | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: USA
+- symbol: IRLTLT01JPM156N
+  asset_class: MACRO
+  area: Japan
+  name: RATES | JPN | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: JPN
+- symbol: IRLTLT01DEM156N
+  asset_class: MACRO
+  area: Germany
+  name: RATES | DEU | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: DEU
+- symbol: IRLTLT01GBM156N
+  asset_class: MACRO
+  area: United Kingdom
+  name: RATES | GBR | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: GBR
+- symbol: IRLTLT01FRM156N
+  asset_class: MACRO
+  area: France
+  name: RATES | FRA | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: FRA
+- symbol: IRLTLT01ITM156N
+  asset_class: MACRO
+  area: Italy
+  name: RATES | ITA | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: ITA
+- symbol: IRLTLT01CAM156N
+  asset_class: MACRO
+  area: Canada
+  name: RATES | CAN | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: CAN
+- symbol: IRLTLT01KRM156N
+  asset_class: MACRO
+  area: Korea
+  name: RATES | KOR | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: KOR
+- symbol: IRLTLT01AUM156N
+  asset_class: MACRO
+  area: Australia
+  name: RATES | AUS | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: AUS
+- symbol: IRLTLT01MXM156N
+  asset_class: MACRO
+  area: Mexico
+  name: RATES | MEX | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: MEX
+- symbol: IRLTLT01ZAM156N
+  asset_class: MACRO
+  area: South Africa
+  name: RATES | ZAF | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: ZAF
+- symbol: IRLTLT01CHM156N
+  asset_class: MACRO
+  area: Switzerland
+  name: RATES | CHE | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: CHE
+- symbol: IRLTLT01NLM156N
+  asset_class: MACRO
+  area: Netherlands
+  name: RATES | NLD | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: NLD
+- symbol: IRLTLT01SEM156N
+  asset_class: MACRO
+  area: Sweden
+  name: RATES | SWE | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: SWE
+- symbol: IRLTLT01NOM156N
+  asset_class: MACRO
+  area: Norway
+  name: RATES | NOR | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: NOR
+- symbol: IRLTLT01DKM156N
+  asset_class: MACRO
+  area: Denmark
+  name: RATES | DNK | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: DNK
+- symbol: IRLTLT01FIM156N
+  asset_class: MACRO
+  area: Finland
+  name: RATES | FIN | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: FIN
+- symbol: IRLTLT01BEM156N
+  asset_class: MACRO
+  area: Belgium
+  name: RATES | BEL | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: BEL
+- symbol: IRLTLT01ATM156N
+  asset_class: MACRO
+  area: Austria
+  name: RATES | AUT | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: AUT
+- symbol: IRLTLT01IEM156N
+  asset_class: MACRO
+  area: Ireland
+  name: RATES | IRL | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: IRL
+- symbol: IRLTLT01PTM156N
+  asset_class: MACRO
+  area: Portugal
+  name: RATES | PRT | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: PRT
+- symbol: IRLTLT01ESM156N
+  asset_class: MACRO
+  area: Spain
+  name: RATES | ESP | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: ESP
+- symbol: IRLTLT01GRM156N
+  asset_class: MACRO
+  area: Greece
+  name: RATES | GRC | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: GRC
+- symbol: IRLTLT01NZM156N
+  asset_class: MACRO
+  area: New Zealand
+  name: RATES | NZL | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: NZL
+- symbol: IRLTLT01ILM156N
+  asset_class: MACRO
+  area: Israel
+  name: RATES | ISR | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: ISR
+- symbol: IRLTLT01LUM156N
+  asset_class: MACRO
+  area: Luxembourg
+  name: RATES | LUX | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: LUX
+- symbol: IRLTLT01PLM156N
+  asset_class: MACRO
+  area: Poland
+  name: RATES | POL | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: POL
+- symbol: IRLTLT01CZM156N
+  asset_class: MACRO
+  area: Czechia
+  name: RATES | CZE | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: CZE
+- symbol: IRLTLT01HUM156N
+  asset_class: MACRO
+  area: Hungary
+  name: RATES | HUN | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: HUN
+- symbol: IRLTLT01SKM156N
+  asset_class: MACRO
+  area: Slovak Republic
+  name: RATES | SVK | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: SVK
+- symbol: IRLTLT01SIM156N
+  asset_class: MACRO
+  area: Slovenia
+  name: RATES | SVN | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: SVN
+- symbol: IRLTLT01CLM156N
+  asset_class: MACRO
+  area: Chile
+  name: RATES | CHL | 10-Year Government Bond Yield (OECD via FRED)
+  priority: 2
+  country: CHL

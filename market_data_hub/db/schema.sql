@@ -322,3 +322,72 @@ SELECT symbol, source, asset_class, last_date, lag_days, freq_detected,
 FROM coverage_report
 WHERE stalled = TRUE
 ORDER BY lag_days DESC;
+
+-- v_macro_panel_ext — the cross-country panel PLUS single-country FRED series
+--   remapped into panel shape, so the Dalio layer can read both from one place.
+--   The data itself stays stored/documented exactly like every other FRED
+--   series (in macro_series); this view is a read-only access layer, it never
+--   moves or duplicates storage. Mapping: macro_series.country holds the ISO3
+--   for these cross-country series, so `country AS country_iso3` is direct.
+--   New indicators land on the unweighted pillar 'markets' by design, so the
+--   Dalio composite (weighted over the 8 scored pillars) is unchanged until
+--   they are explicitly wired into the methodology.
+--
+--   Three added indicators:
+--     bond_yield_10y        — from FRED single-country series (IRLTLT01*)
+--     implied_interest_rate — DERIVED from panel rows already present (like
+--                             v_returns derives log-returns from prices):
+--                             interest_on_debt_gdp (IMF 'ie') ÷ gross debt %GDP
+--                             × 100 = effective cost of the sovereign debt stock,
+--                             the r in Dalio's nominal-growth-vs-r test. Uses the
+--                             dedicated IMF interest series (homogeneous, one
+--                             source) rather than differencing two balances.
+--     reer_broad            — native BIS panel indicator (in macro_panel table)
+CREATE OR REPLACE VIEW v_macro_panel_ext AS
+SELECT date, country_iso3, indicator_id, value, indicator_name, pillar,
+       orientation, source, provider_dataset, provider_code, unit, frequency,
+       updated_at
+FROM macro_panel
+UNION ALL
+SELECT date,
+       country                                   AS country_iso3,
+       'bond_yield_10y'                          AS indicator_id,
+       value,
+       '10Y government bond yield (OECD via FRED)' AS indicator_name,
+       'markets'                                 AS pillar,
+       0                                         AS orientation,
+       source,
+       'FRED'                                    AS provider_dataset,
+       series_id                                 AS provider_code,
+       'percent'                                 AS unit,
+       'M'                                       AS frequency,
+       updated_at
+FROM macro_series
+WHERE series_id LIKE 'IRLTLT01%' AND value IS NOT NULL
+UNION ALL
+-- implied_interest_rate — computed per (country, year) from IMF panel rows:
+-- interest paid on debt (%GDP) ÷ gross debt (%GDP) × 100 = effective rate.
+SELECT date,
+       country_iso3,
+       'implied_interest_rate'                   AS indicator_id,
+       ie / debt * 100                           AS value,
+       'Implied interest rate on govt debt (IMF interest %GDP ÷ debt %GDP)' AS indicator_name,
+       'markets'                                 AS pillar,
+       0                                         AS orientation,
+       'derived'                                 AS source,
+       'IMF(derived)'                            AS provider_dataset,
+       'ie/GGXWDG_NGDP*100'                      AS provider_code,
+       'percent'                                 AS unit,
+       'A'                                       AS frequency,
+       updated_at
+FROM (
+    SELECT date, country_iso3,
+           max(CASE WHEN indicator_id = 'interest_on_debt_gdp' THEN value END) AS ie,
+           max(CASE WHEN indicator_id = 'public_debt_gdp'      THEN value END) AS debt,
+           max(updated_at)                                                     AS updated_at
+    FROM macro_panel
+    WHERE indicator_id IN ('interest_on_debt_gdp', 'public_debt_gdp')
+      AND value IS NOT NULL
+    GROUP BY date, country_iso3
+)
+WHERE ie IS NOT NULL AND debt > 0;

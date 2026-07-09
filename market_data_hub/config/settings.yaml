@@ -101,4 +101,7 @@ dalio:
     banking: 10
     governance: 5
     geopolitical: 5
+    markets: 0                # staged market inputs (REER, 10Y yield): declared
+                              # but UNWEIGHTED — visible to the Dalio layer without
+                              # affecting the composite until explicitly wired in.
 

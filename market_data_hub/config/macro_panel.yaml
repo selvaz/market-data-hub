@@ -767,3 +767,136 @@ indicators:
   orientation: 0
   dalio_role: Nominal rate (nom_growth vs nom_rate); ~0 = pushing on a string
   euro_aggregate: XM
+- id: reer_broad
+  name: Real effective exchange rate - broad (BIS)
+  pillar: markets
+  priority: 2
+  freq: M
+  unit: index
+  source: BIS
+  dataset: WS_EER
+  code: M.R.B.{iso2}
+  bis_country_dim: REF_AREA
+  orientation: 0
+  dalio_role: Currency competitiveness / depreciation channel in a deleveraging
+    (staged input; pillar 'markets' is intentionally unweighted for now)
+# --- IMF DataMapper additions (same connector as WEO; keyless, one call/all
+#     countries). Staged on the unweighted 'markets' pillar so composites are
+#     unchanged until explicitly wired into the methodology.
+- id: interest_on_debt_gdp
+  name: Interest paid on public debt (% GDP, IMF)
+  pillar: markets
+  priority: 1
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: FM
+  code: ie
+  orientation: -1
+  dalio_role: Effective cost of the sovereign debt stock; feeds implied_interest_rate
+    (interest %GDP ÷ debt %GDP) — the r in Dalio's nominal-growth-vs-r test.
+- id: real_long_rate
+  name: Real long-term govt bond yield (% , IMF)
+  pillar: markets
+  priority: 1
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: FM
+  code: rltir
+  orientation: 0
+  dalio_role: Real cost of long-term borrowing; fills the ~13 EM that lack a FRED
+    10Y (nominal). Real, not nominal — pair with inflation for the nominal rate.
+- id: corporate_debt_gdp
+  name: Nonfinancial corporate debt, loans & securities (% GDP, IMF GDD)
+  pillar: markets
+  priority: 2
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: GDD
+  code: NFC_LS
+  orientation: -1
+  dalio_role: Private (corporate) leverage; raw material to COMPUTE a credit gap
+    for the EM that lack the BIS credit-to-GDP gap. NOT the same series as the
+    BIS total-private gap (excludes households) — keep separate, do not backfill.
+# --- ECB Data Portal (SDMX 2.1, wildcard, one call/all countries). The euro
+#     area reports rates to the ECB, not the IMF. Composite "cost of borrowing"
+#     indicators = the ECB's own cross-country comparable bank lending rates.
+#     Staged on the unweighted 'markets' pillar.
+- id: ecb_cost_borrow_nfc
+  name: Cost of borrowing, corporations (ECB MIR)
+  pillar: markets
+  priority: 1
+  freq: M
+  unit: percent
+  source: ECB
+  dataset: MIR
+  code: M.{iso2}.B.A2I.AM.R.A.2240.EUR.N
+  ecb_country_dim: REF_AREA
+  orientation: -1
+  dalio_role: Bank lending cost to firms in the euro area/EU (the missing rate
+    side for ~16 euro members); official ECB composite, comparable cross-country.
+- id: ecb_cost_borrow_house
+  name: Cost of borrowing, households for house purchase (ECB MIR)
+  pillar: markets
+  priority: 2
+  freq: M
+  unit: percent
+  source: ECB
+  dataset: MIR
+  code: M.{iso2}.B.A2C.AM.R.A.2250.EUR.N
+  ecb_country_dim: REF_AREA
+  orientation: -1
+  dalio_role: Mortgage lending cost in the euro area/EU; official ECB composite.
+# --- IMF Global Debt Database + WEO/WDI: full private-credit breakdown (fills
+#     the 21 EM without a BIS credit gap) + net public debt + inequality.
+- id: private_debt_gdp
+  name: Private debt, total (households + corporates), loans & securities (% GDP, IMF GDD)
+  pillar: markets
+  priority: 1
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: GDD
+  code: PVD_LS
+  orientation: -1
+  dalio_role: Total private non-financial credit %GDP — the raw series behind the
+    BIS credit-to-GDP gap. 64/64 → lets us COMPUTE a credit gap for the 21 EM
+    that lack the BIS gap (unlocks BUBBLE/LATE_LEVERAGING detection).
+- id: household_debt_gdp
+  name: Household debt, loans & securities (% GDP, IMF GDD)
+  pillar: markets
+  priority: 2
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: GDD
+  code: HH_LS
+  orientation: -1
+  dalio_role: Household leverage %GDP.
+- id: govt_net_debt_gdp
+  name: General government NET debt (% GDP, IMF WEO)
+  pillar: markets
+  priority: 1
+  freq: A
+  unit: percent
+  source: IMF
+  dataset: WEO
+  code: GGXWDN_G01_GDP_PT
+  orientation: -1
+  dalio_role: Net (not gross) public debt — corrects the gross-vs-net caveat for
+    asset-backed sovereigns (Norway; SGP not reported). Complements public_debt_gdp.
+- id: gini
+  name: Gini index (World Bank)
+  pillar: markets
+  priority: 2
+  freq: A
+  unit: index
+  source: WB
+  dataset: WDI
+  code: SI.POV.GINI
+  orientation: -1
+  api_source_id: 2
+  dalio_role: Income inequality — the "internal conflict" pillar of Dalio's
+    changing-world-order thesis. 59/64 via the existing WB connector.

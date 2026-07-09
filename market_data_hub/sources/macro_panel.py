@@ -16,6 +16,7 @@ import pandas as pd
 from market_data_hub.sources import worldbank as wb
 from market_data_hub.sources import imf as im
 from market_data_hub.sources import bis as bs
+from market_data_hub.sources import ecb as ec
 
 
 def _fetch_one(source: str, spec: Dict, countries: List[Dict], *,
@@ -26,6 +27,10 @@ def _fetch_one(source: str, spec: Dict, countries: List[Dict], *,
                             base_sleep=http["retry_base_sleep"])
     if source == "BIS":
         return bs.fetch_bis(spec, countries, start_year=start_year,
+                            timeout=http["timeout"], retries=http["max_retries"],
+                            base_sleep=http["retry_base_sleep"])
+    if source == "ECB":
+        return ec.fetch_ecb(spec, countries, start_year=start_year,
                             timeout=http["timeout"], retries=http["max_retries"],
                             base_sleep=http["retry_base_sleep"])
     return wb.fetch_worldbank(spec, countries, start_year=start_year,

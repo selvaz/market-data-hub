@@ -33,7 +33,12 @@ from market_data_hub.db.connection import get_conn
 IND = {
     "credit_gap": "bis_credit_gap",
     "dsr": "bis_dsr_private",
-    "policy_rate": "bis_policy_rate",
+    # Cost of debt for the r-vs-g / beautiful-vs-ugly test. The effective rate on
+    # the debt STOCK (IMF implied_interest_rate = interest %GDP ÷ debt) is a
+    # truer "r" than the central-bank policy rate, and — unlike the ECB policy
+    # rate shared by the whole euro area — it is country-specific (Greece != DE).
+    # Falls back to the BIS policy rate where the implied rate is missing.
+    "policy_rate": ["implied_interest_rate", "bis_policy_rate"],
     "pub_debt": "public_debt_gdp",
     "fiscal": ["fiscal_balance_gdp"],
     "growth": ["gdp_growth_weo", "real_gdp_growth"],
@@ -218,9 +223,14 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
     tw_fwd = cfg.get("debt_trend_window_fwd", 5)
 
     con = get_conn(db_path)
+    # Read from v_macro_panel_ext (macro_panel + FRED single-country series
+    # remapped into panel shape), so cross-country FRED inputs (e.g. the 10Y
+    # bond yield) are visible to the Dalio layer alongside the native panel.
+    # New indicators sit on the unweighted 'markets' pillar, so the composite
+    # is unchanged until they are explicitly wired into the methodology.
     panel = con.execute(
         "SELECT date, country_iso3, indicator_id, value, pillar, orientation, "
-        "frequency FROM macro_panel WHERE value IS NOT NULL").fetch_df()
+        "frequency FROM v_macro_panel_ext WHERE value IS NOT NULL").fetch_df()
     if panel.empty:
         con.close()
         raise RuntimeError("macro_panel empty: run the download first.")

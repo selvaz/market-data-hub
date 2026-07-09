@@ -81,6 +81,18 @@ FRED_MEANING = {
  "RSAFS": "US retail sales: consumption and domestic demand.",
  "DTWEXBGS": "Trade-Weighted US Dollar Index (Broad): trade-weighted strength of the dollar.",
 }
+# Cross-country 10Y government bond yields (OECD long-term rates via FRED). Same
+# shared economic meaning for every country; keyed by the per-country FRED id so
+# each is documented with a dedicated meaning like the other FRED rate series.
+FRED_MEANING.update({
+ f"IRLTLT01{cc}M156N":
+   "10Y government bond yield (OECD long-term rate via FRED): the market cost of "
+   "long-term sovereign debt. Nominal growth vs this rate drives beautiful/ugly "
+   "deleveraging (Dalio). Bridged into the cross-country panel via v_macro_panel_ext."
+ for cc in ("US","JP","DE","GB","FR","IT","CA","KR","AU","MX","ZA","CH","NL","SE",
+            "NO","DK","FI","BE","AT","IE","PT","ES","GR","NZ","IL","LU","PL","CZ",
+            "HU","SK","SI","CL")
+})
 
 # ---- economic meaning: Macro_Panel (by id) ---------------------------------
 MP_MEANING = {
@@ -153,10 +165,21 @@ MP_MEANING = {
  "bis_dsr_private": "Private debt service ratio (BIS): share of income absorbed by debt service; peak = top/depression of the cycle (Dalio).",
  "bis_credit_gap": "Private credit-to-GDP gap (BIS, HP filter): deviation of credit from trend; >+10pp = bubble/leveraging (Dalio archetypal threshold).",
  "bis_policy_rate": "Central bank policy rate (BIS): nominal rate; ~0 = 'pushing on a string'; used for nom_growth vs nom_rate.",
+ "reer_broad": "Real effective exchange rate, broad basket (BIS): trade-weighted, inflation-adjusted currency value; the depreciation/competitiveness channel in a deleveraging. Staged input (unweighted 'markets' pillar) pending wiring into the methodology.",
+ "interest_on_debt_gdp": "Interest paid on public debt %GDP (IMF Fiscal Monitor): the interest burden; ÷ gross debt gives the effective cost of the sovereign debt stock (implied_interest_rate). Staged ('markets').",
+ "real_long_rate": "Real long-term government bond yield (IMF): the real cost of long-term borrowing; fills the ~13 EM without a FRED 10Y. Real, not nominal. Staged ('markets').",
+ "corporate_debt_gdp": "Nonfinancial corporate debt, loans & securities %GDP (IMF Global Debt Database): private (corporate) leverage; raw material to compute a credit-to-GDP gap where the BIS gap is missing. Not the BIS total-private series. Staged ('markets').",
+ "ecb_cost_borrow_nfc": "Cost of borrowing for corporations (ECB MIR composite): official euro-area/EU bank lending cost to firms; fills the rate side for ~16 euro members the IMF/WDI miss. Staged ('markets').",
+ "ecb_cost_borrow_house": "Cost of borrowing for households, house purchase (ECB MIR composite): official euro-area/EU mortgage lending cost. Staged ('markets').",
+ "private_debt_gdp": "Private debt, total households+corporates, loans & securities %GDP (IMF Global Debt Database): the raw series behind the BIS credit-to-GDP gap; 64/64 → lets the credit gap be computed for the EM that lack the BIS gap. Staged ('markets').",
+ "household_debt_gdp": "Household debt, loans & securities %GDP (IMF Global Debt Database): household leverage. Staged ('markets').",
+ "govt_net_debt_gdp": "General government NET debt %GDP (IMF WEO): corrects the gross-vs-net caveat for asset-backed sovereigns (Norway). Staged ('markets').",
+ "gini": "Gini index (World Bank SI.POV.GINI): income inequality — the internal-conflict pillar of Dalio's changing-world-order thesis. Staged ('markets').",
 }
 
 PROVIDER = {"IMF": "IMF WEO", "WB": "World Bank", "fred": "FRED (St. Louis Fed)",
-            "yahoo": "Yahoo Finance"}
+            "yahoo": "Yahoo Finance", "BIS": "BIS", "FRED": "FRED (St. Louis Fed)",
+            "ECB": "ECB Data Portal"}
 ASSET_LABEL = {"EQUITY": "Equity", "FIXED_INCOME": "Fixed Income",
                "COMMODITIES": "Commodities", "FX": "FX/Currencies",
                "ALTERNATIVES": "Alternatives/Volatility", "REAL_ESTATE": "Real Estate",
