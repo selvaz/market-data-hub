@@ -1,0 +1,55 @@
+# -*- coding: utf-8 -*-
+"""
+runner.py — orchestrates the Dalio v2 engines and writes engine_scores.
+
+Additive: never touches dalio_signals/pillar_scores/regime_state (dalio.py
+keeps producing the current report unchanged). See
+docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md §1 (non-goal).
+
+Usage:
+    from market_data_hub.dalio_v2.runner import run_dalio_v2
+    run_dalio_v2()                      # both Phase-1 engines, current year
+    run_dalio_v2(ref_year=2026)
+    run_dalio_v2(engines=["sovereign_solvency"])
+"""
+from __future__ import annotations
+
+from datetime import date, datetime
+from typing import Dict, List, Optional
+
+from market_data_hub.dalio_v2 import political_execution, sovereign_solvency
+from market_data_hub.db.connection import get_conn
+
+_ENGINES = {
+    "sovereign_solvency": sovereign_solvency.compute,
+    "political_execution": political_execution.compute,
+}
+
+
+def run_dalio_v2(engines: Optional[List[str]] = None, ref_year: Optional[int] = None,
+                 db_path: Optional[str] = None) -> Dict[str, int]:
+    """Compute the requested engines (default: all implemented so far) for
+    ref_year (default: current year) and write to engine_scores. Returns
+    {engine_name: n_countries_scored}."""
+    engines = engines or list(_ENGINES.keys())
+    unknown = set(engines) - set(_ENGINES)
+    if unknown:
+        raise ValueError(f"Unknown engine(s): {sorted(unknown)}. Known: {sorted(_ENGINES)}")
+
+    ref_date = date(ref_year or datetime.now().year, 12, 31)
+    con = get_conn(db_path)
+    try:
+        summary: Dict[str, int] = {}
+        for name in engines:
+            df = _ENGINES[name](con, ref_date)
+            if df.empty:
+                summary[name] = 0
+                continue
+            con.executemany(
+                "INSERT OR REPLACE INTO engine_scores VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                df.itertuples(index=False, name=None))
+            summary[name] = len(df)
+        con.commit()
+        return summary
+    finally:
+        con.close()

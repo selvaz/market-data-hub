@@ -145,6 +145,29 @@ CREATE TABLE IF NOT EXISTS regime_state (
 );
 
 -- ----------------------------------------------------------------------------
+-- 3b. engine_scores — Dalio v2, 5-engine architecture (additive: does NOT
+--     replace dalio_signals/pillar_scores/regime_state above). One row per
+--     (country, ref_date, engine). See
+--     docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md for the full design.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS engine_scores (
+    country_iso3    VARCHAR NOT NULL,
+    ref_date        DATE    NOT NULL,
+    engine          VARCHAR NOT NULL,   -- 'sovereign_solvency' | 'funding_liquidity' |
+                                        -- 'private_credit' | 'external_constraint' |
+                                        -- 'political_execution'
+    score           DOUBLE,             -- 0-100, higher = worse (risk)
+    label           VARCHAR,            -- engine-specific categorical bucket
+    coverage_tier   VARCHAR,            -- 'full' | 'proxy' | 'insufficient'
+    confidence      VARCHAR,            -- 'high' | 'medium' | 'low'
+    n_components    INTEGER,            -- available inputs used
+    n_expected       INTEGER,            -- total inputs the engine looks for
+    components_json VARCHAR,            -- per-component audit trail (see plan doc)
+    computed_at     TIMESTAMP,
+    PRIMARY KEY (country_iso3, ref_date, engine)
+);
+
+-- ----------------------------------------------------------------------------
 -- 4. download_log — audit trail of every run (one row per symbol per run)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS download_log (
