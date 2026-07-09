@@ -242,11 +242,18 @@ _TEMPLATE = r"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:12px 0}
  .metric{background:var(--bg);border-radius:8px;padding:8px 10px}
  .metric .l{font-size:11px;color:var(--mut)} .metric .v{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
- .pbar{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12px}
- .pbar .pl{width:90px;color:#334155} .pbar .pt{flex:1;background:#eef2ff;border-radius:4px;height:16px;position:relative}
+ .pbar{display:flex;align-items:center;gap:8px;margin:3px 0;font-size:12px;flex-wrap:wrap}
+ .pbar .pl{width:90px;color:#334155} .pbar .pt{flex:1;min-width:80px;background:#eef2ff;border-radius:4px;height:16px;position:relative}
  .pbar .pf{position:absolute;top:0;height:16px;border-radius:4px}
+ .pbar .pl2{width:190px;flex-shrink:0;color:#334155} .pbar .pv2{width:130px;text-align:right;flex-shrink:0}
  details{margin:2px 0 10px 198px} details summary{cursor:pointer;font-size:11px;color:var(--mut)}
- .comp-table{margin:4px 0 0} .comp-table td,.comp-table th{font-size:11px;padding:3px 6px;color:#1a1a2e}
+ .comp-table{margin:4px 0 0;max-width:100%;overflow-x:auto;display:block}
+ .comp-table td,.comp-table th{font-size:11px;padding:3px 6px;color:#1a1a2e;white-space:nowrap}
+ .v2note{margin:-2px 0 2px 198px;font-size:10.5px}
+ @media (max-width:640px){
+   .pbar .pl2{width:100%;font-weight:600} .pbar .pv2{width:100%;text-align:left}
+   details,.v2note{margin-left:4px}
+ }
  .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-top:14px}
  .chart{border:1px solid var(--bd);border-radius:10px;padding:10px;cursor:pointer;transition:box-shadow .15s}
  .chart:hover{box-shadow:0 2px 10px rgba(29,78,216,.18)}
@@ -321,6 +328,35 @@ const ILABEL={}; DATA.chart_indicators.forEach(ci=>ILABEL[ci[0]]=ci[1]);
 const V2_ENGINE_ORDER=["sovereign_solvency","funding_liquidity","private_credit","external_constraint","political_execution"];
 const V2_ENGINE_NAMES={sovereign_solvency:"Sovereign Solvency",political_execution:"Political Execution",
  private_credit:"Private Credit Cycle",external_constraint:"External Currency Constraint",funding_liquidity:"Funding Liquidity"};
+// short input tooltips, full definitions live in the Statistics tab
+const V2_INPUT_DESC={
+ debt_gdp:"General government gross debt, % of GDP",
+ net_debt_gdp:"Government debt net of financial assets, % of GDP",
+ interest_gdp:"Interest paid on government debt, % of GDP",
+ interest_revenue:"Interest / government revenue x100",
+ primary_deficit_gdp:"-primary balance, % of GDP",
+ r_minus_g:"Effective interest rate on debt minus nominal GDP growth",
+ debt_trend_5y:"OLS slope of debt/GDP, [year-3,year+5], pp/year",
+ government_effectiveness:"WGI percentile: quality of public services & policy execution",
+ rule_of_law:"WGI percentile: contract enforcement, property rights, courts",
+ control_corruption:"WGI percentile: public power exercised for private gain",
+ political_stability:"WGI percentile: risk of destabilization/violent change",
+ regulatory_quality:"WGI percentile: soundness of policy/regulation for private sector",
+ credit_gap:"Private credit/GDP minus its long-run trend (BIS or detrend proxy)",
+ private_dsr:"BIS private debt-service ratio, own-history percentile",
+ real_credit_growth:"YoY % change in private debt/GDP",
+ real_house_price_gap:"Real house-price deviation from trend (not wired yet)",
+ npl_ratio:"Non-performing loans, % of total gross loans",
+ current_account_deficit_gdp:"-current account balance, % of GDP",
+ net_external_liability_gdp:"-net international investment position, % of GDP",
+ short_term_debt_reserves:"Short-term external debt / FX reserves x100",
+ debt_service_exports:"External debt service / exports of goods & services x100",
+ fx_debt_share:"Share of debt denominated in foreign currency",
+ inflation:"Headline CPI / WEO inflation",
+ fx_overvaluation_pct:"% deviation of REER from its own trailing trend",
+ reserves_months:"FX reserves in months of import cover",
+ yield_change_12m_pp:"10y govt bond yield today minus 12 months ago, pp",
+};
 function v2Color(score){
  if(score===null||score===undefined||isNaN(score))return '#94a3b8';
  if(score<20)return '#16a34a'; if(score<40)return '#84cc16'; if(score<60)return '#d97706';
@@ -435,10 +471,10 @@ function showCountry(iso){
      const r=v2[e]; if(!r)return;
      const s=r.score, col=v2Color(s), pct=(s===null||s===undefined||isNaN(s))?0:Math.max(0,Math.min(100,s));
      const txt=(s===null||s===undefined||isNaN(s))?'n/a':fmt(s,1)+'/100';
-     h+='<div class="pbar"><span class="pl" style="width:190px">'+(V2_ENGINE_NAMES[e]||e)+'</span><span class="pt">'+
+     h+='<div class="pbar"><span class="pl pl2">'+(V2_ENGINE_NAMES[e]||e)+'</span><span class="pt">'+
         '<span class="pf" style="left:0;width:'+pct+'%;background:'+col+'"></span></span>'+
-        '<span style="width:130px;text-align:right">'+txt+(r.label?' &middot; '+r.label:'')+'</span></div>';
-     h+='<div class="muted" style="margin:-2px 0 2px 198px;font-size:10.5px">coverage: '+r.coverage_tier+
+        '<span class="pv2">'+txt+(r.label?' &middot; '+r.label:'')+'</span></div>';
+     h+='<div class="muted v2note">coverage: '+r.coverage_tier+
         ' &middot; confidence: '+r.confidence+' &middot; '+r.n_components+'/'+r.n_expected+' inputs</div>';
      const comps=r.components||{};
      if(Object.keys(comps).length){
@@ -447,7 +483,8 @@ function showCountry(iso){
        Object.entries(comps).forEach(([name,cc])=>{
          const raw=(cc.raw_value===null||cc.raw_value===undefined)?'n/a':cc.raw_value;
          const sc=(cc.score===null||cc.score===undefined)?'n/a':fmt(cc.score,1);
-         h+='<tr><td>'+name+'</td><td class=n>'+raw+'</td><td class=n>'+sc+'</td><td class=n>'+(cc.weight??0)+'</td></tr>';
+         const desc=V2_INPUT_DESC[name]||'';
+         h+='<tr><td'+(desc?' title="'+desc+'"':'')+'>'+name+'</td><td class=n>'+raw+'</td><td class=n>'+sc+'</td><td class=n>'+(cc.weight??0)+'</td></tr>';
        });
        h+='</tbody></table></details>';
      }
@@ -685,6 +722,56 @@ _STATS = r"""
 <p class="muted">Sources: IMF WEO (DataMapper), BIS (stats.bis.org), World Bank WDI/WGI, FRED. All values
 anchored to the current year for the "state" metrics; projections used only for the forward-looking
 debt trajectory and the charts.</p>
+
+<h2>Dalio v2 — engine input statistics</h2>
+<p>Every input shown in a country's expandable "components" panel, grouped by engine. Each
+row is scored 0-100 (higher = worse) via <code>score_threshold()</code> against the watch/stress/critical
+levels in <code>config/settings.yaml::dalio_v2</code>, then combined into that engine's score with the
+listed weight. See section 6 above for the full engine methodology.</p>
+
+<h3>Sovereign Solvency</h3>
+<table><tr><th>Input</th><th>Meaning</th></tr>
+<tr><td><b>debt_gdp</b></td><td>General government gross debt, % of GDP. The stock of what has to be serviced.</td></tr>
+<tr><td><b>net_debt_gdp</b></td><td>Government debt net of financial assets, % of GDP. Less punishing than the gross figure for countries holding large reserves/sovereign funds.</td></tr>
+<tr><td><b>interest_gdp</b></td><td>Interest paid on government debt, % of GDP. The direct fiscal drag today.</td></tr>
+<tr><td><b>interest_revenue</b></td><td>Interest / government revenue × 100. Interest burden relative to what the state actually collects — a tighter solvency read than interest/GDP.</td></tr>
+<tr><td><b>primary_deficit_gdp</b></td><td>−primary balance, % of GDP (negative primary balance = deficit before interest). The fiscal effort needed just to stop debt/GDP from a self-reinforcing primary-deficit spiral.</td></tr>
+<tr><td><b>r_minus_g</b></td><td>Effective implied interest rate on debt minus nominal GDP growth (real growth + inflation). The single most important debt-dynamics number: if r&gt;g, debt/GDP compounds upward even with a balanced primary budget.</td></tr>
+<tr><td><b>debt_trend_5y</b></td><td>OLS slope of debt/GDP over [year−3, year+5] in pp/year (includes WEO projections). Forward-looking trajectory, same idea as v1's debt-cycle trend but scoped to this engine's own components.</td></tr></table>
+
+<h3>Political Execution (World Bank WGI)</h3>
+<table><tr><th>Input</th><th>Meaning</th></tr>
+<tr><td><b>government_effectiveness</b></td><td>WGI percentile: quality of public services, civil service, policy formulation and implementation.</td></tr>
+<tr><td><b>rule_of_law</b></td><td>WGI percentile: confidence in and abidance by the rules of society — contract enforcement, property rights, courts, police.</td></tr>
+<tr><td><b>control_corruption</b></td><td>WGI percentile: extent to which public power is exercised for private gain.</td></tr>
+<tr><td><b>political_stability</b></td><td>WGI percentile: likelihood of government destabilization or unconstitutional/violent change, including terrorism.</td></tr>
+<tr><td><b>regulatory_quality</b></td><td>WGI percentile: ability of government to formulate and implement sound policies/regulations that permit and promote private-sector development.</td></tr></table>
+<p class="muted">All five are 0-100 percentile ranks published by the World Bank; the engine flips them so a
+<b>higher engine score = weaker execution</b> (opposite direction from the raw WGI percentile).</p>
+
+<h3>Private Credit Cycle</h3>
+<table><tr><th>Input</th><th>Meaning</th></tr>
+<tr><td><b>credit_gap</b></td><td>Private non-financial-sector credit/GDP minus its long-run trend. BIS's own gap when available; otherwise a linear-detrend proxy off <code>private_debt_gdp</code> (flagged via <code>credit_gap_source</code> in the audit trail — a proxy value caps the engine at "proxy" coverage even if every other input is present). &gt;+10pp signals a credit boom.</td></tr>
+<tr><td><b>private_dsr</b></td><td>BIS private-sector debt-service ratio, expressed as this country's own historical percentile (0-100). Read relative to its own history because "normal" DSR varies a lot by country (e.g. high-mortgage economies run structurally higher).</td></tr>
+<tr><td><b>real_credit_growth</b></td><td>YoY % change in private debt/GDP. Rate of leveraging, independent of the level.</td></tr>
+<tr><td><b>real_house_price_gap</b></td><td>Real house-price deviation from trend. Not wired to a free data source yet — always shown as "n/a" (structurally missing, not a bug).</td></tr>
+<tr><td><b>npl_ratio</b></td><td>Non-performing loans, % of total gross loans. Realized credit losses already on banks' books.</td></tr></table>
+
+<h3>External Currency Constraint</h3>
+<table><tr><th>Input</th><th>Meaning</th></tr>
+<tr><td><b>current_account_deficit_gdp</b></td><td>−current account balance, % of GDP (positive = deficit). New external financing needed each year.</td></tr>
+<tr><td><b>net_external_liability_gdp</b></td><td>−net international investment position, % of GDP (positive = net external debtor). The accumulated stock the country owes the rest of the world.</td></tr>
+<tr><td><b>short_term_debt_reserves</b></td><td>Short-term external debt / FX reserves × 100 (Greenspan-Guidotti-style ratio). &gt;100% means reserves don't cover debt rolling over within a year — classic sudden-stop vulnerability gauge.</td></tr>
+<tr><td><b>debt_service_exports</b></td><td>External debt service (principal+interest) / exports of goods and services × 100. Ability to pay external obligations out of hard-currency earnings.</td></tr>
+<tr><td><b>fx_debt_share</b></td><td>Share of public/external debt denominated in foreign currency. The "original sin" exposure — FX depreciation directly inflates local-currency debt burden.</td></tr>
+<tr><td><b>inflation</b></td><td>Headline CPI/WEO inflation. High inflation both signals and causes currency weakness.</td></tr>
+<tr><td><b>fx_overvaluation_pct</b></td><td>% deviation of the real effective exchange rate (REER) from its own trailing linear trend. Positive = currency looks rich vs its own recent history, a depreciation-risk flag; not applied to explicit reserve-currency issuers (USA/JPN/GBR/CHE — see <code>is_reserve_currency</code> in the audit trail).</td></tr>
+<tr><td><b>reserves_months</b></td><td>FX reserves in months of import cover. Buffer against a sudden stop in external financing.</td></tr></table>
+
+<h3>Funding Liquidity <span class="muted">(proxy-tier placeholder — see §6.4)</span></h3>
+<table><tr><th>Input</th><th>Meaning</th></tr>
+<tr><td><b>short_term_debt_reserves</b></td><td>Same ratio as External Constraint's — reused here as the best free proxy for near-term rollover/financing pressure (real GFN/auction-calendar data isn't free for most countries).</td></tr>
+<tr><td><b>yield_change_12m_pp</b></td><td>10y government bond yield today minus 12 months ago, in percentage points. A sharp rise is the market pricing in funding stress before it shows up anywhere else.</td></tr></table>
 """
 
 
