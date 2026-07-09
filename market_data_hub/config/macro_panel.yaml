@@ -916,3 +916,40 @@ indicators:
   orientation: 0
   dalio_role: Official policy rate for the EM the BIS series miss (BGD, BGR, EGY,
     NGA, QAT) — supplements bis_policy_rate.
+- id: iip_net_position
+  name: Net international investment position (USD, IMF IIP)
+  pillar: markets
+  priority: 2
+  freq: A
+  unit: usd
+  source: IMF_SDMX
+  dataset: IIP
+  code: '{iso3}.NETAL_P.NIIP.USD.A'
+  orientation: 1
+  dalio_role: Net external creditor/debtor position (USD level). Negative = the
+    country is a net debtor to the world. Broad DM+EM coverage.
+- id: ext_debt_nonres_usd
+  name: Debt liabilities to non-residents, total (USD, IMF IIPCC)
+  pillar: markets
+  priority: 2
+  freq: A
+  unit: usd
+  source: IMF_SDMX
+  dataset: IIPCC
+  code: '{iso3}.L_P.DLNRES_DIC._T.USD.A'
+  orientation: 0
+  dalio_role: Total sovereign+economy debt owed to non-residents; denominator for
+    the FX-denominated share. Official IMF IIPCC (~19 major economies).
+- id: fx_debt_usd
+  name: Debt liabilities to non-residents, foreign currency (USD, IMF IIPCC)
+  pillar: markets
+  priority: 2
+  freq: A
+  unit: usd
+  source: IMF_SDMX
+  dataset: IIPCC
+  code: '{iso3}.L_P.DLNRES_DIC.FC.USD.A'
+  orientation: -1
+  dalio_role: External debt in FOREIGN currency; divided by ext_debt_nonres_usd
+    gives fx_debt_share (view) — Dalio's top can-they-print-their-way-out signal
+    (USA 8, IT 5 vs TUR 94, HRV 94). Official IMF IIPCC, supersedes manual AT.

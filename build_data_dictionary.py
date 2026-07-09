@@ -176,6 +176,9 @@ MP_MEANING = {
  "govt_net_debt_gdp": "General government NET debt %GDP (IMF WEO): corrects the gross-vs-net caveat for asset-backed sovereigns (Norway). Staged ('markets').",
  "gini": "Gini index (World Bank SI.POV.GINI): income inequality — the internal-conflict pillar of Dalio's changing-world-order thesis. Staged ('markets').",
  "imf_policy_rate": "Monetary policy-related rate (IMF MFS SDMX, MFS166): official policy rate for the EM the BIS series miss (BGD, BGR, EGY, NGA, QAT). Staged ('markets').",
+ "iip_net_position": "Net international investment position (IMF IIP SDMX, USD level): net external creditor/debtor position; negative = net debtor to the world. Staged ('markets').",
+ "ext_debt_nonres_usd": "Debt liabilities to non-residents, total (IMF IIPCC SDMX, USD): total debt owed abroad; denominator for the FX-denominated share. Staged ('markets').",
+ "fx_debt_usd": "Debt liabilities to non-residents in FOREIGN currency (IMF IIPCC SDMX, USD): with ext_debt_nonres gives fx_debt_share — Dalio's #1 'can they print their way out?' signal. Staged ('markets').",
 }
 
 PROVIDER = {"IMF": "IMF WEO", "WB": "World Bank", "fred": "FRED (St. Louis Fed)",

@@ -16,7 +16,7 @@ def test_catalog_counts():
     # Yahoo list (FRED IDs filtered out by get_yahoo_tickers)
     assert len(get_yahoo_tickers()) == 111
     assert len(get_fred_series()) == 77   # 45 + 32 cross-country 10Y yields (IRLTLT01*)
-    assert len(get_macro_panel_specs()) == 80   # +reer/ie/rltir/NFC_LS +2 ECB +PVD_LS/HH_LS/net-debt/gini +imf_policy_rate
+    assert len(get_macro_panel_specs()) == 83   # ...+imf_policy_rate +iip_net/ext_debt_nonres/fx_debt (IMF SDMX)
     assert len(get_countries()) == 64
 
 

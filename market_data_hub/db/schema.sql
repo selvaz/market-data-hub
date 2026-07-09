@@ -390,4 +390,32 @@ FROM (
       AND value IS NOT NULL
     GROUP BY date, country_iso3
 )
-WHERE ie IS NOT NULL AND debt > 0;
+WHERE ie IS NOT NULL AND debt > 0
+UNION ALL
+-- fx_debt_share — % of external (non-resident) debt denominated in FOREIGN
+-- currency = Dalio's #1 "can they print their way out?" signal. A pure ratio
+-- (no GDP needed), from the two IMF IIPCC series.
+SELECT date,
+       country_iso3,
+       'fx_debt_share'                           AS indicator_id,
+       fx / tot * 100                            AS value,
+       'FX-denominated share of external debt (IMF IIPCC)' AS indicator_name,
+       'markets'                                 AS pillar,
+       0                                         AS orientation,
+       'derived'                                 AS source,
+       'IIPCC(derived)'                          AS provider_dataset,
+       'DLNRES_DIC.FC/_T*100'                    AS provider_code,
+       'percent'                                 AS unit,
+       'A'                                       AS frequency,
+       updated_at
+FROM (
+    SELECT date, country_iso3,
+           max(CASE WHEN indicator_id = 'fx_debt_usd'         THEN value END) AS fx,
+           max(CASE WHEN indicator_id = 'ext_debt_nonres_usd' THEN value END) AS tot,
+           max(updated_at)                                                    AS updated_at
+    FROM macro_panel
+    WHERE indicator_id IN ('fx_debt_usd', 'ext_debt_nonres_usd')
+      AND value IS NOT NULL
+    GROUP BY date, country_iso3
+)
+WHERE fx IS NOT NULL AND tot > 0;

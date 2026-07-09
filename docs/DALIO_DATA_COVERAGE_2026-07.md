@@ -282,3 +282,23 @@ periodico). Creato `import_investor_base.py` — scaffold di ingest **manuale** 
 (scarica l'XLSX AT → `nonresident_debt_share` nel panel, staged). Il mapping colonne va
 verificato sul file reale (il layout cambia tra vintage); è un template onesto, non codice
 finto-testato. La **quota non-residenti** resta l'unico vero gap senza fonte automatizzabile.
+
+---
+
+## 10. Chiavi IMF SDMX mappate (deterministicamente, wildcard `*`)
+
+Trovate leggendo i metadati reali (wildcard `*`, non i tentativi), verificate con pull:
+
+| Concetto | Chiave `{iso3}.…` | Copertura | Note |
+|---|---|---:|---|
+| Net IIP (posizione estera netta) | `NETAL_P.NIIP.USD.A` (IIP) | ampia DM+EM | USD (÷PIL per %) |
+| Passività estere lorde | `L_P.IIP.USD.A` (IIP) | ampia | USD |
+| Debito verso non-residenti | `L_P.DLNRES_DIC._T.USD.A` (IIPCC) | 19 | USD |
+| **Debito in valuta estera** | `L_P.DLNRES_DIC.FC.USD.A` (IIPCC) | 19 | → `fx_debt_share` (view) |
+| Attivo banca centrale | `S121_A_TA_ASEC_CB1SR.USD.M` (MFS_CBS) | **solo USA** | thin, non aggiunto |
+
+**`fx_debt_share`** (view, FC/totale×100) = il segnale #1 di Dalio, verificato: USA 8, IT 5,
+DE 14, ES 11 (emittenti valuta di riserva → possono stampare) vs TUR 94, HRV 94, HUN 84,
+IDN 80 (dipendenti da valuta estera → vulnerabili). **Fonte ufficiale IMF IIPCC → supera
+l'ingest manuale Arslanalp–Tsuda** per i 19 paesi coperti (lo scaffold resta per gli altri).
+MFS_CBS (bilancio CB) è thin (solo USA) — la chiave c'è, il dato no.
