@@ -152,7 +152,9 @@ market_data_hub/
   config/     tickers.yaml (111)  macro_series.yaml (77)  macro_panel.yaml (83)  countries.yaml (64)  settings.yaml
   dalio.py    classify.py                 legacy composite z-score + debt-cycle/regime classifier
   dalio_v2/   sovereign_solvency.py  political_execution.py  private_credit.py  external_constraint.py
-              funding_liquidity.py  scoring.py  report.py    5-engine country risk architecture (additive)
+              funding_liquidity.py  cycle_classifier.py  scoring.py  report.py
+              5-engine country risk architecture (additive) + Fase 5 dalio_stage/
+              deleveraging_type classifier on top (dalio_cycle_v2)
   regime/     estimate.py  report.py                         per-symbol HMM regime monitor (needs LazyHMM)
   reader.py   catalog.py  extract.py  agent_tools.py  config_loader.py  runner.py
 run_daily.py  run_backfill.py  diagnose.py  setup_scheduler.ps1
