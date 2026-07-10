@@ -83,14 +83,14 @@ def cmd_summary(con):
     for tbl, key in [("prices_daily", "symbol"), ("macro_series", "series_id"),
                      ("crypto_ohlcv", "symbol")]:
         r = con.execute(
-            f"SELECT count(*) rows, count(DISTINCT {key}) syms, "
-            f"min(" + ("date" if tbl != "crypto_ohlcv" else "ts") + ") mn, "
-            "max(" + ("date" if tbl != "crypto_ohlcv" else "ts") + ") mx "
+            f"SELECT count(*) AS row_count, count(DISTINCT {key}) AS series_count, "
+            f"min(" + ("date" if tbl != "crypto_ohlcv" else "ts") + ") AS first_ts, "
+            "max(" + ("date" if tbl != "crypto_ohlcv" else "ts") + ") AS last_ts "
             f"FROM {tbl}").fetch_df()
-        if not r.empty and r.iloc[0]["rows"]:
+        if not r.empty and r.iloc[0]["row_count"]:
             x = r.iloc[0]
-            print(f"  {tbl:16s}: {int(x['rows']):>10,} rows | "
-                  f"{int(x['syms']):>4} series | {x['mn']} -> {x['mx']}")
+            print(f"  {tbl:16s}: {int(x['row_count']):>10,} rows | "
+                  f"{int(x['series_count']):>4} series | {x['first_ts']} -> {x['last_ts']}")
         else:
             print(f"  {tbl:16s}: empty")
 
