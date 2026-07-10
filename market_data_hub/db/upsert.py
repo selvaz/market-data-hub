@@ -96,6 +96,13 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
     cols = _COLUMNS[table]
     out = df.copy()
 
+    # Collapse intra-batch primary-key duplicates before counting: INSERT OR
+    # REPLACE keeps the last conflicting row anyway, but len(out) would count
+    # every duplicate as an extra "added" row, inflating the added/updated
+    # estimate that download_log reports (e.g. a BIS batch with repeated
+    # (date, country) keys showed a constant phantom rows_added every run).
+    out = out.drop_duplicates(subset=_PK[table], keep="last")
+
     if "updated_at" in cols and "updated_at" not in out.columns:
         out["updated_at"] = datetime.now(timezone.utc)
 
@@ -132,7 +139,7 @@ _VINTAGE = {
 
 
 def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
-                   df: pd.DataFrame, vintage_date) -> int:
+                   df: pd.DataFrame, vintage_date, *, run_id: str | None = None) -> int:
     """Append point-in-time rows to ``{table}_vintage`` for any key whose value
     is new or differs from the latest stored vintage (append-on-change).
 
@@ -140,6 +147,13 @@ def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
     then query the value as-known on a past date (greatest vintage_date <= as-of),
     avoiding revision look-ahead. Returns the number of vintage rows written.
     Tables without a vintage history are silently ignored.
+
+    Each written row also records ``run_id`` (which run observed it -- needed
+    because ``vintage_date`` has day granularity, so it alone can't tell apart
+    two runs on the same calendar day), ``change_type`` ('new' when the (date,
+    key) combination had no prior vintage row at all, 'revised' when it did but
+    with a different value) and ``prior_value`` (the value it replaced, for
+    'revised' rows).
     """
     if df is None or df.empty or table not in _VINTAGE:
         return 0
@@ -159,16 +173,19 @@ def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
     assert n0_row is not None   # COUNT(*) always returns exactly one row
     n0 = n0_row[0]
     con.execute(
-        f"INSERT OR REPLACE INTO {vt} ({key_list}, value, vintage_date, source) "
+        f"INSERT OR REPLACE INTO {vt} "
+        f"({key_list}, value, vintage_date, source, run_id, change_type, prior_value) "
         f"WITH latest AS ("
         f"  SELECT v.* FROM {vt} v JOIN ("
         f"    SELECT {key_list}, max(vintage_date) AS md FROM {vt} GROUP BY {key_list}"
         f"  ) m ON {join_vm} AND v.vintage_date = m.md"
         f") "
-        f"SELECT {sel_keys}, s.value, ?::DATE, s.source "
+        f"SELECT {sel_keys}, s.value, ?::DATE, s.source, ?, "
+        f"       CASE WHEN l.{keys[0]} IS NULL THEN 'new' ELSE 'revised' END, "
+        f"       l.value "
         f"FROM _vtsrc s LEFT JOIN latest l ON {join_sl} "
         f"WHERE l.{keys[0]} IS NULL OR l.value IS DISTINCT FROM s.value",
-        [str(vintage_date)],
+        [str(vintage_date), run_id],
     )
     con.unregister("_vtsrc")
     n1_row = con.execute(f"SELECT count(*) FROM {vt}").fetchone()
