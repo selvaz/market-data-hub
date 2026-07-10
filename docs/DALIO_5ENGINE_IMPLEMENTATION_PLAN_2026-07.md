@@ -559,7 +559,7 @@ cross-country quando non lo è.
 
 ---
 
-### Fase 5 — Classificatore finale (`dalio_cycle_v2`)
+### Fase 5 — Classificatore finale (`dalio_cycle_v2`) ✅ (2026-07-10)
 
 **Obiettivo:** combinare i 5 `engine_scores` in `dalio_stage` +
 `deleveraging_type`, con le regole IF/THEN di §11.2 della proposta, MA con
@@ -573,12 +573,49 @@ soglia crisp con `bucket_with_hysteresis()` (Fase 0) e ogni riferimento a
 paese/data. `top_risk_drivers_json` = i 3 componenti con lo z-score peggiore
 tra tutti i motori (per la country card, §16.1 proposta).
 
-**Definition of done:** rieseguire gli esempi di riclassificazione §15
-della proposta (USA, ARG, SGP, JPN) e confrontare manualmente l'output con
-la diagnosi qualitativa attesa lì descritta. Non deve matchare parola per
-parola, ma la direzione (USA→late long debt cycle, ARG→inflationary/non
-beautiful, SGP→non late cycle, JPN→managed/repression risk) deve essere
-coerente.
+**Costruita in `market_data_hub/dalio_v2/cycle_classifier.py`, con alcune
+deviazioni deliberate e documentate rispetto allo pseudocodice §14/§11.2:**
+- **Isteresi**: non un secondo meccanismo indipendente. Ogni ramo IF/THEN
+  testa la **label** già stabilizzata dall'isteresi del motore sorgente
+  (`bucket_with_hysteresis`), mai lo score grezzo — lo score grezzo NON è
+  stabilizzato, quindi soglie sullo score reintrodurrebbero esattamente il
+  flutter che l'isteresi esiste per prevenire. La stabilità del
+  classificatore composito è ereditata da quella dei 5 motori.
+- **"repressive"**: nessuna fonte dati sui holdings di banca centrale del
+  debito esiste — usa un proxy (`r_effective_pct - inflation_pct` molto
+  negativo E `fx_debt_share_pct` basso, come stand-in per "debito
+  prevalentemente in valuta locale, assorbibile dal sistema domestico").
+  Onestamente debole, ma **mantenuto come ramo separato e reale**: piegarlo
+  in "inflationary" avrebbe reso il Giappone (uno dei quattro esempi del
+  Definition of Done qui sotto) irraggiungibile.
+- **"restructuring"**: nessun flag di evento di ristrutturazione esiste in
+  nessuna parte del repo — folded in "ugly" come default conservativo,
+  stesso trattamento di `real_house_price_gap` (sempre mancante) in
+  `private_credit.py`.
+- **Gating sulla copertura**: per-output, tutto-o-niente sui motori
+  referenziati da almeno un ramo di quell'output (mai un soft-skip per-ramo,
+  che potrebbe far atterrare un paese senza dati su "early_or_mid_cycle" —
+  legge come "va tutto bene" quando la verità è "non lo sappiamo").
+- **Ogni soglia/insieme di label vive in `settings.yaml::dalio_v2.cycle_classifier`**,
+  mai hardcoded in Python — richiesta esplicita, validata da
+  `validate_config.py`.
+
+**Definition of done — verificato (2026-07-10)**, rieseguendo gli esempi
+di riclassificazione §15 della proposta (USA, ARG, SGP, JPN) via
+`classify_deleveraging()`/`classify_dalio_stage()` con input costruiti sul
+profilo economico reale di ciascun paese:
+
+| Paese | `deleveraging_type` ottenuto | `dalio_stage` ottenuto | Atteso (proposta §15) | Coerente? |
+|---|---|---|---|---|
+| USA | `none` (debito in crescita, non in calo) | `late_long_debt_cycle` | late long debt cycle | ✅ |
+| ARG | **`inflationary`** (mai `beautiful`) | `crisis` | inflationary/post-crisis, non beautiful | ✅ — è il bug che ha aperto questa Fase 5 |
+| SGP | `none` | `early_or_mid_cycle` | non late cycle | ✅ |
+| JPN | **`repressive`** | `early_or_mid_cycle` (nota sotto) | repression/inflation tolerance/currency depreciation risk | ✅ sul tipo; lo stage dipenderà dal vero `sovereign_solvency` score sui dati reali (il debito/PIL giapponese reale è ben oltre la soglia `critical`) |
+
+Verificato anche end-to-end attraverso la pipeline reale (non solo le
+funzioni pure): `tests/test_dalio_v2_cycle_classifier.py::test_full_pipeline_arg_profile_is_inflationary`
+fa girare `macro_panel` → tutti e 5 i motori reali → `dalio_cycle_v2` e
+conferma `deleveraging_type == "inflationary"` sul caso Argentina.
 
 ---
 

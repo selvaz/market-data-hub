@@ -168,6 +168,31 @@ CREATE TABLE IF NOT EXISTS engine_scores (
 );
 
 -- ----------------------------------------------------------------------------
+-- 3c. dalio_cycle_v2 — Fase 5 cycle classifier: sits on top of engine_scores,
+--     never collapses the 5 engines into one number before applying rules
+--     (rules test each engine's own hysteresis-stable LABEL, not raw score).
+--     One row per (country, ref_date). See
+--     docs/DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md Fase 5 and
+--     market_data_hub/dalio_v2/cycle_classifier.py for the full design.
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS dalio_cycle_v2 (
+    country_iso3          VARCHAR NOT NULL,
+    ref_date               DATE    NOT NULL,
+    dalio_stage             VARCHAR,   -- early_or_mid_cycle | late_long_debt_cycle | private_bubble |
+                                        -- late_leveraging | contraction | crisis | NULL (unclassifiable)
+    deleveraging_type       VARCHAR,   -- none | beautiful | inflationary | repressive | restructuring |
+                                        -- ugly | NULL (unclassifiable). 'restructuring' is currently
+                                        -- unreachable -- no restructuring-event data source exists, folded
+                                        -- into 'ugly' by design, see cycle_classifier.py module docstring.
+    overall_confidence      VARCHAR,   -- worst confidence_for(tier) across the engines used
+    top_risk_drivers_json   VARCHAR,   -- top-3 worst-scoring components across all 5 engines
+    caveats_json            VARCHAR,   -- active caveats (proxy usage, folded categories, etc.)
+    audit_json               VARCHAR,  -- model_version, engines_used{engine:tier}, unclassifiable_reason
+    computed_at               TIMESTAMP,
+    PRIMARY KEY (country_iso3, ref_date)
+);
+
+-- ----------------------------------------------------------------------------
 -- 4. download_log — audit trail of every run (one row per symbol per run)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS download_log (

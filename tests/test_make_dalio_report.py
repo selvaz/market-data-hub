@@ -48,11 +48,14 @@ def test_collect_without_v2_degrades_cleanly(tmp_db):
     con.close()
 
     assert d["has_v2"] is False
+    assert d["has_cycle"] is False
     assert "USA" in d["countries"]
     assert d["countries"]["USA"]["v2"] == {}
-    # render_html must not choke on the empty-v2 case
+    assert d["countries"]["USA"]["cycle"] == {}
+    # render_html must not choke on the empty-v2/empty-cycle case
     html = mdr.render_html(d)
     assert "V2_ENGINE_NAMES" in html
+    assert "STAGE_NAMES" in html
 
 
 def test_collect_with_v2_wires_engine_scores_onto_the_same_country(tmp_db):
@@ -102,3 +105,38 @@ def test_collect_with_v2_wires_engine_scores_onto_the_same_country(tmp_db):
     # </script> inside embedded JSON is escaped so DB data can never
     # terminate the script block and blank the page
     assert "</script>" not in mdr._js_str({"x": "</script>"})
+
+
+def test_collect_wires_cycle_classifier_onto_the_same_country(tmp_db):
+    con = get_conn()
+    _seed_v1_macro_panel(con)
+    con.commit()
+    con.close()
+
+    run_dalio()
+    classify_countries()
+    con = get_conn()
+    con.execute(
+        "INSERT INTO dalio_cycle_v2 VALUES ('USA', DATE '2026-12-31', 'crisis', "
+        "'inflationary', 'high', '[{\"engine\":\"sovereign_solvency\",\"component\":\"r_minus_g\","
+        "\"score\":92.0,\"raw_value\":-18.4,\"weight\":1}]', "
+        "'[\"deleveraging_type unclassifiable: test caveat\"]', '{}', now())")
+    con.commit()
+    con.close()
+
+    con = get_conn(read_only=True)
+    d = mdr.collect(con)
+    con.close()
+
+    assert d["has_cycle"] is True
+    usa_cycle = d["countries"]["USA"]["cycle"]
+    assert usa_cycle["dalio_stage"] == "crisis"
+    assert usa_cycle["deleveraging_type"] == "inflationary"
+    assert usa_cycle["top_risk_drivers"][0]["component"] == "r_minus_g"
+    assert usa_cycle["caveats"] == ["deleveraging_type unclassifiable: test caveat"]
+    # a country with ONLY a dalio_cycle_v2 row (no v1/v2) must still get a sheet
+    assert "ITA" in d["countries"]
+    assert d["countries"]["ITA"]["cycle"] == {}
+
+    html = mdr.render_html(d)
+    assert "Cycle stage (v2)" in html or "STAGE_NAMES" in html

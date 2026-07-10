@@ -20,8 +20,8 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from market_data_hub.dalio_v2 import (
-    external_constraint, funding_liquidity, political_execution, private_credit,
-    sovereign_solvency,
+    cycle_classifier, external_constraint, funding_liquidity, political_execution,
+    private_credit, sovereign_solvency,
 )
 from market_data_hub.db.connection import get_conn
 from market_data_hub.lock import db_write_lock
@@ -83,6 +83,40 @@ def run_dalio_v2(engines: Optional[List[str]] = None, ref_year: Optional[int] = 
                         "INSERT INTO engine_scores VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                         _records_with_real_nulls(df))
                     summary[name] = len(df)
+                # Fase 5: classify AFTER the engine loop, in the same
+                # transaction, reading engine_scores as it now stands for
+                # ref_date (which includes any OTHER engine's rows already
+                # committed from an earlier run, not just the ones just
+                # rewritten -- a partial-engine run still refreshes the
+                # classification against the full current picture). Runs
+                # unconditionally: no new CLI flag needed.
+                #
+                # BUT: only if every gate-relevant engine has AT LEAST ONE
+                # row at this exact ref_date -- i.e. has actually been
+                # computed for this date at some point, not necessarily by
+                # THIS call. Without this guard, running a single engine for
+                # a brand-new ref_year (e.g. the first `run_dalio_v2.py
+                # --engines sovereign_solvency` of a new year) would rebuild
+                # dalio_cycle_v2 with mostly-unclassifiable rows for that
+                # date; since the report picks the globally latest ref_date,
+                # that would hide the previous, fully-classified year's rows
+                # behind a worse one. A country-level data gap is still
+                # handled correctly by cycle_classifier's own per-output
+                # coverage gate -- this only guards against an engine that
+                # has literally never run for ref_date.
+                present_engines = {r[0] for r in con.execute(
+                    "SELECT DISTINCT engine FROM engine_scores WHERE ref_date = ?",
+                    [ref_date]).fetchall()}
+                if cycle_classifier.REQUIRED_ENGINES <= present_engines:
+                    cycle_df = cycle_classifier.compute(con, ref_date)
+                    con.execute("DELETE FROM dalio_cycle_v2 WHERE ref_date = ?", [ref_date])
+                    if not cycle_df.empty:
+                        con.executemany(
+                            "INSERT INTO dalio_cycle_v2 VALUES (?,?,?,?,?,?,?,?,?)",
+                            _records_with_real_nulls(cycle_df))
+                    summary["cycle_classifier"] = len(cycle_df)
+                else:
+                    summary["cycle_classifier"] = None
                 con.execute("COMMIT")
             except Exception:
                 con.execute("ROLLBACK")

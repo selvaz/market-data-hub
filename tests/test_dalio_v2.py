@@ -172,7 +172,8 @@ def test_sovereign_solvency_and_political_execution(tmp_db):
     con.close()
 
     summary = run_dalio_v2(engines=["sovereign_solvency", "political_execution"], ref_year=2026)
-    assert summary == {"sovereign_solvency": 3, "political_execution": 3}
+    assert summary["sovereign_solvency"] == 3 and summary["political_execution"] == 3
+    assert "cycle_classifier" in summary   # Fase 5 always runs alongside the engines
 
     con = get_conn(read_only=True)
     scores = con.execute(
@@ -322,7 +323,8 @@ def test_private_credit_bis_vs_proxy(tmp_db):
     con.close()
 
     summary = run_dalio_v2(engines=["private_credit"], ref_year=2026)
-    assert summary == {"private_credit": 3}
+    assert summary["private_credit"] == 3
+    assert "cycle_classifier" in summary
 
     con = get_conn(read_only=True)
     scores = con.execute(
@@ -451,7 +453,8 @@ def test_external_constraint_reserve_currency_vs_fragile_em(tmp_db):
     con.close()
 
     summary = run_dalio_v2(engines=["external_constraint"], ref_year=2026)
-    assert summary == {"external_constraint": 2}
+    assert summary["external_constraint"] == 2
+    assert "cycle_classifier" in summary
 
     con = get_conn(read_only=True)
     scores = con.execute(
@@ -508,7 +511,8 @@ def test_funding_liquidity_always_proxy_tier(tmp_db):
     con.close()
 
     summary = run_dalio_v2(engines=["funding_liquidity"], ref_year=2026)
-    assert summary == {"funding_liquidity": 2}
+    assert summary["funding_liquidity"] == 2
+    assert "cycle_classifier" in summary
 
     con = get_conn(read_only=True)
     scores = con.execute(
@@ -543,9 +547,14 @@ def test_run_dalio_v2_empty_panel_returns_zero_counts(tmp_db):
     con = get_conn()
     con.close()
     summary = run_dalio_v2(ref_year=2026)
+    # cycle_classifier: None, not 0 -- with zero countries no engine wrote
+    # any row at all, so the "have all gate engines run for this ref_date"
+    # guard skips the refresh entirely (see test_partial_engine_run_on_a_new_
+    # ref_year_does_not_clobber_the_prior_years_classification for the guard
+    # itself).
     assert summary == {"sovereign_solvency": 0, "political_execution": 0,
                        "private_credit": 0, "external_constraint": 0,
-                       "funding_liquidity": 0}
+                       "funding_liquidity": 0, "cycle_classifier": None}
 
 
 def test_rerun_drops_stale_countries_and_is_idempotent(tmp_db):
@@ -565,7 +574,7 @@ def test_rerun_drops_stale_countries_and_is_idempotent(tmp_db):
     con.close()
 
     summary = run_dalio_v2(engines=["sovereign_solvency"], ref_year=2026)
-    assert summary == {"sovereign_solvency": 2}
+    assert summary["sovereign_solvency"] == 2
 
     con = get_conn(read_only=True)
     left = [r[0] for r in con.execute(
@@ -575,8 +584,7 @@ def test_rerun_drops_stale_countries_and_is_idempotent(tmp_db):
     assert left == ["SGP", "USA"]                    # ARG's stale row is gone
 
     # and a plain re-run with unchanged data is idempotent
-    assert run_dalio_v2(engines=["sovereign_solvency"], ref_year=2026) == \
-        {"sovereign_solvency": 2}
+    assert run_dalio_v2(engines=["sovereign_solvency"], ref_year=2026)["sovereign_solvency"] == 2
 
 
 def test_prev_label_skips_null_label_gaps(tmp_db):

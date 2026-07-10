@@ -131,6 +131,39 @@ def validate() -> list[str]:
                 errors.append(f"settings.yaml: dalio_v2.{engine}.thresholds.{name} "
                               f"must be 3 strictly monotonic values, got {t}")
 
+    # 8. dalio_v2.cycle_classifier (Fase 5): every label it references must
+    # actually be a member of the corresponding engine's configured
+    # bucket_labels -- same typo/silent-fallback risk as the weight keys
+    # above, but for label SETS instead of numeric weights.
+    v2_bucket_label_defaults = {
+        "sovereign_solvency": ["strong", "stable", "watch", "stressed", "critical"],
+        "funding_liquidity": ["easy", "normal", "watch", "stress", "severe"],
+        "private_credit": ["low", "moderate", "elevated", "high", "bubble"],
+        "external_constraint": ["low", "moderate", "elevated", "high", "severe"],
+    }
+    cc = v2.get("cycle_classifier") or {}
+    stage_labels = cc.get("stage_labels") or {}
+    label_refs = {
+        "stage_labels.crisis_funding_labels": ("funding_liquidity", stage_labels.get("crisis_funding_labels")),
+        "stage_labels.crisis_external_labels": ("external_constraint", stage_labels.get("crisis_external_labels")),
+        "stage_labels.late_long_debt_cycle_sovereign_labels":
+            ("sovereign_solvency", stage_labels.get("late_long_debt_cycle_sovereign_labels")),
+        "stage_labels.late_long_debt_cycle_funding_labels":
+            ("funding_liquidity", stage_labels.get("late_long_debt_cycle_funding_labels")),
+        "stage_labels.private_bubble_labels": ("private_credit", stage_labels.get("private_bubble_labels")),
+        "stage_labels.late_leveraging_labels": ("private_credit", stage_labels.get("late_leveraging_labels")),
+        "beautiful_funding_labels": ("funding_liquidity", cc.get("beautiful_funding_labels")),
+    }
+    for key, (engine, refs) in label_refs.items():
+        if not refs:
+            continue
+        allowed = set((v2.get(engine) or {}).get("bucket_labels")
+                     or v2_bucket_label_defaults.get(engine, []))
+        unknown = sorted(set(refs) - allowed)
+        if unknown:
+            errors.append(f"settings.yaml: dalio_v2.cycle_classifier.{key} references "
+                          f"labels not in dalio_v2.{engine}.bucket_labels (typo?): {unknown}")
+
     return errors
 
 
