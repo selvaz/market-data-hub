@@ -311,12 +311,99 @@ df, _ = extract_series(["BTCUSDT", "ETHUSDT"], domain="crypto",
                        field="1d", transform="log_return")
 ```
 
-### Point-in-time macro (revision-safe backtest)
+### Point-in-time / vintage reads (revision-safe)
+
+Revisable macro data (FRED, WEO, WDI, BIS…) lives in two layers:
+
+- `macro_series` / `macro_panel` — **only the latest value** per (date, key).
+  This is the implicit "version 0": every normal read uses it and never touches
+  history.
+- `macro_series_vintage` / `macro_panel_vintage` — **append-on-change history**:
+  a row is written only when an ingest sees a (date, key) for the first time
+  (`change_type='new'`) or sees a *different* value for a date already on
+  record (`change_type='revised'`, with the replaced number in `prior_value`
+  and the writing run in `run_id`). Re-downloading an unchanged value writes
+  nothing, so the history grows only with genuine news and revisions.
+
+**1. Latest values (no vintage involved) — the default everywhere:**
+
 ```python
+from market_data_hub import reader
+gdp = reader.read_macro("GDPC1")                          # FRED series, current
+debt = reader.read_macro_panel("public_debt_gdp", wide=True)  # panel, current
+```
+
+**2. As-known-on-a-date (`asof`) — what a backtest should see.** For each
+(date, key) this picks the row with the greatest `vintage_date <= asof`, i.e.
+the value as it was known then, immune to later revisions:
+
+```python
+# FRED series as known on 2024-05-15 (before any later revision)
+cpi_2024 = reader.read_macro("CPIAUCSL", asof="2024-05-15")
+
+# Cross-country panel as known at end-2018, pivoted date x country
 from market_data_hub.extract import extract_panel
 gdp_asof_2018, _ = extract_panel("real_gdp_growth", countries=["USA", "DEU"],
                                  asof="2018-12-31")
+
+# Same via reader (long format, multiple indicators)
+pit = reader.read_macro_panel(["public_debt_gdp", "fiscal_balance_gdp"],
+                              countries=["ITA"], asof="2023-06-30")
 ```
+
+Caveat: history exists only from when vintage ingestion began — `asof` earlier
+than the first recorded `vintage_date` returns empty, not the current value.
+
+**3. Full revision history of one observation — raw SQL on the vintage table:**
+
+```python
+from market_data_hub.db.connection import get_conn
+con = get_conn(read_only=True)
+
+# Every value Italy's 2023 public debt has ever had, in revision order
+con.execute("""
+    SELECT date, value, vintage_date, change_type, prior_value, run_id
+    FROM macro_panel_vintage
+    WHERE country_iso3 = 'ITA' AND indicator_id = 'public_debt_gdp'
+      AND date = DATE '2023-12-31'
+    ORDER BY vintage_date
+""").fetch_df()
+
+# Same for a FRED series (key is series_id instead of country+indicator)
+con.execute("""
+    SELECT date, value, vintage_date, change_type, prior_value
+    FROM macro_series_vintage
+    WHERE series_id = 'GDPC1' AND date = DATE '2026-01-01'
+    ORDER BY vintage_date
+""").fetch_df()
+```
+
+**4. What a specific run changed — new dates vs revisions.** Each vintage row
+records the `run_id` (from `download_log`) that wrote it, because
+`vintage_date` alone has day granularity and cannot tell two same-day runs
+apart:
+
+```python
+# Everything run 27845cf6b1a4 genuinely added or revised, split by kind
+con.execute("""
+    SELECT change_type, country_iso3, indicator_id, date,
+           prior_value, value
+    FROM macro_panel_vintage
+    WHERE run_id = '27845cf6b1a4'
+    ORDER BY change_type, country_iso3, indicator_id
+""").fetch_df()
+# change_type='new'     -> a (date, key) never seen before (coverage extended)
+# change_type='revised' -> same date, source changed the number
+#                          (prior_value holds what it replaced)
+```
+
+This is exactly the query behind the Telegram run report's "Country updates"
+section. Rows written before run tracking existed have `run_id IS NULL`.
+
+**5. Keeping the history bounded.** `db.retention.prune(con,
+vintage_keep_per_key=N)` keeps only the newest N vintage rows per (date, key)
+if the history ever needs trimming; by construction it only grows on actual
+revisions, so this is rarely needed.
 
 ---
 
