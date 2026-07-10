@@ -8,6 +8,6 @@ pyarrow
 openpyxl
 pyyaml
 certifi
-truststore  # SSL verification via the Windows cert store (networks with proxy/MITM)
+truststore; python_version >= "3.10"  # SSL verification via the Windows cert store (networks with proxy/MITM); every truststore release requires Python >=3.10, and the import in _ssl_bootstrap.py is already exception-guarded for its absence
 filelock>=3.0      # cross-process writer lock on the DuckDB file (market_data_hub/lock.py)
 pydantic>=2.0      # lazydatacore: the shared data contract (identity, time, series, results)

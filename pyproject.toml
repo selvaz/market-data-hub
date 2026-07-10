@@ -20,7 +20,10 @@ dependencies = [
     "openpyxl",
     "pyyaml",
     "certifi",
-    "truststore",
+    # every truststore release requires Python >=3.10 (verified: none support
+    # 3.9); the import in _ssl_bootstrap.py is already exception-guarded for
+    # its absence, so 3.9 installs simply skip it rather than fail to install.
+    "truststore; python_version >= '3.10'",
     "filelock>=3.0",
     # lazydatacore: the shared data contract (identity, time, series, results)
     # is pydantic-only and imported by every downstream tool.
@@ -37,11 +40,13 @@ dev = [
 ]
 
 [tool.mypy]
-# mypy 2.x itself requires Python >=3.10 to run and dropped support for
-# targeting 3.9 -- "3.10" is the closest floor it can still enforce. The
-# actual 3.9 compatibility guarantee comes from running the real test suite
-# on Python 3.9 in CI (see ci.yml's matrix), not from this setting.
-python_version = "3.10"
+# No explicit python_version: mypy then assumes the version of the
+# interpreter actually running it (pinned to 3.12 in ci.yml, since mypy 2.x
+# requires >=3.10 to run at all). Pinning it lower than that broke parsing
+# of numpy's own bundled .pyi stubs, which use syntax matching numpy's
+# actual installed (3.12-targeted) version, not an arbitrary lower target.
+# The 3.9 compatibility guarantee comes from running the real test suite on
+# Python 3.9 in CI (see ci.yml's matrix), not from this setting.
 files = [
     "market_data_hub/lazydatacore",
     "market_data_hub/dalio_v2",
