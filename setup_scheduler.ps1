@@ -25,11 +25,6 @@ $regimeWrapper = Join-Path $root "run_regime_daily_with_telegram.ps1"
 $logDir = Join-Path $root "logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
-$tasks = @(
-    @{ Name = "MarketData_EU18";    Time = "09:00"; Args = @("--report") },
-    @{ Name = "MarketData_USClose"; Time = "13:15"; Args = @("--report") }
-)
-
 if ($Remove) {
     foreach ($name in @("MarketData_EU18", "MarketData_USClose", "MarketDataEOD", "MarketDataWeekend", "MarketDataLive", "MarketData_HMMRegime")) {
         if (Get-ScheduledTask -TaskName $name -ErrorAction SilentlyContinue) {
@@ -43,8 +38,13 @@ if ($Remove) {
 
 function New-MdTask($name, $time, $runDailyArgs, $trigger, $wrapperPath = $wrapper, $argName = "RunDailyArgs") {
     $logFile = Join-Path $logDir "$name.log"
-    $argText = ($runDailyArgs | ForEach-Object { '"' + $_ + '"' }) -join ","
-    $psArgs = "-NoProfile -ExecutionPolicy Bypass -File `"$wrapperPath`" -$argName $argText >> `"$logFile`" 2>&1"
+    # -Command (not -File) so PowerShell's own parser sees *>>: Task Scheduler
+    # invokes powershell.exe directly (no cmd.exe), and -File passes ">>"/"2>&1"
+    # through as inert literal arguments instead of redirecting output — the
+    # wrapper would run but logs/*.log would silently stay empty.
+    $argText = ($runDailyArgs | ForEach-Object { "'" + $_.Replace("'", "''") + "'" }) -join ","
+    $cmdString = "& '$wrapperPath' -$argName $argText *>> '$logFile'"
+    $psArgs = "-NoProfile -ExecutionPolicy Bypass -Command `"$cmdString`""
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $psArgs
     $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
         -DontStopOnIdleEnd -ExecutionTimeLimit (New-TimeSpan -Hours 4)
