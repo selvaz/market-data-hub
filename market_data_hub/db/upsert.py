@@ -8,7 +8,6 @@ and inserts new ones. Returns (rows_added, rows_total).
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import List
 
 import duckdb
 import pandas as pd

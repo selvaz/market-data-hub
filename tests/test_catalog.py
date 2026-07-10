@@ -6,14 +6,10 @@ coverage join on a throwaway DB.
 """
 from __future__ import annotations
 
-import datetime as dt
-import json
 
-import pandas as pd
 
 from market_data_hub import catalog
 from market_data_hub.db import connection as C
-from market_data_hub.db.upsert import upsert
 
 
 def test_list_datasets_covers_five_domains():

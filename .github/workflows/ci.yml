@@ -8,9 +8,16 @@ on:
 permissions:
   contents: read
 
+# Cancel a still-running workflow for the same branch/PR when a new commit
+# lands, instead of burning CI minutes on a superseded run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -26,13 +33,20 @@ jobs:
         run: |
           python -m pip install -U pip
           pip install -r requirements.txt
-          pip install pytest ruff pip-audit
+          pip install pytest pytest-cov pytest-randomly ruff pip-audit build
 
-      - name: Lint (ruff — syntax/undefined-name errors)
-        # Error-class rules only: catches real bugs without failing on style.
-        run: ruff check --select E9,F63,F7,F82 .
+      # Full default rule set (E4/E7/E9/F), not just the narrow error-only
+      # subset -- catches real hygiene bugs (e.g. a config key read into a
+      # variable that's never used) without the noise of style-only rules
+      # (line length, typing-syntax modernization) this legacy codebase
+      # hasn't been swept for yet.
+      - name: Lint (ruff — default rule set)
+        run: ruff check .
 
       - name: Dependency audit (advisory, non-blocking)
+        # Kept advisory: a third-party CVE in a transitive dependency of a
+        # private, non-published package shouldn't block unrelated PRs, but
+        # the report is still visible in the job log for anyone checking.
         continue-on-error: true
         run: pip-audit
 
@@ -42,5 +56,36 @@ jobs:
       - name: Byte-compile all modules
         run: python -m compileall -q market_data_hub *.py
 
-      - name: Run tests
-        run: pytest -q
+      # requirements.txt + `pip install -e .` both worked fine even when
+      # market_data_hub.dalio_v2 and market_data_hub.regime were silently
+      # missing from every real (non-editable) install -- exactly the
+      # install path the README documents for downstream consumers
+      # (`pip install 'market-data-hub @ git+...'`). Build a real wheel and
+      # import-check it in isolation so packaging regressions like that one
+      # fail CI instead of shipping silently.
+      - name: Verify the package actually installs (not just editable)
+        run: |
+          python -m build --wheel --outdir dist .
+          python -m venv /tmp/install-check
+          /tmp/install-check/bin/pip install --quiet dist/*.whl
+          /tmp/install-check/bin/python -c "
+          import market_data_hub, market_data_hub.reader, market_data_hub.catalog, market_data_hub.extract
+          import market_data_hub.dalio, market_data_hub.classify, market_data_hub.agent_tools
+          import market_data_hub.dalio_v2.runner, market_data_hub.dalio_v2.cycle_classifier
+          import market_data_hub.dalio_v2.sovereign_solvency, market_data_hub.dalio_v2.scoring
+          import market_data_hub.regime.schema
+          import market_data_hub.coverage.report, market_data_hub.lazydatacore.identity
+          print('package installs and imports cleanly')
+          "
+
+      # pytest-randomly: a fixed seed would hide order-dependent test bugs
+      # forever; a random one surfaces them, and prints the seed to
+      # reproduce a failure locally (pytest -p randomly --randomly-seed=N).
+      # Coverage has a floor so a PR can't silently regress it; the number
+      # is deliberately not "high" -- several source modules are thin
+      # network-fetch wrappers with no mocking in this suite -- it exists to
+      # catch backsliding, not to demand 90%+.
+      - name: Run tests (randomized order, with coverage)
+        run: |
+          pytest -q --durations=15 \
+            --cov=market_data_hub --cov-report=term-missing --cov-fail-under=60

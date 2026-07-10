@@ -15,6 +15,7 @@ Typical agent flow: discover first (``tool_list_*`` / ``tool_search`` /
 from __future__ import annotations
 
 import json
+import threading
 from typing import Any, List, Optional
 
 import pandas as pd
@@ -163,7 +164,6 @@ TOOL_FUNCTIONS = [
 # ---------------------------------------------------------------------------
 # Write tools — opt-in only (they trigger a network download + DB write)
 # ---------------------------------------------------------------------------
-import threading
 
 # Serialises concurrent tool_refresh_prices calls within the process (the
 # cross-process case is covered by the DB writer file lock).

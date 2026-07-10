@@ -28,10 +28,17 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0"]
+dev = ["pytest>=7.0", "pytest-cov>=4.0", "pytest-randomly>=3.12", "ruff", "pip-audit"]
 
-[tool.setuptools]
-packages = ["market_data_hub", "market_data_hub.db", "market_data_hub.sources", "market_data_hub.coverage", "market_data_hub.lazydatacore"]
+[tool.setuptools.packages.find]
+# Auto-discover every subpackage under market_data_hub/ (must have
+# __init__.py). An explicit hand-maintained list silently drops new
+# subpackages from real (non-editable) installs -- exactly what happened to
+# market_data_hub.dalio_v2 and market_data_hub.regime, both missing from
+# every wheel built before this fix even though `pip install -e .` (used in
+# this dev checkout) worked fine and hid the gap. See ci.yml's "Verify the
+# package actually installs" step, added for the same reason.
+include = ["market_data_hub*"]
 
 [tool.setuptools.package-data]
 market_data_hub = ["config/*.yaml"]

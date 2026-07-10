@@ -56,8 +56,7 @@ def main() -> int:
         print("\n--- Generating report ---")
         try:
             # inline import so live-only runs are not slowed down
-            from make_report import main as _report_main, \
-                collect, render_html, render_md, REPORT_DIR
+            from make_report import collect, render_html, render_md, REPORT_DIR
             from market_data_hub.db.connection import get_conn
             from datetime import datetime
 

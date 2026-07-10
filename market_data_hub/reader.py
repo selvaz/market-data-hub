@@ -49,9 +49,11 @@ def _asof_query(table: str, part_keys: List[str], filters: dict, asof: str,
              f"WHERE {' AND '.join(clauses)}")
     outer = ["rn = 1"]
     if start:
-        outer.append("date >= ?"); params.append(start)
+        outer.append("date >= ?")
+        params.append(start)
     if end:
-        outer.append("date <= ?"); params.append(end)
+        outer.append("date <= ?")
+        params.append(end)
     return (f"SELECT {sel} FROM ({inner}) t WHERE {' AND '.join(outer)} "
             f"ORDER BY {', '.join(part_keys)}"), params
 
@@ -91,9 +93,11 @@ def read_prices(symbols: Union[str, List[str]], start: Optional[str] = None,
         if not include_live:
             clauses.append("is_live = FALSE")
         if start:
-            clauses.append("date >= ?"); params.append(start)
+            clauses.append("date >= ?")
+            params.append(start)
         if end:
-            clauses.append("date <= ?"); params.append(end)
+            clauses.append("date <= ?")
+            params.append(end)
         where = " AND ".join(clauses)
         if wide:
             df = con.execute(
@@ -134,9 +138,11 @@ def read_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,
         clauses = ["series_id IN (" + ",".join(["?"] * len(series_ids)) + ")"]
         params: list = list(series_ids)
         if start:
-            clauses.append("date >= ?"); params.append(start)
+            clauses.append("date >= ?")
+            params.append(start)
         if end:
-            clauses.append("date <= ?"); params.append(end)
+            clauses.append("date <= ?")
+            params.append(end)
         where = " AND ".join(clauses)
         if wide:
             df = con.execute(
@@ -171,9 +177,11 @@ def read_custom(series_ids: Union[str, List[str]], start: Optional[str] = None,
         clauses = ["series_id IN (" + ",".join(["?"] * len(series_ids)) + ")"]
         params: list = list(series_ids)
         if start:
-            clauses.append("date >= ?"); params.append(start)
+            clauses.append("date >= ?")
+            params.append(start)
         if end:
-            clauses.append("date <= ?"); params.append(end)
+            clauses.append("date <= ?")
+            params.append(end)
         where = " AND ".join(clauses)
         if wide:
             df = con.execute(
@@ -204,9 +212,11 @@ def read_crypto(symbols: Union[str, List[str]], timeframe: str = "1h",
                    "timeframe = ?"]
         params: list = list(symbols) + [timeframe]
         if start:
-            clauses.append("ts >= ?"); params.append(start)
+            clauses.append("ts >= ?")
+            params.append(start)
         if end:
-            clauses.append("ts <= ?"); params.append(end)
+            clauses.append("ts <= ?")
+            params.append(end)
         where = " AND ".join(clauses)
         return con.execute(
             f"SELECT * FROM crypto_ohlcv WHERE {where} ORDER BY symbol, ts",
@@ -257,9 +267,11 @@ def read_macro_panel(indicators: Union[str, List[str]],
             clauses.append("country_iso3 IN (" + ",".join(["?"] * len(countries)) + ")")
             params += list(countries)
         if start:
-            clauses.append("date >= ?"); params.append(start)
+            clauses.append("date >= ?")
+            params.append(start)
         if end:
-            clauses.append("date <= ?"); params.append(end)
+            clauses.append("date <= ?")
+            params.append(end)
         where = " AND ".join(clauses)
         df = con.execute(
             f"SELECT * FROM macro_panel WHERE {where} ORDER BY indicator_id, "
@@ -290,16 +302,19 @@ def read_factors(factors: Optional[Union[str, List[str]]] = None,
         clauses: list = []
         params: list = []
         if factor_set:
-            clauses.append("factor_set = ?"); params.append(factor_set)
+            clauses.append("factor_set = ?")
+            params.append(factor_set)
         if factors:
             if isinstance(factors, str):
                 factors = [factors]
             clauses.append("factor IN (" + ",".join(["?"] * len(factors)) + ")")
             params += list(factors)
         if start:
-            clauses.append("date >= ?"); params.append(start)
+            clauses.append("date >= ?")
+            params.append(start)
         if end:
-            clauses.append("date <= ?"); params.append(end)
+            clauses.append("date <= ?")
+            params.append(end)
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         if wide:
             df = con.execute(

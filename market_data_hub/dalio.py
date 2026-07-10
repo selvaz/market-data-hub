@@ -220,8 +220,6 @@ def _deleveraging_quality(g, gn, rn, debt_falling):
 
 def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> dict:
     cfg = get_settings().get("dalio", {})
-    win_y = cfg.get("z_window_years", 10)
-    min_obs = cfg.get("z_min_obs", 5)
     z_pos, z_neg = cfg.get("z_pos", 1.0), cfg.get("z_neg", -1.0)
     weights = cfg.get("pillar_weights", {})
     th = {k: cfg.get(k) for k in (

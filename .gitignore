@@ -38,6 +38,13 @@ Thumbs.db
 *.env
 
 *.egg-info/
+dist/
+build/
+
+# Packaging / test tooling artifacts (pytest-cov, python -m build)
+.coverage
+.coverage.*
+htmlcov/
 
 # mkdocs build output
 site/
