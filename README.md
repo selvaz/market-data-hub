@@ -63,6 +63,12 @@ python run_backfill.py
 # incremental daily download (yahoo + fred + binance + live)
 python run_daily.py
 
+# neutral cross-country dashboard (facts, source dates, historical series)
+python make_country_dashboard.py
+
+# daily download + operational report + country dashboard
+python run_daily.py --report
+
 # intraday live price injection only
 python run_daily.py --live-only
 
@@ -90,10 +96,31 @@ storage.
 powershell -ExecutionPolicy Bypass -File C:\Users\Administrator\Documents\GitHub\market-data-hub\setup_scheduler.ps1
 ```
 
-Creates two tasks: `MarketData_EU18` (daily 09:00 Pacific, roughly 18:00
-Europe/Rome) and `MarketData_USClose` (Mon-Fri 13:15 Pacific, shortly after
-the US cash close). Both run the daily refresh and then send/save the Telegram
-run report. To remove: add `-Remove`.
+Creates three tasks:
+
+| task | when | runs |
+|------|------|------|
+| `MarketData_EU18` | daily 09:00 Pacific (~18:00 Europe/Rome) | `run_daily_with_telegram.ps1` |
+| `MarketData_USClose` | Mon-Fri 13:15 Pacific (shortly after US close) | `run_daily_with_telegram.ps1` |
+| `MarketData_HMMRegime` | Mon-Fri 13:45 Pacific | `run_regime_daily_with_telegram.ps1` |
+
+The two daily-refresh tasks run the download pipeline, then send **two**
+Telegram messages: the operational run report (rows added/updated, errors,
+coverage, per-country new/changed indicators) and the neutral country-data
+dashboard, as separate document attachments. `MarketData_HMMRegime` is
+independent — it runs the per-symbol HMM regime monitor
+(`run_regime_daily.py`) and sends its own Telegram report. All three append
+their output to `logs/<task>.log` (no rotation). To remove: add `-Remove`.
+
+## Country data dashboard
+
+`make_country_dashboard.py` generates a standalone HTML dashboard from the
+hub database only. It contains country reference tags, source periods, simple
+net-fuel-trade exposure when the required inputs are fresh, descriptive
+cross-country percentiles, and historical macro series (charts expand on
+click; no JavaScript is used, so the file stays viewable anywhere, including
+Telegram's in-app document preview). It contains no investment scores, cycle
+labels, or downstream analytical interpretations.
 
 ## Reading from the existing projects
 
@@ -149,8 +176,9 @@ market_data_hub/
   db/         schema.sql  connection.py  upsert.py
   config/     tickers.yaml (111)  macro_series.yaml (77)  macro_panel.yaml (83)  countries.yaml (64)  settings.yaml
   regime/     estimate.py  report.py                         per-symbol HMM regime monitor (needs LazyHMM)
-  reader.py   catalog.py  extract.py  agent_tools.py  config_loader.py  runner.py
-run_daily.py  run_backfill.py  diagnose.py  setup_scheduler.ps1
-run_regime_daily.py  make_report.py
+  reader.py   catalog.py  extract.py  agent_tools.py  config_loader.py  runner.py  country_dashboard.py
+run_daily.py  run_backfill.py  diagnose.py  setup_scheduler.ps1  make_country_dashboard.py
+run_regime_daily.py  make_report.py  send_telegram_run_report.py
+run_daily_with_telegram.ps1  run_regime_daily_with_telegram.ps1
 ```
 

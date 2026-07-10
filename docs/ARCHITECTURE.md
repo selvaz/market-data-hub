@@ -86,6 +86,7 @@ decoupled from `run_daily.py`'s pipeline above.
 | Command | Effect |
 |---------|--------|
 | `python run_daily.py` | full: yahoo + fred + binance + macro_panel + factors + live |
+| `python run_daily.py --report` | full run, then `make_report.py`'s HTML operational report and `country_dashboard.write_dashboard()`'s HTML country dashboard (both written under `reports/`, neither sent anywhere by itself — see [§7 Automation](#7-automation) for the Telegram wrapper) |
 | `python run_daily.py --live-only` | only intraday live-price injection |
 | `python run_daily.py --sources yahoo fred` | restrict to listed sources |
 | `python run_daily.py --end 2024-12-31` | cap the end date |
@@ -102,6 +103,7 @@ market_data_hub/
 ├── config_loader.py         cached YAML loaders (settings / tickers / fred)
 ├── runner.py                orchestration (run, run_yahoo/fred/binance/live)
 ├── reader.py                PUBLIC read API for other projects
+├── country_dashboard.py     write_dashboard() — standalone HTML, no JS, from macro_panel only
 │
 ├── sources/                 one module per provider, all return canonical frames
 │   ├── yahoo.py             yahoo_batch(), effective_start(), live prices
@@ -140,7 +142,8 @@ market_data_hub/
     └── settings.yaml        db_path, backfill dates, parallelism, FRED key, crypto
 
 run_daily.py · run_backfill.py · diagnose.py · validate_macro_panel.py · setup_scheduler.ps1
-run_regime_daily.py · make_report.py
+run_regime_daily.py · make_report.py · make_country_dashboard.py · send_telegram_run_report.py
+run_daily_with_telegram.ps1 · run_regime_daily_with_telegram.ps1
 ```
 
 ---
@@ -358,15 +361,31 @@ An annual series is therefore not penalised for a normal ~12-month reporting lag
 
 ## 7. Automation
 
-`setup_scheduler.ps1` registers two Windows scheduled tasks, both running the
-daily refresh through `run_daily_with_telegram.ps1` (report + Telegram send):
+`setup_scheduler.ps1` registers three Windows scheduled tasks:
 
 | task | when | command |
 |------|------|---------|
 | MarketData_EU18 | daily 09:00 Pacific (~18:00 Europe/Rome) | `run_daily_with_telegram.ps1 --report` |
 | MarketData_USClose | Mon–Fri 13:15 Pacific (shortly after US close) | `run_daily_with_telegram.ps1 --report` |
+| MarketData_HMMRegime | Mon–Fri 13:45 Pacific (30 min after US close) | `run_regime_daily_with_telegram.ps1 --send` |
 
-Logs rotate into `logs/<task>.log`. Remove with `setup_scheduler.ps1 -Remove`.
+`run_daily_with_telegram.ps1` runs the daily refresh, then sends **two**
+Telegram messages via `send_telegram_run_report.py`: the operational run
+report (rows added/updated, errors, coverage, per-country new/changed
+indicators from the vintage history) and, in a second call with
+`--dashboard`, the neutral country-data dashboard — as separate document
+attachments. `MarketData_HMMRegime` is an independent task running its own
+wrapper and sending its own report.
+
+Each task's `Action` invokes `powershell.exe -Command "& '<wrapper.ps1>' ...
+*>> '<logfile>'"` — deliberately `-Command`, not `-File`: Task Scheduler
+calls `powershell.exe` directly (no `cmd.exe` in between), so `-File` would
+pass `>>`/`2>&1` through as inert literal arguments instead of redirecting
+output, leaving `logs/<task>.log` silently empty even on a "successful" task
+run. `-Command` makes PowerShell's own parser handle the redirection (`*>>`,
+all streams) correctly. Logs append into `logs/<task>.log` (no rotation —
+prune manually if they grow large). Remove all three tasks with
+`setup_scheduler.ps1 -Remove`.
 
 ---
 

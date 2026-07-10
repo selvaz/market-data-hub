@@ -47,4 +47,9 @@ Write-Host "[$(Get-Date -Format s)] Sending Telegram run report"
 $telegramExit = $LASTEXITCODE
 Write-Host "[$(Get-Date -Format s)] Telegram report exit code: $telegramExit"
 
+Write-Host "[$(Get-Date -Format s)] Sending Telegram country dashboard"
+& $Python (Join-Path $Root 'send_telegram_run_report.py') --save --dashboard
+$dashboardExit = $LASTEXITCODE
+Write-Host "[$(Get-Date -Format s)] Telegram dashboard exit code: $dashboardExit"
+
 exit $dailyExit
