@@ -83,9 +83,12 @@ python validate_macro_panel.py --full     # all 64 countries
 ```
 
 An HTML status report comes from `make_report.py` (`python run_daily.py
---report` bundles report generation into the daily run).
-`send_telegram_run_report.py` sends that report to Telegram instead — see
-`run_daily_with_telegram.ps1`.
+--report` bundles report generation into the daily run). A neutral
+cross-country dashboard comes from `make_country_dashboard.py`.
+`send_telegram_run_report.py` sends the run report to Telegram; add
+`--dashboard` to send the country dashboard instead. `run_daily_with_telegram.ps1`
+(used by the scheduled tasks below) calls it twice per run — once plain, once
+with `--dashboard` — so both land in Telegram as separate messages.
 
 The Ray Dalio-style debt-cycle / growth-inflation regime classifier and the
 5-engine country risk architecture (`make_dalio_report.py`, `run_dalio_v2.py`)
@@ -99,10 +102,15 @@ which reads this hub's macro panel read-only via
 powershell -ExecutionPolicy Bypass -File C:\Users\Administrator\Documents\GitHub\market-data-hub\setup_scheduler.ps1
 ```
 
-Creates two tasks: `MarketData_EU18` (daily 09:00 Pacific, roughly 18:00
-Europe/Rome) and `MarketData_USClose` (Mon-Fri 13:15 Pacific, shortly after
-the US cash close). Both run the daily refresh and then send/save the Telegram
-run report. Remove them with `-Remove`.
+Creates three tasks: `MarketData_EU18` (daily 09:00 Pacific, roughly 18:00
+Europe/Rome), `MarketData_USClose` (Mon-Fri 13:15 Pacific, shortly after the
+US cash close) — both run the daily refresh and then send the run report
+*and* the country dashboard to Telegram as two separate messages — and
+`MarketData_HMMRegime` (Mon-Fri 13:45 Pacific), which independently runs the
+per-symbol HMM regime monitor and sends its own report. Logs append into
+`logs/<task>.log`. Remove all three with `-Remove`. See
+[Architecture & process](ARCHITECTURE.md#7-automation) for the full task
+table and why the scheduled action uses `-Command` instead of `-File`.
 
 ## Read it from your code
 

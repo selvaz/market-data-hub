@@ -83,9 +83,13 @@ shared identity/result vocabulary lives in the
 ## Automation
 
 Three Windows Task Scheduler jobs (`setup_scheduler.ps1`) keep the DB fresh:
-EOD at 22:00, a weekend FRED refresh, and an hourly live-price injection during
-market hours. See the [Quick start](quickstart.md) for setup, backfill and
-diagnostics.
+`MarketData_EU18` (daily 09:00 Pacific), `MarketData_USClose` (Mon–Fri 13:15
+Pacific, after the US close) — both run the daily refresh and Telegram the
+run report and the country dashboard — and `MarketData_HMMRegime` (Mon–Fri
+13:45 Pacific), an independent per-symbol regime monitor. See the
+[Quick start](quickstart.md) for setup, backfill and diagnostics, and
+[Architecture & process](ARCHITECTURE.md#7-automation) for the full task
+table.
 
 ## Project status & history
 

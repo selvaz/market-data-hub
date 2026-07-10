@@ -6,6 +6,12 @@
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "http.server", "8934", "--directory", "reports/regime"],
       "port": 8934
+    },
+    {
+      "name": "country-dashboard-preview",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8935", "--directory", "reports"],
+      "port": 8935
     }
   ]
 }
