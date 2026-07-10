@@ -154,6 +154,11 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "debt_trend_forecast_dependent": (
                 None if pd.isna(debt_trend) or pd.isna(debt_trend_actuals)
                 else bool(abs(debt_trend - debt_trend_actuals) > 1.0)),
+            # Persisted (not just used internally for r_minus_g/g_nom) so the
+            # Fase 5 cycle classifier can read real growth without
+            # re-deriving it: see market_data_hub/dalio_v2/cycle_classifier.py.
+            "real_growth_pct": None if pd.isna(growth) else round(float(growth), 4),
+            "r_effective_pct": None if pd.isna(r_eff) else round(float(r_eff), 4),
             "components": {
                 k: {"raw_value": None if pd.isna(raw_values[k]) else round(float(raw_values[k]), 4),
                     "score": components[k], "weight": weights.get(k, 0),

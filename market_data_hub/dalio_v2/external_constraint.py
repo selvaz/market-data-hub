@@ -107,6 +107,34 @@ def _pct_deviation_from_trend(s: Optional[pd.DataFrame], window_years: int = 10
     return float((d["value"].values[-1] - trend_latest) / trend_latest * 100.0)
 
 
+def _fx_depreciation_12m_pct(s: Optional[pd.DataFrame]) -> Optional[float]:
+    """Realized % depreciation of the currency over the trailing 12 months,
+    from the same REER series `_pct_deviation_from_trend` uses for the
+    (separate, 10y-trend) overvaluation read. Sign-flipped so positive =
+    depreciation (worse), consistent with every other component's
+    higher-is-worse orientation -- REER itself rises when the currency
+    STRENGTHENS. Feeds the Fase 5 cycle classifier only (see
+    cycle_classifier.py); not one of this engine's own scored components,
+    so it can never silently recalibrate external_constraint's own score.
+    Same 12-18 month prior-print tolerance as funding_liquidity's
+    _yoy_level_change: a gappy series must not silently report a multi-year
+    change as if it were a 12-month one."""
+    if s is None or s.empty:
+        return None
+    d = s.sort_values("date").dropna(subset=["value"])
+    if len(d) < 2:
+        return None
+    latest_date, latest_val = d["date"].iloc[-1], d["value"].iloc[-1]
+    target = latest_date - pd.DateOffset(months=12)
+    prior = d[(d["date"] <= target) & (d["date"] >= latest_date - pd.DateOffset(months=18))]
+    if prior.empty:
+        return None
+    prior_val = prior["value"].iloc[-1]
+    if pd.isna(prior_val) or not prior_val:
+        return None
+    return float(-(latest_val - prior_val) / prior_val * 100.0)
+
+
 def _reserve_currency_iso3s() -> set:
     euro_members = {c["iso3"] for c in get_countries() if c.get("euro")}
     return _EXPLICIT_RESERVE_CURRENCY | euro_members
@@ -167,6 +195,11 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         reer_hist = cdf[cdf["indicator_id"] == _IND["reer"]][["date", "value"]]
         latest_reer, _ = fresh_latest(_latest(reer_hist), ref_ts, max_age)
         fx_overvaluation = _pct_deviation_from_trend(reer_hist) \
+            if latest_reer is not None else None
+        # Fase 5 cycle-classifier input only (see cycle_classifier.py) -- a
+        # realized 12m depreciation, distinct from fx_overvaluation_pct's 10y
+        # trend deviation. Not one of this engine's scored components.
+        fx_depreciation_12m = _fx_depreciation_12m_pct(reer_hist) \
             if latest_reer is not None else None
 
         current_account_deficit = -current_account if not pd.isna(current_account) else None
@@ -235,6 +268,10 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         audit = {
             "model_version": sha, "ref_date": str(ref_date), "asof": None,
             "is_reserve_currency": is_reserve_currency, "caveats": caveats,
+            # Fase 5 cycle-classifier input, not a scored component (see
+            # module docstring above and cycle_classifier.py).
+            "fx_depreciation_12m_pct": (None if fx_depreciation_12m is None
+                                        else round(float(fx_depreciation_12m), 4)),
             "components": {
                 k: {"raw_value": None if raw_values.get(k) is None else round(float(raw_values[k]), 4),
                     "score": components[k], "weight": weights.get(k, 0),

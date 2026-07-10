@@ -237,3 +237,32 @@ dalio_v2:
     bucket_thresholds: [20, 40, 60, 80]
     bucket_labels: [easy, normal, watch, stress, severe]
 
+  cycle_classifier:
+    # Fase 5 classifier (market_data_hub/dalio_v2/cycle_classifier.py):
+    # combines the 5 engines' HYSTERESIS-STABLE LABELS (never raw scores --
+    # see the module docstring for why) into dalio_stage + deleveraging_type.
+    # No hysteresis_margin_pct of its own: stability is fully inherited from
+    # the 5 engines' own bucket_with_hysteresis(). Every threshold and label
+    # set a rule tests lives here, never as a literal in cycle_classifier.py
+    # -- same discipline as the 5 engines above.
+    thresholds:
+      debt_trend_falling_threshold_pp: -0.2     # debt_trend_actuals_5y must fall below this to count as "falling"
+      real_growth_positive_threshold_pct: 0.0
+      inflation_high_threshold_pct: 10.0        # ASSUMED, same cut as external_constraint's own "stress" inflation level
+      fx_depreciation_high_threshold_pct: 15.0  # ASSUMED -- proposal §10.2/§14 gives no number for a realized-12m metric
+      repressive_real_rate_threshold_pct: -2.0  # ASSUMED proxy: r_effective_pct - inflation_pct
+      repressive_fx_debt_share_max_pct: 20.0    # ASSUMED proxy: "mostly domestic-currency debt"
+      contraction_real_growth_threshold_pct: 0.0
+    # dalio_stage branch cutoffs, expressed as engine LABEL SETS at real
+    # bucket boundaries (every engine defaults to bucket_thresholds
+    # [20, 40, 60, 80]) -- never a raw score number, see module docstring.
+    stage_labels:
+      crisis_funding_labels: [severe]
+      crisis_external_labels: [high, severe]
+      late_long_debt_cycle_sovereign_labels: [stressed, critical]
+      late_long_debt_cycle_funding_labels: [watch, stress, severe]
+      private_bubble_labels: [bubble]
+      late_leveraging_labels: [high]
+    beautiful_funding_labels: [easy, normal]
+    top_risk_drivers_n: 3
+
