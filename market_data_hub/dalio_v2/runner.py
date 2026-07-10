@@ -20,8 +20,8 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from market_data_hub.dalio_v2 import (
-    external_constraint, funding_liquidity, political_execution, private_credit,
-    sovereign_solvency,
+    cycle_classifier, external_constraint, funding_liquidity, political_execution,
+    private_credit, sovereign_solvency,
 )
 from market_data_hub.db.connection import get_conn
 from market_data_hub.lock import db_write_lock
@@ -83,6 +83,20 @@ def run_dalio_v2(engines: Optional[List[str]] = None, ref_year: Optional[int] = 
                         "INSERT INTO engine_scores VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                         _records_with_real_nulls(df))
                     summary[name] = len(df)
+                # Fase 5: classify AFTER the engine loop, in the same
+                # transaction, reading engine_scores as it now stands for
+                # ref_date (which includes any OTHER engine's rows already
+                # committed from an earlier run, not just the ones just
+                # rewritten -- a partial-engine run still refreshes the
+                # classification against the full current picture). Runs
+                # unconditionally: no new CLI flag needed.
+                cycle_df = cycle_classifier.compute(con, ref_date)
+                con.execute("DELETE FROM dalio_cycle_v2 WHERE ref_date = ?", [ref_date])
+                if not cycle_df.empty:
+                    con.executemany(
+                        "INSERT INTO dalio_cycle_v2 VALUES (?,?,?,?,?,?,?,?,?)",
+                        _records_with_real_nulls(cycle_df))
+                summary["cycle_classifier"] = len(cycle_df)
                 con.execute("COMMIT")
             except Exception:
                 con.execute("ROLLBACK")

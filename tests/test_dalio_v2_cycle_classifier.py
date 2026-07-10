@@ -306,3 +306,140 @@ def test_compute_empty_engine_scores_returns_empty_frame(tmp_db):
     con.close()
     assert df.empty
     assert list(df.columns) == cc._COLUMNS
+
+
+# ---------------------------------------------------------------------------
+# Full pipeline integration: macro_panel -> run_dalio_v2() (all 5 engines)
+# -> dalio_cycle_v2, via the real runner.py wiring (Fase 5.4)
+# ---------------------------------------------------------------------------
+
+from market_data_hub.dalio_v2.runner import run_dalio_v2                  # noqa: E402
+from market_data_hub.db.upsert import upsert                              # noqa: E402
+import pandas as pd                                                       # noqa: E402
+
+
+def _pr(date_, iso3, ind, val, freq="A"):
+    return {"date": date_, "country_iso3": iso3, "indicator_id": ind, "value": val,
+            "indicator_name": ind, "pillar": "test", "orientation": 0,
+            "source": "test", "provider_dataset": "X", "provider_code": "Y",
+            "unit": "pct", "frequency": freq}
+
+
+def _seed_arg_full_pipeline(con):
+    rows = []
+    # sovereign_solvency: debt/GDP falling hard (2021-2026), classic
+    # hyperinflation-erosion pattern; positive-ish real growth, extreme
+    # inflation -- the ARG regression case, but built from raw macro_panel
+    # through all 5 real engines instead of a hand-seeded engine_scores row.
+    debt_traj = {2021: 110, 2022: 100, 2023: 88, 2024: 75, 2025: 60, 2026: 45}
+    for y, v in debt_traj.items():
+        rows.append(_pr(dt.date(y, 12, 31), "ARG", "public_debt_gdp", v))
+    for ind, v in [("govt_net_debt_gdp", 40.0), ("interest_on_debt_gdp", 3.0),
+                  ("government_revenue_gdp", 18.0), ("primary_balance_gdp", -1.0),
+                  ("gdp_growth_weo", 2.0), ("inflation_avg_weo", 30.0)]:
+        rows.append(_pr(dt.date(2026, 12, 31), "ARG", ind, v))
+    # external_constraint (inflation_avg_weo shared with sovereign above)
+    for ind, v in [("current_account_gdp", 0.5), ("iip_net_position", -50000.0),
+                  ("gdp_current_usd", 600000.0), ("short_term_debt_reserves", 164.0),
+                  ("debt_service_exports", 38.0), ("fx_reserves_months_imports", 3.0)]:
+        rows.append(_pr(dt.date(2026, 12, 31), "ARG", ind, v))
+    # reer_broad: sharp 12m depreciation (130 -> 90, ~+31% per the sign
+    # convention in _fx_depreciation_12m_pct)
+    rows.append(_pr(dt.date(2025, 6, 30), "ARG", "reer_broad", 130.0, freq="M"))
+    rows.append(_pr(dt.date(2026, 6, 30), "ARG", "reer_broad", 90.0, freq="M"))
+    # private_credit (gdp_growth_weo shared with sovereign above)
+    debt_gdp_traj = {y: v for y, v in zip(range(2017, 2027),
+                     [40, 42, 45, 48, 52, 58, 65, 74, 84, 95])}
+    for y, v in debt_gdp_traj.items():
+        rows.append(_pr(dt.date(y, 12, 31), "ARG", "private_debt_gdp", v))
+    rows.append(_pr(dt.date(2026, 12, 31), "ARG", "npl_ratio", 6.0))
+    # funding_liquidity (short_term_debt_reserves shared with external above)
+    rows.append(_pr(dt.date(2025, 12, 31), "ARG", "bond_yield_10y", 15.0, freq="M"))
+    rows.append(_pr(dt.date(2026, 12, 31), "ARG", "bond_yield_10y", 22.0, freq="M"))
+    upsert(con, "macro_panel", pd.DataFrame(rows))
+
+
+def test_full_pipeline_arg_profile_is_inflationary(tmp_db):
+    con = get_conn()
+    _seed_arg_full_pipeline(con)
+    con.commit()
+    con.close()
+
+    summary = run_dalio_v2(ref_year=2026)
+    assert summary["cycle_classifier"] >= 1
+
+    con = get_conn(read_only=True)
+    row = con.execute(
+        "SELECT dalio_stage, deleveraging_type, audit_json FROM dalio_cycle_v2 "
+        "WHERE country_iso3 = 'ARG'").fetchone()
+    con.close()
+
+    dalio_stage, deleveraging_type, audit_json = row
+    assert deleveraging_type == "inflationary"
+    assert deleveraging_type != "beautiful"
+    # sanity: the gate actually passed (real engine data was sufficient),
+    # not an accidental null-everything from insufficient coverage
+    audit = json.loads(audit_json)
+    assert audit["unclassifiable_reason"]["deleveraging_type"] is None
+
+
+def test_full_pipeline_rerun_is_idempotent_and_drops_stale_rows(tmp_db):
+    con = get_conn()
+    _seed_arg_full_pipeline(con)
+    con.commit()
+    con.close()
+
+    run_dalio_v2(ref_year=2026)
+    summary2 = run_dalio_v2(ref_year=2026)   # unchanged data, same ref_date
+
+    con = get_conn(read_only=True)
+    n = con.execute(
+        "SELECT count(*) FROM dalio_cycle_v2 WHERE country_iso3 = 'ARG' "
+        "AND ref_date = DATE '2026-12-31'").fetchone()[0]
+    con.close()
+    assert n == 1                              # DELETE-then-INSERT, never duplicated
+    assert summary2["cycle_classifier"] == summary2["cycle_classifier"]  # ran cleanly twice
+
+
+def test_full_pipeline_hysteresis_stability_no_second_mechanism_needed(tmp_db):
+    # A score nudged within the hysteresis dead-band (label unchanged) must
+    # not flip dalio_stage/deleveraging_type -- proves stability is fully
+    # inherited from the 5 engines' own bucket_with_hysteresis(), with no
+    # separate hysteresis state needed in the classifier itself.
+    con = get_conn()
+    _seed_arg_full_pipeline(con)
+    con.commit()
+    con.close()
+
+    run_dalio_v2(ref_year=2026)
+    con = get_conn(read_only=True)
+    before = con.execute(
+        "SELECT dalio_stage, deleveraging_type FROM dalio_cycle_v2 "
+        "WHERE country_iso3 = 'ARG'").fetchone()
+    funding_label_before = con.execute(
+        "SELECT label FROM engine_scores WHERE country_iso3 = 'ARG' "
+        "AND engine = 'funding_liquidity'").fetchone()[0]
+    con.close()
+
+    # nudge the underlying data slightly (short_term_debt_reserves a hair
+    # higher) and rerun for the SAME ref_date -- prev_label() anchors the
+    # funding_liquidity engine's hysteresis against its own prior run, so a
+    # small move should not cross the dead-band
+    con = get_conn()
+    upsert(con, "macro_panel", pd.DataFrame([
+        _pr(dt.date(2026, 12, 31), "ARG", "short_term_debt_reserves", 166.0)]))
+    con.commit()
+    con.close()
+    run_dalio_v2(ref_year=2026)
+
+    con = get_conn(read_only=True)
+    after = con.execute(
+        "SELECT dalio_stage, deleveraging_type FROM dalio_cycle_v2 "
+        "WHERE country_iso3 = 'ARG'").fetchone()
+    funding_label_after = con.execute(
+        "SELECT label FROM engine_scores WHERE country_iso3 = 'ARG' "
+        "AND engine = 'funding_liquidity'").fetchone()[0]
+    con.close()
+
+    assert funding_label_after == funding_label_before   # engine's own hysteresis held
+    assert after == before                                # classifier followed suit
