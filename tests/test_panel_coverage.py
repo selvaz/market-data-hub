@@ -35,7 +35,8 @@ def test_panel_coverage_scores_countries_and_stalled(tmp_db):
             rows.append(_panel_row("stale_ind", c, y))
     upsert(con, "macro_panel", pd.DataFrame(rows))
     n = rebuild_macro_panel_coverage(con, "t", n_countries_total=10)
-    con.commit(); con.close()
+    con.commit()
+    con.close()
 
     assert n == 2
     cov = R.get_macro_panel_coverage().set_index("indicator_id")

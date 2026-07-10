@@ -20,7 +20,6 @@ import duckdb
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-import pandas as pd  # noqa: E402
 
 from market_data_hub import catalog  # noqa: E402
 from market_data_hub.regime.estimate import SymbolRunResult  # noqa: E402

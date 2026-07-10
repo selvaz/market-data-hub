@@ -85,7 +85,7 @@ def cmd_summary(con):
         r = con.execute(
             f"SELECT count(*) rows, count(DISTINCT {key}) syms, "
             f"min(" + ("date" if tbl != "crypto_ohlcv" else "ts") + ") mn, "
-            f"max(" + ("date" if tbl != "crypto_ohlcv" else "ts") + ") mx "
+            "max(" + ("date" if tbl != "crypto_ohlcv" else "ts") + ") mx "
             f"FROM {tbl}").fetch_df()
         if not r.empty and r.iloc[0]["rows"]:
             x = r.iloc[0]

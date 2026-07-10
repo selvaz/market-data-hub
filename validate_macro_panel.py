@@ -18,6 +18,7 @@ Usage:
 """
 import argparse
 import sys
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -28,9 +29,6 @@ from market_data_hub.config_loader import get_countries, get_macro_panel_specs  
 from market_data_hub.sources import worldbank as wb, imf as im, bis as bs, ecb as ec, imf_sdmx as ims  # noqa: E402
 
 PROBE_DEFAULT = ["USA", "ITA", "BRA", "IND", "CHN"]
-
-
-import time
 
 
 def _fetch(spec, countries):

@@ -201,7 +201,7 @@ def render_html(d: dict) -> str:
 
 
 def render_md(d: dict) -> str:
-    lines = [f"# market_data_hub — Download & DB report", f"_Generated: {d['now']}_", ""]
+    lines = ["# market_data_hub — Download & DB report", f"_Generated: {d['now']}_", ""]
     lines += [f"- **Total rows:** {d['total_rows']:,}",
               f"- **Series/instruments:** {sum(x['series'] for x in d['tables'])}",
               f"- **Average coverage score:** {d['score_avg']}",

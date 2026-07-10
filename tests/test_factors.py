@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import datetime as dt
 
-import pandas as pd
 
 from market_data_hub.sources.factors import _parse_french_csv, CATALOG
 from market_data_hub.db.connection import get_conn

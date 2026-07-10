@@ -197,9 +197,11 @@ def _read_returns_view(symbols, start, end, db_path) -> pd.DataFrame:
         clauses = ["symbol IN (" + ",".join(["?"] * len(symbols)) + ")"]
         params: list = list(symbols)
         if start:
-            clauses.append("date >= ?"); params.append(start)
+            clauses.append("date >= ?")
+            params.append(start)
         if end:
-            clauses.append("date <= ?"); params.append(end)
+            clauses.append("date <= ?")
+            params.append(end)
         where = " AND ".join(clauses)
         raw = con.execute(
             f"SELECT date, symbol, log_return FROM v_returns WHERE {where} "
