@@ -20,7 +20,10 @@ dependencies = [
     "openpyxl",
     "pyyaml",
     "certifi",
-    "truststore",
+    # every truststore release requires Python >=3.10 (verified: none support
+    # 3.9); the import in _ssl_bootstrap.py is already exception-guarded for
+    # its absence, so 3.9 installs simply skip it rather than fail to install.
+    "truststore; python_version >= '3.10'",
     "filelock>=3.0",
     # lazydatacore: the shared data contract (identity, time, series, results)
     # is pydantic-only and imported by every downstream tool.
@@ -28,7 +31,39 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "pytest-cov>=4.0", "pytest-randomly>=3.12", "ruff", "pip-audit"]
+dev = [
+    "pytest>=7.0", "pytest-cov>=4.0", "pytest-randomly>=3.12", "ruff", "pip-audit",
+    "mypy>=1.8", "types-requests", "types-PyYAML",
+    # only ever imported under `if TYPE_CHECKING:` (TypeGuard helpers) -- not
+    # a runtime dependency, needed solely for the mypy step in CI.
+    "typing_extensions",
+]
+
+[tool.mypy]
+# No explicit python_version: mypy then assumes the version of the
+# interpreter actually running it (pinned to 3.12 in ci.yml, since mypy 2.x
+# requires >=3.10 to run at all). Pinning it lower than that broke parsing
+# of numpy's own bundled .pyi stubs, which use syntax matching numpy's
+# actual installed (3.12-targeted) version, not an arbitrary lower target.
+# The 3.9 compatibility guarantee comes from running the real test suite on
+# Python 3.9 in CI (see ci.yml's matrix), not from this setting.
+files = [
+    "market_data_hub/lazydatacore",
+    "market_data_hub/dalio_v2",
+    "market_data_hub/regime",
+    "market_data_hub/catalog.py",
+    "market_data_hub/sources",
+]
+ignore_missing_imports = true
+check_untyped_defs = false
+disallow_untyped_defs = false
+# The cheapest, most targeted catcher for "Optional non gestiti": a
+# parameter defaulting to None must be declared Optional[...] explicitly.
+no_implicit_optional = true
+warn_return_any = true
+# Keeps any future `# type: ignore` honest -- an ignore that stops being
+# needed (e.g. after an upstream stub improves) is flagged, not left stale.
+warn_unused_ignores = true
 
 [tool.setuptools.packages.find]
 # Auto-discover every subpackage under market_data_hub/ (must have

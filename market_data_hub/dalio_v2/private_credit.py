@@ -38,8 +38,8 @@ from market_data_hub.config_loader import get_settings
 from market_data_hub.dalio import _first_avail, _latest
 from market_data_hub.dalio_v2.scoring import (
     bucket_with_hysteresis, confidence_for, coverage_tier, fresh_latest,
-    git_short_sha, prev_label, score_threshold, suppress_insufficient,
-    weighted_average,
+    git_short_sha, prev_label, round_or_none, score_threshold,
+    suppress_insufficient, weighted_average,
 )
 
 ENGINE = "private_credit"
@@ -207,7 +207,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "model_version": sha, "ref_date": str(ref_date), "asof": None,
             "credit_gap_source": "proxy(private_debt_gdp linear detrend)" if used_proxy else "bis",
             "components": {
-                k: {"raw_value": None if raw_values[k] is None else round(float(raw_values[k]), 4),
+                k: {"raw_value": round_or_none(raw_values[k]),
                     "score": components[k], "weight": weights.get(k, 0),
                     "obs_date": obs_dates.get(k)}
                 for k in components

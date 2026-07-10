@@ -45,7 +45,9 @@ def _to_date(value) -> date:
         raise ValueError(f"unparseable observation date: {value!r}") from exc
     if pd.isna(ts):
         raise ValueError(f"unparseable observation date: {value!r}")
-    return ts.date()
+    # pandas' incomplete type stubs make Timestamp.date() resolve to Any
+    result: date = ts.date()
+    return result
 
 
 def _to_frame(series_id: str, observations: Observations) -> pd.DataFrame:
@@ -114,11 +116,12 @@ def delete_series(series_id: str, *, db_path: Optional[str] = None) -> int:
     """Delete every observation of ``series_id``. Returns rows removed."""
     con = get_conn(db_path)
     try:
-        n = con.execute(
+        row = con.execute(
             "SELECT count(*) FROM custom_series WHERE series_id = ?", [series_id]
-        ).fetchone()[0]
+        ).fetchone()
+        assert row is not None   # COUNT(*) always returns exactly one row
         con.execute("DELETE FROM custom_series WHERE series_id = ?", [series_id])
-        return int(n)
+        return int(row[0])
     finally:
         con.close()
 

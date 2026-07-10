@@ -49,10 +49,11 @@ def _records_with_real_nulls(df: pd.DataFrame):
 
 
 def run_dalio_v2(engines: Optional[List[str]] = None, ref_year: Optional[int] = None,
-                 db_path: Optional[str] = None) -> Dict[str, int]:
+                 db_path: Optional[str] = None) -> Dict[str, Optional[int]]:
     """Compute the requested engines (default: all implemented so far) for
     ref_year (default: current year) and write to engine_scores. Returns
-    {engine_name: n_countries_scored}."""
+    {engine_name: n_countries_scored}. cycle_classifier's value is None
+    (not 0) when it was skipped for this ref_date rather than run and empty."""
     engines = engines or list(_ENGINES.keys())
     unknown = set(engines) - set(_ENGINES)
     if unknown:
@@ -62,7 +63,9 @@ def run_dalio_v2(engines: Optional[List[str]] = None, ref_year: Optional[int] = 
     with db_write_lock(db_path):
         con = get_conn(db_path)
         try:
-            summary: Dict[str, int] = {}
+            # cycle_classifier can legitimately stay None (not 0) when it was
+            # skipped for this ref_date -- see the REQUIRED_ENGINES guard below.
+            summary: Dict[str, Optional[int]] = {}
             # One explicit transaction across all engines: DuckDB autocommits
             # each statement otherwise, so a failure at engine 3/5 would leave
             # engine_scores in a mixed-vintage state for this ref_date.

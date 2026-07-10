@@ -33,7 +33,10 @@ def _build_bundle() -> bool:
         parts = [certifi.contents()]
         for store in ("ROOT", "CA"):
             try:
-                for cert, enc, _trust in ssl.enum_certificates(store):
+                # ssl.enum_certificates only exists on Windows; typeshed
+                # doesn't declare it for other platforms. Already guarded by
+                # the surrounding try/except for non-Windows runtimes.
+                for cert, enc, _trust in ssl.enum_certificates(store):  # type: ignore[attr-defined]
                     if enc == "x509_asn":
                         parts.append(ssl.DER_cert_to_PEM_cert(cert))
             except Exception:

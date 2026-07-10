@@ -16,10 +16,12 @@ from __future__ import annotations
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Dict, List
+from types import ModuleType
+from typing import Dict, List, Optional
 
 import pandas as pd
 
+_creq: Optional[ModuleType]
 try:
     from curl_cffi import requests as _creq
 except ImportError:  # pragma: no cover

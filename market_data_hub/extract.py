@@ -87,7 +87,7 @@ def _quality(symbols: List[str], db_path: Optional[str]) -> Dict[str, dict]:
         rec = {k: (None if pd.isna(r[k]) else r[k]) for k in keep}
         # dates / numpy types -> JSON-friendly
         for k, v in rec.items():
-            if hasattr(v, "isoformat"):
+            if v is not None and hasattr(v, "isoformat"):
                 rec[k] = v.isoformat()
             elif isinstance(v, (np.generic,)):
                 rec[k] = v.item()

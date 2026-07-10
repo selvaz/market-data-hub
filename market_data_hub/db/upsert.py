@@ -73,9 +73,10 @@ def _count_existing(con: duckdb.DuckDBPyConnection, table: str,
     con.register("_inc", df[pk])
     q = (f"SELECT COUNT(*) FROM {table} t "
          f"SEMI JOIN _inc i ON " + " AND ".join(f"t.{c} = i.{c}" for c in pk))
-    n = con.execute(q).fetchone()[0]
+    row = con.execute(q).fetchone()
+    assert row is not None   # COUNT(*) always returns exactly one row
     con.unregister("_inc")
-    return int(n)
+    return int(row[0])
 
 
 def upsert(con: duckdb.DuckDBPyConnection, table: str,
@@ -154,7 +155,9 @@ def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
     join_sl = " AND ".join(f"s.{k} = l.{k}" for k in keys)
     join_vm = " AND ".join(f"v.{k} = m.{k}" for k in keys)
     sel_keys = ", ".join(f"s.{k}" for k in keys)
-    n0 = con.execute(f"SELECT count(*) FROM {vt}").fetchone()[0]
+    n0_row = con.execute(f"SELECT count(*) FROM {vt}").fetchone()
+    assert n0_row is not None   # COUNT(*) always returns exactly one row
+    n0 = n0_row[0]
     con.execute(
         f"INSERT OR REPLACE INTO {vt} ({key_list}, value, vintage_date, source) "
         f"WITH latest AS ("
@@ -168,8 +171,9 @@ def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
         [str(vintage_date)],
     )
     con.unregister("_vtsrc")
-    n1 = con.execute(f"SELECT count(*) FROM {vt}").fetchone()[0]
-    return n1 - n0
+    n1_row = con.execute(f"SELECT count(*) FROM {vt}").fetchone()
+    assert n1_row is not None   # COUNT(*) always returns exactly one row
+    return int(n1_row[0]) - int(n0)
 
 
 def log_run(con: duckdb.DuckDBPyConnection, *, run_id: str, started_at: datetime,

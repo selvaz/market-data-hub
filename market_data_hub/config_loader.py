@@ -14,7 +14,9 @@ import yaml
 _CONFIG_DIR = Path(__file__).parent / "config"
 
 
-def _load_yaml(name: str) -> Any:
+def _load_yaml(name: str) -> Dict[str, Any]:
+    # every config YAML in this project is a top-level mapping (validated
+    # by validate_config.py); callers rely on that invariant via .get(...)
     path = _CONFIG_DIR / name
     if not path.exists():
         return {}
@@ -44,14 +46,17 @@ def get_yahoo_tickers() -> List[Dict[str, Any]]:
 
 @lru_cache(maxsize=1)
 def get_fred_series() -> List[Dict[str, Any]]:
-    return _load_yaml("macro_series.yaml").get("fred", [])
+    fred: List[Dict[str, Any]] = _load_yaml("macro_series.yaml").get("fred", [])
+    return fred
 
 
 @lru_cache(maxsize=1)
 def get_countries() -> List[Dict[str, Any]]:
-    return _load_yaml("countries.yaml").get("countries", [])
+    countries: List[Dict[str, Any]] = _load_yaml("countries.yaml").get("countries", [])
+    return countries
 
 
 @lru_cache(maxsize=1)
 def get_macro_panel_specs() -> List[Dict[str, Any]]:
-    return _load_yaml("macro_panel.yaml").get("indicators", [])
+    specs: List[Dict[str, Any]] = _load_yaml("macro_panel.yaml").get("indicators", [])
+    return specs

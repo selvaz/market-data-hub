@@ -27,7 +27,9 @@ def effective_start(last_date: Optional[pd.Timestamp], global_start: str,
     if last_date is None or pd.isna(last_date):
         return global_start
     base = pd.Timestamp(last_date) - timedelta(days=int(tail_refresh_days))
-    nxt = base.date().isoformat()
+    # pandas' incomplete type stubs make base.date() resolve to Any; both
+    # operands are always plain str at runtime.
+    nxt: str = base.date().isoformat()
     return max(global_start, nxt)
 
 

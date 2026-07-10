@@ -16,9 +16,32 @@ from __future__ import annotations
 import subprocess
 from functools import lru_cache
 from pathlib import Path
-from typing import Dict, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Tuple
 
 import pandas as pd
+
+if TYPE_CHECKING:
+    from typing_extensions import TypeGuard
+
+
+def notna(v: Optional[float]) -> "TypeGuard[float]":
+    """True iff v is a real (non-None, non-NaN) float.
+
+    Unlike a bare ``not pd.isna(v)`` check, this narrows Optional[float] to
+    float for the type checker in the branch where it's True -- every engine
+    does arithmetic on values guarded this way immediately afterward."""
+    return v is not None and not pd.isna(v)
+
+
+def round_or_none(v: Optional[float], ndigits: int = 4) -> Optional[float]:
+    """round(float(v), ndigits), or None if v is missing.
+
+    A plain ``None if raw_values[k] is None else round(float(raw_values[k]),
+    4)`` re-subscripts the dict a second time inside the same expression,
+    which the type checker can't narrow through (it only narrows simple
+    names, not repeated subscript/attribute expressions) -- binding through
+    a real function call sidesteps that."""
+    return round(float(v), ndigits) if notna(v) else None
 
 
 def percentile_rank(values: pd.Series) -> pd.Series:

@@ -21,7 +21,10 @@ Usage:
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
+
+if TYPE_CHECKING:
+    from typing_extensions import TypeGuard
 
 import numpy as np
 import pandas as pd
@@ -146,7 +149,7 @@ def classify_cycle_phase(x: dict, th: dict) -> str:
     fisc = x.get("fiscal_balance")
     dtrend = x.get("debt_trend")          # debt/GDP trajectory (pp/year)
 
-    def has(v):
+    def has(v) -> "TypeGuard[float]":
         return v is not None and not pd.isna(v)
 
     # debt is RISING if the multi-year trajectory is positive
@@ -245,7 +248,11 @@ def run_dalio(db_path: Optional[str] = None, ref_year: Optional[int] = None) -> 
     panel["date"] = pd.to_datetime(panel["date"])
     now = datetime.now(timezone.utc)
 
-    sig_rows, pil_rows, reg_rows = [], [], []
+    # loosely typed: each list holds tuples of differing shapes per row kind
+    # (e.g. pil_rows: per-pillar rows vs the COMPOSITE summary row)
+    sig_rows: list = []
+    pil_rows: list = []
+    reg_rows: list = []
 
     # ref_year = CURRENT year (not the max=latest forecast!). The country state
     # metrics must be computed on the present; forecasts (> ref_year) remain
