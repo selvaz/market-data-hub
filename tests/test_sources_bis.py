@@ -64,6 +64,34 @@ def test_fetch_bis_broadcasts_euro_aggregate(monkeypatch):
     assert (df["value"] == 3.75).all()
 
 
+def test_fetch_bis_euro_broadcast_never_shadows_own_national_series(monkeypatch):
+    # HRV-style member: own national policy rate exists for a pre-adoption
+    # month; the XM broadcast must fill only the dates it does NOT cover, and
+    # the output must be free of duplicate primary keys (an unconditional
+    # broadcast used to emit (2024-06, ITA) twice, and INSERT OR REPLACE then
+    # replaced the national value with the aggregate).
+    csv_text = ("REF_AREA,TIME_PERIOD,OBS_VALUE\n"
+                "IT,2024-06,9.99\n"     # member's own observation
+                "XM,2024-06,3.75\n"     # aggregate, same month
+                "XM,2024-07,4.00\n")    # aggregate, month the member lacks
+
+    def fake_get_csv(url, timeout, retries, base_sleep):
+        return csv_text
+
+    monkeypatch.setattr(bis, "_get_csv", fake_get_csv)
+    spec = {"id": "bis_policy_rate", "name": "Policy rate", "dataset": "WS_CBPOL",
+            "code": "M.{iso2}", "pillar": "liquidity", "orientation": 0,
+            "bis_country_dim": "REF_AREA", "euro_aggregate": "XM"}
+    df = bis.fetch_bis(spec, _COUNTRIES, start_year=2020)
+
+    assert not df.duplicated(["date", "country_iso3", "indicator_id"]).any()
+    ita = df[df["country_iso3"] == "ITA"].set_index("date")["value"]
+    assert ita[pd.Timestamp("2024-06-30").date()] == 9.99   # own value kept
+    assert ita[pd.Timestamp("2024-07-31").date()] == 4.00   # gap filled by XM
+    fra = df[df["country_iso3"] == "FRA"].set_index("date")["value"]
+    assert fra[pd.Timestamp("2024-06-30").date()] == 3.75   # no own series -> XM
+
+
 def test_fetch_bis_missing_iso2_template_returns_empty():
     spec = {"id": "x", "name": "x", "dataset": "WS_DSR", "code": "Q.P",
             "pillar": "credit"}
