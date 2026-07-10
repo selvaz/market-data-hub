@@ -37,3 +37,28 @@ def test_upsert_is_idempotent(tmp_db):
     con.close()
 
 
+def test_upsert_counts_are_truthful_under_intra_batch_pk_duplicates(tmp_db):
+    # A source batch can repeat a primary key (e.g. the BIS euro-aggregate
+    # broadcast used to duplicate (date, country) pairs): INSERT OR REPLACE
+    # collapses those to one stored row, so the reported (added, updated)
+    # must count distinct keys, not raw batch rows — this used to report a
+    # constant phantom rows_added on every run.
+    con = C.get_conn()
+    base = {"open": 1, "high": 2, "low": 0.5, "close": 1.5, "adj_close": 1.4,
+            "volume": 100, "source": "yahoo", "is_live": False}
+    batch = pd.DataFrame([
+        {"date": dt.date(2024, 1, 1), "symbol": "SPY", **base},
+        {"date": dt.date(2024, 1, 1), "symbol": "SPY", **base, "close": 9.9},  # dup PK
+        {"date": dt.date(2024, 1, 2), "symbol": "SPY", **base},
+    ])
+    added, updated = upsert(con, "prices_daily", batch)
+    assert (added, updated) == (2, 0)   # 2 distinct keys, not 3 raw rows
+    assert con.execute("SELECT count(*) FROM prices_daily").fetchone()[0] == 2
+    # keep='last' matches INSERT OR REPLACE semantics: the later row wins
+    stored = con.execute("SELECT close FROM prices_daily WHERE date = DATE '2024-01-01'").fetchone()[0]
+    assert stored == 9.9
+    added2, updated2 = upsert(con, "prices_daily", batch)   # replay: all existing
+    assert (added2, updated2) == (0, 2)
+    con.close()
+
+

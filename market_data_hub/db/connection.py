@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 
 def _default_db() -> str:
@@ -128,6 +128,21 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
     the same shape.
     """
     recorded = get_schema_version(con)  # read BEFORE apply_schema stamps a baseline
+
+    # v2 -> v3 columns (run_id, change_type, prior_value on the vintage tables)
+    # must be ADDed *before* apply_schema() below re-runs schema.sql, which
+    # now also CREATE INDEXes on run_id -- CREATE TABLE IF NOT EXISTS alone
+    # never adds columns to a table that already exists in the old shape, so
+    # that index creation would fail on any pre-v3 DB otherwise. Guarded on
+    # table existence: a genuinely fresh DB has no table yet at this point
+    # and gets the column baked into CREATE TABLE by apply_schema() instead.
+    # ALTER ... ADD COLUMN IF NOT EXISTS is idempotent, safe to run every time.
+    for table in ("macro_series_vintage", "macro_panel_vintage"):
+        if _table_exists(con, table):
+            con.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS run_id VARCHAR")
+            con.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS change_type VARCHAR")
+            con.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS prior_value DOUBLE")
+
     apply_schema(con)  # ensures every table exists; stamps baseline only if fresh
 
     if recorded is None:
@@ -147,6 +162,15 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # apply_schema() above already created it via CREATE TABLE IF NOT
         # EXISTS; this step exists so the recorded version tracks the shape.
         current = 2
+    if current < 3:
+        # v2 -> v3: macro_series_vintage / macro_panel_vintage gain run_id,
+        # change_type ('new' | 'revised') and prior_value, so a report can ask
+        # "what did *this run* actually add or revise" instead of everything
+        # dated today (vintage_date has day granularity, which conflates
+        # multiple same-day runs). Columns already ensured above; this step
+        # just advances the recorded version to match.
+        current = 3
+        current = 3
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
@@ -177,7 +201,12 @@ def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
 
     con = duckdb.connect(path, read_only=read_only)
     if not read_only:
-        apply_schema(con)
+        # migrate() also calls apply_schema() internally, then walks any
+        # pending `if current < N:` ladder steps (e.g. ALTER TABLE ADD COLUMN)
+        # that CREATE TABLE IF NOT EXISTS alone can't apply to a table that
+        # already exists. Plain apply_schema() here would silently leave an
+        # existing DB on an old column shape forever.
+        migrate(con)
     return con
 
 

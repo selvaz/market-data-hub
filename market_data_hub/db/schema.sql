@@ -212,15 +212,23 @@ CREATE INDEX IF NOT EXISTS idx_custom_series ON custom_series (series_id);
 -- ingest first observed it, so a backtest can ask "what was known as of date X".
 -- A reader picks the row with the greatest vintage_date <= the as-of date.
 
+-- run_id / change_type / prior_value: which run recorded this vintage row, and
+-- whether it was a brand-new (date, key) observation or a revision of a value
+-- already on record for that same date. NULL on rows written before this
+-- tracking existed. change_type is 'new' | 'revised'.
 CREATE TABLE IF NOT EXISTS macro_series_vintage (
     date         DATE    NOT NULL,
     series_id    VARCHAR NOT NULL,
     value        DOUBLE,
     vintage_date DATE    NOT NULL,    -- ingest date this value was first seen
     source       VARCHAR,
+    run_id       VARCHAR,
+    change_type  VARCHAR,
+    prior_value  DOUBLE,
     PRIMARY KEY (date, series_id, vintage_date)
 );
 CREATE INDEX IF NOT EXISTS idx_msv ON macro_series_vintage (series_id, date);
+CREATE INDEX IF NOT EXISTS idx_msv_run ON macro_series_vintage (run_id);
 
 CREATE TABLE IF NOT EXISTS macro_panel_vintage (
     date          DATE    NOT NULL,
@@ -229,9 +237,13 @@ CREATE TABLE IF NOT EXISTS macro_panel_vintage (
     value         DOUBLE,
     vintage_date  DATE    NOT NULL,
     source        VARCHAR,
+    run_id        VARCHAR,
+    change_type   VARCHAR,
+    prior_value   DOUBLE,
     PRIMARY KEY (date, country_iso3, indicator_id, vintage_date)
 );
 CREATE INDEX IF NOT EXISTS idx_mpv ON macro_panel_vintage (indicator_id, country_iso3, date);
+CREATE INDEX IF NOT EXISTS idx_mpv_run ON macro_panel_vintage (run_id);
 
 
 -- ============================================================================

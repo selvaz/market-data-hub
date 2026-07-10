@@ -106,8 +106,11 @@ Creates three tasks:
 
 The two daily-refresh tasks run the download pipeline, then send **two**
 Telegram messages: the operational run report (rows added/updated, errors,
-coverage, per-country new/changed indicators) and the neutral country-data
-dashboard, as separate document attachments. `MarketData_HMMRegime` is
+coverage, and — scoped to this run only, via `macro_panel_vintage` /
+`macro_series_vintage`'s `run_id` — which countries got a genuinely **new**
+observation date vs which got an existing date **revised** to a different
+number) and the neutral country-data dashboard, as separate document
+attachments. `MarketData_HMMRegime` is
 independent — it runs the per-symbol HMM regime monitor
 (`run_regime_daily.py`) and sends its own Telegram report. All three append
 their output to `logs/<task>.log` (no rotation). To remove: add `-Remove`.

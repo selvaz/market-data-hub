@@ -208,23 +208,30 @@ btc = read_crypto("BTCUSDT", "1h", start="2024-01-01")
 | `db.connection.migrate(con) -> int` | idempotent forward-migration ladder; ensures schema applied + version recorded; returns resulting version |
 | `db.connection.get_schema_version(con) -> int \| None` | read `schema_version` from `schema_meta` (None if absent) |
 | `db.upsert.upsert(con, table, df)` | atomic `INSERT OR REPLACE`; returns `(added, updated)` |
-| `db.upsert.record_vintage(con, table, df, vintage_date)` | append-on-change to `{table}_vintage` for point-in-time history (macro_series, macro_panel) |
+| `db.upsert.record_vintage(con, table, df, vintage_date, *, run_id=None)` | append-on-change to `{table}_vintage` for point-in-time history (macro_series, macro_panel); tags each written row with `run_id` and `change_type` (`'new'` — no prior vintage row for that date — vs `'revised'` — same date, different value, with the old value kept in `prior_value`) |
 | `db.upsert.log_run(con, …)` | append one row to `download_log` |
 | `db.retention.prune(con, *, download_log_days=90, crypto_days=None, vintage_keep_per_key=None, dry_run=False, db_path=None) -> dict` | retention/pruning; returns `{target: rows_deleted}` (or would-delete when `dry_run`) |
 
 #### Schema versioning & retention
 
 **Versioning.** `schema.sql` defines a `schema_meta (key, value)` table.
-`apply_schema()` (run on every `get_conn()` open) always refreshes
-`schema_applied_at` (UTC ISO timestamp), but records `schema_version =
-SCHEMA_VERSION` (module constant in `connection.py`, currently `1`) **only when
-it is absent** — a fresh DB gets stamped, an existing one keeps its recorded
-baseline so `migrate()` can tell a pre-versioning DB apart from a current one.
-`migrate(con)` is the forward-migration entry point: it reads the recorded
-version *before* applying the schema, then walks an ordered `if current < N:`
-ladder so future migrations slot in, stamps the resulting `schema_version`, and
-returns it. Running it twice is a no-op. `get_schema_version(con)` reads the
-recorded version (or `None` if the DB predates versioning).
+`get_conn(read_only=False)` calls `migrate(con)` on every open (not just
+`apply_schema()` directly — a plain `apply_schema()` call only re-runs
+`schema.sql`'s `CREATE TABLE`/`INDEX IF NOT EXISTS`, which never adds a column
+to a table that already exists in an older shape, so an existing DB would
+otherwise stay on a stale column layout forever). `apply_schema()` always
+refreshes `schema_applied_at` (UTC ISO timestamp), but records `schema_version
+= SCHEMA_VERSION` (module constant in `connection.py`, currently `3`) **only
+when it is absent** — a fresh DB gets stamped, an existing one keeps its
+recorded baseline so `migrate()` can tell a pre-versioning DB apart from a
+current one. `migrate(con)` is the forward-migration entry point: it reads the
+recorded version *before* applying the schema, runs any `ALTER TABLE ADD
+COLUMN IF NOT EXISTS` a pending step needs (before `apply_schema()`'s
+`schema.sql` can reference those columns, e.g. in an index), then walks an
+ordered `if current < N:` ladder so future migrations slot in, stamps the
+resulting `schema_version`, and returns it. Running it twice is a no-op.
+`get_schema_version(con)` reads the recorded version (or `None` if the DB
+predates versioning).
 
 **Retention.** `prune(con, …)` trims the fastest-growing tables, each target
 opt-in (`None` = skip): `download_log_days` deletes `download_log` rows older
@@ -371,11 +378,15 @@ An annual series is therefore not penalised for a normal ~12-month reporting lag
 
 `run_daily_with_telegram.ps1` runs the daily refresh, then sends **two**
 Telegram messages via `send_telegram_run_report.py`: the operational run
-report (rows added/updated, errors, coverage, per-country new/changed
-indicators from the vintage history) and, in a second call with
-`--dashboard`, the neutral country-data dashboard — as separate document
-attachments. `MarketData_HMMRegime` is an independent task running its own
-wrapper and sending its own report.
+report (rows added/updated, errors, coverage, and a "Country updates"
+section — per country, which indicators/series this *specific run* gave a
+genuinely new observation date to vs which ones had an existing date's value
+revised, using the `run_id` recorded on each `macro_panel_vintage` /
+`macro_series_vintage` row, not `vintage_date` alone: that column only has
+day granularity, so it can't tell two same-day runs apart) and, in a second
+call with `--dashboard`, the neutral country-data dashboard — as separate
+document attachments. `MarketData_HMMRegime` is an independent task running
+its own wrapper and sending its own report.
 
 Each task's `Action` invokes `powershell.exe -Command "& '<wrapper.ps1>' ...
 *>> '<logfile>'"` — deliberately `-Command`, not `-File`: Task Scheduler

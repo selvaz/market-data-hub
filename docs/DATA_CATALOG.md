@@ -344,10 +344,17 @@ freq-aware lags, so the engine works unchanged.
 **Point-in-time (revisions).** FRED/WEO/WDI values are revised after first
 release, so `macro_series` / `macro_panel` keep only the latest figure. To make
 macro-signal backtests revision-safe, every ingest also appends changed values
-to `macro_series_vintage` / `macro_panel_vintage` (stamped with the ingest
-`vintage_date`). Read as-known-then with the `asof=<date>` argument of
-`read_macro` / `read_macro_panel`. Note: history only exists from when ingestion
-began — there is no pre-existing vintage for periods before first ingest.
+to `macro_series_vintage` / `macro_panel_vintage` (append-on-change: nothing is
+written when a re-download returns the same number). Each vintage row carries
+the ingest `vintage_date`, the writing `run_id`, a `change_type` (`'new'` — a
+date never seen before — vs `'revised'` — an existing date whose value the
+source changed) and, for revisions, the replaced number in `prior_value`. Read
+as-known-then with the `asof=<date>` argument of `read_macro` /
+`read_macro_panel`; see [Extraction & agent tools](EXTRACTION.md) §7
+("Point-in-time / vintage reads") for exact recipes, including how to pull the
+full revision history of one observation or everything a specific run changed.
+Note: history only exists from when ingestion began — there is no pre-existing
+vintage for periods before first ingest.
 
 **Integration note (implemented).** Each row already carries `pillar`,
 `orientation` (+1 healthier / −1 worse / 0 neutral), `source`,

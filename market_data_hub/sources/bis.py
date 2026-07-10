@@ -135,11 +135,19 @@ def fetch_bis(spec: Dict, countries: List[Dict], *,
             continue
         rows.append(_mkrow(dt, iso2_to_iso3[iso2], val))
 
-    # replicate the euro aggregate onto each euro member lacking its own series
+    # Replicate the euro aggregate onto each euro member, but only for
+    # (date, member) pairs with no own observation: some members carry their
+    # own national series at BIS for pre-adoption years (HRV until 2022, GRC
+    # in 2000), and an unconditional broadcast would emit a duplicate primary
+    # key for those dates -- INSERT OR REPLACE then keeps whichever lands
+    # last (the aggregate), silently replacing genuine national history with
+    # the ECB rate.
     if euro_agg and agg_obs and euro_members:
+        own = {(row["date"], row["country_iso3"]) for row in rows}
         for iso3 in euro_members:
             for dt, val in agg_obs:
-                rows.append(_mkrow(dt, iso3, val))
+                if (dt.date(), iso3) not in own:
+                    rows.append(_mkrow(dt, iso3, val))
 
     if not rows:
         return pd.DataFrame(columns=_COLS)

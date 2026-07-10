@@ -99,97 +99,89 @@ def _safe_df(con, sql: str, params: list[Any] | None = None) -> pd.DataFrame:
         return pd.DataFrame({"error": [str(exc)]})
 
 
-def _country_updates(con, started_at: Any, ended_at: Any) -> str:
-    """Per-country breakdown of macro_panel / FRED values that are genuinely
-    new or changed, sourced from the vintage tables (append-on-change: a
-    vintage row only exists when a value is new or differs from the prior
-    stored vintage)."""
-    if started_at is None:
-        return "Country updates\n(no run window available)"
-    start_date = pd.Timestamp(started_at).date()
-    end_date = pd.Timestamp(ended_at).date() if ended_at is not None else start_date
+def _country_updates(con, run_id: str | None) -> str:
+    """Per-country breakdown of what *this run* actually did to macro_panel /
+    FRED data, split into the two things that matter and otherwise look
+    identical in a naive "touched today" view:
 
-    span = _safe_df(con, "SELECT count(DISTINCT vintage_date) AS n FROM macro_panel_vintage")
-    first_ever = not span.empty and int(span.iloc[0].get("n") or 0) <= 1
+    - new dates: a (country/series, date) combination with no prior vintage
+      row at all -- a genuinely new observation (extends coverage).
+    - revised values: a date we already had a value for, now recorded with a
+      different value -- a source-side revision of history, not new data.
 
-    panel_summary = _safe_df(
+    Sourced from macro_panel_vintage / macro_series_vintage, scoped by
+    run_id (not vintage_date: that column has day granularity, so filtering
+    by date alone can't tell apart two runs on the same calendar day -- it
+    would re-list an earlier run's rows as if this run had touched them).
+    Rows written before the run_id/change_type columns existed are NULL and
+    excluded by the run_id filter, which is the correct behavior for them.
+    """
+    if not run_id:
+        return "Country updates\n(no run_id available)"
+
+    panel_rows = _safe_df(
         con,
         """
-        SELECT country_iso3 AS country, count(DISTINCT indicator_id) AS indicators,
-               count(*) AS observations, max(date) AS latest_date
+        SELECT country_iso3 AS country, indicator_id AS item, change_type,
+               date AS obs_date, value, prior_value
         FROM macro_panel_vintage
-        WHERE vintage_date BETWEEN ? AND ?
-        GROUP BY country_iso3
-        ORDER BY indicators DESC, country
-        """,
-        [start_date, end_date],
-    )
-    panel_detail = _safe_df(
-        con,
-        """
-        SELECT country_iso3 AS country, indicator_id, max(date) AS latest_date
-        FROM macro_panel_vintage
-        WHERE vintage_date BETWEEN ? AND ?
-        GROUP BY country_iso3, indicator_id
+        WHERE run_id = ?
         ORDER BY country_iso3, indicator_id
         """,
-        [start_date, end_date],
+        [run_id],
     )
-
-    series_summary = _safe_df(
+    series_rows = _safe_df(
         con,
         """
-        SELECT coalesce(m.country, 'n/a') AS country, count(DISTINCT v.series_id) AS series,
-               count(*) AS observations, max(v.date) AS latest_date
+        SELECT coalesce(m.country, 'n/a') AS country, v.series_id AS item, v.change_type,
+               v.date AS obs_date, v.value, v.prior_value
         FROM macro_series_vintage v
         LEFT JOIN (SELECT DISTINCT series_id, country FROM macro_series) m ON m.series_id = v.series_id
-        WHERE v.vintage_date BETWEEN ? AND ?
-        GROUP BY coalesce(m.country, 'n/a')
-        ORDER BY series DESC, country
-        """,
-        [start_date, end_date],
-    )
-    series_detail = _safe_df(
-        con,
-        """
-        SELECT coalesce(m.country, 'n/a') AS country, v.series_id, max(v.date) AS latest_date
-        FROM macro_series_vintage v
-        LEFT JOIN (SELECT DISTINCT series_id, country FROM macro_series) m ON m.series_id = v.series_id
-        WHERE v.vintage_date BETWEEN ? AND ?
-        GROUP BY coalesce(m.country, 'n/a'), v.series_id
+        WHERE v.run_id = ?
         ORDER BY country, v.series_id
         """,
-        [start_date, end_date],
+        [run_id],
     )
 
-    parts = ["Country updates (new/changed values, from vintage history)"]
-    if first_ever:
-        parts.append(
-            "Note: vintage tracking has no prior history yet, so this first run shows "
-            "every value as \"new\" (initial seed). From the next run on, only genuine "
-            "new/changed values will appear here."
-        )
+    def _fmt_date(value: Any) -> str:
+        if value is None or pd.isna(value):
+            return "n/a"
+        return pd.Timestamp(value).strftime("%Y-%m-%d")
+
+    def _section(df: pd.DataFrame, label: str) -> list[str]:
+        if df.empty:
+            return [f"{label}: no new dates or revised values this run"]
+        new_df = df[df["change_type"] == "new"]
+        revised_df = df[df["change_type"] == "revised"]
+        out = [f"{label}: {len(new_df)} new observation(s) | {len(revised_df)} revised value(s)"]
+
+        if not new_df.empty:
+            counts = new_df.groupby("country").size().reset_index(name="new")
+            out += ["", f"{label} -- NEW dates (never seen before), by country",
+                    _md_table(counts.sort_values("new", ascending=False), ["country", "new"])]
+            out.append("")
+            for country, group in new_df.groupby("country"):
+                names = ", ".join(f"{r.item} ({_fmt_date(r.obs_date)}={_fmt_float(r.value, 3)})" for r in group.itertuples())
+                out.append(f"- {country} ({len(group)}): {names}")
+
+        if not revised_df.empty:
+            counts = revised_df.groupby("country").size().reset_index(name="revised")
+            out += ["", f"{label} -- REVISED values (existing date, changed number), by country",
+                    _md_table(counts.sort_values("revised", ascending=False), ["country", "revised"])]
+            out.append("")
+            for country, group in revised_df.groupby("country"):
+                names = ", ".join(
+                    f"{r.item} @ {_fmt_date(r.obs_date)}: {_fmt_float(r.prior_value, 3)} -> {_fmt_float(r.value, 3)}"
+                    for r in group.itertuples()
+                )
+                out.append(f"- {country} ({len(group)}): {names}")
+
+        return out
+
+    parts = ["Country updates (this run only -- new dates vs revised values)", ""]
+    parts.extend(_section(panel_rows, "Macro panel"))
     parts.append("")
-
-    parts.append(f"Macro panel — countries touched: {len(panel_summary)}")
-    parts.append(_md_table(panel_summary, ["country", "indicators", "observations", "latest_date"]))
-    if not panel_detail.empty:
-        parts.append("")
-        parts.append("Macro panel — indicators touched, by country")
-        for country, group in panel_detail.groupby("country"):
-            names = ", ".join(f"{row.indicator_id} ({row.latest_date})" for row in group.itertuples())
-            parts.append(f"- {country} ({len(group)}): {names}")
-
-    parts.append("")
-    parts.append(f"FRED / macro series — countries touched: {len(series_summary)}")
-    parts.append(_md_table(series_summary, ["country", "series", "observations", "latest_date"]))
-    if not series_detail.empty:
-        parts.append("")
-        parts.append("FRED / macro series — series touched, by country")
-        for country, group in series_detail.groupby("country"):
-            names = ", ".join(f"{row.series_id} ({row.latest_date})" for row in group.itertuples())
-            parts.append(f"- {country} ({len(group)}): {names}")
-
+    parts.extend(_section(series_rows, "FRED / macro series"))
     return "\n".join(parts)
 
 
@@ -368,9 +360,7 @@ def collect_report(db_path: str | None, run_id: str | None) -> tuple[str, str]:
         if not stalled.empty:
             parts.extend(["", f"Stalled series ({len(stalled)})", _md_table(stalled, ["symbol", "source", "last_date", "lag_days", "freq", "score", "status"])])
 
-        started_date = summary.get("started_at")
-        ended_date = summary.get("ended_at")
-        country_updates = _country_updates(con, started_date, ended_date)
+        country_updates = _country_updates(con, run_id)
         parts.extend(["", country_updates])
 
         parts.extend(["", f"Generated at: {datetime.now().isoformat(timespec='seconds')}"])

@@ -164,7 +164,7 @@ def run_fred(con, cfg: dict, run_id: str, *, start_override: Optional[str] = Non
                         error_msg=None, duration_sec=time.perf_counter() - t_start)
             else:
                 added, updated = upsert(con, "macro_series", df)
-                record_vintage(con, "macro_series", df, _today())
+                record_vintage(con, "macro_series", df, _today(), run_id=run_id)
                 log_run(con, run_id=run_id, started_at=st, source="fred",
                         symbol=sid, rows_added=added, rows_updated=updated,
                         status="ok", error_msg=None,
@@ -277,7 +277,7 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
                     duration_sec=dl_sec)
             return
         added, updated = upsert(con, "macro_panel", df)
-        record_vintage(con, "macro_panel", df, _today())
+        record_vintage(con, "macro_panel", df, _today(), run_id=run_id)
         if status == "fallback":
             n_fb += 1
         else:

@@ -76,8 +76,39 @@ Parameters worth knowing:
 - `frequency`: `None` (native) | `D` | `W` (Friday) | `M` | `Q`. For returns the
   levels are resampled, then the return is computed (correct compounding).
 - `fillna`: `none` | `ffill` | `zero` | `drop`.
-- For macro backtests use `reader.read_macro(..., asof=YYYY-MM-DD)` to avoid
-  revision look-ahead (point-in-time vintages).
+
+## Revisions & point-in-time (vintage) reads
+
+Macro data (FRED, WEO, WDI, BIS) gets revised after first release. The main
+tables always hold the **latest** value; an append-on-change history
+(`macro_series_vintage` / `macro_panel_vintage`) records every value a
+(date, key) has ever had, tagged with `vintage_date`, the writing `run_id`,
+`change_type` (`'new'` = date never seen before, `'revised'` = existing date
+whose value changed) and `prior_value` (what a revision replaced).
+
+```python
+# Backtest-safe reads: the value as it was KNOWN on a date, not as it is now
+reader.read_macro("CPIAUCSL", asof="2024-05-15")
+reader.read_macro_panel("public_debt_gdp", wide=True, asof="2023-06-30")
+extract.extract_panel("real_gdp_growth", countries=["USA"], asof="2018-12-31")
+
+# Data-quality check before trusting a series: what changed recently, and how?
+from market_data_hub.db.connection import get_conn
+con = get_conn(read_only=True)
+con.execute("""
+    SELECT date, prior_value, value, vintage_date FROM macro_panel_vintage
+    WHERE country_iso3='HRV' AND indicator_id='bis_policy_rate'
+      AND change_type='revised' ORDER BY vintage_date DESC LIMIT 10
+""").fetch_df()
+```
+
+Caveats: history exists only from when vintage ingestion began (an `asof`
+earlier than the first vintage returns empty); rows written before run
+tracking have NULL `run_id`/`change_type`. Full recipes (revision history of
+one observation, everything a specific run changed) are in the repo's
+`docs/EXTRACTION.md`, section "Point-in-time / vintage reads". The JSON
+`datahub_*` tools do not expose vintage reads — they serve current values
+only; use the Python `reader`/`extract` layer for point-in-time work.
 
 ## Recipe: feed LazyHMM regime detection
 
