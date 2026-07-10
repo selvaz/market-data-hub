@@ -162,6 +162,36 @@ def collect(con) -> dict:
                 "components": comps,
             }
 
+    # Fase 5 cycle classifier (dalio_cycle_v2) -- one row per country per
+    # ref_date (not per engine, so a plain global MAX(ref_date) is correct
+    # here, unlike the per-engine query above). Same degrade-cleanly pattern
+    # if the table doesn't exist yet on this DB.
+    cycle_by = {}
+    try:
+        cyc = con.execute(
+            "SELECT country_iso3, dalio_stage, deleveraging_type, overall_confidence, "
+            "top_risk_drivers_json, caveats_json FROM dalio_cycle_v2 WHERE ref_date = "
+            "(SELECT max(ref_date) FROM dalio_cycle_v2)").fetch_df()
+    except duckdb.CatalogException:
+        cyc = None   # dalio_cycle_v2 doesn't exist yet: Fase 5 never run on this DB
+    if cyc is not None:
+        for _, r in cyc.iterrows():
+            try:
+                drivers = json.loads(r["top_risk_drivers_json"]) if r["top_risk_drivers_json"] else []
+            except Exception:
+                drivers = []
+            try:
+                caveats = json.loads(r["caveats_json"]) if r["caveats_json"] else []
+            except Exception:
+                caveats = []
+            cycle_by[r["country_iso3"]] = {
+                "dalio_stage": None if pd.isna(r["dalio_stage"]) else r["dalio_stage"],
+                "deleveraging_type": None if pd.isna(r["deleveraging_type"]) else r["deleveraging_type"],
+                "overall_confidence": None if pd.isna(r["overall_confidence"]) else r["overall_confidence"],
+                "top_risk_drivers": drivers,
+                "caveats": caveats,
+            }
+
     h = con.execute("SELECT max(date) FROM macro_panel WHERE provider_dataset='WEO'").fetchone()[0]
     weo_horizon = pd.Timestamp(h).year if h is not None else None
 
@@ -183,10 +213,10 @@ def collect(con) -> dict:
         return None if x is None or pd.isna(x) else round(float(x), 2)
 
     countries = {}
-    # union of v1 (regime_state) and v2 (engine_scores) coverage: a country
-    # scored only by the v2 engines must still get a sheet, not be silently
-    # dropped because v1's classification never ran for it
-    for iso in sorted(set(reg_by) | set(v2_by)):
+    # union of v1 (regime_state), v2 (engine_scores) and Fase 5 (dalio_cycle_v2)
+    # coverage: a country scored only by v2/the classifier must still get a
+    # sheet, not be silently dropped because v1's classification never ran
+    for iso in sorted(set(reg_by) | set(v2_by) | set(cycle_by)):
         r = reg_by.get(iso)
         c = comp_by.get(iso, {})
         countries[iso] = {
@@ -209,11 +239,15 @@ def collect(con) -> dict:
             # Dalio v2 5-engine scores, if run_dalio_v2.py has populated
             # engine_scores for this DB; {} if not (section simply hides).
             "v2": v2_by.get(iso, {}),
+            # Fase 5 cycle classifier (dalio_stage/deleveraging_type); {} if
+            # dalio_cycle_v2 hasn't been populated yet.
+            "cycle": cycle_by.get(iso, {}),
         }
 
     return {
         "now": datetime.now().strftime("%Y-%m-%d %H:%M"),
         "cur_year": cur_year, "weo_horizon": weo_horizon,
+        "has_cycle": bool(cycle_by),
         "phase_counts": reg["debt_cycle_phase"].value_counts().to_dict(),
         "quad_counts": reg["quadrant"].value_counts(dropna=True).to_dict(),
         "countries": countries,
@@ -389,6 +423,16 @@ function tab(id,btn){document.querySelectorAll('.tab').forEach(t=>t.classList.re
  document.getElementById(id).classList.add('active');
  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
 function fmt(v,d=1){return (v===null||v===undefined||isNaN(v))?'—':Number(v).toFixed(d);}
+function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+// Fase 5 cycle classifier: colors/names for dalio_stage + deleveraging_type
+const STAGE_NAMES={early_or_mid_cycle:"Early/mid cycle",late_long_debt_cycle:"Late long debt cycle",
+ private_bubble:"Private credit bubble",late_leveraging:"Late leveraging",contraction:"Contraction",crisis:"Crisis"};
+const STAGE_COLORS={early_or_mid_cycle:'#16a34a',late_long_debt_cycle:'#ca8a04',private_bubble:'#dc2626',
+ late_leveraging:'#ea580c',contraction:'#0891b2',crisis:'#991b1b'};
+const DELEV_NAMES={none:"No deleveraging",beautiful:"Beautiful",inflationary:"Inflationary",
+ repressive:"Repressive",restructuring:"Restructuring",ugly:"Ugly"};
+const DELEV_COLORS={none:'#94a3b8',beautiful:'#16a34a',inflationary:'#dc2626',repressive:'#b45309',
+ restructuring:'#7c3aed',ugly:'#991b1b'};
 
 // ---- SVG line chart (vanilla). interactive=true adds hover crosshair+tooltip ----
 function lineChart(series,W,H,interactive,id){
@@ -447,6 +491,27 @@ function showCountry(iso){
  h+='<p class="muted">'+ph[1]+'</p>';
  if(c.quadrant)h+='<p class="muted">'+q[1]+' → '+q[2]+'</p>';
  if(CAVEAT[iso])h+='<div class="note">&#9888; '+CAVEAT[iso]+'</div>';
+ // Fase 5 cycle classifier -- sits above the (buggy, nominal-r-g-driven)
+ // v1 "Deleveraging:" badge above, which is exactly what this supersedes:
+ // see docs/DALIO_V2_DEEP_AUDIT_2026-07.md and cycle_classifier.py's
+ // docstring for the Argentina/Turkey case this exists to catch.
+ const cyc=c.cycle||{};
+ if(cyc.dalio_stage||cyc.deleveraging_type){
+   h+='<div class="badges">';
+   if(cyc.dalio_stage)h+='<span class="badge" style="background:'+(STAGE_COLORS[cyc.dalio_stage]||'#64748b')+
+     '">Cycle stage (v2): '+(STAGE_NAMES[cyc.dalio_stage]||cyc.dalio_stage)+'</span>';
+   if(cyc.deleveraging_type)h+='<span class="badge" style="background:'+(DELEV_COLORS[cyc.deleveraging_type]||'#64748b')+
+     '">Deleveraging type (v2): '+(DELEV_NAMES[cyc.deleveraging_type]||cyc.deleveraging_type)+'</span>';
+   h+='</div>';
+   if(cyc.caveats&&cyc.caveats.length)h+='<div class="note">&#9888; '+cyc.caveats.map(escapeHtml).join(' ')+'</div>';
+   if(cyc.top_risk_drivers&&cyc.top_risk_drivers.length){
+     h+='<p class="muted" style="margin:4px 0 10px">Top risk drivers (v2): '+
+       cyc.top_risk_drivers.map(d=>escapeHtml(d.component)+' ('+(V2_ENGINE_NAMES[d.engine]||d.engine)+', '+fmt(d.score,0)+'/100)').join(', ')+
+       '</p>';
+   }
+ } else if(DATA.has_cycle){
+   h+='<p class="muted">No Fase 5 cycle classification for this country yet.</p>';
+ }
  if(c.stale&&c.stale.length){h+='<div class="stale">&#9888; <b>Stale data</b> — this country lags peers '+
    'on: '+c.stale.map(s=>s.label+' (latest '+s.year+' vs '+s.frontier+' elsewhere)').join('; ')+'</div>';}
  // classification
@@ -704,6 +769,42 @@ than one bucket still applies immediately.</p>
 <p class="muted">Every engine score in the country sheet has an expandable "components" panel
 showing the exact raw value, sub-score and weight behind it &mdash; use it before trusting any
 single number.</p>
+
+<h2>7. Dalio v2 &mdash; cycle classifier</h2>
+<p>Sits on top of the 5 engines and produces two categorical outputs per country: <b>Cycle stage</b>
+and <b>Deleveraging type</b>. It exists because the v1 "Deleveraging:" badge above (BEAUTIFUL/UGLY,
+driven by nominal growth vs a nominal interest rate) can misread a country whose debt/GDP is falling
+purely through <i>inflationary erosion</i> &mdash; not fiscal health &mdash; as "beautiful". Argentina and
+Turkey are the textbook cases: high inflation mechanically produces a "favorable"-looking nominal
+r&minus;g even during an outright debt crisis. See
+<code>docs/DALIO_V2_DEEP_AUDIT_2026-07.md</code> and
+<code>market_data_hub/dalio_v2/cycle_classifier.py</code>'s module docstring for the full story.</p>
+
+<h3>7.1 Deleveraging type</h3>
+<table><tr><th>Type</th><th>Meaning</th></tr>
+<tr><td><b>beautiful</b></td><td>Debt/GDP falling with positive real growth, controlled inflation, a stable currency and easy/normal funding conditions &mdash; the healthy form.</td></tr>
+<tr><td><b>inflationary</b></td><td>Debt/GDP falling but inflation or currency depreciation is high &mdash; the debt is being eroded away, not paid down. This is the category that keeps Argentina/Turkey-style cases out of "beautiful".</td></tr>
+<tr><td><b>repressive</b></td><td>A weak proxy (very negative real interest rate combined with a low FX-debt share, i.e. debt mostly absorbable domestically) &mdash; no central-bank-holdings-of-debt data source exists, so this rarely fires. Documented, not hidden.</td></tr>
+<tr><td><b>ugly</b></td><td>Debt/GDP falling but none of the above hold (recession, funding stress, etc.) &mdash; also where a hypothetical debt restructuring lands, since no restructuring-event data source exists either.</td></tr>
+<tr><td><b>none</b></td><td>Debt/GDP is not falling at all.</td></tr>
+<tr><td><b>n/a (unclassifiable)</b></td><td>One of the engines this output depends on (Sovereign Solvency, External Constraint, Funding Liquidity) has insufficient coverage for this country &mdash; the gate is all-or-nothing across those three, never a silent per-branch skip that could land on a falsely reassuring answer.</td></tr></table>
+
+<h3>7.2 Cycle stage</h3>
+<table><tr><th>Stage</th><th>Meaning</th></tr>
+<tr><td><b>crisis</b></td><td>Funding Liquidity and External Constraint both at their worst labels.</td></tr>
+<tr><td><b>late_long_debt_cycle</b></td><td>Sovereign Solvency stressed/critical and Funding Liquidity at watch or worse.</td></tr>
+<tr><td><b>private_bubble</b></td><td>Private Credit Cycle at its "bubble" label.</td></tr>
+<tr><td><b>late_leveraging</b></td><td>Private Credit Cycle one notch below bubble.</td></tr>
+<tr><td><b>contraction</b></td><td>Negative real GDP growth, none of the above triggered.</td></tr>
+<tr><td><b>early_or_mid_cycle</b></td><td>None of the above &mdash; the default, not a sign of strength on its own.</td></tr>
+<tr><td><b>n/a (unclassifiable)</b></td><td>Same all-or-nothing gate as deleveraging type, across Sovereign Solvency, Funding Liquidity, Private Credit and External Constraint.</td></tr></table>
+
+<h3>7.3 Why labels, not scores</h3>
+<p>Every branch above tests an engine's <b>label</b> (e.g. "severe", "stressed") &mdash; never its raw
+0-100 score. Only the label is stabilized by that engine's own hysteresis (a score can wobble across a
+bucket boundary run to run; the label doesn't, until the move clears a margin). Testing raw scores here
+would reintroduce exactly the flutter hysteresis exists to prevent; testing labels means the classifier's
+stability is fully inherited from the 5 engines, with no second hysteresis mechanism needed.</p>
 """
 
 # statistics glossary (English) — every statistic + economic meaning
