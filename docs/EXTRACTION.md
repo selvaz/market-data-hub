@@ -253,6 +253,17 @@ optional LazyBridge `ToolProvider`.
 - Extraction tools return `{"meta": …, "data": [...records...], "truncated": bool}`
   and cap inline rows at **500** (`_MAX_ROWS`); `meta.n_rows` always holds the true
   count. Narrow the date window or resample to a coarser `frequency` for fewer rows.
+- **Deliberately not exposed: vintage / point-in-time reads.** The tool surface
+  serves *current* values only; `asof` reads and revision-history queries
+  (section 7, "Point-in-time / vintage reads") require the Python
+  `reader`/`extract` layer. This is a design decision, not a gap: the primary
+  downstream consumer (LazyRay) reads the hub via Python directly, and a
+  minimal tool surface keeps agent behavior predictable. If a tool-only agent
+  ever needs point-in-time access, extending it is a two-repo change: add e.g.
+  `tool_get_panel_asof(indicator, countries, asof)` /
+  `tool_get_revisions(symbol_or_id)` here in `agent_tools.py`, then mirror the
+  method in LazyTools' `DataHubBackend` (its methods map 1:1 by hand — new
+  tools do not flow through automatically).
 
 ### 6.2 Use as plain JSON
 

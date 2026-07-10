@@ -11,6 +11,13 @@ truth for the hub's tool semantics; the LazyBridge ``ToolProvider`` binding
 
 Typical agent flow: discover first (``tool_list_*`` / ``tool_search`` /
 ``tool_describe``), then extract (``tool_get_series`` / ``tool_get_returns``).
+
+Deliberately NOT exposed here: vintage / point-in-time reads (``asof``,
+revision history). The tool surface serves current values only; PIT work goes
+through the Python ``reader`` / ``extract`` layer (docs/EXTRACTION.md §7). If
+a tool-only agent ever needs it, add the ``tool_*`` function here AND mirror
+it by hand in LazyTools' ``DataHubBackend`` — its methods map 1:1 explicitly,
+so new tools do not flow through automatically.
 """
 from __future__ import annotations
 
