@@ -39,7 +39,9 @@ def _get_json(url: str, params: dict, timeout: int, retries: int,
             last = e
             if attempt < retries - 1:
                 time.sleep(base_sleep * (4 ** attempt))
-    raise last
+    # retries<=0 means the loop above never ran, leaving `last` unset --
+    # raising it directly would then raise None instead of a real error.
+    raise last if last else RuntimeError(f"worldbank: no attempts made (retries={retries})")
 
 
 def _annual_date(period: str):

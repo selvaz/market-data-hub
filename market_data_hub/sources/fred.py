@@ -39,7 +39,9 @@ def _http_get(url: str, params: dict, timeout: int, retries: int,
             last = e
             if attempt < retries - 1:
                 time.sleep(base_sleep * (4 ** attempt))  # 1, 4, 16s
-    raise last
+    # retries<=0 means the loop above never ran, leaving `last` unset --
+    # raising it directly would then raise None instead of a real error.
+    raise last if last else RuntimeError(f"fred: no attempts made (retries={retries})")
 
 
 def fetch_fred(series_id: str, start: str, end: str, *,

@@ -30,7 +30,7 @@ from market_data_hub.config_loader import get_countries, get_settings
 from market_data_hub.dalio import _slope
 from market_data_hub.dalio_v2.scoring import (
     bucket_with_hysteresis, confidence_for, coverage_tier, fresh_first_avail,
-    git_short_sha, prev_label, score_threshold, suppress_insufficient,
+    git_short_sha, notna, prev_label, score_threshold, suppress_insufficient,
     weighted_average,
 )
 
@@ -104,12 +104,12 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         debt_trend_actuals = _slope(debt_hist, ref_ts.year - 5, ref_ts.year)
 
         g_nom = (((1 + growth / 100.0) * (1 + infl / 100.0)) - 1) * 100.0 \
-            if not (pd.isna(growth) or pd.isna(infl)) else float("nan")
-        r_minus_g = (r_eff - g_nom) if not (pd.isna(r_eff) or pd.isna(g_nom)) else float("nan")
+            if notna(growth) and notna(infl) else float("nan")
+        r_minus_g = (r_eff - g_nom) if notna(r_eff) and notna(g_nom) else float("nan")
         interest_revenue = (interest_gdp / revenue_gdp * 100.0) \
-            if not pd.isna(interest_gdp) and not pd.isna(revenue_gdp) and revenue_gdp != 0 \
+            if notna(interest_gdp) and notna(revenue_gdp) and revenue_gdp != 0 \
             else float("nan")
-        primary_deficit = -primary_balance if not pd.isna(primary_balance) else float("nan")
+        primary_deficit = -primary_balance if notna(primary_balance) else float("nan")
 
         grp = "dm" if dev.get(country, "EM") == "DM" else "em"
         debt_th = th.get(f"debt_gdp_{grp}", [90, 110, 130])
@@ -157,8 +157,8 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             # Persisted (not just used internally for r_minus_g/g_nom) so the
             # Fase 5 cycle classifier can read real growth without
             # re-deriving it: see market_data_hub/dalio_v2/cycle_classifier.py.
-            "real_growth_pct": None if pd.isna(growth) else round(float(growth), 4),
-            "r_effective_pct": None if pd.isna(r_eff) else round(float(r_eff), 4),
+            "real_growth_pct": round(float(growth), 4) if notna(growth) else None,
+            "r_effective_pct": round(float(r_eff), 4) if notna(r_eff) else None,
             "components": {
                 k: {"raw_value": None if pd.isna(raw_values[k]) else round(float(raw_values[k]), 4),
                     "score": components[k], "weight": weights.get(k, 0),

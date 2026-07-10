@@ -43,6 +43,17 @@ jobs:
       - name: Lint (ruff — default rule set)
         run: ruff check .
 
+      # mypy 2.x itself requires Python >=3.10 to run, so it can't be
+      # installed consistently across the whole matrix; run it once, on the
+      # newest leg, rather than skew behavior between legs that would get
+      # different mypy versions. See pyproject.toml's [tool.mypy] for scope
+      # and the documented gaps (config-dict shapes, DataFrame schemas).
+      - name: Type check (mypy)
+        if: matrix.python-version == '3.12'
+        run: |
+          pip install mypy types-requests types-PyYAML typing_extensions
+          mypy
+
       - name: Dependency audit (advisory, non-blocking)
         # Kept advisory: a third-party CVE in a transitive dependency of a
         # private, non-published package shouldn't block unrelated PRs, but

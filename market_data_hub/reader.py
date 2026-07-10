@@ -260,22 +260,22 @@ def read_macro_panel(indicators: Union[str, List[str]],
                 return out.sort_index()
             return df
         clauses = ["indicator_id IN (" + ",".join(["?"] * len(indicators)) + ")"]
-        params: list = list(indicators)
+        qparams: list = list(indicators)
         if countries:
             if isinstance(countries, str):
                 countries = [countries]
             clauses.append("country_iso3 IN (" + ",".join(["?"] * len(countries)) + ")")
-            params += list(countries)
+            qparams += list(countries)
         if start:
             clauses.append("date >= ?")
-            params.append(start)
+            qparams.append(start)
         if end:
             clauses.append("date <= ?")
-            params.append(end)
+            qparams.append(end)
         where = " AND ".join(clauses)
         df = con.execute(
             f"SELECT * FROM macro_panel WHERE {where} ORDER BY indicator_id, "
-            f"country_iso3, date", params).fetch_df()
+            f"country_iso3, date", qparams).fetch_df()
         if wide and not df.empty:
             if len(indicators) != 1:
                 raise ValueError("wide=True requires a single indicator")

@@ -49,8 +49,9 @@ def fetch_klines(symbol: str, timeframe: str, start, end, *,
     session = requests.Session()
 
     while start_ts < end_ts:
-        params = {"symbol": symbol, "interval": timeframe,
-                  "startTime": start_ts, "endTime": end_ts, "limit": _MAX}
+        params: dict[str, str | int] = {
+            "symbol": symbol, "interval": timeframe,
+            "startTime": start_ts, "endTime": end_ts, "limit": _MAX}
         data = None
         for attempt in range(retries):
             try:

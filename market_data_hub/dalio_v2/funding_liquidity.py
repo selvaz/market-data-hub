@@ -44,7 +44,8 @@ from market_data_hub.config_loader import get_settings
 from market_data_hub.dalio import _first_avail, _latest
 from market_data_hub.dalio_v2.scoring import (
     bucket_with_hysteresis, confidence_for, fresh_latest, git_short_sha,
-    prev_label, score_threshold, suppress_insufficient, weighted_average,
+    prev_label, round_or_none, score_threshold, suppress_insufficient,
+    weighted_average,
 )
 
 ENGINE = "funding_liquidity"
@@ -143,7 +144,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "scope": "proxy tier only (ramo B) -- real GFN/auction/maturity-wall "
                     "data not wired, see module docstring",
             "components": {
-                k: {"raw_value": None if raw_values.get(k) is None else round(float(raw_values[k]), 4),
+                k: {"raw_value": round_or_none(raw_values.get(k)),
                     "score": components[k], "weight": weights.get(k, 0),
                     "obs_date": obs_dates.get(k)}
                 for k in components

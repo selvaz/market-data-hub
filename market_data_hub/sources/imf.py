@@ -51,7 +51,9 @@ def _get_json(url: str, timeout: int, retries: int, base_sleep: float):
                     e.response.status_code == 403
                 wait = (10.0 + 5 * attempt) if is_403 else base_sleep * (2 ** attempt)
                 time.sleep(wait)
-    raise last
+    # retries<=0 means the loop above never ran, leaving `last` unset --
+    # raising it directly would then raise None instead of a real error.
+    raise last if last else RuntimeError(f"imf: no attempts made (retries={retries})")
 
 
 def fetch_imf(spec: Dict, countries: List[Dict], *,

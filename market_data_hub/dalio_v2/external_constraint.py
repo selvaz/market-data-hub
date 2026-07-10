@@ -61,8 +61,8 @@ from market_data_hub.config_loader import get_countries, get_settings
 from market_data_hub.dalio import _first_avail, _latest
 from market_data_hub.dalio_v2.scoring import (
     bucket_with_hysteresis, confidence_for, coverage_tier, fresh_latest,
-    git_short_sha, prev_label, score_threshold, suppress_insufficient,
-    weighted_average,
+    git_short_sha, notna, prev_label, round_or_none, score_threshold,
+    suppress_insufficient, weighted_average,
 )
 
 ENGINE = "external_constraint"
@@ -202,9 +202,9 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         fx_depreciation_12m = _fx_depreciation_12m_pct(reer_hist) \
             if latest_reer is not None else None
 
-        current_account_deficit = -current_account if not pd.isna(current_account) else None
+        current_account_deficit = -current_account if notna(current_account) else None
         niip_gdp = (niip / gdp_usd * 100.0) \
-            if not pd.isna(niip) and not pd.isna(gdp_usd) and gdp_usd else None
+            if notna(niip) and notna(gdp_usd) and gdp_usd else None
         net_external_liability = -niip_gdp if niip_gdp is not None else None
 
         raw_values = {
@@ -223,6 +223,12 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "fx_debt_share": fxd_dt, "inflation": infl_dt,
             "fx_overvaluation_pct": None, "reserves_months": resm_dt,
         }
+        # unpacked to exactly 3 names (not splatted from a variable-length
+        # list) so a misconfigured 4-element threshold list in settings.yaml
+        # can't silently collide with the explicit orientation= kwarg below
+        _resm_w, _resm_s, _resm_c = th.get("reserves_months", [4, 3, 2])
+        _reserves_months_th = (_resm_w, _resm_s, _resm_c)
+
         components = {
             "current_account_deficit_gdp": None if current_account_deficit is None else
                 score_threshold(current_account_deficit, *th.get("current_account_deficit_gdp", [3, 5, 8])),
@@ -239,8 +245,8 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "fx_overvaluation_pct": None if fx_overvaluation is None else
                 score_threshold(fx_overvaluation, *th.get("fx_overvaluation_pct", [10, 20, 30])),
             "reserves_months": None if raw_values["reserves_months"] is None else
-                score_threshold(raw_values["reserves_months"],
-                                *th.get("reserves_months", [4, 3, 2]), orientation=-1),
+                score_threshold(raw_values["reserves_months"], *_reserves_months_th,
+                                orientation=-1),
         }
         score, n_avail, n_exp = weighted_average(components, weights)
 
@@ -273,7 +279,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "fx_depreciation_12m_pct": (None if fx_depreciation_12m is None
                                         else round(float(fx_depreciation_12m), 4)),
             "components": {
-                k: {"raw_value": None if raw_values.get(k) is None else round(float(raw_values[k]), 4),
+                k: {"raw_value": round_or_none(raw_values.get(k)),
                     "score": components[k], "weight": weights.get(k, 0),
                     "obs_date": obs_dates.get(k)}
                 for k in components

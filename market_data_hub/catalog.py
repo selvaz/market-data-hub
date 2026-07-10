@@ -104,7 +104,7 @@ def _classify(entry: Dict[str, Any]) -> Dict[str, Any]:
         "name": entry.get("name"),
         "category": category,
         "group": group,
-        "sector": _SECTOR_BY_SYMBOL.get(symbol),
+        "sector": _SECTOR_BY_SYMBOL.get(symbol) if isinstance(symbol, str) else None,
         "theme": category if asset_class == "ALTERNATIVES" else None,
         "priority": entry.get("priority"),
     }
@@ -401,7 +401,8 @@ def describe_series(symbol_or_id: str, db_path: Optional[str] = None) -> Dict[st
     sym = _symbol_universe()
     hit = sym[sym["symbol"] == symbol_or_id]
     if not hit.empty:
-        row = hit.iloc[0].to_dict()
+        # pandas' incomplete type stubs make Series.to_dict() resolve to Any
+        row: Dict[str, Any] = hit.iloc[0].to_dict()
         row["domain"] = "prices"
         try:
             row["latest"] = reader.get_latest(symbol_or_id, db_path=db_path)

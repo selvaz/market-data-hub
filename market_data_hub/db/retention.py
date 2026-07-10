@@ -59,9 +59,9 @@ def prune(
     counts: dict[str, int] = {}
 
     def _count(table: str, where: str) -> int:
-        return int(
-            con.execute(f"SELECT count(*) FROM {table} WHERE {where}").fetchone()[0]
-        )
+        row = con.execute(f"SELECT count(*) FROM {table} WHERE {where}").fetchone()
+        assert row is not None   # COUNT(*) always returns exactly one row
+        return int(row[0])
 
     # Build (target, table, where) work items.
     items: list[tuple[str, str, str]] = []
