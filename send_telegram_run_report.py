@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from lazytools.connectors.telegram import TelegramClient  # noqa: E402
 from market_data_hub.config_loader import get_settings  # noqa: E402
+from market_data_hub.country_dashboard import write_dashboard  # noqa: E402
 from market_data_hub.db.connection import get_conn  # noqa: E402
 
 
@@ -55,9 +56,13 @@ def _fmt_float(value: Any, digits: int = 1) -> str:
     return f"{float(value):.{digits}f}"
 
 
-def _md_table(df: pd.DataFrame, columns: list[str], *, max_rows: int = 20) -> str:
+def _md_table(df: pd.DataFrame, columns: list[str], *, max_rows: int = 500) -> str:
     if df.empty:
         return "(none)"
+    if not set(columns).issubset(df.columns):
+        if "error" in df.columns:
+            return f"(query unavailable: {df.iloc[0]['error']})"
+        return "(query returned an unexpected shape)"
     view = df.loc[:, columns].head(max_rows).copy()
     for col in view.columns:
         view[col] = view[col].map(lambda x: "" if pd.isna(x) else str(x))
@@ -92,6 +97,100 @@ def _safe_df(con, sql: str, params: list[Any] | None = None) -> pd.DataFrame:
         return con.execute(sql, params or []).fetch_df()
     except Exception as exc:
         return pd.DataFrame({"error": [str(exc)]})
+
+
+def _country_updates(con, started_at: Any, ended_at: Any) -> str:
+    """Per-country breakdown of macro_panel / FRED values that are genuinely
+    new or changed, sourced from the vintage tables (append-on-change: a
+    vintage row only exists when a value is new or differs from the prior
+    stored vintage)."""
+    if started_at is None:
+        return "Country updates\n(no run window available)"
+    start_date = pd.Timestamp(started_at).date()
+    end_date = pd.Timestamp(ended_at).date() if ended_at is not None else start_date
+
+    span = _safe_df(con, "SELECT count(DISTINCT vintage_date) AS n FROM macro_panel_vintage")
+    first_ever = not span.empty and int(span.iloc[0].get("n") or 0) <= 1
+
+    panel_summary = _safe_df(
+        con,
+        """
+        SELECT country_iso3 AS country, count(DISTINCT indicator_id) AS indicators,
+               count(*) AS observations, max(date) AS latest_date
+        FROM macro_panel_vintage
+        WHERE vintage_date BETWEEN ? AND ?
+        GROUP BY country_iso3
+        ORDER BY indicators DESC, country
+        """,
+        [start_date, end_date],
+    )
+    panel_detail = _safe_df(
+        con,
+        """
+        SELECT country_iso3 AS country, indicator_id, max(date) AS latest_date
+        FROM macro_panel_vintage
+        WHERE vintage_date BETWEEN ? AND ?
+        GROUP BY country_iso3, indicator_id
+        ORDER BY country_iso3, indicator_id
+        """,
+        [start_date, end_date],
+    )
+
+    series_summary = _safe_df(
+        con,
+        """
+        SELECT coalesce(m.country, 'n/a') AS country, count(DISTINCT v.series_id) AS series,
+               count(*) AS observations, max(v.date) AS latest_date
+        FROM macro_series_vintage v
+        LEFT JOIN (SELECT DISTINCT series_id, country FROM macro_series) m ON m.series_id = v.series_id
+        WHERE v.vintage_date BETWEEN ? AND ?
+        GROUP BY coalesce(m.country, 'n/a')
+        ORDER BY series DESC, country
+        """,
+        [start_date, end_date],
+    )
+    series_detail = _safe_df(
+        con,
+        """
+        SELECT coalesce(m.country, 'n/a') AS country, v.series_id, max(v.date) AS latest_date
+        FROM macro_series_vintage v
+        LEFT JOIN (SELECT DISTINCT series_id, country FROM macro_series) m ON m.series_id = v.series_id
+        WHERE v.vintage_date BETWEEN ? AND ?
+        GROUP BY coalesce(m.country, 'n/a'), v.series_id
+        ORDER BY country, v.series_id
+        """,
+        [start_date, end_date],
+    )
+
+    parts = ["Country updates (new/changed values, from vintage history)"]
+    if first_ever:
+        parts.append(
+            "Note: vintage tracking has no prior history yet, so this first run shows "
+            "every value as \"new\" (initial seed). From the next run on, only genuine "
+            "new/changed values will appear here."
+        )
+    parts.append("")
+
+    parts.append(f"Macro panel — countries touched: {len(panel_summary)}")
+    parts.append(_md_table(panel_summary, ["country", "indicators", "observations", "latest_date"]))
+    if not panel_detail.empty:
+        parts.append("")
+        parts.append("Macro panel — indicators touched, by country")
+        for country, group in panel_detail.groupby("country"):
+            names = ", ".join(f"{row.indicator_id} ({row.latest_date})" for row in group.itertuples())
+            parts.append(f"- {country} ({len(group)}): {names}")
+
+    parts.append("")
+    parts.append(f"FRED / macro series — countries touched: {len(series_summary)}")
+    parts.append(_md_table(series_summary, ["country", "series", "observations", "latest_date"]))
+    if not series_detail.empty:
+        parts.append("")
+        parts.append("FRED / macro series — series touched, by country")
+        for country, group in series_detail.groupby("country"):
+            names = ", ".join(f"{row.series_id} ({row.latest_date})" for row in group.itertuples())
+            parts.append(f"- {country} ({len(group)}): {names}")
+
+    return "\n".join(parts)
 
 
 def collect_report(db_path: str | None, run_id: str | None) -> tuple[str, str]:
@@ -150,7 +249,6 @@ def collect_report(db_path: str | None, run_id: str | None) -> tuple[str, str]:
             FROM download_log
             WHERE run_id = ? AND status = 'error'
             ORDER BY source, symbol
-            LIMIT 25
             """,
             [run_id],
         )
@@ -189,7 +287,6 @@ def collect_report(db_path: str | None, run_id: str | None) -> tuple[str, str]:
             FROM coverage_report
             WHERE stalled = TRUE
             ORDER BY lag_days DESC, coverage_score ASC
-            LIMIT 20
             """,
         )
 
@@ -264,12 +361,17 @@ def collect_report(db_path: str | None, run_id: str | None) -> tuple[str, str]:
         ]
 
         if errors_n:
-            parts.extend(["", "Errors", _md_table(errors, ["source", "symbol", "status", "error"], max_rows=25)])
+            parts.extend(["", "Errors", _md_table(errors, ["source", "symbol", "status", "error"])])
         else:
             parts.extend(["", "Errors", "(none)"])
 
         if not stalled.empty:
-            parts.extend(["", "Top stalled series", _md_table(stalled, ["symbol", "source", "last_date", "lag_days", "freq", "score", "status"], max_rows=20)])
+            parts.extend(["", f"Stalled series ({len(stalled)})", _md_table(stalled, ["symbol", "source", "last_date", "lag_days", "freq", "score", "status"])])
+
+        started_date = summary.get("started_at")
+        ended_date = summary.get("ended_at")
+        country_updates = _country_updates(con, started_date, ended_date)
+        parts.extend(["", country_updates])
 
         parts.extend(["", f"Generated at: {datetime.now().isoformat(timespec='seconds')}"])
         return title, "\n".join(parts)
@@ -303,11 +405,20 @@ def main() -> int:
     p.add_argument("--run-id", help="Specific run_id; defaults to latest")
     p.add_argument("--dry-run", action="store_true", help="Print and save report, but do not send Telegram message")
     p.add_argument("--save", action="store_true", help="Deprecated: reports are always saved before sending")
+    p.add_argument("--dashboard", action="store_true",
+                   help="Generate and send the neutral country dashboard instead of the text run report")
     args = p.parse_args()
 
     title, report = collect_report(args.db, args.run_id)
     out = save_report(title, report)
     print(f"Saved report: {out}")
+
+    attachment = out
+    caption = title
+    if args.dashboard:
+        attachment = write_dashboard(args.db)
+        caption = f"country data dashboard | {title}"
+        print(f"Generated country dashboard: {attachment}")
 
     if args.dry_run:
         print(report)
@@ -320,8 +431,8 @@ def main() -> int:
         print(f"Report was saved but not sent: {out}", file=sys.stderr)
         return 2
 
-    send_report_document(out, token=token, chat_id=chat_id, caption=title)
-    print(f"Sent Telegram report attachment: {out.name}")
+    send_report_document(attachment, token=token, chat_id=chat_id, caption=caption)
+    print(f"Sent Telegram report attachment: {attachment.name}")
     return 0
 
 
