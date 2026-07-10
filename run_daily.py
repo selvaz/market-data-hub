@@ -83,6 +83,10 @@ def main() -> int:
                 webbrowser.open(html_path.as_uri())
                 print(f"Opened in browser: {html_path}")
 
+            from market_data_hub.country_dashboard import write_dashboard
+            dashboard_path = write_dashboard(args.db)
+            print(f"Country dashboard: {dashboard_path}")
+
         except Exception as e:
             print(f"ERROR generating report: {e}", file=sys.stderr)
             import traceback
