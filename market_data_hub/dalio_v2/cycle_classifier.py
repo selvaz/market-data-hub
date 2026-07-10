@@ -67,6 +67,14 @@ _COLUMNS = ["country_iso3", "ref_date", "dalio_stage", "deleveraging_type",
 # non-'insufficient') and to pick the worst confidence to report.
 _DELEVERAGING_GATE_ENGINES = ("sovereign_solvency", "external_constraint", "funding_liquidity")
 _STAGE_GATE_ENGINES = ("sovereign_solvency", "funding_liquidity", "private_credit", "external_constraint")
+
+# Union of the above -- every engine either output's branches can reference.
+# Exposed so runner.py can check whether it's even worth refreshing
+# dalio_cycle_v2 for a ref_date (see REQUIRED_ENGINES usage there): if one of
+# these has literally never been computed for ref_date, compute() would
+# write a mostly-unclassifiable batch that overwrites a previously-complete
+# classification, since the report picks the latest ref_date globally.
+REQUIRED_ENGINES = frozenset(_DELEVERAGING_GATE_ENGINES) | frozenset(_STAGE_GATE_ENGINES)
 _ALL_ENGINES = ("sovereign_solvency", "political_execution", "private_credit",
                 "external_constraint", "funding_liquidity")
 
@@ -153,8 +161,17 @@ def classify_dalio_stage(inputs: dict, cfg: Optional[dict] = None) -> Optional[s
     if private_label in set(sl.get("late_leveraging_labels", ["high"])):
         return "late_leveraging"
 
+    # real_growth_pct is a single field inside sovereign_solvency's audit
+    # (not itself coverage-tier-gated -- the engine can be 'full' on its
+    # other 6 components with this one missing), so an otherwise-passing
+    # engine coverage gate does not guarantee it is present. If none of the
+    # label-based branches above fired and growth is unknown, we cannot rule
+    # out contraction -- return None (unclassifiable) rather than the "safe"
+    # default, which would misrepresent "we don't know" as "this is fine".
+    if real_growth is None:
+        return None
     contraction_th = th.get("contraction_real_growth_threshold_pct", 0.0)
-    if real_growth is not None and real_growth < contraction_th:
+    if real_growth < contraction_th:
         return "contraction"
 
     return "early_or_mid_cycle"
@@ -267,6 +284,14 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         stage_missing = _gate(rows, _STAGE_GATE_ENGINES)
         deleveraging_type = None if deleveraging_missing else classify_deleveraging(inputs, cfg)
         dalio_stage = None if stage_missing else classify_dalio_stage(inputs, cfg)
+        # classify_dalio_stage can itself return None (real_growth_pct
+        # missing) even though every gate engine's coverage_tier passed --
+        # growth is one field inside sovereign_solvency's audit, not
+        # separately tier-gated. Track that distinctly from a full engine-
+        # coverage failure so the audit trail always explains a None.
+        stage_reason = stage_missing
+        if dalio_stage is None and not stage_missing:
+            stage_reason = ["sovereign_solvency:real_growth_pct"]
 
         overall_confidence = _worst_confidence(
             rows, set(_DELEVERAGING_GATE_ENGINES) | set(_STAGE_GATE_ENGINES))
@@ -275,9 +300,9 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
         if deleveraging_missing:
             caveats.append(f"deleveraging_type unclassifiable: insufficient coverage in "
                            f"{', '.join(sorted(deleveraging_missing))}")
-        if stage_missing:
-            caveats.append(f"dalio_stage unclassifiable: insufficient coverage in "
-                           f"{', '.join(sorted(stage_missing))}")
+        if stage_reason:
+            caveats.append(f"dalio_stage unclassifiable: {', '.join(sorted(stage_reason))} "
+                           f"missing/insufficient")
         if deleveraging_type == "repressive":
             caveats.append("'repressive' is a weak proxy (real rate vs FX debt share) -- "
                            "no central-bank-holdings-of-debt data source exists.")
@@ -287,7 +312,7 @@ def compute(con: duckdb.DuckDBPyConnection, ref_date, cfg: Optional[dict] = None
             "engines_used": {e: rows.get(e, {}).get("coverage_tier") or "missing"
                              for e in _ALL_ENGINES},
             "unclassifiable_reason": {
-                "dalio_stage": stage_missing,
+                "dalio_stage": stage_reason,
                 "deleveraging_type": deleveraging_missing,
             },
         }

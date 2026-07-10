@@ -547,9 +547,14 @@ def test_run_dalio_v2_empty_panel_returns_zero_counts(tmp_db):
     con = get_conn()
     con.close()
     summary = run_dalio_v2(ref_year=2026)
+    # cycle_classifier: None, not 0 -- with zero countries no engine wrote
+    # any row at all, so the "have all gate engines run for this ref_date"
+    # guard skips the refresh entirely (see test_partial_engine_run_on_a_new_
+    # ref_year_does_not_clobber_the_prior_years_classification for the guard
+    # itself).
     assert summary == {"sovereign_solvency": 0, "political_execution": 0,
                        "private_credit": 0, "external_constraint": 0,
-                       "funding_liquidity": 0, "cycle_classifier": 0}
+                       "funding_liquidity": 0, "cycle_classifier": None}
 
 
 def test_rerun_drops_stale_countries_and_is_idempotent(tmp_db):
