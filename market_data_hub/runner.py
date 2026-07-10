@@ -418,7 +418,7 @@ def run_live(con, cfg: dict, run_id: str) -> None:
 
 
 # --------------------------------------------------------------- ENTRY
-# Default source set for a full run; also gates the analytical (dalio) layer.
+# Default source set for a full run.
 _DEFAULT_SOURCES = ["yahoo", "fred", "binance", "macro_panel", "factors"]
 
 
@@ -440,11 +440,6 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
         _log(f"SKIP: {ex}")
         return
 
-    # The writer lock is held for the whole run, including the analytical layer:
-    # run_dalio() and classify_countries() are NOT read-only (DELETE/INSERT,
-    # DROP/CREATE), so a concurrent EOD/live task must not acquire the DB until
-    # they finish. con is closed before the analytical layer (which opens its
-    # own connections), but the lock stays held.
     con = None
     try:
         con = get_conn(db_path)
@@ -490,28 +485,6 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
 
         con.close()
         con = None
-
-        # --- Ray Dalio analytical layer (after the panel: cycle phases + regime) ---
-        macro_done = mode != "live-only" and "macro_panel" in (
-            sources or _DEFAULT_SOURCES)
-        if macro_done:
-            try:
-                from market_data_hub.dalio import run_dalio
-                s = run_dalio(db_path)
-                _log(f"DALIO: {s['countries']} countries | phases {s['phases']} | regimes {s['regimes']}")
-                _log(f"DALIO: WEO forecast horizon = {s['weo_horizon']}")
-                if s["forecast_stale"]:
-                    _log("  WARNING: WEO forecasts NOT up to date (horizon <= current "
-                         "year). Check the macro_panel/IMF download.")
-            except Exception as ex:
-                _log(f"DALIO: error (non-blocking): {ex}")
-            try:
-                from market_data_hub.classify import classify_countries
-                cl = classify_countries(db_path)
-                _log(f"CLASSIFY: {cl['countries']} countries | development {cl['development']} "
-                     f"| energy {cl['energy']}")
-            except Exception as ex:
-                _log(f"CLASSIFY: error (non-blocking): {ex}")
 
         _log(f"=== END {run_id} ({time.time()-t0:.1f}s) ===")
     finally:

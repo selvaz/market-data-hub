@@ -49,7 +49,6 @@ dev = [
 # Python 3.9 in CI (see ci.yml's matrix), not from this setting.
 files = [
     "market_data_hub/lazydatacore",
-    "market_data_hub/dalio_v2",
     "market_data_hub/regime",
     "market_data_hub/catalog.py",
     "market_data_hub/sources",

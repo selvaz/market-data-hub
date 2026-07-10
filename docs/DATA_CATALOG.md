@@ -307,9 +307,13 @@ provider APIs (see `validate_macro_panel.py` / `macro_panel_validation.csv`).
 - **Typical lag:** 3–18 months (WDI/WEO/WGI) · **Stalled-after:** 400 days
 - **Sources:** World Bank REST (WDI db, WGI db) + IMF DataMapper (WEO + Fiscal Monitor `ie`/`rltir` + Global Debt Database `NFC_LS`) + BIS SDMX (DSR, credit-gap, policy rate, REER) + ECB Data Portal SDMX (MIR cost-of-borrowing)
 - **Read API:** `reader.read_macro_panel(indicators, countries, wide=…)`
-- **Dalio read layer:** the `v_macro_panel_ext` view = `macro_panel` **+** single-country
-  FRED series remapped into panel shape (currently the 10Y bond yield). `dalio.py`
-  reads this view so cross-country FRED inputs are visible without moving storage.
+- **Extended read layer:** `reader.read_macro_panel_ext()` reads the
+  `v_macro_panel_ext` view = `macro_panel` **+** single-country FRED series
+  remapped into panel shape (currently the 10Y bond yield). Built for the
+  [LazyRay](https://github.com/selvaz/LazyRay) Dalio analytical layer, which
+  consumes this hub read-only — see market-data-hub's
+  `docs/ECOSYSTEM_RATIONALIZATION.md` — so cross-country FRED inputs are
+  visible to it without moving storage.
 - **Extra metadata per row:** `pillar`, `orientation` (+1 healthier / −1 worse /
   0), `provider_dataset`, `provider_code`, `unit`
 
