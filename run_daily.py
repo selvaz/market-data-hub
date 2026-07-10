@@ -78,28 +78,9 @@ def main() -> int:
                   f"{sum(x['series'] for x in d['tables'])} | "
                   f"Score: {d['score_avg']} | Stalled: {len(d['stalled'])}")
 
-            # Ray Dalio report (debt-cycle phases + regime) — the Dalio
-            # computation was already done inside run(); here we only generate the HTML.
-            dalio_path = None
-            try:
-                from make_dalio_report import collect as dcollect, render_html as drender
-                con2 = get_conn(args.db, read_only=True)
-                try:
-                    dd = dcollect(con2)
-                finally:
-                    con2.close()
-                dalio_path = REPORT_DIR / f"dalio_report_{stamp}.html"
-                dalio_path.write_text(drender(dd), encoding="utf-8")
-                print(f"Dalio report: {dalio_path} "
-                      f"(phases: {dd['phase_counts']})")
-            except Exception as e:
-                print(f"(Dalio report skipped: {e})")
-
             if args.open_browser:
                 import webbrowser
                 webbrowser.open(html_path.as_uri())
-                if dalio_path:
-                    webbrowser.open(dalio_path.as_uri())
                 print(f"Opened in browser: {html_path}")
 
         except Exception as e:

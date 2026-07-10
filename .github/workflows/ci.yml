@@ -68,12 +68,12 @@ jobs:
         run: python -m compileall -q market_data_hub *.py
 
       # requirements.txt + `pip install -e .` both worked fine even when
-      # market_data_hub.dalio_v2 and market_data_hub.regime were silently
-      # missing from every real (non-editable) install -- exactly the
-      # install path the README documents for downstream consumers
-      # (`pip install 'market-data-hub @ git+...'`). Build a real wheel and
-      # import-check it in isolation so packaging regressions like that one
-      # fail CI instead of shipping silently.
+      # market_data_hub.regime was silently missing from every real
+      # (non-editable) install -- exactly the install path the README
+      # documents for downstream consumers (`pip install 'market-data-hub @
+      # git+...'`). Build a real wheel and import-check it in isolation so
+      # packaging regressions like that one fail CI instead of shipping
+      # silently.
       - name: Verify the package actually installs (not just editable)
         run: |
           python -m build --wheel --outdir dist .
@@ -81,9 +81,7 @@ jobs:
           /tmp/install-check/bin/pip install --quiet dist/*.whl
           /tmp/install-check/bin/python -c "
           import market_data_hub, market_data_hub.reader, market_data_hub.catalog, market_data_hub.extract
-          import market_data_hub.dalio, market_data_hub.classify, market_data_hub.agent_tools
-          import market_data_hub.dalio_v2.runner, market_data_hub.dalio_v2.cycle_classifier
-          import market_data_hub.dalio_v2.sovereign_solvency, market_data_hub.dalio_v2.scoring
+          import market_data_hub.agent_tools
           import market_data_hub.regime.schema
           import market_data_hub.coverage.report, market_data_hub.lazydatacore.identity
           print('package installs and imports cleanly')

@@ -2,12 +2,13 @@
 """Analysis-ready extraction (extract.py) and the JSON tool layer (agent_tools)."""
 from __future__ import annotations
 
+import datetime as dt
 import json
 
 import numpy as np
 import pandas as pd
 
-from market_data_hub import agent_tools, extract
+from market_data_hub import agent_tools, extract, reader
 from market_data_hub.db import connection as C
 from market_data_hub.db.upsert import upsert
 
@@ -143,3 +144,55 @@ def test_extract_series_daily_frequency_keeps_monday_returns(tmp_db):
     assert meta_d["used_returns_view"] is True  # fast path restored for "D"
     pd.testing.assert_frame_equal(native, daily)
     assert len(daily) == len(native) > 30  # no Monday rows lost
+
+
+def _seed_macro_panel_ext(con):
+    """Seed macro_panel (one indicator, two countries) + macro_series (an
+    IRLTLT01 FRED bond-yield series) so v_macro_panel_ext's UNION ALL has a
+    row from each side."""
+    panel = pd.DataFrame([
+        {"date": dt.date(2020, 12, 31), "country_iso3": "USA",
+         "indicator_id": "real_gdp_growth", "value": 2.5,
+         "indicator_name": "Real GDP growth", "pillar": "growth",
+         "orientation": 1, "source": "worldbank", "provider_dataset": "WDI",
+         "provider_code": "NY.GDP.MKTP.KD.ZG", "unit": "percent",
+         "frequency": "A", "updated_at": dt.datetime(2024, 1, 1)},
+        {"date": dt.date(2020, 12, 31), "country_iso3": "DEU",
+         "indicator_id": "real_gdp_growth", "value": -3.1,
+         "indicator_name": "Real GDP growth", "pillar": "growth",
+         "orientation": 1, "source": "worldbank", "provider_dataset": "WDI",
+         "provider_code": "NY.GDP.MKTP.KD.ZG", "unit": "percent",
+         "frequency": "A", "updated_at": dt.datetime(2024, 1, 1)},
+    ])
+    upsert(con, "macro_panel", panel)
+    series = pd.DataFrame([
+        {"date": dt.date(2020, 12, 31), "series_id": "IRLTLT01USM156N",
+         "value": 0.93, "series_name": "10Y bond yield", "unit": "percent",
+         "frequency": "M", "source": "fred", "country": "US",
+         "updated_at": dt.datetime(2024, 1, 1)},
+    ])
+    upsert(con, "macro_series", series)
+
+
+def test_read_macro_panel_ext_unions_panel_and_fred_bond_yield(tmp_db):
+    con = C.get_conn()
+    _seed_macro_panel_ext(con)
+    con.close()
+
+    df = reader.read_macro_panel_ext()
+    assert set(df["indicator_id"]) == {"real_gdp_growth", "bond_yield_10y"}
+    bond = df[df["indicator_id"] == "bond_yield_10y"].iloc[0]
+    assert bond["country_iso3"] == "US"
+    assert bond["pillar"] == "markets"
+    assert bond["value"] == 0.93
+
+
+def test_read_macro_panel_ext_filters_by_indicator_and_country(tmp_db):
+    con = C.get_conn()
+    _seed_macro_panel_ext(con)
+    con.close()
+
+    df = reader.read_macro_panel_ext(indicators="real_gdp_growth", countries="DEU")
+    assert len(df) == 1
+    assert df.iloc[0]["country_iso3"] == "DEU"
+    assert df.iloc[0]["value"] == -3.1

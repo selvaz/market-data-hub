@@ -288,6 +288,48 @@ def read_macro_panel(indicators: Union[str, List[str]],
         con.close()
 
 
+def read_macro_panel_ext(indicators: Optional[Union[str, List[str]]] = None,
+                         countries: Optional[Union[str, List[str]]] = None,
+                         start: Optional[str] = None, end: Optional[str] = None,
+                         db_path: Optional[str] = None) -> pd.DataFrame:
+    """
+    Long-format read of v_macro_panel_ext: macro_panel PLUS single-country
+    FRED series remapped into panel shape (currently the 10Y government bond
+    yield, indicator_id='bond_yield_10y'). Columns: date, country_iso3,
+    indicator_id, value, indicator_name, pillar, orientation, source,
+    provider_dataset, provider_code, unit, frequency, updated_at.
+
+    indicators=None -> every indicator in the view (matches the query the
+    Dalio analytical layer used before it moved to the LazyRay package).
+    """
+    if isinstance(indicators, str):
+        indicators = [indicators]
+    if isinstance(countries, str):
+        countries = [countries]
+    con = _con(db_path)
+    try:
+        clauses = ["value IS NOT NULL"]
+        qparams: list = []
+        if indicators:
+            clauses.append("indicator_id IN (" + ",".join(["?"] * len(indicators)) + ")")
+            qparams += list(indicators)
+        if countries:
+            clauses.append("country_iso3 IN (" + ",".join(["?"] * len(countries)) + ")")
+            qparams += list(countries)
+        if start:
+            clauses.append("date >= ?")
+            qparams.append(start)
+        if end:
+            clauses.append("date <= ?")
+            qparams.append(end)
+        where = " AND ".join(clauses)
+        return con.execute(
+            f"SELECT * FROM v_macro_panel_ext WHERE {where} ORDER BY "
+            f"indicator_id, country_iso3, date", qparams).fetch_df()
+    finally:
+        con.close()
+
+
 def read_factors(factors: Optional[Union[str, List[str]]] = None,
                  factor_set: Optional[str] = None, start: Optional[str] = None,
                  end: Optional[str] = None, wide: bool = True,

@@ -297,13 +297,6 @@ def send_report_document(file_path: Path, *, token: str, chat_id: str, caption: 
         )
 
 
-def _latest_report(pattern: str) -> Path | None:
-    candidates = [p for p in _base_report_dir().glob(pattern) if p.is_file()]
-    if not candidates:
-        return None
-    return max(candidates, key=lambda p: p.stat().st_mtime)
-
-
 def main() -> int:
     p = argparse.ArgumentParser(description="Send market_data_hub run report via Telegram")
     p.add_argument("--db", help="DuckDB path; defaults to market_data_hub settings")
@@ -329,18 +322,6 @@ def main() -> int:
 
     send_report_document(out, token=token, chat_id=chat_id, caption=title)
     print(f"Sent Telegram report attachment: {out.name}")
-
-    dalio = _latest_report("dalio_report_*.html")
-    if dalio:
-        send_report_document(
-            dalio,
-            token=token,
-            chat_id=chat_id,
-            caption="Ray Dalio dashboard",
-        )
-        print(f"Sent Telegram Dalio attachment: {dalio.name}")
-    else:
-        print("No Dalio report attachment found.")
     return 0
 
 

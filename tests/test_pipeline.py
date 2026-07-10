@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""End-to-end: seed a real schema'd DB, then exercise readers + analytics.
+"""End-to-end: seed a real schema'd DB, then exercise readers + coverage.
 
-Validates that every column reference, view, INSERT arity and the dalio/classify
-SQL stays consistent with db/schema.sql.
+Validates that every column reference, view and INSERT arity stays
+consistent with db/schema.sql.
 """
 from __future__ import annotations
 
@@ -16,8 +16,6 @@ from market_data_hub.db.upsert import upsert
 from market_data_hub import reader as R
 from market_data_hub.coverage.report import (
     rebuild_coverage, rebuild_macro_panel_coverage)
-from market_data_hub.dalio import run_dalio
-from market_data_hub.classify import classify_countries
 
 _IND = [
     ("gdp_growth_weo", "growth", 1, "A"), ("real_gdp_growth", "growth", 1, "A"),
@@ -83,12 +81,3 @@ def test_full_pipeline(tmp_db):
     assert "coverage_score" in R.get_latest("SPY")
     assert R.get_coverage().shape == (4, 18)
     assert not R.get_stalled().empty   # view resolves
-
-    # analytics
-    ds = run_dalio()
-    assert ds["countries"] == 3
-    assert ds["signals"] == 3 * len(_IND)        # cross-country z per (country, indicator)
-    assert ds["forecast_stale"] is False         # horizon 2030 > current year + 1
-
-    cc = classify_countries()
-    assert cc["countries"] == 64                 # from the real countries.yaml
