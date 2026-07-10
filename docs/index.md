@@ -47,26 +47,18 @@ run_daily.py ──► runner.run("full")
                    ├─ yahoo / fred / binance / macro_panel / factors
                    │    fetch gap → upsert → download_log row (per series)
                    ├─ live price injection (adjusted-ratio mapping)
-                   ├─ coverage engine: freshness, gaps, 0–100 score per series
-                   └─ analytical layer: debt-cycle phases + 4-box regimes (dalio.py)
-
-run_dalio_v2.py ─► dalio_v2.runner.run_dalio_v2()   (separate, additive entry point)
-                   └─ 5 independent country risk engines: sovereign solvency,
-                      political execution, private credit cycle, external
-                      currency constraint, funding liquidity → engine_scores
-                      table + HTML/CSV report
+                   └─ coverage engine: freshness, gaps, 0–100 score per series
 ```
 
 After the downloads, the **coverage engine** recomputes, for every series: the
 detected frequency, days of lag, gap count, missing %, price-quality flags and
 a 0–100 coverage score — so a stalled or degraded feed is visible immediately
-(`python diagnose.py --stalled`). The **analytical layer** then derives
-cross-country debt-cycle phases and growth/inflation regime boxes from the
-macro panel. **Dalio v2** (`dalio_v2/`, run via `run_dalio_v2.py`) is a
-separate, additive 5-engine risk architecture that does not replace
-`dalio.py` — see
-[DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md](DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md).
-The whole process map is in [Architecture & process](ARCHITECTURE.md).
+(`python diagnose.py --stalled`). The Ray Dalio-style debt-cycle / growth-
+inflation regime classifier and 5-engine country risk architecture that used
+to live here have moved to the separate
+[LazyRay](https://github.com/selvaz/LazyRay) repo, which reads this hub's
+macro panel read-only. The whole process map is in
+[Architecture & process](ARCHITECTURE.md).
 
 ## How you query it
 

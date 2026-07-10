@@ -82,32 +82,16 @@ python validate_macro_panel.py            # sample of 5 countries
 python validate_macro_panel.py --full     # all 64 countries
 ```
 
-An HTML status report comes from `make_report.py`; the self-contained macro
-dashboard from `make_dalio_report.py` (`python run_daily.py --report` bundles
-report generation into the daily run). `send_telegram_run_report.py` sends
-that report to Telegram instead — see `run_daily_with_telegram.ps1`.
+An HTML status report comes from `make_report.py` (`python run_daily.py
+--report` bundles report generation into the daily run).
+`send_telegram_run_report.py` sends that report to Telegram instead — see
+`run_daily_with_telegram.ps1`.
 
-`make_dalio_report.py` is the **unified v1+v2 dashboard**: v1's debt-cycle
-phase / four-box classification, country tags and historical indicator
-charts, plus — on the same per-country sheet, if `engine_scores` has been
-populated — the Dalio v2 5-engine risk scores:
-
-```bash
-python make_dalio_report.py --calc --calc-v2 --open   # recompute both v1 and v2, then open it
-```
-
-For a faster, v2-only refresh that doesn't need v1's classification tables
-populated, `run_dalio_v2.py` has its own lighter report:
-
-```bash
-python run_dalio_v2.py            # refresh engine_scores + regenerate the HTML report
-python run_dalio_v2.py --csv      # also write a CSV snapshot
-python run_dalio_v2.py --engines sovereign_solvency,political_execution
-```
-
-Dalio v2 writes to its own `engine_scores` table and never touches
-`dalio.py`'s tables — see
-[DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md](DALIO_5ENGINE_IMPLEMENTATION_PLAN_2026-07.md).
+The Ray Dalio-style debt-cycle / growth-inflation regime classifier and the
+5-engine country risk architecture (`make_dalio_report.py`, `run_dalio_v2.py`)
+have moved to the separate [LazyRay](https://github.com/selvaz/LazyRay) repo,
+which reads this hub's macro panel read-only via
+`reader.read_macro_panel_ext()` and keeps its own output storage.
 
 ## Automate (Windows Task Scheduler)
 
