@@ -236,3 +236,25 @@ def test_ecb_fetch_failure_is_logged(monkeypatch, caplog):
     msgs = [r.getMessage() for r in caplog.records]
     assert any("cost_borrowing_corp" in m and "proxy down" in m for m in msgs)
     assert any("Cost of borrowing, corporations" in m for m in msgs)
+
+
+def test_ecb_fetch_happy_path_parses_csv(monkeypatch):
+    # even the file that already covers ecb.py's failure path and its pure
+    # _period_end() helper never exercised a successful CSV->DataFrame fetch
+    text = ("REF_AREA,TIME_PERIOD,OBS_VALUE\n"
+            "DE,2026-05,4.12\n"
+            "FR,2026-05,4.30\n"
+            "GB,2026-05,9.99\n")   # GB not in our country list -> dropped
+    monkeypatch.setattr(ecb, "_get_csv", lambda *a, **k: text)
+    spec = {"dataset": "MIR", "code": "M.{iso2}.B.A2I.AM.R.A.2240.EUR.N",
+            "id": "cost_borrowing_corp", "name": "Cost of borrowing, corporations",
+            "pillar": "markets", "orientation": 1, "unit": "percent"}
+    countries = [{"iso2": "DE", "iso3": "DEU"}, {"iso2": "FR", "iso3": "FRA"}]
+
+    df = ecb.fetch_ecb(spec, countries, start_year=2020)
+
+    assert list(df.columns) == ecb._COLS
+    assert set(df["country_iso3"]) == {"DEU", "FRA"}
+    assert df[df["country_iso3"] == "DEU"].iloc[0]["value"] == 4.12
+    assert (df["date"] == pd.Timestamp("2026-05-31").date()).all()
+    assert (df["source"] == "ecb").all()
