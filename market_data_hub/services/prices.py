@@ -25,6 +25,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 
+import duckdb
 import pandas as pd
 
 from market_data_hub.config_loader import get_settings, get_yahoo_tickers
@@ -92,6 +93,7 @@ def _config_candidates(query: str) -> List[Dict[str, Any]]:
                 "exchange": None,
                 "currency": None,
                 "provider": _DEFAULT_PROVIDER,
+                "provider_symbol": e["symbol"],
                 "registered": False,
             })
     return out
@@ -113,26 +115,35 @@ def resolve_instrument(query: str, exchange: Optional[str] = None,
         if currency:
             where.append("l.currency = ?")
             params.append(currency)
-        rows = con.execute(f"""
-            SELECT l.listing_id, l.instrument_id, i.issuer_id, l.symbol,
-                   i.kind, i.name, l.exchange, l.currency, l.provider
-            FROM listings l JOIN instruments i USING (instrument_id)
-            WHERE {' AND '.join(where)} AND l.active_to IS NULL
-            ORDER BY l.listing_id
-        """, params).fetchall()
-        if not rows:
-            # alias lookup (historic ticker, ISIN, FIGI ...) -> listing
-            rows = con.execute("""
+        try:
+            rows = con.execute(f"""
                 SELECT l.listing_id, l.instrument_id, i.issuer_id, l.symbol,
-                       i.kind, i.name, l.exchange, l.currency, l.provider
-                FROM identifier_aliases a
-                JOIN listings l ON a.target_type = 'listing' AND a.target_id = l.listing_id
-                JOIN instruments i USING (instrument_id)
-                WHERE upper(a.value) = upper(?) AND a.valid_to IS NULL
+                       i.kind, i.name, l.exchange, l.currency, l.provider,
+                       l.provider_symbol
+                FROM listings l JOIN instruments i USING (instrument_id)
+                WHERE {' AND '.join(where)} AND l.active_to IS NULL
                 ORDER BY l.listing_id
-            """, [q]).fetchall()
+            """, params).fetchall()
+            if not rows:
+                # alias lookup (historic ticker, ISIN, FIGI ...) -> listing
+                rows = con.execute("""
+                    SELECT l.listing_id, l.instrument_id, i.issuer_id, l.symbol,
+                           i.kind, i.name, l.exchange, l.currency, l.provider,
+                           l.provider_symbol
+                    FROM identifier_aliases a
+                    JOIN listings l ON a.target_type = 'listing' AND a.target_id = l.listing_id
+                    JOIN instruments i USING (instrument_id)
+                    WHERE upper(a.value) = upper(?) AND a.valid_to IS NULL
+                    ORDER BY l.listing_id
+                """, [q]).fetchall()
+        except duckdb.CatalogException:
+            # DB file predates schema v5 (identity tables not created yet) and
+            # this is a read-only connection, which never runs migrate() --
+            # only a writer (e.g. ensure_price_history) upgrades the schema.
+            # Degrade to config-only candidates instead of raising.
+            rows = []
         cols = ["listing_id", "instrument_id", "issuer_id", "symbol", "kind",
-                "name", "exchange", "currency", "provider"]
+                "name", "exchange", "currency", "provider", "provider_symbol"]
         found = [dict(zip(cols, r), registered=True) for r in rows]
     finally:
         con.close()
@@ -174,7 +185,7 @@ def _register_listing(con, cand: Dict[str, Any]) -> Dict[str, Any]:
         WHERE NOT EXISTS (SELECT 1 FROM listings WHERE listing_id = ?)
     """, [listing_id, instrument_id, symbol, cand.get("exchange"),
           cand.get("currency"), cand.get("provider") or _DEFAULT_PROVIDER,
-          symbol, now, now, listing_id])
+          cand.get("provider_symbol") or symbol, now, now, listing_id])
     con.execute("""
         INSERT INTO identifier_aliases (namespace, value, target_type,
                                         target_id, valid_from, valid_to, updated_at)
@@ -266,13 +277,17 @@ def ensure_price_history(query: str, start: Optional[str] = None,
             """, [run_id, json.dumps(req), provider, now])
 
             try:
-                frames = fetch([symbol], start, end)
-                df = frames.get(symbol)
+                # Fetch under the PROVIDER's native symbol (may differ from
+                # the warehouse symbol, e.g. class-share / venue suffixes),
+                # then normalize the returned frame back to listings.symbol
+                # before it ever reaches prices_daily.
+                provider_symbol = cand.get("provider_symbol") or symbol
+                frames = fetch([provider_symbol], start, end)
+                df = frames.get(provider_symbol)
                 added = updated = 0
                 if df is not None and not df.empty:
                     df = df.copy()
-                    if "symbol" not in df.columns:
-                        df["symbol"] = symbol
+                    df["symbol"] = symbol
                     if "source" not in df.columns:
                         df["source"] = provider
                     added, updated = upsert(con, "prices_daily", df)

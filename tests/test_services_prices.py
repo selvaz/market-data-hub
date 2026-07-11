@@ -161,6 +161,63 @@ def test_job_status_reader(tmp_db):
     assert svc.get_job_status("job_missing", db_path=tmp_db) is None
 
 
+def test_resolve_degrades_gracefully_on_pre_v5_db(tmp_db):
+    """Codex P1: a read-only connection never runs migrate(), so a DB file
+    created before schema v5 (no identity tables) must not make resolve_
+    instrument raise -- it should degrade to config-only candidates."""
+    from market_data_hub.db.connection import get_conn as _get_conn
+
+    # Simulate a pre-v5 DB: open a writer connection, then drop the identity
+    # tables schema v5 added, mimicking a file created before that migration.
+    con = _get_conn(tmp_db)
+    try:
+        for t in ("listings", "instruments", "identifier_aliases"):
+            con.execute(f"DROP TABLE IF EXISTS {t}")
+    finally:
+        con.close()
+
+    cands = svc.resolve_instrument("SPY", db_path=tmp_db)
+    assert len(cands) == 1
+    assert cands[0]["registered"] is False
+
+
+def test_ensure_fetches_provider_symbol_not_warehouse_symbol(tmp_db):
+    """Codex P2: when provider_symbol differs from the warehouse symbol, the
+    fetch must use provider_symbol, and the upserted rows must carry the
+    warehouse symbol back (listings.symbol), not the provider's."""
+    captured = {}
+
+    def fetch(symbols, start, end):
+        captured["symbols"] = symbols
+        return {symbols[0]: pd.DataFrame({
+            "date": pd.date_range(start, periods=3, freq="B").date,
+            "close": [1.0, 2.0, 3.0], "adj_close": [1.0, 2.0, 3.0],
+        })}
+
+    con = svc.get_conn(tmp_db)
+    try:
+        cand = svc._register_listing(con, {
+            "symbol": "BRK.B", "kind": "EQUITY", "name": "Berkshire B",
+            "exchange": None, "currency": None, "provider": "yahoo",
+            "provider_symbol": "BRK-B",
+        })
+    finally:
+        con.close()
+
+    res = svc.ensure_price_history(cand["listing_id"], start="2024-01-01",
+                                   end="2024-01-10", db_path=tmp_db, fetch=fetch)
+    assert res["status"] == "completed"
+    assert captured["symbols"] == ["BRK-B"]
+
+    con = svc.get_conn(tmp_db, read_only=True)
+    try:
+        rows = con.execute(
+            "SELECT DISTINCT symbol FROM prices_daily").fetchall()
+    finally:
+        con.close()
+    assert rows == [("BRK.B",)]
+
+
 def test_tool_layer_gating_and_shapes(tmp_db):
     from market_data_hub import agent_tools as at
 
