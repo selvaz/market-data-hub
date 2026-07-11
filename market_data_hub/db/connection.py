@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 
 def _default_db() -> str:
@@ -189,6 +189,11 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # created them via CREATE TABLE IF NOT EXISTS; prices_daily is
         # deliberately untouched (listings.symbol joins prices_daily.symbol).
         current = 5
+    if current < 6:
+        # v5 -> v6: SEC/EDGAR tables (plan v3.1 Fase 3): sec_filings,
+        # sec_company_facts (append-only), sec_coverage. Purely additive —
+        # created by apply_schema() above.
+        current = 6
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

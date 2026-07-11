@@ -1,0 +1,40 @@
+# ============================================================================
+# XBRL concept -> standardized statement line mapping, VERSION 1 (plan v3.1).
+#
+# Versioned and append-only as a file: never edit the semantics of a line key
+# in place — create xbrl_mapping_v2.yaml and bump the loader default, so
+# results computed under v1 stay reproducible. Concepts are tried IN ORDER;
+# the first one with data for a period wins (issuers migrate concept names
+# over the years, e.g. Revenues -> RevenueFromContractWithCustomer...).
+# ============================================================================
+version: 1
+taxonomy: us-gaap
+statement_lines:
+  revenue:
+    statement: income
+    concepts:
+      - RevenueFromContractWithCustomerExcludingAssessedTax
+      - Revenues
+      - SalesRevenueNet
+  net_income:
+    statement: income
+    concepts:
+      - NetIncomeLoss
+  assets:
+    statement: balance
+    concepts:
+      - Assets
+  liabilities:
+    statement: balance
+    concepts:
+      - Liabilities
+  equity:
+    statement: balance
+    concepts:
+      - StockholdersEquity
+      - StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest
+  operating_cash_flow:
+    statement: cash_flow
+    concepts:
+      - NetCashProvidedByUsedInOperatingActivities
+      - NetCashProvidedByUsedInOperatingActivitiesContinuingOperations

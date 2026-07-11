@@ -191,6 +191,29 @@ def tool_get_price_summary(query: str, start: str = "", end: str = "") -> str:
         return _json({"error": str(ex)})
 
 
+def tool_get_financials_coverage(query: str = "") -> str:
+    """SEC coverage in the hub: which issuers have filings/facts ingested,
+    how many, which forms, freshness. query: CIK, ticker or issuer_id; empty
+    for all covered issuers. Read-only, no network."""
+    from market_data_hub.services import financials as _fin
+    return _json(_fin.get_financials_coverage(query or None))
+
+
+def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
+                             limit: int = 25) -> str:
+    """XBRL company facts for ONE issuer from the hub DB (read-only, no
+    network, max 100 rows). Every value carries unit, period, fiscal
+    year/period, form, accession and filed date, so it is verifiable.
+
+    query: CIK, ticker or issuer_id (must be ingested already).
+    line:  mapped statement line — revenue | net_income | assets |
+           liabilities | equity | operating_cash_flow (versioned mapping).
+    forms: optional comma-separated filter, e.g. "10-K" or "10-K,10-Q"."""
+    from market_data_hub.services import financials as _fin
+    return _json(_fin.get_facts(
+        query, line=line or None, forms=_split(forms) or None, limit=limit))
+
+
 def tool_get_job_status(job_id: str) -> str:
     """Status of an ingestion job created by tool_ensure_price_history:
     queued | running | completed | error, plus the linked run record
@@ -210,6 +233,7 @@ TOOL_FUNCTIONS = [
     tool_list_indicators, tool_list_countries, tool_describe, tool_search,
     tool_get_series, tool_get_returns, tool_get_coverage,
     tool_resolve_instrument, tool_get_price_summary, tool_get_job_status,
+    tool_get_financials_coverage, tool_get_financial_facts,
 ]
 
 
@@ -302,4 +326,27 @@ def tool_ensure_price_history(query: str, start: str = "", end: str = "",
                                f"retry later ({ex})"})
 
 
-WRITE_TOOL_FUNCTIONS = [tool_refresh_prices, tool_ensure_price_history]
+def tool_ensure_financials(query: str, allow_write: bool = False) -> str:
+    """Ensure the hub holds SEC filings metadata + XBRL company facts for ONE
+    issuer, ingesting from EDGAR if needed. WRITE capability gated by
+    allow_write=True; idempotent per (issuer, day) — repeating the call the
+    same day reuses the completed job. Facts are stored append-only.
+
+    query: CIK (digits) or US ticker (resolved via SEC's official map).
+    Returns JSON: job_id, run_id, status, issuer_id, cik, filings, new_facts."""
+    if not allow_write:
+        return _json({"error": "write capability requires allow_write=true"})
+    from market_data_hub.lock import DBLockTimeout
+    from market_data_hub.services import financials as _fin
+    try:
+        with _REFRESH_LOCK:
+            return _json(_fin.ensure_filings_and_facts(query, requester="llm"))
+    except _fin.UnknownIssuerError as ex:
+        return _json({"error": str(ex)})
+    except DBLockTimeout as ex:
+        return _json({"error": f"another writer holds the DB lock; "
+                               f"retry later ({ex})"})
+
+
+WRITE_TOOL_FUNCTIONS = [tool_refresh_prices, tool_ensure_price_history,
+                        tool_ensure_financials]

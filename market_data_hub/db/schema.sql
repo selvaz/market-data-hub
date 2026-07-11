@@ -355,6 +355,62 @@ CREATE TABLE IF NOT EXISTS ingestion_jobs (
 
 
 -- ============================================================================
+-- SEC / EDGAR (plan v3.1, Fase 3) — filings metadata and company facts
+-- ============================================================================
+-- Facts are APPEND-ONLY: a restated value arrives under a new accession (or a
+-- different filed date) and lands as a NEW row; history is never overwritten.
+-- fact_id is a deterministic hash of the full identity tuple (incl. value) so
+-- re-ingestion is idempotent via anti-join, without UPDATE/REPLACE semantics.
+-- No secondary indexes (duckdb 1.4.x INSERT OR REPLACE + index bug).
+
+CREATE TABLE IF NOT EXISTS sec_filings (
+    cik             VARCHAR NOT NULL,      -- zero-padded 10 digits
+    accession       VARCHAR NOT NULL,      -- e.g. 0000320193-24-000123
+    form            VARCHAR,               -- 10-K | 10-Q | 8-K | ...
+    filed_date      DATE,
+    report_date     DATE,
+    primary_doc     VARCHAR,
+    primary_doc_url VARCHAR,
+    issuer_id       VARCHAR,               -- FK issuers (soft)
+    run_id          VARCHAR,
+    updated_at      TIMESTAMP,
+    PRIMARY KEY (cik, accession)
+);
+
+CREATE TABLE IF NOT EXISTS sec_company_facts (
+    fact_id    VARCHAR PRIMARY KEY,        -- sha256[:24] of the identity tuple
+    cik        VARCHAR NOT NULL,
+    taxonomy   VARCHAR NOT NULL,           -- us-gaap | dei | ifrs-full
+    concept    VARCHAR NOT NULL,           -- e.g. Assets, NetIncomeLoss
+    unit       VARCHAR NOT NULL,           -- USD, shares, USD/shares
+    start_date DATE,                       -- NULL for instant facts
+    end_date   DATE NOT NULL,
+    value      DOUBLE,
+    fy         INTEGER,                    -- fiscal year of the REPORT it came from
+    fp         VARCHAR,                    -- FY | Q1 | Q2 | Q3 | Q4
+    form       VARCHAR,
+    filed_date DATE,
+    accession  VARCHAR,
+    frame      VARCHAR,                    -- XBRL frame tag when present
+    run_id     VARCHAR,
+    created_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sec_coverage (
+    cik         VARCHAR PRIMARY KEY,
+    issuer_id   VARCHAR,
+    entity_name VARCHAR,
+    n_filings   INTEGER,
+    n_facts     INTEGER,
+    forms       VARCHAR,                   -- distinct forms ingested, csv
+    last_filed  DATE,
+    lag_days    INTEGER,
+    last_run_id VARCHAR,
+    updated_at  TIMESTAMP
+);
+
+
+-- ============================================================================
 -- VIEWS
 -- ============================================================================
 

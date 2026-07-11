@@ -44,6 +44,13 @@ def get_yahoo_tickers() -> List[Dict[str, Any]]:
             if e["symbol"] not in fred_symbols]
 
 
+@lru_cache(maxsize=None)
+def get_xbrl_mapping(version: int = 1) -> Dict[str, Any]:
+    """Versioned XBRL concept -> statement line mapping (plan v3.1 Fase 3).
+    Mappings are immutable per version: new semantics -> new file + version."""
+    return _load_yaml(f"xbrl_mapping_v{version}.yaml")
+
+
 @lru_cache(maxsize=1)
 def get_fred_series() -> List[Dict[str, Any]]:
     fred: List[Dict[str, Any]] = _load_yaml("macro_series.yaml").get("fred", [])
