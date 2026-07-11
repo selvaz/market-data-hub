@@ -260,3 +260,38 @@ def test_canonical_exports_present():
     # ResultKind and OHLCV_COLUMNS are part of the public contract.
     assert OHLCV_COLUMNS == ("open", "high", "low", "close", "adj_close", "volume")
     assert ResultKind.SCORE.value == "score"
+
+
+# --------------------------------------------------------------------------- #
+# import boundary (piano v3.1, Fase 1)                                        #
+# --------------------------------------------------------------------------- #
+def test_lazydatacore_has_no_heavy_dependencies():
+    """lazydatacore is the shared contract package: it must stay importable
+    without DuckDB, HTTP clients or the hub's own db/sources layers, so it can
+    be extracted as a standalone distribution (plan v3.1, Step 1)."""
+    import ast
+    import pkgutil
+    from pathlib import Path
+
+    import market_data_hub.lazydatacore as ldc
+
+    forbidden = {"duckdb", "requests", "httpx", "urllib3", "yfinance"}
+    forbidden_prefixes = ("market_data_hub.db", "market_data_hub.sources",
+                          "market_data_hub.reader", "market_data_hub.extract",
+                          "lazybridge")
+
+    pkg_dir = Path(ldc.__file__).parent
+    for mod in pkgutil.iter_modules([str(pkg_dir)]):
+        tree = ast.parse((pkg_dir / f"{mod.name}.py").read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            names = []
+            if isinstance(node, ast.Import):
+                names = [a.name for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.module and node.level == 0:
+                names = [node.module]
+            for name in names:
+                root = name.split(".")[0]
+                assert root not in forbidden, (
+                    f"lazydatacore/{mod.name}.py imports forbidden '{name}'")
+                assert not name.startswith(forbidden_prefixes), (
+                    f"lazydatacore/{mod.name}.py imports hub-internal '{name}'")

@@ -261,6 +261,100 @@ CREATE INDEX IF NOT EXISTS idx_mpv ON macro_panel_vintage (indicator_id, country
 
 
 -- ============================================================================
+-- IDENTITY & INGESTION LEDGER (plan v3.1 — issuer / instrument / listing)
+-- ============================================================================
+-- A CIK identifies an ISSUER (legal entity); a ticker identifies a LISTING
+-- (symbol on a venue in a currency). They are distinct: one issuer can have
+-- several share classes, ADRs and historic tickers. These tables layer that
+-- identity model OVER the existing flat price tables: prices_daily.symbol
+-- joins listings.symbol — prices_daily itself is untouched (its INSERT OR
+-- REPLACE upsert path would NULL any extra column it does not write).
+-- No secondary indexes here (duckdb 1.4.x INSERT OR REPLACE + index bug, see
+-- the macro_series_vintage note); these tables are small, scans are fine.
+
+CREATE TABLE IF NOT EXISTS issuers (
+    issuer_id       VARCHAR PRIMARY KEY,   -- 'iss_' + stable slug/hash
+    cik             VARCHAR UNIQUE,        -- SEC CIK, zero-padded 10 digits; NULL if none
+    name            VARCHAR,
+    sic             VARCHAR,
+    fiscal_year_end VARCHAR,               -- 'MM-DD'
+    created_at      TIMESTAMP,
+    updated_at      TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS instruments (
+    instrument_id VARCHAR PRIMARY KEY,     -- 'ins_' + stable slug/hash
+    issuer_id     VARCHAR,                 -- NULL for indices, FX, commodities
+    kind          VARCHAR NOT NULL,        -- EQUITY | ETF | INDEX | FX | CRYPTO | COMMODITY | FUND | OTHER
+    name          VARCHAR,
+    created_at    TIMESTAMP,
+    updated_at    TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS listings (
+    listing_id      VARCHAR PRIMARY KEY,   -- 'lst_' + stable slug/hash
+    instrument_id   VARCHAR NOT NULL,
+    symbol          VARCHAR NOT NULL,      -- as stored in prices_daily.symbol
+    exchange        VARCHAR,               -- MIC or venue label ('XNAS', 'XMIL', ...)
+    currency        VARCHAR,
+    provider        VARCHAR,               -- default price provider ('yahoo', 'binance')
+    provider_symbol VARCHAR,               -- provider-native symbol if it differs
+    active_from     DATE,
+    active_to       DATE,                  -- NULL = currently active
+    created_at      TIMESTAMP,
+    updated_at      TIMESTAMP
+);
+
+-- ticker/ISIN/FIGI/CIK -> entity mapping with temporal validity. namespace is
+-- e.g. 'ticker', 'ticker_historic', 'isin', 'figi', 'cik'; target_type is
+-- 'issuer' | 'instrument' | 'listing'.
+CREATE TABLE IF NOT EXISTS identifier_aliases (
+    namespace   VARCHAR NOT NULL,
+    value       VARCHAR NOT NULL,
+    target_type VARCHAR NOT NULL,
+    target_id   VARCHAR NOT NULL,
+    valid_from  DATE,
+    valid_to    DATE,                      -- NULL = still valid
+    updated_at  TIMESTAMP,
+    PRIMARY KEY (namespace, value, target_type, target_id)
+);
+
+-- One row per physical ingestion attempt. download_log stays as the legacy
+-- per-symbol audit trail of the batch runner; ingestion_runs is the ledger for
+-- on-demand ensure_* capabilities (plan v3.1 §4.1).
+CREATE TABLE IF NOT EXISTS ingestion_runs (
+    run_id          VARCHAR PRIMARY KEY,
+    kind            VARCHAR NOT NULL,      -- 'price_history' | 'sec_facts' | ...
+    input_json      VARCHAR,               -- normalized request input
+    provider        VARCHAR,
+    provider_reason VARCHAR,               -- why this provider (fallback is never silent)
+    status          VARCHAR NOT NULL,      -- 'running' | 'completed' | 'error'
+    attempts        INTEGER DEFAULT 1,
+    error_msg       VARCHAR,
+    payload_hash    VARCHAR,               -- hash of the written payload
+    rows_written    INTEGER,
+    started_at      TIMESTAMP,
+    finished_at     TIMESTAMP
+);
+
+-- Idempotent job envelope: the same normalized request (request_hash) always
+-- maps to the same job. Every ensure_* call creates or reuses one of these;
+-- there are no long operations without a job_id.
+CREATE TABLE IF NOT EXISTS ingestion_jobs (
+    job_id       VARCHAR PRIMARY KEY,
+    request_hash VARCHAR UNIQUE NOT NULL,
+    kind         VARCHAR NOT NULL,
+    request_json VARCHAR,
+    status       VARCHAR NOT NULL,         -- 'queued' | 'running' | 'completed' | 'error'
+    run_id       VARCHAR,                  -- last run serving this job
+    requester    VARCHAR,                  -- 'llm:<session>' | 'cli' | 'notebook' | ...
+    error_msg    VARCHAR,
+    created_at   TIMESTAMP,
+    updated_at   TIMESTAMP
+);
+
+
+-- ============================================================================
 -- VIEWS
 -- ============================================================================
 
