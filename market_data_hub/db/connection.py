@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 
 def _default_db() -> str:
@@ -130,18 +130,25 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
     recorded = get_schema_version(con)  # read BEFORE apply_schema stamps a baseline
 
     # v2 -> v3 columns (run_id, change_type, prior_value on the vintage tables)
-    # must be ADDed *before* apply_schema() below re-runs schema.sql, which
-    # now also CREATE INDEXes on run_id -- CREATE TABLE IF NOT EXISTS alone
-    # never adds columns to a table that already exists in the old shape, so
-    # that index creation would fail on any pre-v3 DB otherwise. Guarded on
-    # table existence: a genuinely fresh DB has no table yet at this point
-    # and gets the column baked into CREATE TABLE by apply_schema() instead.
-    # ALTER ... ADD COLUMN IF NOT EXISTS is idempotent, safe to run every time.
+    # must be ADDed *before* apply_schema() below re-runs schema.sql --
+    # CREATE TABLE IF NOT EXISTS alone never adds columns to a table that
+    # already exists in the old shape. Guarded on table existence: a genuinely
+    # fresh DB has no table yet at this point and gets the column baked into
+    # CREATE TABLE by apply_schema() instead. ALTER ... ADD COLUMN IF NOT
+    # EXISTS is idempotent, safe to run every time.
     for table in ("macro_series_vintage", "macro_panel_vintage"):
         if _table_exists(con, table):
             con.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS run_id VARCHAR")
             con.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS change_type VARCHAR")
             con.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS prior_value DOUBLE")
+
+    # v3 -> v4: drop the run_id indexes that v3 briefly introduced. On duckdb
+    # 1.4.x (the last line supporting Python 3.9) a secondary index on a
+    # column makes INSERT OR REPLACE silently keep the OLD value of that
+    # column on the conflict path, so idx_msv_run / idx_mpv_run broke the
+    # same-day vintage replacement run_id. Idempotent, safe to run every time.
+    con.execute("DROP INDEX IF EXISTS idx_msv_run")
+    con.execute("DROP INDEX IF EXISTS idx_mpv_run")
 
     apply_schema(con)  # ensures every table exists; stamps baseline only if fresh
 
@@ -170,7 +177,11 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # multiple same-day runs). Columns already ensured above; this step
         # just advances the recorded version to match.
         current = 3
-        current = 3
+    if current < 4:
+        # v3 -> v4: run_id indexes dropped (duckdb 1.4.x INSERT OR REPLACE
+        # bug -- see the pre-apply_schema step above, which already ran the
+        # idempotent DROPs). This step advances the recorded version.
+        current = 4
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

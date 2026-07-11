@@ -151,6 +151,14 @@ def _country_updates(con, run_id: str | None) -> str:
     def _section(df: pd.DataFrame, label: str) -> list[str]:
         if df.empty:
             return [f"{label}: no new dates or revised values this run"]
+        if "change_type" not in df.columns:
+            # _safe_df returned its {"error": [...]} frame -- e.g. a pre-v3
+            # database opened read-only (collect_report never migrates), where
+            # the run_id/change_type columns do not exist yet. Degrade to a
+            # note instead of crashing the whole report.
+            reason = df.iloc[0]["error"] if "error" in df.columns else "unexpected result shape"
+            return [f"{label}: change tracking unavailable ({reason}); "
+                    "open the DB with a writer once (e.g. run_daily.py) to apply migrations"]
         new_df = df[df["change_type"] == "new"]
         revised_df = df[df["change_type"] == "revised"]
         out = [f"{label}: {len(new_df)} new observation(s) | {len(revised_df)} revised value(s)"]

@@ -104,7 +104,9 @@ con.execute("""
 
 Caveats: history exists only from when vintage ingestion began (an `asof`
 earlier than the first vintage returns empty); rows written before run
-tracking have NULL `run_id`/`change_type`. Full recipes (revision history of
+tracking have NULL `run_id`/`change_type`; the day is the vintage unit — one
+row per key per calendar day, holding the end-of-day value vs the previous
+day's knowledge (intraday steps are not preserved). Full recipes (revision history of
 one observation, everything a specific run changed) are in the repo's
 `docs/EXTRACTION.md`, section "Point-in-time / vintage reads". The JSON
 `datahub_*` tools do not expose vintage reads — they serve current values

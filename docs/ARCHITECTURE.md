@@ -208,7 +208,7 @@ btc = read_crypto("BTCUSDT", "1h", start="2024-01-01")
 | `db.connection.migrate(con) -> int` | idempotent forward-migration ladder; ensures schema applied + version recorded; returns resulting version |
 | `db.connection.get_schema_version(con) -> int \| None` | read `schema_version` from `schema_meta` (None if absent) |
 | `db.upsert.upsert(con, table, df)` | atomic `INSERT OR REPLACE`; returns `(added, updated)` |
-| `db.upsert.record_vintage(con, table, df, vintage_date, *, run_id=None)` | append-on-change to `{table}_vintage` for point-in-time history (macro_series, macro_panel); tags each written row with `run_id` and `change_type` (`'new'` — no prior vintage row for that date — vs `'revised'` — same date, different value, with the old value kept in `prior_value`) |
+| `db.upsert.record_vintage(con, table, df, vintage_date, *, run_id=None)` | append-on-change to `{table}_vintage` for point-in-time history (macro_series, macro_panel); tags each written row with `run_id` and `change_type` (`'new'` — no prior vintage row for that date — vs `'revised'` — same date, different value, with the old value kept in `prior_value`). The day is the vintage unit: a same-day re-observation replaces that day's row, inheriting the predecessor's `change_type`/`prior_value` so the row always describes the day vs the previous day's knowledge (intraday steps are not preserved) |
 | `db.upsert.log_run(con, …)` | append one row to `download_log` |
 | `db.retention.prune(con, *, download_log_days=90, crypto_days=None, vintage_keep_per_key=None, dry_run=False, db_path=None) -> dict` | retention/pruning; returns `{target: rows_deleted}` (or would-delete when `dry_run`) |
 
