@@ -238,7 +238,11 @@ CREATE TABLE IF NOT EXISTS macro_series_vintage (
     PRIMARY KEY (date, series_id, vintage_date)
 );
 CREATE INDEX IF NOT EXISTS idx_msv ON macro_series_vintage (series_id, date);
-CREATE INDEX IF NOT EXISTS idx_msv_run ON macro_series_vintage (run_id);
+-- No index on run_id (deliberate): on duckdb 1.4.x a secondary index on a
+-- column makes INSERT OR REPLACE keep the OLD value of that column on the
+-- conflict path (fixed in 1.5.x, which no longer supports Python 3.9), so an
+-- idx on run_id silently broke same-day vintage replacements. The report's
+-- WHERE run_id = ? scan is milliseconds on this table size; do not re-add.
 
 CREATE TABLE IF NOT EXISTS macro_panel_vintage (
     date          DATE    NOT NULL,
@@ -253,7 +257,7 @@ CREATE TABLE IF NOT EXISTS macro_panel_vintage (
     PRIMARY KEY (date, country_iso3, indicator_id, vintage_date)
 );
 CREATE INDEX IF NOT EXISTS idx_mpv ON macro_panel_vintage (indicator_id, country_iso3, date);
-CREATE INDEX IF NOT EXISTS idx_mpv_run ON macro_panel_vintage (run_id);
+-- No index on run_id here either -- see the note on macro_series_vintage.
 
 
 -- ============================================================================
