@@ -157,6 +157,21 @@ def test_ingestion_health_reports_jobs_errors_and_is_bounded(tmp_db):
     assert {"yahoo", "sec_edgar"} <= providers
     assert out["sec_coverage"][0]["n_facts"] == 1
 
+    # Codex P2: after a SUCCESSFUL retry of the failed job, the errored run
+    # must remain observable (errors live in the runs ledger, not in the
+    # job's current status), and the join shows the job has recovered.
+    def fetch_ok(symbols, start, end):
+        return {symbols[0]: pd.DataFrame({
+            "date": pd.date_range(start, periods=3, freq="B").date,
+            "close": [1.0, 2.0, 3.0], "adj_close": [1.0, 2.0, 3.0],
+        })}
+    svc.ensure_price_history("QQQ", start="2024-01-01", end="2024-01-31",
+                             db_path=tmp_db, fetch=fetch_ok)
+    out = health.get_ingestion_health(db_path=tmp_db)
+    assert len(out["recent_errors"]) == 1
+    assert "boom" in out["recent_errors"][0]["error_msg"]
+    assert out["recent_errors"][0]["job_status_now"] == "completed"
+
 
 def test_ingestion_health_on_empty_db(tmp_db):
     from market_data_hub.services import health

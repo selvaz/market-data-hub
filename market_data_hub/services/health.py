@@ -42,10 +42,18 @@ def get_ingestion_health(db_path: Optional[str] = None) -> Dict[str, Any]:
             FROM ingestion_runs GROUP BY provider, status
             ORDER BY provider, status
         """)
+        # Errors come from the RUNS ledger, not from the jobs' current status:
+        # a job retried successfully flips back to 'completed', but the failed
+        # attempt stays in ingestion_runs forever — recovered failures must
+        # remain observable. The job join shows whether it has since recovered.
         recent_errors = _rows(con, f"""
-            SELECT job_id, kind, error_msg, updated_at
-            FROM ingestion_jobs WHERE status = 'error'
-            ORDER BY updated_at DESC LIMIT {_MAX_ERRORS}
+            SELECT r.run_id, r.kind, r.error_msg, r.finished_at,
+                   j.job_id, j.status AS job_status_now
+            FROM ingestion_runs r
+            LEFT JOIN ingestion_jobs j
+                   ON j.kind = r.kind AND j.request_json = r.input_json
+            WHERE r.status = 'error'
+            ORDER BY r.finished_at DESC LIMIT {_MAX_ERRORS}
         """)
         stalled = _rows(con, f"""
             SELECT symbol, source, last_date, lag_days, coverage_score
