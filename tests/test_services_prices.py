@@ -8,7 +8,6 @@ price rows nor spawns a second ingestion run for the same request hash.
 from __future__ import annotations
 
 import json
-from datetime import date
 
 import pandas as pd
 import pytest
