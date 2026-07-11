@@ -216,6 +216,16 @@ CREATE INDEX IF NOT EXISTS idx_custom_series ON custom_series (series_id);
 -- whether it was a brand-new (date, key) observation or a revision of a value
 -- already on record for that same date. NULL on rows written before this
 -- tracking existed. change_type is 'new' | 'revised'.
+--
+-- Day granularity (deliberate): vintage_date is a DATE inside the PRIMARY
+-- KEY, so each calendar day holds at most ONE row per key -- the day is the
+-- vintage unit. A same-day re-observation with a different value REPLACES
+-- that day's row, but record_vintage() merges the metadata: the surviving
+-- row inherits the predecessor's change_type and prior_value, so it always
+-- describes the day as a whole vs the previous day's knowledge. Intermediate
+-- intraday values are not preserved (run_id reflects the last writer of the
+-- day); as-of reads see end-of-day values, which is the intended backtest
+-- semantics.
 CREATE TABLE IF NOT EXISTS macro_series_vintage (
     date         DATE    NOT NULL,
     series_id    VARCHAR NOT NULL,

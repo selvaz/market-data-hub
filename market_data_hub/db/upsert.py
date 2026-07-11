@@ -145,15 +145,30 @@ def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
 
     ``vintage_date`` is the date our ingest observed these values. Backtests can
     then query the value as-known on a past date (greatest vintage_date <= as-of),
-    avoiding revision look-ahead. Returns the number of vintage rows written.
-    Tables without a vintage history are silently ignored.
+    avoiding revision look-ahead. Returns the number of vintage rows written
+    (including same-day replacements). Tables without a vintage history are
+    silently ignored.
 
-    Each written row also records ``run_id`` (which run observed it -- needed
-    because ``vintage_date`` has day granularity, so it alone can't tell apart
-    two runs on the same calendar day), ``change_type`` ('new' when the (date,
-    key) combination had no prior vintage row at all, 'revised' when it did but
-    with a different value) and ``prior_value`` (the value it replaced, for
-    'revised' rows).
+    Each written row also records ``run_id`` (which run observed it),
+    ``change_type`` ('new' when the (date, key) combination had no prior
+    vintage row at all, 'revised' when it did but with a different value) and
+    ``prior_value`` (the value it replaced, for 'revised' rows).
+
+    **Day-granularity semantics.** ``vintage_date`` is a DATE and part of the
+    primary key, so one calendar day holds at most ONE vintage row per key:
+    the day is the vintage unit, and a same-day re-observation with a
+    different value REPLACES that day's row (INSERT OR REPLACE) rather than
+    appending. The replacement *merges* rather than overwrites: it inherits
+    the same-day predecessor's ``change_type`` and ``prior_value`` so the
+    surviving row always describes the day as a whole relative to the
+    previous day's knowledge -- "this date is new today, final value X" or
+    "today this date went from <yesterday's value> to X" -- never the
+    intermediate intraday step. What is intentionally NOT preserved:
+    intermediate same-day values (below the day granularity by design;
+    ``run_id`` reflects the last run that touched the row), and a day whose
+    value ends back where it started leaves a row with value == prior_value.
+    As-of reads are unaffected: greatest vintage_date <= asof always sees the
+    end-of-day value.
     """
     if df is None or df.empty or table not in _VINTAGE:
         return 0
@@ -169,10 +184,7 @@ def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
     join_sl = " AND ".join(f"s.{k} = l.{k}" for k in keys)
     join_vm = " AND ".join(f"v.{k} = m.{k}" for k in keys)
     sel_keys = ", ".join(f"s.{k}" for k in keys)
-    n0_row = con.execute(f"SELECT count(*) FROM {vt}").fetchone()
-    assert n0_row is not None   # COUNT(*) always returns exactly one row
-    n0 = n0_row[0]
-    con.execute(
+    inserted = con.execute(
         f"INSERT OR REPLACE INTO {vt} "
         f"({key_list}, value, vintage_date, source, run_id, change_type, prior_value) "
         f"WITH latest AS ("
@@ -181,16 +193,19 @@ def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
         f"  ) m ON {join_vm} AND v.vintage_date = m.md"
         f") "
         f"SELECT {sel_keys}, s.value, ?::DATE, s.source, ?, "
-        f"       CASE WHEN l.{keys[0]} IS NULL THEN 'new' ELSE 'revised' END, "
-        f"       l.value "
+        f"       CASE WHEN l.{keys[0]} IS NULL THEN 'new' "
+        f"            WHEN l.vintage_date = ?::DATE THEN l.change_type "
+        f"            ELSE 'revised' END, "
+        f"       CASE WHEN l.{keys[0]} IS NULL THEN NULL "
+        f"            WHEN l.vintage_date = ?::DATE THEN l.prior_value "
+        f"            ELSE l.value END "
         f"FROM _vtsrc s LEFT JOIN latest l ON {join_sl} "
         f"WHERE l.{keys[0]} IS NULL OR l.value IS DISTINCT FROM s.value",
-        [str(vintage_date), run_id],
-    )
+        [str(vintage_date), run_id, str(vintage_date), str(vintage_date)],
+    ).fetchone()
     con.unregister("_vtsrc")
-    n1_row = con.execute(f"SELECT count(*) FROM {vt}").fetchone()
-    assert n1_row is not None   # COUNT(*) always returns exactly one row
-    return int(n1_row[0]) - int(n0)
+    assert inserted is not None   # INSERT always reports a row count
+    return int(inserted[0])
 
 
 def log_run(con: duckdb.DuckDBPyConnection, *, run_id: str, started_at: datetime,

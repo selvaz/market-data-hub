@@ -362,8 +362,20 @@ pit = reader.read_macro_panel(["public_debt_gdp", "fiscal_balance_gdp"],
                               countries=["ITA"], asof="2023-06-30")
 ```
 
-Caveat: history exists only from when vintage ingestion began — `asof` earlier
-than the first recorded `vintage_date` returns empty, not the current value.
+Caveats:
+
+- History exists only from when vintage ingestion began — `asof` earlier than
+  the first recorded `vintage_date` returns empty, not the current value.
+- **The day is the vintage unit.** `vintage_date` is a DATE inside the primary
+  key, so each calendar day keeps at most one row per observation: if two
+  same-day runs see different values, the later one replaces the day's row,
+  *merging* the metadata — `change_type` and `prior_value` are inherited from
+  the same-day predecessor, so the surviving row always reads "vs yesterday's
+  knowledge" ("new today, final value X" or "went from <yesterday's value> to
+  X"), never the intraday step. Intermediate same-day values are not
+  preserved, and `run_id` reflects the last run of the day that touched the
+  row. `asof` reads therefore return end-of-day values — the correct
+  backtest semantics at daily granularity.
 
 **3. Full revision history of one observation — raw SQL on the vintage table:**
 

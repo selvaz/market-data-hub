@@ -44,6 +44,43 @@ def test_macro_series_vintage_records_revisions(tmp_db):
     assert R.read_macro("GDP", asof="2024-07-01")["GDP"].iloc[0] == 105.0
 
 
+def test_same_day_revision_merges_day_level_metadata(tmp_db):
+    """vintage_date is the vintage unit: a same-day re-observation REPLACES
+    that day's row but must inherit the predecessor's change_type and
+    prior_value, so the surviving row describes the whole day relative to the
+    previous day's knowledge (not the intraday step)."""
+    con = get_conn()
+
+    def _vint(value, day, run):
+        upsert(con, "macro_series", _ms_row(value))
+        return record_vintage(con, "macro_series", _ms_row(value), day, run_id=run)
+
+    def _day_row(day):
+        return con.execute(
+            "SELECT value, change_type, prior_value, run_id FROM macro_series_vintage "
+            "WHERE series_id='GDP' AND vintage_date = ?", [day]).fetchall()
+
+    # Day 1: first-ever observation, then revised twice the same day.
+    assert _vint(100.0, "2024-04-30", "run_a") == 1
+    assert _vint(105.0, "2024-04-30", "run_b") == 1   # same-day replace still counts
+    assert _vint(103.0, "2024-04-30", "run_c") == 1
+    assert _day_row("2024-04-30") == [(103.0, "new", None, "run_c")]
+    # date is still NEW today (not 'revised'), end-of-day value survives
+
+    # Day 2: known date revised twice -> prior_value keeps day-1 knowledge.
+    assert _vint(110.0, "2024-06-30", "run_d") == 1
+    assert _vint(112.0, "2024-06-30", "run_e") == 1
+    assert _day_row("2024-06-30") == [(112.0, "revised", 103.0, "run_e")]
+    # not (112, 'revised', prior=110): 110 was an intraday step, not knowledge
+
+    con.commit()
+    con.close()
+
+    # as-of reads see end-of-day values only
+    assert R.read_macro("GDP", asof="2024-05-15")["GDP"].iloc[0] == 103.0
+    assert R.read_macro("GDP", asof="2024-07-15")["GDP"].iloc[0] == 112.0
+
+
 def _mp_row(value):
     return pd.DataFrame([{
         "date": dt.date(2023, 12, 31), "country_iso3": "USA",
