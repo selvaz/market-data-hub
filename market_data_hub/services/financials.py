@@ -308,6 +308,7 @@ def _refresh_coverage(con, cik: str, issuer_id: str, name: Optional[str],
 
 # -------------------------------------------------------------------- readers
 _MAX_FACT_ROWS = 100        # plan §5.3: facts/statement <= 100 rows
+_MAX_PERIODS = 12           # plan §5.3: statement <= 12 periods
 
 
 def get_financials_coverage(query: Optional[str] = None,
@@ -331,6 +332,75 @@ def get_financials_coverage(query: Optional[str] = None,
     finally:
         con.close()
     return json.loads(df.to_json(orient="records", date_format="iso"))
+
+
+def get_statement(query: str, statement: Optional[str] = None,
+                  periods: int = 8, mapping_version: int = 1,
+                  db_path: Optional[str] = None) -> Dict[str, Any]:
+    """Standardized ANNUAL statement lines for one issuer, derived on read
+    from the append-only facts through the versioned mapping (plan Fase 4).
+
+    Semantics per line: concepts are tried in mapping order and a later
+    concept only fills periods the earlier ones lack; for each period
+    (end_date) the row with the LATEST filed_date wins (restatements
+    supersede on read, history stays intact in sec_company_facts). Duration
+    lines (income/cash flow) require a ~annual window so quarterly and
+    comparative stubs are excluded; balance lines are instants.
+
+    Output is bounded (max 12 periods) and carries provenance per value:
+    concept, accession, filed date — plus the mapping version used.
+    """
+    iss = resolve_issuer(query, db_path=db_path)
+    if iss is None:
+        return {"error": f"issuer {query!r} not in the hub; run "
+                         f"ensure_filings_and_facts first", "lines": {}}
+    mapping = get_xbrl_mapping(mapping_version)
+    lines_cfg = mapping.get("statement_lines") or {}
+    if statement:
+        lines_cfg = {k: v for k, v in lines_cfg.items()
+                     if v.get("statement") == statement}
+        if not lines_cfg:
+            return {"error": f"no mapped lines for statement {statement!r}",
+                    "lines": {}}
+    periods = max(1, min(int(periods), _MAX_PERIODS))
+
+    con = get_conn(db_path, read_only=True)
+    try:
+        lines: Dict[str, Dict[str, Any]] = {}
+        all_ends: set = set()
+        for line_key, cfg in lines_cfg.items():
+            per_period: Dict[str, Dict[str, Any]] = {}
+            for concept in cfg["concepts"]:
+                rows = con.execute("""
+                    SELECT end_date, value, concept, accession, filed_date,
+                           start_date
+                    FROM sec_company_facts
+                    WHERE cik = ? AND concept = ? AND unit = 'USD'
+                      AND form IN ('10-K', '20-F')
+                      AND (start_date IS NULL
+                           OR datediff('day', start_date, end_date) BETWEEN 330 AND 400)
+                    QUALIFY row_number() OVER (
+                        PARTITION BY end_date ORDER BY filed_date DESC) = 1
+                    ORDER BY end_date DESC
+                """, [iss["cik"], concept]).fetchall()
+                for end, value, cpt, accn, filed, _start in rows:
+                    key = end.isoformat()
+                    if key not in per_period:   # earlier concept wins
+                        per_period[key] = {
+                            "value": value, "concept": cpt,
+                            "accession": accn,
+                            "filed_date": filed.isoformat() if filed else None}
+            keep = sorted(per_period, reverse=True)[:periods]
+            lines[line_key] = {k: per_period[k] for k in keep}
+            all_ends.update(keep)
+    finally:
+        con.close()
+    return {"issuer": iss,
+            "mapping": {"version": mapping.get("version"),
+                        "taxonomy": mapping.get("taxonomy")},
+            "frequency": "annual",
+            "periods": sorted(all_ends, reverse=True)[:periods],
+            "lines": lines}
 
 
 def get_facts(query: str, line: Optional[str] = None,

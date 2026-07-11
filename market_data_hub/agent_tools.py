@@ -214,6 +214,22 @@ def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
         query, line=line or None, forms=_split(forms) or None, limit=limit))
 
 
+def tool_get_statement(query: str, statement: str = "", periods: int = 8) -> str:
+    """Standardized ANNUAL statement lines for ONE issuer (revenue,
+    net_income, assets, liabilities, equity, operating_cash_flow), ready for
+    period-over-period comparison — margins, leverage, cash conversion —
+    WITHOUT raw XBRL/HTML. Derived from the hub's facts via the versioned
+    mapping; each value carries concept, accession and filed date, and
+    restatements supersede on read (history preserved). Read-only, no
+    network, max 12 periods.
+
+    query:     CIK, ticker or issuer_id (ingested via tool_ensure_financials).
+    statement: optional filter — income | balance | cash_flow."""
+    from market_data_hub.services import financials as _fin
+    return _json(_fin.get_statement(query, statement=statement or None,
+                                    periods=periods))
+
+
 def tool_get_job_status(job_id: str) -> str:
     """Status of an ingestion job created by tool_ensure_price_history:
     queued | running | completed | error, plus the linked run record
@@ -233,7 +249,7 @@ TOOL_FUNCTIONS = [
     tool_list_indicators, tool_list_countries, tool_describe, tool_search,
     tool_get_series, tool_get_returns, tool_get_coverage,
     tool_resolve_instrument, tool_get_price_summary, tool_get_job_status,
-    tool_get_financials_coverage, tool_get_financial_facts,
+    tool_get_financials_coverage, tool_get_financial_facts, tool_get_statement,
 ]
 
 

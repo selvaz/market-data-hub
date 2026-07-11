@@ -174,6 +174,73 @@ def test_reader_on_unknown_issuer_points_to_ensure(tmp_db):
     assert fin.get_financials_coverage("MSFT", db_path=tmp_db) == []
 
 
+# ------------------------------------------------------------- get_statement
+def _multi_year_facts():
+    """3 fiscal years of revenue: FY2022 under the legacy 'Revenues' concept,
+    FY2023-24 under the modern one; FY2023 restated in the FY2024 10-K; plus
+    a quarterly stub and an instant Assets fact."""
+    modern = "RevenueFromContractWithCustomerExcludingAssessedTax"
+    return {"cik": 320193, "facts": {"us-gaap": {
+        modern: {"units": {"USD": [
+            # FY2023 as originally filed...
+            {"start": "2022-10-02", "end": "2023-09-30", "val": 100.0,
+             "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2023-11-03",
+             "accn": "acc-2023"},
+            # ...and restated in the FY2024 10-K (comparative)
+            {"start": "2022-10-02", "end": "2023-09-30", "val": 101.0,
+             "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2024-11-01",
+             "accn": "acc-2024"},
+            {"start": "2023-10-01", "end": "2024-09-28", "val": 120.0,
+             "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2024-11-01",
+             "accn": "acc-2024"},
+            # quarterly stub in a 10-K context: must be excluded (<330 days)
+            {"start": "2024-06-30", "end": "2024-09-28", "val": 30.0,
+             "fy": 2024, "fp": "FY", "form": "10-K", "filed": "2024-11-01",
+             "accn": "acc-2024"},
+        ]}},
+        "Revenues": {"units": {"USD": [
+            # legacy concept covers FY2022 only; must FILL that period but
+            # not override the modern concept's FY2023/24
+            {"start": "2021-09-26", "end": "2022-09-24", "val": 90.0,
+             "fy": 2022, "fp": "FY", "form": "10-K", "filed": "2022-10-28",
+             "accn": "acc-2022"},
+            {"start": "2022-10-02", "end": "2023-09-30", "val": 999.0,
+             "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2023-11-03",
+             "accn": "acc-2023"},
+        ]}},
+        "Assets": {"units": {"USD": [
+            {"end": "2024-09-28", "val": 500.0, "fy": 2024, "fp": "FY",
+             "form": "10-K", "filed": "2024-11-01", "accn": "acc-2024"},
+        ]}},
+    }}}
+
+
+def test_get_statement_periods_restatement_and_concept_fallback(tmp_db):
+    _ensure(tmp_db, fetch_facts=lambda cik: _multi_year_facts())
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    rev = out["lines"]["revenue"]
+
+    assert list(rev) == ["2024-09-28", "2023-09-30", "2022-09-24"]
+    # restatement wins on read (latest filed_date), original stays in facts
+    assert rev["2023-09-30"]["value"] == 101.0
+    assert rev["2023-09-30"]["accession"] == "acc-2024"
+    # concept priority: modern concept's 101.0 beats legacy 999.0
+    # legacy concept fills the period the modern one lacks
+    assert rev["2022-09-24"]["value"] == 90.0
+    assert rev["2022-09-24"]["concept"] == "Revenues"
+    # quarterly stub excluded
+    assert 30.0 not in [v["value"] for v in rev.values()]
+    # instant (balance) line present with no duration filter applied
+    assert out["lines"]["assets"]["2024-09-28"]["value"] == 500.0
+    assert out["mapping"]["version"] == 1
+
+    # statement filter + period cap
+    out = fin.get_statement("AAPL", statement="balance", periods=1,
+                            db_path=tmp_db)
+    assert set(out["lines"]) == {"assets", "liabilities", "equity"}
+    assert len(out["lines"]["assets"]) == 1
+
+
 # ----------------------------------------------------------------- tool layer
 def test_tool_layer_gating(tmp_db):
     from market_data_hub import agent_tools as at
