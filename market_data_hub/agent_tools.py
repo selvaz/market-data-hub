@@ -230,6 +230,15 @@ def tool_get_statement(query: str, statement: str = "", periods: int = 8) -> str
                                     periods=periods))
 
 
+def tool_get_ingestion_health() -> str:
+    """Health snapshot of the hub's ingestion: jobs by kind/status, runs per
+    provider, recent errors (max 20), stalled price series (max 20 + total),
+    SEC coverage freshness. Read-only, no network — use it to decide whether
+    an ensure_* capability or a retry is needed."""
+    from market_data_hub.services import health as _health
+    return _json(_health.get_ingestion_health())
+
+
 def tool_get_job_status(job_id: str) -> str:
     """Status of an ingestion job created by tool_ensure_price_history:
     queued | running | completed | error, plus the linked run record
@@ -250,6 +259,7 @@ TOOL_FUNCTIONS = [
     tool_get_series, tool_get_returns, tool_get_coverage,
     tool_resolve_instrument, tool_get_price_summary, tool_get_job_status,
     tool_get_financials_coverage, tool_get_financial_facts, tool_get_statement,
+    tool_get_ingestion_health,
 ]
 
 
@@ -262,10 +272,13 @@ TOOL_FUNCTIONS = [
 _REFRESH_LOCK = threading.Lock()
 
 
-def tool_refresh_prices(symbols: str, start: str = "2010-01-01") -> str:
+def tool_refresh_prices(symbols: str, start: str = "2010-01-01",
+                        allow_write: bool = False) -> str:
     """Download price series from Yahoo and WRITE them into the hub DB, then
-    rebuild coverage. Use this when the hub has no (or insufficient) data for a
-    symbol: afterwards tool_get_series / tool_get_returns will see it.
+    rebuild coverage. WRITE capability gated by allow_write=True (plan v3.1
+    §5.2 — every write is explicit). Use this when the hub has no (or
+    insufficient) data for a symbol: afterwards tool_get_series /
+    tool_get_returns will see it.
 
     symbols: comma-separated (e.g. "SPY,QQQ,NVDA").
     start:   history start date "YYYY-MM-DD".
@@ -276,6 +289,8 @@ def tool_refresh_prices(symbols: str, start: str = "2010-01-01") -> str:
     the scheduled runner takes) covers the DuckDB write. If another writer
     holds the DB, a JSON error is returned instead of racing it.
     Yahoo needs no API key."""
+    if not allow_write:
+        return _json({"error": "write capability requires allow_write=true"})
     import uuid
 
     from market_data_hub import runner
