@@ -376,7 +376,7 @@ def get_statement(query: str, statement: Optional[str] = None,
                            start_date
                     FROM sec_company_facts
                     WHERE cik = ? AND concept = ? AND unit = 'USD'
-                      AND form IN ('10-K', '20-F')
+                      AND form IN ('10-K', '20-F', '10-K/A', '20-F/A')
                       AND (start_date IS NULL
                            OR datediff('day', start_date, end_date) BETWEEN 330 AND 400)
                     QUALIFY row_number() OVER (

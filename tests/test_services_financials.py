@@ -241,6 +241,30 @@ def test_get_statement_periods_restatement_and_concept_fallback(tmp_db):
     assert len(out["lines"]["assets"]) == 1
 
 
+def _amended_10ka_facts():
+    """FY2023 revenue originally filed under 10-K, then restated via a
+    10-K/A amendment (later filed_date) -- the amendment must win on read."""
+    modern = "RevenueFromContractWithCustomerExcludingAssessedTax"
+    return {"cik": 320193, "facts": {"us-gaap": {modern: {"units": {"USD": [
+        {"start": "2022-10-02", "end": "2023-09-30", "val": 100.0,
+         "fy": 2023, "fp": "FY", "form": "10-K", "filed": "2023-11-03",
+         "accn": "acc-2023"},
+        {"start": "2022-10-02", "end": "2023-09-30", "val": 105.0,
+         "fy": 2023, "fp": "FY", "form": "10-K/A", "filed": "2024-01-15",
+         "accn": "acc-2023-amend"},
+    ]}}}}}
+
+
+def test_get_statement_includes_amended_annual_forms(tmp_db):
+    """Codex P2: statement reads must include 10-K/A (and 20-F/A) so a
+    restatement filed as an amendment supersedes the original on read."""
+    _ensure(tmp_db, fetch_facts=lambda cik: _amended_10ka_facts())
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    rev = out["lines"]["revenue"]["2023-09-30"]
+    assert rev["value"] == 105.0
+    assert rev["accession"] == "acc-2023-amend"
+
+
 # ----------------------------------------------------------------- tool layer
 def test_tool_layer_gating(tmp_db):
     from market_data_hub import agent_tools as at
