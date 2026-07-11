@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 
 def _default_db() -> str:
@@ -182,6 +182,13 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # bug -- see the pre-apply_schema step above, which already ran the
         # idempotent DROPs). This step advances the recorded version.
         current = 4
+    if current < 5:
+        # v4 -> v5: identity + ingestion ledger (plan v3.1): issuers,
+        # instruments, listings, identifier_aliases, ingestion_runs,
+        # ingestion_jobs. Purely additive — apply_schema() above already
+        # created them via CREATE TABLE IF NOT EXISTS; prices_daily is
+        # deliberately untouched (listings.symbol joins prices_daily.symbol).
+        current = 5
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

@@ -158,6 +158,50 @@ def tool_get_coverage(symbols: str = "") -> str:
     return _json(_df_records(df))
 
 
+# Cap on resolve candidates returned to the LLM (plan v3.1 §5.3: discovery 50).
+_MAX_CANDIDATES = 50
+
+
+def tool_resolve_instrument(query: str, exchange: str = "",
+                            currency: str = "") -> str:
+    """Resolve human input (ticker, alias, or a 'lst_*' listing_id) to listing
+    candidates with listing_id/instrument_id. Ambiguous input returns ALL
+    candidates so the caller can choose — this tool never guesses and never
+    writes. registered=false means the symbol is known to the config universe
+    but has no identity rows yet (ensure_price_history registers it)."""
+    from market_data_hub.services import prices as _prices
+    cands = _prices.resolve_instrument(
+        query, exchange=exchange or None, currency=currency or None)
+    return _json({"n": len(cands), "ambiguous": len(cands) > 1,
+                  "candidates": cands[:_MAX_CANDIDATES]})
+
+
+def tool_get_price_summary(query: str, start: str = "", end: str = "") -> str:
+    """Bounded price metrics for ONE listing (date range, obs, freshness, last
+    adjusted close, total return, annualized vol, max drawdown). Reads only
+    from the hub DB — no network, no raw OHLCV bars. If the hub has no data,
+    the reply says to use tool_ensure_price_history first."""
+    from market_data_hub.services import prices as _prices
+    try:
+        return _json(_prices.get_price_summary(
+            query, start=start or None, end=end or None))
+    except _prices.AmbiguousInstrumentError as ex:
+        return _json({"error": str(ex), "candidates": ex.candidates})
+    except _prices.UnknownInstrumentError as ex:
+        return _json({"error": str(ex)})
+
+
+def tool_get_job_status(job_id: str) -> str:
+    """Status of an ingestion job created by tool_ensure_price_history:
+    queued | running | completed | error, plus the linked run record
+    (provider, rows written, timestamps)."""
+    from market_data_hub.services import prices as _prices
+    job = _prices.get_job_status(job_id)
+    if job is None:
+        return _json({"error": f"unknown job_id {job_id!r}"})
+    return _json(job)
+
+
 # All read-only tool functions exposed to an agent, in the order an agent
 # should prefer. The hub's agent surface is read-only by default (the data is
 # kept fresh by a separate downloader, run_daily.py).
@@ -165,6 +209,7 @@ TOOL_FUNCTIONS = [
     tool_list_datasets, tool_list_symbols, tool_list_sectors, tool_list_macro,
     tool_list_indicators, tool_list_countries, tool_describe, tool_search,
     tool_get_series, tool_get_returns, tool_get_coverage,
+    tool_resolve_instrument, tool_get_price_summary, tool_get_job_status,
 ]
 
 
@@ -229,4 +274,32 @@ def tool_refresh_prices(symbols: str, start: str = "2010-01-01") -> str:
                   "coverage_series": int(n), "run_id": run_id})
 
 
-WRITE_TOOL_FUNCTIONS = [tool_refresh_prices]
+def tool_ensure_price_history(query: str, start: str = "", end: str = "",
+                              allow_write: bool = False) -> str:
+    """Ensure the hub holds price history for ONE listing, ingesting it from
+    the primary provider if needed. WRITE capability (plan v3.1 §5.2): it is
+    gated by allow_write=True, runs as an idempotent persistent job under the
+    DB writer lock, and records an auditable ingestion run. Repeating the same
+    request reuses the completed job instead of re-downloading.
+
+    query: ticker, alias or 'lst_*' listing_id. Ambiguity returns candidates.
+    Returns JSON: job_id, run_id, status, listing_id, rows added/updated."""
+    if not allow_write:
+        return _json({"error": "write capability requires allow_write=true"})
+    from market_data_hub.lock import DBLockTimeout
+    from market_data_hub.services import prices as _prices
+    try:
+        with _REFRESH_LOCK:
+            res = _prices.ensure_price_history(
+                query, start=start or None, end=end or None, requester="llm")
+        return _json(res)
+    except _prices.AmbiguousInstrumentError as ex:
+        return _json({"error": str(ex), "candidates": ex.candidates})
+    except _prices.UnknownInstrumentError as ex:
+        return _json({"error": str(ex)})
+    except DBLockTimeout as ex:
+        return _json({"error": f"another writer holds the DB lock; "
+                               f"retry later ({ex})"})
+
+
+WRITE_TOOL_FUNCTIONS = [tool_refresh_prices, tool_ensure_price_history]
