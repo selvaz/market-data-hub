@@ -176,6 +176,8 @@ def ensure_filings_and_facts(query: str, *, requester: str = "python",
     request_hash = hashlib.sha256(
         json.dumps(req, sort_keys=True).encode()).hexdigest()
 
+    # ---- phase 1 (short lock): issuer identity + job/run as 'running'
+    # (audit CA-06: the EDGAR fetches never run while holding the writer lock)
     with db_write_lock(db_path):
         con = get_conn(db_path)
         try:
@@ -211,39 +213,70 @@ def ensure_filings_and_facts(query: str, *, requester: str = "python",
                 VALUES (?, 'sec_facts', ?, 'sec_edgar',
                         'sole provider for SEC filings/facts', 'running', 1, ?)
             """, [run_id, json.dumps(req), now])
+        finally:
+            con.close()
 
+    # ---- phase 2 (NO lock): EDGAR fetches + normalization
+    try:
+        filings = sec.submissions_to_filings(
+            fetch_submissions(cik), forms=_FILING_FORMS)
+        if not filings.empty:
+            filings = filings.drop(columns=[c for c in filings.columns
+                                            if c not in (
+                "cik", "accession", "form", "filed_date", "report_date",
+                "primary_doc", "primary_doc_url")])
+            filings["issuer_id"] = issuer_id
+
+        facts = sec.company_facts_to_df(fetch_facts(cik))
+        if not facts.empty:
+            facts = facts.copy()
+            facts["fact_id"] = [_fact_id(r) for r in facts.to_dict("records")]
+            facts = facts.drop_duplicates(subset=["fact_id"])
+            facts["run_id"] = run_id
+            facts["created_at"] = now
+    except Exception as exc:
+        _mark_sec_job_error(db_path, job_id, run_id, exc)
+        raise
+
+    # ---- phase 3 (short lock): all writes in ONE transaction
+    with db_write_lock(db_path):
+        con = get_conn(db_path)
+        try:
+            con.execute("BEGIN TRANSACTION")
             try:
-                filings = sec.submissions_to_filings(
-                    fetch_submissions(cik), forms=_FILING_FORMS)
                 n_filings = 0
                 if not filings.empty:
-                    filings = filings.drop(columns=[c for c in filings.columns
-                                                    if c not in (
-                        "cik", "accession", "form", "filed_date", "report_date",
-                        "primary_doc", "primary_doc_url")])
-                    filings["issuer_id"] = issuer_id
-                    filings["run_id"] = run_id
-                    filings["updated_at"] = now
                     con.register("_sf", filings)
+                    # CA-08: run provenance survives re-ingestion — update
+                    # existing rows (first_seen untouched, last_seen advances),
+                    # insert only genuinely new accessions.
                     con.execute("""
-                        INSERT OR REPLACE INTO sec_filings
-                        SELECT cik, accession, form, filed_date, report_date,
-                               primary_doc, primary_doc_url, issuer_id, run_id,
-                               updated_at
-                        FROM _sf
-                    """)
+                        UPDATE sec_filings SET
+                            form = s.form, filed_date = s.filed_date,
+                            report_date = s.report_date,
+                            primary_doc = s.primary_doc,
+                            primary_doc_url = s.primary_doc_url,
+                            issuer_id = s.issuer_id,
+                            last_seen_run_id = ?, updated_at = ?
+                        FROM _sf s
+                        WHERE sec_filings.cik = s.cik
+                          AND sec_filings.accession = s.accession
+                    """, [run_id, now])
+                    con.execute("""
+                        INSERT INTO sec_filings
+                        SELECT s.cik, s.accession, s.form, s.filed_date,
+                               s.report_date, s.primary_doc, s.primary_doc_url,
+                               s.issuer_id, ?, ?, ?
+                        FROM _sf s
+                        WHERE NOT EXISTS (SELECT 1 FROM sec_filings f
+                                          WHERE f.cik = s.cik
+                                            AND f.accession = s.accession)
+                    """, [run_id, run_id, now])
                     con.unregister("_sf")
                     n_filings = int(len(filings))
 
-                facts = sec.company_facts_to_df(fetch_facts(cik))
                 new_facts = 0
                 if not facts.empty:
-                    facts = facts.copy()
-                    facts["fact_id"] = [
-                        _fact_id(r) for r in facts.to_dict("records")]
-                    facts = facts.drop_duplicates(subset=["fact_id"])
-                    facts["run_id"] = run_id
-                    facts["created_at"] = now
                     con.register("_scf", facts)
                     # append-only: anti-join on fact_id, never UPDATE/REPLACE
                     new_facts = con.execute("""
@@ -272,21 +305,43 @@ def ensure_filings_and_facts(query: str, *, requester: str = "python",
                 con.execute("UPDATE ingestion_jobs SET status = 'completed', "
                             "run_id = ?, error_msg = NULL, updated_at = ? "
                             "WHERE job_id = ?", [run_id, fin, job_id])
-                return {"job_id": job_id, "run_id": run_id,
-                        "status": "completed", "issuer_id": issuer_id,
-                        "cik": cik, "reused": False,
-                        "filings": n_filings, "new_facts": int(new_facts)}
-            except Exception as exc:
-                fin = _now()
-                con.execute("UPDATE ingestion_runs SET status = 'error', "
-                            "error_msg = ?, finished_at = ? WHERE run_id = ?",
-                            [str(exc), fin, run_id])
-                con.execute("UPDATE ingestion_jobs SET status = 'error', "
-                            "error_msg = ?, run_id = ?, updated_at = ? "
-                            "WHERE job_id = ?", [str(exc), run_id, fin, job_id])
+                con.execute("COMMIT")
+            except Exception:
+                con.execute("ROLLBACK")
                 raise
+            return {"job_id": job_id, "run_id": run_id,
+                    "status": "completed", "issuer_id": issuer_id,
+                    "cik": cik, "reused": False,
+                    "filings": n_filings, "new_facts": int(new_facts)}
+        except Exception as exc:
+            _mark_sec_job_error(db_path, job_id, run_id, exc, con=con)
+            raise
         finally:
             con.close()
+
+
+def _mark_sec_job_error(db_path: Optional[str], job_id: str, run_id: str,
+                        exc: Exception, con=None) -> None:
+    """Record the failure on job + run (autocommit, outside any transaction)."""
+    fin = _now()
+
+    def _write(c) -> None:
+        c.execute("UPDATE ingestion_runs SET status = 'error', "
+                  "error_msg = ?, finished_at = ? WHERE run_id = ?",
+                  [str(exc), fin, run_id])
+        c.execute("UPDATE ingestion_jobs SET status = 'error', "
+                  "error_msg = ?, run_id = ?, updated_at = ? "
+                  "WHERE job_id = ?", [str(exc), run_id, fin, job_id])
+
+    if con is not None:
+        _write(con)
+        return
+    with db_write_lock(db_path):
+        own = get_conn(db_path)
+        try:
+            _write(own)
+        finally:
+            own.close()
 
 
 def _refresh_coverage(con, cik: str, issuer_id: str, name: Optional[str],

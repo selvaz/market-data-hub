@@ -358,6 +358,70 @@ def test_register_listing_enables_arbitrary_single_name(tmp_db):
                                  db_path=tmp_db)["n_obs"] == 5
 
 
+def test_fetch_runs_without_holding_the_writer_lock(tmp_db, monkeypatch):
+    """Audit CA-06: a slow provider must not block other writers — the fetch
+    phase runs with NO writer lock held."""
+    from market_data_hub.services import prices as _svc
+
+    lock_state = {"held": False, "held_during_fetch": None}
+    real_lock = _svc.db_write_lock
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def tracking_lock(*a, **k):
+        lock_state["held"] = True
+        try:
+            with real_lock(*a, **k):
+                yield
+        finally:
+            lock_state["held"] = False
+
+    monkeypatch.setattr(_svc, "db_write_lock", tracking_lock)
+
+    def fetch(symbols, start, end):
+        lock_state["held_during_fetch"] = lock_state["held"]
+        return _fake_fetch(symbols, start, end)
+
+    res = _svc.ensure_price_history("SPY", start="2024-01-01",
+                                    end="2024-01-31", db_path=tmp_db,
+                                    fetch=fetch)
+    assert res["status"] == "completed"
+    assert lock_state["held_during_fetch"] is False
+
+
+def test_write_failure_rolls_back_payload_and_marks_error(tmp_db, monkeypatch):
+    """Audit CA-06 fault injection: an error AFTER the price upsert (inside
+    the commit transaction) must leave NO materialized payload — payload and
+    ledger commit or roll back together — and the job ends 'error'."""
+    from market_data_hub.db.upsert import upsert as real_upsert
+    from market_data_hub.services import prices as _svc
+
+    def sabotaged(con, table, df, **kw):
+        real_upsert(con, table, df, **kw)
+        raise RuntimeError("boom after upsert")
+
+    monkeypatch.setattr(_svc, "upsert", sabotaged)
+    with pytest.raises(RuntimeError, match="boom after upsert"):
+        _svc.ensure_price_history("SPY", start="2024-01-01", end="2024-01-31",
+                                  db_path=tmp_db, fetch=_fake_fetch)
+
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        n_prices = con.execute(
+            "SELECT COUNT(*) FROM prices_daily WHERE symbol = 'SPY'"
+        ).fetchone()[0]
+        job = con.execute(
+            "SELECT status, error_msg FROM ingestion_jobs").fetchone()
+        run = con.execute(
+            "SELECT status FROM ingestion_runs").fetchone()[0]
+    finally:
+        con.close()
+    assert n_prices == 0                      # rolled back with the ledger
+    assert job[0] == "error" and "boom after upsert" in job[1]
+    assert run == "error"
+
+
 def test_tool_layer_gating_and_shapes(tmp_db):
     from market_data_hub import agent_tools as at
 

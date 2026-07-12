@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 7
+SCHEMA_VERSION = 8
 
 
 def _default_db() -> str:
@@ -206,6 +206,23 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # (the new v_returns view would not bind against the old shape).
         # This step advances the recorded version.
         current = 7
+    if current < 8:
+        # v7 -> v8 (audit CA-08): sec_filings run provenance survives
+        # re-ingestion — first_seen_run_id (immutable) + last_seen_run_id
+        # replace the single run_id that INSERT OR REPLACE overwrote.
+        if _table_exists(con, "sec_filings"):
+            cols = {r[1] for r in con.execute(
+                "PRAGMA table_info('sec_filings')").fetchall()}
+            con.execute("ALTER TABLE sec_filings "
+                        "ADD COLUMN IF NOT EXISTS first_seen_run_id VARCHAR")
+            con.execute("ALTER TABLE sec_filings "
+                        "ADD COLUMN IF NOT EXISTS last_seen_run_id VARCHAR")
+            if "run_id" in cols:
+                con.execute("UPDATE sec_filings SET "
+                            "first_seen_run_id = coalesce(first_seen_run_id, run_id), "
+                            "last_seen_run_id = coalesce(last_seen_run_id, run_id)")
+                con.execute("ALTER TABLE sec_filings DROP COLUMN run_id")
+        current = 8
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

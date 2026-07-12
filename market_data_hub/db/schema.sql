@@ -369,17 +369,22 @@ CREATE TABLE IF NOT EXISTS ingestion_jobs (
 -- re-ingestion is idempotent via anti-join, without UPDATE/REPLACE semantics.
 -- No secondary indexes (duckdb 1.4.x INSERT OR REPLACE + index bug).
 
+-- Filing metadata keeps run provenance across re-ingestions (audit CA-08):
+-- first_seen_run_id never changes after the row is born; last_seen_run_id
+-- records the most recent run that observed the filing. The write path is
+-- UPDATE-existing + INSERT-new, never a blind INSERT OR REPLACE.
 CREATE TABLE IF NOT EXISTS sec_filings (
-    cik             VARCHAR NOT NULL,      -- zero-padded 10 digits
-    accession       VARCHAR NOT NULL,      -- e.g. 0000320193-24-000123
-    form            VARCHAR,               -- 10-K | 10-Q | 8-K | ...
-    filed_date      DATE,
-    report_date     DATE,
-    primary_doc     VARCHAR,
-    primary_doc_url VARCHAR,
-    issuer_id       VARCHAR,               -- FK issuers (soft)
-    run_id          VARCHAR,
-    updated_at      TIMESTAMP,
+    cik               VARCHAR NOT NULL,    -- zero-padded 10 digits
+    accession         VARCHAR NOT NULL,    -- e.g. 0000320193-24-000123
+    form              VARCHAR,             -- 10-K | 10-Q | 8-K | ...
+    filed_date        DATE,
+    report_date       DATE,
+    primary_doc       VARCHAR,
+    primary_doc_url   VARCHAR,
+    issuer_id         VARCHAR,             -- FK issuers (soft)
+    first_seen_run_id VARCHAR,
+    last_seen_run_id  VARCHAR,
+    updated_at        TIMESTAMP,
     PRIMARY KEY (cik, accession)
 );
 

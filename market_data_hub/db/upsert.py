@@ -114,13 +114,17 @@ def _count_existing(con: duckdb.DuckDBPyConnection, table: str,
 
 
 def upsert(con: duckdb.DuckDBPyConnection, table: str,
-           df: pd.DataFrame) -> tuple[int, int]:
+           df: pd.DataFrame, *, outer_txn: bool = False) -> tuple[int, int]:
     """
     Atomic upsert. Returns (rows_added, rows_updated).
     Columns missing in the df are filled with NULL; updated_at is set.
 
     The count + INSERT OR REPLACE run inside an explicit transaction so a
     failure mid-write rolls back cleanly and never leaves a partial batch.
+    With ``outer_txn=True`` the CALLER owns the transaction (BEGIN/COMMIT/
+    ROLLBACK) and this function only executes the statements — DuckDB does
+    not nest transactions (audit CA-06: the ensure_* services wrap payload +
+    ledger in one atomic commit).
     """
     if df is None or df.empty:
         return 0, 0
@@ -151,7 +155,8 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
 
     col_list = ", ".join(cols)
     con.register("_upsert_src", out)
-    con.execute("BEGIN TRANSACTION")
+    if not outer_txn:
+        con.execute("BEGIN TRANSACTION")
     try:
         updated = _count_existing(con, table, out)
         added = len(out) - updated
@@ -159,9 +164,11 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
             f"INSERT OR REPLACE INTO {table} ({col_list}) "
             f"SELECT {col_list} FROM _upsert_src"
         )
-        con.execute("COMMIT")
+        if not outer_txn:
+            con.execute("COMMIT")
     except Exception:
-        con.execute("ROLLBACK")
+        if not outer_txn:
+            con.execute("ROLLBACK")
         raise
     finally:
         con.unregister("_upsert_src")

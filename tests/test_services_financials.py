@@ -174,6 +174,48 @@ def test_reader_on_unknown_issuer_points_to_ensure(tmp_db):
     assert fin.get_financials_coverage("MSFT", db_path=tmp_db) == []
 
 
+def test_filing_run_provenance_survives_reingestion(tmp_db):
+    """Audit CA-08: re-ingesting the same filing must NOT overwrite its run
+    provenance — first_seen_run_id stays, last_seen_run_id advances."""
+    first = _ensure(tmp_db)
+    second = _ensure(tmp_db, force=True)
+    assert second["run_id"] != first["run_id"]
+
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        rows = con.execute("""
+            SELECT accession, first_seen_run_id, last_seen_run_id
+            FROM sec_filings ORDER BY accession
+        """).fetchall()
+    finally:
+        con.close()
+    assert rows, "no filings ingested"
+    for _accn, first_seen, last_seen in rows:
+        assert first_seen == first["run_id"]
+        assert last_seen == second["run_id"]
+
+
+def test_facts_write_failure_rolls_back_filings_too(tmp_db, monkeypatch):
+    """Audit CA-06 fault injection (SEC): filings and facts commit in ONE
+    transaction — a failure between them leaves neither materialized."""
+    def fetch_facts_boom(cik):
+        raise RuntimeError("facts fetch boom")
+
+    with pytest.raises(RuntimeError, match="facts fetch boom"):
+        _ensure(tmp_db, fetch_facts=fetch_facts_boom)
+
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        n_filings = con.execute("SELECT COUNT(*) FROM sec_filings").fetchone()[0]
+        n_facts = con.execute("SELECT COUNT(*) FROM sec_company_facts").fetchone()[0]
+        job = con.execute("SELECT status FROM ingestion_jobs").fetchone()[0]
+    finally:
+        con.close()
+    # the fetch failed in phase 2: NOTHING was written, job is error
+    assert n_filings == 0 and n_facts == 0
+    assert job == "error"
+
+
 # ------------------------------------------------------------- get_statement
 def _multi_year_facts():
     """3 fiscal years of revenue: FY2022 under the legacy 'Revenues' concept,
