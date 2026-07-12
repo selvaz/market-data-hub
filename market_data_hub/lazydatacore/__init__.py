@@ -22,6 +22,11 @@ through ``lazybridge.Store``.
 """
 from __future__ import annotations
 
+from market_data_hub.lazydatacore.artifacts import (
+    WELL_KNOWN_ARTIFACT_SCHEMES,
+    ArtifactRef,
+    ResolvedArtifact,
+)
 from market_data_hub.lazydatacore.identity import (
     CurrencyCode,
     Domain,
@@ -61,6 +66,10 @@ from market_data_hub.lazydatacore.version import (
 )
 
 __all__ = [
+    # artifacts
+    "WELL_KNOWN_ARTIFACT_SCHEMES",
+    "ArtifactRef",
+    "ResolvedArtifact",
     # identity
     "CurrencyCode",
     "Domain",
