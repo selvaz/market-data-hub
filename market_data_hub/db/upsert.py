@@ -54,6 +54,16 @@ _COLUMNS = {
     ],
 }
 
+# Non-NULL defaults for columns that may be absent from an incoming DataFrame.
+# The DDL ``DEFAULT`` only applies when a column is omitted from the INSERT,
+# but upsert() always lists every column, so a missing column would be written
+# as NULL. ``prices_daily.is_live`` NULL is silently invisible to reads that
+# filter ``is_live = FALSE`` (read_prices / extract_series level), so a freshly
+# ingested ticker's daily bars would never appear — default it to FALSE here.
+_COLUMN_DEFAULTS = {
+    "prices_daily": {"is_live": False},
+}
+
 _PK = {
     "prices_daily": ["date", "listing_id"],
     "crypto_ohlcv": ["ts", "symbol", "timeframe"],
@@ -148,9 +158,10 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
     if "updated_at" in cols and "updated_at" not in out.columns:
         out["updated_at"] = datetime.now(timezone.utc)
 
+    defaults = _COLUMN_DEFAULTS.get(table, {})
     for c in cols:
         if c not in out.columns:
-            out[c] = None
+            out[c] = defaults.get(c, None)
     out = out[cols]
 
     col_list = ", ".join(cols)

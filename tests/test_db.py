@@ -37,6 +37,26 @@ def test_upsert_is_idempotent(tmp_db):
     con.close()
 
 
+def test_upsert_defaults_is_live_false_when_column_absent(tmp_db):
+    # A provider fetch (Yahoo daily bars) yields no is_live column. It must be
+    # written as FALSE, not NULL — read_prices / extract_series filter
+    # ``is_live = FALSE``, and in SQL ``NULL = FALSE`` is NULL, so NULL bars are
+    # silently invisible and a freshly ingested ticker would never appear.
+    con = C.get_conn()
+    rows = pd.DataFrame([{
+        "date": dt.date(2024, 1, 1), "symbol": "NEWTKR", "open": 1, "high": 2,
+        "low": 0.5, "close": 1.5, "adj_close": 1.4, "volume": 100, "source": "yahoo",
+    }])  # deliberately NO is_live column
+    upsert(con, "prices_daily", rows)
+    live = con.execute("SELECT is_live FROM prices_daily WHERE symbol = 'NEWTKR'").fetchall()
+    assert live and all(v[0] is False for v in live), live
+    con.close()
+    # end-to-end: the reader (which filters is_live = FALSE) now sees the bar
+    from market_data_hub.reader import read_prices
+    px = read_prices("NEWTKR", field="adj_close")
+    assert not px.empty and "NEWTKR" in px.columns
+
+
 def test_upsert_counts_are_truthful_under_intra_batch_pk_duplicates(tmp_db):
     # A source batch can repeat a primary key (e.g. the BIS euro-aggregate
     # broadcast used to duplicate (date, country) pairs): INSERT OR REPLACE
