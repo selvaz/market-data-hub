@@ -1,0 +1,12 @@
+{
+  "_shape": "wide: one record per date, one column per instrument (log-returns). Matches market_data_hub.extract.extract_returns's real output (a DatetimeIndex + one column per symbol) reduced to records; validated by reconstructing a DatetimeIndex-ed DataFrame from `rows` and calling market_data_hub.lazydatacore.validate_wide_prices, which is structural (DatetimeIndex, sorted, non-empty-or-empty) and return/price-agnostic.",
+  "instruments": ["ticker:AAPL", "ticker:MSFT"],
+  "return_kind": "log",
+  "frequency": "W",
+  "rows": [
+    {"date": "2026-06-19", "AAPL": 0.0142, "MSFT": -0.0038},
+    {"date": "2026-06-26", "AAPL": -0.0071, "MSFT": 0.0205},
+    {"date": "2026-07-03", "AAPL": 0.0298, "MSFT": 0.0117},
+    {"date": "2026-07-10", "AAPL": -0.0056, "MSFT": -0.0142}
+  ]
+}

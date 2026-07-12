@@ -9,6 +9,9 @@ import pytest
 
 from market_data_hub.lazydatacore import (
     OHLCV_COLUMNS,
+    PRODUCER_NAME,
+    PRODUCER_VERSION,
+    SCHEMA_VERSION,
     AnalysisResult,
     Domain,
     InstrumentId,
@@ -208,6 +211,33 @@ def test_forbid_extra_fields():
         SourceRef(source="x", bogus=1)
 
 
+def test_analysis_result_stamps_schema_and_producer_by_default():
+    res = AnalysisResult(kind="signal", produced_by="lazyhmm.regime.v1")
+    assert res.schema_version == SCHEMA_VERSION == "1.0"
+    assert res.producer == PRODUCER_NAME == "market-data-hub"
+    assert res.producer_version == PRODUCER_VERSION
+    dumped = res.model_dump(mode="json")
+    assert dumped["schema_version"] == "1.0"
+    assert dumped["producer"] == "market-data-hub"
+
+
+def test_analysis_result_accepts_payload_missing_schema_fields():
+    # Backward compatibility: a payload serialized before this field existed
+    # (no schema_version/producer/producer_version) still validates — the
+    # defaults fill in rather than the strict `extra="forbid"` model rejecting
+    # the input as incomplete.
+    legacy = {
+        "kind": "score",
+        "produced_by": "legacy.tool",
+        "instruments": [],
+        "payload": {},
+        "provenance": None,
+        "created_at": now_utc().isoformat(),
+    }
+    res = AnalysisResult.model_validate(legacy)
+    assert res.schema_version == "1.0"
+
+
 # --------------------------------------------------------------------------- #
 # series                                                                       #
 # --------------------------------------------------------------------------- #
@@ -295,3 +325,29 @@ def test_lazydatacore_has_no_heavy_dependencies():
                     f"lazydatacore/{mod.name}.py imports forbidden '{name}'")
                 assert not name.startswith(forbidden_prefixes), (
                     f"lazydatacore/{mod.name}.py imports hub-internal '{name}'")
+
+
+def test_lazydatacore_import_does_not_load_heavy_numeric_libs():
+    """Runtime counterpart of the AST check above (ecosystem stabilization
+    plan, ECO-010): even a TYPE_CHECKING-guarded or conditionally-executed
+    import would pass the static AST scan (it only checks *source*, not
+    control flow), so this verifies what actually lands in ``sys.modules``
+    after ``import market_data_hub.lazydatacore`` — in a fresh subprocess, so
+    an earlier test importing pandas in the SAME process can't produce a
+    false pass."""
+    import json
+    import subprocess
+    import sys
+
+    code = (
+        "import sys, json; "
+        "import market_data_hub.lazydatacore; "
+        "print(json.dumps(sorted("
+        "m for m in ('pandas', 'numpy', 'duckdb', 'pyarrow', 'matplotlib') "
+        "if m in sys.modules)))"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True
+    )
+    loaded = json.loads(out.stdout)
+    assert loaded == [], f"lazydatacore import pulled in heavy libs: {loaded}"

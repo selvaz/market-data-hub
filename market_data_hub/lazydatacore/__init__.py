@@ -54,6 +54,11 @@ from market_data_hub.lazydatacore.timeutil import (
     parse_iso,
     to_iso,
 )
+from market_data_hub.lazydatacore.version import (
+    PRODUCER_NAME,
+    PRODUCER_VERSION,
+    SCHEMA_VERSION,
+)
 
 __all__ = [
     # identity
@@ -83,4 +88,8 @@ __all__ = [
     "now_utc",
     "parse_iso",
     "to_iso",
+    # schema / producer identity
+    "PRODUCER_NAME",
+    "PRODUCER_VERSION",
+    "SCHEMA_VERSION",
 ]

@@ -1,0 +1,11 @@
+{
+  "source": {
+    "source": "lazyhmm",
+    "source_id": "regime-run-2026-07-12",
+    "url": null,
+    "retrieved_at": "2026-07-12T16:00:00Z",
+    "content_is_untrusted": false
+  },
+  "as_of": "2026-07-12T16:00:00Z",
+  "tool_version": "0.1.0"
+}
