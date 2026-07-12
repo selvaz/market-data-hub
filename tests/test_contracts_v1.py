@@ -73,9 +73,13 @@ def test_return_series_fixture_validates_as_wide_frame():
     df = pd.DataFrame(rows).set_index("date")
     df.index = pd.to_datetime(df.index)
     assert validate_wide_prices(df) is df
-    # Column keys are the full canonical instrument id (matching
-    # lazystats.models.ReturnDataset.rows), not a bare symbol.
-    assert set(df.columns) == set(raw["instruments"])
+    # Columns are keyed by the BARE symbol, exactly as extract_returns emits
+    # them; `instruments` carries the canonical ids for the same set and
+    # `symbols` their bare forms. A consumer maps bare -> canonical itself.
+    assert set(df.columns) == set(raw["symbols"])
+    from market_data_hub.lazydatacore import InstrumentId
+
+    assert [InstrumentId.parse(i).key for i in raw["instruments"]] == raw["symbols"]
 
 
 def test_all_five_fixtures_present():
