@@ -28,16 +28,20 @@ payload itself (strip it before doing anything shape-specific).
 
 Since `market-data-hub` is distributed exclusively via GitHub (not PyPI —
 see the ecosystem stabilization plan), a consumer references a fixture set
-by pinning a tag or commit, e.g.:
+by pinning a tag or commit. `market-data-hub` does not tag releases yet
+(ECO-007), so today that means an immutable commit SHA, e.g.:
 
 ```python
 import json
 import urllib.request
 
-REF = "v0.1.1"  # pin to a tagged market-data-hub release
+REF = "1c25e2c5801eff8df70fb4f839a204bbb1be1d44"  # pin to an immutable commit
 url = f"https://raw.githubusercontent.com/selvaz/market-data-hub/{REF}/contracts/v1/analysis_result.json"
 fixture = json.loads(urllib.request.urlopen(url).read())
 ```
+
+Switch to a tag (`v0.1.1`, ...) once `market-data-hub` starts publishing
+GitHub Releases; the URL shape is identical.
 
 or, if the consumer already depends on `market-data-hub` as a Git package,
 by reading the file directly out of its own installed copy of the

@@ -73,9 +73,9 @@ def test_return_series_fixture_validates_as_wide_frame():
     df = pd.DataFrame(rows).set_index("date")
     df.index = pd.to_datetime(df.index)
     assert validate_wide_prices(df) is df
-    # instrument column keys are bare symbols; `instruments` carries the
-    # canonical namespaced ids for the same set.
-    assert set(df.columns) == {iid.split(":", 1)[1] for iid in raw["instruments"]}
+    # Column keys are the full canonical instrument id (matching
+    # lazystats.models.ReturnDataset.rows), not a bare symbol.
+    assert set(df.columns) == set(raw["instruments"])
 
 
 def test_all_five_fixtures_present():
