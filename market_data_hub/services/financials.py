@@ -264,6 +264,9 @@ def ensure_filings_and_facts(query: str, *, requester: str = "python",
                     """, [run_id, now])
                     con.execute("""
                         INSERT INTO sec_filings
+                            (cik, accession, form, filed_date, report_date,
+                             primary_doc, primary_doc_url, issuer_id,
+                             first_seen_run_id, last_seen_run_id, updated_at)
                         SELECT s.cik, s.accession, s.form, s.filed_date,
                                s.report_date, s.primary_doc, s.primary_doc_url,
                                s.issuer_id, ?, ?, ?
@@ -286,6 +289,9 @@ def ensure_filings_and_facts(query: str, *, requester: str = "python",
                     """).fetchone()[0]
                     con.execute("""
                         INSERT INTO sec_company_facts
+                            (fact_id, cik, taxonomy, concept, unit,
+                             start_date, end_date, value, fy, fp, form,
+                             filed_date, accession, frame, run_id, created_at)
                         SELECT fact_id, cik, taxonomy, concept, unit,
                                start_date, end_date, value, fy, fp, form,
                                filed_date, accession, frame, run_id, created_at

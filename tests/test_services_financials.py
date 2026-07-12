@@ -106,6 +106,40 @@ def test_ensure_registers_issuer_ingests_and_is_idempotent(tmp_db):
     assert cov[0] == 2 and cov[1] == 3 and "10-K" in cov[2]
 
 
+def test_ensure_survives_legacy_sec_column_order(tmp_db):
+    # Regression: a DB migrated from an older schema can have sec_filings with
+    # ``updated_at`` positioned BEFORE the run_id columns. A positional
+    # ``INSERT ... SELECT`` then writes run_id (a string) into the TIMESTAMP
+    # column and raises a ConversionException. The INSERTs must name their
+    # target columns so on-disk column order is irrelevant. Fresh-schema tests
+    # never caught this because they build the current column order.
+    con = get_conn(tmp_db)
+    con.execute("DROP TABLE sec_filings")
+    con.execute("""
+        CREATE TABLE sec_filings (
+            cik VARCHAR NOT NULL, accession VARCHAR NOT NULL, form VARCHAR,
+            filed_date DATE, report_date DATE, primary_doc VARCHAR,
+            primary_doc_url VARCHAR, issuer_id VARCHAR,
+            updated_at TIMESTAMP,                       -- legacy: before run ids
+            first_seen_run_id VARCHAR, last_seen_run_id VARCHAR,
+            PRIMARY KEY (cik, accession))
+    """)
+    con.close()
+
+    res = _ensure(tmp_db)
+    assert res["status"] == "completed" and res["filings"] == 2
+
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        row = con.execute(
+            "SELECT last_seen_run_id, updated_at FROM sec_filings LIMIT 1"
+        ).fetchone()
+    finally:
+        con.close()
+    assert row[0].startswith("run_")           # run_id landed in the VARCHAR column
+    assert not str(row[1]).startswith("run_")  # updated_at kept a real timestamp
+
+
 def test_facts_are_append_only_on_restatement(tmp_db):
     _ensure(tmp_db)
     # force=True re-runs the job; a restated revenue value must APPEND a new
