@@ -256,77 +256,28 @@ def tool_get_job_status(job_id: str) -> str:
 TOOL_FUNCTIONS = [
     tool_list_datasets, tool_list_symbols, tool_list_sectors, tool_list_macro,
     tool_list_indicators, tool_list_countries, tool_describe, tool_search,
-    tool_get_series, tool_get_returns, tool_get_coverage,
+    tool_get_coverage,
     tool_resolve_instrument, tool_get_price_summary, tool_get_job_status,
     tool_get_financials_coverage, tool_get_financial_facts, tool_get_statement,
     tool_get_ingestion_health,
 ]
+
+# Raw time-series matrices — NOT in the standard profile (plan v3.1 §5.1: "Le
+# matrici raw ... non sono nel profilo LLM standard"). An agent operates on
+# symbols/ids and receives bounded results (summary, statement, coverage);
+# it never carries a price/return matrix through its own context by default.
+# These stay available for verification/spot-checks by callers that opt in
+# explicitly (e.g. a technical profile), always under the same 500-row cap.
+RAW_SERIES_TOOL_FUNCTIONS = [tool_get_series, tool_get_returns]
 
 
 # ---------------------------------------------------------------------------
 # Write tools — opt-in only (they trigger a network download + DB write)
 # ---------------------------------------------------------------------------
 
-# Serialises concurrent tool_refresh_prices calls within the process (the
+# Serialises concurrent write-tool calls within the process (the
 # cross-process case is covered by the DB writer file lock).
 _REFRESH_LOCK = threading.Lock()
-
-
-def tool_refresh_prices(symbols: str, start: str = "2010-01-01",
-                        allow_write: bool = False) -> str:
-    """Download price series from Yahoo and WRITE them into the hub DB, then
-    rebuild coverage. WRITE capability gated by allow_write=True (plan v3.1
-    §5.2 — every write is explicit). Use this when the hub has no (or
-    insufficient) data for a symbol: afterwards tool_get_series /
-    tool_get_returns will see it.
-
-    symbols: comma-separated (e.g. "SPY,QQQ,NVDA").
-    start:   history start date "YYYY-MM-DD".
-    Returns JSON with the refreshed symbols and the rebuilt coverage count.
-
-    Writes are serialised: an in-process lock covers the temporary narrowing
-    of the Yahoo universe, and the cross-process DB writer lock (the same one
-    the scheduled runner takes) covers the DuckDB write. If another writer
-    holds the DB, a JSON error is returned instead of racing it.
-    Yahoo needs no API key."""
-    if not allow_write:
-        return _json({"error": "write capability requires allow_write=true"})
-    import uuid
-
-    from market_data_hub import runner
-    from market_data_hub.config_loader import get_settings
-    from market_data_hub.coverage.report import rebuild_coverage
-    from market_data_hub.db.connection import get_conn
-    from market_data_hub.lock import DBLockTimeout, db_write_lock
-
-    syms = [s.upper() for s in _split(symbols)]
-    if not syms:
-        return _json({"error": "no symbols provided"})
-
-    tickers = [{"symbol": s, "asset_class": "EQUITY", "area": "",
-                "name": s, "priority": 1} for s in syms]
-    run_id = "refresh_" + uuid.uuid4().hex[:8]
-    # run_yahoo reads the universe via runner.get_yahoo_tickers(); narrow it to
-    # the requested symbols, then restore so a later full run is unaffected.
-    # The monkeypatch is process-global, hence the in-process lock around it.
-    with _REFRESH_LOCK:
-        try:
-            with db_write_lock():
-                _orig = runner.get_yahoo_tickers
-                runner.get_yahoo_tickers = lambda: tickers
-                con = get_conn()
-                try:
-                    runner.run_yahoo(con, get_settings(), run_id,
-                                     start_override=start)
-                    n = rebuild_coverage(con, run_id)
-                finally:
-                    runner.get_yahoo_tickers = _orig
-                    con.close()
-        except DBLockTimeout as ex:
-            return _json({"error": f"another writer holds the DB lock; "
-                                   f"retry later ({ex})"})
-    return _json({"refreshed": syms, "start": start,
-                  "coverage_series": int(n), "run_id": run_id})
 
 
 def tool_ensure_price_history(query: str, start: str = "", end: str = "",
@@ -379,5 +330,33 @@ def tool_ensure_financials(query: str, allow_write: bool = False) -> str:
                                f"retry later ({ex})"})
 
 
-WRITE_TOOL_FUNCTIONS = [tool_refresh_prices, tool_ensure_price_history,
+def tool_register_listing(symbol: str, exchange: str, currency: str,
+                          kind: str = "EQUITY", name: str = "",
+                          provider: str = "yahoo", provider_symbol: str = "",
+                          allow_write: bool = False) -> str:
+    """Register an ARBITRARY single name the hub does not know yet (audit
+    CA-05). WRITE capability gated by allow_write=True. The identity is
+    explicit — exchange and currency are REQUIRED, provider_symbol when the
+    provider's key differs from the symbol — never guessed. Idempotent:
+    re-registering the same (symbol, provider, exchange) returns the existing
+    listing_id. After registering, call tool_ensure_price_history with the
+    returned listing_id to ingest the history."""
+    if not allow_write:
+        return _json({"error": "write capability requires allow_write=true"})
+    from market_data_hub.services import prices as _prices
+    try:
+        with _REFRESH_LOCK:
+            return _json(_prices.register_listing(
+                symbol, exchange=exchange, currency=currency, kind=kind,
+                name=name or None, provider=provider,
+                provider_symbol=provider_symbol or None))
+    except ValueError as ex:
+        return _json({"error": str(ex)})
+
+
+# tool_refresh_prices was REMOVED (audit CA-07): it monkeypatched the batch
+# runner's universe, invented an asset class and bypassed the identity model
+# and the job ledger. On-demand ingestion goes through the ensure_* jobs;
+# batch refresh stays an administrative concern (run_daily.py).
+WRITE_TOOL_FUNCTIONS = [tool_register_listing, tool_ensure_price_history,
                         tool_ensure_financials]

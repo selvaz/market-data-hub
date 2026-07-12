@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 6
+SCHEMA_VERSION = 8
 
 
 def _default_db() -> str:
@@ -150,6 +150,12 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
     con.execute("DROP INDEX IF EXISTS idx_msv_run")
     con.execute("DROP INDEX IF EXISTS idx_mpv_run")
 
+    # v6 -> v7 rebuild MUST run before apply_schema(): schema.sql's v_returns
+    # view now references prices_daily.listing_id and the view binder would
+    # fail against the old table shape.
+    if _table_exists(con, "prices_daily"):
+        _migrate_prices_to_listing_key(con)
+
     apply_schema(con)  # ensures every table exists; stamps baseline only if fresh
 
     if recorded is None:
@@ -194,6 +200,29 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # sec_company_facts (append-only), sec_coverage. Purely additive —
         # created by apply_schema() above.
         current = 6
+    if current < 7:
+        # v6 -> v7 (audit CA-01): prices_daily rebuilt keyed by
+        # (date, listing_id) — executed in the pre-apply_schema block above
+        # (the new v_returns view would not bind against the old shape).
+        # This step advances the recorded version.
+        current = 7
+    if current < 8:
+        # v7 -> v8 (audit CA-08): sec_filings run provenance survives
+        # re-ingestion — first_seen_run_id (immutable) + last_seen_run_id
+        # replace the single run_id that INSERT OR REPLACE overwrote.
+        if _table_exists(con, "sec_filings"):
+            cols = {r[1] for r in con.execute(
+                "PRAGMA table_info('sec_filings')").fetchall()}
+            con.execute("ALTER TABLE sec_filings "
+                        "ADD COLUMN IF NOT EXISTS first_seen_run_id VARCHAR")
+            con.execute("ALTER TABLE sec_filings "
+                        "ADD COLUMN IF NOT EXISTS last_seen_run_id VARCHAR")
+            if "run_id" in cols:
+                con.execute("UPDATE sec_filings SET "
+                            "first_seen_run_id = coalesce(first_seen_run_id, run_id), "
+                            "last_seen_run_id = coalesce(last_seen_run_id, run_id)")
+                con.execute("ALTER TABLE sec_filings DROP COLUMN run_id")
+        current = 8
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
@@ -203,6 +232,100 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         [str(current)],
     )
     return current
+
+
+def _migrate_prices_to_listing_key(con: duckdb.DuckDBPyConnection) -> None:
+    """v6 -> v7: rebuild prices_daily keyed by (date, listing_id).
+
+    No-op when the column is already there (fresh DBs get the new shape from
+    schema.sql directly). Runs BEFORE apply_schema(), so the identity tables
+    it joins on may not exist yet on very old DBs — created inline (same DDL
+    as schema.sql, idempotent).
+    """
+    cols = {r[1] for r in con.execute("PRAGMA table_info('prices_daily')").fetchall()}
+    if "listing_id" in cols:
+        return
+
+    from market_data_hub.db.identity import ensure_listing
+
+    # identity tables may predate apply_schema() at this point of migrate()
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS instruments (
+            instrument_id VARCHAR PRIMARY KEY, issuer_id VARCHAR,
+            kind VARCHAR NOT NULL, name VARCHAR,
+            created_at TIMESTAMP, updated_at TIMESTAMP)""")
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS listings (
+            listing_id VARCHAR PRIMARY KEY, instrument_id VARCHAR NOT NULL,
+            symbol VARCHAR NOT NULL, exchange VARCHAR, currency VARCHAR,
+            provider VARCHAR, provider_symbol VARCHAR,
+            active_from DATE, active_to DATE,
+            created_at TIMESTAMP, updated_at TIMESTAMP)""")
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS identifier_aliases (
+            namespace VARCHAR NOT NULL, value VARCHAR NOT NULL,
+            target_type VARCHAR NOT NULL, target_id VARCHAR NOT NULL,
+            valid_from DATE, valid_to DATE, updated_at TIMESTAMP,
+            PRIMARY KEY (namespace, value, target_type, target_id))""")
+
+    # 1. auto-register listings for symbols that have none
+    orphans = [r[0] for r in con.execute("""
+        SELECT DISTINCT p.symbol FROM prices_daily p
+        LEFT JOIN listings l ON l.symbol = p.symbol AND l.active_to IS NULL
+        WHERE l.listing_id IS NULL
+    """).fetchall()]
+    for sym in orphans:
+        ensure_listing(con, sym)
+
+    # 2. collision report: a symbol with >1 active listing cannot have its
+    #    historical rows attributed — abort loudly, never guess
+    dups = con.execute("""
+        SELECT l.symbol, COUNT(*) AS n FROM listings l
+        WHERE l.active_to IS NULL
+          AND l.symbol IN (SELECT DISTINCT symbol FROM prices_daily)
+        GROUP BY l.symbol HAVING COUNT(*) > 1
+    """).fetchall()
+    if dups:
+        raise RuntimeError(
+            "prices_daily v7 migration aborted: these symbols map to multiple "
+            f"active listings, attribute the history manually first: {dups}")
+
+    # 3. rebuild with the new key
+    con.execute("DROP INDEX IF EXISTS idx_prices_symbol")
+    con.execute("""
+        CREATE TABLE prices_daily_v7 (
+            date        DATE        NOT NULL,
+            listing_id  VARCHAR     NOT NULL,
+            symbol      VARCHAR     NOT NULL,
+            open        DOUBLE,
+            high        DOUBLE,
+            low         DOUBLE,
+            close       DOUBLE,
+            adj_close   DOUBLE,
+            volume      BIGINT,
+            source      VARCHAR,
+            is_live     BOOLEAN DEFAULT FALSE,
+            updated_at  TIMESTAMP,
+            PRIMARY KEY (date, listing_id)
+        )
+    """)
+    con.execute("""
+        INSERT INTO prices_daily_v7
+        SELECT p.date, l.listing_id, p.symbol, p.open, p.high, p.low, p.close,
+               p.adj_close, p.volume, p.source, p.is_live, p.updated_at
+        FROM prices_daily p
+        JOIN listings l ON l.symbol = p.symbol AND l.active_to IS NULL
+    """)
+    row_before = con.execute("SELECT COUNT(*) FROM prices_daily").fetchone()
+    row_after = con.execute("SELECT COUNT(*) FROM prices_daily_v7").fetchone()
+    assert row_before is not None and row_after is not None  # COUNT(*) is total
+    before, after = row_before[0], row_after[0]
+    if before != after:
+        raise RuntimeError(
+            f"prices_daily v7 migration aborted: row count changed "
+            f"({before} -> {after})")
+    con.execute("DROP TABLE prices_daily")
+    con.execute("ALTER TABLE prices_daily_v7 RENAME TO prices_daily")
 
 
 def get_conn(db_path: Optional[str] = None, *, read_only: bool = False

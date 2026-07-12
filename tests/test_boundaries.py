@@ -196,9 +196,10 @@ def test_every_write_tool_is_gated_by_allow_write():
             f"{fn.__name__} lacks the allow_write gate")
         assert sig.parameters["allow_write"].default is False, (
             f"{fn.__name__} must default allow_write to False")
-        # calling without the gate returns an error, touching nothing
-        args = {"symbols": "SPY"} if "symbols" in sig.parameters else \
-               {"query": "SPY"}
+        # calling without the gate returns an error, touching nothing:
+        # fill every required (no-default) parameter with a dummy string
+        args = {name: "SPY" for name, p in sig.parameters.items()
+                if p.default is inspect.Parameter.empty}
         out = json.loads(fn(**args))
         assert "allow_write" in out.get("error", "")
 
@@ -209,3 +210,16 @@ def test_write_tools_never_in_default_bundle():
     for fn in at.TOOL_FUNCTIONS:
         assert "allow_write" not in inspect.signature(fn).parameters
         assert not fn.__name__.startswith(("tool_ensure", "tool_refresh"))
+
+
+def test_raw_series_tools_never_in_default_bundle():
+    """Audit CA-02 / plan §5.1: raw price/return matrices are not in the
+    standard profile — an agent gets symbols in, bounded results out, never a
+    full series through its own context by default."""
+    read = {f.__name__ for f in at.TOOL_FUNCTIONS}
+    assert "tool_get_series" not in read
+    assert "tool_get_returns" not in read
+    raw = {f.__name__ for f in at.RAW_SERIES_TOOL_FUNCTIONS}
+    assert raw == {"tool_get_series", "tool_get_returns"}
+    assert not raw & read
+    assert not raw & {f.__name__ for f in at.WRITE_TOOL_FUNCTIONS}

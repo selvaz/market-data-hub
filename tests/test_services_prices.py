@@ -218,6 +218,210 @@ def test_ensure_fetches_provider_symbol_not_warehouse_symbol(tmp_db):
     assert rows == [("BRK.B",)]
 
 
+def test_dual_listings_same_ticker_are_isolated(tmp_db):
+    """Audit CA-01 acceptance — the exact reproduction from the audit: two
+    ACTIVE listings sharing the ticker ACME (XNAS/XMIL), different provider
+    symbols and prices. Both ingested; neither overwrites the other; each
+    summary reads its own series."""
+    con = get_conn(tmp_db)
+    try:
+        xnas = svc._register_listing(con, {
+            "symbol": "ACME", "kind": "EQUITY", "name": "ACME US",
+            "exchange": "XNAS", "currency": "USD", "provider": "yahoo",
+            "provider_symbol": "ACME"})
+        xmil = svc._register_listing(con, {
+            "symbol": "ACME", "kind": "EQUITY", "name": "ACME IT",
+            "exchange": "XMIL", "currency": "EUR", "provider": "yahoo_it",
+            "provider_symbol": "ACME.MI"})
+    finally:
+        con.close()
+
+    def fetch_for(px0):
+        def fetch(symbols, start, end):
+            dates = pd.date_range(start, periods=2, freq="B")
+            return {symbols[0]: pd.DataFrame({
+                "date": dates.date, "close": [px0, px0 + 1.0],
+                "adj_close": [px0, px0 + 1.0],
+            })}
+        return fetch
+
+    svc.ensure_price_history(xnas["listing_id"], start="2024-01-01",
+                             end="2024-01-05", db_path=tmp_db,
+                             fetch=fetch_for(100.0))
+    svc.ensure_price_history(xmil["listing_id"], start="2024-01-01",
+                             end="2024-01-05", db_path=tmp_db,
+                             fetch=fetch_for(90.0))
+
+    us = svc.get_price_summary(xnas["listing_id"], db_path=tmp_db)
+    it = svc.get_price_summary(xmil["listing_id"], db_path=tmp_db)
+    assert us["last_adj_close"] == 101.0
+    assert it["last_adj_close"] == 91.0
+
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        n = con.execute("SELECT COUNT(*) FROM prices_daily "
+                        "WHERE symbol = 'ACME'").fetchone()[0]
+        per_listing = con.execute(
+            "SELECT listing_id, COUNT(*) FROM prices_daily "
+            "WHERE symbol = 'ACME' GROUP BY listing_id").fetchall()
+    finally:
+        con.close()
+    assert n == 4                       # 2 rows per listing, none overwritten
+    assert {r[1] for r in per_listing} == {2}
+
+    # the symbol-based auto-attach path must REFUSE the ambiguous ticker
+    from market_data_hub.db.identity import AmbiguousSymbolError
+    from market_data_hub.db.upsert import upsert as _upsert
+    con = get_conn(tmp_db)
+    try:
+        with pytest.raises(AmbiguousSymbolError, match="ACME"):
+            _upsert(con, "prices_daily", pd.DataFrame({
+                "date": [pd.Timestamp("2024-02-01").date()],
+                "symbol": ["ACME"], "adj_close": [1.0]}))
+    finally:
+        con.close()
+
+
+def test_v7_migration_rebuilds_prices_keyed_by_listing(tmp_path, monkeypatch):
+    """A v6-shaped DB (prices keyed by symbol, no listing_id) is rebuilt on
+    open: rows preserved, listing auto-registered, new key in place."""
+    import duckdb as _duck
+
+    from market_data_hub.db import connection as dbc
+
+    db = str(tmp_path / "old.duckdb")
+    monkeypatch.setenv("MARKET_DATA_DB", db)
+    raw = _duck.connect(db)
+    raw.execute("""
+        CREATE TABLE prices_daily (
+            date DATE NOT NULL, symbol VARCHAR NOT NULL,
+            open DOUBLE, high DOUBLE, low DOUBLE, close DOUBLE,
+            adj_close DOUBLE, volume BIGINT, source VARCHAR,
+            is_live BOOLEAN DEFAULT FALSE, updated_at TIMESTAMP,
+            PRIMARY KEY (date, symbol))""")
+    raw.execute("CREATE TABLE schema_meta (key VARCHAR PRIMARY KEY, value VARCHAR)")
+    raw.execute("INSERT INTO schema_meta VALUES ('schema_version', '6')")
+    raw.execute("INSERT INTO prices_daily (date, symbol, adj_close) VALUES "
+                "('2024-01-02', 'OLDCO', 10.0), ('2024-01-03', 'OLDCO', 11.0)")
+    raw.close()
+
+    con = dbc.get_conn(db)   # triggers migrate()
+    try:
+        assert dbc.get_schema_version(con) == dbc.SCHEMA_VERSION
+        rows = con.execute("SELECT date, listing_id, symbol, adj_close "
+                           "FROM prices_daily ORDER BY date").fetchall()
+        assert len(rows) == 2
+        assert all(r[1].startswith("lst_") for r in rows)
+        assert {r[3] for r in rows} == {10.0, 11.0}
+        lst = con.execute("SELECT COUNT(*) FROM listings "
+                          "WHERE symbol = 'OLDCO'").fetchone()[0]
+        assert lst == 1
+    finally:
+        con.close()
+
+
+def test_register_listing_enables_arbitrary_single_name(tmp_db):
+    """Audit CA-05: an unknown symbol is rejected until registered with
+    explicit identity; after register_listing the normal ensure job works."""
+    with pytest.raises(svc.UnknownInstrumentError, match="register_listing"):
+        svc.ensure_price_history("NEWCO", db_path=tmp_db, fetch=_fake_fetch)
+
+    # identity is never guessed: exchange/currency are mandatory
+    with pytest.raises(ValueError, match="exchange and currency"):
+        svc.register_listing("NEWCO", exchange="", currency="",
+                             db_path=tmp_db)
+
+    reg = svc.register_listing("NEWCO", exchange="XNAS", currency="USD",
+                               name="New Co", db_path=tmp_db)
+    assert reg["created"] is True and reg["listing_id"].startswith("lst_")
+
+    # idempotent: same (symbol, provider, exchange) -> same listing
+    again = svc.register_listing("NEWCO", exchange="XNAS", currency="USD",
+                                 db_path=tmp_db)
+    assert again["created"] is False
+    assert again["listing_id"] == reg["listing_id"]
+
+    # second venue -> its OWN listing, not an overwrite
+    milan = svc.register_listing("NEWCO", exchange="XMIL", currency="EUR",
+                                 db_path=tmp_db)
+    assert milan["created"] is True
+    assert milan["listing_id"] != reg["listing_id"]
+
+    # bare symbol is now ambiguous by design; the listing_id path works
+    with pytest.raises(svc.AmbiguousInstrumentError):
+        svc.ensure_price_history("NEWCO", db_path=tmp_db, fetch=_fake_fetch)
+    res = svc.ensure_price_history(reg["listing_id"], start="2024-01-01",
+                                   end="2024-01-31", db_path=tmp_db,
+                                   fetch=_fake_fetch)
+    assert res["status"] == "completed" and res["rows_added"] == 5
+    assert svc.get_price_summary(reg["listing_id"],
+                                 db_path=tmp_db)["n_obs"] == 5
+
+
+def test_fetch_runs_without_holding_the_writer_lock(tmp_db, monkeypatch):
+    """Audit CA-06: a slow provider must not block other writers — the fetch
+    phase runs with NO writer lock held."""
+    from market_data_hub.services import prices as _svc
+
+    lock_state = {"held": False, "held_during_fetch": None}
+    real_lock = _svc.db_write_lock
+
+    from contextlib import contextmanager
+
+    @contextmanager
+    def tracking_lock(*a, **k):
+        lock_state["held"] = True
+        try:
+            with real_lock(*a, **k):
+                yield
+        finally:
+            lock_state["held"] = False
+
+    monkeypatch.setattr(_svc, "db_write_lock", tracking_lock)
+
+    def fetch(symbols, start, end):
+        lock_state["held_during_fetch"] = lock_state["held"]
+        return _fake_fetch(symbols, start, end)
+
+    res = _svc.ensure_price_history("SPY", start="2024-01-01",
+                                    end="2024-01-31", db_path=tmp_db,
+                                    fetch=fetch)
+    assert res["status"] == "completed"
+    assert lock_state["held_during_fetch"] is False
+
+
+def test_write_failure_rolls_back_payload_and_marks_error(tmp_db, monkeypatch):
+    """Audit CA-06 fault injection: an error AFTER the price upsert (inside
+    the commit transaction) must leave NO materialized payload — payload and
+    ledger commit or roll back together — and the job ends 'error'."""
+    from market_data_hub.db.upsert import upsert as real_upsert
+    from market_data_hub.services import prices as _svc
+
+    def sabotaged(con, table, df, **kw):
+        real_upsert(con, table, df, **kw)
+        raise RuntimeError("boom after upsert")
+
+    monkeypatch.setattr(_svc, "upsert", sabotaged)
+    with pytest.raises(RuntimeError, match="boom after upsert"):
+        _svc.ensure_price_history("SPY", start="2024-01-01", end="2024-01-31",
+                                  db_path=tmp_db, fetch=_fake_fetch)
+
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        n_prices = con.execute(
+            "SELECT COUNT(*) FROM prices_daily WHERE symbol = 'SPY'"
+        ).fetchone()[0]
+        job = con.execute(
+            "SELECT status, error_msg FROM ingestion_jobs").fetchone()
+        run = con.execute(
+            "SELECT status FROM ingestion_runs").fetchone()[0]
+    finally:
+        con.close()
+    assert n_prices == 0                      # rolled back with the ledger
+    assert job[0] == "error" and "boom after upsert" in job[1]
+    assert run == "error"
+
+
 def test_tool_layer_gating_and_shapes(tmp_db):
     from market_data_hub import agent_tools as at
 

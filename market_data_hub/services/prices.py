@@ -30,6 +30,9 @@ import pandas as pd
 
 from market_data_hub.config_loader import get_settings, get_yahoo_tickers
 from market_data_hub.db.connection import get_conn
+# Single id scheme shared with the upsert auto-attach (db.identity): two
+# writers can never mint different ids for the same (symbol, provider).
+from market_data_hub.db.identity import stable_id as _stable_id
 from market_data_hub.db.upsert import upsert
 from market_data_hub.lock import db_write_lock
 
@@ -65,9 +68,6 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _stable_id(prefix: str, *parts: str) -> str:
-    h = hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()[:12]
-    return f"{prefix}_{h}"
 
 
 def _request_hash(payload: Dict[str, Any]) -> str:
@@ -156,7 +156,9 @@ def _resolve_single(query: str, db_path: Optional[str] = None) -> Dict[str, Any]
     candidates = resolve_instrument(query, db_path=db_path)
     if not candidates:
         raise UnknownInstrumentError(
-            f"{query!r} matches no listing, alias or config-universe symbol")
+            f"{query!r} matches no listing, alias or config-universe symbol; "
+            f"register it first with register_listing(symbol, exchange=..., "
+            f"currency=...) and then ensure_price_history")
     if len(candidates) > 1:
         raise AmbiguousInstrumentError(query, candidates)
     return candidates[0]
@@ -199,6 +201,86 @@ def _register_listing(con, cand: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+def register_listing(symbol: str, *, exchange: str, currency: str,
+                     kind: str = "EQUITY", name: Optional[str] = None,
+                     provider: str = _DEFAULT_PROVIDER,
+                     provider_symbol: Optional[str] = None,
+                     db_path: Optional[str] = None) -> Dict[str, Any]:
+    """Register an ARBITRARY single name not present in listings/config
+    (audit CA-05): the caller supplies the identity — exchange, currency,
+    provider symbol — and gets a listing_id back; ingestion then goes through
+    the normal ensure_price_history job.
+
+    Idempotent: re-registering the same (symbol, provider, exchange) returns
+    the existing listing (created=False). A second venue for the same
+    (symbol, provider) gets its own listing_id (dual listing), never an
+    overwrite. Ambiguity later is the resolver's job — it will return both
+    candidates and force an explicit listing_id.
+    """
+    symbol = (symbol or "").strip()
+    if not symbol:
+        raise ValueError("symbol is required")
+    if not (exchange or "").strip() or not (currency or "").strip():
+        raise ValueError(
+            f"registering the unknown symbol {symbol!r} requires explicit "
+            f"exchange and currency (identity is never guessed)")
+    exchange = exchange.strip()
+    currency = currency.strip().upper()
+
+    with db_write_lock(db_path):
+        con = get_conn(db_path)
+        try:
+            now = _now()
+            row = con.execute("""
+                SELECT listing_id, instrument_id FROM listings
+                WHERE symbol = ? AND provider = ?
+                  AND coalesce(exchange, '') = ? AND active_to IS NULL
+            """, [symbol, provider, exchange]).fetchone()
+            if row:
+                return {"listing_id": row[0], "instrument_id": row[1],
+                        "symbol": symbol, "exchange": exchange,
+                        "currency": currency, "provider": provider,
+                        "registered": True, "created": False}
+
+            instrument_id = _stable_id("ins", symbol)
+            base = _stable_id("lst", symbol, provider)
+            taken = con.execute(
+                "SELECT 1 FROM listings WHERE listing_id = ?", [base]).fetchone()
+            # second venue for the same (symbol, provider): venue-qualified id
+            listing_id = _stable_id("lst", symbol, provider, exchange) if taken else base
+
+            con.execute("""
+                INSERT INTO instruments (instrument_id, issuer_id, kind, name,
+                                         created_at, updated_at)
+                SELECT ?, NULL, ?, ?, ?, ?
+                WHERE NOT EXISTS (SELECT 1 FROM instruments WHERE instrument_id = ?)
+            """, [instrument_id, kind, name, now, now, instrument_id])
+            con.execute("""
+                INSERT INTO listings (listing_id, instrument_id, symbol,
+                                      exchange, currency, provider,
+                                      provider_symbol, active_from, active_to,
+                                      created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)
+            """, [listing_id, instrument_id, symbol, exchange, currency,
+                  provider, provider_symbol or symbol, now, now])
+            con.execute("""
+                INSERT INTO identifier_aliases (namespace, value, target_type,
+                                                target_id, valid_from,
+                                                valid_to, updated_at)
+                SELECT 'ticker', ?, 'listing', ?, NULL, NULL, ?
+                WHERE NOT EXISTS (SELECT 1 FROM identifier_aliases
+                                  WHERE namespace = 'ticker' AND value = ?
+                                    AND target_type = 'listing' AND target_id = ?)
+            """, [symbol, listing_id, now, symbol, listing_id])
+            return {"listing_id": listing_id, "instrument_id": instrument_id,
+                    "symbol": symbol, "exchange": exchange,
+                    "currency": currency, "provider": provider,
+                    "provider_symbol": provider_symbol or symbol,
+                    "registered": True, "created": True}
+        finally:
+            con.close()
+
+
 # --------------------------------------------------------------------- ensure
 FetchFn = Callable[[List[str], str, str], Dict[str, pd.DataFrame]]
 
@@ -218,12 +300,15 @@ def ensure_price_history(query: str, start: Optional[str] = None,
     """Idempotent ingestion capability (plan v3.1 §4.1 / §5.2).
 
     Resolves `query` to exactly one listing (raising AmbiguousInstrumentError
-    with the candidates otherwise), creates or reuses the ingestion job keyed
-    by the normalized request hash, and — unless the job is already completed
-    and force is False — fetches and upserts the history under the writer lock.
+    with the candidates otherwise) and creates or reuses the ingestion job
+    keyed by the normalized request hash.
 
-    Returns the job envelope: {job_id, run_id, status, listing_id, symbol,
-    reused, rows_added, rows_updated}.
+    Concurrency shape (audit CA-06): the writer lock is held only for two
+    SHORT windows — registering the job as 'running', then committing the
+    results — while the provider fetch runs with NO lock held, so a slow
+    provider never blocks other writers. Payload + run/job completion commit
+    in ONE transaction: an error after the upsert rolls everything back (no
+    materialized payload with an errored job).
     """
     cand = _resolve_single(query, db_path=db_path)
     settings = get_settings()
@@ -233,6 +318,7 @@ def ensure_price_history(query: str, start: Optional[str] = None,
     fetch = fetch or _default_fetch
     now = _now()
 
+    # ---- phase 1 (short lock): identity + job/run registered as 'running'
     with db_write_lock(db_path):
         con = get_conn(db_path)
         try:
@@ -275,22 +361,40 @@ def ensure_price_history(query: str, start: Optional[str] = None,
                 VALUES (?, 'price_history', ?, ?, 'primary provider for listing',
                         'running', 1, ?)
             """, [run_id, json.dumps(req), provider, now])
+        finally:
+            con.close()
 
+    # ---- phase 2 (NO lock): provider fetch + normalization
+    try:
+        # Fetch under the PROVIDER's native symbol (may differ from the
+        # warehouse symbol, e.g. class-share / venue suffixes), then
+        # normalize the returned frame back to listings.symbol before it
+        # ever reaches prices_daily.
+        provider_symbol = cand.get("provider_symbol") or symbol
+        frames = fetch([provider_symbol], start, end)
+        df = frames.get(provider_symbol)
+        if df is not None and not df.empty:
+            df = df.copy()
+            df["symbol"] = symbol
+            # explicit listing key (CA-01): never rely on the symbol
+            # auto-attach here — this is the dual-listing-safe path
+            df["listing_id"] = listing_id
+            if "source" not in df.columns:
+                df["source"] = provider
+    except Exception as exc:
+        _mark_job_error(db_path, job_id, run_id, exc)
+        raise
+
+    # ---- phase 3 (short lock): payload + ledger in ONE transaction
+    with db_write_lock(db_path):
+        con = get_conn(db_path)
+        try:
+            con.execute("BEGIN TRANSACTION")
             try:
-                # Fetch under the PROVIDER's native symbol (may differ from
-                # the warehouse symbol, e.g. class-share / venue suffixes),
-                # then normalize the returned frame back to listings.symbol
-                # before it ever reaches prices_daily.
-                provider_symbol = cand.get("provider_symbol") or symbol
-                frames = fetch([provider_symbol], start, end)
-                df = frames.get(provider_symbol)
                 added = updated = 0
                 if df is not None and not df.empty:
-                    df = df.copy()
-                    df["symbol"] = symbol
-                    if "source" not in df.columns:
-                        df["source"] = provider
-                    added, updated = upsert(con, "prices_daily", df)
+                    added, updated = upsert(con, "prices_daily", df,
+                                            outer_txn=True)
                 payload_hash = (
                     hashlib.sha256(
                         pd.util.hash_pandas_object(df).values.tobytes()
@@ -305,22 +409,45 @@ def ensure_price_history(query: str, start: Optional[str] = None,
                     UPDATE ingestion_jobs SET status = 'completed', run_id = ?,
                         error_msg = NULL, updated_at = ? WHERE job_id = ?
                 """, [run_id, fin, job_id])
-                return {"job_id": job_id, "run_id": run_id,
-                        "status": "completed", "listing_id": listing_id,
-                        "symbol": symbol, "reused": False,
-                        "rows_added": added, "rows_updated": updated}
-            except Exception as exc:
-                fin = _now()
-                con.execute(
-                    "UPDATE ingestion_runs SET status = 'error', error_msg = ?, "
-                    "finished_at = ? WHERE run_id = ?", [str(exc), fin, run_id])
-                con.execute(
-                    "UPDATE ingestion_jobs SET status = 'error', error_msg = ?, "
-                    "run_id = ?, updated_at = ? WHERE job_id = ?",
-                    [str(exc), run_id, fin, job_id])
+                con.execute("COMMIT")
+            except Exception:
+                con.execute("ROLLBACK")
                 raise
+            return {"job_id": job_id, "run_id": run_id,
+                    "status": "completed", "listing_id": listing_id,
+                    "symbol": symbol, "reused": False,
+                    "rows_added": added, "rows_updated": updated}
+        except Exception as exc:
+            _mark_job_error(db_path, job_id, run_id, exc, con=con)
+            raise
         finally:
             con.close()
+
+
+def _mark_job_error(db_path: Optional[str], job_id: str, run_id: str,
+                    exc: Exception, con=None) -> None:
+    """Record the failure on job + run (autocommit, outside any transaction).
+    Best effort by design: the original exception must surface either way."""
+    fin = _now()
+
+    def _write(c) -> None:
+        c.execute(
+            "UPDATE ingestion_runs SET status = 'error', error_msg = ?, "
+            "finished_at = ? WHERE run_id = ?", [str(exc), fin, run_id])
+        c.execute(
+            "UPDATE ingestion_jobs SET status = 'error', error_msg = ?, "
+            "run_id = ?, updated_at = ? WHERE job_id = ?",
+            [str(exc), run_id, fin, job_id])
+
+    if con is not None:
+        _write(con)
+        return
+    with db_write_lock(db_path):
+        own = get_conn(db_path)
+        try:
+            _write(own)
+        finally:
+            own.close()
 
 
 # --------------------------------------------------------------------- readers
@@ -357,7 +484,13 @@ def get_price_summary(query: str, start: Optional[str] = None,
     symbol = cand["symbol"]
     con = get_conn(db_path, read_only=True)
     try:
-        where, params = ["symbol = ?"], [symbol]
+        # keyed by LISTING (audit CA-01): dual listings sharing a ticker read
+        # their own series. Config-only candidates (no identity rows yet)
+        # cannot have rows either, so the symbol fallback is safe there.
+        if cand.get("listing_id"):
+            where, params = ["listing_id = ?"], [cand["listing_id"]]
+        else:
+            where, params = ["symbol = ?"], [symbol]
         if start:
             where.append("date >= ?")
             params.append(start)

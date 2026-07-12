@@ -38,6 +38,14 @@ theme:
   icon:
     repo: fontawesome/brands/github
 
+# Working documents with repo-relative source links (outside docs_dir) are
+# excluded from the site build: mkdocs --strict would fail on them. They stay
+# readable on GitHub.
+exclude_docs: |
+  ECOSYSTEM_DEEP_AUDIT_*.md
+  FINANCIAL_DATA_HUB_PLAN*.md
+  IMPLEMENTATION_PLAN_*.md
+
 nav:
   - Home: index.md
   - Quick start: quickstart.md
