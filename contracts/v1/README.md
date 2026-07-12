@@ -16,6 +16,8 @@ a cross-repo contract stays enforced instead of just documented.
 | `instrument_id.json` | `InstrumentId.model_validate` per element | JSON array of canonical strings |
 | `price_series.json` | `validate_long_prices` (after reconstructing a DataFrame from `rows`) | long records: one row per (symbol, date) |
 | `return_series.json` | `validate_wide_prices` (after reconstructing a DataFrame from `rows`) | wide records: one row per date, one column per instrument |
+| `artifact_ref.json` | `ArtifactRef.model_validate` per element | JSON array of canonical `scheme:key` strings |
+| `resolved_artifact.json` | `ResolvedArtifact.model_validate` | pydantic object (payload as base64 in `data_b64`) |
 
 `price_series.json` and `return_series.json` are **not** pydantic-validated
 row by row — `lazydatacore` doesn't own a series *envelope* model, only the

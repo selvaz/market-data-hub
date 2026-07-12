@@ -1,0 +1,9 @@
+{
+  "ref": "regimes:plot_ab12cd34",
+  "mime": "image/png",
+  "data_b64": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==",
+  "meta": {
+    "title": "SPY with regime bands",
+    "theme": "dark"
+  }
+}

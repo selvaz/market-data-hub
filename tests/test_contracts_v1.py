@@ -18,8 +18,10 @@ import pytest
 
 from market_data_hub.lazydatacore import (
     AnalysisResult,
+    ArtifactRef,
     InstrumentId,
     Provenance,
+    ResolvedArtifact,
     validate_long_prices,
     validate_wide_prices,
 )
@@ -82,13 +84,31 @@ def test_return_series_fixture_validates_as_wide_frame():
     assert [InstrumentId.parse(i).key for i in raw["instruments"]] == raw["symbols"]
 
 
-def test_all_five_fixtures_present():
+def test_artifact_ref_fixture_round_trips():
+    raw = _load("artifact_ref.json")
+    assert isinstance(raw, list) and raw, "fixture must be a non-empty array"
+    for canonical in raw:
+        ref = ArtifactRef.model_validate(canonical)
+        assert ref.model_dump(mode="json") == canonical
+
+
+def test_resolved_artifact_fixture_round_trips():
+    raw = _load("resolved_artifact.json")
+    res = ResolvedArtifact.model_validate(raw)
+    assert json.loads(res.model_dump_json()) == raw
+    # the payload must actually decode to bytes
+    assert isinstance(res.data, bytes) and res.data
+
+
+def test_all_fixtures_present():
     expected = {
         "analysis_result.json",
         "provenance.json",
         "instrument_id.json",
         "price_series.json",
         "return_series.json",
+        "artifact_ref.json",
+        "resolved_artifact.json",
     }
     present = {p.name for p in CONTRACTS_V1.glob("*.json")}
     assert expected <= present

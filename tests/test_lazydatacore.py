@@ -12,13 +12,16 @@ from market_data_hub.lazydatacore import (
     PRODUCER_NAME,
     PRODUCER_VERSION,
     SCHEMA_VERSION,
+    WELL_KNOWN_ARTIFACT_SCHEMES,
     AnalysisResult,
+    ArtifactRef,
     Domain,
     InstrumentId,
     Money,
     NotResolvableError,
     PriceBar,
     Provenance,
+    ResolvedArtifact,
     ResolvedRef,
     ResultKind,
     SourceRef,
@@ -290,6 +293,70 @@ def test_canonical_exports_present():
     # ResultKind and OHLCV_COLUMNS are part of the public contract.
     assert OHLCV_COLUMNS == ("open", "high", "low", "close", "adj_close", "volume")
     assert ResultKind.SCORE.value == "score"
+
+
+# --------------------------------------------------------------------------- #
+# artifacts                                                                   #
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize(
+    "text,scheme,key",
+    [
+        ("regimes:plot_ab12cd34", "regimes", "plot_ab12cd34"),
+        ("crawler:9f8e7d6c", "crawler", "9f8e7d6c"),
+        ("chart:spy-adjclose-2020-2026-W", "chart", "spy-adjclose-2020-2026-W"),
+        # only the FIRST ':' separates: Windows paths keep theirs
+        ("file:C:\\reports\\fig1.png", "file", "C:\\reports\\fig1.png"),
+        ("bytes:aGVsbG8=", "bytes", "aGVsbG8="),
+    ],
+)
+def test_artifact_ref_parse_roundtrip(text, scheme, key):
+    ref = ArtifactRef.parse(text)
+    assert ref.scheme == scheme
+    assert ref.key == key
+    assert str(ref) == text
+    assert ref.model_dump(mode="json") == text
+    assert ArtifactRef.parse(ref) is ref
+
+
+def test_artifact_ref_rejects_malformed():
+    with pytest.raises(ValueError, match="not a namespaced artifact ref"):
+        ArtifactRef.parse("no-colon-here")
+    with pytest.raises(ValueError):  # empty key
+        ArtifactRef.parse("regimes:")
+    with pytest.raises(ValueError):  # scheme must be a lowercase identifier
+        ArtifactRef.parse("Regimes:plot_1")
+
+
+def test_artifact_ref_is_frozen_and_hashable():
+    a, b = ArtifactRef.parse("regimes:p1"), ArtifactRef.parse("regimes:p1")
+    assert a == b and hash(a) == hash(b)
+    with pytest.raises(Exception):
+        a.key = "p2"
+
+
+def test_well_known_schemes_are_valid():
+    for scheme in WELL_KNOWN_ARTIFACT_SCHEMES:
+        assert ArtifactRef(scheme=scheme, key="k").scheme == scheme
+
+
+def test_resolved_artifact_from_bytes_roundtrip():
+    payload = b"\x89PNG\r\n\x1a\nfakebytes"
+    res = ResolvedArtifact.from_bytes(
+        "regimes:plot_1", "image/png", payload, meta={"theme": "dark"}
+    )
+    assert res.data == payload
+    assert res.ref == ArtifactRef.parse("regimes:plot_1")
+    # JSON round-trip preserves everything (ref as canonical string)
+    again = ResolvedArtifact.model_validate_json(res.model_dump_json())
+    assert again == res
+    assert again.data == payload
+
+
+def test_resolved_artifact_rejects_bad_base64_and_mime():
+    with pytest.raises(ValueError, match="not valid base64"):
+        ResolvedArtifact(ref="file:x.png", mime="image/png", data_b64="!!not-b64!!")
+    with pytest.raises(ValueError):
+        ResolvedArtifact.from_bytes("file:x.png", "not a mime", b"data")
 
 
 # --------------------------------------------------------------------------- #
