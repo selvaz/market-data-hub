@@ -17,6 +17,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from market_data_hub.lazydatacore.identity import CurrencyCode, InstrumentId
 from market_data_hub.lazydatacore.timeutil import UtcDatetime, now_utc
+from market_data_hub.lazydatacore.version import (
+    PRODUCER_NAME,
+    PRODUCER_VERSION,
+    SCHEMA_VERSION,
+)
 
 
 class LazyDataModel(BaseModel):
@@ -91,6 +96,13 @@ class AnalysisResult(LazyDataModel):
     model their own outputs, while standardising *how* a result is identified,
     timestamped and attributed. This is what makes results from LazyHMM,
     LazyFin and future tools uniformly storable and comparable.
+
+    ``schema_version``/``producer``/``producer_version`` identify which
+    contract shape produced this envelope and by what, independent of
+    ``produced_by`` (the analysis tool/model name) — see
+    :mod:`market_data_hub.lazydatacore.version`. Defaulted, so existing
+    callers need no changes and old serialized payloads (missing these
+    fields) still validate.
     """
 
     kind: ResultKind
@@ -99,3 +111,6 @@ class AnalysisResult(LazyDataModel):
     payload: Dict[str, Any] = Field(default_factory=dict)
     provenance: Optional[Provenance] = None
     created_at: UtcDatetime = Field(default_factory=now_utc)
+    schema_version: str = SCHEMA_VERSION
+    producer: str = PRODUCER_NAME
+    producer_version: str = PRODUCER_VERSION

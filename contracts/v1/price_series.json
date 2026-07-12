@@ -1,0 +1,11 @@
+{
+  "_shape": "long: one record per (symbol, date); validated by market_data_hub.lazydatacore.validate_long_prices after reconstructing a DataFrame from `rows`. Matches reader.read_prices(..., wide=False).",
+  "instrument": "ticker:AAPL",
+  "frequency": "D",
+  "rows": [
+    {"symbol": "AAPL", "date": "2026-07-08", "open": 210.10, "high": 212.40, "low": 209.55, "close": 211.90, "adj_close": 211.90, "volume": 48213500},
+    {"symbol": "AAPL", "date": "2026-07-09", "open": 211.95, "high": 213.80, "low": 210.60, "close": 213.20, "adj_close": 213.20, "volume": 39871200},
+    {"symbol": "AAPL", "date": "2026-07-10", "open": 213.15, "high": 214.90, "low": 212.30, "close": 214.55, "adj_close": 214.55, "volume": 41205800},
+    {"symbol": "AAPL", "date": "2026-07-11", "open": 214.60, "high": 215.75, "low": 213.10, "close": 213.85, "adj_close": 213.85, "volume": 37650300}
+  ]
+}

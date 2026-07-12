@@ -1,0 +1,10 @@
+[
+  "ticker:AAPL",
+  "ticker:SPY",
+  "crypto:BTCUSDT@1h",
+  "macro:FEDFUNDS",
+  "macro_panel:USA/real_gdp_growth",
+  "factor:FF5_daily/Mkt-RF",
+  "cik:0000320193",
+  "isin:US0378331005"
+]

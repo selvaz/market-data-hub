@@ -1,0 +1,27 @@
+{
+  "kind": "signal",
+  "produced_by": "lazyhmm.regime.v1",
+  "instruments": [
+    "ticker:SPY"
+  ],
+  "payload": {
+    "state": 1,
+    "state_label": "high_volatility",
+    "prob_highvol": 0.82
+  },
+  "provenance": {
+    "source": {
+      "source": "lazyhmm",
+      "source_id": "regime-run-2026-07-12",
+      "url": null,
+      "retrieved_at": "2026-07-12T16:00:00Z",
+      "content_is_untrusted": false
+    },
+    "as_of": "2026-07-12T16:00:00Z",
+    "tool_version": "0.1.0"
+  },
+  "created_at": "2026-07-12T16:00:05Z",
+  "schema_version": "1.0",
+  "producer": "market-data-hub",
+  "producer_version": "0.1.1"
+}

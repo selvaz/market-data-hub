@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "market-data-hub"
-version = "0.1.0"
+version = "0.1.1"
 description = "Unified market data consolidation pipeline (DuckDB) with a read-only extraction & discovery API for LLMs and downstream tools."
 readme = "README.md"
 requires-python = ">=3.9"
