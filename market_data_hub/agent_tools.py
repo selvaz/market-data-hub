@@ -256,11 +256,19 @@ def tool_get_job_status(job_id: str) -> str:
 TOOL_FUNCTIONS = [
     tool_list_datasets, tool_list_symbols, tool_list_sectors, tool_list_macro,
     tool_list_indicators, tool_list_countries, tool_describe, tool_search,
-    tool_get_series, tool_get_returns, tool_get_coverage,
+    tool_get_coverage,
     tool_resolve_instrument, tool_get_price_summary, tool_get_job_status,
     tool_get_financials_coverage, tool_get_financial_facts, tool_get_statement,
     tool_get_ingestion_health,
 ]
+
+# Raw time-series matrices — NOT in the standard profile (plan v3.1 §5.1: "Le
+# matrici raw ... non sono nel profilo LLM standard"). An agent operates on
+# symbols/ids and receives bounded results (summary, statement, coverage);
+# it never carries a price/return matrix through its own context by default.
+# These stay available for verification/spot-checks by callers that opt in
+# explicitly (e.g. a technical profile), always under the same 500-row cap.
+RAW_SERIES_TOOL_FUNCTIONS = [tool_get_series, tool_get_returns]
 
 
 # ---------------------------------------------------------------------------
