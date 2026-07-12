@@ -320,6 +320,44 @@ def test_v7_migration_rebuilds_prices_keyed_by_listing(tmp_path, monkeypatch):
         con.close()
 
 
+def test_register_listing_enables_arbitrary_single_name(tmp_db):
+    """Audit CA-05: an unknown symbol is rejected until registered with
+    explicit identity; after register_listing the normal ensure job works."""
+    with pytest.raises(svc.UnknownInstrumentError, match="register_listing"):
+        svc.ensure_price_history("NEWCO", db_path=tmp_db, fetch=_fake_fetch)
+
+    # identity is never guessed: exchange/currency are mandatory
+    with pytest.raises(ValueError, match="exchange and currency"):
+        svc.register_listing("NEWCO", exchange="", currency="",
+                             db_path=tmp_db)
+
+    reg = svc.register_listing("NEWCO", exchange="XNAS", currency="USD",
+                               name="New Co", db_path=tmp_db)
+    assert reg["created"] is True and reg["listing_id"].startswith("lst_")
+
+    # idempotent: same (symbol, provider, exchange) -> same listing
+    again = svc.register_listing("NEWCO", exchange="XNAS", currency="USD",
+                                 db_path=tmp_db)
+    assert again["created"] is False
+    assert again["listing_id"] == reg["listing_id"]
+
+    # second venue -> its OWN listing, not an overwrite
+    milan = svc.register_listing("NEWCO", exchange="XMIL", currency="EUR",
+                                 db_path=tmp_db)
+    assert milan["created"] is True
+    assert milan["listing_id"] != reg["listing_id"]
+
+    # bare symbol is now ambiguous by design; the listing_id path works
+    with pytest.raises(svc.AmbiguousInstrumentError):
+        svc.ensure_price_history("NEWCO", db_path=tmp_db, fetch=_fake_fetch)
+    res = svc.ensure_price_history(reg["listing_id"], start="2024-01-01",
+                                   end="2024-01-31", db_path=tmp_db,
+                                   fetch=_fake_fetch)
+    assert res["status"] == "completed" and res["rows_added"] == 5
+    assert svc.get_price_summary(reg["listing_id"],
+                                 db_path=tmp_db)["n_obs"] == 5
+
+
 def test_tool_layer_gating_and_shapes(tmp_db):
     from market_data_hub import agent_tools as at
 

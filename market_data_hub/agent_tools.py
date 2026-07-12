@@ -330,8 +330,33 @@ def tool_ensure_financials(query: str, allow_write: bool = False) -> str:
                                f"retry later ({ex})"})
 
 
+def tool_register_listing(symbol: str, exchange: str, currency: str,
+                          kind: str = "EQUITY", name: str = "",
+                          provider: str = "yahoo", provider_symbol: str = "",
+                          allow_write: bool = False) -> str:
+    """Register an ARBITRARY single name the hub does not know yet (audit
+    CA-05). WRITE capability gated by allow_write=True. The identity is
+    explicit — exchange and currency are REQUIRED, provider_symbol when the
+    provider's key differs from the symbol — never guessed. Idempotent:
+    re-registering the same (symbol, provider, exchange) returns the existing
+    listing_id. After registering, call tool_ensure_price_history with the
+    returned listing_id to ingest the history."""
+    if not allow_write:
+        return _json({"error": "write capability requires allow_write=true"})
+    from market_data_hub.services import prices as _prices
+    try:
+        with _REFRESH_LOCK:
+            return _json(_prices.register_listing(
+                symbol, exchange=exchange, currency=currency, kind=kind,
+                name=name or None, provider=provider,
+                provider_symbol=provider_symbol or None))
+    except ValueError as ex:
+        return _json({"error": str(ex)})
+
+
 # tool_refresh_prices was REMOVED (audit CA-07): it monkeypatched the batch
 # runner's universe, invented an asset class and bypassed the identity model
 # and the job ledger. On-demand ingestion goes through the ensure_* jobs;
 # batch refresh stays an administrative concern (run_daily.py).
-WRITE_TOOL_FUNCTIONS = [tool_ensure_price_history, tool_ensure_financials]
+WRITE_TOOL_FUNCTIONS = [tool_register_listing, tool_ensure_price_history,
+                        tool_ensure_financials]

@@ -196,9 +196,10 @@ def test_every_write_tool_is_gated_by_allow_write():
             f"{fn.__name__} lacks the allow_write gate")
         assert sig.parameters["allow_write"].default is False, (
             f"{fn.__name__} must default allow_write to False")
-        # calling without the gate returns an error, touching nothing
-        args = {"symbols": "SPY"} if "symbols" in sig.parameters else \
-               {"query": "SPY"}
+        # calling without the gate returns an error, touching nothing:
+        # fill every required (no-default) parameter with a dummy string
+        args = {name: "SPY" for name, p in sig.parameters.items()
+                if p.default is inspect.Parameter.empty}
         out = json.loads(fn(**args))
         assert "allow_write" in out.get("error", "")
 

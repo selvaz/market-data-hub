@@ -156,7 +156,9 @@ def _resolve_single(query: str, db_path: Optional[str] = None) -> Dict[str, Any]
     candidates = resolve_instrument(query, db_path=db_path)
     if not candidates:
         raise UnknownInstrumentError(
-            f"{query!r} matches no listing, alias or config-universe symbol")
+            f"{query!r} matches no listing, alias or config-universe symbol; "
+            f"register it first with register_listing(symbol, exchange=..., "
+            f"currency=...) and then ensure_price_history")
     if len(candidates) > 1:
         raise AmbiguousInstrumentError(query, candidates)
     return candidates[0]
@@ -197,6 +199,86 @@ def _register_listing(con, cand: Dict[str, Any]) -> Dict[str, Any]:
     out = dict(cand)
     out.update(listing_id=listing_id, instrument_id=instrument_id, registered=True)
     return out
+
+
+def register_listing(symbol: str, *, exchange: str, currency: str,
+                     kind: str = "EQUITY", name: Optional[str] = None,
+                     provider: str = _DEFAULT_PROVIDER,
+                     provider_symbol: Optional[str] = None,
+                     db_path: Optional[str] = None) -> Dict[str, Any]:
+    """Register an ARBITRARY single name not present in listings/config
+    (audit CA-05): the caller supplies the identity — exchange, currency,
+    provider symbol — and gets a listing_id back; ingestion then goes through
+    the normal ensure_price_history job.
+
+    Idempotent: re-registering the same (symbol, provider, exchange) returns
+    the existing listing (created=False). A second venue for the same
+    (symbol, provider) gets its own listing_id (dual listing), never an
+    overwrite. Ambiguity later is the resolver's job — it will return both
+    candidates and force an explicit listing_id.
+    """
+    symbol = (symbol or "").strip()
+    if not symbol:
+        raise ValueError("symbol is required")
+    if not (exchange or "").strip() or not (currency or "").strip():
+        raise ValueError(
+            f"registering the unknown symbol {symbol!r} requires explicit "
+            f"exchange and currency (identity is never guessed)")
+    exchange = exchange.strip()
+    currency = currency.strip().upper()
+
+    with db_write_lock(db_path):
+        con = get_conn(db_path)
+        try:
+            now = _now()
+            row = con.execute("""
+                SELECT listing_id, instrument_id FROM listings
+                WHERE symbol = ? AND provider = ?
+                  AND coalesce(exchange, '') = ? AND active_to IS NULL
+            """, [symbol, provider, exchange]).fetchone()
+            if row:
+                return {"listing_id": row[0], "instrument_id": row[1],
+                        "symbol": symbol, "exchange": exchange,
+                        "currency": currency, "provider": provider,
+                        "registered": True, "created": False}
+
+            instrument_id = _stable_id("ins", symbol)
+            base = _stable_id("lst", symbol, provider)
+            taken = con.execute(
+                "SELECT 1 FROM listings WHERE listing_id = ?", [base]).fetchone()
+            # second venue for the same (symbol, provider): venue-qualified id
+            listing_id = _stable_id("lst", symbol, provider, exchange) if taken else base
+
+            con.execute("""
+                INSERT INTO instruments (instrument_id, issuer_id, kind, name,
+                                         created_at, updated_at)
+                SELECT ?, NULL, ?, ?, ?, ?
+                WHERE NOT EXISTS (SELECT 1 FROM instruments WHERE instrument_id = ?)
+            """, [instrument_id, kind, name, now, now, instrument_id])
+            con.execute("""
+                INSERT INTO listings (listing_id, instrument_id, symbol,
+                                      exchange, currency, provider,
+                                      provider_symbol, active_from, active_to,
+                                      created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)
+            """, [listing_id, instrument_id, symbol, exchange, currency,
+                  provider, provider_symbol or symbol, now, now])
+            con.execute("""
+                INSERT INTO identifier_aliases (namespace, value, target_type,
+                                                target_id, valid_from,
+                                                valid_to, updated_at)
+                SELECT 'ticker', ?, 'listing', ?, NULL, NULL, ?
+                WHERE NOT EXISTS (SELECT 1 FROM identifier_aliases
+                                  WHERE namespace = 'ticker' AND value = ?
+                                    AND target_type = 'listing' AND target_id = ?)
+            """, [symbol, listing_id, now, symbol, listing_id])
+            return {"listing_id": listing_id, "instrument_id": instrument_id,
+                    "symbol": symbol, "exchange": exchange,
+                    "currency": currency, "provider": provider,
+                    "provider_symbol": provider_symbol or symbol,
+                    "registered": True, "created": True}
+        finally:
+            con.close()
 
 
 # --------------------------------------------------------------------- ensure
