@@ -30,6 +30,9 @@ import pandas as pd
 
 from market_data_hub.config_loader import get_settings, get_yahoo_tickers
 from market_data_hub.db.connection import get_conn
+# Single id scheme shared with the upsert auto-attach (db.identity): two
+# writers can never mint different ids for the same (symbol, provider).
+from market_data_hub.db.identity import stable_id as _stable_id
 from market_data_hub.db.upsert import upsert
 from market_data_hub.lock import db_write_lock
 
@@ -65,9 +68,6 @@ def _now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _stable_id(prefix: str, *parts: str) -> str:
-    h = hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()[:12]
-    return f"{prefix}_{h}"
 
 
 def _request_hash(payload: Dict[str, Any]) -> str:
@@ -288,6 +288,9 @@ def ensure_price_history(query: str, start: Optional[str] = None,
                 if df is not None and not df.empty:
                     df = df.copy()
                     df["symbol"] = symbol
+                    # explicit listing key (CA-01): never rely on the symbol
+                    # auto-attach here — this is the dual-listing-safe path
+                    df["listing_id"] = listing_id
                     if "source" not in df.columns:
                         df["source"] = provider
                     added, updated = upsert(con, "prices_daily", df)
@@ -357,7 +360,13 @@ def get_price_summary(query: str, start: Optional[str] = None,
     symbol = cand["symbol"]
     con = get_conn(db_path, read_only=True)
     try:
-        where, params = ["symbol = ?"], [symbol]
+        # keyed by LISTING (audit CA-01): dual listings sharing a ticker read
+        # their own series. Config-only candidates (no identity rows yet)
+        # cannot have rows either, so the symbol fallback is safe there.
+        if cand.get("listing_id"):
+            where, params = ["listing_id = ?"], [cand["listing_id"]]
+        else:
+            where, params = ["symbol = ?"], [symbol]
         if start:
             where.append("date >= ?")
             params.append(start)

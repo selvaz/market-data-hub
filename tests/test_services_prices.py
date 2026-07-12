@@ -218,6 +218,108 @@ def test_ensure_fetches_provider_symbol_not_warehouse_symbol(tmp_db):
     assert rows == [("BRK.B",)]
 
 
+def test_dual_listings_same_ticker_are_isolated(tmp_db):
+    """Audit CA-01 acceptance — the exact reproduction from the audit: two
+    ACTIVE listings sharing the ticker ACME (XNAS/XMIL), different provider
+    symbols and prices. Both ingested; neither overwrites the other; each
+    summary reads its own series."""
+    con = get_conn(tmp_db)
+    try:
+        xnas = svc._register_listing(con, {
+            "symbol": "ACME", "kind": "EQUITY", "name": "ACME US",
+            "exchange": "XNAS", "currency": "USD", "provider": "yahoo",
+            "provider_symbol": "ACME"})
+        xmil = svc._register_listing(con, {
+            "symbol": "ACME", "kind": "EQUITY", "name": "ACME IT",
+            "exchange": "XMIL", "currency": "EUR", "provider": "yahoo_it",
+            "provider_symbol": "ACME.MI"})
+    finally:
+        con.close()
+
+    def fetch_for(px0):
+        def fetch(symbols, start, end):
+            dates = pd.date_range(start, periods=2, freq="B")
+            return {symbols[0]: pd.DataFrame({
+                "date": dates.date, "close": [px0, px0 + 1.0],
+                "adj_close": [px0, px0 + 1.0],
+            })}
+        return fetch
+
+    svc.ensure_price_history(xnas["listing_id"], start="2024-01-01",
+                             end="2024-01-05", db_path=tmp_db,
+                             fetch=fetch_for(100.0))
+    svc.ensure_price_history(xmil["listing_id"], start="2024-01-01",
+                             end="2024-01-05", db_path=tmp_db,
+                             fetch=fetch_for(90.0))
+
+    us = svc.get_price_summary(xnas["listing_id"], db_path=tmp_db)
+    it = svc.get_price_summary(xmil["listing_id"], db_path=tmp_db)
+    assert us["last_adj_close"] == 101.0
+    assert it["last_adj_close"] == 91.0
+
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        n = con.execute("SELECT COUNT(*) FROM prices_daily "
+                        "WHERE symbol = 'ACME'").fetchone()[0]
+        per_listing = con.execute(
+            "SELECT listing_id, COUNT(*) FROM prices_daily "
+            "WHERE symbol = 'ACME' GROUP BY listing_id").fetchall()
+    finally:
+        con.close()
+    assert n == 4                       # 2 rows per listing, none overwritten
+    assert {r[1] for r in per_listing} == {2}
+
+    # the symbol-based auto-attach path must REFUSE the ambiguous ticker
+    from market_data_hub.db.identity import AmbiguousSymbolError
+    from market_data_hub.db.upsert import upsert as _upsert
+    con = get_conn(tmp_db)
+    try:
+        with pytest.raises(AmbiguousSymbolError, match="ACME"):
+            _upsert(con, "prices_daily", pd.DataFrame({
+                "date": [pd.Timestamp("2024-02-01").date()],
+                "symbol": ["ACME"], "adj_close": [1.0]}))
+    finally:
+        con.close()
+
+
+def test_v7_migration_rebuilds_prices_keyed_by_listing(tmp_path, monkeypatch):
+    """A v6-shaped DB (prices keyed by symbol, no listing_id) is rebuilt on
+    open: rows preserved, listing auto-registered, new key in place."""
+    import duckdb as _duck
+
+    from market_data_hub.db import connection as dbc
+
+    db = str(tmp_path / "old.duckdb")
+    monkeypatch.setenv("MARKET_DATA_DB", db)
+    raw = _duck.connect(db)
+    raw.execute("""
+        CREATE TABLE prices_daily (
+            date DATE NOT NULL, symbol VARCHAR NOT NULL,
+            open DOUBLE, high DOUBLE, low DOUBLE, close DOUBLE,
+            adj_close DOUBLE, volume BIGINT, source VARCHAR,
+            is_live BOOLEAN DEFAULT FALSE, updated_at TIMESTAMP,
+            PRIMARY KEY (date, symbol))""")
+    raw.execute("CREATE TABLE schema_meta (key VARCHAR PRIMARY KEY, value VARCHAR)")
+    raw.execute("INSERT INTO schema_meta VALUES ('schema_version', '6')")
+    raw.execute("INSERT INTO prices_daily (date, symbol, adj_close) VALUES "
+                "('2024-01-02', 'OLDCO', 10.0), ('2024-01-03', 'OLDCO', 11.0)")
+    raw.close()
+
+    con = dbc.get_conn(db)   # triggers migrate()
+    try:
+        assert dbc.get_schema_version(con) == dbc.SCHEMA_VERSION
+        rows = con.execute("SELECT date, listing_id, symbol, adj_close "
+                           "FROM prices_daily ORDER BY date").fetchall()
+        assert len(rows) == 2
+        assert all(r[1].startswith("lst_") for r in rows)
+        assert {r[3] for r in rows} == {10.0, 11.0}
+        lst = con.execute("SELECT COUNT(*) FROM listings "
+                          "WHERE symbol = 'OLDCO'").fetchone()[0]
+        assert lst == 1
+    finally:
+        con.close()
+
+
 def test_tool_layer_gating_and_shapes(tmp_db):
     from market_data_hub import agent_tools as at
 

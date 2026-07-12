@@ -17,8 +17,15 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 -- ----------------------------------------------------------------------------
 -- 1. prices_daily — daily OHLCV (equity, ETF, FX, VIX indices, crypto daily)
 -- ----------------------------------------------------------------------------
+-- Keyed by LISTING, not by bare symbol (audit CA-01): two listings sharing a
+-- ticker (dual listing, ADR, venue) can never overwrite each other. symbol
+-- stays as a denormalized read convenience for univocal mappings; upsert()
+-- attaches listing_id automatically for batch writers and refuses ambiguous
+-- symbols. No secondary index on symbol (duckdb 1.4.x INSERT OR REPLACE
+-- keeps the OLD value of an indexed non-key column on the conflict path).
 CREATE TABLE IF NOT EXISTS prices_daily (
     date        DATE        NOT NULL,
+    listing_id  VARCHAR     NOT NULL,
     symbol      VARCHAR     NOT NULL,
     open        DOUBLE,
     high        DOUBLE,
@@ -29,9 +36,8 @@ CREATE TABLE IF NOT EXISTS prices_daily (
     source      VARCHAR,           -- 'yahoo' | 'binance_daily'
     is_live     BOOLEAN DEFAULT FALSE,  -- TRUE = live intraday row, overwritten by the EOD
     updated_at  TIMESTAMP,
-    PRIMARY KEY (date, symbol)
+    PRIMARY KEY (date, listing_id)
 );
-CREATE INDEX IF NOT EXISTS idx_prices_symbol ON prices_daily (symbol);
 
 -- ----------------------------------------------------------------------------
 -- 2. crypto_ohlcv — Binance intraday data (1h, 4h, 1d)
@@ -414,13 +420,15 @@ CREATE TABLE IF NOT EXISTS sec_coverage (
 -- VIEWS
 -- ============================================================================
 
--- v_returns — daily log returns from adj_close
+-- v_returns — daily log returns from adj_close, per LISTING (CA-01: dual
+-- listings sharing a ticker must never be chained into one return series)
 CREATE OR REPLACE VIEW v_returns AS
 SELECT
     date,
+    listing_id,
     symbol,
     adj_close,
-    ln(adj_close / lag(adj_close) OVER (PARTITION BY symbol ORDER BY date)) AS log_return
+    ln(adj_close / lag(adj_close) OVER (PARTITION BY listing_id ORDER BY date)) AS log_return
 FROM prices_daily
 WHERE adj_close IS NOT NULL AND adj_close > 0;
 

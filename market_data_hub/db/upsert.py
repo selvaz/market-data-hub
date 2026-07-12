@@ -15,7 +15,7 @@ import pandas as pd
 # Expected columns per table (guaranteed order in the INSERT)
 _COLUMNS = {
     "prices_daily": [
-        "date", "symbol", "open", "high", "low", "close",
+        "date", "listing_id", "symbol", "open", "high", "low", "close",
         "adj_close", "volume", "source", "is_live", "updated_at",
     ],
     "crypto_ohlcv": [
@@ -55,7 +55,7 @@ _COLUMNS = {
 }
 
 _PK = {
-    "prices_daily": ["date", "symbol"],
+    "prices_daily": ["date", "listing_id"],
     "crypto_ohlcv": ["ts", "symbol", "timeframe"],
     "macro_series": ["date", "series_id"],
     "custom_series": ["date", "series_id"],
@@ -64,6 +64,40 @@ _PK = {
     "factor_returns": ["date", "factor_set", "factor"],
     "macro_panel_coverage": ["indicator_id"],
 }
+
+
+def _attach_listing_ids(con: duckdb.DuckDBPyConnection,
+                        df: pd.DataFrame) -> pd.DataFrame:
+    """Map prices_daily rows to their listing_id via the listings table
+    (audit CA-01: the price series is keyed by listing, not by symbol).
+
+    Symbols with no listing yet are auto-registered (the batch runner's
+    config universe path); a symbol mapping to MORE than one active listing
+    raises — dual listings must be written with an explicit listing_id
+    (services.prices.ensure_price_history does), never guessed here.
+    """
+    from market_data_hub.db.identity import AmbiguousSymbolError, ensure_listing
+
+    out = df.copy()
+    symbols = sorted({str(s) for s in out["symbol"].dropna().unique()})
+    rows = con.execute(
+        f"SELECT symbol, listing_id FROM listings WHERE active_to IS NULL "
+        f"AND symbol IN ({','.join('?' * len(symbols))})", symbols).fetchall()
+    mapping: dict[str, str] = {}
+    ambiguous = set()
+    for sym, lid in rows:
+        if sym in mapping:
+            ambiguous.add(sym)
+        mapping[sym] = lid
+    if ambiguous:
+        raise AmbiguousSymbolError(
+            f"symbols map to multiple active listings, pass listing_id "
+            f"explicitly: {sorted(ambiguous)}")
+    for sym in symbols:
+        if sym not in mapping:
+            mapping[sym] = ensure_listing(con, sym)
+    out["listing_id"] = out["symbol"].map(mapping)
+    return out
 
 
 def _count_existing(con: duckdb.DuckDBPyConnection, table: str,
@@ -95,6 +129,10 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
 
     cols = _COLUMNS[table]
     out = df.copy()
+
+    if table == "prices_daily" and ("listing_id" not in out.columns
+                                    or out["listing_id"].isna().any()):
+        out = _attach_listing_ids(con, out)
 
     # Collapse intra-batch primary-key duplicates before counting: INSERT OR
     # REPLACE keeps the last conflicting row anyway, but len(out) would count
