@@ -1,12 +1,13 @@
 {
-  "_shape": "wide: one record per date, one column per instrument, keyed by the FULL canonical lazydatacore id (e.g. 'ticker:AAPL', not bare 'AAPL') -- matching lazystats.models.ReturnDataset.rows and lazystats.io.datahub.load_returns's real output. Validated structurally by reconstructing a DatetimeIndex-ed DataFrame from `rows` and calling market_data_hub.lazydatacore.validate_wide_prices (return/price-agnostic).",
+  "_shape": "wide: one record per date, one column per instrument. Columns are keyed by the BARE symbol exactly as market_data_hub.extract.extract_returns emits them (DatetimeIndex + one column per requested symbol), NOT the canonical id. `instruments` lists the canonical lazydatacore ids the caller requested; a consumer maps bare column -> canonical id itself (this is what lazystats.io.datahub.load_returns does when building a ReturnDataset). Validated structurally by reconstructing a DatetimeIndex-ed DataFrame from `rows` and calling market_data_hub.lazydatacore.validate_wide_prices (return/price-agnostic).",
   "instruments": ["ticker:AAPL", "ticker:MSFT"],
+  "symbols": ["AAPL", "MSFT"],
   "return_kind": "log",
   "frequency": "W",
   "rows": [
-    {"date": "2026-06-19", "ticker:AAPL": 0.0142, "ticker:MSFT": -0.0038},
-    {"date": "2026-06-26", "ticker:AAPL": -0.0071, "ticker:MSFT": 0.0205},
-    {"date": "2026-07-03", "ticker:AAPL": 0.0298, "ticker:MSFT": 0.0117},
-    {"date": "2026-07-10", "ticker:AAPL": -0.0056, "ticker:MSFT": -0.0142}
+    {"date": "2026-06-19", "AAPL": 0.0142, "MSFT": -0.0038},
+    {"date": "2026-06-26", "AAPL": -0.0071, "MSFT": 0.0205},
+    {"date": "2026-07-03", "AAPL": 0.0298, "MSFT": 0.0117},
+    {"date": "2026-07-10", "AAPL": -0.0056, "MSFT": -0.0142}
   ]
 }
