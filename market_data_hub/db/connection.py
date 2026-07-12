@@ -316,8 +316,10 @@ def _migrate_prices_to_listing_key(con: duckdb.DuckDBPyConnection) -> None:
         FROM prices_daily p
         JOIN listings l ON l.symbol = p.symbol AND l.active_to IS NULL
     """)
-    before = con.execute("SELECT COUNT(*) FROM prices_daily").fetchone()[0]
-    after = con.execute("SELECT COUNT(*) FROM prices_daily_v7").fetchone()[0]
+    row_before = con.execute("SELECT COUNT(*) FROM prices_daily").fetchone()
+    row_after = con.execute("SELECT COUNT(*) FROM prices_daily_v7").fetchone()
+    assert row_before is not None and row_after is not None  # COUNT(*) is total
+    before, after = row_before[0], row_after[0]
     if before != after:
         raise RuntimeError(
             f"prices_daily v7 migration aborted: row count changed "
