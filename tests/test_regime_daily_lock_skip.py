@@ -20,20 +20,37 @@ import types
 from contextlib import contextmanager
 
 
-def _install_lazyhmm_stub(monkeypatch) -> None:
-    """Make ``run_regime_daily`` importable without the optional lazyhmm add-on.
+def _install_optional_stack_stubs(monkeypatch) -> None:
+    """Make ``run_regime_daily`` importable without the optional regime add-on
+    stack (``lazyhmm`` + ``matplotlib``), so this wiring test runs in CI too.
 
-    Only the two names ``regime.estimate`` binds at import time are needed; the
-    engine is never invoked on the lock-timeout path under test.
+    The lock-timeout path never fits an HMM or renders a chart, so trivial
+    stubs suffice: ``regime.estimate`` binds two names from ``lazyhmm`` at
+    import, and ``regime.report`` does ``import matplotlib; matplotlib.use(...);
+    import matplotlib.pyplot`` at import.
     """
-    fake = types.ModuleType("lazyhmm")
-    fake.MSRegimeEngine = object
-    fake.RegimeRun = object
-    monkeypatch.setitem(sys.modules, "lazyhmm", fake)
+    # Force a fresh import under the stubs (and restore the module table at
+    # teardown, so a stubbed regime module never leaks to another test under
+    # pytest-randomly's randomized order).
+    for _name in list(sys.modules):
+        if _name == "run_regime_daily" or _name.startswith("market_data_hub.regime"):
+            monkeypatch.delitem(sys.modules, _name, raising=False)
+
+    lazyhmm = types.ModuleType("lazyhmm")
+    lazyhmm.MSRegimeEngine = object
+    lazyhmm.RegimeRun = object
+    monkeypatch.setitem(sys.modules, "lazyhmm", lazyhmm)
+
+    mpl = types.ModuleType("matplotlib")
+    mpl.use = lambda *a, **k: None
+    pyplot = types.ModuleType("matplotlib.pyplot")
+    mpl.pyplot = pyplot
+    monkeypatch.setitem(sys.modules, "matplotlib", mpl)
+    monkeypatch.setitem(sys.modules, "matplotlib.pyplot", pyplot)
 
 
 def test_regime_daily_skips_cleanly_on_writer_lock_timeout(monkeypatch):
-    _install_lazyhmm_stub(monkeypatch)
+    _install_optional_stack_stubs(monkeypatch)
     import importlib
 
     rrd = importlib.import_module("run_regime_daily")
@@ -65,7 +82,7 @@ def test_regime_daily_skips_cleanly_on_writer_lock_timeout(monkeypatch):
 
 def test_regime_daily_imports_dblocktimeout_symbol(monkeypatch):
     """Guard against the import regressing: the handler needs the symbol bound."""
-    _install_lazyhmm_stub(monkeypatch)
+    _install_optional_stack_stubs(monkeypatch)
     import importlib
 
     rrd = importlib.import_module("run_regime_daily")
