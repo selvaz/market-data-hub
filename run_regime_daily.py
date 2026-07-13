@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from market_data_hub.config_loader import get_settings  # noqa: E402
 from market_data_hub.db.connection import get_conn  # noqa: E402
-from market_data_hub.lock import db_write_lock  # noqa: E402
+from market_data_hub.lock import DBLockTimeout, db_write_lock  # noqa: E402
 from market_data_hub.regime.estimate import (  # noqa: E402
     DEFAULT_N_STARTS, DEFAULT_RETRO_DAYS, DEFAULT_S_MAX,
     priority_symbols, run_daily_regime_estimation, summary_dataframe,
@@ -70,12 +70,23 @@ def main() -> int:
 
     print(f"Fitting regimes as of {asof.isoformat()} "
           f"({'custom tickers' if args.tickers else f'priority={args.priority}'})...")
-    with db_write_lock(args.db):
-        results = run_daily_regime_estimation(
-            symbols=symbols, priority=args.priority, S_max=args.s_max,
-            n_starts=args.n_starts, retro_days=args.retro_days, asof=asof,
-            db_path=args.db,
-        )
+    # This job is scheduled (MarketData_HMMRegime, 30 min after US close) and can
+    # overlap the USClose/EU18 refresh or a manual backfill/import, all of which
+    # take the same single-writer lock. Mirror runner.py: if another writer holds
+    # it past the timeout, skip this run cleanly (exit 0) instead of letting an
+    # unhandled DBLockTimeout crash the task with a traceback — a red Scheduler
+    # task and a silently-missed regime report/Telegram on a benign, expected
+    # contention. A skipped day is recovered on the next scheduled run.
+    try:
+        with db_write_lock(args.db):
+            results = run_daily_regime_estimation(
+                symbols=symbols, priority=args.priority, S_max=args.s_max,
+                n_starts=args.n_starts, retro_days=args.retro_days, asof=asof,
+                db_path=args.db,
+            )
+    except DBLockTimeout as ex:
+        print(f"SKIP: {ex}")
+        return 0
 
     summary = summary_dataframe(results)
     ok = summary[summary["status"] == "ok"]
