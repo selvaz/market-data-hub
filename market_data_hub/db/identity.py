@@ -44,16 +44,32 @@ _DEFAULT_CURRENCY = "USD"
 _FX_PAIR_RE = re.compile(r"^[A-Z]{3}([A-Z]{3})=X$")
 
 
-def currency_for_symbol(symbol: str) -> str:
-    """Listing currency for a config-universe symbol (best-effort, not a
+def _config_symbols() -> set[str]:
+    from market_data_hub.config_loader import get_yahoo_tickers
+    return {e["symbol"] for e in get_yahoo_tickers()}
+
+
+def currency_for_symbol(symbol: str) -> Optional[str]:
+    """Listing currency for a CONFIG-UNIVERSE symbol (best-effort, not a
     provider lookup): explicit override, else FX quote-currency derivation,
-    else the USD default."""
+    else the USD default.
+
+    Returns ``None`` for a symbol NOT in ``config/tickers.yaml`` -- an
+    ad-hoc/on-demand ticker (e.g. ``7203.T``, ``VOD.L``) is not part of the
+    curated, USD-heavy universe this heuristic was derived from, and every
+    other override/pattern here is specific to known config symbols. Auto-
+    registering an unknown symbol should leave currency unknown (NULL)
+    rather than silently guess USD -- and once non-NULL, the backfill script
+    would never revisit it to correct a wrong guess (it only fills NULLs).
+    """
     if symbol in _CURRENCY_OVERRIDES:
         return _CURRENCY_OVERRIDES[symbol]
     m = _FX_PAIR_RE.match(symbol)
     if m:
         return m.group(1)
-    return _DEFAULT_CURRENCY
+    if symbol in _config_symbols():
+        return _DEFAULT_CURRENCY
+    return None
 
 
 def stable_id(prefix: str, *parts: str) -> str:
