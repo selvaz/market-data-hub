@@ -44,14 +44,18 @@ def main() -> int:
     with db_write_lock():
         con = get_conn()
         try:
-            # Preserve any already-curated benchmark_proxy: upsert() is a
-            # full-row INSERT OR REPLACE, so a rerun must carry forward the
-            # existing value rather than clobber it with the hardcoded NULL
-            # every classification-only refresh would otherwise write.
-            existing = dict(con.execute(
-                f"SELECT symbol, benchmark_proxy FROM etf_classification "
+            # Preserve already-curated benchmark_proxy AND the original
+            # created_at: upsert() is a full-row INSERT OR REPLACE, so a
+            # rerun must carry both forward rather than clobber them --
+            # benchmark_proxy with the hardcoded NULL a classification-only
+            # refresh would otherwise write, created_at with "now" (only
+            # updated_at should advance on a refresh).
+            existing_rows = con.execute(
+                f"SELECT symbol, benchmark_proxy, created_at FROM etf_classification "
                 f"WHERE symbol IN ({','.join('?' * len(symbols))})",
-                symbols).fetchall())
+                symbols).fetchall()
+            existing_proxy = {r[0]: r[1] for r in existing_rows}
+            existing_created = {r[0]: r[2] for r in existing_rows}
 
             rows = []
             for e in entries:
@@ -64,9 +68,9 @@ def main() -> int:
                     "sub_group": c["group"],
                     "sector": c["sector"],
                     "theme": c["theme"],
-                    "benchmark_proxy": existing.get(c["symbol"]),
+                    "benchmark_proxy": existing_proxy.get(c["symbol"]),
                     "priority": c["priority"],
-                    "created_at": now,
+                    "created_at": existing_created.get(c["symbol"], now),
                     "updated_at": now,
                 })
             df = pd.DataFrame(rows)
