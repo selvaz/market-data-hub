@@ -47,6 +47,26 @@ _KIND_BY_ASSET_CLASS = {
     "VOLATILITY": "INDEX",
 }
 
+# Listing currency override by symbol. The config universe is USD by default
+# (US-exchange-listed ETFs); the STOXX Europe 600 sector sleeves trade on
+# Xetra in EUR and are the only exception (verified against tickers.yaml --
+# every other symbol is unsuffixed or a plain US ticker).
+_CURRENCY_OVERRIDES = {
+    "EXSA.DE": "EUR",
+    "EXV1.DE": "EUR",
+    "EXV3.DE": "EUR",
+    "EXV4.DE": "EUR",
+    "EXH4.DE": "EUR",
+    "EXH1.DE": "EUR",
+    "EXH9.DE": "EUR",
+}
+_DEFAULT_CURRENCY = "USD"
+
+
+def _currency_for_symbol(symbol: str) -> str:
+    return _CURRENCY_OVERRIDES.get(symbol, _DEFAULT_CURRENCY)
+
+
 _DEFAULT_PROVIDER = "yahoo"
 
 
@@ -91,7 +111,7 @@ def _config_candidates(query: str) -> List[Dict[str, Any]]:
                 "kind": _KIND_BY_ASSET_CLASS.get(e.get("asset_class", ""), "OTHER"),
                 "name": e.get("name"),
                 "exchange": None,
-                "currency": None,
+                "currency": _currency_for_symbol(e["symbol"]),
                 "provider": _DEFAULT_PROVIDER,
                 "provider_symbol": e["symbol"],
                 "registered": False,

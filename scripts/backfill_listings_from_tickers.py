@@ -18,7 +18,7 @@ from market_data_hub.config_loader import get_yahoo_tickers          # noqa: E40
 from market_data_hub.db.connection import get_conn                   # noqa: E402
 from market_data_hub.lock import db_write_lock                       # noqa: E402
 from market_data_hub.services.prices import (                        # noqa: E402
-    _KIND_BY_ASSET_CLASS, _register_listing)
+    _KIND_BY_ASSET_CLASS, _currency_for_symbol, _register_listing)
 
 
 def main() -> int:
@@ -33,7 +33,7 @@ def main() -> int:
                     "kind": _KIND_BY_ASSET_CLASS.get(e.get("asset_class", ""), "OTHER"),
                     "name": e.get("name"),
                     "exchange": None,
-                    "currency": None,
+                    "currency": _currency_for_symbol(e["symbol"]),
                     "provider": "yahoo",
                 })
             after = con.execute("SELECT COUNT(*) FROM listings").fetchone()[0]

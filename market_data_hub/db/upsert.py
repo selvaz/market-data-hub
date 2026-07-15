@@ -52,6 +52,10 @@ _COLUMNS = {
         "first_date", "last_date", "lag_days", "stalled", "obs_count",
         "status", "last_run_id", "updated_at",
     ],
+    "etf_classification": [
+        "symbol", "asset_class", "area", "category", "sub_group", "sector",
+        "theme", "benchmark_proxy", "priority", "created_at", "updated_at",
+    ],
 }
 
 # Non-NULL defaults for columns that may be absent from an incoming DataFrame.
@@ -73,6 +77,7 @@ _PK = {
     "coverage_report": ["symbol", "source"],
     "factor_returns": ["date", "factor_set", "factor"],
     "macro_panel_coverage": ["indicator_id"],
+    "etf_classification": ["symbol"],
 }
 
 
