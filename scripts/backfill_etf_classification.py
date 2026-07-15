@@ -6,15 +6,20 @@ today only derivable at query time via catalog._classify()) into the
 etf_classification table, and backfill listings.currency for symbols
 registered before the currency fix (db/identity.py's currency_for_symbol).
 
-Idempotent AND non-destructive on rerun:
+Idempotent, non-destructive on rerun, AND kept in sync with tickers.yaml:
 - classification columns always reflect the current tickers.yaml +
   _classify() mapping (re-derived every run);
-- benchmark_proxy is curated separately (not derivable from config), so an
-  existing value is preserved across reruns instead of being reset to NULL;
+- benchmark_proxy and created_at are curated/original metadata, not
+  derivable from config, so existing values are preserved across reruns
+  instead of being reset to NULL / "now" by the INSERT OR REPLACE;
 - the currency backfill only fills listings rows that are still NULL, for
   the config/Yahoo-provider listing specifically -- it never overwrites an
   already-set currency (e.g. a distinct listing for the same symbol on
-  another venue, registered explicitly with its own currency).
+  another venue, registered explicitly with its own currency);
+- a symbol removed or renamed in tickers.yaml is DELETEd from
+  etf_classification on the next run -- this table is a materialization of
+  the current config, not an independent audit trail, so a stale row for a
+  no-longer-configured symbol would silently drift out of sync otherwise.
 
 Run:  python scripts/backfill_etf_classification.py
 """
@@ -76,6 +81,15 @@ def main() -> int:
             df = pd.DataFrame(rows)
             added, updated = upsert(con, "etf_classification", df)
 
+            # Retire rows for symbols no longer in tickers.yaml, so the table
+            # stays a faithful materialization of the current config instead
+            # of accumulating stale/removed/renamed symbols indefinitely.
+            removed = con.execute(
+                f"DELETE FROM etf_classification "
+                f"WHERE symbol NOT IN ({','.join('?' * len(symbols))})",
+                symbols).fetchall()
+            n_removed = removed[0][0] if removed else 0
+
             # Backfill currency on listings rows that are still NULL for the
             # config/Yahoo-provider listing specifically -- never overwrite
             # an already-set currency (e.g. a distinct listing for the same
@@ -99,8 +113,8 @@ def main() -> int:
         finally:
             con.close()
 
-    print(f"etf_classification: +{added} added, {updated} updated "
-          f"({len(entries)} config symbols processed)")
+    print(f"etf_classification: +{added} added, {updated} updated, "
+          f"-{n_removed} removed ({len(entries)} config symbols processed)")
     print(f"listings.currency: {n_updated_listings} rows backfilled")
     return 0
 
