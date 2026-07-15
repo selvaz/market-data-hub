@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 
 
 def _default_db() -> str:
@@ -223,6 +223,17 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
                             "last_seen_run_id = coalesce(last_seen_run_id, run_id)")
                 con.execute("ALTER TABLE sec_filings DROP COLUMN run_id")
         current = 8
+    if current < 9:
+        # v8 -> v9: etf_classification (curated-universe anagrafica). Purely
+        # additive — apply_schema() above already created it via CREATE TABLE
+        # IF NOT EXISTS. This step just advances the recorded version so a
+        # write-mode open on an existing v8 DB is guaranteed to have run
+        # apply_schema() (via migrate(), above) before anything queries the
+        # new table — a read-only open on a pre-existing DB never calls
+        # apply_schema() at all (see get_conn()), so without this version
+        # bump an existing DB could sit indefinitely reporting "current"
+        # while the table is still absent.
+        current = 9
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

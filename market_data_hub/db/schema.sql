@@ -311,6 +311,30 @@ CREATE TABLE IF NOT EXISTS listings (
     updated_at      TIMESTAMP
 );
 
+-- Curated-universe classification ("anagrafica"), keyed by symbol (joins
+-- listings.symbol / prices_daily.symbol directly -- no synthetic id, since
+-- there is exactly one classification row per config-universe symbol).
+-- Materializes what catalog.py's `_classify()` previously only derived at
+-- query time from the free-text `name` field in config/tickers.yaml, plus a
+-- new `benchmark_proxy` slot for the top-down investment-process pillars.
+-- Editorial/curated data, distinct from the identity tables above: a symbol
+-- can exist in `listings` (identity) without ever being classified here, and
+-- vice versa is not expected but not enforced by a FK (small reference table,
+-- same rationale as issuers/instruments/listings above).
+CREATE TABLE IF NOT EXISTS etf_classification (
+    symbol          VARCHAR PRIMARY KEY,
+    asset_class     VARCHAR,               -- EQUITY | FIXED_INCOME | COMMODITIES | ALTERNATIVES | FX | REAL_ESTATE
+    area            VARCHAR,               -- config area, e.g. 'USA', 'Europe', 'Emerging Markets'
+    category        VARCHAR,               -- name token 0 (mirrors catalog._classify's 'category')
+    sub_group       VARCHAR,               -- name token 1 (mirrors catalog._classify's 'group')
+    sector          VARCHAR,               -- GICS sector for sector ETFs, else NULL
+    theme           VARCHAR,               -- for ALTERNATIVES sleeves
+    benchmark_proxy VARCHAR,               -- pillar-proxy symbol, e.g. equity/fixed-income/commodity anchor; NULL until assigned
+    priority        INTEGER,
+    created_at      TIMESTAMP,
+    updated_at      TIMESTAMP
+);
+
 -- ticker/ISIN/FIGI/CIK -> entity mapping with temporal validity. namespace is
 -- e.g. 'ticker', 'ticker_historic', 'isin', 'figi', 'cik'; target_type is
 -- 'issuer' | 'instrument' | 'listing'.

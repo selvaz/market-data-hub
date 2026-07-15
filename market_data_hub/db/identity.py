@@ -9,10 +9,67 @@ different listing_ids for the same (symbol, provider).
 from __future__ import annotations
 
 import hashlib
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
 DEFAULT_PROVIDER = "yahoo"
+
+# Listing currency by symbol -- lives here (not services/prices.py) so BOTH
+# identity-row producers can use it: the services layer (services/prices.py)
+# AND the prices-upsert auto-attach path (db/upsert.py's
+# _attach_listing_ids -> ensure_listing), which used to hardcode currency to
+# NULL for symbols first seen through ordinary price ingestion rather than
+# the service/script paths.
+#
+# Default is USD (the config universe is US-exchange-listed ETFs); the STOXX
+# Europe 600 sector sleeves trade on Xetra in EUR and are the only
+# exchange-suffix exception (verified against tickers.yaml -- every other
+# non-FX symbol is unsuffixed or a plain US ticker).
+_CURRENCY_OVERRIDES = {
+    "EXSA.DE": "EUR",
+    "EXV1.DE": "EUR",
+    "EXV3.DE": "EUR",
+    "EXV4.DE": "EUR",
+    "EXH4.DE": "EUR",
+    "EXH1.DE": "EUR",
+    "EXH9.DE": "EUR",
+}
+_DEFAULT_CURRENCY = "USD"
+
+# Yahoo FX pair convention: 'AAABBB=X' quotes 1 AAA in BBB -- the instrument's
+# price (and therefore its currency) is the SECOND code, not the first, and
+# not the universe default. E.g. 'USDJPY=X' is priced in JPY, 'EURUSD=X' in
+# USD. Plain ETFs like 'UUP' (not '=X'-suffixed) fall through to the default.
+_FX_PAIR_RE = re.compile(r"^[A-Z]{3}([A-Z]{3})=X$")
+
+
+def _config_symbols() -> set[str]:
+    from market_data_hub.config_loader import get_yahoo_tickers
+    return {e["symbol"] for e in get_yahoo_tickers()}
+
+
+def currency_for_symbol(symbol: str) -> Optional[str]:
+    """Listing currency for a CONFIG-UNIVERSE symbol (best-effort, not a
+    provider lookup): explicit override, else FX quote-currency derivation,
+    else the USD default.
+
+    Returns ``None`` for a symbol NOT in ``config/tickers.yaml`` -- an
+    ad-hoc/on-demand ticker (e.g. ``7203.T``, ``VOD.L``) is not part of the
+    curated, USD-heavy universe this heuristic was derived from, and every
+    other override/pattern here is specific to known config symbols. Auto-
+    registering an unknown symbol should leave currency unknown (NULL)
+    rather than silently guess USD -- and once non-NULL, the backfill script
+    would never revisit it to correct a wrong guess (it only fills NULLs).
+    """
+    if symbol in _CURRENCY_OVERRIDES:
+        return _CURRENCY_OVERRIDES[symbol]
+    m = _FX_PAIR_RE.match(symbol)
+    if m:
+        return m.group(1)
+    if symbol in _config_symbols():
+        return _DEFAULT_CURRENCY
+    return None
 
 
 def stable_id(prefix: str, *parts: str) -> str:
@@ -28,7 +85,15 @@ def ensure_listing(con, symbol: str, *, kind: str = "OTHER",
                    provider_symbol: Optional[str] = None) -> str:
     """Idempotently create instrument + listing + ticker alias for a symbol
     and return the listing_id. Deterministic ids: safe to call repeatedly and
-    from multiple writers."""
+    from multiple writers.
+
+    ``currency`` defaults via :func:`currency_for_symbol` when not given, so
+    every caller/call site gets the same best-effort currency without having
+    to remember to pass it explicitly (a prior per-call-site fix here missed
+    the migration path in connection.py's ``_migrate_prices_to_listing_key``,
+    which also auto-registers orphan symbols)."""
+    if currency is None:
+        currency = currency_for_symbol(symbol)
     now = datetime.now(timezone.utc)
     instrument_id = stable_id("ins", symbol)
     listing_id = stable_id("lst", symbol, provider)

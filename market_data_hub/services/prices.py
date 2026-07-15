@@ -30,6 +30,7 @@ import pandas as pd
 
 from market_data_hub.config_loader import get_settings, get_yahoo_tickers
 from market_data_hub.db.connection import get_conn
+from market_data_hub.db import identity as _identity
 # Single id scheme shared with the upsert auto-attach (db.identity): two
 # writers can never mint different ids for the same (symbol, provider).
 from market_data_hub.db.identity import stable_id as _stable_id
@@ -46,6 +47,10 @@ _KIND_BY_ASSET_CLASS = {
     "FX": "FX",
     "VOLATILITY": "INDEX",
 }
+
+# Shared with db/upsert.py's auto-attach path -- see db/identity.py for why
+# this lives there and not here.
+_currency_for_symbol = _identity.currency_for_symbol
 
 _DEFAULT_PROVIDER = "yahoo"
 
@@ -91,7 +96,7 @@ def _config_candidates(query: str) -> List[Dict[str, Any]]:
                 "kind": _KIND_BY_ASSET_CLASS.get(e.get("asset_class", ""), "OTHER"),
                 "name": e.get("name"),
                 "exchange": None,
-                "currency": None,
+                "currency": _currency_for_symbol(e["symbol"]),
                 "provider": _DEFAULT_PROVIDER,
                 "provider_symbol": e["symbol"],
                 "registered": False,
