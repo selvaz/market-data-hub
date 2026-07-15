@@ -91,7 +91,8 @@ def _attach_listing_ids(con: duckdb.DuckDBPyConnection,
     raises — dual listings must be written with an explicit listing_id
     (services.prices.ensure_price_history does), never guessed here.
     """
-    from market_data_hub.db.identity import AmbiguousSymbolError, ensure_listing
+    from market_data_hub.db.identity import (
+        AmbiguousSymbolError, currency_for_symbol, ensure_listing)
 
     out = df.copy()
     symbols = sorted({str(s) for s in out["symbol"].dropna().unique()})
@@ -110,7 +111,7 @@ def _attach_listing_ids(con: duckdb.DuckDBPyConnection,
             f"explicitly: {sorted(ambiguous)}")
     for sym in symbols:
         if sym not in mapping:
-            mapping[sym] = ensure_listing(con, sym)
+            mapping[sym] = ensure_listing(con, sym, currency=currency_for_symbol(sym))
     out["listing_id"] = out["symbol"].map(mapping)
     return out
 

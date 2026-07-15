@@ -95,6 +95,11 @@ Write-Host ""
 Write-Host "Verifying configuration..."
 & $Python -c "from market_data_hub.config_loader import get_settings; s=get_settings(); print('db_path=' + str(s.get('db_path'))); print('report_dir=' + str(s.get('reports', {}).get('dir'))); print('fred_api_key_present=' + str(bool(s.get('fred_api_key'))))"
 
+Write-Host ""
+Write-Host "Populating ETF identity/classification anagrafica (fast, idempotent -- unlike -RunBackfill, always runs)..."
+& $Python (Join-Path $Root "scripts\backfill_listings_from_tickers.py")
+& $Python (Join-Path $Root "scripts\backfill_etf_classification.py")
+
 if (!$SkipTests) {
     Write-Host ""
     Write-Host "Running test suite..."

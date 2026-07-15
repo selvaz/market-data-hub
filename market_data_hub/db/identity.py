@@ -9,10 +9,51 @@ different listing_ids for the same (symbol, provider).
 from __future__ import annotations
 
 import hashlib
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
 DEFAULT_PROVIDER = "yahoo"
+
+# Listing currency by symbol -- lives here (not services/prices.py) so BOTH
+# identity-row producers can use it: the services layer (services/prices.py)
+# AND the prices-upsert auto-attach path (db/upsert.py's
+# _attach_listing_ids -> ensure_listing), which used to hardcode currency to
+# NULL for symbols first seen through ordinary price ingestion rather than
+# the service/script paths.
+#
+# Default is USD (the config universe is US-exchange-listed ETFs); the STOXX
+# Europe 600 sector sleeves trade on Xetra in EUR and are the only
+# exchange-suffix exception (verified against tickers.yaml -- every other
+# non-FX symbol is unsuffixed or a plain US ticker).
+_CURRENCY_OVERRIDES = {
+    "EXSA.DE": "EUR",
+    "EXV1.DE": "EUR",
+    "EXV3.DE": "EUR",
+    "EXV4.DE": "EUR",
+    "EXH4.DE": "EUR",
+    "EXH1.DE": "EUR",
+    "EXH9.DE": "EUR",
+}
+_DEFAULT_CURRENCY = "USD"
+
+# Yahoo FX pair convention: 'AAABBB=X' quotes 1 AAA in BBB -- the instrument's
+# price (and therefore its currency) is the SECOND code, not the first, and
+# not the universe default. E.g. 'USDJPY=X' is priced in JPY, 'EURUSD=X' in
+# USD. Plain ETFs like 'UUP' (not '=X'-suffixed) fall through to the default.
+_FX_PAIR_RE = re.compile(r"^[A-Z]{3}([A-Z]{3})=X$")
+
+
+def currency_for_symbol(symbol: str) -> str:
+    """Listing currency for a config-universe symbol (best-effort, not a
+    provider lookup): explicit override, else FX quote-currency derivation,
+    else the USD default."""
+    if symbol in _CURRENCY_OVERRIDES:
+        return _CURRENCY_OVERRIDES[symbol]
+    m = _FX_PAIR_RE.match(symbol)
+    if m:
+        return m.group(1)
+    return _DEFAULT_CURRENCY
 
 
 def stable_id(prefix: str, *parts: str) -> str:

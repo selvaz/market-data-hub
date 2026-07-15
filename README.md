@@ -44,7 +44,26 @@ powershell -ExecutionPolicy Bypass -File .\setup_first_run.ps1
 
 It installs the package, asks for local secrets such as `FRED_API_KEY` and
 Telegram credentials, verifies the config, and can optionally configure the
-scheduled tasks or start the historical backfill.
+scheduled tasks or start the historical backfill. It also **always** runs the
+ETF identity/classification anagrafica backfill (see below) — no extra step
+needed if you used this script.
+
+> **⚠️ Highly recommended, every install:** run the ETF anagrafica backfill
+> right after the package is installed and the DB path is set — whether or
+> not you used `setup_first_run.ps1`:
+> ```bash
+> python scripts/backfill_listings_from_tickers.py
+> python scripts/backfill_etf_classification.py
+> ```
+> This registers every `config/tickers.yaml` symbol into `listings`/
+> `instruments` with the correct **currency** (USD by default, EUR for the
+> STOXX Europe 600 Xetra sleeves, the FX-pair quote currency for `FX` symbols
+> — see `market_data_hub/db/identity.py`'s `currency_for_symbol`), and
+> populates `etf_classification` (asset_class/area/category/sector/theme —
+> the materialized form of what `catalog.py` otherwise only derives at query
+> time). Both scripts are idempotent and safe to re-run at any time — re-run
+> `backfill_etf_classification.py` after editing `tickers.yaml` to refresh
+> the classification without losing any curated `benchmark_proxy` values.
 
 1. **FRED API key**: set the `FRED_API_KEY` environment variable. Do not commit
    keys in `settings.yaml`. If no key is set, the public FRED CSV endpoint is

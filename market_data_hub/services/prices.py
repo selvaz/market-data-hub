@@ -30,6 +30,7 @@ import pandas as pd
 
 from market_data_hub.config_loader import get_settings, get_yahoo_tickers
 from market_data_hub.db.connection import get_conn
+from market_data_hub.db import identity as _identity
 # Single id scheme shared with the upsert auto-attach (db.identity): two
 # writers can never mint different ids for the same (symbol, provider).
 from market_data_hub.db.identity import stable_id as _stable_id
@@ -47,25 +48,9 @@ _KIND_BY_ASSET_CLASS = {
     "VOLATILITY": "INDEX",
 }
 
-# Listing currency override by symbol. The config universe is USD by default
-# (US-exchange-listed ETFs); the STOXX Europe 600 sector sleeves trade on
-# Xetra in EUR and are the only exception (verified against tickers.yaml --
-# every other symbol is unsuffixed or a plain US ticker).
-_CURRENCY_OVERRIDES = {
-    "EXSA.DE": "EUR",
-    "EXV1.DE": "EUR",
-    "EXV3.DE": "EUR",
-    "EXV4.DE": "EUR",
-    "EXH4.DE": "EUR",
-    "EXH1.DE": "EUR",
-    "EXH9.DE": "EUR",
-}
-_DEFAULT_CURRENCY = "USD"
-
-
-def _currency_for_symbol(symbol: str) -> str:
-    return _CURRENCY_OVERRIDES.get(symbol, _DEFAULT_CURRENCY)
-
+# Shared with db/upsert.py's auto-attach path -- see db/identity.py for why
+# this lives there and not here.
+_currency_for_symbol = _identity.currency_for_symbol
 
 _DEFAULT_PROVIDER = "yahoo"
 
