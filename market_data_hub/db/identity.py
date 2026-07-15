@@ -69,7 +69,15 @@ def ensure_listing(con, symbol: str, *, kind: str = "OTHER",
                    provider_symbol: Optional[str] = None) -> str:
     """Idempotently create instrument + listing + ticker alias for a symbol
     and return the listing_id. Deterministic ids: safe to call repeatedly and
-    from multiple writers."""
+    from multiple writers.
+
+    ``currency`` defaults via :func:`currency_for_symbol` when not given, so
+    every caller/call site gets the same best-effort currency without having
+    to remember to pass it explicitly (a prior per-call-site fix here missed
+    the migration path in connection.py's ``_migrate_prices_to_listing_key``,
+    which also auto-registers orphan symbols)."""
+    if currency is None:
+        currency = currency_for_symbol(symbol)
     now = datetime.now(timezone.utc)
     instrument_id = stable_id("ins", symbol)
     listing_id = stable_id("lst", symbol, provider)
