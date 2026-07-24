@@ -319,10 +319,10 @@ yahoo:
   area: Europe
   name: FI | Europe | iShares € High Yield Corporate
   priority: 1
-- symbol: SXRN.DE
+- symbol: DBXP.DE
   asset_class: FIXED_INCOME
   area: Europe
-  name: FI | Europe | iShares € Govt Bond 1-3yr UCITS ETF EUR (Acc)
+  name: FI | Europe | Xtrackers II Eurozone Govt Bond 1-3yr UCITS ETF 1C
   priority: 1
 - symbol: IBCL.DE
   asset_class: FIXED_INCOME
