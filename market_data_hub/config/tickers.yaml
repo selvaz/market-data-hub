@@ -94,6 +94,11 @@ yahoo:
   area: USA
   name: EQUITY | US | Materials Select Sector SPDR
   priority: 1
+- symbol: XLRE
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Real Estate Select Sector SPDR
+  priority: 1
 - symbol: EXSA.DE
   asset_class: EQUITY
   area: Europe
@@ -229,6 +234,16 @@ yahoo:
   area: Mexico
   name: EQUITY | Mexico | iShares MSCI Mexico
   priority: 1
+- symbol: EZA
+  asset_class: EQUITY
+  area: South Africa
+  name: EQUITY | South Africa | iShares MSCI South Africa
+  priority: 1
+- symbol: KSA
+  asset_class: EQUITY
+  area: Saudi Arabia
+  name: EQUITY | Saudi Arabia | iShares MSCI Saudi Arabia
+  priority: 1
 - symbol: ILF
   asset_class: EQUITY
   area: Latin America
@@ -303,6 +318,21 @@ yahoo:
   asset_class: FIXED_INCOME
   area: Europe
   name: FI | Europe | iShares € High Yield Corporate
+  priority: 1
+- symbol: SXRN.DE
+  asset_class: FIXED_INCOME
+  area: Europe
+  name: FI | Europe | iShares € Govt Bond 1-3yr UCITS ETF EUR (Acc)
+  priority: 1
+- symbol: IBCL.DE
+  asset_class: FIXED_INCOME
+  area: Europe
+  name: FI | Europe | iShares € Govt Bond 15-30yr UCITS ETF EUR (Dist)
+  priority: 1
+- symbol: IEAC.AS
+  asset_class: FIXED_INCOME
+  area: Europe
+  name: FI | Europe | iShares Core € Corp Bond UCITS ETF EUR (Dist)
   priority: 1
 - symbol: HYXU
   asset_class: FIXED_INCOME

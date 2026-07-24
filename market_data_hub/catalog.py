@@ -63,6 +63,7 @@ _SECTOR_BY_SYMBOL = {
     "XLV": "Health Care",
     "XLY": "Consumer Discretionary",
     "VGT": "Information Technology",
+    "XLRE": "Real Estate",
     # Europe — STOXX 600 sector sleeves
     "EXV1.DE": "Financials",        # Banks
     "EXV3.DE": "Information Technology",
