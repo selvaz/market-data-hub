@@ -3,7 +3,7 @@
 estimate.py — fit a per-symbol HMM regime model and persist it as-of today.
 
 Every call to run_daily_regime_estimation() does a FULL refit per symbol on
-the whole available daily-return history (not lazyhmm's fixed-parameter
+the whole available daily-return history (not lazystats.regimes' fixed-parameter
 apply_regime_params()) — that is what lets us observe, day by day, whether
 adding one more day's data changes the model's read of the past. Results are
 written with record-vintage-style append-on-change semantics (see
@@ -24,7 +24,7 @@ import duckdb
 import numpy as np
 import pandas as pd
 
-from lazyhmm import MSRegimeEngine, RegimeRun
+from lazystats.regimes import MSRegimeEngine, RegimeRun
 
 from market_data_hub import catalog
 from market_data_hub.extract import extract_returns

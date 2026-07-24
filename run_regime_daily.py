@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 run_regime_daily.py — daily HMM regime-monitor entry point (optional add-on,
-requires the sibling `lazyhmm` package).
+requires the `lazystats` package's `regimes` extra).
 
 Fits a 1-3 state Gaussian HMM per priority-1 symbol on its whole daily-return
 history, persists every day's estimate as-of that day (never overwriting past

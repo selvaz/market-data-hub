@@ -9,8 +9,8 @@ cleanly; the regime entry point did not, so a benign, expected contention
 crashed the task with a traceback (red Scheduler task, silently-missed regime
 report + Telegram). This test pins the "skip cleanly, exit 0" contract.
 
-Unlike the ``lazyhmm``-gated regime tests (which ``importorskip`` and are hence
-skipped in CI), this stubs ``lazyhmm`` so it exercises the wiring everywhere —
+Unlike the ``lazystats.regimes``-gated regime tests (which ``importorskip`` and are hence
+skipped in CI), this stubs ``lazystats.regimes`` so it exercises the wiring everywhere —
 the lock-handling path never touches the HMM engine.
 """
 from __future__ import annotations
@@ -22,10 +22,10 @@ from contextlib import contextmanager
 
 def _install_optional_stack_stubs(monkeypatch) -> None:
     """Make ``run_regime_daily`` importable without the optional regime add-on
-    stack (``lazyhmm`` + ``matplotlib``), so this wiring test runs in CI too.
+    stack (``lazystats.regimes`` + ``matplotlib``), so this wiring test runs in CI too.
 
     The lock-timeout path never fits an HMM or renders a chart, so trivial
-    stubs suffice: ``regime.estimate`` binds two names from ``lazyhmm`` at
+    stubs suffice: ``regime.estimate`` binds two names from ``lazystats.regimes`` at
     import, and ``regime.report`` does ``import matplotlib; matplotlib.use(...);
     import matplotlib.pyplot`` at import.
     """
@@ -36,10 +36,13 @@ def _install_optional_stack_stubs(monkeypatch) -> None:
         if _name == "run_regime_daily" or _name.startswith("market_data_hub.regime"):
             monkeypatch.delitem(sys.modules, _name, raising=False)
 
-    lazyhmm = types.ModuleType("lazyhmm")
-    lazyhmm.MSRegimeEngine = object
-    lazyhmm.RegimeRun = object
-    monkeypatch.setitem(sys.modules, "lazyhmm", lazyhmm)
+    lazystats = types.ModuleType("lazystats")
+    regimes = types.ModuleType("lazystats.regimes")
+    regimes.MSRegimeEngine = object
+    regimes.RegimeRun = object
+    lazystats.regimes = regimes
+    monkeypatch.setitem(sys.modules, "lazystats", lazystats)
+    monkeypatch.setitem(sys.modules, "lazystats.regimes", regimes)
 
     mpl = types.ModuleType("matplotlib")
     mpl.use = lambda *a, **k: None

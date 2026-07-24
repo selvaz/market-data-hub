@@ -4,7 +4,7 @@ report.py — single self-contained HTML report for the daily regime run.
 
 Mirrors the "single file, no external assets" approach already used by
 make_dalio_report.py so the output stays directly attachable to a Telegram
-message (send_document). Charts are lazyhmm's own matplotlib plots, rendered
+message (send_document). Charts are lazystats.regimes' own matplotlib plots, rendered
 under the Agg backend and embedded as base64 PNGs.
 """
 from __future__ import annotations
@@ -77,7 +77,7 @@ def _display_names() -> Dict[str, str]:
 
 
 def _chart_img(run, symbol: str) -> str:
-    # The fit is daily: lazyhmm's default points_per_year=52 (weekly) would
+    # The fit is daily: lazystats.regimes' default points_per_year=52 (weekly) would
     # slice ~1 year while the chart claims 5.
     run.plot_series_with_regimes(symbol, last_years=5, points_per_year=252)
     fig = plt.gcf()

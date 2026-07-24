@@ -5,8 +5,8 @@ Covers: retro-window backfill after a pause, full rewrite on a BIC model flip,
 error rerun preserving a same-day success, daily points_per_year in the regime
 charts, display names in the regime report, empty-universe guard.
 
-The regime module hard-imports lazyhmm (private, git-installed); the whole
-module is skipped where it isn't available (e.g. CI).
+The regime module hard-imports lazystats.regimes; the whole module is
+skipped where it isn't available (e.g. CI).
 """
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-pytest.importorskip("lazyhmm", reason="regime module hard-imports lazyhmm")
+pytest.importorskip("lazystats.regimes", reason="regime module hard-imports lazystats.regimes")
 
 from market_data_hub.regime.estimate import (           # noqa: E402
     SymbolRunResult, _write_error_run, write_regime_run)

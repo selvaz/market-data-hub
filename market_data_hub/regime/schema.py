@@ -3,7 +3,7 @@
 schema.py — additive DDL for the HMM regime-monitor add-on.
 
 Kept separate from market_data_hub/db/schema.sql and its SCHEMA_VERSION
-ladder: this add-on is optional (requires ``lazyhmm``), so it must not force
+ladder: this add-on is optional (requires ``lazystats``), so it must not force
 a core schema migration on installations that don't use it. ensure_regime_schema()
 is only called by the regime entrypoint (run_regime_daily.py), never by
 db.connection.get_conn().
