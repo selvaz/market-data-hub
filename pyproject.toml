@@ -32,7 +32,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0", "pytest-cov>=4.0", "pytest-randomly>=3.12", "ruff", "pip-audit",
+    "pytest>=7.0", "pytest-cov>=4.0", "pytest-randomly>=3.12", "ruff==0.15.22", "pip-audit",
     "mypy>=1.8", "types-requests", "types-PyYAML",
     # only ever imported under `if TYPE_CHECKING:` (TypeGuard helpers) -- not
     # a runtime dependency, needed solely for the mypy step in CI.
