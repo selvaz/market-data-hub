@@ -31,6 +31,8 @@ from market_data_hub.regime.estimate import (  # noqa: E402
     priority_symbols, run_daily_regime_estimation, summary_dataframe,
 )
 from market_data_hub.regime.report import generate_html_report  # noqa: E402
+from operations_integration import finish as finish_operations  # noqa: E402
+from operations_integration import register_file, register_json, start as start_operations  # noqa: E402
 
 
 def _report_dir() -> Path:
@@ -68,6 +70,13 @@ def main() -> int:
               "nothing to do.")
         return 0
 
+    catalog, operations_run_id = start_operations(
+        "market_data_regime",
+        parameters={"symbols": symbols, "priority": args.priority, "s_max": args.s_max,
+                    "n_starts": args.n_starts, "retro_days": args.retro_days, "asof": args.asof},
+        source_db=args.db,
+    )
+
     print(f"Fitting regimes as of {asof.isoformat()} "
           f"({'custom tickers' if args.tickers else f'priority={args.priority}'})...")
     # This job is scheduled (MarketData_HMMRegime, 30 min after US close) and can
@@ -86,6 +95,7 @@ def main() -> int:
             )
     except DBLockTimeout as ex:
         print(f"SKIP: {ex}")
+        finish_operations(catalog, operations_run_id, ok=True)
         return 0
 
     summary = summary_dataframe(results)
@@ -102,10 +112,35 @@ def main() -> int:
     finally:
         con.close()
     print(f"Report: {out_path}")
+    register_file(catalog, operations_run_id, out_path, kind="report", role="html")
+    register_json(catalog, operations_run_id, "regime-summary.json",
+                  summary.to_dict(orient="records"), kind="result")
+
+    # The specialist regime DB remains authoritative. Capture a portable
+    # snapshot of the fitted parameters so this run can be reused without
+    # copying the entire database into the central artifact store.
+    con = get_conn(args.db, read_only=True)
+    try:
+        rows = con.execute(
+            """SELECT symbol, estimation_date, n_states, criterion, bic, loglik,
+                      data_start, data_end, n_obs, transmat_json, means_json,
+                      covars_json, labels_json, fit_seconds, status, error_msg
+               FROM hmm_model_runs WHERE estimation_date = ? ORDER BY symbol""",
+            [str(asof)],
+        ).fetchall()
+        model_snapshot = [dict(zip([
+            "symbol", "estimation_date", "n_states", "criterion", "bic", "loglik",
+            "data_start", "data_end", "n_obs", "transmat_json", "means_json",
+            "covars_json", "labels_json", "fit_seconds", "status", "error_msg",
+        ], row)) for row in rows]
+    finally:
+        con.close()
+    register_json(catalog, operations_run_id, "regime-model-snapshot.json", model_snapshot, kind="model")
 
     if args.dry_run or not args.send:
         if not errors.empty:
             print(errors[["symbol", "error_msg"]].to_string(index=False))
+        finish_operations(catalog, operations_run_id, ok=errors.empty)
         return 0
 
     import os
@@ -116,6 +151,7 @@ def main() -> int:
     if not token or not chat_id:
         print("Telegram not configured: set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.",
               file=sys.stderr)
+        finish_operations(catalog, operations_run_id, ok=False, error="Telegram not configured")
         return 2
 
     lines = [
@@ -133,6 +169,7 @@ def main() -> int:
         client.send_document(chat_id=chat_id, document=out_path.read_bytes(),
                              filename=out_path.name, caption="HMM regime report")
     print("Sent Telegram summary + report attachment.")
+    finish_operations(catalog, operations_run_id, ok=errors.empty)
     return 0
 
 

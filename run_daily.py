@@ -19,6 +19,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from market_data_hub.runner import run  # noqa: E402
+from operations_integration import finish as finish_operations  # noqa: E402
+from operations_integration import register_file, start as start_operations  # noqa: E402
 
 
 def main() -> int:
@@ -41,10 +43,19 @@ def main() -> int:
         args.report = True
 
     mode = "live-only" if args.live_only else "full"
+    catalog, operations_run_id = start_operations(
+        f"market_data_{mode}",
+        parameters={"mode": mode, "sources": args.sources, "end": args.end, "report": args.report},
+        source_db=args.db,
+    )
+    job_ok = True
+    job_error = None
 
     try:
         run(mode=mode, sources=args.sources, end=args.end, db_path=args.db)
     except Exception as e:
+        job_ok = False
+        job_error = str(e)
         print(f"ERROR during download: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
@@ -77,6 +88,8 @@ def main() -> int:
             print(f"Rows: {d['total_rows']:,} | Series: "
                   f"{sum(x['series'] for x in d['tables'])} | "
                   f"Score: {d['score_avg']} | Stalled: {len(d['stalled'])}")
+            register_file(catalog, operations_run_id, html_path, kind="report", role="html")
+            register_file(catalog, operations_run_id, md_path, kind="report", role="markdown")
 
             if args.open_browser:
                 import webbrowser
@@ -86,13 +99,17 @@ def main() -> int:
             from market_data_hub.country_dashboard import write_dashboard
             dashboard_path = write_dashboard(args.db)
             print(f"Country dashboard: {dashboard_path}")
+            register_file(catalog, operations_run_id, dashboard_path, kind="report", role="dashboard")
 
         except Exception as e:
+            job_ok = False
+            job_error = str(e)
             print(f"ERROR generating report: {e}", file=sys.stderr)
             import traceback
             traceback.print_exc()
 
-    return 0
+    finish_operations(catalog, operations_run_id, ok=job_ok, error=job_error)
+    return 0 if job_ok else 1
 
 
 if __name__ == "__main__":

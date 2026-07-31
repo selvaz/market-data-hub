@@ -28,6 +28,8 @@ from lazytools.connectors.telegram import TelegramClient  # noqa: E402
 from market_data_hub.config_loader import get_settings  # noqa: E402
 from market_data_hub.country_dashboard import write_dashboard  # noqa: E402
 from market_data_hub.db.connection import get_conn  # noqa: E402
+from operations_integration import finish as finish_operations  # noqa: E402
+from operations_integration import register_file, start as start_operations  # noqa: E402
 
 
 ROOT = Path(__file__).resolve().parent
@@ -407,9 +409,16 @@ def main() -> int:
                    help="Generate and send the neutral country dashboard instead of the text run report")
     args = p.parse_args()
 
+    catalog, operations_run_id = start_operations(
+        "market_data_telegram_report",
+        parameters={"run_id": args.run_id, "dashboard": args.dashboard, "dry_run": args.dry_run},
+        source_db=args.db,
+    )
+
     title, report = collect_report(args.db, args.run_id)
     out = save_report(title, report)
     print(f"Saved report: {out}")
+    register_file(catalog, operations_run_id, out, kind="report", role="telegram-markdown")
 
     attachment = out
     caption = title
@@ -417,9 +426,11 @@ def main() -> int:
         attachment = write_dashboard(args.db)
         caption = f"country data dashboard | {title}"
         print(f"Generated country dashboard: {attachment}")
+        register_file(catalog, operations_run_id, attachment, kind="report", role="dashboard")
 
     if args.dry_run:
         print(report)
+        finish_operations(catalog, operations_run_id, ok=True)
         return 0
 
     token = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -427,10 +438,12 @@ def main() -> int:
     if not token or not chat_id:
         print("Telegram not configured: set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID.", file=sys.stderr)
         print(f"Report was saved but not sent: {out}", file=sys.stderr)
+        finish_operations(catalog, operations_run_id, ok=False, error="Telegram not configured")
         return 2
 
     send_report_document(attachment, token=token, chat_id=chat_id, caption=caption)
     print(f"Sent Telegram report attachment: {attachment.name}")
+    finish_operations(catalog, operations_run_id, ok=True)
     return 0
 
 
