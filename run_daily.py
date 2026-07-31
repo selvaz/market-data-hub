@@ -109,7 +109,11 @@ def main() -> int:
 
         except Exception as e:
             job_ok = False
-            job_error = str(e)
+            # Don't overwrite a download failure that's already recorded --
+            # combine both so the catalog keeps the root cause instead of
+            # only the secondary report failure that followed it.
+            report_error = f"report generation failed: {e}"
+            job_error = f"{job_error}; {report_error}" if job_error else report_error
             print(f"ERROR generating report: {e}", file=sys.stderr)
             import traceback
             traceback.print_exc()
