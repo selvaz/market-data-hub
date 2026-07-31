@@ -3,11 +3,20 @@
 runs afterward (because ``--report`` was passed) also fails -- the catalog
 used to record only the secondary report-generation error, hiding the
 actual download failure that triggered it.
+
+lazytools is an optional dependency here (operations_integration.py falls
+back to a no-op stub when it's absent, by design), and it isn't installed
+in this repo's CI matrix -- importorskip so this runs where it's available
+(this dev machine) and skips cleanly in CI rather than failing on import.
 """
 from __future__ import annotations
 
 import importlib
 import sys
+
+import pytest
+
+pytest.importorskip("lazytools", reason="operations catalog integration is optional here")
 
 
 def test_run_daily_preserves_download_error_when_report_also_fails(tmp_path, monkeypatch):
