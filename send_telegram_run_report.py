@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from lazytools.connectors.telegram import TelegramClient  # noqa: E402
 from market_data_hub.config_loader import get_settings  # noqa: E402
 from market_data_hub.country_dashboard import write_dashboard  # noqa: E402
-from market_data_hub.db.connection import get_conn  # noqa: E402
+from market_data_hub.db.connection import _resolve_db_path, get_conn  # noqa: E402
 from operations_integration import finish as finish_operations  # noqa: E402
 from operations_integration import register_file, start as start_operations  # noqa: E402
 
@@ -412,7 +412,7 @@ def main() -> int:
     catalog, operations_run_id = start_operations(
         "market_data_telegram_report",
         parameters={"run_id": args.run_id, "dashboard": args.dashboard, "dry_run": args.dry_run},
-        source_db=args.db,
+        source_db=_resolve_db_path(args.db),
     )
 
     try:

@@ -24,7 +24,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from market_data_hub.config_loader import get_settings  # noqa: E402
-from market_data_hub.db.connection import get_conn  # noqa: E402
+from market_data_hub.db.connection import _resolve_db_path, get_conn  # noqa: E402
 from market_data_hub.lock import DBLockTimeout, db_write_lock  # noqa: E402
 from market_data_hub.regime.estimate import (  # noqa: E402
     DEFAULT_N_STARTS, DEFAULT_RETRO_DAYS, DEFAULT_S_MAX,
@@ -61,30 +61,36 @@ def main() -> int:
     symbols = [s.strip() for s in args.tickers.split(",")] if args.tickers else None
     asof = datetime.strptime(args.asof, "%Y-%m-%d").date() if args.asof else datetime.now().date()
 
-    # Resolve the universe up front: an empty one would otherwise reach
-    # summary_dataframe({}) whose frame has no 'status' column (KeyError).
-    if symbols is None:
-        symbols = priority_symbols(args.priority, db_path=args.db)
-    if not symbols:
-        print(f"No symbols to fit (priority={args.priority} universe is empty); "
-              "nothing to do.")
-        return 0
-
+    # Register the run (and resolve the DB path _resolve_db_path() actually
+    # opens, not the possibly-None --db passed in) *before* the universe
+    # lookup below, which hits the database and can itself fail -- a job
+    # that dies resolving its universe would otherwise leave no operations
+    # record at all instead of one marked "failed".
     catalog, operations_run_id = start_operations(
         "market_data_regime",
-        parameters={"symbols": symbols, "priority": args.priority, "s_max": args.s_max,
+        parameters={"tickers_arg": args.tickers, "priority": args.priority, "s_max": args.s_max,
                     "n_starts": args.n_starts, "retro_days": args.retro_days, "asof": args.asof},
-        source_db=args.db,
+        source_db=_resolve_db_path(args.db),
     )
 
     try:
+        # Resolve the universe up front: an empty one would otherwise reach
+        # summary_dataframe({}) whose frame has no 'status' column (KeyError).
+        if symbols is None:
+            symbols = priority_symbols(args.priority, db_path=args.db)
+        if not symbols:
+            print(f"No symbols to fit (priority={args.priority} universe is empty); "
+                  "nothing to do.")
+            finish_operations(catalog, operations_run_id, ok=True)
+            return 0
         return _run_regime_job(args, symbols, asof, catalog, operations_run_id)
     except Exception as exc:
-        # Anything past this point that isn't already handled (fitting, report
-        # generation, snapshot creation, Telegram delivery) must still
-        # finalize the record -- otherwise a genuine failure leaves the
-        # catalog reporting this run as "running" forever. Re-raise so the
-        # scheduled task still shows red / prints a traceback like before.
+        # Anything past this point that isn't already handled (universe
+        # lookup, fitting, report generation, snapshot creation, Telegram
+        # delivery) must still finalize the record -- otherwise a genuine
+        # failure leaves the catalog reporting this run as "running"
+        # forever. Re-raise so the scheduled task still shows red / prints
+        # a traceback like before.
         finish_operations(catalog, operations_run_id, ok=False, error=str(exc))
         raise
 

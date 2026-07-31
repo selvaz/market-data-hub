@@ -18,6 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from market_data_hub.db.connection import _resolve_db_path  # noqa: E402
 from market_data_hub.runner import run  # noqa: E402
 from operations_integration import finish as finish_operations  # noqa: E402
 from operations_integration import register_file, start as start_operations  # noqa: E402
@@ -43,10 +44,14 @@ def main() -> int:
         args.report = True
 
     mode = "live-only" if args.live_only else "full"
+    # _resolve_db_path() mirrors what get_conn() resolves args.db/MARKET_DATA_DB/
+    # settings.yaml down to internally -- args.db alone is None on the default
+    # scheduled invocation, which would register the run with no source_db at
+    # all even though a concrete database is what it actually touched.
     catalog, operations_run_id = start_operations(
         f"market_data_{mode}",
         parameters={"mode": mode, "sources": args.sources, "end": args.end, "report": args.report},
-        source_db=args.db,
+        source_db=_resolve_db_path(args.db),
     )
     job_ok = True
     job_error = None
