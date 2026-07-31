@@ -77,6 +77,19 @@ def main() -> int:
         source_db=args.db,
     )
 
+    try:
+        return _run_regime_job(args, symbols, asof, catalog, operations_run_id)
+    except Exception as exc:
+        # Anything past this point that isn't already handled (fitting, report
+        # generation, snapshot creation, Telegram delivery) must still
+        # finalize the record -- otherwise a genuine failure leaves the
+        # catalog reporting this run as "running" forever. Re-raise so the
+        # scheduled task still shows red / prints a traceback like before.
+        finish_operations(catalog, operations_run_id, ok=False, error=str(exc))
+        raise
+
+
+def _run_regime_job(args, symbols, asof, catalog, operations_run_id) -> int:
     print(f"Fitting regimes as of {asof.isoformat()} "
           f"({'custom tickers' if args.tickers else f'priority={args.priority}'})...")
     # This job is scheduled (MarketData_HMMRegime, 30 min after US close) and can
@@ -118,23 +131,35 @@ def main() -> int:
 
     # The specialist regime DB remains authoritative. Capture a portable
     # snapshot of the fitted parameters so this run can be reused without
-    # copying the entire database into the central artifact store.
-    con = get_conn(args.db, read_only=True)
-    try:
-        rows = con.execute(
-            """SELECT symbol, estimation_date, n_states, criterion, bic, loglik,
-                      data_start, data_end, n_obs, transmat_json, means_json,
-                      covars_json, labels_json, fit_seconds, status, error_msg
-               FROM hmm_model_runs WHERE estimation_date = ? ORDER BY symbol""",
-            [str(asof)],
-        ).fetchall()
-        model_snapshot = [dict(zip([
-            "symbol", "estimation_date", "n_states", "criterion", "bic", "loglik",
-            "data_start", "data_end", "n_obs", "transmat_json", "means_json",
-            "covars_json", "labels_json", "fit_seconds", "status", "error_msg",
-        ], row)) for row in rows]
-    finally:
-        con.close()
+    # copying the entire database into the central artifact store. Scoped to
+    # THIS run's successfully-fit symbols, not just the date: a plain
+    # date-only predicate would also pick up unrelated symbols already
+    # written for today (e.g. an earlier full run followed by a
+    # `--tickers SPY --dry-run` partial run), and _write_error_run() leaves
+    # a prior successful row in place for a symbol whose fit failed today,
+    # so a date-only query would misreport that symbol as fit successfully.
+    ok_symbols = ok["symbol"].tolist()
+    model_snapshot: list[dict] = []
+    if ok_symbols:
+        con = get_conn(args.db, read_only=True)
+        try:
+            placeholders = ",".join("?" * len(ok_symbols))
+            rows = con.execute(
+                f"""SELECT symbol, estimation_date, n_states, criterion, bic, loglik,
+                          data_start, data_end, n_obs, transmat_json, means_json,
+                          covars_json, labels_json, fit_seconds, status, error_msg
+                   FROM hmm_model_runs
+                   WHERE estimation_date = ? AND symbol IN ({placeholders})
+                   ORDER BY symbol""",
+                [str(asof), *ok_symbols],
+            ).fetchall()
+            model_snapshot = [dict(zip([
+                "symbol", "estimation_date", "n_states", "criterion", "bic", "loglik",
+                "data_start", "data_end", "n_obs", "transmat_json", "means_json",
+                "covars_json", "labels_json", "fit_seconds", "status", "error_msg",
+            ], row)) for row in rows]
+        finally:
+            con.close()
     register_json(catalog, operations_run_id, "regime-model-snapshot.json", model_snapshot, kind="model")
 
     if args.dry_run or not args.send:

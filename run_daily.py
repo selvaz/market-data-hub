@@ -61,6 +61,7 @@ def main() -> int:
         traceback.print_exc()
         # continue to the report anyway if requested
         if not args.report:
+            finish_operations(catalog, operations_run_id, ok=False, error=job_error)
             return 1
 
     if args.report and not args.live_only:

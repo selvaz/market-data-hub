@@ -415,6 +415,18 @@ def main() -> int:
         source_db=args.db,
     )
 
+    try:
+        return _send_report_job(args, catalog, operations_run_id)
+    except Exception as exc:
+        # collect_report/write_dashboard/send_report_document can each raise
+        # (bad DB, network) after the run was already registered -- without
+        # this, that failure leaves the catalog reporting the run as
+        # "running" forever. Re-raise so the scheduled task still shows red.
+        finish_operations(catalog, operations_run_id, ok=False, error=str(exc))
+        raise
+
+
+def _send_report_job(args, catalog, operations_run_id) -> int:
     title, report = collect_report(args.db, args.run_id)
     out = save_report(title, report)
     print(f"Saved report: {out}")
