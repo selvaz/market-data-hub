@@ -14,15 +14,15 @@ superseded by a new row once the discretized regime label actually differs
 from the most recent prior estimate for that trading_date.
 
 This module previously wrote directly into this repo's own DuckDB tables
-(``hmm_regime_estimates`` / ``hmm_model_runs``, see market_data_hub/regime/
-schema.py) with a hand-rolled ``INSERT OR REPLACE`` CTE reimplementing this
-same change-detection logic. That table/DDL still exists (and still holds the
-historical data written before this switch) but is no longer written to by
-this module — a later, separately-confirmed phase will migrate the old rows
-and retire it.
+(``hmm_regime_estimates`` / ``hmm_model_runs``) with a hand-rolled
+``INSERT OR REPLACE`` CTE reimplementing this same change-detection logic.
+That migration is complete: the historical rows were migrated into
+ResultDepot and the old tables (and ``market_data_hub/regime/schema.py``)
+were dropped/removed.
 """
 from __future__ import annotations
 
+import hashlib
 import time
 from dataclasses import dataclass
 from datetime import date, datetime
@@ -36,6 +36,7 @@ from lazystats.io.depot import ResultDepot
 from lazystats.regimes import MSRegimeEngine, RegimeRun
 
 from market_data_hub import catalog
+from market_data_hub.db.connection import _resolve_db_path
 from market_data_hub.extract import extract_returns
 
 DEFAULT_S_MAX = 3
@@ -98,11 +99,22 @@ def fit_symbol_regime(symbol: str, *, db_path: Optional[str] = None,
     return engine.fit(df, model="panel", dropna="all")
 
 
-def _series_key(symbol: str) -> str:
-    return f"regime:{symbol}"
+def _series_key(symbol: str, db_path: Optional[str] = None) -> str:
+    """``regime:<symbol>`` for the production DuckDB (the key format the
+    405,313-row migration already used) -- but namespaced by the resolved
+    input database's identity for any other one (e.g. ``--db test.duckdb``
+    for a test/staging run), so an alternate-DB run can never supersede
+    production vintages/diagnostics in the single, shared ResultDepot (which
+    has no per-DuckDB isolation of its own, unlike the DuckDB file itself).
+    """
+    resolved = _resolve_db_path(db_path)
+    if resolved == _resolve_db_path(None):
+        return f"regime:{symbol}"
+    db_id = hashlib.sha256(str(resolved).encode("utf-8")).hexdigest()[:12]
+    return f"regime:{symbol}@{db_id}"
 
 
-def _last_estimate(depot: ResultDepot, symbol: str):
+def _last_estimate(depot: ResultDepot, symbol: str, db_path: Optional[str] = None):
     """(max stored trading_date, n_states of the newest vintage) or (None, None).
 
     ``get_series_latest`` already returns, per as_of_date, only the value from
@@ -111,7 +123,7 @@ def _last_estimate(depot: ResultDepot, symbol: str):
     constant within one estimation_date, one fit per day, and every run's
     window always includes that day's newest trading_date -- see
     write_regime_run below) the n_states of the newest vintage overall."""
-    latest = depot.get_series_latest(_series_key(symbol))
+    latest = depot.get_series_latest(_series_key(symbol, db_path))
     if not latest:
         return None, None
     last_point = latest[-1]
@@ -150,12 +162,13 @@ def _find_run_result_id(
 
 def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
                      *, estimation_date: date, fit_seconds: float,
-                     retro_days: int = DEFAULT_RETRO_DAYS) -> SymbolRunResult:
+                     retro_days: int = DEFAULT_RETRO_DAYS,
+                     db_path: Optional[str] = None) -> SymbolRunResult:
     panel = run.panel
     m = run.meta[symbol]
     S = int(m["S"])
     labels = m["labels"]
-    series_key = _series_key(symbol)
+    series_key = _series_key(symbol, db_path)
     estimation_date_str = str(estimation_date)
 
     state = panel[f"{symbol}_state"].astype(int)
@@ -174,7 +187,7 @@ def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
         "state_probs": [[round(float(x), 6) for x in row] for row in gamma.values],
     })
 
-    last_td, last_S = _last_estimate(depot, symbol)
+    last_td, last_S = _last_estimate(depot, symbol, db_path)
     is_first_run = last_td is None
     # A BIC flip (e.g. 2 -> 3 states) renumbers every state: rewriting only the
     # retro window would leave the latest vintage mixing two incompatible
@@ -270,8 +283,9 @@ def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
 
 
 def _write_error_run(depot: ResultDepot, symbol: str,
-                     estimation_date: date, error_msg: str) -> None:
-    series_key = _series_key(symbol)
+                     estimation_date: date, error_msg: str,
+                     db_path: Optional[str] = None) -> None:
+    series_key = _series_key(symbol, db_path)
     estimation_date_str = str(estimation_date)
     # A failed evening rerun must not clobber the BIC/params of a successful
     # same-day run (equivalent of the old hmm_model_runs PK (symbol,
@@ -341,13 +355,14 @@ def run_daily_regime_estimation(*, symbols: Optional[List[str]] = None,
         results: Dict[str, SymbolRunResult] = {}
         for symbol, (run, error_msg, fit_seconds) in fits.items():
             if run is None:
-                _write_error_run(depot, symbol, asof, error_msg)
+                _write_error_run(depot, symbol, asof, error_msg, db_path)
                 results[symbol] = SymbolRunResult(symbol=symbol, status="error",
                                                   error_msg=error_msg)
             else:
                 results[symbol] = write_regime_run(
                     depot, symbol, run, estimation_date=asof,
                     fit_seconds=fit_seconds, retro_days=retro_days,
+                    db_path=db_path,
                 )
     finally:
         depot.close()

@@ -88,6 +88,29 @@ def test_first_run_writes_full_history(depot):
     assert res.revised_dates == []
 
 
+def test_alternate_db_path_is_namespaced_away_from_production(depot):
+    """A run against an explicit, non-default --db (e.g. a test/staging
+    DuckDB) must land in a different series_key than a production run --
+    otherwise it would supersede production vintages/diagnostics in the
+    single, shared ResultDepot, which has no per-DuckDB isolation of its
+    own."""
+    write_regime_run(depot, "SPY", _mk_run("SPY", 10, S=2),
+                     estimation_date=dt.date(2024, 6, 1), fit_seconds=0.1)
+    write_regime_run(depot, "SPY", _mk_run("SPY", 10, S=2),
+                     estimation_date=dt.date(2024, 6, 1), fit_seconds=0.1,
+                     db_path="staging_market_data.duckdb")
+
+    prod_latest = depot.get_series_latest("regime:SPY")
+    assert len(prod_latest) == 10  # untouched by the alternate-db run
+
+    # The alternate run landed under a *different*, namespaced series_key --
+    # not overwriting/mixed into "regime:SPY".
+    all_stable = [e for e in depot.list(cadence="stable", limit=100)]
+    series_keys = {e["series_key"] for e in all_stable}
+    assert "regime:SPY" in series_keys
+    assert any(k.startswith("regime:SPY@") and k != "regime:SPY" for k in series_keys)
+
+
 def test_write_regime_run_uses_label_only_compare_keys(depot, monkeypatch):
     """write_regime_run() must restrict save_stable_point()'s change
     detection to state/n_states/is_high_vol, matching the original DuckDB
