@@ -100,7 +100,8 @@ def main() -> int:
 
     depot = ResultDepot(lazytools_registry.resolve_db("lazystats_depot"))
     try:
-        out_path = generate_html_report(depot, results, out_dir=_report_dir(), asof=asof)
+        out_path = generate_html_report(depot, results, out_dir=_report_dir(), asof=asof,
+                                        db_path=args.db)
     finally:
         depot.close()
     print(f"Report: {out_path}")

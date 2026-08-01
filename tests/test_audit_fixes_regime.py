@@ -351,6 +351,48 @@ def test_revision_table_skips_dates_with_no_second_vintage(depot):
     assert rep._revision_table(depot, "SPY", []) == ""
 
 
+def test_revision_table_uses_namespaced_series_key_for_alternate_db(depot):
+    """Persistence namespaces vintages by input-database identity
+    (series_key_for_db) when --db is non-default -- the report's revision
+    lookup must use that same namespaced key, not the bare regime:<symbol>
+    production key, or an alternate-database run's drill-down would be
+    empty (or worse, show unrelated production transitions)."""
+    from market_data_hub.regime import estimate as est_mod
+    from market_data_hub.regime import report as rep
+
+    alt_db = "staging_market_data.duckdb"
+    alt_key = est_mod._series_key("SPY", alt_db)
+    assert alt_key != "regime:SPY"
+
+    # A production vintage transition for the same date -- must NOT leak
+    # into the alternate-db report.
+    depot.save_stable_point(
+        series_key="regime:SPY", as_of_date="2024-06-01", estimation_date="2024-06-01",
+        value={"state": 0, "is_high_vol": False, "prob_high_vol": 0.1,
+               "n_states": 2, "state_probs": [0.9, 0.1]},
+    )
+    depot.save_stable_point(
+        series_key="regime:SPY", as_of_date="2024-06-01", estimation_date="2024-06-05",
+        value={"state": 1, "is_high_vol": True, "prob_high_vol": 0.9,
+               "n_states": 2, "state_probs": [0.1, 0.9]},
+    )
+    # The alternate-db series' own, distinct transition.
+    depot.save_stable_point(
+        series_key=alt_key, as_of_date="2024-06-01", estimation_date="2024-06-01",
+        value={"state": 0, "is_high_vol": False, "prob_high_vol": 0.2,
+               "n_states": 2, "state_probs": [0.8, 0.2]},
+    )
+    depot.save_stable_point(
+        series_key=alt_key, as_of_date="2024-06-01", estimation_date="2024-06-05",
+        value={"state": 1, "is_high_vol": True, "prob_high_vol": 0.75,
+               "n_states": 2, "state_probs": [0.25, 0.75]},
+    )
+
+    out = rep._revision_table(depot, "SPY", [dt.date(2024, 6, 1)], alt_db)
+    assert "0.200 &rarr; 0.750" in out       # the alternate-db transition
+    assert "0.100 &rarr; 0.900" not in out   # not production's
+
+
 def test_report_shows_display_names(tmp_path):
     from market_data_hub.regime import report as rep
 
