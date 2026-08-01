@@ -47,12 +47,12 @@ DEFAULT_RETRO_DAYS = 30
 _PRODUCED_BY = "scheduled:run_regime_daily"
 _PROVENANCE_SOURCE = "market_data_hub.regime.estimate"
 
-# _has_ok_run()'s error-vs-success-guard has no dedicated (series_key,
-# estimation_date) query on ResultDepot (see its docstring) so it scans the
-# most recent ``cadence="stable"`` index entries client-side instead. This
-# caps how far back that scan looks; same-day reruns (the only case the
-# guard needs to catch) are always near the front of the DESC-by-created_at
-# list, so this comfortably covers even a large priority-1 universe.
+# _find_run_result_id()'s scan has no dedicated (series_key, estimation_date)
+# query on ResultDepot (see its docstring) so it scans the most recent
+# ``cadence="stable"`` index entries client-side instead. This caps how far
+# back that scan looks; same-day reruns (the only case it needs to catch) are
+# always near the front of the DESC-by-created_at list, so this comfortably
+# covers even a large priority-1 universe.
 _ERROR_GUARD_SCAN_LIMIT = 2000
 
 
@@ -120,15 +120,21 @@ def _last_estimate(depot: ResultDepot, symbol: str):
     return last_td, last_S
 
 
-def _has_ok_run(depot: ResultDepot, series_key: str, estimation_date_str: str) -> bool:
-    """True if a status='ok' fit-diagnostics result already exists for this
-    (series_key, estimation_date).
+def _find_run_result_id(
+    depot: ResultDepot, series_key: str, estimation_date_str: str
+) -> tuple[Optional[str], Optional[str]]:
+    """(result_id, status) of the existing fit-diagnostics result for this
+    (series_key, estimation_date), or (None, None) if none exists.
 
     ``ResultDepot`` has no query keyed directly on (series_key,
     estimation_date), so this scans the most recent ``cadence="stable"``
     index entries (``depot.list``) and loads each candidate's full payload
-    (``depot.load``) to check its ``series_key``/``estimation_date``/
-    ``status``. See ``_ERROR_GUARD_SCAN_LIMIT`` for the scan's bound.
+    (``depot.load``) to check its ``series_key``/``estimation_date``. See
+    ``_ERROR_GUARD_SCAN_LIMIT`` for the scan's bound.
+
+    Used both to guard against a failed rerun clobbering a same-day success,
+    and to upsert (rather than duplicate) a symbol's fit-diagnostics result
+    when it's fitted more than once for the same day.
     """
     for entry in depot.list(cadence="stable", limit=_ERROR_GUARD_SCAN_LIMIT):
         if entry["series_key"] != series_key:
@@ -137,9 +143,9 @@ def _has_ok_run(depot: ResultDepot, series_key: str, estimation_date_str: str) -
         if full is None:
             continue
         payload = full["payload"]
-        if payload.get("estimation_date") == estimation_date_str and payload.get("status") == "ok":
-            return True
-    return False
+        if payload.get("estimation_date") == estimation_date_str:
+            return entry["result_id"], payload.get("status")
+    return None, None
 
 
 def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
@@ -188,6 +194,12 @@ def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
 
     # One fit-diagnostics result per symbol per day; each per-date point below
     # is linked back to it via result_id (this replaces the hmm_model_runs row).
+    # A symbol fitted more than once for the same estimation_date (a rerun)
+    # upserts that existing result in place instead of accumulating a
+    # duplicate -- mirroring hmm_model_runs' old PK(symbol, estimation_date).
+    existing_result_id, _existing_status = _find_run_result_id(
+        depot, series_key, estimation_date_str
+    )
     result_id = depot.save(
         kind="regime",
         produced_by=_PRODUCED_BY,
@@ -207,6 +219,7 @@ def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
         },
         provenance={"source": _PROVENANCE_SOURCE, "fit_seconds": fit_seconds},
         cadence="stable", series_key=series_key,
+        result_id=existing_result_id,
     )
 
     # save_stable_point() does its own per-date change-detection (append only
@@ -263,7 +276,10 @@ def _write_error_run(depot: ResultDepot, symbol: str,
     # A failed evening rerun must not clobber the BIC/params of a successful
     # same-day run (equivalent of the old hmm_model_runs PK (symbol,
     # estimation_date) guard against INSERT OR REPLACE).
-    if _has_ok_run(depot, series_key, estimation_date_str):
+    existing_result_id, existing_status = _find_run_result_id(
+        depot, series_key, estimation_date_str
+    )
+    if existing_status == "ok":
         return
     depot.save(
         kind="regime",
@@ -275,6 +291,7 @@ def _write_error_run(depot: ResultDepot, symbol: str,
         },
         provenance={"source": _PROVENANCE_SOURCE},
         cadence="stable", series_key=series_key,
+        result_id=existing_result_id,
     )
 
 

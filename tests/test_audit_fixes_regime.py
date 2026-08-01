@@ -32,7 +32,7 @@ pytest.importorskip("lazytools.registry", reason="regime persistence hard-import
 from lazystats.io.depot import ResultDepot                       # noqa: E402
 
 from market_data_hub.regime.estimate import (                    # noqa: E402
-    SymbolRunResult, _has_ok_run, _write_error_run, write_regime_run)
+    SymbolRunResult, _find_run_result_id, _write_error_run, write_regime_run)
 
 # ---------------------------------------------------------------------------
 # regime/estimate.py — fake RegimeRun so no HMM fit / price history is needed
@@ -169,7 +169,9 @@ def test_error_rerun_keeps_same_day_success(depot):
     assert len(same_day) == 1                    # error rerun did not add a second row
     assert same_day[0]["status"] == "ok"          # success preserved
     assert same_day[0]["bic"] is not None
-    assert _has_ok_run(depot, "regime:SPY", str(d)) is True
+    result_id, status = _find_run_result_id(depot, "regime:SPY", str(d))
+    assert status == "ok"
+    assert result_id is not None
 
     # a genuinely new (symbol, date) still records the error
     d2 = dt.date(2024, 6, 2)
@@ -180,6 +182,37 @@ def test_error_rerun_keeps_same_day_success(depot):
     assert len(day2) == 1
     assert day2[0]["status"] == "error"
     assert day2[0]["error_msg"] == "boom"
+
+
+def test_success_rerun_same_day_upserts_diagnostics_not_duplicates(depot):
+    """A symbol fitted more than once successfully for the same
+    estimation_date (e.g. a manual rerun after a data correction) must
+    update its one fit-diagnostics result in place, not accumulate a second
+    one that no stable_series_points row would ever reference."""
+    d = dt.date(2024, 6, 1)
+    first = write_regime_run(depot, "SPY", _mk_run("SPY", 40, S=2),
+                             estimation_date=d, fit_seconds=0.1)
+    second = write_regime_run(depot, "SPY", _mk_run("SPY", 40, S=2),
+                              estimation_date=d, fit_seconds=0.2)
+
+    entries = _series_entries(depot, "regime:SPY")
+    same_day = [depot.load(e["result_id"])["payload"] for e in entries
+                if depot.load(e["result_id"])["payload"]["estimation_date"] == str(d)]
+    assert len(same_day) == 1  # not two diagnostics rows for the same day
+    assert same_day[0]["fit_seconds"] == 0.2  # reflects the latest fit
+
+    result_id, status = _find_run_result_id(depot, "regime:SPY", str(d))
+    assert status == "ok" and result_id is not None
+    # Every point still links to the one (upserted) diagnostics result --
+    # not split across the two (first, second) result_ids that a naive
+    # duplicate-insert would have produced.
+    latest = depot.get_series_latest("regime:SPY")
+    assert latest
+    for point in latest:
+        vintages = depot.list_series_vintages("regime:SPY", point["as_of_date"])
+        assert vintages[-1]["result_id"] == result_id
+
+    assert first.status == second.status == "ok"
 
 
 def test_stable_points_link_back_to_result_id(depot):
@@ -322,3 +355,19 @@ def test_empty_universe_exits_cleanly(tmp_db, monkeypatch, capsys):
                         ["run_regime_daily.py", "--priority", "99", "--dry-run"])
     assert rrd.main() == 0
     assert "No symbols to fit" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# run_regime_daily_with_telegram.ps1 -- the scheduled task's wrapper must
+# import LAZYSTATS_RESULT_DEPOT_DB from the persisted environment, the same
+# way it already does for MARKET_DATA_DB/TELEGRAM_*. Without it, the task
+# scheduler's process never sees a User/Machine env var set after the
+# scheduled task was registered, and the regime job fails on every
+# scheduled run despite working fine interactively.
+# ---------------------------------------------------------------------------
+def test_regime_wrapper_imports_depot_env_var():
+    from pathlib import Path
+
+    wrapper = Path(__file__).resolve().parent.parent / "run_regime_daily_with_telegram.ps1"
+    text = wrapper.read_text(encoding="utf-8")
+    assert 'Import-PersistedEnvVar "LAZYSTATS_RESULT_DEPOT_DB"' in text
