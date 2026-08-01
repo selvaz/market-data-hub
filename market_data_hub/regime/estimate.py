@@ -6,24 +6,33 @@ Every call to run_daily_regime_estimation() does a FULL refit per symbol on
 the whole available daily-return history (not lazystats.regimes' fixed-parameter
 apply_regime_params()) — that is what lets us observe, day by day, whether
 adding one more day's data changes the model's read of the past. Results are
-written with record-vintage-style append-on-change semantics (see
-market_data_hub/db/upsert.py::record_vintage) so a past estimate is never
-overwritten: a new (symbol, trading_date, estimation_date) row is inserted
-only when the discretized regime label actually differs from the most recent
-prior estimate for that trading_date.
+persisted to LazyStats' shared ``ResultDepot`` (a SQLite store, resolved via
+``lazytools.registry.resolve_db("lazystats_depot")``) using its stable-series
+append-on-change semantics (``ResultDepot.save_stable_point``): a past
+(symbol, trading_date, estimation_date) reading is never overwritten, only
+superseded by a new row once the discretized regime label actually differs
+from the most recent prior estimate for that trading_date.
+
+This module previously wrote directly into this repo's own DuckDB tables
+(``hmm_regime_estimates`` / ``hmm_model_runs``, see market_data_hub/regime/
+schema.py) with a hand-rolled ``INSERT OR REPLACE`` CTE reimplementing this
+same change-detection logic. That table/DDL still exists (and still holds the
+historical data written before this switch) but is no longer written to by
+this module — a later, separately-confirmed phase will migrate the old rows
+and retire it.
 """
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from typing import Dict, List, Optional
 
-import duckdb
 import numpy as np
 import pandas as pd
 
+import lazytools.registry as lazytools_registry
+from lazystats.io.depot import ResultDepot
 from lazystats.regimes import MSRegimeEngine, RegimeRun
 
 from market_data_hub import catalog
@@ -33,6 +42,18 @@ DEFAULT_S_MAX = 3
 DEFAULT_N_STARTS = 20
 DEFAULT_RANDOM_STATE = 123
 DEFAULT_RETRO_DAYS = 30
+
+# ResultDepot bookkeeping for this producer's writes.
+_PRODUCED_BY = "scheduled:run_regime_daily"
+_PROVENANCE_SOURCE = "market_data_hub.regime.estimate"
+
+# _has_ok_run()'s error-vs-success-guard has no dedicated (series_key,
+# estimation_date) query on ResultDepot (see its docstring) so it scans the
+# most recent ``cadence="stable"`` index entries client-side instead. This
+# caps how far back that scan looks; same-day reruns (the only case the
+# guard needs to catch) are always near the front of the DESC-by-created_at
+# list, so this comfortably covers even a large priority-1 universe.
+_ERROR_GUARD_SCAN_LIMIT = 2000
 
 
 @dataclass
@@ -77,30 +98,59 @@ def fit_symbol_regime(symbol: str, *, db_path: Optional[str] = None,
     return engine.fit(df, model="panel", dropna="all")
 
 
-def _json_array(values) -> str:
-    """JSON-encode a NumPy array (or nested list of NumPy scalars) as native lists."""
-    return json.dumps(np.asarray(values).tolist())
+def _series_key(symbol: str) -> str:
+    return f"regime:{symbol}"
 
 
-def _last_estimate(con: duckdb.DuckDBPyConnection, symbol: str):
+def _last_estimate(depot: ResultDepot, symbol: str):
     """(max stored trading_date, n_states of the newest vintage) or (None, None).
 
-    n_states is constant within one estimation_date (one fit per day), so
-    arg_max over estimation_date is unambiguous despite the per-date rows."""
-    row = con.execute(
-        "SELECT max(trading_date), arg_max(n_states, estimation_date) "
-        "FROM hmm_regime_estimates WHERE symbol = ?", [symbol]
-    ).fetchone()
-    return (row[0], row[1]) if row else (None, None)
+    ``get_series_latest`` already returns, per as_of_date, only the value from
+    that date's most recent estimation_date -- so the last entry (as_of_date
+    is ascending) is both the max stored trading_date AND (since n_states is
+    constant within one estimation_date, one fit per day, and every run's
+    window always includes that day's newest trading_date -- see
+    write_regime_run below) the n_states of the newest vintage overall."""
+    latest = depot.get_series_latest(_series_key(symbol))
+    if not latest:
+        return None, None
+    last_point = latest[-1]
+    last_td = datetime.strptime(last_point["as_of_date"], "%Y-%m-%d").date()
+    last_S = last_point["value"].get("n_states")
+    return last_td, last_S
 
 
-def write_regime_run(con: duckdb.DuckDBPyConnection, symbol: str, run: RegimeRun,
+def _has_ok_run(depot: ResultDepot, series_key: str, estimation_date_str: str) -> bool:
+    """True if a status='ok' fit-diagnostics result already exists for this
+    (series_key, estimation_date).
+
+    ``ResultDepot`` has no query keyed directly on (series_key,
+    estimation_date), so this scans the most recent ``cadence="stable"``
+    index entries (``depot.list``) and loads each candidate's full payload
+    (``depot.load``) to check its ``series_key``/``estimation_date``/
+    ``status``. See ``_ERROR_GUARD_SCAN_LIMIT`` for the scan's bound.
+    """
+    for entry in depot.list(cadence="stable", limit=_ERROR_GUARD_SCAN_LIMIT):
+        if entry["series_key"] != series_key:
+            continue
+        full = depot.load(entry["result_id"])
+        if full is None:
+            continue
+        payload = full["payload"]
+        if payload.get("estimation_date") == estimation_date_str and payload.get("status") == "ok":
+            return True
+    return False
+
+
+def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
                      *, estimation_date: date, fit_seconds: float,
                      retro_days: int = DEFAULT_RETRO_DAYS) -> SymbolRunResult:
     panel = run.panel
     m = run.meta[symbol]
     S = int(m["S"])
     labels = m["labels"]
+    series_key = _series_key(symbol)
+    estimation_date_str = str(estimation_date)
 
     state = panel[f"{symbol}_state"].astype(int)
     highvol = panel[f"{symbol}_highvol"].astype(bool)
@@ -115,11 +165,10 @@ def write_regime_run(con: duckdb.DuckDBPyConnection, symbol: str, run: RegimeRun
         "state": state.values,
         "is_high_vol": highvol.values,
         "prob_high_vol": prob_hv.values,
-        "state_probs_json": [json.dumps([round(float(x), 6) for x in row])
-                              for row in gamma.values],
+        "state_probs": [[round(float(x), 6) for x in row] for row in gamma.values],
     })
 
-    last_td, last_S = _last_estimate(con, symbol)
+    last_td, last_S = _last_estimate(depot, symbol)
     is_first_run = last_td is None
     # A BIC flip (e.g. 2 -> 3 states) renumbers every state: rewriting only the
     # retro window would leave the latest vintage mixing two incompatible
@@ -137,62 +186,60 @@ def write_regime_run(con: duckdb.DuckDBPyConnection, symbol: str, run: RegimeRun
             mask.iloc[-retro_days:] = True
         window = src[mask]
 
-    con.register("_hmm_src", window)
-    inserted = con.execute(
-        """
-        INSERT OR REPLACE INTO hmm_regime_estimates
-            (symbol, trading_date, estimation_date, n_states, state,
-             is_high_vol, prob_high_vol, state_probs_json)
-        WITH latest AS (
-            SELECT v.* FROM hmm_regime_estimates v
-            JOIN (
-                SELECT symbol, trading_date, max(estimation_date) AS md
-                FROM hmm_regime_estimates WHERE symbol = ? GROUP BY symbol, trading_date
-            ) m ON v.symbol = m.symbol AND v.trading_date = m.trading_date
-                AND v.estimation_date = m.md
+    # One fit-diagnostics result per symbol per day; each per-date point below
+    # is linked back to it via result_id (this replaces the hmm_model_runs row).
+    result_id = depot.save(
+        kind="regime",
+        produced_by=_PRODUCED_BY,
+        instruments=[symbol],
+        payload={
+            "n_states": S, "criterion": "bic", "bic": float(m["bic"]),
+            "loglik": float(m["loglik"]),
+            "data_start": str(panel.index.min().date()),
+            "data_end": str(panel.index.max().date()),
+            "n_obs": int(len(panel)),
+            "transmat": np.asarray(m["transmat_"]).tolist(),
+            "means": np.asarray(m["means_"]).tolist(),
+            "covars": np.asarray(m["covars_"]).tolist(),
+            "labels": labels, "fit_seconds": float(fit_seconds),
+            "status": "ok", "error_msg": None,
+            "estimation_date": estimation_date_str,
+        },
+        provenance={"source": _PROVENANCE_SOURCE, "fit_seconds": fit_seconds},
+        cadence="stable", series_key=series_key,
+    )
+
+    # save_stable_point() does its own per-date change-detection (append only
+    # if the value actually differs from the last stored one for that
+    # as_of_date) -- so, unlike the old hand-rolled DuckDB CTE, nothing here
+    # needs to recompute "did this change"; we only track which dates it
+    # reports as changed, to preserve the existing revision-reporting below.
+    changed_map: Dict[str, bool] = {}
+    for row in window.itertuples(index=False):
+        d_str = str(row.trading_date)
+        changed_map[d_str] = depot.save_stable_point(
+            series_key=series_key, as_of_date=d_str, estimation_date=estimation_date_str,
+            value={
+                "state": int(row.state), "is_high_vol": bool(row.is_high_vol),
+                "prob_high_vol": float(row.prob_high_vol), "n_states": S,
+                "state_probs": row.state_probs,
+            },
+            result_id=result_id,
         )
-        SELECT s.symbol, s.trading_date, ?::DATE, s.n_states, s.state,
-               s.is_high_vol, s.prob_high_vol, s.state_probs_json
-        FROM _hmm_src s LEFT JOIN latest l ON s.trading_date = l.trading_date
-        WHERE l.trading_date IS NULL
-           OR l.state IS DISTINCT FROM s.state
-           OR l.n_states IS DISTINCT FROM s.n_states
-           OR l.is_high_vol IS DISTINCT FROM s.is_high_vol
-        RETURNING trading_date
-        """,
-        [symbol, str(estimation_date)],
-    ).fetchall()
-    con.unregister("_hmm_src")
 
     # The newest trading_date always writes (it is new, not a revision); any
-    # other trading_date the INSERT actually touched is a genuine retroactive
-    # revision. Read those dates back from the INSERT itself instead of
-    # guessing the last N dates in the window, since a refit can revise
-    # non-contiguous dates.
+    # other trading_date save_stable_point() actually changed is a genuine
+    # retroactive revision.
     revised_dates: List[str] = []
-    if not is_first_run and inserted:
+    if not is_first_run and changed_map:
         newest_date = str(window["trading_date"].iloc[-1])
         revised_dates = sorted(
-            str(row[0]) for row in inserted if str(row[0]) != newest_date
+            d for d, changed in changed_map.items() if changed and d != newest_date
         )
     revised_count = len(revised_dates)
 
     cur_state = int(state.iloc[-1])
     changed_today = len(state) > 1 and int(state.iloc[-1]) != int(state.iloc[-2])
-
-    con.execute(
-        """
-        INSERT OR REPLACE INTO hmm_model_runs
-            (symbol, estimation_date, n_states, criterion, bic, loglik,
-             data_start, data_end, n_obs, transmat_json, means_json,
-             covars_json, labels_json, fit_seconds, status, error_msg, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ok', NULL, ?)
-        """,
-        [symbol, str(estimation_date), S, "bic", float(m["bic"]), float(m["loglik"]),
-         panel.index.min().date(), panel.index.max().date(), int(len(panel)),
-         _json_array(m["transmat_"]), _json_array(m["means_"]), _json_array(m["covars_"]),
-         json.dumps(labels), float(fit_seconds), datetime.now(timezone.utc)],
-    )
 
     return SymbolRunResult(
         symbol=symbol, status="ok", n_states=S, current_state=cur_state,
@@ -202,23 +249,25 @@ def write_regime_run(con: duckdb.DuckDBPyConnection, symbol: str, run: RegimeRun
     )
 
 
-def _write_error_run(con: duckdb.DuckDBPyConnection, symbol: str,
+def _write_error_run(depot: ResultDepot, symbol: str,
                      estimation_date: date, error_msg: str) -> None:
-    # PK is (symbol, estimation_date): a failed evening rerun must not
-    # INSERT OR REPLACE away the BIC/params of a successful same-day run.
-    prior = con.execute(
-        "SELECT status FROM hmm_model_runs WHERE symbol = ? AND estimation_date = ?",
-        [symbol, str(estimation_date)],
-    ).fetchone()
-    if prior and prior[0] == "ok":
+    series_key = _series_key(symbol)
+    estimation_date_str = str(estimation_date)
+    # A failed evening rerun must not clobber the BIC/params of a successful
+    # same-day run (equivalent of the old hmm_model_runs PK (symbol,
+    # estimation_date) guard against INSERT OR REPLACE).
+    if _has_ok_run(depot, series_key, estimation_date_str):
         return
-    con.execute(
-        """
-        INSERT OR REPLACE INTO hmm_model_runs
-            (symbol, estimation_date, status, error_msg, created_at)
-        VALUES (?, ?, 'error', ?, ?)
-        """,
-        [symbol, str(estimation_date), error_msg[:500], datetime.now(timezone.utc)],
+    depot.save(
+        kind="regime",
+        produced_by=_PRODUCED_BY,
+        instruments=[symbol],
+        payload={
+            "status": "error", "error_msg": error_msg[:500],
+            "estimation_date": estimation_date_str,
+        },
+        provenance={"source": _PROVENANCE_SOURCE},
+        cadence="stable", series_key=series_key,
     )
 
 
@@ -230,18 +279,17 @@ def run_daily_regime_estimation(*, symbols: Optional[List[str]] = None,
                                 db_path: Optional[str] = None) -> Dict[str, SymbolRunResult]:
     """Fit + persist regimes for every requested symbol. Returns {symbol: SymbolRunResult}.
 
-    A single symbol's failure is recorded as an error row and does not stop the run.
+    A single symbol's failure is recorded as an error result and does not stop
+    the run.
 
     Two phases, deliberately not interleaved: (1) fit every symbol — each fit
     pulls returns via its own short-lived read-only connection (extract_returns
-    -> reader.read_prices); (2) open a single writer connection and persist all
-    results. DuckDB refuses a second connection to the same file with a
-    different read_only configuration while one is already open in-process, so
-    phase 1 must finish (and hold no connection) before phase 2 opens the writer.
+    -> reader.read_prices); (2) construct one ``ResultDepot`` and persist all
+    results through it. Mirrors the previous DuckDB writer's lifecycle (opened
+    once, reused across symbols, closed at the end) even though the depot's
+    own SQLite connection has none of DuckDB's single-writer-per-file
+    restriction that motivated keeping phase 1's readers short-lived.
     """
-    from market_data_hub.db.connection import get_conn
-    from market_data_hub.regime.schema import ensure_regime_schema
-
     asof = asof or datetime.now().date()
     symbols = symbols or priority_symbols(priority, db_path=db_path)
 
@@ -255,22 +303,30 @@ def run_daily_regime_estimation(*, symbols: Optional[List[str]] = None,
         except Exception as exc:  # noqa: BLE001 - one bad symbol must not abort the run
             fits[symbol] = (None, str(exc), time.time() - t0)
 
-    results: Dict[str, SymbolRunResult] = {}
-    con = get_conn(db_path)
+    # Required core persistence, not the artifact-store's best-effort optional
+    # pattern (see market_data_hub/artifact_registry.py): resolve_db raises
+    # RuntimeError if LAZYSTATS_RESULT_DEPOT_DB is unset, and that is left to
+    # propagate -- a regime run that cannot persist its results must fail loudly.
+    depot_path = lazytools_registry.resolve_db("lazystats_depot")
+    # resolve_db's return type is Optional[str] for the general (optional-DB)
+    # case, but "lazystats_depot" is declared required=True in KNOWN_DBS, so
+    # it always either returns a real path or raises above -- never None.
+    assert depot_path is not None
+    depot = ResultDepot(depot_path)
     try:
-        ensure_regime_schema(con)
+        results: Dict[str, SymbolRunResult] = {}
         for symbol, (run, error_msg, fit_seconds) in fits.items():
             if run is None:
-                _write_error_run(con, symbol, asof, error_msg)
+                _write_error_run(depot, symbol, asof, error_msg)
                 results[symbol] = SymbolRunResult(symbol=symbol, status="error",
                                                   error_msg=error_msg)
             else:
                 results[symbol] = write_regime_run(
-                    con, symbol, run, estimation_date=asof,
+                    depot, symbol, run, estimation_date=asof,
                     fit_seconds=fit_seconds, retro_days=retro_days,
                 )
     finally:
-        con.close()
+        depot.close()
     return results
 
 
