@@ -21,7 +21,6 @@ import datetime as dt
 import html as html_mod
 import sys
 
-import duckdb
 import numpy as np
 import pandas as pd
 import pytest
@@ -235,6 +234,43 @@ def test_chart_uses_daily_points_per_year():
     assert captured["points_per_year"] == 252       # daily fit, not weekly
 
 
+def test_revision_table_renders_old_new_transition(depot):
+    """_revision_table reads vintages from the depot (not DuckDB) and shows
+    the old->new state/prob_high_vol/estimation_date transition -- the gap
+    flagged after the persistence-layer swap (report.py silently rendering
+    an empty revision section)."""
+    from market_data_hub.regime import report as rep
+
+    depot.save_stable_point(
+        series_key="regime:SPY", as_of_date="2024-06-01", estimation_date="2024-06-01",
+        value={"state": 0, "is_high_vol": False, "prob_high_vol": 0.1,
+               "n_states": 2, "state_probs": [0.9, 0.1]},
+    )
+    depot.save_stable_point(
+        series_key="regime:SPY", as_of_date="2024-06-01", estimation_date="2024-06-05",
+        value={"state": 1, "is_high_vol": True, "prob_high_vol": 0.87,
+               "n_states": 2, "state_probs": [0.13, 0.87]},
+    )
+
+    out = rep._revision_table(depot, "SPY", [dt.date(2024, 6, 1)])
+
+    assert "0 &rarr; 1" in out
+    assert "0.100 &rarr; 0.870" in out
+    assert "2024-06-01 &rarr; 2024-06-05" in out
+
+
+def test_revision_table_skips_dates_with_no_second_vintage(depot):
+    from market_data_hub.regime import report as rep
+
+    depot.save_stable_point(
+        series_key="regime:SPY", as_of_date="2024-06-01", estimation_date="2024-06-01",
+        value={"state": 0, "is_high_vol": False, "prob_high_vol": 0.1,
+               "n_states": 2, "state_probs": [0.9, 0.1]},
+    )
+    assert rep._revision_table(depot, "SPY", [dt.date(2024, 6, 1)]) == ""
+    assert rep._revision_table(depot, "SPY", []) == ""
+
+
 def test_report_shows_display_names(tmp_path):
     from market_data_hub.regime import report as rep
 
@@ -242,12 +278,12 @@ def test_report_shows_display_names(tmp_path):
     assert names, "tickers.yaml catalog lookup produced no names"
     sym, name = next(iter(sorted(names.items())))
     results = {sym: SymbolRunResult(symbol=sym, status="error", error_msg="x")}
-    con = duckdb.connect()
+    depot = ResultDepot()
     try:
-        out = rep.generate_html_report(con, results, out_dir=tmp_path,
+        out = rep.generate_html_report(depot, results, out_dir=tmp_path,
                                        asof=dt.date(2026, 7, 9))
     finally:
-        con.close()
+        depot.close()
     assert html_mod.escape(name) in out.read_text(encoding="utf-8")
 
 
