@@ -36,7 +36,7 @@ from lazystats.io.depot import ResultDepot
 from lazystats.regimes import MSRegimeEngine, RegimeRun
 
 from market_data_hub import catalog
-from market_data_hub.db.connection import _resolve_db_path
+from market_data_hub.db.connection import _default_db, _resolve_db_path
 from market_data_hub.extract import extract_returns
 
 DEFAULT_S_MAX = 3
@@ -103,12 +103,23 @@ def _series_key(symbol: str, db_path: Optional[str] = None) -> str:
     """``regime:<symbol>`` for the production DuckDB (the key format the
     405,313-row migration already used) -- but namespaced by the resolved
     input database's identity for any other one (e.g. ``--db test.duckdb``
-    for a test/staging run), so an alternate-DB run can never supersede
-    production vintages/diagnostics in the single, shared ResultDepot (which
-    has no per-DuckDB isolation of its own, unlike the DuckDB file itself).
+    for a test/staging run, or a staging *deployment*'s own ``MARKET_DATA_DB``
+    env var), so an alternate-DB run can never supersede production
+    vintages/diagnostics in the single, shared ResultDepot (which has no
+    per-DuckDB isolation of its own, unlike the DuckDB file itself).
+
+    Compared against ``_default_db()`` -- the hardcoded, env-var-independent
+    fallback path -- and NOT against ``_resolve_db_path(None)``: the latter
+    already applies MARKET_DATA_DB/settings.yaml, so on a staging deployment
+    (which sets its own MARKET_DATA_DB, never passes ``--db``) it would
+    resolve to that deployment's own database and then trivially compare
+    equal to itself, bypassing the namespace entirely. The scheduled wrapper
+    itself is exactly this shape: it imports MARKET_DATA_DB and invokes
+    run_regime_daily.py with no ``--db``, so this must not depend on ``--db``
+    having been passed to tell production apart from another deployment.
     """
     resolved = _resolve_db_path(db_path)
-    if resolved == _resolve_db_path(None):
+    if resolved == _default_db():
         return f"regime:{symbol}"
     db_id = hashlib.sha256(str(resolved).encode("utf-8")).hexdigest()[:12]
     return f"regime:{symbol}@{db_id}"

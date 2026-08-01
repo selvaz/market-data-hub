@@ -111,6 +111,24 @@ def test_alternate_db_path_is_namespaced_away_from_production(depot):
     assert any(k.startswith("regime:SPY@") and k != "regime:SPY" for k in series_keys)
 
 
+def test_deployment_default_via_env_var_is_also_namespaced(depot, monkeypatch):
+    """A staging/other deployment selects its DuckDB through MARKET_DATA_DB
+    (or settings.yaml), never passing --db at all -- the scheduled wrapper
+    itself works exactly this way (imports MARKET_DATA_DB, invokes
+    run_regime_daily.py with no --db). Comparing against
+    _resolve_db_path(None) would have this deployment's own env-resolved
+    path trivially equal itself and wrongly skip namespacing; only
+    comparing against the fixed, env-var-independent _default_db() catches
+    this."""
+    from market_data_hub.regime import estimate as est_mod
+
+    monkeypatch.setenv("MARKET_DATA_DB", "some_other_deployments_market_data.duckdb")
+
+    key = est_mod._series_key("SPY")  # no db_path passed, same as the real wrapper
+    assert key != "regime:SPY"
+    assert key.startswith("regime:SPY@")
+
+
 def test_write_regime_run_uses_label_only_compare_keys(depot, monkeypatch):
     """write_regime_run() must restrict save_stable_point()'s change
     detection to state/n_states/is_high_vol, matching the original DuckDB
