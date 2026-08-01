@@ -225,6 +225,13 @@ def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
                 "state_probs": row.state_probs,
             },
             result_id=result_id,
+            # Label-only change detection, matching the original DuckDB CTE
+            # (`state`/`n_states`/`is_high_vol` only): prob_high_vol/
+            # state_probs shift on every refit merely from adding one more
+            # day's observation, even when the discrete regime read is
+            # unchanged -- comparing the full value would flag ~retro_days
+            # false revisions per symbol on every single run.
+            compare_keys=["state", "n_states", "is_high_vol"],
         )
 
     # The newest trading_date always writes (it is new, not a revision); any

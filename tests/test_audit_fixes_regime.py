@@ -88,6 +88,30 @@ def test_first_run_writes_full_history(depot):
     assert res.revised_dates == []
 
 
+def test_write_regime_run_uses_label_only_compare_keys(depot, monkeypatch):
+    """write_regime_run() must restrict save_stable_point()'s change
+    detection to state/n_states/is_high_vol, matching the original DuckDB
+    CTE (`state`/`n_states`/`is_high_vol` only). Regression test: comparing
+    the full value (which also carries prob_high_vol/state_probs -- fields
+    that drift on every refit even when the discrete regime read is
+    unchanged) would flag ~retro_days false revisions per symbol on every
+    run."""
+    calls = []
+    original = depot.save_stable_point
+
+    def spy(**kwargs):
+        calls.append(kwargs.get("compare_keys"))
+        return original(**kwargs)
+
+    monkeypatch.setattr(depot, "save_stable_point", spy)
+
+    write_regime_run(depot, "SPY", _mk_run("SPY", 5),
+                     estimation_date=dt.date(2024, 6, 1), fit_seconds=0.1)
+
+    assert calls, "save_stable_point was never called"
+    assert all(c == ["state", "n_states", "is_high_vol"] for c in calls)
+
+
 def test_retro_window_backfills_after_pause(depot):
     # 100 days fitted, then a 50-trading-day pause (> retro_days=30): every
     # missing date must become eligible, not just the last 30 rows.
