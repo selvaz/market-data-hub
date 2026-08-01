@@ -124,9 +124,11 @@ market_data_hub/
 │   ├── score.py             coverage_score() 0–100
 │   └── report.py            rebuild_coverage() → coverage_report table
 │
-├── regime/                  per-symbol HMM regime monitor (needs the sibling
-│   ├── estimate.py          LazyHMM package) — entry point run_regime_daily.py
-│   └── report.py
+├── regime/                  per-symbol HMM regime monitor (needs the sibling lazystats
+│   ├── estimate.py          package: fit engine + persistence via ResultDepot, resolved
+│   └── report.py            via lazytools.registry) — entry point run_regime_daily.py.
+│                            Results live in LazyStats' ResultDepot, not this repo's
+│                            DuckDB (moved there 2026-08).
 │
 ├── db/
 │   ├── schema.sql           tables + indexes + views (idempotent); schema_meta
