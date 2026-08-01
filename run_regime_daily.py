@@ -24,7 +24,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from market_data_hub.config_loader import get_settings  # noqa: E402
-from market_data_hub.db.connection import get_conn  # noqa: E402
 from market_data_hub.lock import DBLockTimeout, db_write_lock  # noqa: E402
 from market_data_hub.regime.estimate import (  # noqa: E402
     DEFAULT_N_STARTS, DEFAULT_RETRO_DAYS, DEFAULT_S_MAX,
@@ -96,12 +95,25 @@ def main() -> int:
     print(f"Done: {len(ok)} ok, {len(errors)} errors, "
           f"{len(changed)} regime changes today, {len(revised)} with revisions.")
 
-    con = get_conn(args.db, read_only=True)
+    import lazytools.registry as lazytools_registry
+    from lazystats.io.depot import ResultDepot
+
+    depot = ResultDepot(lazytools_registry.resolve_db("lazystats_depot"))
     try:
-        out_path = generate_html_report(con, results, out_dir=_report_dir(), asof=asof)
+        out_path = generate_html_report(depot, results, out_dir=_report_dir(), asof=asof,
+                                        db_path=args.db)
     finally:
-        con.close()
+        depot.close()
     print(f"Report: {out_path}")
+
+    from market_data_hub.artifact_registry import register_report_artifact
+    register_report_artifact(
+        title=f"Regime monitor report {asof.isoformat()}",
+        summary=f"{len(ok)} symbols fitted | {len(errors)} errors | "
+                f"{len(changed)} regime changes today | {len(revised)} revisions",
+        tags=["regime", "daily"],
+        content_uri=str(out_path),
+    )
 
     if args.dry_run or not args.send:
         if not errors.empty:

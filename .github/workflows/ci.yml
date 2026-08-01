@@ -80,6 +80,12 @@ jobs:
       # git+...'`). Build a real wheel and import-check it in isolation so
       # packaging regressions like that one fail CI instead of shipping
       # silently.
+      #
+      # market_data_hub.regime itself is intentionally NOT import-checked
+      # here: since the ResultDepot persistence swap, estimate.py/report.py
+      # hard-require lazystats + lazytools, optional packages this bare
+      # install never pulls in (this differs from the old regime/schema.py,
+      # which had zero external deps and happened to import cleanly here).
       - name: Verify the package actually installs (not just editable)
         run: |
           python -m build --wheel --outdir dist .
@@ -88,7 +94,6 @@ jobs:
           /tmp/install-check/bin/python -c "
           import market_data_hub, market_data_hub.reader, market_data_hub.catalog, market_data_hub.extract
           import market_data_hub.agent_tools
-          import market_data_hub.regime.schema
           import market_data_hub.coverage.report, market_data_hub.lazydatacore.identity
           print('package installs and imports cleanly')
           "

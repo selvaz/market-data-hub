@@ -31,6 +31,7 @@ Import-PersistedEnvVar "MARKET_DATA_DB"
 Import-PersistedEnvVar "MARKET_DATA_REPORT_DIR"
 Import-PersistedEnvVar "TELEGRAM_BOT_TOKEN"
 Import-PersistedEnvVar "TELEGRAM_CHAT_ID"
+Import-PersistedEnvVar "LAZYSTATS_RESULT_DEPOT_DB"
 
 Write-Host "[$(Get-Date -Format s)] Starting HMM regime monitor: $($RunRegimeArgs -join ' ')"
 & $Python (Join-Path $Root 'run_regime_daily.py') @RunRegimeArgs

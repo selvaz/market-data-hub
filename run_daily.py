@@ -78,6 +78,16 @@ def main() -> int:
                   f"{sum(x['series'] for x in d['tables'])} | "
                   f"Score: {d['score_avg']} | Stalled: {len(d['stalled'])}")
 
+            from market_data_hub.artifact_registry import register_report_artifact
+            register_report_artifact(
+                title=f"Market data report {stamp}",
+                summary=f"{d['total_rows']:,} rows | "
+                        f"{sum(x['series'] for x in d['tables'])} series | "
+                        f"score {d['score_avg']} | {len(d['stalled'])} stalled",
+                tags=["daily"],
+                content_uri=str(html_path),
+            )
+
             if args.open_browser:
                 import webbrowser
                 webbrowser.open(html_path.as_uri())

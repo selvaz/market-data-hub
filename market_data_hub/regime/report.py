@@ -14,15 +14,15 @@ import html
 import io
 from datetime import date, datetime
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Optional
 
-import duckdb
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+from lazystats.io.depot import ResultDepot  # noqa: E402
 from market_data_hub import catalog  # noqa: E402
-from market_data_hub.regime.estimate import SymbolRunResult  # noqa: E402
+from market_data_hub.regime.estimate import SymbolRunResult, _series_key  # noqa: E402
 
 _CSS = """
 body { font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 0;
@@ -85,24 +85,20 @@ def _chart_img(run, symbol: str) -> str:
     return f'<img alt="{html.escape(symbol)} regimes" src="data:image/png;base64,{b64}"/>'
 
 
-def _revision_table(con: duckdb.DuckDBPyConnection, symbol: str, dates: list) -> str:
+def _revision_table(depot: ResultDepot, symbol: str, dates: list,
+                    db_path: Optional[str] = None) -> str:
     if not dates:
         return ""
     rows_html = []
     for d in dates:
-        hist = con.execute(
-            """
-            SELECT estimation_date, state, prob_high_vol FROM hmm_regime_estimates
-            WHERE symbol = ? AND trading_date = ? ORDER BY estimation_date
-            """,
-            [symbol, d],
-        ).fetch_df()
+        hist = depot.list_series_vintages(_series_key(symbol, db_path), str(d))
         if len(hist) < 2:
             continue
-        old, new = hist.iloc[-2], hist.iloc[-1]
+        old, new = hist[-2], hist[-1]
+        old_v, new_v = old["value"], new["value"]
         rows_html.append(
-            f"<tr><td>{d}</td><td>{int(old['state'])} &rarr; {int(new['state'])}</td>"
-            f"<td>{old['prob_high_vol']:.3f} &rarr; {new['prob_high_vol']:.3f}</td>"
+            f"<tr><td>{d}</td><td>{int(old_v['state'])} &rarr; {int(new_v['state'])}</td>"
+            f"<td>{old_v['prob_high_vol']:.3f} &rarr; {new_v['prob_high_vol']:.3f}</td>"
             f"<td>{old['estimation_date']} &rarr; {new['estimation_date']}</td></tr>"
         )
     if not rows_html:
@@ -145,9 +141,10 @@ def _stats_table(run, symbol: str) -> str:
     )
 
 
-def generate_html_report(con: duckdb.DuckDBPyConnection,
+def generate_html_report(depot: ResultDepot,
                          results: Dict[str, SymbolRunResult], *,
-                         out_dir: Path, asof: date) -> Path:
+                         out_dir: Path, asof: date,
+                         db_path: Optional[str] = None) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     ok = {s: r for s, r in results.items() if r.status == "ok"}
@@ -192,7 +189,7 @@ def generate_html_report(con: duckdb.DuckDBPyConnection,
         r = ok[symbol]
         chart = _chart_img(r.run, symbol)
         stats = _stats_table(r.run, symbol)
-        revs = _revision_table(con, symbol, r.revised_dates or [])
+        revs = _revision_table(depot, symbol, r.revised_dates or [], db_path)
         sections.append(
             f'<section class="symbol" id="sec-{symbol}" style="display:none">'
             f"<h2>{symbol} &mdash; {html.escape(r.current_label or '')}</h2>"
