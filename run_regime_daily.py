@@ -103,6 +103,15 @@ def main() -> int:
         con.close()
     print(f"Report: {out_path}")
 
+    from market_data_hub.artifact_registry import register_report_artifact
+    register_report_artifact(
+        title=f"Regime monitor report {asof.isoformat()}",
+        summary=f"{len(ok)} symbols fitted | {len(errors)} errors | "
+                f"{len(changed)} regime changes today | {len(revised)} revisions",
+        tags=["regime", "daily"],
+        content_uri=str(out_path),
+    )
+
     if args.dry_run or not args.send:
         if not errors.empty:
             print(errors[["symbol", "error_msg"]].to_string(index=False))
