@@ -75,6 +75,9 @@ Write-Host "MARKET_DATA_REPORT_DIR=$ReportDir"
 Read-OptionalSecret "FRED API key" "FRED_API_KEY"
 Read-OptionalSecret "Telegram bot token" "TELEGRAM_BOT_TOKEN"
 Read-OptionalSecret "Telegram chat id / @channel" "TELEGRAM_CHAT_ID"
+Read-OptionalSecret "SEC EDGAR user agent (fair-access policy: 'name email', falls back to settings.yaml then a default if skipped)" "SEC_USER_AGENT"
+Read-OptionalSecret "Artifact catalog DB (this repo's reports, shared cross-repo via LazyTools' registry)" "MARKET_DATA_ARTIFACTS_DB"
+Read-OptionalSecret "LazyStats result depot DB (REQUIRED for -ConfigureScheduler's regime job -- run_daily_regime_estimation raises if unset)" "LAZYSTATS_RESULT_DEPOT_DB"
 
 if (!$SkipInstall) {
     Write-Host ""
