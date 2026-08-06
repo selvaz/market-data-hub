@@ -36,7 +36,7 @@ import pandas as pd  # noqa: E402
 from market_data_hub.catalog import _classify                      # noqa: E402
 from market_data_hub.config_loader import get_yahoo_tickers        # noqa: E402
 from market_data_hub.db.connection import get_conn                 # noqa: E402
-from market_data_hub.db.identity import currency_for_symbol        # noqa: E402
+from market_data_hub.db.identity import currency_for_symbol, sync_currency_overrides  # noqa: E402
 from market_data_hub.db.upsert import upsert                       # noqa: E402
 from market_data_hub.lock import db_write_lock                     # noqa: E402
 
@@ -110,12 +110,21 @@ def main() -> int:
             """, [now]).fetchall()
             n_updated_listings = update_result[0][0] if update_result else 0
             con.unregister("_cur_src")
+
+            # Explicit _CURRENCY_OVERRIDES entries are a deliberate, curated
+            # correction (unlike the general USD default above) -- force them
+            # onto existing rows even when already non-NULL, so a symbol
+            # newly added to the override dict (or one outside tickers.yaml
+            # entirely, e.g. EEM) actually gets corrected, not just symbols
+            # that happened to still be NULL.
+            n_synced_overrides = sync_currency_overrides(con)
         finally:
             con.close()
 
     print(f"etf_classification: +{added} added, {updated} updated, "
           f"-{n_removed} removed ({len(entries)} config symbols processed)")
-    print(f"listings.currency: {n_updated_listings} rows backfilled")
+    print(f"listings.currency: {n_updated_listings} rows backfilled, "
+          f"{n_synced_overrides} rows corrected to an explicit override")
     return 0
 
 

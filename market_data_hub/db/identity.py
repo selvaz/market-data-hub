@@ -81,6 +81,37 @@ def currency_for_symbol(symbol: str) -> Optional[str]:
     return None
 
 
+def sync_currency_overrides(con) -> int:
+    """Idempotent migration: force ``listings.currency`` to match
+    ``_CURRENCY_OVERRIDES`` for every symbol with an explicit override, even
+    on a row that already has a *different* stored value.
+
+    Deploying a new/changed ``_CURRENCY_OVERRIDES`` entry over an
+    already-populated database does not, by itself, touch existing rows:
+    ``ensure_listing`` skips its insert once the deterministic listing
+    already exists, and the general backfill in
+    ``scripts/backfill_etf_classification.py`` only fills ``NULL``
+    currencies (deliberately -- it must never overwrite a legitimately
+    hand-corrected value for a symbol with no override). An override,
+    unlike that general USD default, *is* a deliberate, curated correction,
+    so forcing it here is safe where the broader backfill's "only fill
+    NULLs" caution would not be. Safe to call on every run: a row that
+    already matches is left untouched.
+
+    Returns the number of rows corrected.
+    """
+    now = datetime.now(timezone.utc)
+    updated = 0
+    for symbol, currency in _CURRENCY_OVERRIDES.items():
+        result = con.execute(
+            "UPDATE listings SET currency = ?, updated_at = ? "
+            "WHERE symbol = ? AND provider = 'yahoo' AND (currency IS NULL OR currency != ?)",
+            [currency, now, symbol, currency],
+        ).fetchall()
+        updated += result[0][0] if result else 0
+    return updated
+
+
 def stable_id(prefix: str, *parts: str) -> str:
     h = hashlib.sha256("|".join(parts).encode("utf-8")).hexdigest()[:12]
     return f"{prefix}_{h}"
