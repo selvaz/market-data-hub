@@ -36,7 +36,7 @@ def test_every_yahoo_ticker_is_classified():
 def test_lazyportfolio_phase_a_universe_is_in_daily_and_master_catalogs():
     """Every Phase-A ETF must be daily-downloadable and taxonomy-registered."""
     phase_a = {
-        "QAI", "WTMF", "MNA", "IGOV", "ISHG", "PICB", "VCIT", "VCLT",
+        "QAI", "WTMF", "MNA", "IGOV", "ISHG", "PICB", "VCIT", "VCLT", "IHY",
         "BNO", "USL", "EFV", "EFG", "SCZ", "ECH", "EPHE", "THD",
         "EIDO", "EPU", "TUR", "ARGT",
     }
@@ -47,6 +47,7 @@ def test_lazyportfolio_phase_a_universe_is_in_daily_and_master_catalogs():
 
     assert phase_a <= daily_symbols
     assert phase_a <= master_symbols
+    assert "HYXU" not in daily_symbols
 
 
 def test_validator_detects_a_fred_leak(monkeypatch):

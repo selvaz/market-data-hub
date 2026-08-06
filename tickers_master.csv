@@ -80,7 +80,7 @@ LQD,USA,FIXED_INCOME,AGG,Corporate,US-IG,Broad,1,FIXED_INCOME,FI | US | iShares 
 VCSH,USA,FIXED_INCOME,AGG,Corporate,US-IG,Short-Term,1,FIXED_INCOME,FI | US | Vanguard Short-Term Corporate
 HYG,USA,FIXED_INCOME,AGG,Corporate,US-HY,Broad,1,FIXED_INCOME,FI | US | iShares iBoxx $ High Yield Corporate
 EUHY,Europe,FIXED_INCOME,AGG,Corporate,Europe-HY,Broad,1,FIXED_INCOME,FI | Europe | iShares € High Yield Corporate
-HYXU,Global,FIXED_INCOME,AGG,Corporate,Global-HY,Ex-USD,1,FIXED_INCOME,FI | Global | iShares Global ex USD High Yield Corporate
+IHY,Global,FIXED_INCOME,BNDX,Corporate,Global-HY,Ex-US,1,FIXED_INCOME,FI | Global ex-US | VanEck International High Yield Bond
 EMB,Emerging Markets,FIXED_INCOME,AGG,Emerging,EM-Sovereign,Hard-Currency,1,FIXED_INCOME,FI | EM | iShares JP Morgan USD Emerging Markets Bond
 EMLC,Emerging Markets,FIXED_INCOME,AGG,Emerging,EM-Sovereign,Local-Currency,1,FIXED_INCOME,FI | EM | VanEck Emerging Markets Local Currency Bond
 CEMB,Emerging Markets,FIXED_INCOME,AGG,Emerging,EM-Corporate,Hard-Currency,1,FIXED_INCOME,FI | EM | iShares Emerging Markets Corporate Bond

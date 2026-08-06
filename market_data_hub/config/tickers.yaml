@@ -334,10 +334,10 @@ yahoo:
   area: Europe
   name: FI | Europe | iShares Core € Corp Bond UCITS ETF EUR (Dist)
   priority: 1
-- symbol: HYXU
+- symbol: IHY
   asset_class: FIXED_INCOME
   area: Global
-  name: FI | Global | iShares Global ex USD High Yield Corporate
+  name: FI | Global ex-US | VanEck International High Yield Bond
   priority: 1
 - symbol: EMB
   asset_class: FIXED_INCOME

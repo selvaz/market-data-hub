@@ -119,7 +119,7 @@ point normally is on a healthy day.
 | | PICB | Invesco International Corporate Bond |
 | High yield | HYG | iShares iBoxx $ High Yield Corporate |
 | | EUHY | iShares € High Yield Corporate |
-| | HYXU | iShares Global ex USD High Yield Corporate |
+| | IHY | VanEck International High Yield Bond |
 | | HYEM | VanEck Emerging Markets High Yield Bond |
 | | HYD | VanEck High Yield Muni |
 | EM debt | EMB | iShares JP Morgan USD Emerging Markets Bond |
