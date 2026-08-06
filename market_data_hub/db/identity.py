@@ -23,9 +23,14 @@ DEFAULT_PROVIDER = "yahoo"
 # the service/script paths.
 #
 # Default is USD (the config universe is US-exchange-listed ETFs); the STOXX
-# Europe 600 sector sleeves trade on Xetra in EUR and are the only
-# exchange-suffix exception (verified against tickers.yaml -- every other
-# non-FX symbol is unsuffixed or a plain US ticker).
+# Europe 600 sector sleeves and the Xetra/Amsterdam-listed euro bond UCITS
+# ETFs below trade in EUR and are exchange-suffix exceptions (verified
+# against tickers.yaml -- every other non-FX symbol is unsuffixed or a plain
+# US ticker). EEM is a US-listed (NYSEARCA), USD-denominated ETF that isn't
+# in the curated tickers.yaml universe at all, so it would otherwise fall
+# through to an unknown (NULL) currency -- this override bypasses the
+# "must be in tickers.yaml" gate the same way every other entry here does,
+# without pulling it into the curated ingestion universe just to label it.
 _CURRENCY_OVERRIDES = {
     "EXSA.DE": "EUR",
     "EXV1.DE": "EUR",
@@ -34,6 +39,10 @@ _CURRENCY_OVERRIDES = {
     "EXH4.DE": "EUR",
     "EXH1.DE": "EUR",
     "EXH9.DE": "EUR",
+    "DBXP.DE": "EUR",
+    "IBCL.DE": "EUR",
+    "IEAC.AS": "EUR",
+    "EEM": "USD",
 }
 _DEFAULT_CURRENCY = "USD"
 
