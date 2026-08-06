@@ -23,9 +23,14 @@ DEFAULT_PROVIDER = "yahoo"
 # the service/script paths.
 #
 # Default is USD (the config universe is US-exchange-listed ETFs); the STOXX
-# Europe 600 sector sleeves trade on Xetra in EUR and are the only
-# exchange-suffix exception (verified against tickers.yaml -- every other
-# non-FX symbol is unsuffixed or a plain US ticker).
+# Europe 600 sector sleeves and the Xetra/Amsterdam-listed euro bond UCITS
+# ETFs below trade in EUR and are exchange-suffix exceptions (verified
+# against tickers.yaml -- every other non-FX symbol is unsuffixed or a plain
+# US ticker). EEM is a US-listed (NYSEARCA), USD-denominated ETF that isn't
+# in the curated tickers.yaml universe at all, so it would otherwise fall
+# through to an unknown (NULL) currency -- this override bypasses the
+# "must be in tickers.yaml" gate the same way every other entry here does,
+# without pulling it into the curated ingestion universe just to label it.
 _CURRENCY_OVERRIDES = {
     "EXSA.DE": "EUR",
     "EXV1.DE": "EUR",
@@ -34,6 +39,10 @@ _CURRENCY_OVERRIDES = {
     "EXH4.DE": "EUR",
     "EXH1.DE": "EUR",
     "EXH9.DE": "EUR",
+    "DBXP.DE": "EUR",
+    "IBCL.DE": "EUR",
+    "IEAC.AS": "EUR",
+    "EEM": "USD",
 }
 _DEFAULT_CURRENCY = "USD"
 
@@ -70,6 +79,37 @@ def currency_for_symbol(symbol: str) -> Optional[str]:
     if symbol in _config_symbols():
         return _DEFAULT_CURRENCY
     return None
+
+
+def sync_currency_overrides(con) -> int:
+    """Idempotent migration: force ``listings.currency`` to match
+    ``_CURRENCY_OVERRIDES`` for every symbol with an explicit override, even
+    on a row that already has a *different* stored value.
+
+    Deploying a new/changed ``_CURRENCY_OVERRIDES`` entry over an
+    already-populated database does not, by itself, touch existing rows:
+    ``ensure_listing`` skips its insert once the deterministic listing
+    already exists, and the general backfill in
+    ``scripts/backfill_etf_classification.py`` only fills ``NULL``
+    currencies (deliberately -- it must never overwrite a legitimately
+    hand-corrected value for a symbol with no override). An override,
+    unlike that general USD default, *is* a deliberate, curated correction,
+    so forcing it here is safe where the broader backfill's "only fill
+    NULLs" caution would not be. Safe to call on every run: a row that
+    already matches is left untouched.
+
+    Returns the number of rows corrected.
+    """
+    now = datetime.now(timezone.utc)
+    updated = 0
+    for symbol, currency in _CURRENCY_OVERRIDES.items():
+        result = con.execute(
+            "UPDATE listings SET currency = ?, updated_at = ? "
+            "WHERE symbol = ? AND provider = 'yahoo' AND (currency IS NULL OR currency != ?)",
+            [currency, now, symbol, currency],
+        ).fetchall()
+        updated += result[0][0] if result else 0
+    return updated
 
 
 def stable_id(prefix: str, *parts: str) -> str:
