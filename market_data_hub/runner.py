@@ -76,6 +76,14 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
               end: Optional[str] = None) -> None:
     end = end or _today()
     tickers = get_yahoo_tickers()
+    # Register the full configured universe before the provider call. This
+    # keeps the anagrafica (instrument, listing, ticker alias) in sync with
+    # the daily universe even when Yahoo is temporarily unavailable; a later
+    # successful run will attach the same deterministic listing ids to prices.
+    from market_data_hub.db.identity import ensure_listing
+    for entry in tickers:
+        ensure_listing(con, entry["symbol"], kind=entry.get("asset_class", "OTHER"),
+                       name=entry.get("name"))
     tail = cfg["incremental"]["tail_refresh_days"]
     gstart = cfg["backfill_start"]["yahoo"]
     last = _last_prices(con)

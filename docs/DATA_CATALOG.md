@@ -6,7 +6,7 @@
 > *query* this catalogue programmatically (by asset class, area, sector, pillar)
 > and pull analysis-ready series, see [EXTRACTION.md](EXTRACTION.md).
 
-Totals: **111 Yahoo symbols** + **77 FRED series** + **6 crypto × 3 timeframes**.
+Totals: **137 Yahoo symbols** + **77 FRED series** + **6 crypto × 3 timeframes**.
 
 Legend — *Stalled-after* is the freshness threshold from the coverage engine:
 beyond it a series is flagged `stalled`. *Typical lag* is how old the newest

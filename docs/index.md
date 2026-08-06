@@ -25,7 +25,7 @@ df, meta = extract.extract_returns(["SPY", "TLT", "^VIX"],
 
 | Source | What | Table | Frequency |
 |--------|------|-------|-----------|
-| Yahoo Finance | 111 symbols (ETFs, equity, FX, VIX indices) — OHLCV + adj_close, plus intraday live injection | `prices_daily` | daily |
+| Yahoo Finance | 137 symbols (ETFs, equity, FX, VIX indices) — OHLCV + adj_close, plus intraday live injection | `prices_daily` | daily |
 | Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
 | FRED | 77 macro series (rates, real yields, CPI, GDP, credit spreads, financial conditions, liquidity, cross-country 10Y yields) | `macro_series` | D/M/Q |
 | World Bank + IMF + BIS + ECB | 83 cross-country indicators (WDI/WGI/WEO/BIS/IMF SDMX/ECB) × 64 countries, with primary→fallback source logic | `macro_panel` | annual |

@@ -50,6 +50,24 @@ four YAML catalogs under `market_data_hub/config/` — see the
 (`export_to_excel.py` / `import_from_excel.py`) exists for spreadsheet editing,
 with `validate_config.py` guarding consistency.
 
+### LazyPortfolio Phase-A ETF coverage
+
+The Yahoo daily universe includes the instruments needed by the global
+multi-asset optimization trees: developed-market style ETFs (`EFV`, `EFG`,
+`SCZ`), EM country satellites (`ECH`, `EPHE`, `THD`, `EIDO`, `EPU`, `TUR`,
+`ARGT`), international and corporate fixed income (`IGOV`, `ISHG`, `PICB`,
+`VCIT`, `VCLT`), energy commodities (`BNO`, `USL`), and diversifying
+alternatives (`QAI`, `WTMF`, `MNA`). Their Layer-1-to-Layer-4 taxonomy is kept
+in `tickers_master.csv`; the operational daily universe is
+`market_data_hub/config/tickers.yaml`.
+
+Every Yahoo daily or backfill run first creates the identity rows
+(`instruments`, `listings`, and ticker aliases) for its configured universe.
+The backfill then writes price history to `prices_daily` and rebuilds
+`coverage_report`; each subsequent `run_daily.py --sources yahoo` refreshes
+the same universe and records the per-symbol operational outcome in
+`download_log`, including provider failures.
+
 ## First load, then daily
 
 ```bash

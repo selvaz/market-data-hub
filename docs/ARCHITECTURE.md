@@ -137,7 +137,7 @@ market_data_hub/
 │   └── upsert.py            upsert() INSERT OR REPLACE, log_run()
 │
 └── config/
-    ├── tickers.yaml         111 Yahoo symbols (symbol/asset_class/area/priority)
+    ├── tickers.yaml         137 Yahoo symbols (symbol/asset_class/area/priority)
     ├── macro_series.yaml    77 FRED series (symbol/country/name/priority)
     ├── macro_panel.yaml     83 cross-country indicators (WB/WDI+WGI, IMF/WEO+SDMX, BIS, ECB)
     ├── countries.yaml       64 countries (iso3/iso2/wb/imf)
