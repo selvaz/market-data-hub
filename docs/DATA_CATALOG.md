@@ -6,7 +6,12 @@
 > *query* this catalogue programmatically (by asset class, area, sector, pillar)
 > and pull analysis-ready series, see [EXTRACTION.md](EXTRACTION.md).
 
-Totals: **111 Yahoo symbols** + **77 FRED series** + **6 crypto × 3 timeframes**.
+Totals: **137 Yahoo symbols** + **77 FRED series** + **6 crypto × 3 timeframes**.
+
+The Yahoo tables below describe the configured daily universe. Actual
+historical availability, freshness, and gaps are operational data held in
+`coverage_report`; newly configured symbols appear there after their first
+successful Yahoo backfill.
 
 Legend — *Stalled-after* is the freshness threshold from the coverage engine:
 beyond it a series is flagged `stalled`. *Typical lag* is how old the newest
@@ -23,7 +28,7 @@ point normally is on a healthy day.
 - **Live injection:** intraday for liquid classes (EQUITY, ALTERNATIVES,
   FIXED_INCOME, COMMODITIES, REAL_ESTATE) → today's row with `is_live=TRUE`
 
-### EQUITY (49) — `asset_class = EQUITY`
+### EQUITY (62) — `asset_class = EQUITY`
 | Sub-group | Symbol | Series name |
 |-----------|--------|-------------|
 | Global / broad | ACWI | MSCI ACWI |
@@ -46,6 +51,7 @@ point normally is on a healthy day.
 | | XLE | Energy Select Sector SPDR |
 | | XLU | Utilities Select Sector SPDR |
 | | XLB | Materials Select Sector SPDR |
+| | XLRE | Real Estate Select Sector SPDR |
 | Europe broad / sectors | EXSA.DE | iShares STOXX Europe 600 |
 | | VGK | Vanguard FTSE Europe |
 | | FEZ | SPDR EURO STOXX 50 |
@@ -75,8 +81,20 @@ point normally is on a healthy day.
 | LatAm | EWZ | iShares MSCI Brazil |
 | | EWW | iShares MSCI Mexico |
 | | ILF | iShares Latin America 40 |
+| Other EM countries | EZA | iShares MSCI South Africa |
+| | KSA | iShares MSCI Saudi Arabia |
+| Developed ex-US styles | EFV | iShares MSCI EAFE Value |
+| | EFG | iShares MSCI EAFE Growth |
+| | SCZ | iShares MSCI EAFE Small-Cap |
+| EM country satellites | ECH | iShares MSCI Chile |
+| | EPHE | iShares MSCI Philippines |
+| | THD | iShares MSCI Thailand |
+| | EIDO | iShares MSCI Indonesia |
+| | EPU | iShares MSCI Peru and Global Exposure |
+| | TUR | iShares MSCI Turkey |
+| | ARGT | Global X MSCI Argentina |
 
-### FIXED_INCOME (21) — `asset_class = FIXED_INCOME`
+### FIXED_INCOME (29) — `asset_class = FIXED_INCOME`
 | Sub-group | Symbol | Series name |
 |-----------|--------|-------------|
 | US Treasuries (curve) | SHY | iShares 1-3 Year Treasury Bond |
@@ -91,9 +109,17 @@ point normally is on a healthy day.
 | | BWX | SPDR Bloomberg International Treasury |
 | IG credit | LQD | iShares iBoxx $ Investment Grade Corporate |
 | | VCSH | Vanguard Short-Term Corporate |
+| | VCIT | Vanguard Intermediate-Term Corporate Bond |
+| | VCLT | Vanguard Long-Term Corporate Bond |
+| Europe government / IG | DBXP.DE | Xtrackers Eurozone Government Bond 1-3 Year |
+| | IBCL.DE | iShares € Government Bond 15-30 Year |
+| | IEAC.AS | iShares Core € Corporate Bond |
+| International government / IG | IGOV | iShares International Treasury Bond |
+| | ISHG | iShares 1-3 Year International Treasury Bond |
+| | PICB | Invesco International Corporate Bond |
 | High yield | HYG | iShares iBoxx $ High Yield Corporate |
 | | EUHY | iShares € High Yield Corporate |
-| | HYXU | iShares Global ex USD High Yield Corporate |
+| | IHY | VanEck International High Yield Bond |
 | | HYEM | VanEck Emerging Markets High Yield Bond |
 | | HYD | VanEck High Yield Muni |
 | EM debt | EMB | iShares JP Morgan USD Emerging Markets Bond |
@@ -101,7 +127,7 @@ point normally is on a healthy day.
 | | CEMB | iShares Emerging Markets Corporate Bond |
 | Municipals | MUB | iShares National Muni Bond |
 
-### COMMODITIES (15) — `asset_class = COMMODITIES`
+### COMMODITIES (17) — `asset_class = COMMODITIES`
 | Sub-group | Symbol | Series name |
 |-----------|--------|-------------|
 | Broad baskets | DBC | Invesco DB Commodity Index Tracking |
@@ -109,6 +135,8 @@ point normally is on a healthy day.
 | Energy | USO | United States Oil Fund |
 | | UNG | United States Natural Gas Fund |
 | | UGA | United States Gasoline Fund |
+| | BNO | United States Brent Oil Fund |
+| | USL | United States 12 Month Oil Fund |
 | Precious metals | GLD | SPDR Gold Trust |
 | | SLV | iShares Silver Trust |
 | | PPLT | abrdn Physical Platinum Shares |
@@ -120,7 +148,7 @@ point normally is on a healthy day.
 | | WEAT | Teucrium Wheat Fund |
 | | SOYB | Teucrium Soybean Fund |
 
-### ALTERNATIVES (14) — `asset_class = ALTERNATIVES`
+### ALTERNATIVES (17) — `asset_class = ALTERNATIVES`
 | Sub-group | Symbol | Series name |
 |-----------|--------|-------------|
 | Crypto (Yahoo daily) | BTC-USD | Bitcoin (Yahoo USD spot) |
@@ -137,6 +165,9 @@ point normally is on a healthy day.
 | Vol / infra | VIXY | ProShares VIX Short-Term Futures |
 | | IGF | iShares Global Infrastructure |
 | | IFRA | iShares US Infrastructure |
+| Diversifying alternatives | QAI | IQ Hedge Multi-Strategy Tracker |
+| | WTMF | WisdomTree Managed Futures Strategy |
+| | MNA | IQ Merger Arbitrage ETF |
 
 > The 6 `^VIX*` indices feed the `v_vix_term_structure` view — the backbone for
 > `quant_vix_calibrator` / `quant_vix_dashboard`.

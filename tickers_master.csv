@@ -1,5 +1,25 @@
 Ticker,Area,Layer1_AssetClass,Layer1_Benchmark,Layer2_SubAssetClass,Layer3_Geographic,Layer4_Granular,Priority,Asset_Class_YAML,Name
 ACWI,Global,EQUITY,ACWI,Global,World,All-Cap,1,EQUITY,EQUITY | Global | MSCI ACWI
+EFV,Developed Markets,EQUITY,ACWI,Developed ex-US,EAFE,Value,1,EQUITY,EQUITY | DM | iShares MSCI EAFE Value
+EFG,Developed Markets,EQUITY,ACWI,Developed ex-US,EAFE,Growth,1,EQUITY,EQUITY | DM | iShares MSCI EAFE Growth
+SCZ,Developed Markets,EQUITY,ACWI,Developed ex-US,EAFE,Small-Cap,1,EQUITY,EQUITY | DM | iShares MSCI EAFE Small-Cap
+ECH,Chile,EQUITY,VWO,Emerging,Latin America,Chile,1,EQUITY,EQUITY | EM | iShares MSCI Chile
+EPHE,Philippines,EQUITY,VWO,Emerging,South-East Asia,Philippines,1,EQUITY,EQUITY | EM | iShares MSCI Philippines
+THD,Thailand,EQUITY,VWO,Emerging,South-East Asia,Thailand,1,EQUITY,EQUITY | EM | iShares MSCI Thailand
+EIDO,Indonesia,EQUITY,VWO,Emerging,South-East Asia,Indonesia,1,EQUITY,EQUITY | EM | iShares MSCI Indonesia
+EPU,Peru,EQUITY,VWO,Emerging,Latin America,Peru,1,EQUITY,EQUITY | EM | iShares MSCI Peru and Global Exposure
+TUR,Türkiye,EQUITY,VWO,Emerging,Europe/Türkiye,Turkey,1,EQUITY,EQUITY | EM | iShares MSCI Turkey
+ARGT,Argentina,EQUITY,VWO,Emerging,Latin America,Argentina,1,EQUITY,EQUITY | EM | Global X MSCI Argentina
+IGOV,Developed ex-US,FIXED_INCOME,BNDX,Government,Developed ex-US,Broad,1,FIXED_INCOME,FI | Developed ex-US | iShares International Treasury Bond
+ISHG,Developed ex-US,FIXED_INCOME,BNDX,Government,Developed ex-US,1-3 Year,1,FIXED_INCOME,FI | Developed ex-US | iShares 1-3 Year International Treasury Bond
+PICB,Developed ex-US,FIXED_INCOME,BNDX,Investment Grade Credit,Developed ex-US,Broad,1,FIXED_INCOME,FI | Developed ex-US | Invesco International Corporate Bond
+VCIT,USA,FIXED_INCOME,AGG,Investment Grade Credit,USA,Intermediate,1,FIXED_INCOME,FI | US | Vanguard Intermediate-Term Corporate Bond
+VCLT,USA,FIXED_INCOME,AGG,Investment Grade Credit,USA,Long,1,FIXED_INCOME,FI | US | Vanguard Long-Term Corporate Bond
+BNO,Global,COMMODITIES,DBC,Energy,Brent,Oil,2,COMMODITIES,CMDTY | Energy | United States Brent Oil Fund
+USL,USA,COMMODITIES,DBC,Energy,WTI,12-Month Oil,2,COMMODITIES,CMDTY | Energy | United States 12 Month Oil Fund
+QAI,Global,ALTERNATIVES,QAI,Multi-Strategy,Global,Hedge Multi-Strategy,1,ALTERNATIVES,ALT | Multi-Strategy | IQ Hedge Multi-Strategy Tracker
+WTMF,Global,ALTERNATIVES,QAI,Managed Futures,Global,Trend,1,ALTERNATIVES,ALT | Managed Futures | WisdomTree Managed Futures Strategy
+MNA,Global,ALTERNATIVES,QAI,Merger Arbitrage,Global,Merger Arbitrage,1,ALTERNATIVES,ALT | Merger Arbitrage | IQ Merger Arbitrage ETF
 VEA,Developed Markets,EQUITY,ACWI,Developed,Broad,All-Cap,1,EQUITY,EQUITY | DM | Vanguard FTSE Developed Markets
 IEMG,Emerging Markets,EQUITY,ACWI,Emerging,Broad,All-Cap,1,EQUITY,EQUITY | EM | iShares Core MSCI Emerging Markets
 EMXC,Emerging Markets,EQUITY,ACWI,Emerging,Broad,Ex-China,1,EQUITY,EQUITY | EM | iShares MSCI EM ex China
@@ -60,7 +80,7 @@ LQD,USA,FIXED_INCOME,AGG,Corporate,US-IG,Broad,1,FIXED_INCOME,FI | US | iShares 
 VCSH,USA,FIXED_INCOME,AGG,Corporate,US-IG,Short-Term,1,FIXED_INCOME,FI | US | Vanguard Short-Term Corporate
 HYG,USA,FIXED_INCOME,AGG,Corporate,US-HY,Broad,1,FIXED_INCOME,FI | US | iShares iBoxx $ High Yield Corporate
 EUHY,Europe,FIXED_INCOME,AGG,Corporate,Europe-HY,Broad,1,FIXED_INCOME,FI | Europe | iShares € High Yield Corporate
-HYXU,Global,FIXED_INCOME,AGG,Corporate,Global-HY,Ex-USD,1,FIXED_INCOME,FI | Global | iShares Global ex USD High Yield Corporate
+IHY,Global,FIXED_INCOME,BNDX,Corporate,Global-HY,Ex-US,1,FIXED_INCOME,FI | Global ex-US | VanEck International High Yield Bond
 EMB,Emerging Markets,FIXED_INCOME,AGG,Emerging,EM-Sovereign,Hard-Currency,1,FIXED_INCOME,FI | EM | iShares JP Morgan USD Emerging Markets Bond
 EMLC,Emerging Markets,FIXED_INCOME,AGG,Emerging,EM-Sovereign,Local-Currency,1,FIXED_INCOME,FI | EM | VanEck Emerging Markets Local Currency Bond
 CEMB,Emerging Markets,FIXED_INCOME,AGG,Emerging,EM-Corporate,Hard-Currency,1,FIXED_INCOME,FI | EM | iShares Emerging Markets Corporate Bond

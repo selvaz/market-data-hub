@@ -334,10 +334,10 @@ yahoo:
   area: Europe
   name: FI | Europe | iShares Core € Corp Bond UCITS ETF EUR (Dist)
   priority: 1
-- symbol: HYXU
+- symbol: IHY
   asset_class: FIXED_INCOME
   area: Global
-  name: FI | Global | iShares Global ex USD High Yield Corporate
+  name: FI | Global ex-US | VanEck International High Yield Bond
   priority: 1
 - symbol: EMB
   asset_class: FIXED_INCOME
@@ -583,4 +583,104 @@ yahoo:
   asset_class: EQUITY
   area: Emerging Markets
   name: EQUITY | EM | Vanguard FTSE Emerging Markets
+  priority: 1
+- symbol: EFV
+  asset_class: EQUITY
+  area: Developed Markets
+  name: EQUITY | DM | iShares MSCI EAFE Value
+  priority: 1
+- symbol: EFG
+  asset_class: EQUITY
+  area: Developed Markets
+  name: EQUITY | DM | iShares MSCI EAFE Growth
+  priority: 1
+- symbol: SCZ
+  asset_class: EQUITY
+  area: Developed Markets
+  name: EQUITY | DM | iShares MSCI EAFE Small-Cap
+  priority: 1
+- symbol: ECH
+  asset_class: EQUITY
+  area: Chile
+  name: EQUITY | EM | iShares MSCI Chile
+  priority: 1
+- symbol: EPHE
+  asset_class: EQUITY
+  area: Philippines
+  name: EQUITY | EM | iShares MSCI Philippines
+  priority: 1
+- symbol: THD
+  asset_class: EQUITY
+  area: Thailand
+  name: EQUITY | EM | iShares MSCI Thailand
+  priority: 1
+- symbol: EIDO
+  asset_class: EQUITY
+  area: Indonesia
+  name: EQUITY | EM | iShares MSCI Indonesia
+  priority: 1
+- symbol: EPU
+  asset_class: EQUITY
+  area: Peru
+  name: EQUITY | EM | iShares MSCI Peru and Global Exposure
+  priority: 1
+- symbol: TUR
+  asset_class: EQUITY
+  area: Türkiye
+  name: EQUITY | EM | iShares MSCI Turkey
+  priority: 1
+- symbol: ARGT
+  asset_class: EQUITY
+  area: Argentina
+  name: EQUITY | EM | Global X MSCI Argentina
+  priority: 1
+- symbol: IGOV
+  asset_class: FIXED_INCOME
+  area: Developed ex-US
+  name: FI | Developed ex-US | iShares International Treasury Bond
+  priority: 1
+- symbol: ISHG
+  asset_class: FIXED_INCOME
+  area: Developed ex-US
+  name: FI | Developed ex-US | iShares 1-3 Year International Treasury Bond
+  priority: 1
+- symbol: PICB
+  asset_class: FIXED_INCOME
+  area: Developed ex-US
+  name: FI | Developed ex-US | Invesco International Corporate Bond
+  priority: 1
+- symbol: VCIT
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | Vanguard Intermediate-Term Corporate Bond
+  priority: 1
+- symbol: VCLT
+  asset_class: FIXED_INCOME
+  area: USA
+  name: FI | US | Vanguard Long-Term Corporate Bond
+  priority: 1
+- symbol: BNO
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Energy | United States Brent Oil Fund
+  priority: 2
+- symbol: USL
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Energy | United States 12 Month Oil Fund
+  priority: 2
+- symbol: QAI
+  asset_class: ALTERNATIVES
+  area: Global
+  name: ALT | Multi-Strategy | IQ Hedge Multi-Strategy Tracker
+  priority: 1
+- symbol: WTMF
+  asset_class: ALTERNATIVES
+  area: Global
+  name: ALT | Managed Futures | WisdomTree Managed Futures Strategy
+  priority: 1
+- symbol: MNA
+  asset_class: ALTERNATIVES
+  area: Global
+  name: ALT | Merger Arbitrage | IQ Merger Arbitrage ETF
   priority: 1

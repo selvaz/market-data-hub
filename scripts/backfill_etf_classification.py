@@ -44,7 +44,10 @@ from market_data_hub.lock import db_write_lock                     # noqa: E402
 def main() -> int:
     entries = get_yahoo_tickers()
     symbols = [e["symbol"] for e in entries]
-    now = datetime.now(timezone.utc)
+    # ``etf_classification`` stores TIMESTAMP (without timezone). Pandas
+    # preserves tz-aware datetimes in the DataFrame and DuckDB rejects that
+    # conversion during the full-row upsert, so materialize a UTC-naive value.
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     with db_write_lock():
         con = get_conn()
