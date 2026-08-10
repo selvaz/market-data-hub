@@ -42,7 +42,19 @@ def _repo_local(path: str) -> str:
     return str(_REPO_ROOT / p)
 
 
-def _resolve_db_path(db_path: Optional[str] = None) -> str:
+def resolve_db_path(db_path: Optional[str] = None) -> str:
+    """The canonical DB path for this repository — the only such chain.
+
+    Public because it is the contract other entry points resolve against:
+    ``lock.py``, ``regime/estimate.py`` and the DataSpace adapter all call
+    it rather than re-deriving the order below. A second, independent chain
+    is exactly the bug that once made a freshly-generated regime plot
+    resolve as "not found" elsewhere in this codebase.
+
+    Resolution order: explicit ``db_path``, then ``MARKET_DATA_DB``, then
+    ``settings.yaml``, then the repo-local default. Relative paths are
+    resolved against the repo root so a clone stays self-contained.
+    """
     if db_path:
         return _repo_local(db_path)
     env = os.environ.get("MARKET_DATA_DB")
@@ -431,7 +443,7 @@ def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
     read_only=True for readers (reader.py, diagnose.py) so multiple processes
     can read in parallel without locking.
     """
-    path = _resolve_db_path(db_path)
+    path = resolve_db_path(db_path)
     Path(path).parent.mkdir(parents=True, exist_ok=True)
 
     if read_only and not os.path.exists(path):

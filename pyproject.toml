@@ -44,6 +44,18 @@ dev = [
 # reader. The 3.9 leg of CI does not install this, so the modules that need it
 # must stay unimported until asked for (see econ_calendar/collect/__init__.py).
 calendar = ["selenium>=4.15", "webdriver-manager>=4.0", "beautifulsoup4>=4.11"]
+# Registers this repo's market DB as a Source (market_data_hub.dataspace_source)
+# so a cross-repository workflow can check every source's readiness together
+# before it starts writing. The distribution is `lazydataspace`, not
+# `dataspace` -- that name belongs to an unrelated project on PyPI, and it is
+# not published anywhere, so this is an immutable git ref rather than a bare
+# name a squatter could claim (same pin LazyStats carries).
+# Optional on purpose: nothing else in the package imports it, so the repo
+# installs and runs standalone without it, and a test enforces that. Needs
+# Python 3.11+, above this package's own 3.9 floor.
+lazydataspace = [
+    "lazydataspace @ git+https://github.com/selvaz/DataSpace.git@4c2b71c2e59ea3e7e003d06e6b9b54354edea07e",
+]
 
 [tool.mypy]
 # No explicit python_version: mypy then assumes the version of the

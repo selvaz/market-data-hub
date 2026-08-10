@@ -13,7 +13,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator, Optional
 
-from market_data_hub.db.connection import _resolve_db_path
+from market_data_hub.db.connection import resolve_db_path
 
 # Default seconds to wait for a concurrent writer before giving up. Kept short:
 # if another writer holds the DB, the right move is to skip this run cleanly
@@ -23,7 +23,7 @@ DEFAULT_TIMEOUT = 30.0
 
 def db_lock_path(db_path: Optional[str] = None) -> str:
     """Path of the advisory lock file for a given (or resolved) DB path."""
-    return str(Path(_resolve_db_path(db_path)).with_suffix(".lock"))
+    return str(Path(resolve_db_path(db_path)).with_suffix(".lock"))
 
 
 class DBLockTimeout(RuntimeError):
