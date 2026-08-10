@@ -103,6 +103,19 @@ def ensure_listing(con, symbol: str, *, kind: str = "OTHER",
         SELECT ?, NULL, ?, ?, ?, ?
         WHERE NOT EXISTS (SELECT 1 FROM instruments WHERE instrument_id = ?)
     """, [instrument_id, kind, name, now, now, instrument_id])
+    # Price ingestion can create an identity row before the curated universe
+    # knows about the symbol.  When the daily runner later supplies the
+    # authoritative catalog name, complete an empty placeholder instead of
+    # leaving downstream catalog consumers (Tree Studio included) with a
+    # blank label forever.  Never overwrite an existing non-empty name: that
+    # may be a richer manually curated identity record.
+    if name and name.strip():
+        con.execute("""
+            UPDATE instruments
+            SET name = ?, updated_at = ?
+            WHERE instrument_id = ?
+              AND (name IS NULL OR trim(name) = '')
+        """, [name, now, instrument_id])
     con.execute("""
         INSERT INTO listings (listing_id, instrument_id, symbol, exchange,
                               currency, provider, provider_symbol,

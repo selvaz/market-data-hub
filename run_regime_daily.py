@@ -13,12 +13,23 @@ Usage:
     python run_regime_daily.py --dry-run
     python run_regime_daily.py --tickers SPY,TLT --dry-run
     python run_regime_daily.py --send
+    python run_regime_daily.py --lookback-years 8 --tickers SPY,TLT
+
+``--lookback-years N`` fits the SAME pipeline restricted to the last N years
+of history instead of full history -- identical persistence (revision
+tracking, upsert-in-place), just a different start date and a
+differently-namespaced series (see market_data_hub/regime/estimate.py's
+``variant``) so it never collides with the full-history production series.
+This is a diagnostic/comparison fit, not itself a day-to-day monitor, so it
+skips the HTML reports and Telegram send -- see
+market_data_hub/regime/window_comparison.py for the report that reads both
+this and the full-history series back.
 """
 from __future__ import annotations
 
 import argparse
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -50,6 +61,9 @@ def main() -> int:
     p.add_argument("--n-starts", type=int, default=DEFAULT_N_STARTS)
     p.add_argument("--retro-days", type=int, default=DEFAULT_RETRO_DAYS)
     p.add_argument("--asof", help="override the estimation_date (YYYY-MM-DD); default: today")
+    p.add_argument("--lookback-years", type=int,
+                   help="restrict the fit to the last N years instead of full history; "
+                        "writes to a separate series, skips reports/Telegram")
     p.add_argument("--dry-run", action="store_true",
                    help="fit + write DB + build report, but do not send Telegram")
     p.add_argument("--send", action="store_true", help="send the Telegram report")
@@ -57,6 +71,9 @@ def main() -> int:
 
     symbols = [s.strip() for s in args.tickers.split(",")] if args.tickers else None
     asof = datetime.strptime(args.asof, "%Y-%m-%d").date() if args.asof else datetime.now().date()
+    windowed = args.lookback_years is not None
+    start = (asof - timedelta(days=365 * args.lookback_years)).isoformat() if windowed else None
+    variant = f"{args.lookback_years}y" if windowed else None
 
     # Resolve the universe up front: an empty one would otherwise reach
     # summary_dataframe({}) whose frame has no 'status' column (KeyError).
@@ -67,8 +84,9 @@ def main() -> int:
               "nothing to do.")
         return 0
 
+    window_desc = f", last {args.lookback_years}y (from {start})" if windowed else ""
     print(f"Fitting regimes as of {asof.isoformat()} "
-          f"({'custom tickers' if args.tickers else f'priority={args.priority}'})...")
+          f"({'custom tickers' if args.tickers else f'priority={args.priority}'}){window_desc}...")
     # This job is scheduled (MarketData_HMMRegime, 30 min after US close) and can
     # overlap the USClose/EU18 refresh or a manual backfill/import, all of which
     # take the same single-writer lock. Mirror runner.py: if another writer holds
@@ -81,10 +99,23 @@ def main() -> int:
             results = run_daily_regime_estimation(
                 symbols=symbols, priority=args.priority, S_max=args.s_max,
                 n_starts=args.n_starts, retro_days=args.retro_days, asof=asof,
-                db_path=args.db,
+                db_path=args.db, start=start, variant=variant,
             )
     except DBLockTimeout as ex:
         print(f"SKIP: {ex}")
+        return 0
+
+    if windowed:
+        # Diagnostic/comparison fit, not a day-to-day monitor: fit + persist
+        # only. window_comparison.py reads this series and the full-history
+        # one back together -- no report/Telegram here would just duplicate
+        # (and desync from) that comparison.
+        summary = summary_dataframe(results)
+        ok = summary[summary["status"] == "ok"]
+        errors = summary[summary["status"] != "ok"]
+        print(f"Done ({variant} window): {len(ok)} ok, {len(errors)} errors.")
+        if not errors.empty:
+            print(errors[["symbol", "error_msg"]].to_string(index=False))
         return 0
 
     summary = summary_dataframe(results)
@@ -98,13 +129,40 @@ def main() -> int:
     import lazytools.registry as lazytools_registry
     from lazystats.io.depot import ResultDepot
 
+    from market_data_hub.regime.daily_payload import (
+        REGIME_REPORT_KIND, REGIME_REPORT_SERIES_KEY, build_daily_payload,
+    )
+    from market_data_hub.regime.daily_render import render_html as render_daily_json_report
+
     depot = ResultDepot(lazytools_registry.resolve_db("lazystats_depot"))
     try:
         out_path = generate_html_report(depot, results, out_dir=_report_dir(), asof=asof,
                                         db_path=args.db)
+
+        # The consolidated, JSON-first daily report: names, EVERY state's
+        # annualized mean/vol (not just the current one), and the full
+        # current state-probability vector -- saved once as its own depot
+        # row so the HTML can always be reconstructed from that JSON alone
+        # (see render_regime_report.py), independent of the chart-based
+        # report above.
+        daily_payload = build_daily_payload(depot, results, asof=asof)
+        daily_result_id = depot.save(
+            kind=REGIME_REPORT_KIND,
+            produced_by="scheduled:run_regime_daily",
+            instruments=sorted(results),
+            payload=daily_payload,
+            provenance=daily_payload["provenance"],
+            cadence="stable",
+            series_key=REGIME_REPORT_SERIES_KEY,
+        )
+        daily_row = depot.load(daily_result_id)
     finally:
         depot.close()
     print(f"Report: {out_path}")
+
+    daily_json_path = _report_dir() / f"regime_daily_{asof.isoformat()}_{daily_result_id}.html"
+    daily_json_path.write_text(render_daily_json_report(daily_row), encoding="utf-8")
+    print(f"JSON-reproducible report: {daily_json_path} (result_id={daily_result_id})")
 
     from market_data_hub.artifact_registry import register_report_artifact
     register_report_artifact(
@@ -113,6 +171,13 @@ def main() -> int:
                 f"{len(changed)} regime changes today | {len(revised)} revisions",
         tags=["regime", "daily"],
         content_uri=str(out_path),
+    )
+    register_report_artifact(
+        title=f"Regime monitor (all states, JSON-reproducible) {asof.isoformat()}",
+        summary=f"{len(ok)} symbols fitted | {len(errors)} errors | "
+                f"{len(changed)} regime changes today | {len(revised)} revisions",
+        tags=["regime", "daily", "json-reproducible"],
+        content_uri=str(daily_json_path),
     )
 
     if args.dry_run or not args.send:
@@ -143,8 +208,11 @@ def main() -> int:
     with TelegramClient.from_token(token) as client:
         client.send_message(chat_id=chat_id, text=text)
         client.send_document(chat_id=chat_id, document=out_path.read_bytes(),
-                             filename=out_path.name, caption="HMM regime report")
-    print("Sent Telegram summary + report attachment.")
+                             filename=out_path.name, caption="HMM regime report (charts)")
+        client.send_document(chat_id=chat_id, document=daily_json_path.read_bytes(),
+                             filename=daily_json_path.name,
+                             caption="HMM regime report (all states, JSON-reproducible)")
+    print("Sent Telegram summary + both report attachments.")
     return 0
 
 

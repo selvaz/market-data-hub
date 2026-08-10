@@ -71,6 +71,14 @@ class SymbolRunResult:
     revised_last_n_days: int = 0
     revised_dates: Optional[List[str]] = None
     run: Optional[RegimeRun] = None
+    # result_id: the depot row (kind="regime") holding this symbol's full
+    # fit -- means/covars/labels/transmat for EVERY state -- so a
+    # consolidated daily report can read it back without recomputing.
+    result_id: Optional[str] = None
+    # Today's full state-probability vector (one entry per state, sums to
+    # 1.0) -- prob_high_vol above only ever tells you P(high-vol), never
+    # the per-state breakdown a "show every regime" report needs.
+    current_state_probs: Optional[List[float]] = None
 
 
 def priority_symbols(priority: int = 1, db_path: Optional[str] = None) -> List[str]:
@@ -83,10 +91,13 @@ def priority_symbols(priority: int = 1, db_path: Optional[str] = None) -> List[s
 
 def fit_symbol_regime(symbol: str, *, db_path: Optional[str] = None,
                       S_max: int = DEFAULT_S_MAX, n_starts: int = DEFAULT_N_STARTS,
-                      random_state: int = DEFAULT_RANDOM_STATE) -> RegimeRun:
-    """Full refit of a 1-3 state Gaussian HMM on the symbol's whole daily-return
-    history. Raises ValueError if there is not enough return history to fit."""
-    df, meta = extract_returns([symbol], frequency="D", db_path=db_path)
+                      random_state: int = DEFAULT_RANDOM_STATE,
+                      start: Optional[str] = None) -> RegimeRun:
+    """Full refit of a 1-3 state Gaussian HMM on the symbol's daily-return
+    history. ``start`` (YYYY-MM-DD) restricts the fit to history from that
+    date onward -- omit for the symbol's whole history (the production
+    default). Raises ValueError if there is not enough return history to fit."""
+    df, meta = extract_returns([symbol], frequency="D", db_path=db_path, start=start)
     if df.empty or symbol not in df.columns:
         raise ValueError(f"No return history available for {symbol!r}")
     df = df[[symbol]].dropna()
@@ -99,7 +110,7 @@ def fit_symbol_regime(symbol: str, *, db_path: Optional[str] = None,
     return engine.fit(df, model="panel", dropna="all")
 
 
-def _series_key(symbol: str, db_path: Optional[str] = None) -> str:
+def _series_key(symbol: str, db_path: Optional[str] = None, *, variant: Optional[str] = None) -> str:
     """``regime:<symbol>`` for the production DuckDB (the key format the
     405,313-row migration already used) -- but namespaced by the resolved
     input database's identity for any other one (e.g. ``--db test.duckdb``
@@ -107,6 +118,12 @@ def _series_key(symbol: str, db_path: Optional[str] = None) -> str:
     env var), so an alternate-DB run can never supersede production
     vintages/diagnostics in the single, shared ResultDepot (which has no
     per-DuckDB isolation of its own, unlike the DuckDB file itself).
+
+    ``variant`` namespaces a DIFFERENT fit of the SAME symbol against the
+    SAME database -- e.g. ``variant="8y"`` for a fit restricted to the last
+    8 years of history (see ``run_daily_regime_estimation``'s ``start=``) --
+    so it never collides with (or upserts into) the full-history production
+    series for that symbol.
 
     Compared against ``_default_db()`` -- the hardcoded, env-var-independent
     fallback path -- and NOT against ``_resolve_db_path(None)``: the latter
@@ -120,12 +137,14 @@ def _series_key(symbol: str, db_path: Optional[str] = None) -> str:
     """
     resolved = _resolve_db_path(db_path)
     if resolved == _default_db():
-        return f"regime:{symbol}"
-    db_id = hashlib.sha256(str(resolved).encode("utf-8")).hexdigest()[:12]
-    return f"regime:{symbol}@{db_id}"
+        base = f"regime:{symbol}"
+    else:
+        db_id = hashlib.sha256(str(resolved).encode("utf-8")).hexdigest()[:12]
+        base = f"regime:{symbol}@{db_id}"
+    return f"{base}:{variant}" if variant else base
 
 
-def _last_estimate(depot: ResultDepot, symbol: str, db_path: Optional[str] = None):
+def _last_estimate(depot: ResultDepot, symbol: str, db_path: Optional[str] = None, *, variant: Optional[str] = None):
     """(max stored trading_date, n_states of the newest vintage) or (None, None).
 
     ``get_series_latest`` already returns, per as_of_date, only the value from
@@ -134,7 +153,7 @@ def _last_estimate(depot: ResultDepot, symbol: str, db_path: Optional[str] = Non
     constant within one estimation_date, one fit per day, and every run's
     window always includes that day's newest trading_date -- see
     write_regime_run below) the n_states of the newest vintage overall."""
-    latest = depot.get_series_latest(_series_key(symbol, db_path))
+    latest = depot.get_series_latest(_series_key(symbol, db_path, variant=variant))
     if not latest:
         return None, None
     last_point = latest[-1]
@@ -174,12 +193,13 @@ def _find_run_result_id(
 def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
                      *, estimation_date: date, fit_seconds: float,
                      retro_days: int = DEFAULT_RETRO_DAYS,
-                     db_path: Optional[str] = None) -> SymbolRunResult:
+                     db_path: Optional[str] = None,
+                     variant: Optional[str] = None) -> SymbolRunResult:
     panel = run.panel
     m = run.meta[symbol]
     S = int(m["S"])
     labels = m["labels"]
-    series_key = _series_key(symbol, db_path)
+    series_key = _series_key(symbol, db_path, variant=variant)
     estimation_date_str = str(estimation_date)
 
     state = panel[f"{symbol}_state"].astype(int)
@@ -198,7 +218,7 @@ def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
         "state_probs": [[round(float(x), 6) for x in row] for row in gamma.values],
     })
 
-    last_td, last_S = _last_estimate(depot, symbol, db_path)
+    last_td, last_S = _last_estimate(depot, symbol, db_path, variant=variant)
     is_first_run = last_td is None
     # A BIC flip (e.g. 2 -> 3 states) renumbers every state: rewriting only the
     # retro window would leave the latest vintage mixing two incompatible
@@ -290,13 +310,15 @@ def write_regime_run(depot: ResultDepot, symbol: str, run: RegimeRun,
         current_label=labels[cur_state], is_high_vol=bool(highvol.iloc[-1]),
         prob_high_vol=float(prob_hv.iloc[-1]), changed_today=changed_today,
         revised_last_n_days=revised_count, revised_dates=revised_dates, run=run,
+        result_id=result_id, current_state_probs=list(src["state_probs"].iloc[-1]),
     )
 
 
 def _write_error_run(depot: ResultDepot, symbol: str,
                      estimation_date: date, error_msg: str,
-                     db_path: Optional[str] = None) -> None:
-    series_key = _series_key(symbol, db_path)
+                     db_path: Optional[str] = None,
+                     variant: Optional[str] = None) -> None:
+    series_key = _series_key(symbol, db_path, variant=variant)
     estimation_date_str = str(estimation_date)
     # A failed evening rerun must not clobber the BIC/params of a successful
     # same-day run (equivalent of the old hmm_model_runs PK (symbol,
@@ -325,11 +347,21 @@ def run_daily_regime_estimation(*, symbols: Optional[List[str]] = None,
                                 n_starts: int = DEFAULT_N_STARTS,
                                 retro_days: int = DEFAULT_RETRO_DAYS,
                                 asof: Optional[date] = None,
-                                db_path: Optional[str] = None) -> Dict[str, SymbolRunResult]:
+                                db_path: Optional[str] = None,
+                                start: Optional[str] = None,
+                                variant: Optional[str] = None) -> Dict[str, SymbolRunResult]:
     """Fit + persist regimes for every requested symbol. Returns {symbol: SymbolRunResult}.
 
     A single symbol's failure is recorded as an error result and does not stop
     the run.
+
+    ``start``/``variant`` let this SAME pipeline fit a restricted window
+    instead of full history -- e.g. ``start="2018-01-01", variant="8y"`` for
+    an 8-year lookback -- writing to a differently-namespaced series
+    (``_series_key``'s ``variant``) so it never collides with the
+    full-history production series for that symbol. Everything else
+    (persistence, revision tracking, upsert-in-place) is identical to the
+    production path.
 
     Two phases, deliberately not interleaved: (1) fit every symbol — each fit
     pulls returns via its own short-lived read-only connection (extract_returns
@@ -347,7 +379,7 @@ def run_daily_regime_estimation(*, symbols: Optional[List[str]] = None,
         t0 = time.time()
         try:
             run = fit_symbol_regime(symbol, db_path=db_path, S_max=S_max,
-                                    n_starts=n_starts)
+                                    n_starts=n_starts, start=start)
             fits[symbol] = (run, None, time.time() - t0)
         except Exception as exc:  # noqa: BLE001 - one bad symbol must not abort the run
             fits[symbol] = (None, str(exc), time.time() - t0)
@@ -366,14 +398,14 @@ def run_daily_regime_estimation(*, symbols: Optional[List[str]] = None,
         results: Dict[str, SymbolRunResult] = {}
         for symbol, (run, error_msg, fit_seconds) in fits.items():
             if run is None:
-                _write_error_run(depot, symbol, asof, error_msg, db_path)
+                _write_error_run(depot, symbol, asof, error_msg, db_path, variant=variant)
                 results[symbol] = SymbolRunResult(symbol=symbol, status="error",
                                                   error_msg=error_msg)
             else:
                 results[symbol] = write_regime_run(
                     depot, symbol, run, estimation_date=asof,
                     fit_seconds=fit_seconds, retro_days=retro_days,
-                    db_path=db_path,
+                    db_path=db_path, variant=variant,
                 )
     finally:
         depot.close()

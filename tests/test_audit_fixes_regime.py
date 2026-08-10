@@ -413,8 +413,9 @@ def test_revision_table_uses_namespaced_series_key_for_alternate_db(depot):
 
 def test_report_shows_display_names(tmp_path):
     from market_data_hub.regime import report as rep
+    from market_data_hub.regime.names import display_names
 
-    names = rep._display_names()
+    names = display_names()
     assert names, "tickers.yaml catalog lookup produced no names"
     sym, name = next(iter(sorted(names.items())))
     results = {sym: SymbolRunResult(symbol=sym, status="error", error_msg="x")}

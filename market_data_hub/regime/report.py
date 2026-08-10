@@ -21,8 +21,9 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 from lazystats.io.depot import ResultDepot  # noqa: E402
-from market_data_hub import catalog  # noqa: E402
+from market_data_hub.regime.daily_payload import current_state_tier  # noqa: E402
 from market_data_hub.regime.estimate import SymbolRunResult, _series_key  # noqa: E402
+from market_data_hub.regime.names import display_names  # noqa: E402
 
 _CSS = """
 body { font-family: -apple-system, Segoe UI, Arial, sans-serif; margin: 0;
@@ -47,7 +48,9 @@ img { max-width: 100%; border-radius: 4px; }
 .badge { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 11px;
          margin-left: 6px; }
 .badge.hv { background: #EE6352; color: #0B0F14; }
+.badge.midvol { background: #F4D35E; color: #0B0F14; }
 .badge.calm { background: #2D7DD2; color: #0B0F14; }
+.badge.single { background: #556270; color: #D7E1EA; }
 .badge.rev { background: #FAA916; color: #0B0F14; }
 """
 
@@ -67,13 +70,6 @@ def _fig_to_base64(fig) -> str:
     return base64.b64encode(buf.getvalue()).decode("ascii")
 
 
-def _display_names() -> Dict[str, str]:
-    """symbol -> human-readable name from tickers.yaml (best-effort, one lookup)."""
-    try:
-        df = catalog.list_symbols(with_coverage=False)
-        return {s: str(n) for s, n in zip(df["symbol"], df["name"]) if n}
-    except Exception:
-        return {}
 
 
 def _chart_img(run, symbol: str) -> str:
@@ -149,7 +145,7 @@ def generate_html_report(depot: ResultDepot,
 
     ok = {s: r for s, r in results.items() if r.status == "ok"}
     errored = {s: r for s, r in results.items() if r.status != "ok"}
-    names = _display_names()
+    names = display_names()
 
     def _name_div(symbol: str) -> str:
         name = names.get(symbol)
@@ -173,7 +169,13 @@ def generate_html_report(depot: ResultDepot,
             badge += ' <span class="badge rev">changed today</span>'
         if r.revised_last_n_days:
             badge += f' <span class="badge rev">{r.revised_last_n_days} revised</span>'
-        vol_badge = '<span class="badge hv">high-vol</span>' if r.is_high_vol else '<span class="badge calm">calm</span>'
+        tier = current_state_tier(depot, r.result_id, r.current_state)
+        vol_badge = {
+            "high": '<span class="badge hv">high-vol</span>',
+            "mid": '<span class="badge midvol">mid vol</span>',
+            "calm": '<span class="badge calm">calm</span>',
+            "single": '<span class="badge single">single state</span>',
+        }[tier]
         recap_rows.append(
             f'<tr class="{cls}"><td><a href="#" onclick="show(\'sec-{symbol}\');return false;">{symbol}</a>{_name_div(symbol)}</td>'
             f"<td>{html.escape(r.current_label or '')} {vol_badge}</td>"
