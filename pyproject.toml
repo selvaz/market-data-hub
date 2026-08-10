@@ -38,6 +38,13 @@ dev = [
     # a runtime dependency, needed solely for the mypy step in CI.
     "typing_extensions",
 ]
+# Registers this repo's market DB as a DataSpace Source
+# (market_data_hub.dataspace_source), so a cross-repository workflow can
+# check every source's readiness together before it starts writing. Optional
+# on purpose: nothing else in the package imports it, so the repo installs
+# and runs standalone without it -- a test enforces that. Note dataspace
+# requires Python 3.11+, above this package's own 3.9 floor.
+dataspace = ["dataspace>=0.1.0"]
 
 [tool.mypy]
 # No explicit python_version: mypy then assumes the version of the
