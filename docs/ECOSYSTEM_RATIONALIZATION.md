@@ -129,18 +129,20 @@ L2b GRAFICI COMUNI   lazyviz   (in LazyTools, extra)     → PlotTheme di LazyHM
                                                            + chart-spec dichiarativo
 
 L3  TOOL ESTERNI     LazyFin · LazyHMM · LazyPulse · LazyCrawler
-                     consumano L0/L2/L2b, non reinventano nulla
+                     consumano L0 (identità/tempo/serie/envelope); L2/L2b restano proposte
 ```
 
 Grafo delle dipendenze (DAG, `lazydatacore` come foglia in basso):
 
 ```
         lazydatacore  (pydantic puro)
-          ▲   ▲   ▲   ▲
-          │   │   │   └────────────── LazyHMM
-          │   │   └────────────────── LazyFin
-          │   └──── market-data-hub          LazyBridge (runtime, resta agnostico)
-          └──────── lazyquant/lazyviz (LazyTools)
+          ▲   ▲   ▲
+          │   │   └────────────── LazyHMM
+          │   └────────────────── LazyFin
+          └──── market-data-hub          LazyBridge (runtime, resta agnostico)
+
+  (L2/L2b: lazyviz in LazyTools — solo proposta; lo strato quant condiviso NON esiste,
+   vedi DEEP_AUDIT_2026-07: i returns restano in extract.py / kernel LazyFin)
 ```
 
 ## 7. Lo standard concreto: `lazydatacore`
