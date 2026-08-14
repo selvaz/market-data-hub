@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 9
+SCHEMA_VERSION = 10
 
 
 def _default_db() -> str:
@@ -234,6 +234,14 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # bump an existing DB could sit indefinitely reporting "current"
         # while the table is still absent.
         current = 9
+    if current < 10:
+        # v9 -> v10: calendario economico dei rilasci (calendar_indicators,
+        # calendar_events, calendar_observations). Puramente additivo:
+        # apply_schema() le ha gia' create con CREATE TABLE IF NOT EXISTS.
+        # Come per il passo v8 -> v9, questo step serve ad avanzare la
+        # versione registrata, cosi' un DB preesistente non resta a
+        # dichiararsi "current" mentre le tabelle nuove non ci sono ancora.
+        current = 10
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
