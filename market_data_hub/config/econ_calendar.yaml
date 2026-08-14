@@ -1127,7 +1127,7 @@ indicators:
   agency: Statistics Bureau
   rationale: 'Superseded by the Tokyo CPI, which comes out three weeks earlier.'
   match_rules: cpi;yy
-  match_excludes: tokyo|core|corp|goods|service|trimmed|weighted|median
+  match_excludes: 'tokyo|core|corp|goods|service|trimmed|weighted|median|excl|ex food'
   macro_indicator_id: null
 - key: jp_core_cpi
   country_iso2: JP

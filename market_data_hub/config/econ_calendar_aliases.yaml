@@ -1,79 +1,419 @@
-# Per-source decisions that no pattern can express.
-#
-# match_rules works on the name, so it can only separate what the name
-# separates. These cases publish the *same* name for a different transform of
-# the series: Nasdaq's 'Housing Starts' is a level in millions of units where
-# everyone else's is the month-on-month change, and its 'Building Approvals' is
-# a year-on-year where Tradays' is a month-on-month. No exclusion can tell them
-# apart, because there is nothing in the name to tell apart.
-#
-# Every entry here was found by `values_agree = false` -- two sources filing
-# different numbers under one indicator -- which over the first full load was
-# right 46 times out of 46. The rule of thumb: if the disagreement survives a
-# reading of both names, the answer is a decision about the source, and it
-# belongs in this file.
-#
-# 'reject' means the triple binds to nothing: the row is seen, understood, and
-# deliberately kept out of the calendar. It is not the same as never having
-# been seen, and the distinction is the point -- a rejection is a decision on
-# the record, so nobody re-litigates it next month.
-
 rejections:
-  - source: nasdaq
-    country_iso3: USA
-    name: Housing Starts
-    reason: >-
-      A level in millions of units (1.177M) where the indicator is declared m/m
-      and every other source publishes the change (-15.4%). Same release, not
-      the same number.
-
-  - source: nasdaq
-    country_iso3: AUS
-    name: Building Approvals
-    reason: >-
-      Year-on-year (10.20%, 5.30%, 8.90% -- all positive across months when
-      Tradays' m/m alternates sign) under an indicator declared m/m.
-
-  - source: nasdaq
-    country_iso3: USA
-    name: Core PCE Prices
-    reason: >-
-      The annual rate (4.40%, 3.40%) under an indicator declared m/m, where
-      Tradays and MyFXBook publish the monthly (0.1-0.3%). The name carries no
-      frequency, so only the values give it away.
-
-  - source: nasdaq
-    country_iso3: USA
-    name: Core PCE Price Index
-    reason: >-
-      Nasdaq uses two names for the same annual rate -- this one and 'Core PCE
-      Prices' -- and rejecting only the first left the second arriving at 3.4%
-      against the monthly 0.3%. A source is not one name.
-
-  - source: yahoo
-    country_iso3: USA
-    name: Core PCE Prices Advance
-    reason: >-
-      The advance annual estimate (3.4) from the GDP report, not the monthly
-      deflator from the personal income report.
-
-  - source: yahoo
-    country_iso3: EMU
-    name: GDP Revised QQ *
-    reason: >-
-      The revised estimate (-0.2) alongside the first estimate (0%) of the same
-      quarter. Both are real; mixing vintages inside one indicator makes the
-      series contradict itself. Revisions belong in calendar_observations, which
-      already keeps them by vintage_date.
-
-  - source: tradays
-    country_iso3: CAN
-    name: Retail Sales m/m
-    reason: >-
-      The outlier in two months of three (0.9 against 0.6 and 0.6; 1.0 against
-      0.4 and 0.4), most likely the ex-autos series under a name that declares
-      plain m/m. Rejected on the balance of the evidence, not on certainty --
-      and Nasdaq is the outlier in the third month (1.0 against 0.5 and 0.5),
-      so this indicator is not settled, it is only mostly settled. Left visible
-      in the disagreement report rather than silenced by rejecting whichever
-      source disagrees until the count reaches zero.
+- source: nasdaq
+  country_iso3: USA
+  name: Housing Starts
+  reason: A level in millions of units (1.177M) where the indicator is declared m/m and every
+    other source publishes the change (-15.4%). Same release, not the same number.
+- source: nasdaq
+  country_iso3: AUS
+  name: Building Approvals
+  reason: Year-on-year (10.20%, 5.30%, 8.90% -- all positive across months when Tradays' m/m
+    alternates sign) under an indicator declared m/m.
+- source: nasdaq
+  country_iso3: USA
+  name: Core PCE Prices
+  reason: The annual rate (4.40%, 3.40%) under an indicator declared m/m, where Tradays and
+    MyFXBook publish the monthly (0.1-0.3%). The name carries no frequency, so only the values
+    give it away.
+- source: nasdaq
+  country_iso3: USA
+  name: Core PCE Price Index
+  reason: Nasdaq uses two names for the same annual rate -- this one and 'Core PCE Prices'
+    -- and rejecting only the first left the second arriving at 3.4% against the monthly 0.3%.
+    A source is not one name.
+- source: yahoo
+  country_iso3: USA
+  name: Core PCE Prices Advance
+  reason: The advance annual estimate (3.4) from the GDP report, not the monthly deflator
+    from the personal income report.
+- source: yahoo
+  country_iso3: EMU
+  name: GDP Revised QQ *
+  reason: The revised estimate (-0.2) alongside the first estimate (0%) of the same quarter.
+    Both are real; mixing vintages inside one indicator makes the series contradict itself.
+    Revisions belong in calendar_observations, which already keeps them by vintage_date.
+- source: tradays
+  country_iso3: CAN
+  name: Retail Sales m/m
+  reason: The outlier in two months of three (0.9 against 0.6 and 0.6; 1.0 against 0.4 and
+    0.4), most likely the ex-autos series under a name that declares plain m/m. Rejected on
+    the balance of the evidence, not on certainty -- and Nasdaq is the outlier in the third
+    month (1.0 against 0.5 and 0.5), so this indicator is not settled, it is only mostly settled.
+    Left visible in the disagreement report rather than silenced by rejecting whichever source
+    disagrees until the count reaches zero.
+- source: nasdaq
+  country_iso3: USA
+  name: Capacity Utilization Rate
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for us_fomc by name reconciliation. Capacity utilisation has nothing to
+    do with the FOMC decision; it paired on value alone.
+- source: myfxbook
+  country_iso3: USA
+  name: Capacity Utilization
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for us_fomc by name reconciliation. Same coincidence from the other source.
+- source: nasdaq
+  country_iso3: USA
+  name: Philly Fed Employment
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for us_housing by name reconciliation. The Philadelphia Fed employment
+    sub-index is not housing starts.
+- source: tradays
+  country_iso3: USA
+  name: Philadelphia Fed Employment
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for us_housing by name reconciliation. Same coincidence from the other
+    source.
+- source: nasdaq
+  country_iso3: USA
+  name: U6 Unemployment Rate
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for us_unemp by name reconciliation. U6 counts discouraged and part-time-for-economic-reasons
+    workers; it runs roughly double the headline U3 and is a different measure, not a variant.
+- source: tradays
+  country_iso3: USA
+  name: U6 Unemployment Rate
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for us_unemp by name reconciliation. Same measure, other source.
+- source: nasdaq
+  country_iso3: CHN
+  name: Outstanding Loan Growth
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for cn_indprod by name reconciliation. Credit growth, not industrial output.
+- source: nasdaq
+  country_iso3: JPN
+  name: CPI Tokyo Ex Food & Energy
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for jp_indprod by name reconciliation. Tokyo core-core inflation, filed
+    against industrial production purely on a shared value.
+- source: nasdaq
+  country_iso3: DEU
+  name: Bavaria CPI
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for de_cpi_yy by name reconciliation. A Land index, like the Saxony and
+    Hesse ones already kept out of the euro-area HICP.
+- source: myfxbook
+  country_iso3: AUS
+  name: Building Permits YoY
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for au_building by name reconciliation. The annual rate under an indicator
+    declared m/m.
+- source: nasdaq
+  country_iso3: JPN
+  name: Tankan All Small Industry CAPEX
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for jp_tankan by name reconciliation. The small-firm capex sub-index, not
+    the headline Tankan diffusion index.
+- source: tradays
+  country_iso3: JPN
+  name: BoJ Tankan Small All Industry Capex
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for jp_tankan by name reconciliation. Same sub-index, other source.
+- source: nasdaq
+  country_iso3: GBR
+  name: Core Retail Sales
+  decided_by: reconciled-2026-08-14
+  reason: Proposed for uk_retail by name reconciliation. Core is a different series from the
+    headline.
+- source: myfxbook
+  country_iso3: CHN
+  name: Balance of Trade Yuan
+  decided_by: reconciled-2026-08-14
+  reason: 'Proposed for cn_trade by name reconciliation. The same balance quoted in yuan:
+    roughly seven times the USD figure the indicator carries.'
+- source: nasdaq
+  country_iso3: CAN
+  name: Core CPI
+  decided_by: verified-2026-08-14
+  reason: The m/m (0.1) against a y/y indicator (2.1).
+- source: nasdaq
+  country_iso3: DEU
+  name: German CPI
+  decided_by: verified-2026-08-14
+  reason: Nasdaq's bare 'German CPI' is the m/m (0.6, -0.2, -0.2) where the indicator is y/y
+    (2.9, 2.6). Bound in error by reconciliation and caught by the disagreement report the
+    same run.
+- source: nasdaq
+  country_iso3: USA
+  name: PPI
+  decided_by: verified-2026-08-14
+  reason: The m/m (1.1, 1.4) against a y/y indicator (6.0, 6.5).
+- source: nasdaq
+  country_iso3: USA
+  name: Retail Sales
+  decided_by: verified-2026-08-14
+  reason: The y/y (6.72) against an indicator declared m/m (0.2).
+bindings:
+- source: myfxbook
+  country_iso3: AUS
+  name: Building Permits MoM
+  indicator_key: au_building
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: AUS
+  name: Quarterly Inflation Rate QoQ
+  indicator_key: au_cpi_qq
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: AUS
+  name: Quarterly Inflation Rate YoY
+  indicator_key: au_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: forexfactory
+  country_iso3: AUS
+  name: Cash Rate
+  indicator_key: au_rba
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: BRA
+  name: CPI
+  indicator_key: br_ipca_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: BRA
+  name: Interest Rate Decision
+  indicator_key: br_selic
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: CAN
+  name: Core Inflation Rate YoY
+  indicator_key: ca_core_cpi
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: CAN
+  name: Inflation Rate YoY
+  indicator_key: ca_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: CHN
+  name: CPI
+  indicator_key: cn_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: CHN
+  name: Inflation Rate YoY
+  indicator_key: cn_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: CHN
+  name: GDP
+  indicator_key: cn_gdp
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: CHN
+  name: Industrial Production
+  indicator_key: cn_indprod
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: CHN
+  name: PPI
+  indicator_key: cn_ppi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: CHN
+  name: Retail Sales
+  indicator_key: cn_retail
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: IND
+  name: CPI
+  indicator_key: in_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: IND
+  name: Industrial Production
+  indicator_key: in_indprod
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: IND
+  name: Interest Rate Decision
+  indicator_key: in_rbi
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: IND
+  name: WPI Inflation
+  indicator_key: in_wpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: JPN
+  name: National Core CPI
+  indicator_key: jp_core_cpi
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: JPN
+  name: National CPI
+  indicator_key: jp_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: JPN
+  name: Industrial Production
+  indicator_key: jp_indprod
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: JPN
+  name: Retail Sales
+  indicator_key: jp_retail
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: JPN
+  name: Tokyo CPI
+  indicator_key: jp_tokyo_cpi
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: KOR
+  name: Interest Rate Decision
+  indicator_key: kr_bok
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: KOR
+  name: CPI
+  indicator_key: kr_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: KOR
+  name: Exports
+  indicator_key: kr_exports
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: KOR
+  name: GDP
+  indicator_key: kr_gdp
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: yahoo
+  country_iso3: MEX
+  name: 12-Month Inflation
+  indicator_key: mx_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: GBR
+  name: Core CPI
+  indicator_key: uk_core_cpi
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: GBR
+  name: Core Inflation Rate YoY
+  indicator_key: uk_core_cpi
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: GBR
+  name: CPI
+  indicator_key: uk_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: GBR
+  name: Inflation Rate YoY
+  indicator_key: uk_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: GBR
+  name: GDP
+  indicator_key: uk_gdp_qq
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: GBR
+  name: Retail Sales
+  indicator_key: uk_retail
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: USA
+  name: Core Inflation Rate YoY
+  indicator_key: us_core_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: USA
+  name: Inflation Rate MoM
+  indicator_key: us_cpi_mm
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: USA
+  name: Inflation Rate YoY
+  indicator_key: us_cpi_yy
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: nasdaq
+  country_iso3: USA
+  name: GDP
+  indicator_key: us_gdp
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
+- source: myfxbook
+  country_iso3: USA
+  name: Balance of Trade
+  indicator_key: us_trade
+  decided_by: reconciled-2026-08-14
+  reason: 'Confirmed by cross-source reconciliation: same country, same normalised UTC instant,
+    same printed value.'
