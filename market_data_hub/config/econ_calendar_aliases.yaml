@@ -1,0 +1,79 @@
+# Per-source decisions that no pattern can express.
+#
+# match_rules works on the name, so it can only separate what the name
+# separates. These cases publish the *same* name for a different transform of
+# the series: Nasdaq's 'Housing Starts' is a level in millions of units where
+# everyone else's is the month-on-month change, and its 'Building Approvals' is
+# a year-on-year where Tradays' is a month-on-month. No exclusion can tell them
+# apart, because there is nothing in the name to tell apart.
+#
+# Every entry here was found by `values_agree = false` -- two sources filing
+# different numbers under one indicator -- which over the first full load was
+# right 46 times out of 46. The rule of thumb: if the disagreement survives a
+# reading of both names, the answer is a decision about the source, and it
+# belongs in this file.
+#
+# 'reject' means the triple binds to nothing: the row is seen, understood, and
+# deliberately kept out of the calendar. It is not the same as never having
+# been seen, and the distinction is the point -- a rejection is a decision on
+# the record, so nobody re-litigates it next month.
+
+rejections:
+  - source: nasdaq
+    country_iso3: USA
+    name: Housing Starts
+    reason: >-
+      A level in millions of units (1.177M) where the indicator is declared m/m
+      and every other source publishes the change (-15.4%). Same release, not
+      the same number.
+
+  - source: nasdaq
+    country_iso3: AUS
+    name: Building Approvals
+    reason: >-
+      Year-on-year (10.20%, 5.30%, 8.90% -- all positive across months when
+      Tradays' m/m alternates sign) under an indicator declared m/m.
+
+  - source: nasdaq
+    country_iso3: USA
+    name: Core PCE Prices
+    reason: >-
+      The annual rate (4.40%, 3.40%) under an indicator declared m/m, where
+      Tradays and MyFXBook publish the monthly (0.1-0.3%). The name carries no
+      frequency, so only the values give it away.
+
+  - source: nasdaq
+    country_iso3: USA
+    name: Core PCE Price Index
+    reason: >-
+      Nasdaq uses two names for the same annual rate -- this one and 'Core PCE
+      Prices' -- and rejecting only the first left the second arriving at 3.4%
+      against the monthly 0.3%. A source is not one name.
+
+  - source: yahoo
+    country_iso3: USA
+    name: Core PCE Prices Advance
+    reason: >-
+      The advance annual estimate (3.4) from the GDP report, not the monthly
+      deflator from the personal income report.
+
+  - source: yahoo
+    country_iso3: EMU
+    name: GDP Revised QQ *
+    reason: >-
+      The revised estimate (-0.2) alongside the first estimate (0%) of the same
+      quarter. Both are real; mixing vintages inside one indicator makes the
+      series contradict itself. Revisions belong in calendar_observations, which
+      already keeps them by vintage_date.
+
+  - source: tradays
+    country_iso3: CAN
+    name: Retail Sales m/m
+    reason: >-
+      The outlier in two months of three (0.9 against 0.6 and 0.6; 1.0 against
+      0.4 and 0.4), most likely the ex-autos series under a name that declares
+      plain m/m. Rejected on the balance of the evidence, not on certainty --
+      and Nasdaq is the outlier in the third month (1.0 against 0.5 and 0.5),
+      so this indicator is not settled, it is only mostly settled. Left visible
+      in the disagreement report rather than silenced by rejecting whichever
+      source disagrees until the count reaches zero.

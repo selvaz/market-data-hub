@@ -264,7 +264,7 @@ indicators:
 - key: us_earnings
   country_iso2: US
   area: US
-  name: Average Hourly Earnings
+  name: 'Average Hourly Earnings y/y'
   category: Labour
   archetype: earnings
   freq: M
@@ -273,7 +273,7 @@ indicators:
   agency: BLS
   rationale: 'The wage-to-inflation channel: the variable that decides whether disinflation is sustainable.'
   match_rules: 'hourly|earnings'
-  match_excludes: 'unit labour|unit labor|real|weekly'
+  match_excludes: 'unit labour|unit labor|real|weekly|mm'
   macro_indicator_id: null
 - key: us_claims
   country_iso2: US
@@ -376,7 +376,7 @@ indicators:
 - key: us_core_pce
   country_iso2: US
   area: US
-  name: Core PCE Price Index
+  name: 'Core PCE Price Index m/m'
   category: Inflation
   archetype: pce
   freq: M
@@ -385,7 +385,7 @@ indicators:
   agency: BEA
   rationale: 'This, not the CPI, is the Fed''s formal target. For policy it matters more than the CPI.'
   match_rules: core;pce
-  match_excludes: ''
+  match_excludes: 'qq|fnal|yy'
   macro_indicator_id: null
 - key: us_retail
   country_iso2: US
@@ -399,7 +399,7 @@ indicators:
   agency: Census Bureau
   rationale: 'Consumption is about two thirds of GDP: the most direct read on demand.'
   match_rules: retail sales;mm
-  match_excludes: ex|excl|control|redbook
+  match_excludes: 'ex|excl|control|redbook|core'
   macro_indicator_id: null
 - key: us_ism_mfg
   country_iso2: US
@@ -427,7 +427,7 @@ indicators:
   agency: ISM
   rationale: 'Covers the sector that generates most American employment.'
   match_rules: ism;non|services|n mfg
-  match_excludes: employment|new orders|price|inventories|deliveries|backlog|s p global
+  match_excludes: 'employment|new orders|price|inventories|deliveries|backlog|s p global|business activity|bus act'
   macro_indicator_id: null
 - key: us_indprod
   country_iso2: US
@@ -497,7 +497,7 @@ indicators:
   agency: Census Bureau
   rationale: 'The headline is dominated by aircraft orders; read core capital goods only.'
   match_rules: durable
-  match_excludes: ex |ex-|r mm|revised|shipment|nondef|non def
+  match_excludes: 'ex |ex-|r mm|revised|shipment|nondef|non def|core'
   macro_indicator_id: null
 - key: us_housing
   country_iso2: US
@@ -567,7 +567,7 @@ indicators:
   agency: NBS
   rationale: 'Heavily managed: surprises are rare and small by construction.'
   match_rules: gdp;yy
-  match_excludes: qq
+  match_excludes: 'qq|ytd'
   macro_indicator_id: null
 - key: cn_indprod
   country_iso2: CN
@@ -581,7 +581,7 @@ indicators:
   agency: NBS
   rationale: 'Confirms the industrial picture already read in the PMIs.'
   match_rules: 'industrial;yy'
-  match_excludes: 'profit'
+  match_excludes: 'profit|ytd'
   macro_indicator_id: null
 - key: cn_retail
   country_iso2: CN
@@ -595,7 +595,7 @@ indicators:
   agency: NBS
   rationale: 'Domestic demand is the unresolved knot of the Chinese economy.'
   match_rules: retail sales;yy
-  match_excludes: mm
+  match_excludes: 'mm|ytd'
   macro_indicator_id: null
 - key: cn_fai
   country_iso2: CN
@@ -735,7 +735,7 @@ indicators:
   agency: PBoC
   rationale: 'The reference rate for loans: guided in practice by the PBoC.'
   match_rules: prime rate|lpr
-  match_excludes: ''
+  match_excludes: '5y'
   macro_indicator_id: null
 - key: ez_hicp_yy
   country_iso2: EU
@@ -861,7 +861,7 @@ indicators:
   agency: BCE
   rationale: 'Decision, quarterly projections and press conference.'
   match_rules: ecb;rate
-  match_excludes: speak|speech|president|bulletin|account
+  match_excludes: 'speak|speech|president|bulletin|account|marginal|lending|deposit'
   macro_indicator_id: null
 - key: ez_sentix
   country_iso2: EU
@@ -931,7 +931,7 @@ indicators:
   agency: Destatis
   rationale: 'Leads industrial production by 2-3 months: read it excluding bulk orders.'
   match_rules: factory orders|industrial orders
-  match_excludes: ''
+  match_excludes: 'yy'
   macro_indicator_id: null
 - key: de_indprod
   country_iso2: DE
@@ -1057,7 +1057,7 @@ indicators:
   agency: ONS
   rationale: 'Volatile; the private BRC measure comes out earlier and is often read more.'
   match_rules: retail sales;mm
-  match_excludes: brc|cbi|core
+  match_excludes: 'brc|cbi|core|ex fuel'
   macro_indicator_id: null
 - key: uk_pmi_mfg
   country_iso2: GB
@@ -1113,7 +1113,7 @@ indicators:
   agency: ONS
   rationale: 'Relevant to gilt issuance expectations, not to the cycle.'
   match_rules: public sector
-  match_excludes: ''
+  match_excludes: 'cash requirement|ex banks'
   macro_indicator_id: null
 - key: jp_cpi_yy
   country_iso2: JP
@@ -1169,7 +1169,7 @@ indicators:
   agency: Cabinet Office
   rationale: 'Wide revisions between the first and second estimate.'
   match_rules: 'gdp;qq'
-  match_excludes: 'deflator|price|capital|external|consmp|consumption|expend|contribution|net export'
+  match_excludes: 'deflator|price|capital|external|consmp|consumption|expend|contribution|net export|yy|cap ex'
   macro_indicator_id: null
 - key: jp_tankan
   country_iso2: JP
@@ -1211,7 +1211,7 @@ indicators:
   agency: METI
   rationale: 'Useful for the real-consumption against nominal-wages theme.'
   match_rules: retail;yy
-  match_excludes: mm
+  match_excludes: 'mm|large'
   macro_indicator_id: null
 - key: jp_trade
   country_iso2: JP
@@ -1258,7 +1258,7 @@ indicators:
 - key: jp_machinery
   country_iso2: JP
   area: JP
-  name: Core Machinery Orders
+  name: 'Core Machinery Orders m/m'
   category: Activity
   archetype: machinery
   freq: M
@@ -1267,7 +1267,7 @@ indicators:
   agency: Cabinet Office
   rationale: 'Leads private investment by about six months; very volatile.'
   match_rules: machinery orders
-  match_excludes: tool
+  match_excludes: 'tool|yy'
   macro_indicator_id: null
 - key: jp_pmi_mfg
   country_iso2: JP
@@ -1743,7 +1743,7 @@ indicators:
   agency: Statistics Canada
   rationale: 'Very volatile because of the small sample: read the full-time/part-time breakdown.'
   match_rules: employment
-  match_excludes: full time|part time|unemployment
+  match_excludes: 'full time|part time|unemployment|full'
   macro_indicator_id: null
 - key: ca_unemp
   country_iso2: CA
@@ -1785,7 +1785,7 @@ indicators:
   agency: Statistics Canada
   rationale: 'Consumption under pressure from household indebtedness.'
   match_rules: retail sales
-  match_excludes: ex|excl
+  match_excludes: 'ex|excl|core|yy'
   macro_indicator_id: null
 - key: ca_ivey
   country_iso2: CA
@@ -1883,7 +1883,7 @@ indicators:
   agency: ABS
   rationale: 'Small sample: a single month says little, the trend is what counts.'
   match_rules: employment
-  match_excludes: full time|part time|unemployment
+  match_excludes: 'full time|part time|unemployment|full'
   macro_indicator_id: null
 - key: au_unemp
   country_iso2: AU
@@ -1939,7 +1939,7 @@ indicators:
   agency: ABS
   rationale: 'Backward-looking.'
   match_rules: gdp;qq
-  match_excludes: ''
+  match_excludes: 'consumption|chain|capital|expenditure'
   macro_indicator_id: null
 - key: au_trade
   country_iso2: AU
@@ -1981,7 +1981,7 @@ indicators:
   agency: ABS
   rationale: 'Immune to composition effects: the RBA cites it explicitly.'
   match_rules: wage
-  match_excludes: ''
+  match_excludes: 'yy'
   macro_indicator_id: null
 - key: kr_cpi_yy
   country_iso2: KR

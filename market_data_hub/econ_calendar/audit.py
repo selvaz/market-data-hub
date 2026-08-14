@@ -154,6 +154,93 @@ def suspect_matches(
     return sospetti
 
 
+def disagreeing_bindings(
+    con: duckdb.DuckDBPyConnection,
+    *,
+    criticalities: Optional[Iterable[str]] = None,
+) -> list[dict]:
+    """Events where the sources disagree on the number *and* on the name.
+
+    The strongest binding detector there is, and the cheapest: it does not
+    guess from words, it uses the fact that two sources filed different figures
+    under one indicator. Over the 46 disagreements in the first full load,
+    every single one had sources reporting under different names -- not one was
+    a data error.
+
+    What they turn out to be, once the names are read side by side:
+
+        au_wages     'Wage Price Index y/y' 3.3% | 'Wage Price Index' 0.8%
+        ca_employment'Employment Change' 75.1K   | 'Full Employment Change' 38.6K
+        us_ism_svc   'ISM Non-Mfg Business Activity' 59.1 | 'ISM Services PMI' 54.1
+        cn_lpr       'PBoC Loan Prime Rate' 3.00% | 'Loan Prime Rate 5Y' 3.5%
+
+    Different series, one indicator. And the majority wins the consolidation,
+    so on au_wages -- declared q/q -- the two sources carrying the y/y outvote
+    the one carrying the right number.
+
+    Two things this also catches that are *not* binding errors, and the caller
+    has to tell them apart: the same series in different units (housing starts
+    as a level and as a m/m change), and successive vintages of one release
+    (a flash and its revision). Both are worth a look anyway.
+    """
+    dove, parametri = "", []
+    if criticalities is not None:
+        livelli = list(criticalities)
+        if not livelli:
+            return []
+        dove = f"AND i.criticality IN ({','.join('?' * len(livelli))})"
+        parametri = livelli
+
+    righe = con.execute(f"""
+        SELECT i.criticality, i.area, i.name, e.indicator_key, e.event_id,
+               strftime(e.release_utc, '%Y-%m-%d') AS giorno,
+               o.source, o.source_event_name, o.actual
+        FROM calendar_events e
+        JOIN calendar_indicators i ON i.indicator_key = e.indicator_key
+        JOIN calendar_observations o ON o.event_id = e.event_id
+        WHERE e.status = 'released' AND e.n_sources > 1
+          AND NOT e.values_agree {dove}
+        ORDER BY i.criticality, i.area, i.name, e.release_utc
+    """, parametri).fetchall()
+
+    per_evento: dict[str, dict] = {}
+    for crit, area, nome, chiave, ev, giorno, src, sen, att in righe:
+        v = per_evento.setdefault(ev, {
+            "event_id": ev, "indicator_key": chiave, "indicator_name": nome,
+            "area": area, "criticality": crit, "date": giorno, "readings": [],
+        })
+        v["readings"].append({"source": src, "source_name": sen, "actual": att})
+
+    fuori = []
+    for v in per_evento.values():
+        nomi = {r["source_name"] for r in v["readings"]}
+        # one name and two numbers is a data problem; two names is a binding one
+        v["distinct_names"] = len(nomi)
+        fuori.append(v)
+
+    fuori.sort(key=lambda x: (x["criticality"], x["area"], x["indicator_name"]))
+    return fuori
+
+
+def format_disagreements(righe: list[dict]) -> str:
+    if not righe:
+        return "No disagreement: where sources overlap, they report the same figure."
+    out = [f"{len(righe)} events where sources disagree on the value:", ""]
+    visti = set()
+    for r in righe:
+        if r["indicator_key"] not in visti:
+            visti.add(r["indicator_key"])
+            out.append(f"[{r['criticality']}] {r['area']} {r['indicator_name']} "
+                       f"({r['indicator_key']})")
+        out.append(f"      {r['date']}"
+                   + ("  -- SAME name, different numbers: check the data, not the binding"
+                      if r["distinct_names"] == 1 else ""))
+        for l in r["readings"]:
+            out.append(f"        {l['source']:10s} {(l['source_name'] or '')[:44]:46s} "
+                       f"{l['actual']}")
+    return "\n".join(out)
+
+
 def format_report(sospetti: list[dict]) -> str:
     """The review list as text, for a run log or an operator's eyes."""
     if not sospetti:

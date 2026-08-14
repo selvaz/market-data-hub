@@ -36,9 +36,11 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Iterable, Optional
 
 import duckdb
+import yaml
 
 # Names arrive with soft hyphens, non-breaking and zero-width spaces embedded
 # by the scrapers, plus the asterisks and daggers sources use to mark revised
@@ -165,6 +167,78 @@ def seed_from_observations(
         )
         n += 1
     return n
+
+
+_SEED = Path(__file__).resolve().parents[1] / "config" / "econ_calendar_aliases.yaml"
+
+
+def load_seed(
+    con: duckdb.DuckDBPyConnection,
+    percorso: Optional[Path] = None,
+) -> int:
+    """Load the per-source decisions kept as data, next to the catalogue.
+
+    These are the rulings a pattern cannot express, because the source uses the
+    same name for a different transform of the series. They live in a file
+    rather than only in the table so that rebuilding the database does not
+    silently discard them: a decision that evaporates on the next load is not a
+    decision, it is a note.
+    """
+    p = Path(percorso) if percorso else _SEED
+    if not p.exists():
+        return 0
+    doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+    n = 0
+    for r in doc.get("rejections", []):
+        upsert_alias(
+            con, source=r["source"], country_iso3=r["country_iso3"],
+            source_name=r["name"], indicator_key=None, status="rejected",
+            decided_by=r.get("decided_by", "econ_calendar_aliases.yaml"),
+            note=" ".join((r.get("reason") or "").split()),
+        )
+        n += 1
+    for r in doc.get("bindings", []):
+        upsert_alias(
+            con, source=r["source"], country_iso3=r["country_iso3"],
+            source_name=r["name"], indicator_key=r["indicator_key"],
+            status="confirmed",
+            decided_by=r.get("decided_by", "econ_calendar_aliases.yaml"),
+            note=" ".join((r.get("reason") or "").split()),
+        )
+        n += 1
+    return n
+
+
+def is_rejected(
+    con: duckdb.DuckDBPyConnection,
+    source: str,
+    country_iso3: str,
+    source_name: str,
+) -> bool:
+    """Was this triple seen, understood, and deliberately kept out?
+
+    Distinct from ``resolve() is None``, which also covers 'never seen'. The
+    collector needs the difference: a rejection is settled, an unknown name is
+    work waiting to be done.
+    """
+    r = con.execute(
+        "SELECT 1 FROM calendar_indicator_aliases "
+        "WHERE source = ? AND country_iso3 = ? AND source_name_norm = ? "
+        "  AND status = 'rejected'",
+        [source, country_iso3, normalize_name(source_name)],
+    ).fetchone()
+    return r is not None
+
+
+def load_rejections(con: duckdb.DuckDBPyConnection) -> set[tuple[str, str, str]]:
+    """Every rejected triple, for filtering a day's rows in one pass."""
+    return {
+        (s, c, n)
+        for s, c, n in con.execute(
+            "SELECT source, country_iso3, source_name_norm "
+            "FROM calendar_indicator_aliases WHERE status = 'rejected'"
+        ).fetchall()
+    }
 
 
 def propose(

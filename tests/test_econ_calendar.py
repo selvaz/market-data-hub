@@ -15,6 +15,9 @@ from market_data_hub.econ_calendar import (
 )
 from market_data_hub.econ_calendar.aliases import (
     cadence_violations,
+    is_rejected,
+    load_rejections,
+    load_seed,
     normalize_name,
     propose,
     resolve,
@@ -22,7 +25,10 @@ from market_data_hub.econ_calendar.aliases import (
     unmapped,
     upsert_alias,
 )
-from market_data_hub.econ_calendar.audit import suspect_matches
+from market_data_hub.econ_calendar.audit import (
+    disagreeing_bindings,
+    suspect_matches,
+)
 from market_data_hub.econ_calendar.catalog import to_iso3
 from market_data_hub.econ_calendar.ingest import parse_number
 
@@ -445,3 +451,55 @@ def test_cadence_quiet_when_the_indicator_behaves(con):
         CalendarObservation(release_utc=datetime(2026, 8, 7, 12, 30), actual="3.2%", **base),
     ])
     assert cadence_violations(con, indicator_keys=["us_earnings"]) == []
+
+
+# --- the strongest binding detector: sources that disagree on the number -----
+def test_disagreement_names_both_readings(con):
+    """46 disagreements in the first full load, 46 of them binding errors.
+    The report has to show the names beside the values, because it is reading
+    them together that says which series each source actually filed."""
+    upsert_indicators(con, load_catalog_rows())
+    base = dict(indicator_key="au_wages", country_iso3="AUS",
+                provenance="aggregator", release_utc=datetime(2026, 5, 13, 1, 30),
+                vintage_date=date(2026, 8, 14))
+    ingest_observations(con, [
+        CalendarObservation(source="tradays", source_event_name="Wage Price Index y/y",
+                            actual="3.3%", **base),
+        CalendarObservation(source="nasdaq", source_event_name="Wage Price Index",
+                            actual="0.8%", **base),
+    ])
+    fuori = disagreeing_bindings(con)
+    assert len(fuori) == 1
+    assert fuori[0]["distinct_names"] == 2      # two names: a binding problem
+    letture = {r["source"]: (r["source_name"], r["actual"]) for r in fuori[0]["readings"]}
+    assert letture["nasdaq"] == ("Wage Price Index", "0.8%")
+
+
+def test_disagreement_under_one_name_is_marked_differently(con):
+    """One name and two numbers is a data problem, not a binding one, and the
+    caller must not go looking for a series that is not there."""
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("tradays", actual="3.4%"),
+                              _obs("nasdaq", actual="9.9%")])
+    fuori = disagreeing_bindings(con)
+    assert len(fuori) == 1 and fuori[0]["distinct_names"] == 1
+
+
+def test_agreeing_sources_produce_no_finding(con):
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("tradays", actual="3.4%"),
+                              _obs("nasdaq", actual="3.4%")])
+    assert disagreeing_bindings(con) == []
+
+
+def test_seed_file_carries_the_per_source_decisions(con):
+    """A ruling that evaporates when the database is rebuilt is not a ruling,
+    so the decisions live in a file beside the catalogue."""
+    upsert_indicators(con, load_catalog_rows())
+    assert load_seed(con) > 0
+    # Nasdaq publishes housing starts as a level where the indicator is m/m
+    assert is_rejected(con, "nasdaq", "USA", "Housing Starts")
+    assert not is_rejected(con, "tradays", "USA", "Housing Starts m/m")
+    # rejection is not the same as never seen: resolve() returns None for both
+    assert resolve(con, "nasdaq", "USA", "Housing Starts") is None
+    assert ("nasdaq", "USA", "housing starts") in load_rejections(con)
