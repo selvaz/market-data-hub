@@ -359,18 +359,22 @@ def consolidate_events(
             """
             INSERT OR REPLACE INTO calendar_events
                 (event_id, indicator_key, country_iso3, release_utc, release_precision,
-                 reference_period, reference_date, status, actual, actual_num,
+                 reference_period, reference_date, reference_date_origin,
+                 status, actual, actual_num,
                  actual_source, actual_provenance, consensus, consensus_num,
                  consensus_source, consensus_disputed, consensus_low,
                  consensus_high, consensus_n, previous, previous_num,
                  revised_from, impact, impact_source, n_sources, values_agree,
                  first_seen_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                     COALESCE((SELECT first_seen_at FROM calendar_events WHERE event_id = ?),
                              ?), ?)
             """,
             [eid, indicator_key, country_iso3, release, precisione,
-             periodo, reference_date, "released" if actual else "scheduled",
+             periodo, reference_date,
+             # a re-consolidation must not relabel an inferred date as published
+             "source" if reference_date is not None else None,
+             "released" if actual else "scheduled",
              actual, parse_number(actual), actual_src, actual_prov,
              consensus, parse_number(consensus), consensus_src, consensus_contestato,
              cons_min, cons_max, len(attese),

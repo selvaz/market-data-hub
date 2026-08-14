@@ -30,6 +30,11 @@ from market_data_hub.econ_calendar.aliases import (
     unmapped,
     upsert_alias,
 )
+from market_data_hub.econ_calendar.reference import (
+    infer_reference_dates,
+    learn_lags,
+    validate_lags,
+)
 from market_data_hub.econ_calendar.catalog import (
     load_catalog_rows,
     upsert_indicators,
@@ -45,7 +50,9 @@ __all__ = [
     "CalendarObservation",
     "cadence_violations",
     "consolidate_events",
+    "infer_reference_dates",
     "ingest_observations",
+    "learn_lags",
     "load_aliases",
     "load_catalog_rows",
     "make_event_id",
@@ -55,4 +62,5 @@ __all__ = [
     "unmapped",
     "upsert_alias",
     "upsert_indicators",
+    "validate_lags",
 ]

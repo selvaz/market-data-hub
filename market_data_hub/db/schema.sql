@@ -634,6 +634,17 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     release_precision   VARCHAR,               -- 'minute' | 'day'
     reference_period    VARCHAR,               -- as the source writes it: 'Jul', 'Q2'
     reference_date      DATE,                  -- period end -> joins macro_panel.date
+    -- Where reference_date came from: 'source' when a provider published the
+    -- period, 'inferred' when it was derived from the release date and the
+    -- indicator's usual lag.
+    --
+    -- The column exists because the two must never be indistinguishable.
+    -- Nasdaq and Tradays carry two thirds of the observations and publish no
+    -- period at all, so without inference the point-in-time bridge answers for
+    -- one event in five; with it, a backtest would be joining on dates that
+    -- nobody published. Both of those are acceptable -- silently mixing them
+    -- is not.
+    reference_date_origin VARCHAR,             -- 'source' | 'inferred'
     status              VARCHAR NOT NULL,      -- 'scheduled' | 'released'
     actual              VARCHAR,
     actual_num          DOUBLE,

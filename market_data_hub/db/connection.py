@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 
 def _default_db() -> str:
@@ -251,6 +251,21 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # importing those bindings is a claim that they are right, and that
         # claim belongs to whoever runs it.
         current = 11
+    if current < 12:
+        # v11 -> v12: calendar_events.reference_date_origin, which separates a
+        # period a provider published from one derived from the release date.
+        # ALTER rather than additive-by-CREATE: the table already exists on any
+        # DB at v10 or later, so CREATE TABLE IF NOT EXISTS does not add it.
+        try:
+            con.execute("ALTER TABLE calendar_events "
+                        "ADD COLUMN reference_date_origin VARCHAR")
+        except Exception:
+            pass        # already present: apply_schema() created the table fresh
+        # Everything recorded before this step came from a source, because
+        # nothing else could write it yet.
+        con.execute("UPDATE calendar_events SET reference_date_origin = 'source' "
+                    "WHERE reference_date IS NOT NULL AND reference_date_origin IS NULL")
+        current = 12
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

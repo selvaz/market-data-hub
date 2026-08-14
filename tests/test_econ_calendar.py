@@ -30,6 +30,11 @@ from market_data_hub.econ_calendar.audit import (
     suspect_matches,
 )
 from market_data_hub.econ_calendar.catalog import to_iso3
+from market_data_hub.econ_calendar.reference import (
+    infer_reference_dates,
+    learn_lags,
+    validate_lags,
+)
 from market_data_hub.econ_calendar.ingest import parse_number
 
 
@@ -503,3 +508,82 @@ def test_seed_file_carries_the_per_source_decisions(con):
     # rejection is not the same as never seen: resolve() returns None for both
     assert resolve(con, "nasdaq", "USA", "Housing Starts") is None
     assert ("nasdaq", "USA", "housing starts") in load_rejections(con)
+
+
+# --- reference period: derived where no source publishes one ----------------
+def _rilascio(con, indicator_key, release, *, period=None, ref=None, source="tradays"):
+    ingest_observations(con, [CalendarObservation(
+        indicator_key=indicator_key, country_iso3="USA", source=source,
+        provenance="aggregator", source_event_name="x", release_utc=release,
+        reference_period=period, reference_date=ref, actual="0.1%",
+        vintage_date=date(2026, 8, 14))])
+
+
+def test_lag_is_learned_per_indicator_not_per_frequency(con):
+    """US CPI and euro-area industrial production are both monthly and their
+    lags are 1 and 2. A frequency-wide default is wrong for one of them every
+    month, which is why the lag is learned per indicator."""
+    upsert_indicators(con, load_catalog_rows())
+    for mese, fine in ((6, date(2026, 5, 31)), (7, date(2026, 6, 30))):
+        _rilascio(con, "us_cpi_yy", datetime(2026, mese, 12, 12, 30), ref=fine)
+    for mese, fine in ((6, date(2026, 4, 30)), (7, date(2026, 5, 31))):
+        _rilascio(con, "ez_indprod", datetime(2026, mese, 14, 9, 0), ref=fine)
+
+    imparati = learn_lags(con)
+    assert imparati["us_cpi_yy"]["lag_months"] == 1
+    assert imparati["ez_indprod"]["lag_months"] == 2
+    assert imparati["us_cpi_yy"]["stable"] and imparati["ez_indprod"]["stable"]
+
+
+def test_inference_marks_what_it_writes(con):
+    """A derived period must never be indistinguishable from a published one:
+    a backtest joining on dates nobody published has no way to know."""
+    upsert_indicators(con, load_catalog_rows())
+    for mese, fine in ((6, date(2026, 5, 31)), (7, date(2026, 6, 30))):
+        _rilascio(con, "us_cpi_yy", datetime(2026, mese, 12, 12, 30), ref=fine)
+    _rilascio(con, "us_cpi_yy", datetime(2026, 8, 12, 12, 30))   # no period given
+
+    esito = infer_reference_dates(con)
+    assert esito["events_filled"] == 1
+    righe = dict(con.execute(
+        "SELECT reference_date_origin, count(*) FROM calendar_events "
+        "WHERE reference_date IS NOT NULL GROUP BY 1").fetchall())
+    assert righe == {"source": 2, "inferred": 1}
+    # August release, lag 1 -> July, and the period is its LAST day
+    assert con.execute(
+        "SELECT reference_date FROM calendar_events "
+        "WHERE reference_date_origin = 'inferred'").fetchone()[0] == date(2026, 7, 31)
+
+
+def test_unstable_lag_is_left_alone(con):
+    """Where the observed lag contradicts itself the series is usually mixing
+    two releases; deriving from a contradiction writes a confident wrong date."""
+    upsert_indicators(con, load_catalog_rows())
+    _rilascio(con, "ez_unemp", datetime(2026, 6, 2, 9, 0), ref=date(2026, 4, 30))
+    _rilascio(con, "ez_unemp", datetime(2026, 7, 2, 9, 0), ref=date(2026, 6, 30))
+    _rilascio(con, "ez_unemp", datetime(2026, 8, 4, 9, 0))
+
+    assert learn_lags(con)["ez_unemp"]["stable"] is False
+    assert infer_reference_dates(con)["events_filled"] == 0
+    assert infer_reference_dates(con, only_stable=False)["events_filled"] == 1
+
+
+def test_weekly_and_policy_events_are_not_derived(con):
+    """Jobless claims refer to a week ending on a given day, which a lag in
+    months cannot express; a rate decision describes no period at all."""
+    upsert_indicators(con, load_catalog_rows())
+    for giorno in (6, 13, 20):
+        _rilascio(con, "us_claims", datetime(2026, 8, giorno, 12, 30))
+    _rilascio(con, "us_fomc", datetime(2026, 7, 29, 18, 0))
+    assert infer_reference_dates(con)["events_filled"] == 0
+
+
+def test_inference_does_not_learn_from_itself(con):
+    """Once a date is inferred it must not become evidence for the next lag,
+    or a single wrong derivation propagates into the rule that produced it."""
+    upsert_indicators(con, load_catalog_rows())
+    for mese, fine in ((6, date(2026, 5, 31)), (7, date(2026, 6, 30))):
+        _rilascio(con, "us_cpi_yy", datetime(2026, mese, 12, 12, 30), ref=fine)
+    _rilascio(con, "us_cpi_yy", datetime(2026, 8, 12, 12, 30))
+    infer_reference_dates(con)
+    assert learn_lags(con)["us_cpi_yy"]["events"] == 2      # not 3
