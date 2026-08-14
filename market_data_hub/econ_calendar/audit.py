@@ -235,9 +235,10 @@ def format_disagreements(righe: list[dict]) -> str:
         out.append(f"      {r['date']}"
                    + ("  -- SAME name, different numbers: check the data, not the binding"
                       if r["distinct_names"] == 1 else ""))
-        for l in r["readings"]:
-            out.append(f"        {l['source']:10s} {(l['source_name'] or '')[:44]:46s} "
-                       f"{l['actual']}")
+        for lettura in r["readings"]:
+            out.append(f"        {lettura['source']:10s} "
+                       f"{(lettura['source_name'] or '')[:44]:46s} "
+                       f"{lettura['actual']}")
     return "\n".join(out)
 
 
