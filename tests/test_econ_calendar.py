@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Economic calendar tests: catalogue, ingestion, consolidation."""
+from calendar import monthrange
 from datetime import date, datetime
 
 import duckdb
@@ -587,3 +588,24 @@ def test_inference_does_not_learn_from_itself(con):
     _rilascio(con, "us_cpi_yy", datetime(2026, 8, 12, 12, 30))
     infer_reference_dates(con)
     assert learn_lags(con)["us_cpi_yy"]["events"] == 2      # not 3
+
+
+def test_holdout_validation_reports_what_the_rule_is_worth(con):
+    """The rule gets applied where no truth exists, so the only honest accuracy
+    comes from hiding a known period, relearning without it, and comparing."""
+    upsert_indicators(con, load_catalog_rows())
+    for mese in (5, 6, 7, 8):
+        fine = date(2026, mese - 1, monthrange(2026, mese - 1)[1])
+        _rilascio(con, "us_cpi_yy", datetime(2026, mese, 12, 12, 30), ref=fine)
+
+    esito = validate_lags(con)
+    assert esito["tested"] == 4
+    assert esito["accuracy"] == 1.0 and esito["wrong"] == 0
+
+    # an indicator whose lag contradicts itself is where the errors land
+    _rilascio(con, "ez_unemp", datetime(2026, 6, 2, 9, 0), ref=date(2026, 4, 30))
+    _rilascio(con, "ez_unemp", datetime(2026, 7, 2, 9, 0), ref=date(2026, 6, 30))
+    _rilascio(con, "ez_unemp", datetime(2026, 8, 4, 9, 0), ref=date(2026, 6, 30))
+    dopo = validate_lags(con)
+    assert dopo["wrong"] > 0
+    assert {e["indicator_key"] for e in dopo["errors"]} == {"ez_unemp"}
