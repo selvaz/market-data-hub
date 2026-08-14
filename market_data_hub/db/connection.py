@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 11
 
 
 def _default_db() -> str:
@@ -235,13 +235,22 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # while the table is still absent.
         current = 9
     if current < 10:
-        # v9 -> v10: calendario economico dei rilasci (calendar_indicators,
-        # calendar_events, calendar_observations). Puramente additivo:
-        # apply_schema() le ha gia' create con CREATE TABLE IF NOT EXISTS.
-        # Come per il passo v8 -> v9, questo step serve ad avanzare la
-        # versione registrata, cosi' un DB preesistente non resta a
-        # dichiararsi "current" mentre le tabelle nuove non ci sono ancora.
+        # v9 -> v10: the economic release calendar (calendar_indicators,
+        # calendar_events, calendar_observations, calendar_event_notes).
+        # Purely additive: apply_schema() has already created them with
+        # CREATE TABLE IF NOT EXISTS. As with the v8 -> v9 step, this exists
+        # to advance the recorded version, so a pre-existing DB does not sit
+        # declaring itself "current" while the new tables are still absent.
         current = 10
+    if current < 11:
+        # v10 -> v11: calendar_indicator_aliases, which records what each
+        # source means by a name instead of recomputing it from a regex.
+        # Additive in the same way. The table starts empty; seeding it from
+        # the bindings already in calendar_observations is a deliberate act
+        # (econ_calendar.aliases.seed_from_observations), not a migration:
+        # importing those bindings is a claim that they are right, and that
+        # claim belongs to whoever runs it.
+        current = 11
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

@@ -21,6 +21,15 @@ The three provenances never mix:
 ``provenance``       ``'aggregator'`` third-party calendars
 ===================  ============================================
 """
+from market_data_hub.econ_calendar.aliases import (
+    cadence_violations,
+    load_aliases,
+    normalize_name,
+    resolve,
+    seed_from_observations,
+    unmapped,
+    upsert_alias,
+)
 from market_data_hub.econ_calendar.catalog import (
     load_catalog_rows,
     upsert_indicators,
@@ -34,9 +43,16 @@ from market_data_hub.econ_calendar.ingest import (
 
 __all__ = [
     "CalendarObservation",
+    "cadence_violations",
     "consolidate_events",
     "ingest_observations",
+    "load_aliases",
     "load_catalog_rows",
     "make_event_id",
+    "normalize_name",
+    "resolve",
+    "seed_from_observations",
+    "unmapped",
+    "upsert_alias",
     "upsert_indicators",
 ]

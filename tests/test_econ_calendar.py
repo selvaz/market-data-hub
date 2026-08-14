@@ -13,6 +13,15 @@ from market_data_hub.econ_calendar import (
     make_event_id,
     upsert_indicators,
 )
+from market_data_hub.econ_calendar.aliases import (
+    cadence_violations,
+    normalize_name,
+    propose,
+    resolve,
+    seed_from_observations,
+    unmapped,
+    upsert_alias,
+)
 from market_data_hub.econ_calendar.audit import suspect_matches
 from market_data_hub.econ_calendar.catalog import to_iso3
 from market_data_hub.econ_calendar.ingest import parse_number
@@ -47,8 +56,9 @@ def test_migration_creates_the_tables(con):
     tables = {r[0] for r in con.execute(
         "SELECT table_name FROM information_schema.tables "
         "WHERE table_name LIKE 'calendar%'").fetchall()}
-    assert tables == {"calendar_indicators", "calendar_events",
-                       "calendar_observations", "calendar_event_notes"}
+    assert tables == {"calendar_indicators", "calendar_indicator_aliases",
+                      "calendar_events", "calendar_observations",
+                      "calendar_event_notes"}
 
 
 # ----------------------------------------------------------------- paesi ----
@@ -325,3 +335,113 @@ def test_audit_reads_through_the_abbreviations_sources_use(con):
         _bind(con, "us_claims", "tradays", "Initial Jobless Claims", day)
     _bind(con, "us_claims", "tradays", "Initial Jobless Clm *", 12)
     assert suspect_matches(con) == []
+
+
+# --- aliases: what a source means by a name, decided once and recorded -------
+def test_normalization_keeps_what_separates_indicators():
+    """Gentler than the audit's: 'm/m' and 'y/y' are noise there and meaning
+    here -- Mexico's core CPI m/m is not its core CPI y/y."""
+    assert normalize_name("CPI y/y") != normalize_name("CPI m/m")
+    # ... and drops only typography: revision marks, case, invisible spaces
+    assert normalize_name("GDP Revised QQ *") == normalize_name("gdp  revised qq")
+    assert normalize_name("Trade\u200bBalance\u00a0") == "trade balance"
+
+
+def test_alias_resolves_only_what_was_confirmed(con):
+    upsert_indicators(con, load_catalog_rows())
+    upsert_alias(con, source="tradays", country_iso3="USA",
+                 source_name="Real Earnings m/m", indicator_key="us_earnings",
+                 status="proposed")
+    # a proposal is a work queue, not a binding
+    assert resolve(con, "tradays", "USA", "Real Earnings m/m") is None
+    upsert_alias(con, source="tradays", country_iso3="USA",
+                 source_name="Average Hourly Earnings y/y",
+                 indicator_key="us_earnings")
+    assert resolve(con, "tradays", "USA", "Average Hourly Earnings y/y") == "us_earnings"
+    # and it cannot generalise the way the regex did
+    assert resolve(con, "tradays", "USA", "Real Weekly Earnings MM") is None
+
+
+def test_alias_is_keyed_on_the_country_too(con):
+    """'CPI y/y' on Tradays means eleven different indicators, one per country.
+    Without the country in the key the table would be unusable."""
+    upsert_indicators(con, load_catalog_rows())
+    upsert_alias(con, source="tradays", country_iso3="USA",
+                 source_name="CPI y/y", indicator_key="us_cpi_yy")
+    upsert_alias(con, source="tradays", country_iso3="IND",
+                 source_name="CPI y/y", indicator_key="in_cpi_yy")
+    assert resolve(con, "tradays", "USA", "CPI y/y") == "us_cpi_yy"
+    assert resolve(con, "tradays", "IND", "CPI y/y") == "in_cpi_yy"
+
+
+def test_unknown_status_is_rejected(con):
+    with pytest.raises(ValueError, match="unknown alias status"):
+        upsert_alias(con, source="tradays", country_iso3="USA",
+                     source_name="CPI y/y", indicator_key="us_cpi_yy",
+                     status="maybe")
+
+
+def test_proposal_does_not_overwrite_a_decision(con):
+    """A rejection that quietly turned back into a proposal would be the same
+    silent drift the alias table exists to stop."""
+    upsert_indicators(con, load_catalog_rows())
+    upsert_alias(con, source="tradays", country_iso3="USA",
+                 source_name="Real Earnings m/m", indicator_key=None,
+                 status="rejected", note="CPI-deflated earnings, a different series")
+    assert propose(con, source="tradays", country_iso3="USA",
+                   source_name="Real Earnings m/m",
+                   indicator_key="us_earnings") is False
+    riga = con.execute("SELECT status, indicator_key FROM calendar_indicator_aliases"
+                       ).fetchone()
+    assert riga == ("rejected", None)
+
+
+def test_unmapped_names_are_reported_not_dropped(con):
+    """An unknown name yields no event instead of a wrong one. That is the
+    better failure, not a harmless one, so it has to be visible."""
+    upsert_indicators(con, load_catalog_rows())
+    propose(con, source="tradays", country_iso3="USA",
+            source_name="Some Brand New Print", indicator_key="us_cpi_yy")
+    righe = unmapped(con)
+    assert len(righe) == 1
+    assert righe[0]["source_name"] == "Some Brand New Print"
+    assert righe[0]["suggested"] == "us_cpi_yy"
+
+
+def test_seed_takes_the_bindings_already_in_the_calendar(con):
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("tradays", actual="3.4%"),
+                              _obs("nasdaq", actual="3.4%")])
+    assert seed_from_observations(con, decided_by="test") == 2
+    assert resolve(con, "tradays", "USA", "CPI y/y") == "us_cpi_yy"
+
+
+def test_cadence_catches_what_source_agreement_cannot(con):
+    """The Real Earnings case: all three sources named it the same way and all
+    three agreed on the value, so cross-checking them would have confirmed the
+    wrong binding. Two monthly prints in one August is a contradiction no
+    amount of agreement excuses."""
+    upsert_indicators(con, load_catalog_rows())
+    base = dict(indicator_key="us_earnings", country_iso3="USA",
+                source_event_name="Average Hourly Earnings", provenance="aggregator",
+                source="tradays", vintage_date=date(2026, 8, 14))
+    ingest_observations(con, [
+        CalendarObservation(release_utc=datetime(2026, 8, 7, 12, 30), actual="3.2%", **base),
+        CalendarObservation(release_utc=datetime(2026, 8, 12, 12, 30), actual="0.0%", **base),
+    ])
+    fuori = cadence_violations(con, indicator_keys=["us_earnings"])
+    assert len(fuori) == 1
+    assert fuori[0]["releases"] == 2 and fuori[0]["expected"] == 1
+    assert fuori[0]["period"] == "2026-08-01"
+
+
+def test_cadence_quiet_when_the_indicator_behaves(con):
+    upsert_indicators(con, load_catalog_rows())
+    base = dict(indicator_key="us_earnings", country_iso3="USA",
+                source_event_name="Average Hourly Earnings", provenance="aggregator",
+                source="tradays", vintage_date=date(2026, 8, 14))
+    ingest_observations(con, [
+        CalendarObservation(release_utc=datetime(2026, 7, 3, 12, 30), actual="3.5%", **base),
+        CalendarObservation(release_utc=datetime(2026, 8, 7, 12, 30), actual="3.2%", **base),
+    ])
+    assert cadence_violations(con, indicator_keys=["us_earnings"]) == []

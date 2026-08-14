@@ -685,6 +685,52 @@ CREATE INDEX IF NOT EXISTS idx_cal_events_refdate   ON calendar_events (country_
 CREATE INDEX IF NOT EXISTS idx_cal_obs_source       ON calendar_observations (source, vintage_date);
 
 -- ---------------------------------------------------------------------------
+-- Which indicator a source means by a given name.
+--
+-- calendar_indicators.match_rules is a regex, and a regex generalises: it does
+-- not decide about a name, it meets one and swallows it. 'hourly|earnings' was
+-- never a judgement about BLS 'Real Earnings' -- an entirely different series,
+-- published alongside the CPI because it is CPI-deflated earnings -- yet it
+-- filed it as Average Hourly Earnings, T1 and all, and the report carried
+-- 0.0% for July when the real print was 3.2%, out five days earlier. Twelve
+-- more bindings of the same shape were found the same afternoon.
+--
+-- So the decision is recorded instead of being recomputed. One row per name a
+-- source actually uses, with who decided it and when. An alias cannot
+-- generalise: (source, country, name) is either in this table or it is not.
+--
+-- The key is the triple. Country is what makes it unambiguous: 'CPI y/y' on
+-- Tradays means eleven different indicators, one per country, and over the
+-- 411 bindings collected so far the triple leaves exactly zero ambiguity.
+--
+-- match_rules does not disappear, it steps down to proposing: when a name
+-- arrives that is not in here, the regex suggests an indicator and the row
+-- lands with status 'proposed', to be confirmed or rejected. Nothing enters
+-- the calendar on a proposal alone.
+--
+-- The failure mode changes shape and that is the point: an unknown name now
+-- yields no match instead of a wrong one. Silence is safer than a wrong
+-- number, but it is still a failure, which is why unmapped names have to be
+-- reported rather than dropped.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS calendar_indicator_aliases (
+    source              VARCHAR NOT NULL,      -- 'tradays', 'nasdaq', ...
+    country_iso3        VARCHAR NOT NULL,      -- normalised, never the source's own string
+    source_name_norm    VARCHAR NOT NULL,      -- normalised name: the join key
+    source_name_raw     VARCHAR,               -- as first seen, for a human reading this
+    indicator_key       VARCHAR,               -- NULL = seen and deliberately not tracked
+    status              VARCHAR NOT NULL DEFAULT 'confirmed',
+                                               -- confirmed | proposed | rejected
+    decided_by          VARCHAR,               -- who: a person, or the seeding run
+    decided_at          TIMESTAMP,
+    note                VARCHAR,               -- why, when the choice is not obvious
+    PRIMARY KEY (source, country_iso3, source_name_norm)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cal_alias_indicator ON calendar_indicator_aliases (indicator_key);
+CREATE INDEX IF NOT EXISTS idx_cal_alias_status    ON calendar_indicator_aliases (status);
+
+-- ---------------------------------------------------------------------------
 -- Enrichment of a release: press commentary and technical detail.
 --
 -- A separate table for a reason of substance, not tidiness: this is content
