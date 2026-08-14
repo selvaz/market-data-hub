@@ -609,3 +609,55 @@ def test_holdout_validation_reports_what_the_rule_is_worth(con):
     dopo = validate_lags(con)
     assert dopo["wrong"] > 0
     assert {e["indicator_key"] for e in dopo["errors"]} == {"ez_unemp"}
+
+
+# --- the point-in-time bridge: when did that value become public ------------
+def test_bridge_dates_a_macro_panel_value(con):
+    """The reason the calendar exists. macro_panel carries a month-end policy
+    rate; the calendar knows which meeting set it and when that meeting spoke."""
+    upsert_indicators(con, load_catalog_rows())
+    con.execute(
+        "INSERT INTO macro_panel (date, country_iso3, indicator_id, value, frequency) "
+        "VALUES (?, 'USA', 'bis_policy_rate', 3.625, 'M')", [date(2026, 7, 31)])
+    _rilascio(con, "us_fomc", datetime(2026, 7, 29, 18, 0))
+
+    assert infer_reference_dates(con)["policy_events_dated"] == 1
+    riga = con.execute(
+        "SELECT reference_date, value, known_from, calendar_indicator_key "
+        "FROM v_macro_panel_asof WHERE country_iso3 = 'USA'").fetchone()
+    assert riga[0] == date(2026, 7, 31) and riga[1] == 3.625
+    assert riga[2] == datetime(2026, 7, 29, 18, 0)
+    assert riga[3] == "us_fomc"
+
+
+def test_bridge_leaves_a_month_without_a_meeting_undated(con):
+    """A rate that simply persisted was published by nobody that month, and the
+    bridge has to say so rather than attribute it to the previous decision."""
+    upsert_indicators(con, load_catalog_rows())
+    for giorno in (date(2026, 7, 31), date(2026, 8, 31)):
+        con.execute(
+            "INSERT INTO macro_panel (date, country_iso3, indicator_id, value, frequency) "
+            "VALUES (?, 'USA', 'bis_policy_rate', 3.625, 'M')", [giorno])
+    _rilascio(con, "us_fomc", datetime(2026, 7, 29, 18, 0))
+    infer_reference_dates(con)
+
+    righe = dict(con.execute(
+        "SELECT reference_date, known_from FROM v_macro_panel_asof").fetchall())
+    assert righe[date(2026, 7, 31)] is not None
+    assert righe[date(2026, 8, 31)] is None
+
+
+def test_policy_dates_are_only_given_where_a_bridge_exists(con):
+    """A period invented for an event nothing joins to is just a wrong field.
+    The ECB decision has no macro_indicator_id -- macro_panel carries DEU, not
+    EMU -- so it keeps no reference_date."""
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [CalendarObservation(
+        indicator_key="ez_ecb", country_iso3="EMU", source="tradays",
+        provenance="aggregator", source_event_name="ECB Rate Decision",
+        release_utc=datetime(2026, 7, 23, 12, 15), actual="2.4%",
+        vintage_date=date(2026, 8, 14))])
+    infer_reference_dates(con)
+    assert con.execute(
+        "SELECT reference_date FROM calendar_events "
+        "WHERE indicator_key = 'ez_ecb'").fetchone()[0] is None

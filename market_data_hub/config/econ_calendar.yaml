@@ -483,8 +483,8 @@ indicators:
   agency: Federal Reserve
   rationale: 'Not the decision, which is anticipated, but the projections and the press conference.'
   match_rules: fed funds|fomc|federal funds|fed;rate
-  match_excludes: dallas|cleveland|kc |philly|richmond|chicago|atlanta|empire|budget|speak|speech|member|minutes|balance|cpi|pce|survey
-  macro_indicator_id: null
+  match_excludes: 'dallas|cleveland|kc |philly|richmond|chicago|atlanta|empire|budget|speak|speech|member|minutes|balance|cpi|pce|survey|capacity|utilization|utilisation'
+  macro_indicator_id: bis_policy_rate
 - key: us_durable
   country_iso2: US
   area: US
@@ -736,7 +736,7 @@ indicators:
   rationale: 'The reference rate for loans: guided in practice by the PBoC.'
   match_rules: prime rate|lpr
   match_excludes: '5y'
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: ez_hicp_yy
   country_iso2: EU
   area: EZ
@@ -1100,7 +1100,7 @@ indicators:
   rationale: 'Committee vote and projections: the split of the vote is often the real signal.'
   match_rules: boe|bank rate;rate
   match_excludes: speak|speech|governor|minutes|report
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: uk_psnb
   country_iso2: GB
   area: UK
@@ -1254,7 +1254,7 @@ indicators:
   rationale: 'Every meeting is an event for the currency since the exit from negative rates.'
   match_rules: boj;rate
   match_excludes: speak|speech|governor|opinion|minutes|price
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: jp_machinery
   country_iso2: JP
   area: JP
@@ -1352,7 +1352,7 @@ indicators:
   rationale: 'Decision and stance; the RBI also communicates its position on liquidity.'
   match_rules: repo|rbi;rate
   match_excludes: reverse
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: in_trade
   country_iso2: IN
   area: IN
@@ -1492,7 +1492,7 @@ indicators:
   rationale: 'The rate differential against the Fed is the engine of the peso carry.'
   match_rules: interest rate|banxico|bank of mexico
   match_excludes: minutes|report
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: mx_indprod
   country_iso2: MX
   area: MX
@@ -1618,7 +1618,7 @@ indicators:
   rationale: 'Brazil has one of the highest real rates in the world: the Copom is the centre of the stage.'
   match_rules: selic|copom|bcb;rate
   match_excludes: minutes|focus|tjlp
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: br_indprod
   country_iso2: BR
   area: BR
@@ -1772,7 +1772,7 @@ indicators:
   rationale: 'Often just ahead of or just behind the Fed: the differential moves the Canadian dollar.'
   match_rules: boc|bank of canada;rate
   match_excludes: speak|speech|summary|minutes|review
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: ca_retail
   country_iso2: CA
   area: CA
@@ -1912,7 +1912,7 @@ indicators:
   rationale: 'Statement and the quarterly Statement on Monetary Policy.'
   match_rules: rba;rate
   match_excludes: speak|speech|governor|minutes|statement|bulletin
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: au_retail
   country_iso2: AU
   area: AU
@@ -2024,7 +2024,7 @@ indicators:
   rationale: 'Constrained between household debt and the differential against the Fed.'
   match_rules: bok|bank of korea;rate
   match_excludes: minutes|speak|m2|bsi
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: kr_indprod
   country_iso2: KR
   area: KR

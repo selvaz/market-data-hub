@@ -160,13 +160,58 @@ def infer_reference_dates(
             )
         scritti += 1
 
+    politica = _date_dei_tassi(con, dry_run=dry_run)
+
     return {
         "indicators_learned": len(imparati),
         "indicators_usable": len(usabili),
         "events_missing": len(mancanti),
         "events_filled": scritti,
         "events_without_rule": senza_regola,
+        "policy_events_dated": politica,
     }
+
+
+def _date_dei_tassi(con: duckdb.DuckDBPyConnection, *, dry_run: bool = False) -> int:
+    """Give a rate decision the month it governs, so the bridge can join.
+
+    A policy decision describes no period, which is why frequency 'E' is left
+    out of the lag rule. But the series it feeds does have one: BIS publishes a
+    month-end policy rate, and the rate standing at the end of July is the rate
+    the July meeting set. Dating the decision to that month-end is the claim
+    'this is when that month's value became public', which is exactly what the
+    bridge is for.
+
+    Deliberately restricted to indicators that HAVE a macro bridge. Without
+    that guard this would be inventing a period for every rate decision in the
+    calendar, including the ones nothing joins to -- and a period invented for
+    no reason is just a wrong field.
+
+    Months with no meeting keep no event, and the bridge leaves their value
+    with a null publication date. That is correct: the rate persisted, nobody
+    published it that month.
+    """
+    righe = con.execute(
+        """
+        SELECT e.event_id, e.release_utc::date
+        FROM calendar_events e
+        JOIN calendar_indicators i ON i.indicator_key = e.indicator_key
+        WHERE e.status = 'released'
+          AND e.reference_date IS NULL
+          AND i.frequency = 'E'
+          AND i.macro_indicator_id IS NOT NULL
+        """
+    ).fetchall()
+    if dry_run:
+        return len(righe)
+    for eid, giorno in righe:
+        fine = date(giorno.year, giorno.month, monthrange(giorno.year, giorno.month)[1])
+        con.execute(
+            "UPDATE calendar_events SET reference_date = ?, "
+            "reference_date_origin = 'inferred' WHERE event_id = ?",
+            [fine, eid],
+        )
+    return len(righe)
 
 
 def validate_lags(con: duckdb.DuckDBPyConnection) -> dict:
