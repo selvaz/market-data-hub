@@ -73,19 +73,16 @@ jobs:
       - name: Byte-compile all modules
         run: python -m compileall -q market_data_hub *.py
 
-      # requirements.txt + `pip install -e .` both worked fine even when
-      # market_data_hub.regime was silently missing from every real
-      # (non-editable) install -- exactly the install path the README
-      # documents for downstream consumers (`pip install 'market-data-hub @
-      # git+...'`). Build a real wheel and import-check it in isolation so
-      # packaging regressions like that one fail CI instead of shipping
-      # silently.
+      # requirements.txt + `pip install -e .` both worked fine even when a
+      # subpackage was silently missing from every real (non-editable)
+      # install -- exactly the install path the README documents for
+      # downstream consumers (`pip install 'market-data-hub @ git+...'`).
+      # Build a real wheel and import-check it in isolation so packaging
+      # regressions like that one fail CI instead of shipping silently.
       #
-      # market_data_hub.regime itself is intentionally NOT import-checked
-      # here: since the ResultDepot persistence swap, estimate.py/report.py
-      # hard-require lazystats + lazytools, optional packages this bare
-      # install never pulls in (this differs from the old regime/schema.py,
-      # which had zero external deps and happened to import cleanly here).
+      # The subpackage that happened to was market_data_hub.regime, which no
+      # longer lives here: regime estimation belongs to LazyStats, and
+      # tests/test_regime_boundary.py keeps it from coming back.
       - name: Verify the package actually installs (not just editable)
         run: |
           python -m build --wheel --outdir dist .

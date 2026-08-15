@@ -49,7 +49,6 @@ dev = [
 # Python 3.9 in CI (see ci.yml's matrix), not from this setting.
 files = [
     "market_data_hub/lazydatacore",
-    "market_data_hub/regime",
     "market_data_hub/catalog.py",
     "market_data_hub/sources",
 ]
@@ -68,7 +67,8 @@ warn_unused_ignores = true
 # Auto-discover every subpackage under market_data_hub/ (must have
 # __init__.py). An explicit hand-maintained list silently drops new
 # subpackages from real (non-editable) installs -- exactly what happened to
-# market_data_hub.dalio_v2 and market_data_hub.regime, both missing from
+# market_data_hub.dalio_v2 (and, while it lived here, the regime package),
+# missing from
 # every wheel built before this fix even though `pip install -e .` (used in
 # this dev checkout) worked fine and hid the gap. See ci.yml's "Verify the
 # package actually installs" step, added for the same reason.
