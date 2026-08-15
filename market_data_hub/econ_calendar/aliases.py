@@ -326,9 +326,15 @@ def cadence_violations(
     agreement between sources can excuse -- and that is exactly the shape the
     Real Earnings binding took, sitting next to the genuine payroll-day print.
 
-    Two honest limits. Flash and final estimates of the same indicator land in
-    one period by design and will show up here; so will the first month a
-    revision is filed as its own release. This reviews, it does not reject.
+    Indicators tagged ``flash_final`` are skipped. Two events in one period is
+    what a flash estimate followed by a final one looks like, and flagging them
+    was the largest source of noise in this report: euro-area HICP and the PMIs
+    appeared every single month, correctly, for months. The tag says which
+    indicators publish twice on purpose, so the check can stop asking about
+    them and the list can be read.
+
+    One honest limit remains: the first month a revision is filed as its own
+    release will still show up. This reviews, it does not reject.
     """
     dove, parametri = "", []
     if indicator_keys is not None:
@@ -350,6 +356,7 @@ def cadence_violations(
             FROM calendar_events e
             JOIN calendar_indicators i ON i.indicator_key = e.indicator_key
             WHERE i.frequency = ? AND e.status = 'released' {dove}
+              AND '|' || coalesce(i.tags, '') || '|' NOT LIKE '%|flash_final|%'
             GROUP BY ALL
             HAVING count(*) > ?
             """,

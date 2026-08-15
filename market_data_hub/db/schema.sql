@@ -608,7 +608,27 @@ CREATE TABLE IF NOT EXISTS calendar_indicators (
     country_iso2        VARCHAR,               -- matching key against the sources
     area                VARCHAR NOT NULL,      -- reporting group: US, CN, EZ, ...
     name                VARCHAR NOT NULL,
+    -- What the indicator is about: one value, exclusive. Inflation, Labour,
+    -- External, Surveys, Growth, Consumption, Production, Investment, Housing,
+    -- 'Monetary policy', 'Credit & money', Fiscal.
     category            VARCHAR,
+    -- Measured or surveyed. 'hard' is a count of something that happened, 'soft'
+    -- is what respondents say they expect. A constrained field rather than a
+    -- tag because it is a classification with exactly two answers, and 'hard
+    -- data is slowing while soft holds up' is a reading the calendar could not
+    -- express at all before.
+    data_type           VARCHAR,               -- hard | soft
+    side                VARCHAR,               -- demand | supply
+    -- Free-form, pipe separated. Cross-cutting properties that change how a
+    -- figure must be READ, not what it is about:
+    --   flash_final     published twice, so two events in one period are
+    --                   correct and cadence_violations() must not flag them
+    --   cumulative      year-to-date (Chinese YTD, Indian FYTD): the month has
+    --                   to be differenced out before the number means anything
+    --   revision_prone  the first print is routinely revised, so a surprise
+    --                   computed against it is provisional
+    --   policy_input    the central bank says it watches this one
+    tags                VARCHAR,
     archetype           VARCHAR,               -- shared description/methodology
     value_type          VARCHAR,
     frequency           VARCHAR,               -- M | Q | A | W | E (E = by calendar)
