@@ -250,6 +250,53 @@ def tool_get_job_status(job_id: str) -> str:
     return _json(job)
 
 
+def tool_calendar_vocabulary() -> str:
+    """The values the economic-calendar filters actually match, with counts.
+
+    Call this before tool_calendar_series: country/area/category/data_type/
+    criticality are a closed vocabulary, and a wrong spelling returns an empty
+    list that looks exactly like a legitimate 'nothing matched'."""
+    from market_data_hub.db.connection import get_conn
+    from market_data_hub.econ_calendar import catalog as _calendar
+
+    con = get_conn(read_only=True)
+    try:
+        return _json(_calendar.catalogue_vocabulary(con))
+    finally:
+        con.close()
+
+
+def tool_calendar_series(day: str = "", from_day: str = "", to_day: str = "",
+                         country: str = "", area: str = "", category: str = "",
+                         tags: str = "", data_type: str = "",
+                         criticality: str = "", released_only: bool = False) -> str:
+    """What the economic calendar can answer about, along the axes people ask in.
+
+    With no arguments it says what exists; with a window, what came out in it;
+    with country='IND', category='Inflation' it answers that question without
+    the caller knowing an indicator_key. `tags` is comma-separated. `events`
+    counts releases in the window, so an empty answer is distinguishable from
+    an untracked one, and `with_reference_date` says how many carry a period —
+    which is what a join against macro_panel stands on."""
+    from market_data_hub.db.connection import get_conn
+    from market_data_hub.econ_calendar import catalog as _calendar
+
+    con = get_conn(read_only=True)
+    try:
+        rows = _calendar.available_series(
+            con,
+            day=day or None, from_day=from_day or None, to_day=to_day or None,
+            country=country or None, area=area or None, category=category or None,
+            tags=_split(tags) or None, data_type=data_type or None,
+            criticality=criticality or None, released_only=released_only,
+        )
+    finally:
+        con.close()
+    return _json({"data": rows[:_MAX_ROWS],
+                  "truncated": bool(len(rows) > _MAX_ROWS),
+                  "meta": {"rows": len(rows)}})
+
+
 # All read-only tool functions exposed to an agent, in the order an agent
 # should prefer. The hub's agent surface is read-only by default (the data is
 # kept fresh by a separate downloader, run_daily.py).
@@ -260,6 +307,7 @@ TOOL_FUNCTIONS = [
     tool_resolve_instrument, tool_get_price_summary, tool_get_job_status,
     tool_get_financials_coverage, tool_get_financial_facts, tool_get_statement,
     tool_get_ingestion_health,
+    tool_calendar_vocabulary, tool_calendar_series,
 ]
 
 # Raw time-series matrices — NOT in the standard profile (plan v3.1 §5.1: "Le

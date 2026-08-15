@@ -371,7 +371,7 @@ An annual series is therefore not penalised for a normal ~12-month reporting lag
 
 ## 7. Automation
 
-`setup_scheduler.ps1` registers three Windows scheduled tasks:
+`setup_scheduler.ps1` registers two Windows scheduled tasks:
 
 | task | when | command |
 |------|------|---------|
@@ -387,8 +387,12 @@ revised, using the `run_id` recorded on each `macro_panel_vintage` /
 `macro_series_vintage` row, not `vintage_date` alone: that column only has
 day granularity, so it can't tell two same-day runs apart) and, in a second
 call with `--dashboard`, the neutral country-data dashboard — as separate
-document attachments. `MarketData_HMMRegime` is an independent task running
-its own wrapper and sending its own report.
+document attachments.
+
+There is no regime task here. Regime estimation moved to LazyStats in August
+2026 and runs from the Investment Committee job matrix against that package;
+this repository supplies the prices and nothing else. See
+`tests/test_regime_boundary.py`, which keeps the fit from coming back.
 
 Each task's `Action` invokes `powershell.exe -Command "& '<wrapper.ps1>' ...
 *>> '<logfile>'"` — deliberately `-Command`, not `-File`: Task Scheduler
@@ -397,8 +401,9 @@ pass `>>`/`2>&1` through as inert literal arguments instead of redirecting
 output, leaving `logs/<task>.log` silently empty even on a "successful" task
 run. `-Command` makes PowerShell's own parser handle the redirection (`*>>`,
 all streams) correctly. Logs append into `logs/<task>.log` (no rotation —
-prune manually if they grow large). Remove all three tasks with
-`setup_scheduler.ps1 -Remove`.
+prune manually if they grow large). Remove both tasks with
+`setup_scheduler.ps1 -Remove`, which also clears a `MarketData_HMMRegime` left
+over from a machine set up before the move.
 
 ---
 

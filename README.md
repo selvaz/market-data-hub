@@ -115,7 +115,7 @@ storage.
 powershell -ExecutionPolicy Bypass -File C:\Users\Administrator\Documents\GitHub\market-data-hub\setup_scheduler.ps1
 ```
 
-Creates three tasks:
+Creates two tasks:
 
 | task | when | runs |
 |------|------|------|
@@ -128,10 +128,13 @@ coverage, and — scoped to this run only, via `macro_panel_vintage` /
 `macro_series_vintage`'s `run_id` — which countries got a genuinely **new**
 observation date vs which got an existing date **revised** to a different
 number) and the neutral country-data dashboard, as separate document
-attachments. `MarketData_HMMRegime` is
-independent — it runs the per-symbol HMM regime monitor
-(`run_regime_daily.py`) and sends its own Telegram report. All three append
-their output to `logs/<task>.log` (no rotation). To remove: add `-Remove`.
+attachments. Both append their output to `logs/<task>.log` (no rotation). To
+remove: add `-Remove`, which also clears a `MarketData_HMMRegime` left over
+from before the regime job moved out of this repository.
+
+There is no regime task here any more. Regime estimation moved to LazyStats in
+August 2026 and is scheduled from the Investment Committee job matrix; this
+repository supplies the prices.
 
 ## Country data dashboard
 

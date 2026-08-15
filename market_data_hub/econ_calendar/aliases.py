@@ -326,12 +326,17 @@ def cadence_violations(
     agreement between sources can excuse -- and that is exactly the shape the
     Real Earnings binding took, sitting next to the genuine payroll-day print.
 
-    Indicators tagged ``flash_final`` are skipped. Two events in one period is
-    what a flash estimate followed by a final one looks like, and flagging them
-    was the largest source of noise in this report: euro-area HICP and the PMIs
-    appeared every single month, correctly, for months. The tag says which
-    indicators publish twice on purpose, so the check can stop asking about
-    them and the list can be read.
+    Indicators tagged ``flash_final`` are allowed one extra release per period,
+    not exempted from the check. Two events in one period is what a flash
+    estimate followed by a final one looks like, and flagging those was the
+    largest source of noise here: euro-area HICP and the PMIs appeared every
+    month, correctly, for months.
+
+    Skipping them entirely went too far. Seventeen indicators carry the tag,
+    and a third release in one period -- the shape a bad alias binding takes --
+    would have been invisible on every one of them, which is the fault this
+    report exists to catch. The tag says an indicator publishes twice on
+    purpose; it does not say nobody should count.
 
     One honest limit remains: the first month a revision is filed as its own
     release will still show up. This reviews, it does not reject.
@@ -350,19 +355,20 @@ def cadence_violations(
             f"""
             SELECT e.indicator_key, i.name, i.area, i.criticality,
                    date_trunc('{unita}', e.release_utc) AS periodo,
+                   '|' || coalesce(i.tags, '') || '|' LIKE '%|flash_final|%'
+                       AS pubblica_due_volte,
                    count(*) AS n,
                    string_agg(strftime(e.release_utc, '%Y-%m-%d'), ', '
                               ORDER BY e.release_utc) AS giorni
             FROM calendar_events e
             JOIN calendar_indicators i ON i.indicator_key = e.indicator_key
             WHERE i.frequency = ? AND e.status = 'released' {dove}
-              AND '|' || coalesce(i.tags, '') || '|' NOT LIKE '%|flash_final|%'
             GROUP BY ALL
-            HAVING count(*) > ?
+            HAVING count(*) > ? + CASE WHEN pubblica_due_volte THEN 1 ELSE 0 END
             """,
             [freq, *parametri, atteso],
         ).fetchall()
-        for chiave, nome, area, crit, periodo, n, giorni in righe:
+        for chiave, nome, area, crit, periodo, _due_volte, n, giorni in righe:
             fuori.append({
                 "indicator_key": chiave, "indicator_name": nome, "area": area,
                 "criticality": crit, "frequency": freq,

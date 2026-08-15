@@ -120,13 +120,13 @@ which reads this hub's macro panel read-only via
 powershell -ExecutionPolicy Bypass -File C:\Users\Administrator\Documents\GitHub\market-data-hub\setup_scheduler.ps1
 ```
 
-Creates three tasks: `MarketData_EU18` (daily 09:00 Pacific, roughly 18:00
-Europe/Rome), `MarketData_USClose` (Mon-Fri 13:15 Pacific, shortly after the
-US cash close) — both run the daily refresh and then send the run report
-*and* the country dashboard to Telegram as two separate messages — and
-`MarketData_HMMRegime` (Mon-Fri 13:45 Pacific), which independently runs the
-per-symbol HMM regime monitor and sends its own report. Logs append into
-`logs/<task>.log`. Remove all three with `-Remove`. See
+Creates two tasks: `MarketData_EU18` (daily 09:00 Pacific, roughly 18:00
+Europe/Rome) and `MarketData_USClose` (Mon-Fri 13:15 Pacific, shortly after the
+US cash close). Both run the daily refresh and then send the run report *and*
+the country dashboard to Telegram as two separate messages. Logs append into
+`logs/<task>.log`. Remove them with `-Remove`, which also clears a
+`MarketData_HMMRegime` left over from before regime estimation moved to
+LazyStats. See
 [Architecture & process](ARCHITECTURE.md#7-automation) for the full task
 table and why the scheduled action uses `-Command` instead of `-File`.
 

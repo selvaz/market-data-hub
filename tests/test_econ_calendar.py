@@ -850,6 +850,28 @@ def test_cadence_ignores_indicators_that_publish_twice_by_design(con):
     assert cadence_violations(con, indicator_keys=["ez_hicp_yy"]) == []
 
 
+def test_a_third_release_is_still_caught_on_a_flash_final_indicator(con):
+    """The tag buys one extra release, not silence.
+
+    Skipping tagged indicators entirely made seventeen of them unauditable: a
+    third print in one period -- the shape a bad alias binding takes, and the
+    reason this check exists -- would have passed unseen on every one. Two is
+    the flash and the final; three is a question.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    base = dict(country_iso3="EMU", source="tradays", provenance="aggregator",
+                source_event_name="HICP", vintage_date=date(2026, 8, 14),
+                actual="2.0%", indicator_key="ez_hicp_yy")
+    ingest_observations(con, [
+        CalendarObservation(release_utc=datetime(2026, 7, 17, 9, 0), **base),
+        CalendarObservation(release_utc=datetime(2026, 7, 31, 9, 0), **base),
+        CalendarObservation(release_utc=datetime(2026, 7, 24, 9, 0), **base),
+    ])
+    fuori = cadence_violations(con, indicator_keys=["ez_hicp_yy"])
+    assert len(fuori) == 1, "a third release on a flash/final indicator went unreported"
+    assert fuori[0]["indicator_key"] == "ez_hicp_yy"
+
+
 def test_discovery_answers_without_knowing_an_indicator_key(con):
     """The point of the function: an agent asks in the terms it thinks in."""
     upsert_indicators(con, load_catalog_rows())
