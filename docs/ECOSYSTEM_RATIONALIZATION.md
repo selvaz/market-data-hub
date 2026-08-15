@@ -91,8 +91,7 @@ non sa fare grafici (delega a `Memo`, che fa solo tabelle). Ogni nuovo tool ripa
 1. **Identità → namespaced.** Tipo canonico `InstrumentId` (`ticker:AAPL`, `crypto:BTCUSDT@1h`,
    `macro:FEDFUNDS`, `factor:FF5_daily/Mkt-RF`, `cik:0000320193`). Unifica le quattro identità
    interne del core *e* combacia con LazyFin (che usa già `ticker:`/`cik:`). **Il DuckDB non si
-   tocca**: un resolver in `lazydatacore` mappa `InstrumentId → (tabella, chiave piatta)` e un
-   registry l'inverso (`from_symbol`/`from_duckdb`).
+   tocca**: un resolver in `lazydatacore` mappa `InstrumentId → (tabella, chiave piatta)`.
    > Nota implementativa (decisione di hardening, PR #13): il dominio canonico per
    > `prices_daily` è **`ticker`** (non `equity`); `price:` è accettato come *alias* in input e
    > normalizzato a `ticker:`. Solo `crypto` porta un qualifier (il timeframe). Le CIK sono
@@ -119,30 +118,31 @@ L0  CONTRATTI        lazydatacore  (in market-data-hub)  — pydantic puro, zero
                      ├─ Tempo (UTC tz-aware, helper ISO-8601)
                      ├─ Schemi serie (PriceBar, ReturnSeries, TS wide/long)
                      ├─ Envelope risultati (AnalysisResult + Provenance)
-                     ├─ Resolver + registry InstrumentId ⇄ (tabella, chiave) per il DuckDB
-                     └─ Primitive quant (returns/vol/drawdown, float)  ← era previsto in L2
+                     └─ Resolver InstrumentId → (tabella, chiave) per il DuckDB
 
 L1  DATA CORE        market-data-hub (DuckDB)            → output conforme a L0
 L1b STATO/RUNTIME    LazyBridge Store/EventLog (SQLite)  → invariato, resta agnostico
 
-L2  ANALISI COMUNE   primitive quant in lazydatacore     → returns, vol, drawdown
-                     (resample pandas: eventuale extra)
+L2  ANALISI COMUNE   (non implementato — DEEP_AUDIT_2026-07: quant/registry rimossi,
+                     zero consumer; i returns restano in extract.py)
 L2b GRAFICI COMUNI   lazyviz   (in LazyTools, extra)     → PlotTheme di LazyHMM promosso a lib
                                                            + chart-spec dichiarativo
 
 L3  TOOL ESTERNI     LazyFin · LazyHMM · LazyPulse · LazyCrawler
-                     consumano L0/L2/L2b, non reinventano nulla
+                     consumano L0 (identità/tempo/serie/envelope); L2/L2b restano proposte
 ```
 
 Grafo delle dipendenze (DAG, `lazydatacore` come foglia in basso):
 
 ```
         lazydatacore  (pydantic puro)
-          ▲   ▲   ▲   ▲
-          │   │   │   └────────────── LazyHMM
-          │   │   └────────────────── LazyFin
-          │   └──── market-data-hub          LazyBridge (runtime, resta agnostico)
-          └──────── lazyquant/lazyviz (LazyTools)
+          ▲   ▲   ▲
+          │   │   └────────────── LazyHMM
+          │   └────────────────── LazyFin
+          └──── market-data-hub          LazyBridge (runtime, resta agnostico)
+
+  (L2/L2b: lazyviz in LazyTools — solo proposta; lo strato quant condiviso NON esiste,
+   vedi DEEP_AUDIT_2026-07: i returns restano in extract.py / kernel LazyFin)
 ```
 
 ## 7. Lo standard concreto: `lazydatacore`
@@ -155,9 +155,10 @@ Pacchetto **solo Pydantic, senza pandas/numpy/matplotlib**, così *tutti* posson
   `ticker` (canonico per `prices_daily`: equity/ETF/FX/VIX — alias input `price`) `| crypto`
   (con qualifier timeframe, es. `@1h`) `| macro | macro_panel | factor | cik | isin`.
   `cik`/`isin` sono identità di riferimento (LazyFin/EDGAR), non righe del warehouse.
-- `to_duckdb(instrument_id) -> (tabella, filtri)` (`resolver`) e il suo inverso `from_duckdb` +
-  `from_symbol` (bare `AAPL → ticker:AAPL`) nel `registry`: unico punto di traduzione, nei due
-  versi. market-data-hub e LazyFin smettono di tradurre ad-hoc.
+- `to_duckdb(instrument_id) -> (tabella, filtri)` (`resolver`): unico punto di traduzione
+  identità → warehouse. market-data-hub e LazyFin smettono di tradurre ad-hoc.
+  > Il registry inverso (`from_symbol`/`from_duckdb`) è stato **rimosso** (DEEP_AUDIT_2026-07):
+  > zero consumer — LazyHMM normalizza inline in `contract._as_instrument`.
 
 ### 7.2 Tempo
 - Tutti i timestamp **UTC tz-aware**, ISO-8601. Helper di parsing/normalizzazione condivisi
