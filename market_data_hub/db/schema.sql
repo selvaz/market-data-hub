@@ -746,7 +746,12 @@ CREATE TABLE IF NOT EXISTS calendar_indicator_aliases (
 );
 
 CREATE INDEX IF NOT EXISTS idx_cal_alias_indicator ON calendar_indicator_aliases (indicator_key);
-CREATE INDEX IF NOT EXISTS idx_cal_alias_status    ON calendar_indicator_aliases (status);
+-- No index on `status`, deliberately. On duckdb 1.4.x -- the last line
+-- supporting Python 3.9 -- a secondary index on a column makes INSERT OR
+-- REPLACE keep the OLD value of that column on the conflict path, so an alias
+-- moved from 'confirmed' to 'rejected' would silently stay confirmed: the
+-- exact silent drift this table exists to stop. The repo already paid for
+-- this lesson once with idx_msv_run / idx_mpv_run.
 
 -- ---------------------------------------------------------------------------
 -- Enrichment of a release: press commentary and technical detail.

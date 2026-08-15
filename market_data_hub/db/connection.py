@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 13
+SCHEMA_VERSION = 14
 
 
 def _default_db() -> str:
@@ -283,6 +283,13 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
                     "     THEN 'day' ELSE 'minute' END "
                     "WHERE release_precision IS NULL")
         current = 13
+    if current < 14:
+        # v13 -> v14: drop the index v11 put on calendar_indicator_aliases
+        # (status). Same defect as idx_msv_run above: with it in place, an
+        # INSERT OR REPLACE that moves an alias from 'confirmed' to 'rejected'
+        # keeps the old status, and the decision never lands.
+        con.execute("DROP INDEX IF EXISTS idx_cal_alias_status")
+        current = 14
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

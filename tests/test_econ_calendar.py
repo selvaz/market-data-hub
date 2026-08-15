@@ -769,3 +769,18 @@ def test_reseeding_does_not_resurrect_a_corrected_alias(con):
     assert riga[0] == "rejected" and riga[1] is None and riga[2] == "checked and refused"
     # ... unless somebody asks for it
     assert seed_from_observations(con, overwrite=True) == 1
+
+
+def test_alias_status_actually_changes(con):
+    """Guards the duckdb 1.4.x trap the repo has already paid for once: with a
+    secondary index on a column, INSERT OR REPLACE keeps the OLD value there.
+    An index on `status` therefore leaves a rejection reading 'confirmed', and
+    every decision this table records would silently fail to land."""
+    upsert_alias(con, source="tradays", country_iso3="USA",
+                 source_name="CPI y/y", indicator_key="us_cpi_yy")
+    upsert_alias(con, source="tradays", country_iso3="USA",
+                 source_name="CPI y/y", indicator_key=None, status="rejected")
+    assert con.execute(
+        "SELECT status, indicator_key FROM calendar_indicator_aliases"
+    ).fetchone() == ("rejected", None)
+    assert resolve(con, "tradays", "USA", "CPI y/y") is None
