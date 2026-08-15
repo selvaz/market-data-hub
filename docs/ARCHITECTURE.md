@@ -124,11 +124,12 @@ market_data_hub/
 │   ├── score.py             coverage_score() 0–100
 │   └── report.py            rebuild_coverage() → coverage_report table
 │
-├── regime/                  per-symbol HMM regime monitor (needs the sibling lazystats
-│   ├── estimate.py          package: fit engine + persistence via ResultDepot, resolved
-│   └── report.py            via lazytools.registry) — entry point run_regime_daily.py.
-│                            Results live in LazyStats' ResultDepot, not this repo's
-│                            DuckDB (moved there 2026-08).
+│                            Regime estimation is NOT here. It lived in this repo
+│                            until August 2026 and now lives in LazyStats, which
+│                            owns both the fit and the ResultDepot the results go
+│                            to. This repo supplies the prices and nothing else:
+│                            two copies of a method are two answers waiting to
+│                            disagree, and for a while there were two.
 │
 ├── db/
 │   ├── schema.sql           tables + indexes + views (idempotent); schema_meta
@@ -144,8 +145,8 @@ market_data_hub/
     └── settings.yaml        db_path, backfill dates, parallelism, FRED key, crypto
 
 run_daily.py · run_backfill.py · diagnose.py · validate_macro_panel.py · setup_scheduler.ps1
-run_regime_daily.py · make_report.py · make_country_dashboard.py · send_telegram_run_report.py
-run_daily_with_telegram.ps1 · run_regime_daily_with_telegram.ps1
+make_report.py · make_country_dashboard.py · send_telegram_run_report.py
+run_daily_with_telegram.ps1
 ```
 
 ---
@@ -376,7 +377,6 @@ An annual series is therefore not penalised for a normal ~12-month reporting lag
 |------|------|---------|
 | MarketData_EU18 | daily 09:00 Pacific (~18:00 Europe/Rome) | `run_daily_with_telegram.ps1 --report` |
 | MarketData_USClose | Mon–Fri 13:15 Pacific (shortly after US close) | `run_daily_with_telegram.ps1 --report` |
-| MarketData_HMMRegime | Mon–Fri 13:45 Pacific (30 min after US close) | `run_regime_daily_with_telegram.ps1 --send` |
 
 `run_daily_with_telegram.ps1` runs the daily refresh, then sends **two**
 Telegram messages via `send_telegram_run_report.py`: the operational run

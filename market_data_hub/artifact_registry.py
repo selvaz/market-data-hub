@@ -10,7 +10,7 @@ reasons it may be a no-op, all of them fine:
 1. ``lazytools`` is not installed in this environment at all (it is not a
    declared dependency of this package — see pyproject.toml/requirements.txt
    — only imported opportunistically, same as the existing Telegram
-   integration in run_regime_daily.py/send_telegram_run_report.py).
+   integration in send_telegram_run_report.py).
 2. ``lazytools.registry.resolve_db("market_data_artifacts")`` returns
    ``None`` because ``MARKET_DATA_ARTIFACTS_DB`` is unset — this DB is
    declared ``required=False`` in LazyTools' ``KNOWN_DBS``, i.e. opt-in per
@@ -18,7 +18,7 @@ reasons it may be a no-op, all of them fine:
 3. Anything else goes wrong while registering (a locked/corrupt sqlite file,
    an unexpected exception inside lazytools, ...).
 
-In every case the calling scheduled script (run_daily.py, run_regime_daily.py)
+In every case the calling scheduled script (run_daily.py)
 must keep running: registering a report as an artifact is a nice-to-have
 index entry, never a condition for the download/estimation job's success.
 """

@@ -121,7 +121,6 @@ Creates three tasks:
 |------|------|------|
 | `MarketData_EU18` | daily 09:00 Pacific (~18:00 Europe/Rome) | `run_daily_with_telegram.ps1` |
 | `MarketData_USClose` | Mon-Fri 13:15 Pacific (shortly after US close) | `run_daily_with_telegram.ps1` |
-| `MarketData_HMMRegime` | Mon-Fri 13:45 Pacific | `run_regime_daily_with_telegram.ps1` |
 
 The two daily-refresh tasks run the download pipeline, then send **two**
 Telegram messages: the operational run report (rows added/updated, errors,
