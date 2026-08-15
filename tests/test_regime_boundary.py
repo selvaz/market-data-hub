@@ -70,23 +70,37 @@ def test_no_module_here_fits_a_regime():
     it tells the reader where the fit happens now. A check that cannot tell a
     signpost from the thing it points at would have to be silenced, and a
     silenced check protects nothing.
+
+    The first version read only bare names -- `MSRegimeEngine(...)` -- and only
+    `from` imports. `import lazystats.regimes as regimes` followed by
+    `regimes.MSRegimeEngine(...)` walked straight through: the import is an
+    `ast.Import` and the call target an `ast.Attribute`, and it checked
+    neither. A boundary the obvious spelling passes is not a boundary.
     """
     offenders = []
     for path in PACKAGE.rglob("*.py"):
         tree = ast.parse(path.read_text(encoding="utf-8", errors="replace"), str(path))
         for node in ast.walk(tree):
-            if isinstance(node, ast.ImportFrom) and (node.module or "").startswith(
-                "lazystats.regimes"
-            ):
-                offenders.append(f"{path.relative_to(ROOT)}: imports {node.module}")
-            elif isinstance(node, ast.ImportFrom) and {
-                a.name for a in node.names
-            } & FITTING:
-                offenders.append(f"{path.relative_to(ROOT)}: imports a fit engine")
-            elif isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and (
-                node.func.id in FITTING
-            ):
-                offenders.append(f"{path.relative_to(ROOT)}: calls {node.func.id}()")
+            where = f"{path.relative_to(ROOT)}"
+            if isinstance(node, ast.ImportFrom):
+                if (node.module or "").startswith("lazystats.regimes"):
+                    offenders.append(f"{where}: imports from {node.module}")
+                elif {alias.name for alias in node.names} & FITTING:
+                    offenders.append(f"{where}: imports a fit engine by name")
+            elif isinstance(node, ast.Import):
+                for alias in node.names:
+                    if alias.name.startswith("lazystats.regimes"):
+                        offenders.append(f"{where}: imports {alias.name}")
+            elif isinstance(node, ast.Call):
+                # Bare `MSRegimeEngine(...)` and qualified `regimes.MSRegimeEngine(...)`
+                # are the same act written two ways.
+                called = None
+                if isinstance(node.func, ast.Name):
+                    called = node.func.id
+                elif isinstance(node.func, ast.Attribute):
+                    called = node.func.attr
+                if called in FITTING:
+                    offenders.append(f"{where}: calls {called}()")
     assert not offenders, (
         "regime fitting reappeared in this package: " + ", ".join(offenders)
     )

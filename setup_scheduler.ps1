@@ -21,7 +21,6 @@ $root = $Root
 # Use the Spyder Python environment that is already configured for this workstation.
 $python = $Python
 $wrapper = Join-Path $root "run_daily_with_telegram.ps1"
-$regimeWrapper = Join-Path $root "run_regime_daily_with_telegram.ps1"
 $logDir = Join-Path $root "logs"
 New-Item -ItemType Directory -Force -Path $logDir | Out-Null
 
@@ -65,12 +64,15 @@ New-MdTask "MarketData_EU18" "09:00 daily" @("--report") `
 New-MdTask "MarketData_USClose" "13:15 Mon-Fri" @("--report") `
     (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At "13:15")
 
-# 13:45 Pacific: 30 minutes after MarketData_USClose, once that day's prices have
-# landed. Runs as its own independent scheduled task (separate from the download
-# pipeline), via its own wrapper script.
-New-MdTask "MarketData_HMMRegime" "13:45 Mon-Fri" @("--send") `
-    (New-ScheduledTaskTrigger -Weekly -DaysOfWeek Monday,Tuesday,Wednesday,Thursday,Friday -At "13:45") `
-    $regimeWrapper "RunRegimeArgs"
+# The regime task is deliberately absent. Regime estimation moved to LazyStats
+# in August 2026 and this repository no longer contains a fit, a runner or a
+# wrapper for it -- see tests/test_regime_boundary.py. The scheduled job now
+# runs from the Investment Committee job matrix, against LazyStats.
+#
+# `-Remove` still names MarketData_HMMRegime, so anyone cleaning up a machine
+# that was set up before the move gets rid of it. Creating it here would hand
+# out a task pointing at a file this repository stopped shipping, which is the
+# failure the whole migration started from.
 
 Write-Host ""
 Write-Host "Tasks created. Verify with: Get-ScheduledTask -TaskName MarketData*"
