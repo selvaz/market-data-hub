@@ -30,7 +30,11 @@ from market_data_hub.econ_calendar.audit import (
     disagreeing_bindings,
     suspect_matches,
 )
-from market_data_hub.econ_calendar.catalog import available_series, to_iso3
+from market_data_hub.econ_calendar.catalog import (
+    available_series,
+    catalogue_vocabulary,
+    to_iso3,
+)
 from market_data_hub.econ_calendar.reference import (
     infer_reference_dates,
     learn_lags,
@@ -871,3 +875,25 @@ def test_discovery_tag_filter_matches_whole_tags(con):
     flash = available_series(con, tags=["flash_final"])
     assert flash and all("flash_final" in (s["tags"] or "") for s in flash)
     assert available_series(con, tags=["flash"]) == []
+
+
+def test_vocabulary_tells_a_caller_what_it_can_filter_on(con):
+    """A filter over a closed vocabulary is unusable by someone who does not
+    know the vocabulary, and a wrong guess returns an empty list that looks
+    exactly like a legitimate 'nothing matched'."""
+    upsert_indicators(con, load_catalog_rows())
+    v = catalogue_vocabulary(con)
+    assert v["data_type"] == {"hard": 111, "soft": 18}
+    assert set(v["side"]) == {"demand", "supply"}
+    assert v["category"]["Inflation"] == 29
+    # tags are pipe-packed in the column and counted individually here
+    assert "flash_final" in v["tags"] and "|" not in "".join(v["tags"])
+
+
+def test_filters_are_case_insensitive(con):
+    """An agent writing 'inflation' should get the answer, not silence."""
+    upsert_indicators(con, load_catalog_rows())
+    assert (len(available_series(con, category="inflation"))
+            == len(available_series(con, category="Inflation")) == 29)
+    assert len(available_series(con, country="usa")) == \
+        len(available_series(con, country="USA"))

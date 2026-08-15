@@ -161,11 +161,15 @@ def available_series(
     if to_day:
         dove.append("e.release_utc < ?::date + INTERVAL 1 DAY")
         parametri.append(to_day)
+    # Compared case-insensitively. These are a closed vocabulary a caller is
+    # expected to have read from catalogue_vocabulary(), and an agent that
+    # writes 'inflation' for 'Inflation' should get the answer rather than an
+    # empty list indistinguishable from 'nothing matches'.
     for colonna, valore in (("i.country_iso3", country), ("i.area", area),
                             ("i.category", category), ("i.data_type", data_type),
                             ("i.criticality", criticality)):
         if valore:
-            dove.append(f"{colonna} = ?")
+            dove.append(f"lower({colonna}) = lower(?)")
             parametri.append(valore)
     for t in (tags or []):
         # pipe-delimited on both sides so 'hard' cannot match 'hardship'
@@ -198,3 +202,40 @@ def available_series(
             ORDER BY i.criticality, i.area, i.name
         """, parametri).fetchall()
     ]
+
+
+def catalogue_vocabulary(con: duckdb.DuckDBPyConnection) -> dict:
+    """The values available_series() will actually match, with their counts.
+
+    A filter over a closed vocabulary is only usable by someone who knows the
+    vocabulary. Without this a caller guesses between 'Inflation', 'inflation'
+    and 'Prices', and two of those return an empty list that looks exactly like
+    a legitimate 'nothing matched'. Matching is case-insensitive for the same
+    reason; this is how a caller learns the axes exist at all.
+    """
+    def conta(colonna: str, dividi: bool = False) -> dict:
+        righe = con.execute(
+            f"SELECT {colonna}, count(*) FROM calendar_indicators "
+            f"WHERE active AND {colonna} IS NOT NULL AND {colonna} <> '' "
+            f"GROUP BY 1 ORDER BY 2 DESC"
+        ).fetchall()
+        if not dividi:
+            return {v: n for v, n in righe}
+        singoli: dict[str, int] = {}
+        for valore, n in righe:
+            for pezzo in str(valore).split("|"):
+                if pezzo:
+                    singoli[pezzo] = singoli.get(pezzo, 0) + n
+        return dict(sorted(singoli.items(), key=lambda x: -x[1]))
+
+    return {
+        "category": conta("category"),
+        "data_type": conta("data_type"),
+        "side": conta("side"),
+        "nature": conta("nature"),
+        "criticality": conta("criticality"),
+        "frequency": conta("frequency"),
+        "area": conta("area"),
+        "country_iso3": conta("country_iso3"),
+        "tags": conta("tags", dividi=True),
+    }
