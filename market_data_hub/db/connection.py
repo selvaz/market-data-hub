@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 16
+SCHEMA_VERSION = 17
 
 
 def _default_db() -> str:
@@ -308,6 +308,16 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         con.execute("DROP INDEX IF EXISTS idx_cal_events_indicator")
         con.execute("DROP INDEX IF EXISTS idx_cal_events_refdate")
         current = 16
+    if current < 17:
+        # v16 -> v17: calendar_indicators gains data_type, side and tags, so a
+        # caller can ask what exists along the axes people actually think in.
+        # ALTER, not CREATE: the table exists on any DB from v10 on.
+        for colonna in ("data_type", "side", "tags"):
+            try:
+                con.execute(f"ALTER TABLE calendar_indicators ADD COLUMN {colonna} VARCHAR")
+            except Exception:
+                pass    # already there on a freshly created table
+        current = 17
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

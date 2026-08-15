@@ -70,6 +70,9 @@ def load_catalog_rows(percorso: Optional[Path] = None) -> list[dict]:
             "area": v["area"],
             "name": v["name"],
             "category": v.get("category"),
+            "data_type": v.get("data_type"),
+            "side": v.get("side"),
+            "tags": v.get("tags"),
             "archetype": v.get("archetype"),
             "value_type": a.get("value_type"),
             "frequency": v.get("freq"),
@@ -100,13 +103,16 @@ def upsert_indicators(
             """
             INSERT OR REPLACE INTO calendar_indicators
                 (indicator_key, country_iso3, country_iso2, area, name, category,
+                 data_type, side, tags,
                  archetype, value_type, frequency, criticality, nature, rationale,
                  agency, description, methodology, macro_indicator_id,
                  macro_series_id, match_rules, match_excludes, active, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [r["indicator_key"], r["country_iso3"], r.get("country_iso2"),
-             r["area"], r["name"], r.get("category"), r.get("archetype"),
+             r["area"], r["name"], r.get("category"),
+             r.get("data_type"), r.get("side"), r.get("tags"),
+             r.get("archetype"),
              r.get("value_type"), r.get("frequency"), r.get("criticality"),
              r.get("nature"), r.get("rationale"), r.get("agency"),
              r.get("description"), r.get("methodology"),
@@ -116,3 +122,79 @@ def upsert_indicators(
         )
         n += 1
     return n
+
+
+def available_series(
+    con: duckdb.DuckDBPyConnection,
+    *,
+    day: Optional[str] = None,
+    from_day: Optional[str] = None,
+    to_day: Optional[str] = None,
+    country: Optional[str] = None,
+    area: Optional[str] = None,
+    category: Optional[str] = None,
+    tags: Optional[Iterable[str]] = None,
+    data_type: Optional[str] = None,
+    criticality: Optional[str] = None,
+    released_only: bool = False,
+) -> list[dict]:
+    """What the calendar can answer about, along the axes people ask in.
+
+    With no arguments it says what exists. With a window it says what came out
+    in it. With ``country='IND', category='Inflation'`` it answers the question
+    an agent actually has, without that agent needing to know an indicator_key.
+
+    Two columns exist for the caller's benefit rather than the catalogue's.
+    ``events`` is how many releases fall in the window, so an empty answer is
+    distinguishable from an untracked one. ``with_reference_date`` is how many
+    of those carry a period: a caller planning to join against ``macro_panel``
+    can see whether that join has anything to stand on *before* attempting it,
+    which today would be 43% of releases and nothing like uniform across
+    indicators.
+    """
+    dove, parametri = ["i.active"], []
+    if day:
+        from_day = to_day = day
+    if from_day:
+        dove.append("e.release_utc >= ?::date")
+        parametri.append(from_day)
+    if to_day:
+        dove.append("e.release_utc < ?::date + INTERVAL 1 DAY")
+        parametri.append(to_day)
+    for colonna, valore in (("i.country_iso3", country), ("i.area", area),
+                            ("i.category", category), ("i.data_type", data_type),
+                            ("i.criticality", criticality)):
+        if valore:
+            dove.append(f"{colonna} = ?")
+            parametri.append(valore)
+    for t in (tags or []):
+        # pipe-delimited on both sides so 'hard' cannot match 'hardship'
+        dove.append("'|' || coalesce(i.tags, '') || '|' LIKE ?")
+        parametri.append(f"%|{t}|%")
+    if released_only:
+        dove.append("e.status = 'released'")
+
+    # LEFT JOIN, deliberately: an indicator the calendar tracks but that has no
+    # event in the window is an answer, not a row to hide. 'we watch Indian CPI
+    # and nothing came out' and 'we do not watch it' are different statements.
+    giunzione = "LEFT JOIN" if not (from_day or released_only) else "JOIN"
+    return [
+        dict(zip(("indicator_key", "name", "area", "country_iso3", "category",
+                  "data_type", "side", "tags", "frequency", "criticality",
+                  "nature", "agency", "events", "first_release", "last_release",
+                  "with_reference_date"), r))
+        for r in con.execute(f"""
+            SELECT i.indicator_key, i.name, i.area, i.country_iso3, i.category,
+                   i.data_type, i.side, i.tags, i.frequency, i.criticality,
+                   i.nature, i.agency,
+                   count(e.event_id) AS events,
+                   min(e.release_utc) AS first_release,
+                   max(e.release_utc) AS last_release,
+                   count(e.reference_date) AS with_reference_date
+            FROM calendar_indicators i
+            {giunzione} calendar_events e ON e.indicator_key = i.indicator_key
+            WHERE {' AND '.join(dove)}
+            GROUP BY ALL
+            ORDER BY i.criticality, i.area, i.name
+        """, parametri).fetchall()
+    ]

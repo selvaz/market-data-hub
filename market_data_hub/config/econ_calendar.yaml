@@ -237,7 +237,10 @@ indicators:
   country_iso2: US
   area: US
   name: Non-Farm Payrolls
-  category: Labour
+  category: 'Labour'
+  tags: 'revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: payrolls
   freq: M
   criticality: T1
@@ -251,7 +254,10 @@ indicators:
   country_iso2: US
   area: US
   name: Unemployment Rate
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: unemployment_rate
   freq: M
   criticality: T1
@@ -265,7 +271,10 @@ indicators:
   country_iso2: US
   area: US
   name: 'Average Hourly Earnings y/y'
-  category: Labour
+  category: 'Labour'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: earnings
   freq: M
   criticality: T1
@@ -279,7 +288,10 @@ indicators:
   country_iso2: US
   area: US
   name: Initial Jobless Claims
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: claims
   freq: W
   criticality: T1
@@ -293,7 +305,10 @@ indicators:
   country_iso2: US
   area: US
   name: JOLTS Job Openings
-  category: Labour
+  category: 'Labour'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: jolts
   freq: M
   criticality: T2
@@ -307,7 +322,10 @@ indicators:
   country_iso2: US
   area: US
   name: CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: M
   criticality: T1
@@ -321,7 +339,10 @@ indicators:
   country_iso2: US
   area: US
   name: CPI m/m
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_mm
   freq: M
   criticality: T1
@@ -335,7 +356,10 @@ indicators:
   country_iso2: US
   area: US
   name: Core CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: core_cpi
   freq: M
   criticality: T1
@@ -349,7 +373,10 @@ indicators:
   country_iso2: US
   area: US
   name: Core CPI m/m
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: core_cpi
   freq: M
   criticality: T1
@@ -363,7 +390,10 @@ indicators:
   country_iso2: US
   area: US
   name: PPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: 'supply'
+  data_type: 'hard'
   archetype: ppi_yy
   freq: M
   criticality: T2
@@ -377,7 +407,10 @@ indicators:
   country_iso2: US
   area: US
   name: 'Core PCE Price Index m/m'
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input|revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: pce
   freq: M
   criticality: T1
@@ -391,7 +424,10 @@ indicators:
   country_iso2: US
   area: US
   name: Retail Sales m/m
-  category: Activity
+  category: 'Consumption'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: retail
   freq: M
   criticality: T1
@@ -405,7 +441,10 @@ indicators:
   country_iso2: US
   area: US
   name: ISM Manufacturing PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
   archetype: ism_mfg
   freq: M
   criticality: T1
@@ -419,7 +458,10 @@ indicators:
   country_iso2: US
   area: US
   name: ISM Services PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
   archetype: ism_svc
   freq: M
   criticality: T1
@@ -433,7 +475,10 @@ indicators:
   country_iso2: US
   area: US
   name: Industrial Production m/m
-  category: Activity
+  category: 'Production'
+  tags: 'revision_prone'
+  side: 'supply'
+  data_type: 'hard'
   archetype: indprod
   freq: M
   criticality: T2
@@ -447,7 +492,10 @@ indicators:
   country_iso2: US
   area: US
   name: GDP q/q annualizzato
-  category: Growth
+  category: 'Growth'
+  tags: 'flash_final|revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_qq
   freq: Q
   criticality: T2
@@ -461,7 +509,10 @@ indicators:
   country_iso2: US
   area: US
   name: U. Michigan Sentiment
-  category: Sentiment
+  category: 'Surveys'
+  tags: 'flash_final|policy_input'
+  side: 'demand'
+  data_type: 'soft'
   archetype: umich
   freq: M
   criticality: T2
@@ -475,7 +526,10 @@ indicators:
   country_iso2: US
   area: US
   name: Fed Funds Rate Decision
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: E
   criticality: T1
@@ -489,7 +543,10 @@ indicators:
   country_iso2: US
   area: US
   name: Durable Goods Orders
-  category: Activity
+  category: 'Investment'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: durable
   freq: M
   criticality: T2
@@ -503,7 +560,10 @@ indicators:
   country_iso2: US
   area: US
   name: Housing Starts
-  category: Activity
+  category: 'Housing'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: housing
   freq: M
   criticality: T2
@@ -517,7 +577,10 @@ indicators:
   country_iso2: US
   area: US
   name: Trade Balance
-  category: External
+  category: 'External'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: trade_balance
   freq: M
   criticality: T3
@@ -531,7 +594,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: M
   criticality: T2
@@ -545,7 +611,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: PPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: 'supply'
+  data_type: 'hard'
   archetype: ppi_yy
   freq: M
   criticality: T1
@@ -559,7 +628,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: GDP y/y
-  category: Growth
+  category: 'Growth'
+  tags: 'revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_yy
   freq: Q
   criticality: T2
@@ -573,7 +645,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: Industrial Production y/y
-  category: Activity
+  category: 'Production'
+  tags: 'revision_prone'
+  side: 'supply'
+  data_type: 'hard'
   archetype: indprod
   freq: M
   criticality: T2
@@ -587,7 +662,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: Retail Sales y/y
-  category: Activity
+  category: 'Consumption'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: retail
   freq: M
   criticality: T2
@@ -601,7 +679,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: Fixed Asset Investment
-  category: Activity
+  category: 'Production'
+  tags: 'cumulative'
+  side: 'supply'
+  data_type: 'hard'
   archetype: fai
   freq: M
   criticality: T1
@@ -615,7 +696,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: Trade Balance
-  category: External
+  category: 'External'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: trade_balance
   freq: M
   criticality: T1
@@ -629,7 +713,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: Exports y/y
-  category: External
+  category: 'External'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
   archetype: exports
   freq: M
   criticality: T1
@@ -643,7 +730,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: Imports y/y
-  category: External
+  category: 'External'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
   archetype: imports
   freq: M
   criticality: T1
@@ -657,7 +747,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: Caixin Manufacturing PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
   archetype: caixin
   freq: M
   criticality: T1
@@ -671,7 +764,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: Caixin Services PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
   archetype: caixin
   freq: M
   criticality: T2
@@ -685,7 +781,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: NBS Manufacturing PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
   archetype: nbs_pmi
   freq: M
   criticality: T1
@@ -699,7 +798,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: New Yuan Loans
-  category: Monetary policy
+  category: 'Credit & money'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: loans
   freq: M
   criticality: T1
@@ -713,7 +815,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: M2 Money Supply y/y
-  category: Monetary policy
+  category: 'Credit & money'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: m2
   freq: M
   criticality: T2
@@ -727,7 +832,10 @@ indicators:
   country_iso2: CN
   area: CN
   name: Loan Prime Rate 1y
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: lpr
   freq: M
   criticality: T1
@@ -741,7 +849,10 @@ indicators:
   country_iso2: EU
   area: EZ
   name: HICP y/y (flash)
-  category: Inflation
+  category: 'Inflation'
+  tags: 'flash_final|policy_input'
+  side: null
+  data_type: 'hard'
   archetype: hicp
   freq: M
   criticality: T1
@@ -755,7 +866,10 @@ indicators:
   country_iso2: EU
   area: EZ
   name: Core HICP y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: core_cpi
   freq: M
   criticality: T1
@@ -769,7 +883,10 @@ indicators:
   country_iso2: EU
   area: EZ
   name: GDP q/q
-  category: Growth
+  category: 'Growth'
+  tags: 'flash_final|revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_qq
   freq: Q
   criticality: T2
@@ -783,7 +900,10 @@ indicators:
   country_iso2: EU
   area: EZ
   name: Unemployment Rate
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: unemployment_rate
   freq: M
   criticality: T3
@@ -797,7 +917,10 @@ indicators:
   country_iso2: EU
   area: EZ
   name: Manufacturing PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
   archetype: pmi_mfg
   freq: M
   criticality: T1
@@ -811,7 +934,10 @@ indicators:
   country_iso2: EU
   area: EZ
   name: Services PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
   archetype: pmi_svc
   freq: M
   criticality: T1
@@ -825,7 +951,10 @@ indicators:
   country_iso2: EU
   area: EZ
   name: Industrial Production m/m
-  category: Activity
+  category: 'Production'
+  tags: 'revision_prone'
+  side: 'supply'
+  data_type: 'hard'
   archetype: indprod
   freq: M
   criticality: T2
@@ -839,7 +968,10 @@ indicators:
   country_iso2: EU
   area: EZ
   name: Retail Sales m/m
-  category: Activity
+  category: 'Consumption'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: retail
   freq: M
   criticality: T3
@@ -853,7 +985,10 @@ indicators:
   country_iso2: EU
   area: EZ
   name: ECB Rate Decision
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: E
   criticality: T1
@@ -867,7 +1002,10 @@ indicators:
   country_iso2: EU
   area: EZ
   name: Sentix Investor Confidence
-  category: Sentiment
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
   archetype: sentix
   freq: M
   criticality: T2
@@ -881,7 +1019,10 @@ indicators:
   country_iso2: DE
   area: EZ
   name: ZEW Economic Sentiment (DE)
-  category: Sentiment
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
   archetype: zew
   freq: M
   criticality: T2
@@ -895,7 +1036,10 @@ indicators:
   country_iso2: DE
   area: EZ
   name: Ifo Business Climate (DE)
-  category: Sentiment
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
   archetype: ifo
   freq: M
   criticality: T1
@@ -909,7 +1053,10 @@ indicators:
   country_iso2: DE
   area: EZ
   name: German CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: M
   criticality: T1
@@ -923,7 +1070,10 @@ indicators:
   country_iso2: DE
   area: EZ
   name: German Factory Orders m/m
-  category: Activity
+  category: 'Investment'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: factory_orders
   freq: M
   criticality: T1
@@ -937,7 +1087,10 @@ indicators:
   country_iso2: DE
   area: EZ
   name: German Industrial Production m/m
-  category: Activity
+  category: 'Production'
+  tags: 'revision_prone'
+  side: 'supply'
+  data_type: 'hard'
   archetype: indprod
   freq: M
   criticality: T2
@@ -951,7 +1104,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: M
   criticality: T1
@@ -965,7 +1121,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: Core CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: core_cpi
   freq: M
   criticality: T1
@@ -979,7 +1138,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: GDP m/m
-  category: Growth
+  category: 'Growth'
+  tags: 'revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_mm
   freq: M
   criticality: T2
@@ -993,7 +1155,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: GDP q/q
-  category: Growth
+  category: 'Growth'
+  tags: 'flash_final|revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_qq
   freq: Q
   criticality: T2
@@ -1007,7 +1172,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: ILO Unemployment Rate
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: unemployment_rate
   freq: M
   criticality: T2
@@ -1021,7 +1189,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: Claimant Count Change
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: claimant
   freq: M
   criticality: T2
@@ -1035,7 +1206,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: Average Earnings
-  category: Labour
+  category: 'Labour'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: earnings
   freq: M
   criticality: T1
@@ -1049,7 +1223,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: Retail Sales m/m
-  category: Activity
+  category: 'Consumption'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: retail
   freq: M
   criticality: T2
@@ -1063,7 +1240,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: Manufacturing PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
   archetype: pmi_mfg
   freq: M
   criticality: T2
@@ -1077,7 +1257,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: Services PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
   archetype: pmi_svc
   freq: M
   criticality: T1
@@ -1091,7 +1274,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: BoE Bank Rate Decision
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: E
   criticality: T1
@@ -1105,7 +1291,10 @@ indicators:
   country_iso2: GB
   area: UK
   name: Public Sector Net Borrowing
-  category: Growth
+  category: 'Fiscal'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: psnb
   freq: M
   criticality: T2
@@ -1119,7 +1308,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: National CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: M
   criticality: T2
@@ -1133,7 +1325,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: National Core CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: core_cpi_jp
   freq: M
   criticality: T1
@@ -1147,7 +1342,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: Tokyo CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: tokyo_cpi
   freq: M
   criticality: T1
@@ -1161,7 +1359,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: GDP q/q
-  category: Growth
+  category: 'Growth'
+  tags: 'flash_final|revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_qq
   freq: Q
   criticality: T2
@@ -1175,7 +1376,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: Tankan Large Manufacturers
-  category: Sentiment
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
   archetype: tankan
   freq: Q
   criticality: T1
@@ -1189,7 +1393,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: Industrial Production m/m
-  category: Activity
+  category: 'Production'
+  tags: 'revision_prone'
+  side: 'supply'
+  data_type: 'hard'
   archetype: indprod
   freq: M
   criticality: T2
@@ -1203,7 +1410,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: Retail Sales y/y
-  category: Activity
+  category: 'Consumption'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: retail
   freq: M
   criticality: T2
@@ -1217,7 +1427,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: Trade Balance
-  category: External
+  category: 'External'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: trade_balance
   freq: M
   criticality: T2
@@ -1231,7 +1444,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: Unemployment Rate
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: unemployment_rate
   freq: M
   criticality: T3
@@ -1245,7 +1461,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: BoJ Rate Decision
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: E
   criticality: T1
@@ -1259,7 +1478,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: 'Core Machinery Orders m/m'
-  category: Activity
+  category: 'Investment'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: machinery
   freq: M
   criticality: T2
@@ -1273,7 +1495,10 @@ indicators:
   country_iso2: JP
   area: JP
   name: Manufacturing PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
   archetype: pmi_mfg
   freq: M
   criticality: T2
@@ -1287,7 +1512,10 @@ indicators:
   country_iso2: IN
   area: IN
   name: CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: M
   criticality: T1
@@ -1301,7 +1529,10 @@ indicators:
   country_iso2: IN
   area: IN
   name: WPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: 'supply'
+  data_type: 'hard'
   archetype: wpi
   freq: M
   criticality: T2
@@ -1315,7 +1546,10 @@ indicators:
   country_iso2: IN
   area: IN
   name: Industrial Production y/y
-  category: Activity
+  category: 'Production'
+  tags: 'revision_prone'
+  side: 'supply'
+  data_type: 'hard'
   archetype: indprod
   freq: M
   criticality: T2
@@ -1329,7 +1563,10 @@ indicators:
   country_iso2: IN
   area: IN
   name: GDP y/y
-  category: Growth
+  category: 'Growth'
+  tags: 'revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_yy
   freq: Q
   criticality: T1
@@ -1343,7 +1580,10 @@ indicators:
   country_iso2: IN
   area: IN
   name: RBI Repo Rate
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: E
   criticality: T1
@@ -1357,7 +1597,10 @@ indicators:
   country_iso2: IN
   area: IN
   name: Trade Balance
-  category: External
+  category: 'External'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: trade_balance
   freq: M
   criticality: T2
@@ -1371,7 +1614,10 @@ indicators:
   country_iso2: IN
   area: IN
   name: Exports
-  category: External
+  category: 'External'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
   archetype: exports
   freq: M
   criticality: T3
@@ -1385,7 +1631,10 @@ indicators:
   country_iso2: IN
   area: IN
   name: Imports
-  category: External
+  category: 'External'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
   archetype: imports
   freq: M
   criticality: T2
@@ -1399,7 +1648,10 @@ indicators:
   country_iso2: IN
   area: IN
   name: Manufacturing PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
   archetype: pmi_mfg
   freq: M
   criticality: T2
@@ -1413,7 +1665,10 @@ indicators:
   country_iso2: IN
   area: IN
   name: Services PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
   archetype: pmi_svc
   freq: M
   criticality: T2
@@ -1427,7 +1682,10 @@ indicators:
   country_iso2: MX
   area: MX
   name: CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: M
   criticality: T1
@@ -1441,7 +1699,10 @@ indicators:
   country_iso2: MX
   area: MX
   name: Core CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: core_cpi
   freq: M
   criticality: T1
@@ -1455,7 +1716,10 @@ indicators:
   country_iso2: MX
   area: MX
   name: GDP y/y
-  category: Growth
+  category: 'Growth'
+  tags: 'revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_yy
   freq: Q
   criticality: T2
@@ -1469,7 +1733,10 @@ indicators:
   country_iso2: MX
   area: MX
   name: GDP q/q
-  category: Growth
+  category: 'Growth'
+  tags: 'flash_final|revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_qq
   freq: Q
   criticality: T2
@@ -1483,7 +1750,10 @@ indicators:
   country_iso2: MX
   area: MX
   name: Banxico Rate Decision
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: E
   criticality: T1
@@ -1497,7 +1767,10 @@ indicators:
   country_iso2: MX
   area: MX
   name: Industrial Production y/y
-  category: Activity
+  category: 'Production'
+  tags: 'revision_prone'
+  side: 'supply'
+  data_type: 'hard'
   archetype: indprod
   freq: M
   criticality: T2
@@ -1511,7 +1784,10 @@ indicators:
   country_iso2: MX
   area: MX
   name: Retail Sales y/y
-  category: Activity
+  category: 'Consumption'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: retail
   freq: M
   criticality: T3
@@ -1525,7 +1801,10 @@ indicators:
   country_iso2: MX
   area: MX
   name: Trade Balance
-  category: External
+  category: 'External'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: trade_balance
   freq: M
   criticality: T2
@@ -1539,7 +1818,10 @@ indicators:
   country_iso2: MX
   area: MX
   name: Unemployment Rate
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: unemployment_rate
   freq: M
   criticality: T3
@@ -1553,7 +1835,10 @@ indicators:
   country_iso2: MX
   area: MX
   name: Remittances
-  category: External
+  category: 'External'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
   archetype: remittances
   freq: M
   criticality: T2
@@ -1567,7 +1852,10 @@ indicators:
   country_iso2: BR
   area: BR
   name: IPCA y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: ipca
   freq: M
   criticality: T1
@@ -1581,7 +1869,10 @@ indicators:
   country_iso2: BR
   area: BR
   name: IPCA m/m
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: ipca
   freq: M
   criticality: T1
@@ -1595,7 +1886,10 @@ indicators:
   country_iso2: BR
   area: BR
   name: GDP q/q
-  category: Growth
+  category: 'Growth'
+  tags: 'flash_final|revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_qq
   freq: Q
   criticality: T2
@@ -1609,7 +1903,10 @@ indicators:
   country_iso2: BR
   area: BR
   name: Selic Rate (Copom)
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: E
   criticality: T1
@@ -1623,7 +1920,10 @@ indicators:
   country_iso2: BR
   area: BR
   name: Industrial Production m/m
-  category: Activity
+  category: 'Production'
+  tags: 'revision_prone'
+  side: 'supply'
+  data_type: 'hard'
   archetype: indprod
   freq: M
   criticality: T3
@@ -1637,7 +1937,10 @@ indicators:
   country_iso2: BR
   area: BR
   name: Retail Sales m/m
-  category: Activity
+  category: 'Consumption'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: retail
   freq: M
   criticality: T2
@@ -1651,7 +1954,10 @@ indicators:
   country_iso2: BR
   area: BR
   name: Unemployment Rate
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: unemployment_rate
   freq: M
   criticality: T2
@@ -1665,7 +1971,10 @@ indicators:
   country_iso2: BR
   area: BR
   name: Trade Balance
-  category: External
+  category: 'External'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: trade_balance
   freq: M
   criticality: T2
@@ -1679,7 +1988,10 @@ indicators:
   country_iso2: BR
   area: BR
   name: IGP-M
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: 'supply'
+  data_type: 'hard'
   archetype: igpm
   freq: M
   criticality: T3
@@ -1693,7 +2005,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: M
   criticality: T1
@@ -1707,7 +2022,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: Core CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: core_cpi
   freq: M
   criticality: T1
@@ -1721,7 +2039,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: GDP m/m
-  category: Growth
+  category: 'Growth'
+  tags: 'revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_mm
   freq: M
   criticality: T2
@@ -1735,7 +2056,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: Employment Change
-  category: Labour
+  category: 'Labour'
+  tags: 'revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: employment_change
   freq: M
   criticality: T1
@@ -1749,7 +2073,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: Unemployment Rate
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: unemployment_rate
   freq: M
   criticality: T1
@@ -1763,7 +2090,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: BoC Rate Decision
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: E
   criticality: T1
@@ -1777,7 +2107,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: Retail Sales m/m
-  category: Activity
+  category: 'Consumption'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: retail
   freq: M
   criticality: T2
@@ -1791,7 +2124,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: Ivey PMI
-  category: Sentiment
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
   archetype: ivey
   freq: M
   criticality: T3
@@ -1805,7 +2141,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: Trade Balance
-  category: External
+  category: 'External'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: trade_balance
   freq: M
   criticality: T3
@@ -1819,7 +2158,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: Housing Starts
-  category: Activity
+  category: 'Housing'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: housing
   freq: M
   criticality: T2
@@ -1833,7 +2175,10 @@ indicators:
   country_iso2: CA
   area: CA
   name: Manufacturing Sales m/m
-  category: Activity
+  category: 'Production'
+  tags: null
+  side: 'supply'
+  data_type: 'hard'
   archetype: mfg_sales
   freq: M
   criticality: T3
@@ -1847,7 +2192,10 @@ indicators:
   country_iso2: AU
   area: AU
   name: CPI q/q
-  category: Inflation
+  category: 'Inflation'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: cpi_qq
   freq: Q
   criticality: T1
@@ -1861,7 +2209,10 @@ indicators:
   country_iso2: AU
   area: AU
   name: CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: Q
   criticality: T1
@@ -1875,7 +2226,10 @@ indicators:
   country_iso2: AU
   area: AU
   name: Employment Change
-  category: Labour
+  category: 'Labour'
+  tags: 'revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: employment_change
   freq: M
   criticality: T1
@@ -1889,7 +2243,10 @@ indicators:
   country_iso2: AU
   area: AU
   name: Unemployment Rate
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: unemployment_rate
   freq: M
   criticality: T1
@@ -1903,7 +2260,10 @@ indicators:
   country_iso2: AU
   area: AU
   name: RBA Rate Decision
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: E
   criticality: T1
@@ -1917,7 +2277,10 @@ indicators:
   country_iso2: AU
   area: AU
   name: Retail Sales m/m
-  category: Activity
+  category: 'Consumption'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
   archetype: retail
   freq: M
   criticality: T2
@@ -1931,7 +2294,10 @@ indicators:
   country_iso2: AU
   area: AU
   name: GDP q/q
-  category: Growth
+  category: 'Growth'
+  tags: 'flash_final|revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_qq
   freq: Q
   criticality: T2
@@ -1945,7 +2311,10 @@ indicators:
   country_iso2: AU
   area: AU
   name: Trade Balance
-  category: External
+  category: 'External'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: trade_balance
   freq: M
   criticality: T2
@@ -1959,7 +2328,10 @@ indicators:
   country_iso2: AU
   area: AU
   name: Building Approvals m/m
-  category: Activity
+  category: 'Housing'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
   archetype: building
   freq: M
   criticality: T3
@@ -1973,7 +2345,10 @@ indicators:
   country_iso2: AU
   area: AU
   name: Wage Price Index q/q
-  category: Labour
+  category: 'Labour'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
   archetype: wages
   freq: Q
   criticality: T1
@@ -1987,7 +2362,10 @@ indicators:
   country_iso2: KR
   area: KR
   name: CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: M
   criticality: T2
@@ -2001,7 +2379,10 @@ indicators:
   country_iso2: KR
   area: KR
   name: GDP q/q
-  category: Growth
+  category: 'Growth'
+  tags: 'flash_final|revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_qq
   freq: Q
   criticality: T2
@@ -2015,7 +2396,10 @@ indicators:
   country_iso2: KR
   area: KR
   name: BoK Base Rate
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: E
   criticality: T1
@@ -2029,7 +2413,10 @@ indicators:
   country_iso2: KR
   area: KR
   name: Industrial Production y/y
-  category: Activity
+  category: 'Production'
+  tags: 'revision_prone'
+  side: 'supply'
+  data_type: 'hard'
   archetype: indprod
   freq: M
   criticality: T2
@@ -2043,7 +2430,10 @@ indicators:
   country_iso2: KR
   area: KR
   name: Exports y/y
-  category: External
+  category: 'External'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
   archetype: exports
   freq: M
   criticality: T1
@@ -2057,7 +2447,10 @@ indicators:
   country_iso2: KR
   area: KR
   name: Exports First 20 Days
-  category: External
+  category: 'External'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
   archetype: exports20
   freq: M
   criticality: T1
@@ -2071,7 +2464,10 @@ indicators:
   country_iso2: KR
   area: KR
   name: Trade Balance
-  category: External
+  category: 'External'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: trade_balance
   freq: M
   criticality: T2
@@ -2085,7 +2481,10 @@ indicators:
   country_iso2: KR
   area: KR
   name: Unemployment Rate
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: unemployment_rate
   freq: M
   criticality: T3
@@ -2099,7 +2498,10 @@ indicators:
   country_iso2: TW
   area: TW
   name: CPI y/y
-  category: Inflation
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: cpi_yy
   freq: M
   criticality: T3
@@ -2113,7 +2515,10 @@ indicators:
   country_iso2: TW
   area: TW
   name: GDP y/y
-  category: Growth
+  category: 'Growth'
+  tags: 'revision_prone'
+  side: null
+  data_type: 'hard'
   archetype: gdp_yy
   freq: Q
   criticality: T3
@@ -2127,7 +2532,10 @@ indicators:
   country_iso2: TW
   area: TW
   name: Export Orders y/y
-  category: External
+  category: 'External'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
   archetype: export_orders
   freq: M
   criticality: T1
@@ -2141,7 +2549,10 @@ indicators:
   country_iso2: TW
   area: TW
   name: Exports y/y
-  category: External
+  category: 'External'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
   archetype: exports
   freq: M
   criticality: T1
@@ -2155,7 +2566,10 @@ indicators:
   country_iso2: TW
   area: TW
   name: Industrial Production y/y
-  category: Activity
+  category: 'Production'
+  tags: 'revision_prone'
+  side: 'supply'
+  data_type: 'hard'
   archetype: indprod
   freq: M
   criticality: T2
@@ -2169,7 +2583,10 @@ indicators:
   country_iso2: TW
   area: TW
   name: CBC Discount Rate
-  category: Monetary policy
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
   archetype: policy_rate
   freq: Q
   criticality: T2
@@ -2183,7 +2600,10 @@ indicators:
   country_iso2: TW
   area: TW
   name: Unemployment Rate
-  category: Labour
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: unemployment_rate
   freq: M
   criticality: T3
@@ -2197,7 +2617,10 @@ indicators:
   country_iso2: TW
   area: TW
   name: Trade Balance
-  category: External
+  category: 'External'
+  tags: null
+  side: null
+  data_type: 'hard'
   archetype: trade_balance
   freq: M
   criticality: T2

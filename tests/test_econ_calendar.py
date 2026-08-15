@@ -30,7 +30,7 @@ from market_data_hub.econ_calendar.audit import (
     disagreeing_bindings,
     suspect_matches,
 )
-from market_data_hub.econ_calendar.catalog import to_iso3
+from market_data_hub.econ_calendar.catalog import available_series, to_iso3
 from market_data_hub.econ_calendar.reference import (
     infer_reference_dates,
     learn_lags,
@@ -811,3 +811,63 @@ def test_reconsolidation_can_change_an_indexed_event_column(con):
                                    release_precision="minute",
                                    vintage_date=date(2026, 9, 2))])
     assert con.execute("SELECT release_utc FROM calendar_events").fetchone()[0]         == datetime(2026, 8, 12, 6, 0)
+
+
+# --- classification and discovery -------------------------------------------
+def test_catalogue_carries_the_classification(con):
+    upsert_indicators(con, load_catalog_rows())
+    # a survey is soft, a price is hard, a decision is neither
+    tipi = dict(con.execute(
+        "SELECT indicator_key, data_type FROM calendar_indicators "
+        "WHERE indicator_key IN ('ez_pmi_mfg', 'us_cpi_yy', 'us_fomc')").fetchall())
+    assert tipi == {"ez_pmi_mfg": "soft", "us_cpi_yy": "hard", "us_fomc": None}
+    # the two misfilings the classification pass corrected
+    posti = dict(con.execute(
+        "SELECT indicator_key, category FROM calendar_indicators "
+        "WHERE indicator_key IN ('uk_psnb', 'cn_m2', 'us_retail')").fetchall())
+    assert posti == {"uk_psnb": "Fiscal", "cn_m2": "Credit & money",
+                     "us_retail": "Consumption"}
+
+
+def test_cadence_ignores_indicators_that_publish_twice_by_design(con):
+    """Euro-area HICP prints a flash and a final every month. Flagging that was
+    the largest single source of noise in the cadence report -- 106 of 221
+    findings -- and it was correct behaviour being reported as a fault."""
+    upsert_indicators(con, load_catalog_rows())
+    base = dict(country_iso3="EMU", source="tradays", provenance="aggregator",
+                source_event_name="HICP", vintage_date=date(2026, 8, 14),
+                actual="2.0%")
+    ingest_observations(con, [
+        CalendarObservation(indicator_key="ez_hicp_yy",
+                            release_utc=datetime(2026, 7, 31, 9, 0), **base),
+        CalendarObservation(indicator_key="ez_hicp_yy",
+                            release_utc=datetime(2026, 7, 17, 9, 0), **base),
+    ])
+    assert cadence_violations(con, indicator_keys=["ez_hicp_yy"]) == []
+
+
+def test_discovery_answers_without_knowing_an_indicator_key(con):
+    """The point of the function: an agent asks in the terms it thinks in."""
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("tradays", actual="3.4%")])
+
+    inflazione = available_series(con, country="IND", category="Inflation")
+    assert {s["indicator_key"] for s in inflazione} == {"in_cpi_yy", "in_wpi_yy"}
+    # tracked but with no event: an answer, not a hidden row
+    assert all(s["events"] == 0 for s in inflazione)
+
+    giorno = available_series(con, day="2026-08-12", released_only=True)
+    assert [s["indicator_key"] for s in giorno] == ["us_cpi_yy"]
+    assert giorno[0]["events"] == 1 and giorno[0]["with_reference_date"] == 1
+
+    soft = available_series(con, data_type="soft")
+    assert soft and all(s["category"] == "Surveys" for s in soft)
+
+
+def test_discovery_tag_filter_matches_whole_tags(con):
+    """'hard' must not match 'hardship': the tags are pipe-delimited and the
+    filter has to respect the delimiters, or a filter silently over-selects."""
+    upsert_indicators(con, load_catalog_rows())
+    flash = available_series(con, tags=["flash_final"])
+    assert flash and all("flash_final" in (s["tags"] or "") for s in flash)
+    assert available_series(con, tags=["flash"]) == []
