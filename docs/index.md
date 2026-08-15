@@ -82,11 +82,11 @@ shared identity/result vocabulary lives in the
 
 ## Automation
 
-Three Windows Task Scheduler jobs (`setup_scheduler.ps1`) keep the DB fresh:
-`MarketData_EU18` (daily 09:00 Pacific), `MarketData_USClose` (Mon–Fri 13:15
-Pacific, after the US close) — both run the daily refresh and Telegram the
-run report and the country dashboard — and `MarketData_HMMRegime` (Mon–Fri
-13:45 Pacific), an independent per-symbol regime monitor. See the
+Two Windows Task Scheduler jobs (`setup_scheduler.ps1`) keep the DB fresh:
+`MarketData_EU18` (daily 09:00 Pacific) and `MarketData_USClose` (Mon–Fri 13:15
+Pacific, after the US close). Both run the daily refresh and Telegram the run
+report and the country dashboard. Regime estimation is not scheduled from here
+any more: it moved to LazyStats in August 2026. See the
 [Quick start](quickstart.md) for setup, backfill and diagnostics, and
 [Architecture & process](ARCHITECTURE.md#7-automation) for the full task
 table.
