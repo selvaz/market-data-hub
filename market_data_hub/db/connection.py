@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 
 
 def _default_db() -> str:
@@ -266,6 +266,23 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         con.execute("UPDATE calendar_events SET reference_date_origin = 'source' "
                     "WHERE reference_date IS NOT NULL AND reference_date_origin IS NULL")
         current = 12
+    if current < 13:
+        # v12 -> v13: calendar_observations.release_precision, so consolidation
+        # can prefer a minute-precision timestamp over a day-only placeholder
+        # instead of taking the earliest and recording midnight.
+        try:
+            con.execute("ALTER TABLE calendar_observations "
+                        "ADD COLUMN release_precision VARCHAR")
+        except Exception:
+            pass        # already present on a freshly created table
+        # Existing rows: midnight is what a day-only collector writes, so it is
+        # the only defensible reading of what was already stored.
+        con.execute("UPDATE calendar_observations SET release_precision = "
+                    "CASE WHEN release_utc IS NULL THEN NULL "
+                    "     WHEN strftime(release_utc, '%H:%M:%S') = '00:00:00' "
+                    "     THEN 'day' ELSE 'minute' END "
+                    "WHERE release_precision IS NULL")
+        current = 13
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

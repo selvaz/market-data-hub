@@ -137,6 +137,7 @@ def seed_from_observations(
     *,
     decided_by: str = "seed",
     status: str = "confirmed",
+    overwrite: bool = False,
 ) -> int:
     """Bootstrap the table from the bindings already in the calendar.
 
@@ -146,7 +147,23 @@ def seed_from_observations(
     nobody has caught yet. ``audit.suspect_matches`` is the review queue for
     exactly this, and it is why this is a function somebody calls rather than
     a step in the migration.
+
+    Existing rows are left alone. Re-seeding is a routine thing to do after a
+    fresh load, and the observations it reads from are the OLD ones, still
+    carrying the bindings that were since corrected: an unconditional upsert
+    would resurrect every rejected alias and reset its review metadata,
+    quietly undoing the decisions this table exists to keep. ``overwrite``
+    exists for the deliberate case, and has to be asked for.
     """
+    esistenti = set()
+    if not overwrite:
+        esistenti = {
+            (s, c, n) for s, c, n in con.execute(
+                "SELECT source, country_iso3, source_name_norm "
+                "FROM calendar_indicator_aliases"
+            ).fetchall()
+        }
+
     righe = con.execute(
         """
         SELECT o.source, i.country_iso3, o.source_event_name, e.indicator_key,
@@ -160,6 +177,8 @@ def seed_from_observations(
 
     n = 0
     for source, paese, nome, chiave, quante in righe:
+        if (source, paese, normalize_name(nome)) in esistenti:
+            continue
         upsert_alias(
             con, source=source, country_iso3=paese, source_name=nome,
             indicator_key=chiave, status=status, decided_by=decided_by,

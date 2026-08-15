@@ -675,6 +675,13 @@ CREATE TABLE IF NOT EXISTS calendar_observations (
     vintage_date        DATE NOT NULL,         -- when the hub saw THIS version
     source_event_name   VARCHAR NOT NULL,      -- the exact name the source used
     release_utc         TIMESTAMP,
+    -- 'minute' | 'day'. On the observation and not only on the event, because
+    -- consolidation has to choose between sources: one collector may know the
+    -- release to the minute while another publishes only a date, which arrives
+    -- as midnight. Without this column the two are indistinguishable, taking
+    -- the earliest timestamp records midnight, and v_macro_panel_asof then
+    -- reports a value as public hours before it was.
+    release_precision   VARCHAR,
     reference_period    VARCHAR,
     reference_date      DATE,                  -- period end, per source: it is the
                                                -- source that states which period
@@ -778,9 +785,18 @@ CREATE OR REPLACE VIEW v_calendar_surprise AS
 SELECT  e.event_id, e.indicator_key, i.area, i.name AS indicator_name,
         i.criticality, e.release_utc, e.reference_date,
         e.actual_num, e.consensus_num,
-        e.actual_num - e.consensus_num AS surprise,
-        CASE WHEN e.consensus_num IS NOT NULL AND abs(e.consensus_num) > 1e-9
-             THEN (e.actual_num - e.consensus_num) / abs(e.consensus_num) END AS surprise_rel,
+        -- Null where the sources disagree on what was expected. The point
+        -- surprise is the number this view exists to publish, and quoting one
+        -- against a consensus that was never agreed is precisely the fabricated
+        -- surprise consensus_disputed was added to prevent. The range is
+        -- carried alongside so a caller can still say how wide the doubt was.
+        CASE WHEN NOT e.consensus_disputed
+             THEN e.actual_num - e.consensus_num END AS surprise,
+        CASE WHEN NOT e.consensus_disputed
+              AND e.consensus_num IS NOT NULL AND abs(e.consensus_num) > 1e-9
+             THEN (e.actual_num - e.consensus_num) / abs(e.consensus_num)
+        END AS surprise_rel,
+        e.consensus_disputed, e.consensus_low, e.consensus_high, e.consensus_n,
         e.consensus_source, e.actual_provenance
 FROM    calendar_events e
 JOIN    calendar_indicators i USING (indicator_key)

@@ -141,7 +141,9 @@ def test_ingestion_writes_observations_and_event(con):
         _obs("tradays", actual="3.4%", consensus="2.7%", previous="3.5%", impact="high"),
         _obs("nasdaq", actual="3.4%", consensus="2.9%"),
     ])
-    assert outcome == {"observations": 2, "events": 1, "revised": 0}
+    assert outcome["observations"] == 2 and outcome["events"] == 1
+    assert outcome["revised"] == 0
+    assert outcome["rejected_by_alias"] == 0 and outcome["redirected_by_alias"] == 0
     e = con.execute(
         "SELECT actual, actual_num, consensus, consensus_source, n_sources, "
         "values_agree, status FROM calendar_events").fetchone()
@@ -661,3 +663,109 @@ def test_policy_dates_are_only_given_where_a_bridge_exists(con):
     assert con.execute(
         "SELECT reference_date FROM calendar_events "
         "WHERE indicator_key = 'ez_ecb'").fetchone()[0] is None
+
+
+# --- what the Codex review found -------------------------------------------
+def test_consensus_survives_the_release_that_overwrites_it(con):
+    """Providers replace the forecast with the printed value once a release
+    lands, and vintage_date has day granularity, so both captures are the same
+    row. Losing the earlier one makes every later surprise zero."""
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("tradays", consensus="2.7%")])           # before
+    ingest_observations(con, [_obs("tradays", actual="3.4%", consensus=None)])  # after
+
+    e = con.execute("SELECT actual, consensus FROM calendar_events").fetchone()
+    assert e == ("3.4%", "2.7%")
+
+
+def test_consensus_comes_from_the_oldest_version_not_the_newest(con):
+    """Same defect one day later: the provider's post-release row carries the
+    print in the consensus field, and reading the newest version takes that
+    replacement for an expectation."""
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("tradays", consensus="2.7%",
+                                   vintage_date=date(2026, 8, 11))])
+    ingest_observations(con, [_obs("tradays", actual="3.4%", consensus="3.4%",
+                                   vintage_date=date(2026, 8, 12))])
+    assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "2.7%"
+
+
+def test_a_known_minute_outranks_a_day_only_placeholder(con):
+    """A source publishing only a date arrives as midnight. Taking the earliest
+    timestamp would record midnight as the release instant, and the bridge then
+    reports a figure as public hours before it was."""
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [
+        _obs("nasdaq", release_utc=datetime(2026, 8, 12, 0, 0),
+             release_precision="day", actual="3.4%"),
+        _obs("tradays", release_utc=datetime(2026, 8, 12, 12, 30),
+             release_precision="minute", actual="3.4%"),
+    ])
+    e = con.execute(
+        "SELECT release_utc, release_precision FROM calendar_events").fetchone()
+    assert e[0] == datetime(2026, 8, 12, 12, 30) and e[1] == "minute"
+
+
+def test_day_only_stays_day_when_nobody_knows_the_minute(con):
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("nasdaq", release_utc=datetime(2026, 8, 12, 0, 0),
+                                   release_precision="day", actual="3.4%")])
+    assert con.execute(
+        "SELECT release_precision FROM calendar_events").fetchone()[0] == "day"
+
+
+def test_surprise_view_withholds_a_disputed_point(con):
+    """consensus_disputed exists to stop a fabricated surprise; the view that
+    publishes surprises has to honour it, or the flag protects nothing."""
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [
+        _obs("tradays", actual="3.4%", consensus="2.7%"),
+        _obs("nasdaq", actual="3.4%", consensus="3.4%"),
+    ])
+    r = con.execute(
+        "SELECT consensus_disputed, surprise, surprise_rel, consensus_low, "
+        "consensus_high FROM v_calendar_surprise").fetchone()
+    assert r[0] is True
+    assert r[1] is None and r[2] is None       # no point surprise
+    assert r[3] == 2.7 and r[4] == 3.4         # but the range is still there
+
+
+def test_ingestion_enforces_the_alias_decisions(con):
+    """Matching lives in the collector, so a wrong indicator_key arrives
+    already chosen. The alias table has to bite in the one place every writer
+    passes through, or it documents a rule nothing applies."""
+    upsert_indicators(con, load_catalog_rows())
+    upsert_alias(con, source="nasdaq", country_iso3="USA",
+                 source_name="Housing Starts", indicator_key=None,
+                 status="rejected")
+    upsert_alias(con, source="tradays", country_iso3="USA",
+                 source_name="Real Earnings m/m", indicator_key="us_core_pce")
+
+    esito = ingest_observations(con, [
+        _obs("nasdaq", indicator_key="us_housing",
+             source_event_name="Housing Starts", actual="1.177M"),
+        _obs("tradays", indicator_key="us_earnings",
+             source_event_name="Real Earnings m/m", actual="0.0%"),
+    ])
+    assert esito["rejected_by_alias"] == 1 and esito["redirected_by_alias"] == 1
+    chiavi = {r[0] for r in con.execute(
+        "SELECT indicator_key FROM calendar_events").fetchall()}
+    assert chiavi == {"us_core_pce"}            # rejected row wrote nothing
+
+
+def test_reseeding_does_not_resurrect_a_corrected_alias(con):
+    """Re-seeding reads the OLD observations, still carrying the binding that
+    was since corrected. An unconditional upsert would undo the decision."""
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("tradays", actual="3.4%")])
+    seed_from_observations(con)
+    upsert_alias(con, source="tradays", country_iso3="USA",
+                 source_name="CPI y/y", indicator_key=None, status="rejected",
+                 note="checked and refused")
+
+    assert seed_from_observations(con) == 0
+    riga = con.execute("SELECT status, indicator_key, note FROM "
+                       "calendar_indicator_aliases").fetchone()
+    assert riga[0] == "rejected" and riga[1] is None and riga[2] == "checked and refused"
+    # ... unless somebody asks for it
+    assert seed_from_observations(con, overwrite=True) == 1
