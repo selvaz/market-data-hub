@@ -800,3 +800,14 @@ def test_reconsolidation_can_change_an_indexed_event_column(con):
                                    vintage_date=date(2026, 9, 1))])
     assert con.execute(
         "SELECT reference_date FROM calendar_events").fetchone()[0] == date(2026, 6, 30)
+
+    # and the release instant, which the precision rule has to be able to move
+    ingest_observations(con, [_obs("nasdaq", actual="3.4%",
+                                   release_utc=datetime(2026, 8, 12, 0, 0),
+                                   release_precision="day",
+                                   vintage_date=date(2026, 9, 2))])
+    ingest_observations(con, [_obs("yahoo", actual="3.4%",
+                                   release_utc=datetime(2026, 8, 12, 6, 0),
+                                   release_precision="minute",
+                                   vintage_date=date(2026, 9, 2))])
+    assert con.execute("SELECT release_utc FROM calendar_events").fetchone()[0]         == datetime(2026, 8, 12, 6, 0)

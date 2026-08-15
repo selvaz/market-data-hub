@@ -697,9 +697,21 @@ CREATE TABLE IF NOT EXISTS calendar_observations (
     PRIMARY KEY (event_id, source, vintage_date)
 );
 
-CREATE INDEX IF NOT EXISTS idx_cal_events_release   ON calendar_events (release_utc);
-CREATE INDEX IF NOT EXISTS idx_cal_events_indicator ON calendar_events (indicator_key, release_utc);
-CREATE INDEX IF NOT EXISTS idx_cal_events_refdate   ON calendar_events (country_iso3, reference_date);
+-- No secondary indexes on calendar_events, and the reason is correctness, not
+-- taste. The table is rebuilt with INSERT OR REPLACE on every consolidation,
+-- and on duckdb 1.4.x -- the last line supporting Python 3.9 -- an indexed
+-- column keeps its OLD value on the conflict path. With them in place:
+--
+--   * a reference_date corrected by a source that finally published the
+--     period never lands, because of the index on (country_iso3, reference_date);
+--   * a release_utc corrected from a day-only midnight to the minute another
+--     collector knew never lands either, because of the index on release_utc --
+--     silently defeating the precision rule that exists to stop the bridge
+--     reporting a figure as public before it was.
+--
+-- Both were found by a test written to probe for exactly this after the same
+-- defect ate two decisions in calendar_indicator_aliases. The table holds a
+-- few thousand rows and is queried by event_id, which is the primary key.
 CREATE INDEX IF NOT EXISTS idx_cal_obs_source       ON calendar_observations (source, vintage_date);
 
 -- ---------------------------------------------------------------------------

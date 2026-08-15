@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 15
+SCHEMA_VERSION = 16
 
 
 def _default_db() -> str:
@@ -297,6 +297,17 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # pointing at the binding it was rejecting.
         con.execute("DROP INDEX IF EXISTS idx_cal_alias_indicator")
         current = 15
+    if current < 16:
+        # v15 -> v16: the same trap in calendar_events, which is rebuilt with
+        # INSERT OR REPLACE on every consolidation. The index on
+        # (country_iso3, reference_date) froze a corrected reference period,
+        # and the one on release_utc froze a corrected release instant --
+        # defeating the precision rule that keeps the point-in-time bridge
+        # honest. Found by a probe test, not by reasoning.
+        con.execute("DROP INDEX IF EXISTS idx_cal_events_release")
+        con.execute("DROP INDEX IF EXISTS idx_cal_events_indicator")
+        con.execute("DROP INDEX IF EXISTS idx_cal_events_refdate")
+        current = 16
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
