@@ -634,6 +634,17 @@ CREATE TABLE IF NOT EXISTS calendar_events (
     release_precision   VARCHAR,               -- 'minute' | 'day'
     reference_period    VARCHAR,               -- as the source writes it: 'Jul', 'Q2'
     reference_date      DATE,                  -- period end -> joins macro_panel.date
+    -- Where reference_date came from: 'source' when a provider published the
+    -- period, 'inferred' when it was derived from the release date and the
+    -- indicator's usual lag.
+    --
+    -- The column exists because the two must never be indistinguishable.
+    -- Nasdaq and Tradays carry two thirds of the observations and publish no
+    -- period at all, so without inference the point-in-time bridge answers for
+    -- one event in five; with it, a backtest would be joining on dates that
+    -- nobody published. Both of those are acceptable -- silently mixing them
+    -- is not.
+    reference_date_origin VARCHAR,             -- 'source' | 'inferred'
     status              VARCHAR NOT NULL,      -- 'scheduled' | 'released'
     actual              VARCHAR,
     actual_num          DOUBLE,
@@ -664,6 +675,13 @@ CREATE TABLE IF NOT EXISTS calendar_observations (
     vintage_date        DATE NOT NULL,         -- when the hub saw THIS version
     source_event_name   VARCHAR NOT NULL,      -- the exact name the source used
     release_utc         TIMESTAMP,
+    -- 'minute' | 'day'. On the observation and not only on the event, because
+    -- consolidation has to choose between sources: one collector may know the
+    -- release to the minute while another publishes only a date, which arrives
+    -- as midnight. Without this column the two are indistinguishable, taking
+    -- the earliest timestamp records midnight, and v_macro_panel_asof then
+    -- reports a value as public hours before it was.
+    release_precision   VARCHAR,
     reference_period    VARCHAR,
     reference_date      DATE,                  -- period end, per source: it is the
                                                -- source that states which period
@@ -679,10 +697,74 @@ CREATE TABLE IF NOT EXISTS calendar_observations (
     PRIMARY KEY (event_id, source, vintage_date)
 );
 
-CREATE INDEX IF NOT EXISTS idx_cal_events_release   ON calendar_events (release_utc);
-CREATE INDEX IF NOT EXISTS idx_cal_events_indicator ON calendar_events (indicator_key, release_utc);
-CREATE INDEX IF NOT EXISTS idx_cal_events_refdate   ON calendar_events (country_iso3, reference_date);
+-- No secondary indexes on calendar_events, and the reason is correctness, not
+-- taste. The table is rebuilt with INSERT OR REPLACE on every consolidation,
+-- and on duckdb 1.4.x -- the last line supporting Python 3.9 -- an indexed
+-- column keeps its OLD value on the conflict path. With them in place:
+--
+--   * a reference_date corrected by a source that finally published the
+--     period never lands, because of the index on (country_iso3, reference_date);
+--   * a release_utc corrected from a day-only midnight to the minute another
+--     collector knew never lands either, because of the index on release_utc --
+--     silently defeating the precision rule that exists to stop the bridge
+--     reporting a figure as public before it was.
+--
+-- Both were found by a test written to probe for exactly this after the same
+-- defect ate two decisions in calendar_indicator_aliases. The table holds a
+-- few thousand rows and is queried by event_id, which is the primary key.
 CREATE INDEX IF NOT EXISTS idx_cal_obs_source       ON calendar_observations (source, vintage_date);
+
+-- ---------------------------------------------------------------------------
+-- Which indicator a source means by a given name.
+--
+-- calendar_indicators.match_rules is a regex, and a regex generalises: it does
+-- not decide about a name, it meets one and swallows it. 'hourly|earnings' was
+-- never a judgement about BLS 'Real Earnings' -- an entirely different series,
+-- published alongside the CPI because it is CPI-deflated earnings -- yet it
+-- filed it as Average Hourly Earnings, T1 and all, and the report carried
+-- 0.0% for July when the real print was 3.2%, out five days earlier. Twelve
+-- more bindings of the same shape were found the same afternoon.
+--
+-- So the decision is recorded instead of being recomputed. One row per name a
+-- source actually uses, with who decided it and when. An alias cannot
+-- generalise: (source, country, name) is either in this table or it is not.
+--
+-- The key is the triple. Country is what makes it unambiguous: 'CPI y/y' on
+-- Tradays means eleven different indicators, one per country, and over the
+-- 411 bindings collected so far the triple leaves exactly zero ambiguity.
+--
+-- match_rules does not disappear, it steps down to proposing: when a name
+-- arrives that is not in here, the regex suggests an indicator and the row
+-- lands with status 'proposed', to be confirmed or rejected. Nothing enters
+-- the calendar on a proposal alone.
+--
+-- The failure mode changes shape and that is the point: an unknown name now
+-- yields no match instead of a wrong one. Silence is safer than a wrong
+-- number, but it is still a failure, which is why unmapped names have to be
+-- reported rather than dropped.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS calendar_indicator_aliases (
+    source              VARCHAR NOT NULL,      -- 'tradays', 'nasdaq', ...
+    country_iso3        VARCHAR NOT NULL,      -- normalised, never the source's own string
+    source_name_norm    VARCHAR NOT NULL,      -- normalised name: the join key
+    source_name_raw     VARCHAR,               -- as first seen, for a human reading this
+    indicator_key       VARCHAR,               -- NULL = seen and deliberately not tracked
+    status              VARCHAR NOT NULL DEFAULT 'confirmed',
+                                               -- confirmed | proposed | rejected
+    decided_by          VARCHAR,               -- who: a person, or the seeding run
+    decided_at          TIMESTAMP,
+    note                VARCHAR,               -- why, when the choice is not obvious
+    PRIMARY KEY (source, country_iso3, source_name_norm)
+);
+
+-- No secondary index on this table, deliberately. On duckdb 1.4.x -- the last
+-- line supporting Python 3.9 -- a secondary index on a column makes INSERT OR
+-- REPLACE keep the OLD value of that column on the conflict path. An index on
+-- `status` left a rejection reading 'confirmed'; one on `indicator_key` left
+-- the rejected binding in place. Either way the decision never lands, which is
+-- the exact silent drift this table exists to stop. The repo already paid for
+-- this lesson once, with idx_msv_run / idx_mpv_run in the v3 -> v4 step.
+-- The table is small and read whole by load_aliases(); it needs no index.
 
 -- ---------------------------------------------------------------------------
 -- Enrichment of a release: press commentary and technical detail.
@@ -721,9 +803,18 @@ CREATE OR REPLACE VIEW v_calendar_surprise AS
 SELECT  e.event_id, e.indicator_key, i.area, i.name AS indicator_name,
         i.criticality, e.release_utc, e.reference_date,
         e.actual_num, e.consensus_num,
-        e.actual_num - e.consensus_num AS surprise,
-        CASE WHEN e.consensus_num IS NOT NULL AND abs(e.consensus_num) > 1e-9
-             THEN (e.actual_num - e.consensus_num) / abs(e.consensus_num) END AS surprise_rel,
+        -- Null where the sources disagree on what was expected. The point
+        -- surprise is the number this view exists to publish, and quoting one
+        -- against a consensus that was never agreed is precisely the fabricated
+        -- surprise consensus_disputed was added to prevent. The range is
+        -- carried alongside so a caller can still say how wide the doubt was.
+        CASE WHEN NOT e.consensus_disputed
+             THEN e.actual_num - e.consensus_num END AS surprise,
+        CASE WHEN NOT e.consensus_disputed
+              AND e.consensus_num IS NOT NULL AND abs(e.consensus_num) > 1e-9
+             THEN (e.actual_num - e.consensus_num) / abs(e.consensus_num)
+        END AS surprise_rel,
+        e.consensus_disputed, e.consensus_low, e.consensus_high, e.consensus_n,
         e.consensus_source, e.actual_provenance
 FROM    calendar_events e
 JOIN    calendar_indicators i USING (indicator_key)

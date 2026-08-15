@@ -198,6 +198,11 @@ def ingest_observations(
     if not righe:
         return {"observations": 0, "events": 0, "revised": 0}
 
+    righe, respinte, ridiretti = _applica_alias(con, righe)
+    if not righe:
+        return {"observations": 0, "events": 0, "revised": 0,
+                "rejected_by_alias": respinte, "redirected_by_alias": ridiretti}
+
     # Identity is resolved before writing, in chronological order: the first
     # observation of a release creates the event, later ones attach to it
     # even when their source places it hours away.
@@ -234,16 +239,35 @@ def ingest_observations(
         else:
             tipo = "unchanged"
 
+        # The forecast a provider carried before the print must survive the
+        # print. Several calendars overwrite the consensus field with the
+        # published value once a release lands, and vintage_date has day
+        # granularity, so a pre-release capture and a post-release one on the
+        # same day are the same row: INSERT OR REPLACE would erase the only
+        # copy of what was expected, and a surprise computed afterwards would
+        # be zero by construction.
+        consenso = o.consensus
+        if not consenso:
+            stesso_giorno = con.execute(
+                "SELECT consensus FROM calendar_observations "
+                "WHERE event_id = ? AND source = ? AND vintage_date = ?",
+                [id_per_riga[id(o)], o.source, o.vintage_date],
+            ).fetchone()
+            if stesso_giorno and stesso_giorno[0]:
+                consenso = stesso_giorno[0]
+
         con.execute(
             """
             INSERT OR REPLACE INTO calendar_observations
                 (event_id, source, provenance, vintage_date, source_event_name,
-                 release_utc, reference_period, reference_date, actual, consensus,
+                 release_utc, release_precision, reference_period, reference_date,
+                 actual, consensus,
                  previous, revised_from, impact, change_type, prior_actual, run_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [id_per_riga[id(o)], o.source, o.provenance, o.vintage_date, o.source_event_name,
-             o.release_utc, o.reference_period, o.reference_date, o.actual, o.consensus,
+             o.release_utc, o.release_precision, o.reference_period, o.reference_date,
+             o.actual, consenso,
              o.previous, o.revised_from, o.impact, tipo, prior, run_id],
         )
 
@@ -252,7 +276,58 @@ def ingest_observations(
     for o in righe:
         anagrafica.setdefault(id_per_riga[id(o)], o)
     consolidate_events(con, toccati, anagrafica, consensus_source=consensus_source)
-    return {"observations": len(righe), "events": len(toccati), "revised": revisioni}
+    return {"observations": len(righe), "events": len(toccati), "revised": revisioni,
+            "rejected_by_alias": respinte, "redirected_by_alias": ridiretti}
+
+
+def _applica_alias(con, righe):
+    """Let the recorded decision outrank whatever bound the row upstream.
+
+    Matching happens in the collector -- that is the design, and it is why
+    `CalendarObservation` arrives with an `indicator_key` already chosen. The
+    consequence is that a wrong choice sails straight through here: a
+    'Real Earnings' row pre-bound to us_earnings was written and consolidated
+    exactly as before, and the alias table sat beside the pipeline documenting
+    a rule nothing enforced.
+
+    So the check moves to the one place every writer passes through. A
+    rejected triple is dropped; a triple bound to a different indicator is
+    redirected to it. Both are counted and returned, because a row silently
+    discarded during ingestion is the kind of loss nobody notices until the
+    number is missing from a report.
+
+    Rows whose triple has no ruling are left exactly as the collector bound
+    them: the table records decisions, it is not a whitelist, and treating an
+    absent row as a refusal would empty the calendar.
+    """
+    try:
+        decisioni = con.execute(
+            "SELECT source, country_iso3, source_name_norm, indicator_key, status "
+            "FROM calendar_indicator_aliases WHERE status IN ('confirmed', 'rejected')"
+        ).fetchall()
+    except Exception:
+        return righe, 0, 0          # table absent: a DB below v11
+    if not decisioni:
+        return righe, 0, 0
+
+    from market_data_hub.econ_calendar.aliases import normalize_name
+    mappa = {(f, p, n): (k, s) for f, p, n, k, s in decisioni}
+
+    tenute, respinte, ridiretti = [], 0, 0
+    for o in righe:
+        voce = mappa.get((o.source, o.country_iso3, normalize_name(o.source_event_name)))
+        if voce is None:
+            tenute.append(o)
+            continue
+        chiave, stato = voce
+        if stato == "rejected":
+            respinte += 1
+            continue
+        if chiave and chiave != o.indicator_key:
+            o.indicator_key = chiave
+            ridiretti += 1
+        tenute.append(o)
+    return tenute, respinte, ridiretti
 
 
 def consolidate_events(
@@ -284,7 +359,7 @@ def consolidate_events(
             """
             SELECT source, provenance, source_event_name, release_utc,
                    reference_period, actual, consensus, previous, revised_from,
-                   impact, reference_date
+                   impact, reference_date, release_precision
             FROM (
                 SELECT *, row_number() OVER (
                            PARTITION BY source ORDER BY vintage_date DESC) AS rn
@@ -295,6 +370,29 @@ def consolidate_events(
         ).fetchall()
         if not osservazioni:
             continue
+
+        # The consensus is read from the OLDEST version each source carried,
+        # not the newest. A forecast only exists before the print, and
+        # providers routinely replace it with the published number afterwards;
+        # reading the latest row would take that replacement for an
+        # expectation and report a surprise of zero.
+        primo_consenso = {
+            fonte: valore
+            for fonte, valore in con.execute(
+                """
+                SELECT source, consensus FROM (
+                    SELECT source, consensus, row_number() OVER (
+                               PARTITION BY source ORDER BY vintage_date ASC) AS rn
+                    FROM calendar_observations
+                    WHERE event_id = ? AND consensus IS NOT NULL AND consensus <> ''
+                ) WHERE rn = 1
+                """,
+                [eid],
+            ).fetchall()
+        }
+        osservazioni = [
+            r[:6] + (primo_consenso.get(r[0], r[6]),) + r[7:] for r in osservazioni
+        ]
 
         anagrafica = per_id.get(eid)
         if anagrafica is None:
@@ -352,25 +450,44 @@ def consolidate_events(
 
         impact, impact_src, _ = scegli(9, ordine_valore)
         periodo = next((r[4] for r in osservazioni if r[4] not in (None, "", "N/D")), None)
-        release = min(r[3] for r in osservazioni if r[3] is not None)
+
+        # A source that publishes only a date arrives as midnight, and taking
+        # the earliest timestamp across sources would make that midnight the
+        # release instant of an event another collector timed to the minute.
+        # v_macro_panel_asof exposes this as `known_from`, so the cost is a
+        # backtest treating a figure as public hours before it was: the one
+        # error the point-in-time bridge exists to prevent. A known minute
+        # always outranks a placeholder, however early the placeholder looks.
+        al_minuto = [r[3] for r in osservazioni
+                     if r[3] is not None and r[11] == "minute"]
+        if al_minuto:
+            release, precisione = min(al_minuto), "minute"
+        else:
+            release = min(r[3] for r in osservazioni if r[3] is not None)
+            precisione = "day"
+
         numerici = [parse_number(r[5]) for r in osservazioni]
 
         con.execute(
             """
             INSERT OR REPLACE INTO calendar_events
                 (event_id, indicator_key, country_iso3, release_utc, release_precision,
-                 reference_period, reference_date, status, actual, actual_num,
+                 reference_period, reference_date, reference_date_origin,
+                 status, actual, actual_num,
                  actual_source, actual_provenance, consensus, consensus_num,
                  consensus_source, consensus_disputed, consensus_low,
                  consensus_high, consensus_n, previous, previous_num,
                  revised_from, impact, impact_source, n_sources, values_agree,
                  first_seen_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                     COALESCE((SELECT first_seen_at FROM calendar_events WHERE event_id = ?),
                              ?), ?)
             """,
             [eid, indicator_key, country_iso3, release, precisione,
-             periodo, reference_date, "released" if actual else "scheduled",
+             periodo, reference_date,
+             # a re-consolidation must not relabel an inferred date as published
+             "source" if reference_date is not None else None,
+             "released" if actual else "scheduled",
              actual, parse_number(actual), actual_src, actual_prov,
              consensus, parse_number(consensus), consensus_src, consensus_contestato,
              cons_min, cons_max, len(attese),

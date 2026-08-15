@@ -264,7 +264,7 @@ indicators:
 - key: us_earnings
   country_iso2: US
   area: US
-  name: Average Hourly Earnings
+  name: 'Average Hourly Earnings y/y'
   category: Labour
   archetype: earnings
   freq: M
@@ -273,7 +273,7 @@ indicators:
   agency: BLS
   rationale: 'The wage-to-inflation channel: the variable that decides whether disinflation is sustainable.'
   match_rules: 'hourly|earnings'
-  match_excludes: 'unit labour|unit labor|real|weekly'
+  match_excludes: 'unit labour|unit labor|real|weekly|mm'
   macro_indicator_id: null
 - key: us_claims
   country_iso2: US
@@ -376,7 +376,7 @@ indicators:
 - key: us_core_pce
   country_iso2: US
   area: US
-  name: Core PCE Price Index
+  name: 'Core PCE Price Index m/m'
   category: Inflation
   archetype: pce
   freq: M
@@ -385,7 +385,7 @@ indicators:
   agency: BEA
   rationale: 'This, not the CPI, is the Fed''s formal target. For policy it matters more than the CPI.'
   match_rules: core;pce
-  match_excludes: ''
+  match_excludes: 'qq|fnal|yy'
   macro_indicator_id: null
 - key: us_retail
   country_iso2: US
@@ -399,7 +399,7 @@ indicators:
   agency: Census Bureau
   rationale: 'Consumption is about two thirds of GDP: the most direct read on demand.'
   match_rules: retail sales;mm
-  match_excludes: ex|excl|control|redbook
+  match_excludes: 'ex|excl|control|redbook|core'
   macro_indicator_id: null
 - key: us_ism_mfg
   country_iso2: US
@@ -427,7 +427,7 @@ indicators:
   agency: ISM
   rationale: 'Covers the sector that generates most American employment.'
   match_rules: ism;non|services|n mfg
-  match_excludes: employment|new orders|price|inventories|deliveries|backlog|s p global
+  match_excludes: 'employment|new orders|price|inventories|deliveries|backlog|s p global|business activity|bus act'
   macro_indicator_id: null
 - key: us_indprod
   country_iso2: US
@@ -483,8 +483,8 @@ indicators:
   agency: Federal Reserve
   rationale: 'Not the decision, which is anticipated, but the projections and the press conference.'
   match_rules: fed funds|fomc|federal funds|fed;rate
-  match_excludes: dallas|cleveland|kc |philly|richmond|chicago|atlanta|empire|budget|speak|speech|member|minutes|balance|cpi|pce|survey
-  macro_indicator_id: null
+  match_excludes: 'dallas|cleveland|kc |philly|richmond|chicago|atlanta|empire|budget|speak|speech|member|minutes|balance|cpi|pce|survey|capacity|utilization|utilisation'
+  macro_indicator_id: bis_policy_rate
 - key: us_durable
   country_iso2: US
   area: US
@@ -497,7 +497,7 @@ indicators:
   agency: Census Bureau
   rationale: 'The headline is dominated by aircraft orders; read core capital goods only.'
   match_rules: durable
-  match_excludes: ex |ex-|r mm|revised|shipment|nondef|non def
+  match_excludes: 'ex |ex-|r mm|revised|shipment|nondef|non def|core'
   macro_indicator_id: null
 - key: us_housing
   country_iso2: US
@@ -567,7 +567,7 @@ indicators:
   agency: NBS
   rationale: 'Heavily managed: surprises are rare and small by construction.'
   match_rules: gdp;yy
-  match_excludes: qq
+  match_excludes: 'qq|ytd'
   macro_indicator_id: null
 - key: cn_indprod
   country_iso2: CN
@@ -581,7 +581,7 @@ indicators:
   agency: NBS
   rationale: 'Confirms the industrial picture already read in the PMIs.'
   match_rules: 'industrial;yy'
-  match_excludes: 'profit'
+  match_excludes: 'profit|ytd'
   macro_indicator_id: null
 - key: cn_retail
   country_iso2: CN
@@ -595,7 +595,7 @@ indicators:
   agency: NBS
   rationale: 'Domestic demand is the unresolved knot of the Chinese economy.'
   match_rules: retail sales;yy
-  match_excludes: mm
+  match_excludes: 'mm|ytd'
   macro_indicator_id: null
 - key: cn_fai
   country_iso2: CN
@@ -735,8 +735,8 @@ indicators:
   agency: PBoC
   rationale: 'The reference rate for loans: guided in practice by the PBoC.'
   match_rules: prime rate|lpr
-  match_excludes: ''
-  macro_indicator_id: null
+  match_excludes: '5y'
+  macro_indicator_id: bis_policy_rate
 - key: ez_hicp_yy
   country_iso2: EU
   area: EZ
@@ -861,7 +861,7 @@ indicators:
   agency: BCE
   rationale: 'Decision, quarterly projections and press conference.'
   match_rules: ecb;rate
-  match_excludes: speak|speech|president|bulletin|account
+  match_excludes: 'speak|speech|president|bulletin|account|marginal|lending|deposit'
   macro_indicator_id: null
 - key: ez_sentix
   country_iso2: EU
@@ -931,7 +931,7 @@ indicators:
   agency: Destatis
   rationale: 'Leads industrial production by 2-3 months: read it excluding bulk orders.'
   match_rules: factory orders|industrial orders
-  match_excludes: ''
+  match_excludes: 'yy'
   macro_indicator_id: null
 - key: de_indprod
   country_iso2: DE
@@ -1057,7 +1057,7 @@ indicators:
   agency: ONS
   rationale: 'Volatile; the private BRC measure comes out earlier and is often read more.'
   match_rules: retail sales;mm
-  match_excludes: brc|cbi|core
+  match_excludes: 'brc|cbi|core|ex fuel'
   macro_indicator_id: null
 - key: uk_pmi_mfg
   country_iso2: GB
@@ -1100,7 +1100,7 @@ indicators:
   rationale: 'Committee vote and projections: the split of the vote is often the real signal.'
   match_rules: boe|bank rate;rate
   match_excludes: speak|speech|governor|minutes|report
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: uk_psnb
   country_iso2: GB
   area: UK
@@ -1113,7 +1113,7 @@ indicators:
   agency: ONS
   rationale: 'Relevant to gilt issuance expectations, not to the cycle.'
   match_rules: public sector
-  match_excludes: ''
+  match_excludes: 'cash requirement|ex banks'
   macro_indicator_id: null
 - key: jp_cpi_yy
   country_iso2: JP
@@ -1127,7 +1127,7 @@ indicators:
   agency: Statistics Bureau
   rationale: 'Superseded by the Tokyo CPI, which comes out three weeks earlier.'
   match_rules: cpi;yy
-  match_excludes: tokyo|core|corp|goods|service|trimmed|weighted|median
+  match_excludes: 'tokyo|core|corp|goods|service|trimmed|weighted|median|excl|ex food'
   macro_indicator_id: null
 - key: jp_core_cpi
   country_iso2: JP
@@ -1169,7 +1169,7 @@ indicators:
   agency: Cabinet Office
   rationale: 'Wide revisions between the first and second estimate.'
   match_rules: 'gdp;qq'
-  match_excludes: 'deflator|price|capital|external|consmp|consumption|expend|contribution|net export'
+  match_excludes: 'deflator|price|capital|external|consmp|consumption|expend|contribution|net export|yy|cap ex'
   macro_indicator_id: null
 - key: jp_tankan
   country_iso2: JP
@@ -1211,7 +1211,7 @@ indicators:
   agency: METI
   rationale: 'Useful for the real-consumption against nominal-wages theme.'
   match_rules: retail;yy
-  match_excludes: mm
+  match_excludes: 'mm|large'
   macro_indicator_id: null
 - key: jp_trade
   country_iso2: JP
@@ -1254,11 +1254,11 @@ indicators:
   rationale: 'Every meeting is an event for the currency since the exit from negative rates.'
   match_rules: boj;rate
   match_excludes: speak|speech|governor|opinion|minutes|price
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: jp_machinery
   country_iso2: JP
   area: JP
-  name: Core Machinery Orders
+  name: 'Core Machinery Orders m/m'
   category: Activity
   archetype: machinery
   freq: M
@@ -1267,7 +1267,7 @@ indicators:
   agency: Cabinet Office
   rationale: 'Leads private investment by about six months; very volatile.'
   match_rules: machinery orders
-  match_excludes: tool
+  match_excludes: 'tool|yy'
   macro_indicator_id: null
 - key: jp_pmi_mfg
   country_iso2: JP
@@ -1352,7 +1352,7 @@ indicators:
   rationale: 'Decision and stance; the RBI also communicates its position on liquidity.'
   match_rules: repo|rbi;rate
   match_excludes: reverse
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: in_trade
   country_iso2: IN
   area: IN
@@ -1492,7 +1492,7 @@ indicators:
   rationale: 'The rate differential against the Fed is the engine of the peso carry.'
   match_rules: interest rate|banxico|bank of mexico
   match_excludes: minutes|report
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: mx_indprod
   country_iso2: MX
   area: MX
@@ -1618,7 +1618,7 @@ indicators:
   rationale: 'Brazil has one of the highest real rates in the world: the Copom is the centre of the stage.'
   match_rules: selic|copom|bcb;rate
   match_excludes: minutes|focus|tjlp
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: br_indprod
   country_iso2: BR
   area: BR
@@ -1743,7 +1743,7 @@ indicators:
   agency: Statistics Canada
   rationale: 'Very volatile because of the small sample: read the full-time/part-time breakdown.'
   match_rules: employment
-  match_excludes: full time|part time|unemployment
+  match_excludes: 'full time|part time|unemployment|full'
   macro_indicator_id: null
 - key: ca_unemp
   country_iso2: CA
@@ -1772,7 +1772,7 @@ indicators:
   rationale: 'Often just ahead of or just behind the Fed: the differential moves the Canadian dollar.'
   match_rules: boc|bank of canada;rate
   match_excludes: speak|speech|summary|minutes|review
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: ca_retail
   country_iso2: CA
   area: CA
@@ -1785,7 +1785,7 @@ indicators:
   agency: Statistics Canada
   rationale: 'Consumption under pressure from household indebtedness.'
   match_rules: retail sales
-  match_excludes: ex|excl
+  match_excludes: 'ex|excl|core|yy'
   macro_indicator_id: null
 - key: ca_ivey
   country_iso2: CA
@@ -1883,7 +1883,7 @@ indicators:
   agency: ABS
   rationale: 'Small sample: a single month says little, the trend is what counts.'
   match_rules: employment
-  match_excludes: full time|part time|unemployment
+  match_excludes: 'full time|part time|unemployment|full'
   macro_indicator_id: null
 - key: au_unemp
   country_iso2: AU
@@ -1912,7 +1912,7 @@ indicators:
   rationale: 'Statement and the quarterly Statement on Monetary Policy.'
   match_rules: rba;rate
   match_excludes: speak|speech|governor|minutes|statement|bulletin
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: au_retail
   country_iso2: AU
   area: AU
@@ -1939,7 +1939,7 @@ indicators:
   agency: ABS
   rationale: 'Backward-looking.'
   match_rules: gdp;qq
-  match_excludes: ''
+  match_excludes: 'consumption|chain|capital|expenditure'
   macro_indicator_id: null
 - key: au_trade
   country_iso2: AU
@@ -1981,7 +1981,7 @@ indicators:
   agency: ABS
   rationale: 'Immune to composition effects: the RBA cites it explicitly.'
   match_rules: wage
-  match_excludes: ''
+  match_excludes: 'yy'
   macro_indicator_id: null
 - key: kr_cpi_yy
   country_iso2: KR
@@ -2024,7 +2024,7 @@ indicators:
   rationale: 'Constrained between household debt and the differential against the Fed.'
   match_rules: bok|bank of korea;rate
   match_excludes: minutes|speak|m2|bsi
-  macro_indicator_id: null
+  macro_indicator_id: bis_policy_rate
 - key: kr_indprod
   country_iso2: KR
   area: KR

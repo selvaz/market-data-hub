@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 10
+SCHEMA_VERSION = 16
 
 
 def _default_db() -> str:
@@ -235,13 +235,79 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # while the table is still absent.
         current = 9
     if current < 10:
-        # v9 -> v10: calendario economico dei rilasci (calendar_indicators,
-        # calendar_events, calendar_observations). Puramente additivo:
-        # apply_schema() le ha gia' create con CREATE TABLE IF NOT EXISTS.
-        # Come per il passo v8 -> v9, questo step serve ad avanzare la
-        # versione registrata, cosi' un DB preesistente non resta a
-        # dichiararsi "current" mentre le tabelle nuove non ci sono ancora.
+        # v9 -> v10: the economic release calendar (calendar_indicators,
+        # calendar_events, calendar_observations, calendar_event_notes).
+        # Purely additive: apply_schema() has already created them with
+        # CREATE TABLE IF NOT EXISTS. As with the v8 -> v9 step, this exists
+        # to advance the recorded version, so a pre-existing DB does not sit
+        # declaring itself "current" while the new tables are still absent.
         current = 10
+    if current < 11:
+        # v10 -> v11: calendar_indicator_aliases, which records what each
+        # source means by a name instead of recomputing it from a regex.
+        # Additive in the same way. The table starts empty; seeding it from
+        # the bindings already in calendar_observations is a deliberate act
+        # (econ_calendar.aliases.seed_from_observations), not a migration:
+        # importing those bindings is a claim that they are right, and that
+        # claim belongs to whoever runs it.
+        current = 11
+    if current < 12:
+        # v11 -> v12: calendar_events.reference_date_origin, which separates a
+        # period a provider published from one derived from the release date.
+        # ALTER rather than additive-by-CREATE: the table already exists on any
+        # DB at v10 or later, so CREATE TABLE IF NOT EXISTS does not add it.
+        try:
+            con.execute("ALTER TABLE calendar_events "
+                        "ADD COLUMN reference_date_origin VARCHAR")
+        except Exception:
+            pass        # already present: apply_schema() created the table fresh
+        # Everything recorded before this step came from a source, because
+        # nothing else could write it yet.
+        con.execute("UPDATE calendar_events SET reference_date_origin = 'source' "
+                    "WHERE reference_date IS NOT NULL AND reference_date_origin IS NULL")
+        current = 12
+    if current < 13:
+        # v12 -> v13: calendar_observations.release_precision, so consolidation
+        # can prefer a minute-precision timestamp over a day-only placeholder
+        # instead of taking the earliest and recording midnight.
+        try:
+            con.execute("ALTER TABLE calendar_observations "
+                        "ADD COLUMN release_precision VARCHAR")
+        except Exception:
+            pass        # already present on a freshly created table
+        # Existing rows: midnight is what a day-only collector writes, so it is
+        # the only defensible reading of what was already stored.
+        con.execute("UPDATE calendar_observations SET release_precision = "
+                    "CASE WHEN release_utc IS NULL THEN NULL "
+                    "     WHEN strftime(release_utc, '%H:%M:%S') = '00:00:00' "
+                    "     THEN 'day' ELSE 'minute' END "
+                    "WHERE release_precision IS NULL")
+        current = 13
+    if current < 14:
+        # v13 -> v14: drop the index v11 put on calendar_indicator_aliases
+        # (status). Same defect as idx_msv_run above: with it in place, an
+        # INSERT OR REPLACE that moves an alias from 'confirmed' to 'rejected'
+        # keeps the old status, and the decision never lands.
+        con.execute("DROP INDEX IF EXISTS idx_cal_alias_status")
+        current = 14
+    if current < 15:
+        # v14 -> v15: and the other one. The index on (indicator_key) has the
+        # same effect on the same duckdb line: rejecting an alias left its old
+        # indicator_key in place, so the row read 'rejected' while still
+        # pointing at the binding it was rejecting.
+        con.execute("DROP INDEX IF EXISTS idx_cal_alias_indicator")
+        current = 15
+    if current < 16:
+        # v15 -> v16: the same trap in calendar_events, which is rebuilt with
+        # INSERT OR REPLACE on every consolidation. The index on
+        # (country_iso3, reference_date) froze a corrected reference period,
+        # and the one on release_utc froze a corrected release instant --
+        # defeating the precision rule that keeps the point-in-time bridge
+        # honest. Found by a probe test, not by reasoning.
+        con.execute("DROP INDEX IF EXISTS idx_cal_events_release")
+        con.execute("DROP INDEX IF EXISTS idx_cal_events_indicator")
+        con.execute("DROP INDEX IF EXISTS idx_cal_events_refdate")
+        current = 16
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
