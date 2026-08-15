@@ -784,3 +784,19 @@ def test_alias_status_actually_changes(con):
         "SELECT status, indicator_key FROM calendar_indicator_aliases"
     ).fetchone() == ("rejected", None)
     assert resolve(con, "tradays", "USA", "CPI y/y") is None
+
+
+def test_reconsolidation_can_change_an_indexed_event_column(con):
+    """calendar_events is written with INSERT OR REPLACE and carries secondary
+    indexes on release_utc, indicator_key and (country_iso3, reference_date).
+    On duckdb 1.4.x that combination keeps the OLD value of an indexed column,
+    so this asserts the ones a re-consolidation is expected to move actually
+    move -- the alias table lost two decisions to exactly this."""
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("tradays", actual="3.4%",
+                                   reference_date=date(2026, 7, 31))])
+    ingest_observations(con, [_obs("tradays", actual="3.4%",
+                                   reference_date=date(2026, 6, 30),
+                                   vintage_date=date(2026, 9, 1))])
+    assert con.execute(
+        "SELECT reference_date FROM calendar_events").fetchone()[0] == date(2026, 6, 30)

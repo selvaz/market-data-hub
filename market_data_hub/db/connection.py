@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 14
+SCHEMA_VERSION = 15
 
 
 def _default_db() -> str:
@@ -290,6 +290,13 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # keeps the old status, and the decision never lands.
         con.execute("DROP INDEX IF EXISTS idx_cal_alias_status")
         current = 14
+    if current < 15:
+        # v14 -> v15: and the other one. The index on (indicator_key) has the
+        # same effect on the same duckdb line: rejecting an alias left its old
+        # indicator_key in place, so the row read 'rejected' while still
+        # pointing at the binding it was rejecting.
+        con.execute("DROP INDEX IF EXISTS idx_cal_alias_indicator")
+        current = 15
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

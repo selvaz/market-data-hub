@@ -745,13 +745,14 @@ CREATE TABLE IF NOT EXISTS calendar_indicator_aliases (
     PRIMARY KEY (source, country_iso3, source_name_norm)
 );
 
-CREATE INDEX IF NOT EXISTS idx_cal_alias_indicator ON calendar_indicator_aliases (indicator_key);
--- No index on `status`, deliberately. On duckdb 1.4.x -- the last line
--- supporting Python 3.9 -- a secondary index on a column makes INSERT OR
--- REPLACE keep the OLD value of that column on the conflict path, so an alias
--- moved from 'confirmed' to 'rejected' would silently stay confirmed: the
--- exact silent drift this table exists to stop. The repo already paid for
--- this lesson once with idx_msv_run / idx_mpv_run.
+-- No secondary index on this table, deliberately. On duckdb 1.4.x -- the last
+-- line supporting Python 3.9 -- a secondary index on a column makes INSERT OR
+-- REPLACE keep the OLD value of that column on the conflict path. An index on
+-- `status` left a rejection reading 'confirmed'; one on `indicator_key` left
+-- the rejected binding in place. Either way the decision never lands, which is
+-- the exact silent drift this table exists to stop. The repo already paid for
+-- this lesson once, with idx_msv_run / idx_mpv_run in the v3 -> v4 step.
+-- The table is small and read whole by load_aliases(); it needs no index.
 
 -- ---------------------------------------------------------------------------
 -- Enrichment of a release: press commentary and technical detail.
