@@ -1,0 +1,2209 @@
+# Catalogo del calendario economico.
+#
+# criticality: T1 critico (muove i mercati o determina le attese di politica
+# monetaria), T2 rilevante (qualifica il quadro), T3 contesto.
+# La classificazione e' redazionale: il livello di impatto pubblicato dagli
+# aggregatori non e' utilizzabile (Tradays da' 'low' al FOMC).
+#
+# match_rules: gruppi separati da ';', alternative da '|'. Servono perche'
+# ogni fonte chiama lo stesso indicatore in modo diverso.
+#
+# freq: M mensile, Q trimestrale, A annuale, W settimanale, E a calendario
+# (riunioni di banca centrale).
+
+archetypes:
+- key: cpi_yy
+  value_type: Variazione % a/a
+  description: 'Headline consumer inflation: the change in the price of a basket of goods and services against the same month a year earlier.'
+  methodology: 'A fixed-weight basket, reweighted periodically from a household expenditure survey. The y/y absorbs seasonality but carries base effects: a weak month a year ago mechanically inflates the current reading.'
+- key: cpi_mm
+  value_type: Variazione % m/m
+  description: 'Consumer inflation against the previous month: it measures the current momentum of prices.'
+  methodology: 'Normally seasonally adjusted. More responsive but noisier than the y/y; practitioners annualise the rolling quarter to read the trend.'
+- key: cpi_qq
+  value_type: Variazione % t/t
+  description: 'Australian quarterly consumer inflation, the country''s primary format.'
+  methodology: 'Australia published only a quarterly CPI for decades; the monthly series is recent and thinner in coverage. The RBA watches the trimmed mean above all, which excludes the tails of the distribution rather than fixed categories.'
+- key: core_cpi
+  value_type: Variazione % a/a
+  description: 'Underlying inflation: CPI excluding food and energy, the two most volatile components.'
+  methodology: 'The exclusion is for volatility, not irrelevance. It is the central banks'' reference because it approximates the persistent component. In the US owners'' equivalent rent carries a large weight and responds to the housing market with a 9-12 month lag.'
+- key: core_cpi_jp
+  value_type: Variazione % a/a
+  description: 'Japanese core inflation, which by national convention excludes only fresh food, not energy.'
+  methodology: 'Mind the definition: the Japanese ''core'' is not comparable with the American or European one because it includes energy. The measure equivalent to the Western core is called ''core-core'' in Japan (excluding fresh food and energy).'
+- key: tokyo_cpi
+  value_type: Variazione % a/a
+  description: 'Consumer price index for the Tokyo area.'
+  methodology: 'It comes out about three weeks before the national figure and is the best available predictor of it, with a very high correlation. It is the real market mover on Japanese inflation.'
+- key: hicp
+  value_type: Variazione % a/a
+  description: 'Harmonised index of consumer prices for the euro area: the measure the ECB sets its 2% objective against.'
+  methodology: 'Harmonised across countries by Eurostat to make them comparable; it differs from national indices mainly in the treatment of owner-occupied housing, which the HICP substantially excludes. The flash estimate comes out at month end and is finalised in the middle of the following month.'
+- key: ppi_yy
+  value_type: Variazione % a/a
+  description: 'Producer prices: what producers receive, upstream of the consumer price.'
+  methodology: 'An imperfect leading indicator of the CPI: pass-through downstream depends on margins and final demand. In China the PPI is followed as a thermometer of the global industrial cycle and of commodity prices.'
+- key: pce
+  value_type: Variazione % a/a
+  description: 'Core personal consumption expenditures deflator: the Federal Reserve''s preferred inflation measure.'
+  methodology: 'Against the CPI it uses variable weights that track substitution between goods, it also covers healthcare paid by third parties, and it runs structurally 20-40 basis points below the CPI.'
+- key: ipca
+  value_type: Variazione %
+  description: 'Brazil''s official consumer price index: the central bank''s formal target.'
+  methodology: 'Computed by IBGE over households earning 1 to 40 minimum wages across 13 metropolitan areas. There is also the IPCA-15, an early version collected in the middle of the month.'
+- key: wpi
+  value_type: Variazione % a/a
+  description: 'Indian wholesale prices: inflation upstream in the supply chain.'
+  methodology: 'It contains no services, so it often diverges widely from the Indian CPI. Since 2016 the RBI targets the CPI, not the WPI, but the WPI remains relevant to industrial margins.'
+- key: igpm
+  value_type: Variazione % a/a
+  description: 'Brazil''s general price index, computed by the Getulio Vargas Foundation and used to index rents and contracts.'
+  methodology: 'A weighted average of wholesale (60%), consumer (30%) and construction (10%) prices. The heavy wholesale component makes it far more volatile than the IPCA and sensitive to the exchange rate.'
+- key: payrolls
+  value_type: Migliaia di posti
+  description: 'Change in US non-farm employment: the most watched macro figure in the world alongside the CPI.'
+  methodology: 'An establishment survey, distinct from the household survey the unemployment rate comes from: the two can diverge. Subject to material revisions over the following two months and to an annual benchmark adjustment.'
+- key: unemployment_rate
+  value_type: '%'
+  description: 'The share of the labour force without work and actively seeking it.'
+  methodology: 'A household survey. The level is not comparable across countries because definitions differ. A lagging indicator of the cycle: it turns after the recession has already begun.'
+- key: employment_change
+  value_type: Migliaia di posti
+  description: 'Net change in the number of employed people in the month.'
+  methodology: 'From a household sample survey, so with a wide standard error: in Australia and Canada a single month says little, and the full-time/part-time split is what counts.'
+- key: claims
+  value_type: Migliaia di domande
+  description: 'New weekly claims for unemployment benefit in the US.'
+  methodology: 'An administrative figure, not a sample, so it is immediate and barely revised. Weekly and noisy: read it on the 4-week moving average. One of the few genuinely leading labour indicators.'
+- key: jolts
+  value_type: Milioni di posizioni
+  description: 'US job openings at month end.'
+  methodology: 'It comes out about a month later than payrolls. The ratio of openings to unemployed is the labour market tightness measure the Fed cites explicitly.'
+- key: earnings
+  value_type: Variazione %
+  description: 'Average hourly earnings: the channel through which the labour market feeds inflation.'
+  methodology: 'Distorted by composition effects: if the jobs lost are mostly low-paid ones, the average rises without anyone getting a raise.'
+- key: claimant
+  value_type: Migliaia di persone
+  description: 'Change in the number of benefit claimants in the United Kingdom.'
+  methodology: 'A monthly administrative figure, more timely than ILO unemployment but sensitive to changes in benefit eligibility rules, which break its historical comparability.'
+- key: wages
+  value_type: Variazione % t/t
+  description: 'Australia''s wage price index: wage growth at constant composition.'
+  methodology: 'Built by following the same jobs over time, so it is immune to the composition effects that distort average earnings. Quarterly and closely watched by the RBA.'
+- key: gdp_qq
+  value_type: Variazione % t/t
+  description: 'Gross domestic product against the previous quarter.'
+  methodology: 'In the US it is published annualised (multiplied by roughly 4), elsewhere it is not: comparing the raw numbers across countries is a common mistake. Three successive estimates, with revisions that can be wide.'
+- key: gdp_yy
+  value_type: Variazione % a/a
+  description: 'Gross domestic product against the same quarter a year earlier.'
+  methodology: 'The standard format in China, India and Taiwan. More stable than the q/q but much slower to signal the turns of the cycle.'
+- key: gdp_mm
+  value_type: Variazione % m/m
+  description: 'Monthly GDP estimate, published only by the United Kingdom and Canada.'
+  methodology: 'Reconstructed from the output side by summing sectoral production indices. Very volatile and sensitive to strikes and public holidays.'
+- key: retail
+  value_type: Variazione %
+  description: 'Retail sales: the most direct read on household demand.'
+  methodology: 'Expressed in value, not volume, so when inflation is high the nominal figure overstates real demand. In the US the market watches the ''control group'', which excludes autos, petrol, building materials and food services because that is what enters GDP.'
+- key: indprod
+  value_type: Variazione %
+  description: 'Industrial production: the physical output of manufacturing, mining and utilities.'
+  methodology: 'It covers only 15-20% of GDP in advanced economies but generates much of their cyclical volatility. Very sensitive to temperature (the utility component) and to car-plant shutdowns.'
+- key: fai
+  value_type: Variazione % a/a cumulata
+  description: 'Chinese fixed asset investment: infrastructure, property and manufacturing.'
+  methodology: 'Published cumulatively from the start of the year, not monthly: obtaining the single month requires differencing. The split between property and infrastructure is more informative than the total.'
+- key: durable
+  value_type: Variazione % m/m
+  description: 'US durable goods orders: spending commitments for goods with a useful life beyond three years.'
+  methodology: 'Dominated by aircraft orders, which can move the headline by ten points. The subset actually read is ''core capital goods'', a proxy for private investment.'
+- key: factory_orders
+  value_type: Variazione % m/m
+  description: 'German factory orders: commitments received by manufacturing firms.'
+  methodology: 'They lead industrial production by 2-3 months. Very volatile because of the weight of single bulk orders, which the statistical office flags separately; the figure excluding bulk orders is the one to read.'
+- key: housing
+  value_type: Migliaia annualizzate
+  description: 'New residential construction started.'
+  methodology: 'A small sector in GDP terms but strongly leading, because it is the first to react to rates. A very volatile series, sensitive to weather; building permits lead starts.'
+- key: machinery
+  value_type: Variazione %
+  description: 'Core machinery orders in Japan, excluding ships and electric power.'
+  methodology: 'The exclusions remove single orders of enormous size. It is the best leading indicator of Japanese private investment, with about six months of lead.'
+- key: building
+  value_type: Variazione % m/m
+  description: 'Australian building approvals.'
+  methodology: 'Very volatile because of the weight of multi-family apartments; the detached-house segment is more stable and more informative about the cycle.'
+- key: mfg_sales
+  value_type: Variazione % m/m
+  description: 'Sales of the Canadian manufacturing sector.'
+  methodology: 'At current values; the heavy weight of autos and energy makes it dependent on commodity prices and on the American industrial cycle.'
+- key: pmi_mfg
+  value_type: Indice diffusione 0-100
+  description: 'Manufacturing purchasing managers'' index: 50 separates expansion from contraction.'
+  methodology: 'A qualitative survey (better/same/worse), so it measures direction, not intensity. Coming out on the first working day of the month, it is one of the earliest signals available. Flash versions come out mid-month on a partial sample.'
+- key: pmi_svc
+  value_type: Indice diffusione 0-100
+  description: 'Services purchasing managers'' index.'
+  methodology: 'More relevant than manufacturing to GDP in advanced economies, but historically less correlated with the turning points of the cycle and with markets.'
+- key: ism_mfg
+  value_type: Indice diffusione 0-100
+  description: 'US ISM manufacturing index: the longest and most followed industrial sentiment series.'
+  methodology: 'Distinct from the S&P Global PMI, which covers the same sector with a different sample and method. Below 42-43 it has historically signalled recession for the whole economy, not just industry. The new orders and inventories sub-components lead the headline index.'
+- key: ism_svc
+  value_type: Indice diffusione 0-100
+  description: 'US ISM services index.'
+  methodology: 'A shorter series (from 1997) with less recessionary history, so its thresholds are less reliable. The employment component is followed as a leading indicator of payrolls.'
+- key: ivey
+  value_type: Indice diffusione 0-100
+  description: 'Canadian purchasing managers'' index published by the Ivey Business School.'
+  methodology: 'It covers both the private and the public sector, unlike the standard PMIs, and has a small sample: very noisy.'
+- key: tankan
+  value_type: Saldo % (diffusion index)
+  description: 'The Bank of Japan''s quarterly survey of business conditions.'
+  methodology: 'The balance between firms judging conditions favourable and unfavourable, so it can be negative. A very large sample (about 10,000 firms) and a high response rate: the most reliable business survey in Japan.'
+- key: zew
+  value_type: Saldo %
+  description: 'Six-month expectations of German analysts and institutional investors.'
+  methodology: 'It measures the expectations of financial operators, not of firms: more a thermometer of market sentiment than of the real economy, and indeed very volatile.'
+- key: ifo
+  value_type: Indice (base 2015=100)
+  description: 'German business confidence over about 9,000 firms.'
+  methodology: 'It combines a judgement on current conditions with six-month expectations. The expectations component is the one with leading content; the gap between the two is read as a signal that the cycle is turning.'
+- key: sentix
+  value_type: Saldo %
+  description: 'Euro-area investor confidence, surveyed at the start of the month.'
+  methodology: 'The first figure of the month on the euro area, hence closely watched despite its limited sample of private and institutional investors.'
+- key: umich
+  value_type: Indice (base 1966=100)
+  description: 'US consumer sentiment surveyed by the University of Michigan.'
+  methodology: 'Published twice: preliminary mid-month and final at month end. The 1-year and 5-10 year inflation expectations contained in the survey are cited explicitly by the Fed and often move markets more than the headline index.'
+- key: nbs_pmi
+  value_type: Indice diffusione 0-100
+  description: 'China''s official PMI from the National Bureau of Statistics.'
+  methodology: 'The sample is skewed towards large state-owned firms, while Caixin covers small, private, export-oriented ones: the two series diverge systematically and should be read together.'
+- key: caixin
+  value_type: Indice diffusione 0-100
+  description: 'Chinese PMI from Caixin/S&P Global.'
+  methodology: 'A sample of smaller, private, export-exposed firms relative to the official PMI. More sensitive to the global trade cycle.'
+- key: trade_balance
+  value_type: Valuta locale o USD
+  description: 'The balance between exports and imports of goods.'
+  methodology: 'A nominal figure, so it mixes volumes and prices: a rise in oil worsens importers'' balances without any change in volumes. Highly seasonal (Chinese New Year, the European August).'
+- key: exports
+  value_type: Variazione % a/a
+  description: 'Goods exports.'
+  methodology: 'For China and Korea they are the most timely thermometer of global demand. In China the January and February figures are published together to neutralise the drift of the lunar new year.'
+- key: imports
+  value_type: Variazione % a/a
+  description: 'Goods imports.'
+  methodology: 'Read as a measure of domestic demand and, for China, of the commodity cycle. Sensitive to prices as well as volumes.'
+- key: export_orders
+  value_type: Variazione % a/a
+  description: 'Taiwanese export orders: commitments received by the island''s firms.'
+  methodology: 'They lead actual exports by 2-3 months and, given Taiwan''s position in the semiconductor supply chain, are among the best leading indicators of the global tech cycle.'
+- key: exports20
+  value_type: Variazione % a/a
+  description: 'Korean exports over the first 20 days of the month.'
+  methodology: 'The most timely macro figure in the world on global trade: out around the 21st of the same month. It has to be corrected for the number of working days, which the raw figure does not normalise.'
+- key: remittances
+  value_type: Milioni di USD
+  description: 'Remittances from Mexican emigrants.'
+  methodology: 'A balance-of-payments item comparable to oil receipts and decisive for low-income household consumption and for the exchange rate.'
+- key: policy_rate
+  value_type: '%'
+  description: 'The central bank''s decision on the policy rate.'
+  methodology: 'What moves markets is almost never the decision itself, which is anticipated, but the statement, the projections and the press conference. The calendar is fixed and known a year in advance.'
+- key: lpr
+  value_type: '%'
+  description: 'China''s 1-year Loan Prime Rate: the reference rate for bank lending.'
+  methodology: 'Set monthly as the average of quotes from a panel of banks, but in practice guided by the PBoC through the medium-term lending facility rate.'
+- key: loans
+  value_type: Miliardi di valuta locale
+  description: 'New yuan loans extended during the month.'
+  methodology: 'A central instrument of Chinese economic policy, more so than the rate lever. Extremely seasonal: January is systematically the highest month of the year.'
+- key: m2
+  value_type: Variazione % a/a
+  description: 'The broad monetary aggregate.'
+  methodology: 'In China it is read as a measure of the credit impulse; the related ''total social financing'' series is more complete because it includes non-bank credit.'
+- key: psnb
+  value_type: Miliardi di sterline
+  description: 'UK public sector net borrowing.'
+  methodology: 'Highly seasonal: January and July are months of heavy tax receipts and the balance can turn positive. Relevant to expectations for gilt issuance.'
+indicators:
+- key: us_nfp
+  country_iso2: US
+  area: US
+  name: Non-Farm Payrolls
+  category: Labour
+  archetype: payrolls
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: BLS
+  rationale: 'The most watched figure in the world: it moves rates, the dollar and equities in the same minute.'
+  match_rules: payroll
+  match_excludes: adp|private|revision|government|manufacturing
+  macro_indicator_id: null
+- key: us_unemp
+  country_iso2: US
+  area: US
+  name: Unemployment Rate
+  category: Labour
+  archetype: unemployment_rate
+  freq: M
+  criticality: T1
+  nature: lagging
+  agency: BLS
+  rationale: 'Half the Fed''s mandate. It turns after the recession, and the Fed chases it anyway.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: insurance|claims|u6
+  macro_indicator_id: null
+- key: us_earnings
+  country_iso2: US
+  area: US
+  name: Average Hourly Earnings
+  category: Labour
+  archetype: earnings
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: BLS
+  rationale: 'The wage-to-inflation channel: the variable that decides whether disinflation is sustainable.'
+  match_rules: 'hourly|earnings'
+  match_excludes: 'unit labour|unit labor|real|weekly'
+  macro_indicator_id: null
+- key: us_claims
+  country_iso2: US
+  area: US
+  name: Initial Jobless Claims
+  category: Labour
+  archetype: claims
+  freq: W
+  criticality: T1
+  nature: leading
+  agency: Dept. of Labor
+  rationale: 'Weekly and administrative: the only genuinely leading labour indicator.'
+  match_rules: jobless|claims
+  match_excludes: continuing|cont|4wk|4 week|averag
+  macro_indicator_id: null
+- key: us_jolts
+  country_iso2: US
+  area: US
+  name: JOLTS Job Openings
+  category: Labour
+  archetype: jolts
+  freq: M
+  criticality: T2
+  nature: lagging
+  agency: BLS
+  rationale: 'The vacancies-to-unemployed ratio is the tightness measure the Fed cites, but it arrives late.'
+  match_rules: jolts|job openings
+  match_excludes: ''
+  macro_indicator_id: null
+- key: us_cpi_yy
+  country_iso2: US
+  area: US
+  name: CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: BLS
+  rationale: 'With payrolls, the market mover par excellence.'
+  match_rules: cpi;yy
+  match_excludes: core|ex|food|energy|prelim|cleveland|median|trimmed|n s a
+  macro_indicator_id: null
+- key: us_cpi_mm
+  country_iso2: US
+  area: US
+  name: CPI m/m
+  category: Inflation
+  archetype: cpi_mm
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: BLS
+  rationale: 'Monthly momentum matters more than the annual rate: the y/y drags base effects a year old.'
+  match_rules: cpi;mm
+  match_excludes: core|ex|food|energy|prelim|cleveland|median|trimmed|n s a
+  macro_indicator_id: null
+- key: us_core_cpi_yy
+  country_iso2: US
+  area: US
+  name: Core CPI y/y
+  category: Inflation
+  archetype: core_cpi
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: BLS
+  rationale: 'The persistent component, the one expectations form around.'
+  match_rules: core;cpi;yy
+  match_excludes: n s a|cleveland|median|trimmed
+  macro_indicator_id: null
+- key: us_core_cpi_mm
+  country_iso2: US
+  area: US
+  name: Core CPI m/m
+  category: Inflation
+  archetype: core_cpi
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: BLS
+  rationale: 'The number markets read first when the release drops.'
+  match_rules: core;cpi;mm
+  match_excludes: n s a|cleveland|median|trimmed
+  macro_indicator_id: null
+- key: us_ppi_yy
+  country_iso2: US
+  area: US
+  name: PPI y/y
+  category: Inflation
+  archetype: ppi_yy
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: BLS
+  rationale: 'It says little alone, but some of its line items feed the PCE estimate that follows.'
+  match_rules: ppi;yy
+  match_excludes: core|ex
+  macro_indicator_id: null
+- key: us_core_pce
+  country_iso2: US
+  area: US
+  name: Core PCE Price Index
+  category: Inflation
+  archetype: pce
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: BEA
+  rationale: 'This, not the CPI, is the Fed''s formal target. For policy it matters more than the CPI.'
+  match_rules: core;pce
+  match_excludes: ''
+  macro_indicator_id: null
+- key: us_retail
+  country_iso2: US
+  area: US
+  name: Retail Sales m/m
+  category: Activity
+  archetype: retail
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Census Bureau
+  rationale: 'Consumption is about two thirds of GDP: the most direct read on demand.'
+  match_rules: retail sales;mm
+  match_excludes: ex|excl|control|redbook
+  macro_indicator_id: null
+- key: us_ism_mfg
+  country_iso2: US
+  area: US
+  name: ISM Manufacturing PMI
+  category: Sentiment
+  archetype: ism_mfg
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: ISM
+  rationale: 'Below 42-43 it has historically signalled recession for the whole economy. First out in the month.'
+  match_rules: ism;mfg|manufacturing
+  match_excludes: non|n mfg|employment|new orders|price|inventories|deliveries|backlog|s p global
+  macro_indicator_id: null
+- key: us_ism_svc
+  country_iso2: US
+  area: US
+  name: ISM Services PMI
+  category: Sentiment
+  archetype: ism_svc
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: ISM
+  rationale: 'Covers the sector that generates most American employment.'
+  match_rules: ism;non|services|n mfg
+  match_excludes: employment|new orders|price|inventories|deliveries|backlog|s p global
+  macro_indicator_id: null
+- key: us_indprod
+  country_iso2: US
+  area: US
+  name: Industrial Production m/m
+  category: Activity
+  archetype: indprod
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Federal Reserve
+  rationale: 'Little GDP but plenty of cyclical volatility; useful to confirm the ISM, not to lead it.'
+  match_rules: industrial;mm
+  match_excludes: capacity
+  macro_indicator_id: null
+- key: us_gdp
+  country_iso2: US
+  area: US
+  name: GDP q/q annualizzato
+  category: Growth
+  archetype: gdp_qq
+  freq: Q
+  criticality: T2
+  nature: lagging
+  agency: BEA
+  rationale: 'Backward-looking and in three estimates: markets have already priced it from the monthly data.'
+  match_rules: gdp;qq|estimate
+  match_excludes: deflator|price|sales|cons spending|implicit|final
+  macro_indicator_id: null
+- key: us_umich
+  country_iso2: US
+  area: US
+  name: U. Michigan Sentiment
+  category: Sentiment
+  archetype: umich
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: Univ. of Michigan
+  rationale: 'The index counts for little; the 1-year and 5-10 year inflation expectations inside the survey are what the Fed reads.'
+  match_rules: mich;sentiment
+  match_excludes: conditions|expectation|inf
+  macro_indicator_id: null
+- key: us_fomc
+  country_iso2: US
+  area: US
+  name: Fed Funds Rate Decision
+  category: Monetary policy
+  archetype: policy_rate
+  freq: E
+  criticality: T1
+  nature: policy
+  agency: Federal Reserve
+  rationale: 'Not the decision, which is anticipated, but the projections and the press conference.'
+  match_rules: fed funds|fomc|federal funds|fed;rate
+  match_excludes: dallas|cleveland|kc |philly|richmond|chicago|atlanta|empire|budget|speak|speech|member|minutes|balance|cpi|pce|survey
+  macro_indicator_id: null
+- key: us_durable
+  country_iso2: US
+  area: US
+  name: Durable Goods Orders
+  category: Activity
+  archetype: durable
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: Census Bureau
+  rationale: 'The headline is dominated by aircraft orders; read core capital goods only.'
+  match_rules: durable
+  match_excludes: ex |ex-|r mm|revised|shipment|nondef|non def
+  macro_indicator_id: null
+- key: us_housing
+  country_iso2: US
+  area: US
+  name: Housing Starts
+  category: Activity
+  archetype: housing
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: Census Bureau
+  rationale: 'The first sector to react to rates, so it leads; but a very noisy series.'
+  match_rules: housing starts
+  match_excludes: permit
+  macro_indicator_id: null
+- key: us_trade
+  country_iso2: US
+  area: US
+  name: Trade Balance
+  category: External
+  archetype: trade_balance
+  freq: M
+  criticality: T3
+  nature: lagging
+  agency: BEA / Census Bureau
+  rationale: 'Nominal and seasonal: it rarely changes a view.'
+  match_rules: trade balance|international trade
+  match_excludes: goods advance
+  macro_indicator_id: null
+- key: cn_cpi_yy
+  country_iso2: CN
+  area: CN
+  name: CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: NBS
+  rationale: 'The Chinese theme is deflation, but the CPI moves global markets little.'
+  match_rules: cpi;yy
+  match_excludes: core|ppi
+  macro_indicator_id: null
+- key: cn_ppi_yy
+  country_iso2: CN
+  area: CN
+  name: PPI y/y
+  category: Inflation
+  archetype: ppi_yy
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: NBS
+  rationale: 'A thermometer of the global industrial cycle and of commodity prices.'
+  match_rules: ppi;yy
+  match_excludes: ''
+  macro_indicator_id: null
+- key: cn_gdp
+  country_iso2: CN
+  area: CN
+  name: GDP y/y
+  category: Growth
+  archetype: gdp_yy
+  freq: Q
+  criticality: T2
+  nature: lagging
+  agency: NBS
+  rationale: 'Heavily managed: surprises are rare and small by construction.'
+  match_rules: gdp;yy
+  match_excludes: qq
+  macro_indicator_id: null
+- key: cn_indprod
+  country_iso2: CN
+  area: CN
+  name: Industrial Production y/y
+  category: Activity
+  archetype: indprod
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: NBS
+  rationale: 'Confirms the industrial picture already read in the PMIs.'
+  match_rules: 'industrial;yy'
+  match_excludes: 'profit'
+  macro_indicator_id: null
+- key: cn_retail
+  country_iso2: CN
+  area: CN
+  name: Retail Sales y/y
+  category: Activity
+  archetype: retail
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: NBS
+  rationale: 'Domestic demand is the unresolved knot of the Chinese economy.'
+  match_rules: retail sales;yy
+  match_excludes: mm
+  macro_indicator_id: null
+- key: cn_fai
+  country_iso2: CN
+  area: CN
+  name: Fixed Asset Investment
+  category: Activity
+  archetype: fai
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: NBS
+  rationale: 'Property and infrastructure are the real driver: read the breakdown, not the total.'
+  match_rules: fixed asset|urban investment
+  match_excludes: ''
+  macro_indicator_id: null
+- key: cn_trade
+  country_iso2: CN
+  area: CN
+  name: Trade Balance
+  category: External
+  archetype: trade_balance
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Dogane (GACC)
+  rationale: 'The Chinese balance is a direct read on global demand.'
+  match_rules: 'trade;balance'
+  match_excludes: 'yuan|cny|rmb'
+  macro_indicator_id: null
+- key: cn_exports
+  country_iso2: CN
+  area: CN
+  name: Exports y/y
+  category: External
+  archetype: exports
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Dogane (GACC)
+  rationale: 'With Korea, the most timely thermometer of world trade.'
+  match_rules: export;yy
+  match_excludes: order
+  macro_indicator_id: null
+- key: cn_imports
+  country_iso2: CN
+  area: CN
+  name: Imports y/y
+  category: External
+  archetype: imports
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Dogane (GACC)
+  rationale: 'Domestic demand and the commodity cycle in a single number.'
+  match_rules: import;yy
+  match_excludes: ''
+  macro_indicator_id: null
+- key: cn_pmi_caixin_mfg
+  country_iso2: CN
+  area: CN
+  name: Caixin Manufacturing PMI
+  category: Sentiment
+  archetype: caixin
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: Caixin / S&P Global
+  rationale: 'Small, private, exporting firms: more sensitive to the global cycle than the official survey.'
+  match_rules: caixin;mfg|manufacturing
+  match_excludes: ''
+  macro_indicator_id: null
+- key: cn_pmi_caixin_svc
+  country_iso2: CN
+  area: CN
+  name: Caixin Services PMI
+  category: Sentiment
+  archetype: caixin
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: Caixin / S&P Global
+  rationale: 'Useful paired with manufacturing to separate domestic from external demand.'
+  match_rules: caixin;services|composite
+  match_excludes: ''
+  macro_indicator_id: null
+- key: cn_pmi_nbs_mfg
+  country_iso2: CN
+  area: CN
+  name: NBS Manufacturing PMI
+  category: Sentiment
+  archetype: nbs_pmi
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: NBS
+  rationale: 'Large state-owned firms: it diverges systematically from Caixin, and the divergence is the signal.'
+  match_rules: mfg|manufacturing;pmi
+  match_excludes: 'ratingdog|caixin|markit|global|private'
+  macro_indicator_id: null
+- key: cn_loans
+  country_iso2: CN
+  area: CN
+  name: New Yuan Loans
+  category: Monetary policy
+  archetype: loans
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: PBoC
+  rationale: 'The credit impulse is China''s policy lever, more than rates.'
+  match_rules: yuan loans|new loans
+  match_excludes: ''
+  macro_indicator_id: null
+- key: cn_m2
+  country_iso2: CN
+  area: CN
+  name: M2 Money Supply y/y
+  category: Monetary policy
+  archetype: m2
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: PBoC
+  rationale: 'Total social financing would be more complete because it includes non-bank credit.'
+  match_rules: m2
+  match_excludes: ''
+  macro_indicator_id: null
+- key: cn_lpr
+  country_iso2: CN
+  area: CN
+  name: Loan Prime Rate 1y
+  category: Monetary policy
+  archetype: lpr
+  freq: M
+  criticality: T1
+  nature: policy
+  agency: PBoC
+  rationale: 'The reference rate for loans: guided in practice by the PBoC.'
+  match_rules: prime rate|lpr
+  match_excludes: ''
+  macro_indicator_id: null
+- key: ez_hicp_yy
+  country_iso2: EU
+  area: EZ
+  name: HICP y/y (flash)
+  category: Inflation
+  archetype: hicp
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Eurostat
+  rationale: 'The measure the ECB sets its 2% against: the flash estimate is the market mover.'
+  match_rules: 'hicp|cpi;yy'
+  match_excludes: 'core|x f|x t|tobacco|german|french|italian|spanish|ex|hesse|hessen|saxony|sachsen|bavaria|bayern|brandenburg|baden|wuerttemberg|wurttemberg|westphalia|westfalen|niedersachsen|thuringia|thueringen|berlin|hamburg|bremen|rhineland|schleswig|mecklenburg|saarland|nordrhein'
+  macro_indicator_id: null
+- key: ez_core_hicp
+  country_iso2: EU
+  area: EZ
+  name: Core HICP y/y
+  category: Inflation
+  archetype: core_cpi
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Eurostat
+  rationale: 'The component the ECB judges persistence on.'
+  match_rules: core|x f e;hicp|cpi;yy
+  match_excludes: german|french|italian|spanish
+  macro_indicator_id: null
+- key: ez_gdp
+  country_iso2: EU
+  area: EZ
+  name: GDP q/q
+  category: Growth
+  archetype: gdp_qq
+  freq: Q
+  criticality: T2
+  nature: lagging
+  agency: Eurostat
+  rationale: 'A slow aggregate; the national PMIs arrive well before it.'
+  match_rules: gdp;qq
+  match_excludes: german|french|italian|spanish
+  macro_indicator_id: null
+- key: ez_unemp
+  country_iso2: EU
+  area: EZ
+  name: Unemployment Rate
+  category: Labour
+  archetype: unemployment_rate
+  freq: M
+  criticality: T3
+  nature: lagging
+  agency: Eurostat
+  rationale: 'Structurally sticky: almost never informative about the quarter.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: german|french|italian|spanish
+  macro_indicator_id: null
+- key: ez_pmi_mfg
+  country_iso2: EU
+  area: EZ
+  name: Manufacturing PMI
+  category: Sentiment
+  archetype: pmi_mfg
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: HCOB / S&P Global
+  rationale: 'With Germany in industrial stagnation, this is the main cyclical signal.'
+  match_rules: mfg|manufacturing;pmi
+  match_excludes: german|french|italian|spanish|services|composite
+  macro_indicator_id: null
+- key: ez_pmi_svc
+  country_iso2: EU
+  area: EZ
+  name: Services PMI
+  category: Sentiment
+  archetype: pmi_svc
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: HCOB / S&P Global
+  rationale: 'Services hold up the area''s GDP: they often diverge from manufacturing.'
+  match_rules: services;pmi
+  match_excludes: german|french|italian|spanish|mfg|manufacturing
+  macro_indicator_id: null
+- key: ez_indprod
+  country_iso2: EU
+  area: EZ
+  name: Industrial Production m/m
+  category: Activity
+  archetype: indprod
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Eurostat
+  rationale: 'Confirms the PMIs two months later.'
+  match_rules: industrial;mm
+  match_excludes: german|french|italian|spanish
+  macro_indicator_id: null
+- key: ez_retail
+  country_iso2: EU
+  area: EZ
+  name: Retail Sales m/m
+  category: Activity
+  archetype: retail
+  freq: M
+  criticality: T3
+  nature: coincident
+  agency: Eurostat
+  rationale: 'Noisy and little followed by European markets.'
+  match_rules: retail sales;mm
+  match_excludes: german|french|italian|spanish|yy
+  macro_indicator_id: null
+- key: ez_ecb
+  country_iso2: EU
+  area: EZ
+  name: ECB Rate Decision
+  category: Monetary policy
+  archetype: policy_rate
+  freq: E
+  criticality: T1
+  nature: policy
+  agency: BCE
+  rationale: 'Decision, quarterly projections and press conference.'
+  match_rules: ecb;rate
+  match_excludes: speak|speech|president|bulletin|account
+  macro_indicator_id: null
+- key: ez_sentix
+  country_iso2: EU
+  area: EZ
+  name: Sentix Investor Confidence
+  category: Sentiment
+  archetype: sentix
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: Sentix
+  rationale: 'The first figure of the month on the area: its value is mostly timing.'
+  match_rules: sentix
+  match_excludes: ''
+  macro_indicator_id: null
+- key: de_zew
+  country_iso2: DE
+  area: EZ
+  name: ZEW Economic Sentiment (DE)
+  category: Sentiment
+  archetype: zew
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: ZEW Mannheim
+  rationale: 'Measures the sentiment of financial operators, not of firms: very volatile.'
+  match_rules: zew
+  match_excludes: current|condition
+  macro_indicator_id: null
+- key: de_ifo
+  country_iso2: DE
+  area: EZ
+  name: Ifo Business Climate (DE)
+  category: Sentiment
+  archetype: ifo
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: Ifo Institut
+  rationale: 'The best German leading indicator; the gap between current conditions and expectations flags the turns.'
+  match_rules: ifo
+  match_excludes: expectation|current|assessment
+  macro_indicator_id: null
+- key: de_cpi_yy
+  country_iso2: DE
+  area: EZ
+  name: German CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Destatis
+  rationale: 'Out a few hours before the area HICP, and it anticipates its surprise.'
+  match_rules: cpi;yy
+  match_excludes: hicp|core
+  macro_indicator_id: null
+- key: de_factory
+  country_iso2: DE
+  area: EZ
+  name: German Factory Orders m/m
+  category: Activity
+  archetype: factory_orders
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: Destatis
+  rationale: 'Leads industrial production by 2-3 months: read it excluding bulk orders.'
+  match_rules: factory orders|industrial orders
+  match_excludes: ''
+  macro_indicator_id: null
+- key: de_indprod
+  country_iso2: DE
+  area: EZ
+  name: German Industrial Production m/m
+  category: Activity
+  archetype: indprod
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Destatis
+  rationale: 'Confirms what orders had already said.'
+  match_rules: industrial;mm
+  match_excludes: orders
+  macro_indicator_id: null
+- key: uk_cpi_yy
+  country_iso2: GB
+  area: UK
+  name: CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: ONS
+  rationale: 'The UK had the most persistent inflation in the G7: every print shifts BoE expectations.'
+  match_rules: cpi;yy
+  match_excludes: cpih|core|ppi|rpi|hpi
+  macro_indicator_id: null
+- key: uk_core_cpi
+  country_iso2: GB
+  area: UK
+  name: Core CPI y/y
+  category: Inflation
+  archetype: core_cpi
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: ONS
+  rationale: 'The measure the BoE judges domestic persistence on.'
+  match_rules: core;cpi;yy
+  match_excludes: cpih|ppi|rpi
+  macro_indicator_id: null
+- key: uk_gdp_mm
+  country_iso2: GB
+  area: UK
+  name: GDP m/m
+  category: Growth
+  archetype: gdp_mm
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: ONS
+  rationale: 'Timely but volatile: sensitive to strikes and bank holidays.'
+  match_rules: gdp;mm
+  match_excludes: ''
+  macro_indicator_id: null
+- key: uk_gdp_qq
+  country_iso2: GB
+  area: UK
+  name: GDP q/q
+  category: Growth
+  archetype: gdp_qq
+  freq: Q
+  criticality: T2
+  nature: lagging
+  agency: ONS
+  rationale: 'Confirms what the monthly figure has already said three times.'
+  match_rules: gdp;qq
+  match_excludes: ''
+  macro_indicator_id: null
+- key: uk_unemp
+  country_iso2: GB
+  area: UK
+  name: ILO Unemployment Rate
+  category: Labour
+  archetype: unemployment_rate
+  freq: M
+  criticality: T2
+  nature: lagging
+  agency: ONS
+  rationale: 'Use with care: the ONS survey has known response-rate problems.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: claimant
+  macro_indicator_id: null
+- key: uk_claimant
+  country_iso2: GB
+  area: UK
+  name: Claimant Count Change
+  category: Labour
+  archetype: claimant
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: ONS
+  rationale: 'Administrative and more timely, but sensitive to changes in benefit rules.'
+  match_rules: claimant
+  match_excludes: ''
+  macro_indicator_id: null
+- key: uk_earnings
+  country_iso2: GB
+  area: UK
+  name: Average Earnings
+  category: Labour
+  archetype: earnings
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: ONS
+  rationale: 'The BoE has made wage growth its persistence indicator.'
+  match_rules: 'earnings'
+  match_excludes: 'excl|ex-bonus|ex bonus|regular'
+  macro_indicator_id: null
+- key: uk_retail
+  country_iso2: GB
+  area: UK
+  name: Retail Sales m/m
+  category: Activity
+  archetype: retail
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: ONS
+  rationale: 'Volatile; the private BRC measure comes out earlier and is often read more.'
+  match_rules: retail sales;mm
+  match_excludes: brc|cbi|core
+  macro_indicator_id: null
+- key: uk_pmi_mfg
+  country_iso2: GB
+  area: UK
+  name: Manufacturing PMI
+  category: Sentiment
+  archetype: pmi_mfg
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: S&P Global / CIPS
+  rationale: 'A small sector in the British economy.'
+  match_rules: mfg|manufacturing;pmi
+  match_excludes: services|composite|construction
+  macro_indicator_id: null
+- key: uk_pmi_svc
+  country_iso2: GB
+  area: UK
+  name: Services PMI
+  category: Sentiment
+  archetype: pmi_svc
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: S&P Global / CIPS
+  rationale: 'Services are about 80% of British GDP.'
+  match_rules: services;pmi
+  match_excludes: mfg|manufacturing|composite
+  macro_indicator_id: null
+- key: uk_boe
+  country_iso2: GB
+  area: UK
+  name: BoE Bank Rate Decision
+  category: Monetary policy
+  archetype: policy_rate
+  freq: E
+  criticality: T1
+  nature: policy
+  agency: Bank of England
+  rationale: 'Committee vote and projections: the split of the vote is often the real signal.'
+  match_rules: boe|bank rate;rate
+  match_excludes: speak|speech|governor|minutes|report
+  macro_indicator_id: null
+- key: uk_psnb
+  country_iso2: GB
+  area: UK
+  name: Public Sector Net Borrowing
+  category: Growth
+  archetype: psnb
+  freq: M
+  criticality: T2
+  nature: lagging
+  agency: ONS
+  rationale: 'Relevant to gilt issuance expectations, not to the cycle.'
+  match_rules: public sector
+  match_excludes: ''
+  macro_indicator_id: null
+- key: jp_cpi_yy
+  country_iso2: JP
+  area: JP
+  name: National CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Statistics Bureau
+  rationale: 'Superseded by the Tokyo CPI, which comes out three weeks earlier.'
+  match_rules: cpi;yy
+  match_excludes: tokyo|core|corp|goods|service|trimmed|weighted|median
+  macro_indicator_id: null
+- key: jp_core_cpi
+  country_iso2: JP
+  area: JP
+  name: National Core CPI y/y
+  category: Inflation
+  archetype: core_cpi_jp
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Statistics Bureau
+  rationale: 'Careful: the Japanese core excludes only fresh food, not energy.'
+  match_rules: core;cpi;yy
+  match_excludes: tokyo|trimmed|weighted|median|core core
+  macro_indicator_id: null
+- key: jp_tokyo_cpi
+  country_iso2: JP
+  area: JP
+  name: Tokyo CPI y/y
+  category: Inflation
+  archetype: tokyo_cpi
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: Statistics Bureau
+  rationale: 'Out three weeks before the national figure and predicts it well: the real market mover.'
+  match_rules: tokyo;cpi;yy
+  match_excludes: 'core|excl|ex '
+  macro_indicator_id: null
+- key: jp_gdp
+  country_iso2: JP
+  area: JP
+  name: GDP q/q
+  category: Growth
+  archetype: gdp_qq
+  freq: Q
+  criticality: T2
+  nature: lagging
+  agency: Cabinet Office
+  rationale: 'Wide revisions between the first and second estimate.'
+  match_rules: 'gdp;qq'
+  match_excludes: 'deflator|price|capital|external|consmp|consumption|expend|contribution|net export'
+  macro_indicator_id: null
+- key: jp_tankan
+  country_iso2: JP
+  area: JP
+  name: Tankan Large Manufacturers
+  category: Sentiment
+  archetype: tankan
+  freq: Q
+  criticality: T1
+  nature: leading
+  agency: Bank of Japan
+  rationale: 'A sample of 10,000 firms and a high response rate: the most reliable survey in Japan.'
+  match_rules: tankan
+  match_excludes: non|small|service|reuters
+  macro_indicator_id: null
+- key: jp_indprod
+  country_iso2: JP
+  area: JP
+  name: Industrial Production m/m
+  category: Activity
+  archetype: indprod
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: METI
+  rationale: 'Volatile because of car-plant shutdowns.'
+  match_rules: 'industrial;mm'
+  match_excludes: 'forecast|projection'
+  macro_indicator_id: null
+- key: jp_retail
+  country_iso2: JP
+  area: JP
+  name: Retail Sales y/y
+  category: Activity
+  archetype: retail
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: METI
+  rationale: 'Useful for the real-consumption against nominal-wages theme.'
+  match_rules: retail;yy
+  match_excludes: mm
+  macro_indicator_id: null
+- key: jp_trade
+  country_iso2: JP
+  area: JP
+  name: Trade Balance
+  category: External
+  archetype: trade_balance
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Ministry of Finance
+  rationale: 'More sensitive to the exchange rate than to volumes.'
+  match_rules: trade;balance
+  match_excludes: ''
+  macro_indicator_id: null
+- key: jp_unemp
+  country_iso2: JP
+  area: JP
+  name: Unemployment Rate
+  category: Labour
+  archetype: unemployment_rate
+  freq: M
+  criticality: T3
+  nature: lagging
+  agency: Statistics Bureau
+  rationale: 'Structurally stable: not informative.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: ''
+  macro_indicator_id: null
+- key: jp_boj
+  country_iso2: JP
+  area: JP
+  name: BoJ Rate Decision
+  category: Monetary policy
+  archetype: policy_rate
+  freq: E
+  criticality: T1
+  nature: policy
+  agency: Bank of Japan
+  rationale: 'Every meeting is an event for the currency since the exit from negative rates.'
+  match_rules: boj;rate
+  match_excludes: speak|speech|governor|opinion|minutes|price
+  macro_indicator_id: null
+- key: jp_machinery
+  country_iso2: JP
+  area: JP
+  name: Core Machinery Orders
+  category: Activity
+  archetype: machinery
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: Cabinet Office
+  rationale: 'Leads private investment by about six months; very volatile.'
+  match_rules: machinery orders
+  match_excludes: tool
+  macro_indicator_id: null
+- key: jp_pmi_mfg
+  country_iso2: JP
+  area: JP
+  name: Manufacturing PMI
+  category: Sentiment
+  archetype: pmi_mfg
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: au Jibun / S&P Global
+  rationale: 'Less followed than the Tankan, but monthly rather than quarterly.'
+  match_rules: mfg|manufacturing;pmi
+  match_excludes: services|composite
+  macro_indicator_id: null
+- key: in_cpi_yy
+  country_iso2: IN
+  area: IN
+  name: CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: MoSPI
+  rationale: 'The RBI''s formal target since 2016. Food carries an enormous weight.'
+  match_rules: cpi;yy
+  match_excludes: wpi
+  macro_indicator_id: null
+- key: in_wpi_yy
+  country_iso2: IN
+  area: IN
+  name: WPI y/y
+  category: Inflation
+  archetype: wpi
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: Ministry of Commerce
+  rationale: 'It contains no services, so it diverges widely from the CPI: useful for industrial margins.'
+  match_rules: wpi;yy
+  match_excludes: fuel|food|manufactur
+  macro_indicator_id: null
+- key: in_indprod
+  country_iso2: IN
+  area: IN
+  name: Industrial Production y/y
+  category: Activity
+  archetype: indprod
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: MoSPI
+  rationale: 'A noisy series, heavily revised.'
+  match_rules: industrial;yy
+  match_excludes: 'fytd|cumulative'
+  macro_indicator_id: null
+- key: in_gdp
+  country_iso2: IN
+  area: IN
+  name: GDP y/y
+  category: Growth
+  archetype: gdp_yy
+  freq: Q
+  criticality: T1
+  nature: lagging
+  agency: MoSPI
+  rationale: 'India is the fastest-growing large economy: the level of growth is the investment thesis.'
+  match_rules: gdp;yy
+  match_excludes: 'annual|fy'
+  macro_indicator_id: null
+- key: in_rbi
+  country_iso2: IN
+  area: IN
+  name: RBI Repo Rate
+  category: Monetary policy
+  archetype: policy_rate
+  freq: E
+  criticality: T1
+  nature: policy
+  agency: Reserve Bank of India
+  rationale: 'Decision and stance; the RBI also communicates its position on liquidity.'
+  match_rules: repo|rbi;rate
+  match_excludes: reverse
+  macro_indicator_id: null
+- key: in_trade
+  country_iso2: IN
+  area: IN
+  name: Trade Balance
+  category: External
+  archetype: trade_balance
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Ministry of Commerce
+  rationale: 'The trade deficit is India''s structural external constraint.'
+  match_rules: trade;balance
+  match_excludes: ''
+  macro_indicator_id: null
+- key: in_exports
+  country_iso2: IN
+  area: IN
+  name: Exports
+  category: External
+  archetype: exports
+  freq: M
+  criticality: T3
+  nature: coincident
+  agency: Ministry of Commerce
+  rationale: 'Little information in isolation from the balance.'
+  match_rules: export
+  match_excludes: ''
+  macro_indicator_id: null
+- key: in_imports
+  country_iso2: IN
+  area: IN
+  name: Imports
+  category: External
+  archetype: imports
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Ministry of Commerce
+  rationale: 'Gold and oil dominate: it reads domestic demand and the external constraint together.'
+  match_rules: import
+  match_excludes: ''
+  macro_indicator_id: null
+- key: in_pmi_mfg
+  country_iso2: IN
+  area: IN
+  name: Manufacturing PMI
+  category: Sentiment
+  archetype: pmi_mfg
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: S&P Global
+  rationale: 'In expansion steadily for years: little marginal information.'
+  match_rules: mfg|manufacturing;pmi
+  match_excludes: services|composite
+  macro_indicator_id: null
+- key: in_pmi_svc
+  country_iso2: IN
+  area: IN
+  name: Services PMI
+  category: Sentiment
+  archetype: pmi_svc
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: S&P Global
+  rationale: 'Services and IT are the engine of Indian exports.'
+  match_rules: services;pmi
+  match_excludes: mfg|manufacturing|composite
+  macro_indicator_id: null
+- key: mx_cpi_yy
+  country_iso2: MX
+  area: MX
+  name: CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: INEGI
+  rationale: 'Banxico is among the most reactive central banks: the CPI moves the peso directly.'
+  match_rules: cpi|inflation;yy
+  match_excludes: 'half|1st|first|quincena|core'
+  macro_indicator_id: null
+- key: mx_core_cpi
+  country_iso2: MX
+  area: MX
+  name: Core CPI y/y
+  category: Inflation
+  archetype: core_cpi
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: INEGI
+  rationale: 'The measure Banxico judges persistence on.'
+  match_rules: core;cpi|inflation
+  match_excludes: 'half|1st|first|quincena'
+  macro_indicator_id: null
+- key: mx_gdp
+  country_iso2: MX
+  area: MX
+  name: GDP y/y
+  category: Growth
+  archetype: gdp_yy
+  freq: Q
+  criticality: T2
+  nature: lagging
+  agency: INEGI
+  rationale: 'Follows the American industrial cycle with a lag.'
+  match_rules: gdp;yy
+  match_excludes: ''
+  macro_indicator_id: null
+- key: mx_gdp_qq
+  country_iso2: MX
+  area: MX
+  name: GDP q/q
+  category: Growth
+  archetype: gdp_qq
+  freq: Q
+  criticality: T2
+  nature: lagging
+  agency: INEGI
+  rationale: 'The same information as the y/y, in a different format.'
+  match_rules: gdp;qq
+  match_excludes: ''
+  macro_indicator_id: null
+- key: mx_banxico
+  country_iso2: MX
+  area: MX
+  name: Banxico Rate Decision
+  category: Monetary policy
+  archetype: policy_rate
+  freq: E
+  criticality: T1
+  nature: policy
+  agency: Banxico
+  rationale: 'The rate differential against the Fed is the engine of the peso carry.'
+  match_rules: interest rate|banxico|bank of mexico
+  match_excludes: minutes|report
+  macro_indicator_id: null
+- key: mx_indprod
+  country_iso2: MX
+  area: MX
+  name: Industrial Production y/y
+  category: Activity
+  archetype: indprod
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: INEGI
+  rationale: 'Mexican manufacturing is in effect an appendix of the American one.'
+  match_rules: industrial;yy
+  match_excludes: ''
+  macro_indicator_id: null
+- key: mx_retail
+  country_iso2: MX
+  area: MX
+  name: Retail Sales y/y
+  category: Activity
+  archetype: retail
+  freq: M
+  criticality: T3
+  nature: coincident
+  agency: INEGI
+  rationale: 'Little followed by markets.'
+  match_rules: retail;yy
+  match_excludes: mm
+  macro_indicator_id: null
+- key: mx_trade
+  country_iso2: MX
+  area: MX
+  name: Trade Balance
+  category: External
+  archetype: trade_balance
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: INEGI
+  rationale: 'Relevant to the nearshoring theme.'
+  match_rules: trade;balance
+  match_excludes: ''
+  macro_indicator_id: null
+- key: mx_unemp
+  country_iso2: MX
+  area: MX
+  name: Unemployment Rate
+  category: Labour
+  archetype: unemployment_rate
+  freq: M
+  criticality: T3
+  nature: lagging
+  agency: INEGI
+  rationale: 'The official rate understates, given the extent of informality.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: s a|n s a
+  macro_indicator_id: null
+- key: mx_remit
+  country_iso2: MX
+  area: MX
+  name: Remittances
+  category: External
+  archetype: remittances
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Banxico
+  rationale: 'A balance-of-payments item comparable to oil receipts; it supports consumption and the peso.'
+  match_rules: remittance
+  match_excludes: ''
+  macro_indicator_id: null
+- key: br_ipca_yy
+  country_iso2: BR
+  area: BR
+  name: IPCA y/y
+  category: Inflation
+  archetype: ipca
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: IBGE
+  rationale: 'The formal target of the Brazilian central bank.'
+  match_rules: ipca|cpi;yy
+  match_excludes: 'igp|core|15|mid|fipe'
+  macro_indicator_id: null
+- key: br_ipca_mm
+  country_iso2: BR
+  area: BR
+  name: IPCA m/m
+  category: Inflation
+  archetype: ipca
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: IBGE
+  rationale: 'Monthly momentum drives expectations for the Copom.'
+  match_rules: ipca|cpi;mm
+  match_excludes: igp|core|15|fipe|mid month|s a
+  macro_indicator_id: null
+- key: br_gdp
+  country_iso2: BR
+  area: BR
+  name: GDP q/q
+  category: Growth
+  archetype: gdp_qq
+  freq: Q
+  criticality: T2
+  nature: lagging
+  agency: IBGE
+  rationale: 'Backward-looking.'
+  match_rules: gdp;qq
+  match_excludes: ''
+  macro_indicator_id: null
+- key: br_selic
+  country_iso2: BR
+  area: BR
+  name: Selic Rate (Copom)
+  category: Monetary policy
+  archetype: policy_rate
+  freq: E
+  criticality: T1
+  nature: policy
+  agency: BCB (Copom)
+  rationale: 'Brazil has one of the highest real rates in the world: the Copom is the centre of the stage.'
+  match_rules: selic|copom|bcb;rate
+  match_excludes: minutes|focus|tjlp
+  macro_indicator_id: null
+- key: br_indprod
+  country_iso2: BR
+  area: BR
+  name: Industrial Production m/m
+  category: Activity
+  archetype: indprod
+  freq: M
+  criticality: T3
+  nature: coincident
+  agency: IBGE
+  rationale: 'A very noisy series.'
+  match_rules: industrial;mm
+  match_excludes: ''
+  macro_indicator_id: null
+- key: br_retail
+  country_iso2: BR
+  area: BR
+  name: Retail Sales m/m
+  category: Activity
+  archetype: retail
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: IBGE
+  rationale: 'Useful for the domestic consumption cycle.'
+  match_rules: retail;mm
+  match_excludes: ''
+  macro_indicator_id: null
+- key: br_unemp
+  country_iso2: BR
+  area: BR
+  name: Unemployment Rate
+  category: Labour
+  archetype: unemployment_rate
+  freq: M
+  criticality: T2
+  nature: lagging
+  agency: IBGE
+  rationale: 'A tight labour market is a recurring Copom argument.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: ''
+  macro_indicator_id: null
+- key: br_trade
+  country_iso2: BR
+  area: BR
+  name: Trade Balance
+  category: External
+  archetype: trade_balance
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: MDIC
+  rationale: 'The agricultural and mining surplus supports the real.'
+  match_rules: trade;balance
+  match_excludes: ''
+  macro_indicator_id: null
+- key: br_igpm
+  country_iso2: BR
+  area: BR
+  name: IGP-M
+  category: Inflation
+  archetype: igpm
+  freq: M
+  criticality: T3
+  nature: coincident
+  agency: FGV
+  rationale: 'It indexes rents and contracts; very volatile and tied to the exchange rate.'
+  match_rules: 'igp'
+  match_excludes: 'igp-di|igp di|igp-10|igp 10|igp10|igpdi'
+  macro_indicator_id: null
+- key: ca_cpi_yy
+  country_iso2: CA
+  area: CA
+  name: CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Statistics Canada
+  rationale: 'The BoC has an inflation-only mandate.'
+  match_rules: cpi;yy
+  match_excludes: core|median|trim|common
+  macro_indicator_id: null
+- key: ca_core_cpi
+  country_iso2: CA
+  area: CA
+  name: Core CPI y/y
+  category: Inflation
+  archetype: core_cpi
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Bank of Canada
+  rationale: 'The BoC watches the trim and median measures, not the traditional core.'
+  match_rules: core;cpi;yy
+  match_excludes: ''
+  macro_indicator_id: null
+- key: ca_gdp_mm
+  country_iso2: CA
+  area: CA
+  name: GDP m/m
+  category: Growth
+  archetype: gdp_mm
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Statistics Canada
+  rationale: 'Canada is one of the two countries that publishes monthly GDP.'
+  match_rules: gdp;mm
+  match_excludes: ''
+  macro_indicator_id: null
+- key: ca_employment
+  country_iso2: CA
+  area: CA
+  name: Employment Change
+  category: Labour
+  archetype: employment_change
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Statistics Canada
+  rationale: 'Very volatile because of the small sample: read the full-time/part-time breakdown.'
+  match_rules: employment
+  match_excludes: full time|part time|unemployment
+  macro_indicator_id: null
+- key: ca_unemp
+  country_iso2: CA
+  area: CA
+  name: Unemployment Rate
+  category: Labour
+  archetype: unemployment_rate
+  freq: M
+  criticality: T1
+  nature: lagging
+  agency: Statistics Canada
+  rationale: 'With inflation, the BoC''s second variable.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: ''
+  macro_indicator_id: null
+- key: ca_boc
+  country_iso2: CA
+  area: CA
+  name: BoC Rate Decision
+  category: Monetary policy
+  archetype: policy_rate
+  freq: E
+  criticality: T1
+  nature: policy
+  agency: Bank of Canada
+  rationale: 'Often just ahead of or just behind the Fed: the differential moves the Canadian dollar.'
+  match_rules: boc|bank of canada;rate
+  match_excludes: speak|speech|summary|minutes|review
+  macro_indicator_id: null
+- key: ca_retail
+  country_iso2: CA
+  area: CA
+  name: Retail Sales m/m
+  category: Activity
+  archetype: retail
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Statistics Canada
+  rationale: 'Consumption under pressure from household indebtedness.'
+  match_rules: retail sales
+  match_excludes: ex|excl
+  macro_indicator_id: null
+- key: ca_ivey
+  country_iso2: CA
+  area: CA
+  name: Ivey PMI
+  category: Sentiment
+  archetype: ivey
+  freq: M
+  criticality: T3
+  nature: leading
+  agency: Ivey Business School
+  rationale: 'Small sample and it includes the public sector: very noisy.'
+  match_rules: ivey
+  match_excludes: ''
+  macro_indicator_id: null
+- key: ca_trade
+  country_iso2: CA
+  area: CA
+  name: Trade Balance
+  category: External
+  archetype: trade_balance
+  freq: M
+  criticality: T3
+  nature: coincident
+  agency: Statistics Canada
+  rationale: 'Dominated by energy going to the United States.'
+  match_rules: trade;balance
+  match_excludes: ''
+  macro_indicator_id: null
+- key: ca_housing
+  country_iso2: CA
+  area: CA
+  name: Housing Starts
+  category: Activity
+  archetype: housing
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: CMHC
+  rationale: 'The Canadian housing market is a recognised macro risk.'
+  match_rules: housing starts
+  match_excludes: ''
+  macro_indicator_id: null
+- key: ca_mfg_sales
+  country_iso2: CA
+  area: CA
+  name: Manufacturing Sales m/m
+  category: Activity
+  archetype: mfg_sales
+  freq: M
+  criticality: T3
+  nature: coincident
+  agency: Statistics Canada
+  rationale: 'Dependent on the American industrial cycle.'
+  match_rules: manufacturing sales
+  match_excludes: ''
+  macro_indicator_id: null
+- key: au_cpi_qq
+  country_iso2: AU
+  area: AU
+  name: CPI q/q
+  category: Inflation
+  archetype: cpi_qq
+  freq: Q
+  criticality: T1
+  nature: coincident
+  agency: ABS
+  rationale: 'The country''s primary format: the RBA thinks in quarterly terms.'
+  match_rules: cpi;qq
+  match_excludes: 'trimmed|weighted|weightd|medn|median|rba|monthly'
+  macro_indicator_id: null
+- key: au_cpi_yy
+  country_iso2: AU
+  area: AU
+  name: CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: Q
+  criticality: T1
+  nature: coincident
+  agency: ABS
+  rationale: 'The RBA watches the trimmed mean above all, not the headline.'
+  match_rules: cpi;yy
+  match_excludes: 'trimmed|weighted|weightd|medn|median|rba'
+  macro_indicator_id: null
+- key: au_employment
+  country_iso2: AU
+  area: AU
+  name: Employment Change
+  category: Labour
+  archetype: employment_change
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: ABS
+  rationale: 'Small sample: a single month says little, the trend is what counts.'
+  match_rules: employment
+  match_excludes: full time|part time|unemployment
+  macro_indicator_id: null
+- key: au_unemp
+  country_iso2: AU
+  area: AU
+  name: Unemployment Rate
+  category: Labour
+  archetype: unemployment_rate
+  freq: M
+  criticality: T1
+  nature: lagging
+  agency: ABS
+  rationale: 'The RBA has an explicit full-employment mandate as well.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: ''
+  macro_indicator_id: null
+- key: au_rba
+  country_iso2: AU
+  area: AU
+  name: RBA Rate Decision
+  category: Monetary policy
+  archetype: policy_rate
+  freq: E
+  criticality: T1
+  nature: policy
+  agency: RBA
+  rationale: 'Statement and the quarterly Statement on Monetary Policy.'
+  match_rules: rba;rate
+  match_excludes: speak|speech|governor|minutes|statement|bulletin
+  macro_indicator_id: null
+- key: au_retail
+  country_iso2: AU
+  area: AU
+  name: Retail Sales m/m
+  category: Activity
+  archetype: retail
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: ABS
+  rationale: 'Consumption sensitive to variable-rate mortgages, which are near universal in Australia.'
+  match_rules: retail sales
+  match_excludes: ''
+  macro_indicator_id: null
+- key: au_gdp
+  country_iso2: AU
+  area: AU
+  name: GDP q/q
+  category: Growth
+  archetype: gdp_qq
+  freq: Q
+  criticality: T2
+  nature: lagging
+  agency: ABS
+  rationale: 'Backward-looking.'
+  match_rules: gdp;qq
+  match_excludes: ''
+  macro_indicator_id: null
+- key: au_trade
+  country_iso2: AU
+  area: AU
+  name: Trade Balance
+  category: External
+  archetype: trade_balance
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: ABS
+  rationale: 'Iron ore to China: it reads the Chinese cycle more than the Australian one.'
+  match_rules: trade;balance
+  match_excludes: ''
+  macro_indicator_id: null
+- key: au_building
+  country_iso2: AU
+  area: AU
+  name: Building Approvals m/m
+  category: Activity
+  archetype: building
+  freq: M
+  criticality: T3
+  nature: leading
+  agency: ABS
+  rationale: 'Very volatile because of the weight of multi-family projects.'
+  match_rules: building approval
+  match_excludes: approvals total
+  macro_indicator_id: null
+- key: au_wages
+  country_iso2: AU
+  area: AU
+  name: Wage Price Index q/q
+  category: Labour
+  archetype: wages
+  freq: Q
+  criticality: T1
+  nature: coincident
+  agency: ABS
+  rationale: 'Immune to composition effects: the RBA cites it explicitly.'
+  match_rules: wage
+  match_excludes: ''
+  macro_indicator_id: null
+- key: kr_cpi_yy
+  country_iso2: KR
+  area: KR
+  name: CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Statistics Korea
+  rationale: 'Relatively contained inflation: it rarely surprises.'
+  match_rules: cpi;yy
+  match_excludes: core|ppi
+  macro_indicator_id: null
+- key: kr_gdp
+  country_iso2: KR
+  area: KR
+  name: GDP q/q
+  category: Growth
+  archetype: gdp_qq
+  freq: Q
+  criticality: T2
+  nature: lagging
+  agency: Bank of Korea
+  rationale: 'Confirms what exports have already said.'
+  match_rules: gdp;qq
+  match_excludes: ''
+  macro_indicator_id: null
+- key: kr_bok
+  country_iso2: KR
+  area: KR
+  name: BoK Base Rate
+  category: Monetary policy
+  archetype: policy_rate
+  freq: E
+  criticality: T1
+  nature: policy
+  agency: Bank of Korea
+  rationale: 'Constrained between household debt and the differential against the Fed.'
+  match_rules: bok|bank of korea;rate
+  match_excludes: minutes|speak|m2|bsi
+  macro_indicator_id: null
+- key: kr_indprod
+  country_iso2: KR
+  area: KR
+  name: Industrial Production y/y
+  category: Activity
+  archetype: indprod
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Statistics Korea
+  rationale: 'Semiconductors: it confirms the tech cycle.'
+  match_rules: industrial
+  match_excludes: ''
+  macro_indicator_id: null
+- key: kr_exports
+  country_iso2: KR
+  area: KR
+  name: Exports y/y
+  category: External
+  archetype: exports
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: MOTIE / Dogane
+  rationale: 'Korea is the most trade-exposed economy among the advanced ones.'
+  match_rules: export;yy|growth
+  match_excludes: 20 day|first 20|price
+  macro_indicator_id: null
+- key: kr_exports20
+  country_iso2: KR
+  area: KR
+  name: Exports First 20 Days
+  category: External
+  archetype: exports20
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: Dogane coreane
+  rationale: 'The most timely macro figure in the world on trade: out on the 21st of the same month.'
+  match_rules: 20 day|first 20
+  match_excludes: ''
+  macro_indicator_id: null
+- key: kr_trade
+  country_iso2: KR
+  area: KR
+  name: Trade Balance
+  category: External
+  archetype: trade_balance
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: MOTIE
+  rationale: 'The balance depends on the price of imported energy.'
+  match_rules: trade;balance
+  match_excludes: ''
+  macro_indicator_id: null
+- key: kr_unemp
+  country_iso2: KR
+  area: KR
+  name: Unemployment Rate
+  category: Labour
+  archetype: unemployment_rate
+  freq: M
+  criticality: T3
+  nature: lagging
+  agency: Statistics Korea
+  rationale: 'Little informative.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: ''
+  macro_indicator_id: null
+- key: tw_cpi_yy
+  country_iso2: TW
+  area: TW
+  name: CPI y/y
+  category: Inflation
+  archetype: cpi_yy
+  freq: M
+  criticality: T3
+  nature: coincident
+  agency: DGBAS
+  rationale: 'Structurally low and not very volatile inflation.'
+  match_rules: cpi;yy
+  match_excludes: ppi|wpi
+  macro_indicator_id: null
+- key: tw_gdp
+  country_iso2: TW
+  area: TW
+  name: GDP y/y
+  category: Growth
+  archetype: gdp_yy
+  freq: Q
+  criticality: T3
+  nature: lagging
+  agency: DGBAS
+  rationale: 'Entirely explained by exports.'
+  match_rules: gdp;yy
+  match_excludes: ''
+  macro_indicator_id: null
+- key: tw_export_orders
+  country_iso2: TW
+  area: TW
+  name: Export Orders y/y
+  category: External
+  archetype: export_orders
+  freq: M
+  criticality: T1
+  nature: leading
+  agency: MOEA
+  rationale: 'They lead exports by 2-3 months: among the best leading indicators of the global tech cycle.'
+  match_rules: export orders
+  match_excludes: ''
+  macro_indicator_id: null
+- key: tw_exports
+  country_iso2: TW
+  area: TW
+  name: Exports y/y
+  category: External
+  archetype: exports
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Ministry of Finance
+  rationale: 'Taiwan is the semiconductor bottleneck: its exports are the tech cycle.'
+  match_rules: export;yy|goods
+  match_excludes: order
+  macro_indicator_id: null
+- key: tw_indprod
+  country_iso2: TW
+  area: TW
+  name: Industrial Production y/y
+  category: Activity
+  archetype: indprod
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: MOEA
+  rationale: 'Semiconductor production.'
+  match_rules: industrial;yy
+  match_excludes: ''
+  macro_indicator_id: null
+- key: tw_cbc
+  country_iso2: TW
+  area: TW
+  name: CBC Discount Rate
+  category: Monetary policy
+  archetype: policy_rate
+  freq: Q
+  criticality: T2
+  nature: policy
+  agency: Central Bank of China (Taiwan)
+  rationale: 'Quarterly meetings, not a very reactive policy.'
+  match_rules: discount rate|interest rate
+  match_excludes: ''
+  macro_indicator_id: null
+- key: tw_unemp
+  country_iso2: TW
+  area: TW
+  name: Unemployment Rate
+  category: Labour
+  archetype: unemployment_rate
+  freq: M
+  criticality: T3
+  nature: lagging
+  agency: DGBAS
+  rationale: 'Stable.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: ''
+  macro_indicator_id: null
+- key: tw_trade
+  country_iso2: TW
+  area: TW
+  name: Trade Balance
+  category: External
+  archetype: trade_balance
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: Ministry of Finance
+  rationale: 'Partly duplicates the information in exports.'
+  match_rules: trade;balance
+  match_excludes: ''
+  macro_indicator_id: null

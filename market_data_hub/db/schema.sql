@@ -582,3 +582,171 @@ FROM (
     GROUP BY date, country_iso3
 )
 WHERE fx IS NOT NULL AND tot > 0;
+
+
+-- ---------------------------------------------------------------------------
+-- Economic release calendar
+--
+-- macro_panel knows which PERIOD a figure refers to, not when that figure
+-- became public: the *_vintage tables record when ingestion saw it, which
+-- depends on when the job runs. These tables supply the missing axis -- the
+-- moment of publication -- and with it the consensus, which the issuing
+-- institutions do not publish.
+--
+-- The three provenances stay apart and never mix within one series:
+--   macro_panel/macro_series  multilateral bodies (IMF, World Bank, BIS, ECB)
+--   provenance='official'     issuing agencies (BLS, BEA, Census)
+--   provenance='aggregator'   third-party calendars (MyFXBook, Tradays, ...)
+-- The link to macro_panel is the v_macro_panel_asof view, never a write.
+--
+-- country_iso3 follows the hub convention; the aggregate euro area uses 'EMU'.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS calendar_indicators (
+    indicator_key       VARCHAR PRIMARY KEY,   -- 'us_cpi_yy'
+    country_iso3        VARCHAR NOT NULL,      -- 'USA'; aggregate euro area -> 'EMU'
+    country_iso2        VARCHAR,               -- matching key against the sources
+    area                VARCHAR NOT NULL,      -- reporting group: US, CN, EZ, ...
+    name                VARCHAR NOT NULL,
+    category            VARCHAR,
+    archetype           VARCHAR,               -- shared description/methodology
+    value_type          VARCHAR,
+    frequency           VARCHAR,               -- M | Q | A | W | E (E = by calendar)
+    criticality         VARCHAR,               -- T1 critical | T2 notable | T3 context
+    nature              VARCHAR,               -- leading|coincident|lagging|policy
+    rationale           VARCHAR,               -- why it matters in this country
+    agency              VARCHAR,
+    description         VARCHAR,
+    methodology         VARCHAR,
+    macro_indicator_id  VARCHAR,               -- bridge -> macro_panel.indicator_id
+    macro_series_id     VARCHAR,               -- bridge -> macro_series.series_id
+    match_rules         VARCHAR,               -- token rules to recognise it on the sources
+    match_excludes      VARCHAR,
+    active              BOOLEAN DEFAULT TRUE,
+    updated_at          TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS calendar_events (
+    event_id            VARCHAR PRIMARY KEY,   -- hash(indicator_key, release_utc)
+    indicator_key       VARCHAR NOT NULL,
+    country_iso3        VARCHAR NOT NULL,
+    release_utc         TIMESTAMP NOT NULL,
+    release_precision   VARCHAR,               -- 'minute' | 'day'
+    reference_period    VARCHAR,               -- as the source writes it: 'Jul', 'Q2'
+    reference_date      DATE,                  -- period end -> joins macro_panel.date
+    status              VARCHAR NOT NULL,      -- 'scheduled' | 'released'
+    actual              VARCHAR,
+    actual_num          DOUBLE,
+    actual_source       VARCHAR,
+    actual_provenance   VARCHAR,               -- 'official' beats 'aggregator'
+    consensus           VARCHAR,
+    consensus_num       DOUBLE,
+    consensus_source    VARCHAR,               -- one source per series, never mixed
+    consensus_disputed  BOOLEAN,               -- other sources give a different consensus
+    consensus_low       DOUBLE,                -- range of expectations across sources: when
+    consensus_high      DOUBLE,                -- they diverge the truth is the interval, not
+    consensus_n         INTEGER,               -- one of the two picked by convention
+    previous            VARCHAR,
+    previous_num        DOUBLE,
+    revised_from        VARCHAR,
+    impact              VARCHAR,
+    impact_source       VARCHAR,
+    n_sources           INTEGER,
+    values_agree        BOOLEAN,
+    first_seen_at       TIMESTAMP,
+    updated_at          TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS calendar_observations (
+    event_id            VARCHAR NOT NULL,
+    source              VARCHAR NOT NULL,
+    provenance          VARCHAR NOT NULL,      -- 'official' | 'aggregator'
+    vintage_date        DATE NOT NULL,         -- when the hub saw THIS version
+    source_event_name   VARCHAR NOT NULL,      -- the exact name the source used
+    release_utc         TIMESTAMP,
+    reference_period    VARCHAR,
+    reference_date      DATE,                  -- period end, per source: it is the
+                                               -- source that states which period
+                                               -- the figure refers to
+    actual              VARCHAR,
+    consensus           VARCHAR,
+    previous            VARCHAR,
+    revised_from        VARCHAR,
+    impact              VARCHAR,
+    change_type         VARCHAR,               -- 'new' | 'revised' | 'unchanged'
+    prior_actual        VARCHAR,
+    run_id              VARCHAR,
+    PRIMARY KEY (event_id, source, vintage_date)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cal_events_release   ON calendar_events (release_utc);
+CREATE INDEX IF NOT EXISTS idx_cal_events_indicator ON calendar_events (indicator_key, release_utc);
+CREATE INDEX IF NOT EXISTS idx_cal_events_refdate   ON calendar_events (country_iso3, reference_date);
+CREATE INDEX IF NOT EXISTS idx_cal_obs_source       ON calendar_observations (source, vintage_date);
+
+-- ---------------------------------------------------------------------------
+-- Enrichment of a release: press commentary and technical detail.
+--
+-- A separate table for a reason of substance, not tidiness: this is content
+-- GENERATED by a model from web pages, not a value published by an institute.
+-- Keeping it in calendar_events next to 'actual' and 'consensus' would make
+-- what was measured indistinguishable from what was written, which is exactly
+-- the confusion the rest of the schema avoids.
+--
+-- generated_at is part of the key: a regeneration sits alongside rather than
+-- overwriting, so what the report said on a given day stays reconstructible.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS calendar_event_notes (
+    event_id            VARCHAR NOT NULL,
+    generated_at        TIMESTAMP NOT NULL,
+    model               VARCHAR,           -- who produced the enrichment
+    reviewer            VARCHAR,           -- who checked its relevance
+    review_attempts     INTEGER,           -- how many review rounds it took
+    commentary_json     VARCHAR,           -- items: outlet, url, summary, evidence
+    n_comments          INTEGER,
+    drivers             VARCHAR,           -- what moved the figure
+    components          VARCHAR,           -- how the indicator is built
+    technical_source    VARCHAR,           -- the agency release, if cited
+    not_found           VARCHAR,           -- what could not be found, and why
+    run_id              VARCHAR,
+    PRIMARY KEY (event_id, generated_at)
+);
+
+CREATE INDEX IF NOT EXISTS idx_cal_notes_event ON calendar_event_notes (event_id);
+
+-- The surprise only means something if the consensus was captured BEFORE the
+-- release: some sources overwrite it with the printed value. consensus_source
+-- stays exposed so the reader knows which provider the expectation came from.
+CREATE OR REPLACE VIEW v_calendar_surprise AS
+SELECT  e.event_id, e.indicator_key, i.area, i.name AS indicator_name,
+        i.criticality, e.release_utc, e.reference_date,
+        e.actual_num, e.consensus_num,
+        e.actual_num - e.consensus_num AS surprise,
+        CASE WHEN e.consensus_num IS NOT NULL AND abs(e.consensus_num) > 1e-9
+             THEN (e.actual_num - e.consensus_num) / abs(e.consensus_num) END AS surprise_rel,
+        e.consensus_source, e.actual_provenance
+FROM    calendar_events e
+JOIN    calendar_indicators i USING (indicator_key)
+WHERE   e.status = 'released'
+  AND   e.actual_num IS NOT NULL AND e.consensus_num IS NOT NULL;
+
+-- The "what to watch" for the Investment Committee: scheduled releases ordered
+-- by criticality, with the reason the indicator matters in that country.
+CREATE OR REPLACE VIEW v_calendar_upcoming AS
+SELECT  e.release_utc, i.area, i.country_iso3, i.name, i.criticality, i.nature,
+        e.reference_period, e.previous, e.consensus, i.rationale
+FROM    calendar_events e
+JOIN    calendar_indicators i USING (indicator_key)
+WHERE   e.status = 'scheduled';
+
+-- The point-in-time bridge: for every macro_panel value, when it became
+-- public. Without it a backtest uses data not yet known at the time.
+CREATE OR REPLACE VIEW v_macro_panel_asof AS
+SELECT  m.date AS reference_date, m.country_iso3, m.indicator_id, m.value,
+        e.release_utc AS known_from, i.indicator_key AS calendar_indicator_key
+FROM    macro_panel m
+LEFT JOIN calendar_indicators i
+       ON i.macro_indicator_id = m.indicator_id AND i.country_iso3 = m.country_iso3
+LEFT JOIN calendar_events e
+       ON e.indicator_key = i.indicator_key AND e.reference_date = m.date
+      AND e.status = 'released';
