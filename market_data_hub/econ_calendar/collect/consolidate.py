@@ -21,9 +21,8 @@ from .. import (
 )
 from ..aliases import normalize_name
 from .matching import normalizza
-from .timezones import measure
+from .timezones import giorno_di, measure
 
-ANNO = 2026
 MESI = {m: i for i, m in enumerate(
     ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], 1)}
@@ -101,8 +100,15 @@ def istante(fonte, data, orario, scarto=0.0):
             return locale.replace(tzinfo=ZoneInfo('America/New_York')).astimezone(
                 timezone.utc).replace(tzinfo=None), 'minute'
         if fonte == 'tradays':
-            g = datetime.strptime(f"{data.split(',')[0].strip()} {ANNO}", '%d %B %Y')
+            # Tradays writes '13 August' and never the year. It is derived from
+            # the date rather than fixed, because a batch collected in January
+            # legitimately spans two calendar years and a constant misdates
+            # whichever half it does not name.
+            giorno = giorno_di(data)
+            if giorno is None:
+                raise ValueError(data)
             o = datetime.strptime(orario, '%H:%M')
+            g = datetime(giorno.year, giorno.month, giorno.day)
             return g + timedelta(hours=o.hour + scarto, minutes=o.minute), 'minute'
         if fonte == 'yahoo':
             g = datetime.strptime(data, '%Y-%m-%d')
@@ -131,11 +137,9 @@ def istante(fonte, data, orario, scarto=0.0):
     # deliberately NOT applied: shifting midnight by the source's offset invents
     # an hour the source never published, and the row goes on to declare itself
     # 'day' precision anyway. Better a date that is honest about knowing no time.
-    for f, s in (('%Y-%m-%d', data), ('%d %B %Y', f"{data.split(',')[0].strip()} {ANNO}")):
-        try:
-            return datetime.strptime(s, f), 'day'
-        except ValueError:
-            continue
+    giorno = giorno_di(data)
+    if giorno is not None:
+        return datetime(giorno.year, giorno.month, giorno.day), 'day'
     return None, 'day'
 
 
@@ -237,7 +241,12 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
                     actual=pulisci('Attuale'), consensus=pulisci('Previsto'),
                     previous=pulisci('Precedente'), revised_from=pulisci('Revisione'),
                     impact=pulisci('Importanza'),
-                    vintage_date=date(2026, 8, 14),
+                    # vintage_date is deliberately left to its default, which is
+                    # today in UTC. It was pinned to a single collection day,
+                    # so every later run overwrote the same
+                    # (event_id, source, vintage_date) row instead of adding a
+                    # new one -- revisions were invisible and an as-of query
+                    # could return a value from before it had been collected.
                 ))
                 n += 1
         per_fonte[fonte] = n

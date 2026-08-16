@@ -147,12 +147,57 @@ VALUTA_PAESE = {'USD': 'US', 'EUR': 'EU', 'GBP': 'GB', 'JPY': 'JP', 'CNY': 'CN',
                 'MXN': 'MX', 'BRL': 'BR', 'KRW': 'KR', 'TWD': 'TW', 'ZAR': 'ZA'}
 
 
-def scarica(da, a, out, registro=None, verboso=True):
+def _iso_date(s):
+    """'2026-08-16' -> date, anything else -> None."""
+    try:
+        return datetime.strptime(str(s).strip(), '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        return None
+
+
+def paese_iso(valore):
+    """Currency -> ISO country, and an ISO country -> itself.
+
+    Both have to work, because the file is appended to across runs: rows
+    written today still say 'USD', rows written yesterday already say 'US'.
+    Mapping the whole column through the currency dictionary turned the second
+    kind into empty strings, so a resumed run erased the country from
+    everything collected before it.
+    """
+    v = str(valore).strip()
+    return VALUTA_PAESE.get(v, v)
+
+
+def da_ricollezionare(fatte, rifai_giorni=7, oggi=None):
+    """Split the registry into (skip, collect again).
+
+    A finished day stays skipped; the recent ones do not. Today is routinely
+    collected before its own releases come out, and recent values get revised,
+    so a registry that skipped every date it had ever seen meant overlapping
+    scheduled windows never refreshed any of it.
+    """
+    oggi = oggi or datetime.utcnow().date()
+    limite = oggi - timedelta(days=max(0, rifai_giorni))
+    rifare = {g for g in fatte
+              if _iso_date(g) is not None and _iso_date(g) >= limite}
+    return fatte - rifare, rifare
+
+
+def scarica(da, a, out, registro=None, verboso=True, rifai_giorni=7):
     """Una giornata alla volta, riprendibile, con il paese in ISO.
 
     Scrive man mano e tiene un registro delle giornate fatte: ogni giornata
     costa una tredicina di secondi piu' i tentativi, quindi una corsa
     interrotta a meta' che ricominciasse da capo sarebbe inutilizzabile.
+
+    `rifai_giorni` are the most recent days that get collected again even when
+    the registry has them. The registry alone skipped a date forever, which is
+    right for a date that is finished and wrong for the two cases that actually
+    happen: today, collected in the morning before its own releases came out,
+    and the recent past, whose actual values get revised. On overlapping
+    scheduled windows that meant those observations were never refreshed --
+    the vintage and revision tracking this calendar exists for could not see
+    anything change.
     """
     out = Path(out)
     registro = Path(registro) if registro else out.with_suffix('.fatte.txt')
@@ -161,8 +206,11 @@ def scarica(da, a, out, registro=None, verboso=True):
     if registro.exists():
         fatte = {r.strip() for r in registro.read_text(encoding='utf-8').splitlines()
                  if r.strip()}
+    fatte, da_rifare = da_ricollezionare(fatte, rifai_giorni)
     if verboso:
-        print(f'  giornate gia fatte: {len(fatte)}', flush=True)
+        print(f'  giornate gia fatte: {len(fatte)}'
+              + (f' (+{len(da_rifare)} recenti da rifare)' if da_rifare else ''),
+              flush=True)
 
     nuovo = not out.exists()
     with open(out, 'a', newline='', encoding='utf-8-sig') as uscita, \
@@ -196,6 +244,16 @@ def scarica(da, a, out, registro=None, verboso=True):
                 pass
 
     df = pd.read_csv(out).fillna('')
-    df['Paese'] = df.Paese.map(VALUTA_PAESE).fillna('')
+    # Only the rows still labelled by currency need converting. Mapping the
+    # whole column through a currency-keyed dictionary turned the ISO codes
+    # written by an earlier run into empty strings, so every resumed run
+    # stripped the country from all its predecessors and consolidation then
+    # skipped them for matching no catalogue country.
+    df['Paese'] = df.Paese.map(paese_iso)
+    # A re-collected day appends a second copy of its rows; the later one is
+    # the current truth (revised values), so it wins.
+    df = df.drop_duplicates(subset=[c for c in ('Data_Rilascio', 'Orario', 'Paese', 'Evento')
+                                    if c in df.columns],
+                            keep='last').reset_index(drop=True)
     df.to_csv(out, index=False, encoding='utf-8-sig')
     return df

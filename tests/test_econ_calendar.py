@@ -897,3 +897,138 @@ def test_filters_are_case_insensitive(con):
             == len(available_series(con, category="Inflation")) == 29)
     assert len(available_series(con, country="usa")) == \
         len(available_series(con, country="USA"))
+
+
+# ---------------------------------------------------------------------------
+# Collection: the five defects Codex found on PR #59, each with the case that
+# reproduces it. Every test below fails on the code as it was.
+# ---------------------------------------------------------------------------
+
+
+def test_anchor_utc_hour_follows_daylight_saving():
+    """A US 08:30 ET print is 12:30 UTC in summer and 13:30 in winter.
+
+    The anchors used to carry a fixed UTC hour, so a winter batch measured a
+    one-hour offset against a correct source: tradays and yahoo were refused
+    outright, and myfxbook took an offset one hour wrong -- silently, which is
+    the failure this module was written to end.
+    """
+    from market_data_hub.econ_calendar.collect.timezones import ora_utc_ancora
+
+    estate = ora_utc_ancora(8.5, 'America/New_York', date(2026, 8, 13))
+    inverno = ora_utc_ancora(8.5, 'America/New_York', date(2026, 12, 10))
+    assert estate == 12.5
+    assert inverno == 13.5
+    assert inverno - estate == 1.0
+
+
+def test_winter_batch_measures_zero_offset_for_a_utc_source():
+    """The regression in full: a correct UTC batch dated in December.
+
+    With a fixed 12.5 anchor this measured +1.00 and `measure` refused the
+    batch for a source that was right all along.
+    """
+    import pandas as pd
+
+    from market_data_hub.econ_calendar.collect.timezones import measure
+
+    inverno = pd.DataFrame({
+        'Paese': ['US'] * 3,
+        'Evento': ['CPI YY', 'Initial Jobless Claims', 'CPI YY'],
+        # 08:30 New York in December is 13:30 UTC, and yahoo publishes UTC
+        'Orario': ['13:30', '13:30', '13:30'],
+        'Data_Rilascio': ['2026-12-10', '2026-12-17', '2026-12-24'],
+    })
+    assert measure(inverno, 'yahoo') == 0.0
+
+
+def test_tradays_year_is_derived_not_fixed():
+    """Tradays writes '13 August' with no year.
+
+    It was forced to 2026, so from 2027 every newly collected release would be
+    dated a year early, and a January batch -- which spans two years by
+    construction -- misdated whichever half the constant did not name.
+    """
+    from market_data_hub.econ_calendar.collect.timezones import giorno_di
+
+    # a January run reaching back thirteen weeks crosses into the year before
+    gennaio = date(2027, 1, 15)
+    assert giorno_di('15 January', gennaio) == date(2027, 1, 15)
+    assert giorno_di('20 December', gennaio) == date(2026, 12, 20)
+    # and the year is never hardwired to 2026
+    assert giorno_di('13 August', date(2028, 9, 1)) == date(2028, 8, 13)
+
+
+def test_observations_are_stamped_with_the_day_they_were_collected(tmp_path, monkeypatch):
+    """`vintage_date` was pinned to `date(2026, 8, 14)` inside `raccogli`.
+
+    Every run after that day therefore rewrote the same
+    (event_id, source, vintage_date) row instead of adding one, so a revision
+    was indistinguishable from the value it replaced and an as-of query could
+    return a number from before it had been collected. This goes through
+    `raccogli` itself, because the pin was there and not on the dataclass.
+    """
+    from market_data_hub.econ_calendar.collect.consolidate import raccogli
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'yahoo.csv').write_text(
+        'Paese,Evento,Orario,Data_Rilascio,Attuale,Previsto,Precedente\n'
+        'US,CPI YY,12:30 PM UTC,2026-08-13,3.1,3.0,2.9\n'
+        'US,Initial Jobless,12:30 PM UTC,2026-08-13,221K,225K,224K\n',
+        encoding='utf-8')
+
+    catalogo = [r for r in load_catalog_rows()
+                if r['country_iso3'] == 'USA' and 'cpi' in r['indicator_key'].lower()][:1]
+    assert catalogo, 'serve almeno un indicatore USA nel catalogo'
+
+    osservazioni, _ = raccogli(catalogo)
+    assert osservazioni, 'il csv di prova deve produrre almeno una osservazione'
+    assert {o.vintage_date for o in osservazioni} == {datetime.utcnow().date()}
+
+
+def test_resuming_myfxbook_keeps_iso_codes_already_written():
+    """The whole column used to be mapped through a currency-keyed dictionary.
+
+    Rows an earlier run had already converted ('US') matched no currency key
+    and became empty, so each resumed run erased the country from everything
+    collected before it, and consolidation then skipped those rows entirely.
+    """
+    import pandas as pd
+
+    from market_data_hub.econ_calendar.collect.myfxbook import paese_iso
+
+    assert paese_iso('USD') == 'US'          # fresh row, still a currency
+    assert paese_iso('US') == 'US'           # row from an earlier run, kept
+    assert paese_iso('EU') == 'EU'
+    assert paese_iso('') == ''
+
+    # the column as it really looks on a resumed run: both kinds at once
+    misto = pd.Series(['USD', 'US', 'EUR', 'EU', 'GBP', 'GB'])
+    assert list(misto.map(paese_iso)) == ['US', 'US', 'EU', 'EU', 'GB', 'GB']
+
+
+def test_recent_days_are_collected_again():
+    """The registry skipped a date forever.
+
+    Today is routinely collected before its own releases come out, and recent
+    values get revised; with overlapping scheduled windows those observations
+    were never refreshed. Only days older than the window stay skipped.
+    """
+    from datetime import timedelta as td
+
+    from market_data_hub.econ_calendar.collect.myfxbook import da_ricollezionare
+
+    oggi = date(2026, 8, 16)
+    registro = {(oggi - td(days=n)).isoformat() for n in (0, 1, 3, 30, 90)}
+    saltate, rifare = da_ricollezionare(registro, rifai_giorni=7, oggi=oggi)
+
+    assert oggi.isoformat() in rifare                      # today, still filling in
+    assert (oggi - td(days=1)).isoformat() in rifare       # yesterday, revisable
+    assert (oggi - td(days=3)).isoformat() in rifare
+    assert (oggi - td(days=30)).isoformat() in saltate     # settled, stays skipped
+    assert (oggi - td(days=90)).isoformat() in saltate
+    assert saltate | rifare == registro and not (saltate & rifare)
+
+    # a registry with junk in it must not crash the split
+    saltate, rifare = da_ricollezionare({'non-una-data'}, oggi=oggi)
+    assert saltate == {'non-una-data'} and rifare == set()

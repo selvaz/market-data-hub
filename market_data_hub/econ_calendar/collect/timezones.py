@@ -24,21 +24,31 @@ What each source needs, and why they differ:
               fixed number here would fail every November for being right.
 ``forexfactory`` reads a Unix epoch, which has no timezone to get wrong.
 
-Method: releases whose UTC time is publicly fixed. The US 08:30 ET prints (CPI,
-jobless claims, retail sales) and the ECB decision are the anchors -- they move
-only with US and euro-area daylight saving, which is the drift being looked for.
+Method: releases whose *local* time is publicly fixed. The US 08:30 ET prints
+(CPI, jobless claims, retail sales) and the ECB decision at 14:15 CET/CEST are
+the anchors. Their local time never moves; their UTC time moves twice a year
+with daylight saving, so it is computed per release date rather than written
+down -- a fixed UTC hour is right for half the year and one hour wrong for the
+other half, which is the exact error this module exists to catch.
 """
 from __future__ import annotations
 
 from collections import Counter
+from datetime import datetime, timedelta
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 # source -> how its offset is established
 DERIVED = ('myfxbook',)          # measured from the batch, every run
 EXPECTED_ZERO = ('tradays', 'yahoo')
 NOT_APPLICABLE = ('nasdaq', 'forexfactory')
 
-# source -> (country code, event name pattern, true UTC hour as float)
+# source -> (country code, event name pattern, LOCAL hour as float, IANA zone)
+#
+# The hour is the release's *local* time, which is what the issuing agency
+# fixes and never changes: the BLS prints at 08:30 New York, the ECB decides at
+# 14:15 Frankfurt. The UTC hour those correspond to is computed per release
+# date, because it differs by one hour between summer and winter.
 #
 # The codes are ISO, not currencies, because that is what the sources write by
 # the time they reach here: myfxbook labels by currency but its collector now
@@ -46,14 +56,14 @@ NOT_APPLICABLE = ('nasdaq', 'forexfactory')
 # batch would be refused for having no anchors rather than for being undatable.
 ANCORE = {
     'myfxbook': [
-        ('US', r'Inflation Rate|Initial Jobless|Retail Sales', 12.5),
-        ('EU', r'Interest Rate', 12.25),
+        ('US', r'Inflation Rate|Initial Jobless|Retail Sales', 8.5, 'America/New_York'),
+        ('EU', r'Interest Rate', 14.25, 'Europe/Berlin'),
     ],
     'tradays': [
-        ('US', r'CPI|Initial Jobless Claims|Retail Sales', 12.5),
+        ('US', r'CPI|Initial Jobless Claims|Retail Sales', 8.5, 'America/New_York'),
     ],
     'yahoo': [
-        ('US', r'CPI YY|Initial Jobless', 12.5),
+        ('US', r'CPI YY|Initial Jobless', 8.5, 'America/New_York'),
     ],
 }
 
@@ -85,11 +95,63 @@ def ore(orario) -> Optional[float]:
         return None
 
 
-def measure(d, fonte: str) -> float:
+def giorno_di(valore, oggi=None):
+    """The release date of a row, from whatever the source writes.
+
+    Sources disagree: ISO for most, '13 August' -- with no year -- for Tradays.
+    The missing year is taken as the one that puts the date nearest to today
+    without landing far in the future, because a batch is collected backwards
+    from the present and a January batch legitimately spans two years.
+    Returns None when nothing parses: such a row simply cannot serve as an
+    anchor, which is safer than dating it by assumption.
+    """
+    s = str(valore).strip()
+    if not s:
+        return None
+    oggi = oggi or datetime.utcnow().date()
+    try:
+        return datetime.strptime(s, '%Y-%m-%d').date()
+    except ValueError:
+        pass
+    testa = s.split(',')[0].strip()
+    for formato in ('%d %B', '%d %b'):
+        for anno in (oggi.year, oggi.year - 1, oggi.year + 1):
+            try:
+                g = datetime.strptime(f'{testa} {anno}', f'{formato} %Y').date()
+            except ValueError:
+                continue
+            # A batch runs backwards from today; a date more than a couple of
+            # months ahead belongs to the previous year, not this one.
+            if g - oggi <= timedelta(days=60):
+                return g
+    return None
+
+
+def ora_utc_ancora(locale: float, zona: str, giorno) -> Optional[float]:
+    """The UTC hour a fixed local release time falls on, on that date.
+
+    08:30 New York is 12:30 UTC in summer and 13:30 in winter. Which one it is
+    depends on the date, so it is asked of the date rather than assumed.
+    """
+    if giorno is None:
+        return None
+    h, m = divmod(round(locale * 60), 60)
+    istante = datetime(giorno.year, giorno.month, giorno.day, h, m,
+                       tzinfo=ZoneInfo(zona))
+    utc = istante.astimezone(ZoneInfo('UTC'))
+    return utc.hour + utc.minute / 60
+
+
+def measure(d, fonte: str, oggi=None) -> float:
     """The offset to ADD to this source's times to reach UTC.
 
-    `d` is the source's own frame, with `Paese`, `Evento` and `Orario`.
-    Raises TimezoneUnknown when the anchors are absent or disagree.
+    `d` is the source's own frame, with `Paese`, `Evento`, `Orario` and
+    `Data_Rilascio`. Raises TimezoneUnknown when the anchors are absent or
+    disagree.
+
+    Each anchor row is measured against the UTC hour its own release date
+    implies, so a batch spanning a daylight-saving change measures the same
+    offset on both sides of it instead of splitting into two populations.
     """
     if fonte in NOT_APPLICABLE:
         return 0.0
@@ -100,15 +162,23 @@ def measure(d, fonte: str) -> float:
                               f"established. Add one to ANCORE before ingesting it.")
 
     misure = []
-    for paese, pattern, utc_vero in ancore:
-        s = d[(d.Paese.astype(str) == paese)
-              & d.Evento.astype(str).str.contains(pattern, case=False, regex=True,
-                                                  na=False)]
-        valori = [v for v in (ore(x) for x in s.Orario) if v is not None]
-        if not valori:
+    for paese, pattern, ora_locale, zona in ancore:
+        sub = d[(d.Paese.astype(str) == paese)
+                & d.Evento.astype(str).str.contains(pattern, case=False,
+                                                    regex=True, na=False)]
+        scarti = []
+        for _, r in sub.iterrows():
+            pubblicata = ore(r.Orario)
+            if pubblicata is None:
+                continue
+            vera = ora_utc_ancora(ora_locale, zona,
+                                  giorno_di(r.get('Data_Rilascio', ''), oggi))
+            if vera is None:
+                continue
+            scarti.append(round(vera - pubblicata, 2))
+        if not scarti:
             continue
-        comune = Counter(valori).most_common(1)[0][0]
-        misure.append(round(utc_vero - comune, 2))
+        misure.append(Counter(scarti).most_common(1)[0][0])
 
     if not misure:
         raise TimezoneUnknown(
