@@ -22,11 +22,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
-from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+
+# selenium, bs4 and webdriver-manager arrive with the `calendar` extra, which
+# the 3.9 leg of CI deliberately does not install: nothing but the collectors
+# needs a browser. They are therefore imported inside the two functions that
+# actually drive one, so this module's pure logic -- `paese_iso`,
+# `da_ricollezionare`, the parsing helpers -- can be imported and tested
+# without a browser stack. This is deferral, not a fallback: `apri()` and
+# `leggi()` still fail loudly and immediately if the extra is missing.
 
 PERIODO = re.compile(r'\(([^)]{1,12})\)\s*$')
 MESI = {m: i for i, m in enumerate(
@@ -56,6 +59,11 @@ IMPOSTA = """
 
 
 def apri():
+    from selenium import webdriver
+    from selenium.webdriver.chrome.options import Options
+    from selenium.webdriver.chrome.service import Service
+    from webdriver_manager.chrome import ChromeDriverManager
+
     o = Options()
     o.add_argument('--window-size=1600,1000')
     o.add_argument('--disable-blink-features=AutomationControlled')
@@ -78,6 +86,8 @@ def carica(d):
 
 
 def leggi(d, anno):
+    from bs4 import BeautifulSoup
+
     s = BeautifulSoup(d.page_source, 'html.parser')
     righe = []
     for tr in s.find_all('tr'):
