@@ -919,3 +919,232 @@ def test_filters_are_case_insensitive(con):
             == len(available_series(con, category="Inflation")) == 29)
     assert len(available_series(con, country="usa")) == \
         len(available_series(con, country="USA"))
+
+
+# ---------------------------------------------------------------------------
+# Collection: the five defects Codex found on PR #59, each with the case that
+# reproduces it. Every test below fails on the code as it was.
+# ---------------------------------------------------------------------------
+
+
+def test_anchor_utc_hour_follows_daylight_saving():
+    """A US 08:30 ET print is 12:30 UTC in summer and 13:30 in winter.
+
+    The anchors used to carry a fixed UTC hour, so a winter batch measured a
+    one-hour offset against a correct source: tradays and yahoo were refused
+    outright, and myfxbook took an offset one hour wrong -- silently, which is
+    the failure this module was written to end.
+    """
+    from market_data_hub.econ_calendar.collect.timezones import ora_utc_ancora
+
+    estate = ora_utc_ancora(8.5, 'America/New_York', date(2026, 8, 13))
+    inverno = ora_utc_ancora(8.5, 'America/New_York', date(2026, 12, 10))
+    assert estate == 12.5
+    assert inverno == 13.5
+    assert inverno - estate == 1.0
+
+
+def test_winter_batch_measures_zero_offset_for_a_utc_source():
+    """The regression in full: a correct UTC batch dated in December.
+
+    With a fixed 12.5 anchor this measured +1.00 and `measure` refused the
+    batch for a source that was right all along.
+    """
+    import pandas as pd
+
+    from market_data_hub.econ_calendar.collect.timezones import measure
+
+    inverno = pd.DataFrame({
+        'Paese': ['US'] * 3,
+        'Evento': ['CPI YY', 'Initial Jobless Claims', 'CPI YY'],
+        # 08:30 New York in December is 13:30 UTC, and yahoo publishes UTC
+        'Orario': ['13:30', '13:30', '13:30'],
+        'Data_Rilascio': ['2026-12-10', '2026-12-17', '2026-12-24'],
+    })
+    assert measure(inverno, 'yahoo') == 0.0
+
+
+def test_tradays_year_is_derived_not_fixed():
+    """Tradays writes '13 August' with no year.
+
+    It was forced to 2026, so from 2027 every newly collected release would be
+    dated a year early, and a January batch -- which spans two years by
+    construction -- misdated whichever half the constant did not name.
+    """
+    from market_data_hub.econ_calendar.collect.timezones import giorno_di
+
+    # a January run reaching back thirteen weeks crosses into the year before
+    gennaio = date(2027, 1, 15)
+    assert giorno_di('15 January', gennaio) == date(2027, 1, 15)
+    assert giorno_di('20 December', gennaio) == date(2026, 12, 20)
+    # and the year is never hardwired to 2026
+    assert giorno_di('13 August', date(2028, 9, 1)) == date(2028, 8, 13)
+
+    # The symmetric case, and the one a "not far in the future" rule gets
+    # wrong: read on New Year's Eve, '1 January' is tomorrow, not 364 days
+    # back. Both directions have to work, so distance decides rather than a
+    # rule about which way to lean.
+    vigilia = date(2026, 12, 31)
+    assert giorno_di('1 January', vigilia) == date(2027, 1, 1)
+    assert giorno_di('30 December', vigilia) == date(2026, 12, 30)
+    # 29 February exists only in a leap year: 2028 is one, 2027 is not
+    assert giorno_di('29 February', date(2028, 3, 5)) == date(2028, 2, 29)
+
+
+def test_observations_are_stamped_with_the_day_they_were_collected(tmp_path, monkeypatch):
+    """`vintage_date` was pinned to `date(2026, 8, 14)` inside `raccogli`.
+
+    Every run after that day therefore rewrote the same
+    (event_id, source, vintage_date) row instead of adding one, so a revision
+    was indistinguishable from the value it replaced and an as-of query could
+    return a number from before it had been collected. This goes through
+    `raccogli` itself, because the pin was there and not on the dataclass.
+    """
+    from market_data_hub.econ_calendar.collect.consolidate import raccogli
+
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'yahoo.csv').write_text(
+        'Paese,Evento,Orario,Data_Rilascio,Attuale,Previsto,Precedente\n'
+        'US,CPI YY,12:30 PM UTC,2026-08-13,3.1,3.0,2.9\n'
+        'US,Initial Jobless,12:30 PM UTC,2026-08-13,221K,225K,224K\n',
+        encoding='utf-8')
+
+    catalogo = [r for r in load_catalog_rows()
+                if r['country_iso3'] == 'USA' and 'cpi' in r['indicator_key'].lower()][:1]
+    assert catalogo, 'serve almeno un indicatore USA nel catalogo'
+
+    # Bracket the call: crossing UTC midnight mid-run must not fail the test,
+    # but a pinned date outside the bracket still must.
+    prima = datetime.utcnow().date()
+    osservazioni, _ = raccogli(catalogo)
+    dopo = datetime.utcnow().date()
+
+    assert osservazioni, 'il csv di prova deve produrre almeno una osservazione'
+    assert all(prima <= o.vintage_date <= dopo for o in osservazioni)
+
+
+def test_resuming_myfxbook_keeps_iso_codes_already_written():
+    """The whole column used to be mapped through a currency-keyed dictionary.
+
+    Rows an earlier run had already converted ('US') matched no currency key
+    and became empty, so each resumed run erased the country from everything
+    collected before it, and consolidation then skipped those rows entirely.
+    """
+    import pandas as pd
+
+    from market_data_hub.econ_calendar.collect.myfxbook import paese_iso
+
+    assert paese_iso('USD') == 'US'          # fresh row, still a currency
+    assert paese_iso('US') == 'US'           # row from an earlier run, kept
+    assert paese_iso('EU') == 'EU'
+    assert paese_iso('') == ''
+
+    # the column as it really looks on a resumed run: both kinds at once
+    misto = pd.Series(['USD', 'US', 'EUR', 'EU', 'GBP', 'GB'])
+    assert list(misto.map(paese_iso)) == ['US', 'US', 'EU', 'EU', 'GB', 'GB']
+
+
+def test_recent_days_are_collected_again():
+    """The registry skipped a date forever.
+
+    Today is routinely collected before its own releases come out, and recent
+    values get revised; with overlapping scheduled windows those observations
+    were never refreshed. Only days older than the window stay skipped.
+    """
+    from datetime import timedelta as td
+
+    from market_data_hub.econ_calendar.collect.myfxbook import da_ricollezionare
+
+    oggi = date(2026, 8, 16)
+    registro = {(oggi - td(days=n)).isoformat() for n in (0, 1, 3, 30, 90)}
+    saltate, rifare = da_ricollezionare(registro, rifai_giorni=7, oggi=oggi)
+
+    assert oggi.isoformat() in rifare                      # today, still filling in
+    assert (oggi - td(days=1)).isoformat() in rifare       # yesterday, revisable
+    assert (oggi - td(days=3)).isoformat() in rifare
+    assert (oggi - td(days=30)).isoformat() in saltate     # settled, stays skipped
+    assert (oggi - td(days=90)).isoformat() in saltate
+    assert saltate | rifare == registro and not (saltate & rifare)
+
+    # a registry with junk in it must not crash the split
+    saltate, rifare = da_ricollezionare({'non-una-data'}, oggi=oggi)
+    assert saltate == {'non-una-data'} and rifare == set()
+
+
+def test_scarica_actually_uses_the_two_helpers():
+    """The helpers being right does not mean the collector calls them.
+
+    Both defects lived inside `scarica`: the whole-column currency map and the
+    registry that skipped forever. Testing `paese_iso` and `da_ricollezionare`
+    in isolation leaves `scarica` free to stop calling them and stay green, so
+    the call sites are checked here -- structurally, since exercising `scarica`
+    itself would need a browser.
+    """
+    import ast
+    import inspect
+
+    from market_data_hub.econ_calendar.collect import myfxbook
+
+    sorgente_fn = inspect.getsource(myfxbook.scarica)
+    albero = ast.parse(sorgente_fn)
+    # Every name the function mentions, however it uses it: `da_ricollezionare`
+    # is called, `paese_iso` is handed to `.map()` without being called, and
+    # either way its absence is the defect coming back.
+    nomi = {n.id for n in ast.walk(albero) if isinstance(n, ast.Name)}
+
+    assert 'da_ricollezionare' in nomi, \
+        'scarica non consulta piu da_ricollezionare: il registro torna a saltare per sempre'
+    assert 'paese_iso' in nomi, \
+        'scarica non converte piu con paese_iso: la ripresa torna a cancellare gli ISO'
+    # and the mapping that caused the defect must not come back
+    assert '.map(VALUTA_PAESE)' not in sorgente_fn, \
+        'la colonna e di nuovo mappata in blocco sul dizionario delle valute'
+
+
+def test_recollected_row_replaces_the_stale_one_even_if_its_time_changed():
+    """Dedup must key on the release, not on the time it was said to be at.
+
+    A re-collection can carry a corrected time. Keying on `Orario` kept both
+    rows, and the ingest then chose between them by order -- where the stale
+    one can win. Two genuinely distinct reference periods must still survive.
+    """
+    import ast
+    import inspect
+
+    import pandas as pd
+
+    from market_data_hub.econ_calendar.collect import myfxbook
+
+    righe = pd.DataFrame([
+        # same release, collected twice, time corrected on the second pass
+        {'Data_Rilascio': '2026-08-13', 'Orario': '15:00', 'Paese': 'US',
+         'Evento': 'CPI YY', 'Periodo_Riferimento': 'Jul', 'Attuale': '3.0'},
+        {'Data_Rilascio': '2026-08-13', 'Orario': '14:00', 'Paese': 'US',
+         'Evento': 'CPI YY', 'Periodo_Riferimento': 'Jul', 'Attuale': '3.1'},
+        # same day and indicator, different period: two observations, not a dup
+        {'Data_Rilascio': '2026-08-13', 'Orario': '14:00', 'Paese': 'US',
+         'Evento': 'CPI YY', 'Periodo_Riferimento': 'Jun', 'Attuale': '2.9'},
+    ])
+
+    # the key is read from `scarica` itself, so changing it there fails here
+    sorgente_fn = inspect.getsource(myfxbook.scarica)
+    albero = ast.parse(sorgente_fn)
+    chiave = None
+    for nodo in ast.walk(albero):
+        if (isinstance(nodo, ast.Assign)
+                and any(getattr(t, 'id', '') == 'chiave' for t in nodo.targets)):
+            chiave = [c.value for c in ast.walk(nodo)
+                      if isinstance(c, ast.Constant) and isinstance(c.value, str)]
+    assert chiave, 'scarica non definisce piu una chiave di deduplicazione'
+    assert 'Orario' not in chiave, \
+        "l'orario e tornato nella chiave: una release con orario corretto non viene sostituita"
+    assert 'Periodo_Riferimento' in chiave, \
+        'senza il periodo, due release dello stesso indicatore nello stesso giorno si fondono'
+
+    tenute = righe.drop_duplicates(subset=chiave, keep='last').reset_index(drop=True)
+
+    assert len(tenute) == 2, 'le due letture della stessa release devono fondersi in una'
+    luglio = tenute[tenute.Periodo_Riferimento == 'Jul'].iloc[0]
+    assert luglio.Attuale == '3.1' and luglio.Orario == '14:00', \
+        'deve vincere la riga ricollezionata, con il suo orario corretto'
+    assert set(tenute.Periodo_Riferimento) == {'Jul', 'Jun'}

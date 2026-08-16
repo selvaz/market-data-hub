@@ -38,6 +38,12 @@ dev = [
     # a runtime dependency, needed solely for the mypy step in CI.
     "typing_extensions",
 ]
+# Scraping the economic release calendar. An extra rather than a dependency:
+# four of the five sources are read through a real browser, and nothing else in
+# the package needs one -- neither the ingestion, nor the audits, nor any
+# reader. The 3.9 leg of CI does not install this, so the modules that need it
+# must stay unimported until asked for (see econ_calendar/collect/__init__.py).
+calendar = ["selenium>=4.15", "webdriver-manager>=4.0", "beautifulsoup4>=4.11"]
 
 [tool.mypy]
 # No explicit python_version: mypy then assumes the version of the
