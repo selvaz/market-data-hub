@@ -252,8 +252,15 @@ def scarica(da, a, out, registro=None, verboso=True, rifai_giorni=7):
     df['Paese'] = df.Paese.map(paese_iso)
     # A re-collected day appends a second copy of its rows; the later one is
     # the current truth (revised values), so it wins.
-    df = df.drop_duplicates(subset=[c for c in ('Data_Rilascio', 'Orario', 'Paese', 'Evento')
-                                    if c in df.columns],
-                            keep='last').reset_index(drop=True)
+    #
+    # `Orario` is deliberately NOT part of the key: a re-collection can carry a
+    # corrected time, and keying on it would keep both rows instead of
+    # replacing one -- leaving the ingest to pick between them by order, where
+    # the stale row can win. `Periodo_Riferimento` IS part of it, because two
+    # releases of the same indicator published the same day for different
+    # periods are two observations, not a duplicate.
+    chiave = [c for c in ('Data_Rilascio', 'Paese', 'Evento', 'Periodo_Riferimento')
+              if c in df.columns]
+    df = df.drop_duplicates(subset=chiave, keep='last').reset_index(drop=True)
     df.to_csv(out, index=False, encoding='utf-8-sig')
     return df

@@ -34,7 +34,7 @@ other half, which is the exact error this module exists to catch.
 from __future__ import annotations
 
 from collections import Counter
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Optional
 from zoneinfo import ZoneInfo
 
@@ -114,17 +114,21 @@ def giorno_di(valore, oggi=None):
     except ValueError:
         pass
     testa = s.split(',')[0].strip()
+    # The nearest candidate wins, measured both ways. Taking the first one that
+    # merely is not far in the future picks this year for '1 January' read on
+    # 31 December -- a date 364 days behind, when the row means tomorrow.
+    # Distance decides it in both directions and needs no rule about which.
+    candidati = []
     for formato in ('%d %B', '%d %b'):
-        for anno in (oggi.year, oggi.year - 1, oggi.year + 1):
+        for anno in (oggi.year - 1, oggi.year, oggi.year + 1):
             try:
-                g = datetime.strptime(f'{testa} {anno}', f'{formato} %Y').date()
+                candidati.append(
+                    datetime.strptime(f'{testa} {anno}', f'{formato} %Y').date())
             except ValueError:
                 continue
-            # A batch runs backwards from today; a date more than a couple of
-            # months ahead belongs to the previous year, not this one.
-            if g - oggi <= timedelta(days=60):
-                return g
-    return None
+    if not candidati:
+        return None
+    return min(candidati, key=lambda g: abs(g - oggi))
 
 
 def ora_utc_ancora(locale: float, zona: str, giorno) -> Optional[float]:
