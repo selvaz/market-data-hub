@@ -1148,3 +1148,41 @@ def test_recollected_row_replaces_the_stale_one_even_if_its_time_changed():
     assert luglio.Attuale == '3.1' and luglio.Orario == '14:00', \
         'deve vincere la riga ricollezionata, con il suo orario corretto'
     assert set(tenute.Periodo_Riferimento) == {'Jul', 'Jun'}
+
+
+# ---------------------------------------------------------------------------
+# The job used to exit 0 whenever anything at all was ingested, even with a
+# source down -- indistinguishable to Task Scheduler from a clean run.
+# D27, found 2026-08-17 enabling the job: yahoo died mid-collection and the
+# job reported success while reference_date coverage dropped to 11% (from a
+# clean run's 44%), because yahoo is the only source that publishes it.
+# ---------------------------------------------------------------------------
+
+
+def test_a_clean_run_with_all_sources_exits_zero():
+    from run_econ_calendar import exit_code
+
+    assert exit_code(guasti=0, n_fonti=5, n_osservazioni=468) == 0
+
+
+def test_a_degraded_run_exits_two_not_zero():
+    """The regression in full: one of five sources down, four still
+    delivered observations. This used to return 0."""
+    from run_econ_calendar import exit_code
+
+    assert exit_code(guasti=1, n_fonti=5, n_osservazioni=468) == 2
+    assert exit_code(guasti=4, n_fonti=5, n_osservazioni=12) == 2
+
+
+def test_every_source_down_exits_one():
+    from run_econ_calendar import exit_code
+
+    assert exit_code(guasti=5, n_fonti=5, n_osservazioni=0) == 1
+
+
+def test_zero_observations_is_a_failure_even_if_no_source_reported_a_crash():
+    """Sources can 'succeed' -- return an empty frame -- and still leave
+    nothing to ingest; that is not a clean run either."""
+    from run_econ_calendar import exit_code
+
+    assert exit_code(guasti=0, n_fonti=5, n_osservazioni=0) == 1
