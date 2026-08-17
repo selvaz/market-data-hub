@@ -46,6 +46,55 @@ from market_data_hub.econ_calendar.reference import (                 # noqa: E4
 FILE_PER_FONTE = {fonte: file for file, (fonte, _) in FONTI.items()}
 
 
+def exit_code(guasti: int, n_osservazioni: int) -> int:
+    """0 clean, 1 total failure, 2 degraded -- three outcomes, not two.
+
+    One dead source does not void the others: the run above still ingests
+    what the rest collected, and a day covered by four sources is worth
+    having. But "some collected" and "all collected" used to both return 0,
+    which is indistinguishable to a caller that only reads the exit code --
+    and Task Scheduler is exactly such a caller.
+
+    The middle case is not cosmetic. Measured on 2026-08-17 with yahoo down:
+    reference_date coverage came out at 11%, against the 44% a clean run
+    gets, because yahoo is the only source that publishes the reference
+    period.
+
+    Decided on `n_osservazioni`, not on `guasti` reaching every source: a
+    source can "succeed" -- raise nothing -- and still return an empty frame,
+    which is a total failure by outcome even though nothing crashed.
+    """
+    if n_osservazioni == 0:
+        return 1
+    if guasti == 0:
+        return 0
+    return 2
+
+
+def _scarta_csv_stantio(uscita: Path, scritto_da_se: bool) -> None:
+    """Remove a source's CSV when this run's collection did not replace it.
+
+    `--work-dir` is the live project's directory, written into day after day,
+    not a fresh one per run. A source that fails leaves whatever file was
+    there from a previous day untouched, and `raccogli()` reads it anyway --
+    it has no way to know the file is not from today. That is not only a
+    freshness problem: the rows would be ingested under today's vintage_date,
+    recording yesterday's reading as if it were observed today. It also
+    defeats the exit code above: a run where every source fails can still
+    have `n_osservazioni > 0` from leftover files, and get reported as
+    degraded rather than total failure.
+
+    Not for myfxbook: it writes its own file incrementally and resumes across
+    runs by design (`scritto_da_se=True`) -- clearing it would discard
+    correctly-collected earlier days along with the failed attempt.
+    """
+    if scritto_da_se:
+        return
+    if uscita.exists():
+        uscita.unlink()
+        print(f'  removed stale {uscita.name} from a previous run', flush=True)
+
+
 def collect(fonti, work_dir: Path, da: str, a: str,
             yahoo_da: str, yahoo_a: str, settimane: int) -> int:
     """Download each requested source into its CSV. Returns the failure count."""
@@ -84,11 +133,13 @@ def collect(fonti, work_dir: Path, da: str, a: str,
             # covered by four is worth having.
             guasti += 1
             print(f'  FAILED: {type(e).__name__}: {str(e)[:160]}', flush=True)
+            _scarta_csv_stantio(uscita, scritto_da_se)
             continue
 
         if df is None or df.empty:
             guasti += 1
             print('  no rows', flush=True)
+            _scarta_csv_stantio(uscita, scritto_da_se)
             continue
         if not scritto_da_se:
             df.to_csv(uscita, index=False, encoding='utf-8-sig')
@@ -193,11 +244,24 @@ def main() -> int:
     for f, n in sorted(per_fonte.items()):
         print(f'  {f:14} {n:5} observations')
     print(f'  {"TOTAL":14} {len(osservazioni):5}')
+    # Printed even when nothing failed, so a reader does not have to infer a
+    # clean run from the absence of a line -- the failure count above it is
+    # already easy to miss between two runs of numbers.
+    #
+    # Under --no-collect, `guasti` never leaves 0: no source was asked to run,
+    # so none can have failed. Printing "N/N succeeded" there would say a
+    # fresh collection just happened when it did not -- the CSVs on disk could
+    # be from a degraded run, or from days ago.
+    if args.no_collect:
+        print('  sources: not attempted (--no-collect; re-ingesting what is on disk)')
+    else:
+        print(f'  sources: {len(fonti) - guasti}/{len(fonti)} succeeded'
+              + (f'  ({guasti} failed, see FAILED lines above)' if guasti else ''))
 
     if not osservazioni:
         print('\nnothing to ingest.', file=sys.stderr)
         con.close()
-        return 1
+        return exit_code(guasti, 0)
 
     esito = ingest_observations(
         con, osservazioni,
@@ -217,7 +281,7 @@ def main() -> int:
 
     audit(con)
     con.close()
-    return 1 if guasti == len(fonti) else 0
+    return exit_code(guasti, len(osservazioni))
 
 
 if __name__ == '__main__':
