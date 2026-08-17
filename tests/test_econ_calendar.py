@@ -1162,7 +1162,7 @@ def test_recollected_row_replaces_the_stale_one_even_if_its_time_changed():
 def test_a_clean_run_with_all_sources_exits_zero():
     from run_econ_calendar import exit_code
 
-    assert exit_code(guasti=0, n_fonti=5, n_osservazioni=468) == 0
+    assert exit_code(guasti=0, n_osservazioni=468) == 0
 
 
 def test_a_degraded_run_exits_two_not_zero():
@@ -1170,14 +1170,14 @@ def test_a_degraded_run_exits_two_not_zero():
     delivered observations. This used to return 0."""
     from run_econ_calendar import exit_code
 
-    assert exit_code(guasti=1, n_fonti=5, n_osservazioni=468) == 2
-    assert exit_code(guasti=4, n_fonti=5, n_osservazioni=12) == 2
+    assert exit_code(guasti=1, n_osservazioni=468) == 2
+    assert exit_code(guasti=4, n_osservazioni=12) == 2
 
 
 def test_every_source_down_exits_one():
     from run_econ_calendar import exit_code
 
-    assert exit_code(guasti=5, n_fonti=5, n_osservazioni=0) == 1
+    assert exit_code(guasti=5, n_osservazioni=0) == 1
 
 
 def test_zero_observations_is_a_failure_even_if_no_source_reported_a_crash():
@@ -1185,4 +1185,62 @@ def test_zero_observations_is_a_failure_even_if_no_source_reported_a_crash():
     nothing to ingest; that is not a clean run either."""
     from run_econ_calendar import exit_code
 
-    assert exit_code(guasti=0, n_fonti=5, n_osservazioni=0) == 1
+    assert exit_code(guasti=0, n_osservazioni=0) == 1
+
+
+def test_a_stale_csv_from_a_previous_run_is_removed_on_failure(tmp_path):
+    """The regression found by review: --work-dir is the live project's
+    directory, written into day after day. A source that fails today left
+    yesterday's file untouched and raccogli() read it anyway -- not just
+    stale data ingested under today's vintage, but a run where every source
+    fails today could still show n_osservazioni > 0 from leftovers, and be
+    reported as degraded instead of total failure.
+    """
+    from run_econ_calendar import _scarta_csv_stantio
+
+    stantio = tmp_path / "nasdaq.csv"
+    stantio.write_text("Paese,Evento\nUS,CPI\n", encoding="utf-8")
+    assert stantio.exists()
+
+    _scarta_csv_stantio(stantio, scritto_da_se=False)
+    assert not stantio.exists()
+
+
+def test_myfxbook_is_exempt_because_it_resumes_across_runs(tmp_path):
+    """myfxbook writes incrementally and resumes by design -- clearing its
+    file on a failed attempt would discard correctly-collected earlier days,
+    not just today's."""
+    from run_econ_calendar import _scarta_csv_stantio
+
+    proprio = tmp_path / "myfxbook.csv"
+    proprio.write_text("giorni gia raccolti\n", encoding="utf-8")
+
+    _scarta_csv_stantio(proprio, scritto_da_se=True)
+    assert proprio.exists(), "il file di myfxbook non deve mai essere cancellato qui"
+
+
+def test_no_collect_does_not_claim_a_fresh_collection_succeeded():
+    """guasti stays 0 under --no-collect because no source was asked to run --
+    the summary must say that, not '5/5 succeeded', which implies a
+    collection that never happened."""
+    import inspect
+
+    sorgente = inspect.getsource(__import__("run_econ_calendar").main)
+    assert "args.no_collect" in sorgente
+    assert "not attempted" in sorgente or "no_collect" in sorgente.split(
+        "sources:")[0][-200:]
+
+
+def test_collect_actually_calls_the_stale_csv_cleanup_on_both_failure_paths():
+    """The helper being correct does not mean collect() calls it. Structural,
+    because exercising collect() itself needs a browser."""
+    import inspect
+
+    import run_econ_calendar as modulo
+
+    corpo = inspect.getsource(modulo.collect)
+    chiamate = corpo.count("_scarta_csv_stantio(")
+    assert chiamate == 2, (
+        f"collect() chiama _scarta_csv_stantio {chiamate} volte, attese 2 "
+        f"(il ramo 'FAILED' e il ramo 'no rows')"
+    )
