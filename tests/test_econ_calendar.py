@@ -1244,3 +1244,38 @@ def test_collect_actually_calls_the_stale_csv_cleanup_on_both_failure_paths():
         f"collect() chiama _scarta_csv_stantio {chiamate} volte, attese 2 "
         f"(il ramo 'FAILED' e il ramo 'no rows')"
     )
+
+
+def test_myfxbook_file_survives_a_failure_inside_its_own_call(tmp_path, monkeypatch):
+    """The bug an independent review found after the PR above had merged.
+
+    `scritto_da_se = True` was assigned only after `scarica()` returned, so a
+    failure *inside* that call -- myfxbook writes incrementally and can have
+    committed many resumable days before a transient browser death -- left
+    the flag False, and the cleanup path deleted the file anyway. Its own
+    `.fatte.txt` registry is untouched by that deletion, so a later run would
+    believe those days were already done and never re-fetch the history just
+    destroyed.
+    """
+    import market_data_hub.econ_calendar.collect.myfxbook as mod_myfxbook
+    from run_econ_calendar import collect
+
+    work_dir = tmp_path
+    bersaglio = work_dir / "myfxbook.csv"
+    bersaglio.write_text("giorni gia raccolti, prima della chiamata che fallisce\n",
+                         encoding="utf-8")
+
+    def scarica_che_fallisce_a_meta(da, a, uscita):
+        # emula il comportamento reale: scrive, poi il browser muore
+        assert uscita == bersaglio
+        raise RuntimeError("browser died mid-collection")
+
+    monkeypatch.setattr(mod_myfxbook, "scarica", scarica_che_fallisce_a_meta)
+
+    guasti = collect(["myfxbook"], work_dir, "2026-08-01", "2026-08-16",
+                     "2026-08-01", "2026-08-16", 13)
+
+    assert guasti == 1
+    assert bersaglio.exists(), \
+        "il file di myfxbook e' stato cancellato da un fallimento dentro la sua stessa chiamata"
+    assert "gia raccolti" in bersaglio.read_text(encoding="utf-8")
