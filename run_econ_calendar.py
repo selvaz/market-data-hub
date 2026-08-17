@@ -102,7 +102,16 @@ def collect(fonti, work_dir: Path, da: str, a: str,
     for fonte in fonti:
         uscita = work_dir / FILE_PER_FONTE[fonte]
         print(f'\n--- {fonte} -> {uscita.name} ---', flush=True)
-        scritto_da_se = False
+        # Set from `fonte`, before the call -- not after it returns. myfxbook
+        # writes incrementally and may have committed many resumable days to
+        # disk before raising midway (a transient browser failure, say). The
+        # exemption has to hold from the first byte it could have written, or
+        # a failure on exactly the call this flag is meant to protect finds
+        # it still False and the cleanup below deletes real, unrecoverable
+        # history -- its own `.fatte.txt` registry survives the deletion, so
+        # a later run would believe those days are already done and never
+        # re-fetch them. Found by an independent review after this PR merged.
+        scritto_da_se = fonte == 'myfxbook'
         try:
             # Imported per source: four of the five need selenium and a browser,
             # and a run limited to nasdaq must not require either.
@@ -118,7 +127,6 @@ def collect(fonti, work_dir: Path, da: str, a: str,
                 # over would never finish.
                 from market_data_hub.econ_calendar.collect.myfxbook import scarica
                 df = scarica(da, a, uscita)
-                scritto_da_se = True
             elif fonte == 'tradays':
                 from market_data_hub.econ_calendar.collect.tradays import scarica
                 df = scarica(settimane)
