@@ -861,3 +861,85 @@ LEFT JOIN calendar_indicators i
 LEFT JOIN calendar_events e
        ON e.indicator_key = i.indicator_key AND e.reference_date = m.date
       AND e.status = 'released';
+
+
+-- ---------------------------------------------------------------------------
+-- Corporate earnings calendar
+--
+-- Same two-layer shape as the economic calendar: observations are what a
+-- source said on a given day, events are derived from them and regenerable.
+--
+-- The source publishes two distinct fields -- the last release and the next
+-- expected one -- and never a history, so past weeks exist only because we
+-- stored them. Nothing here is ever deleted.
+--
+-- market_cap is normalised across venues (the same issuer's listings in EUR
+-- and MXN report the same figure) and is comparable in USD. EPS and revenue
+-- are NOT: they are in the instrument's own currency, so they are only ever
+-- compared against their own forecast, as a ratio.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE IF NOT EXISTS earnings_events (
+    event_id            VARCHAR PRIMARY KEY,   -- hash(exchange, symbol, release day)
+    symbol              VARCHAR NOT NULL,
+    exchange            VARCHAR NOT NULL,
+    tv_ticker           VARCHAR,               -- 'HKEX:700', the scanner's own key
+    company_name        VARCHAR,
+    country             VARCHAR,
+    region              VARCHAR,               -- closed vocabulary, see ingest.REGIONS
+    sector              VARCHAR,
+    industry            VARCHAR,
+    theme               VARCHAR,               -- curated, config/earnings_themes.yaml
+    market_cap          DOUBLE,                -- USD
+    release_ts_utc      TIMESTAMP,
+    release_precision   VARCHAR,               -- 'minute' | 'day'
+    status              VARCHAR NOT NULL,      -- 'estimated' | 'confirmed' | 'occurred'
+    eps_estimate        DOUBLE,
+    eps_actual          DOUBLE,
+    revenue_estimate    DOUBLE,
+    revenue_actual      DOUBLE,
+    currency            VARCHAR,               -- of eps/revenue, not of market_cap
+    n_sources           INTEGER,
+    first_seen_at       TIMESTAMP,
+    updated_at          TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS earnings_observations (
+    event_id            VARCHAR NOT NULL,
+    source              VARCHAR NOT NULL,
+    vintage_date        DATE NOT NULL,         -- when the hub saw THIS version
+    symbol              VARCHAR NOT NULL,
+    exchange            VARCHAR NOT NULL,
+    tv_ticker           VARCHAR,
+    company_name        VARCHAR,
+    country             VARCHAR,
+    sector              VARCHAR,
+    industry            VARCHAR,
+    market_cap          DOUBLE,
+    release_ts_utc      TIMESTAMP,
+    release_precision   VARCHAR,
+    status              VARCHAR NOT NULL,
+    eps_estimate        DOUBLE,
+    eps_actual          DOUBLE,
+    revenue_estimate    DOUBLE,
+    revenue_actual      DOUBLE,
+    currency            VARCHAR,
+    run_id              VARCHAR,
+    PRIMARY KEY (event_id, source, vintage_date)
+);
+
+-- No secondary indexes on either table: both are written with INSERT OR
+-- REPLACE, and on duckdb 1.4.x an indexed non-key column keeps its OLD value
+-- on the conflict path. A moved release date would never land.
+
+-- Surprise as a ratio, the only cross-company comparison the units allow.
+CREATE OR REPLACE VIEW v_earnings_surprise AS
+SELECT event_id, symbol, exchange, company_name, country, region, sector,
+       theme, market_cap, release_ts_utc, currency,
+       eps_estimate, eps_actual, revenue_estimate, revenue_actual,
+       CASE WHEN eps_estimate IS NOT NULL AND eps_estimate <> 0 AND eps_actual IS NOT NULL
+            THEN (eps_actual - eps_estimate) / abs(eps_estimate) END AS eps_surprise,
+       CASE WHEN revenue_estimate IS NOT NULL AND revenue_estimate <> 0 AND revenue_actual IS NOT NULL
+            THEN (revenue_actual - revenue_estimate) / abs(revenue_estimate) END AS revenue_surprise
+FROM earnings_events
+WHERE status = 'occurred';
