@@ -316,6 +316,14 @@ def audit(con: duckdb.DuckDBPyConnection) -> dict:
             "WHERE theme IS NULL AND industry IS NOT NULL"),
         "missing_market_cap": conta(
             "SELECT count(*) FROM earnings_events WHERE market_cap IS NULL"),
+        # is_primary drops secondary venues but not an issuer's second share
+        # class, and identity is per symbol, so GOOG and GOOGL would count as
+        # two companies and their capitalisation twice. Counted rather than
+        # merged: name normalisation guesses, and this has yet to occur.
+        "same_day_same_issuer": conta(
+            "SELECT count(*) FROM (SELECT company_name, country, "
+            "date_trunc('day', release_ts_utc) AS g FROM earnings_events "
+            "WHERE company_name IS NOT NULL GROUP BY 1, 2, 3 HAVING count(*) > 1)"),
         # A release that happened without a figure, or one that has not yet
         # happened but already carries one: both mean a source contradicted itself.
         "occurred_without_actual": conta(

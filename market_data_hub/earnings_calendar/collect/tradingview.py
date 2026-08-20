@@ -53,8 +53,12 @@ def scarica(da: datetime, a: datetime, *, mode: str = "next",
         colonne += [campo_eps, campo_rev]
 
     filtri = [
+        # in_range includes BOTH bounds, while `a` is exclusive everywhere else
+        # here. The difference is not cosmetic: day-precision releases land on
+        # midnight, and a window ending on a Monday midnight collected 65
+        # Chinese companies into that week AND the next one.
         {"left": campo_data, "operation": "in_range",
-         "right": [_unix(da), _unix(a)]},
+         "right": [_unix(da), _unix(a) - 1]},
         {"left": "is_primary", "operation": "equal", "right": True},
     ]
     if min_market_cap:
