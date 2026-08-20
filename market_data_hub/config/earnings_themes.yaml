@@ -1,0 +1,81 @@
+# Cross-cutting themes over TradingView's industry taxonomy.
+#
+# Sector answers "what business is this"; a theme answers "what story does it
+# belong to", which is how a weekly read is actually organised. An industry
+# with no entry here simply has no theme -- audit() counts those so the file
+# can be grown from what actually shows up, rather than guessed at up front.
+
+themes:
+  ai_semis:
+    - Semiconductors
+    - Electronic Production Equipment
+    - Computer Processing Hardware
+    - Internet Software/Services
+    - Packaged Software
+    - Information Technology Services
+
+  banks_financials:
+    - Major Banks
+    - Regional Banks
+    - Investment Banks/Brokers
+    - Financial Conglomerates
+    - Insurance Brokers/Services
+    - Life/Health Insurance
+    - Property/Casualty Insurance
+    - Multi-Line Insurance
+    - Investment Managers
+    - Savings Banks
+
+  luxury_consumer:
+    - Apparel/Footwear
+    - Apparel/Footwear Retail
+    - Other Consumer Specialties
+    - Specialty Stores
+    - Home Furnishings
+    - Recreational Products
+
+  energy:
+    - Oil & Gas Production
+    - Integrated Oil
+    - Oil Refining/Marketing
+    - Oilfield Services/Equipment
+    - Coal
+    - Alternative Power Generation
+    - Electric Utilities
+    - Gas Distributors
+
+  healthcare:
+    - "Pharmaceuticals: Major"
+    - "Pharmaceuticals: Other"
+    - "Pharmaceuticals: Generic"
+    - Biotechnology
+    - Medical Specialties
+    - Medical Distributors
+    - Managed Health Care
+    - Hospital/Nursing Management
+
+  materials_industrials:
+    - Steel
+    - Other Metals/Minerals
+    - Precious Metals
+    - Aluminum
+    - "Chemicals: Major Diversified"
+    - "Chemicals: Specialty"
+    - Industrial Machinery
+    - Trucks/Construction/Farm Machinery
+    - Building Products
+    - Engineering & Construction
+
+  mobility_transport:
+    - Motor Vehicles
+    - "Auto Parts: OEM"
+    - Airlines
+    - Marine Shipping
+    - Air Freight/Couriers
+    - Trucking
+    - Railroads
+
+  real_estate:
+    - Real Estate Investment Trusts
+    - Real Estate Development
+    - Homebuilding
