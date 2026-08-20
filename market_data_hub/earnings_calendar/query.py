@@ -87,6 +87,35 @@ def aggregate(
             for b, n, tot, occ in righe]
 
 
+def event_history(con: duckdb.DuckDBPyConnection, event_id: str) -> dict:
+    """One event with every version each source recorded for it.
+
+    The versions are the only place a moved date is visible: the event itself
+    carries the current answer, not the fact that it used to say something else.
+    """
+    riga = con.execute(
+        f"SELECT {_CAMPI} FROM earnings_events WHERE event_id = ?", [event_id]
+    )
+    colonne = [d[0] for d in riga.description]
+    trovata = riga.fetchone()
+    if trovata is None:
+        return {}
+
+    versioni = con.execute(
+        """
+        SELECT source, vintage_date, release_ts_utc, release_precision, status,
+               eps_estimate, eps_actual, revenue_estimate, revenue_actual, run_id
+        FROM earnings_observations WHERE event_id = ?
+        ORDER BY vintage_date, source
+        """,
+        [event_id],
+    )
+    chiavi = [d[0] for d in versioni.description]
+    evento = dict(zip(colonne, trovata))
+    evento["versions"] = [dict(zip(chiavi, v)) for v in versioni.fetchall()]
+    return evento
+
+
 def vocabulary(con: duckdb.DuckDBPyConnection) -> dict:
     """What a caller can filter on, with counts. Empty lists when nothing is stored."""
     def valori(colonna: str) -> list[dict]:

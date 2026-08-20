@@ -14,6 +14,7 @@ from market_data_hub.earnings_calendar.ingest import (
 )
 from market_data_hub.earnings_calendar.query import (
     aggregate,
+    event_history,
     events_between,
     vocabulary,
 )
@@ -22,5 +23,5 @@ __all__ = [
     "REGIONS", "STATUS_RANK", "EarningsObservation", "audit",
     "consolidate_events", "ingest_observations", "make_event_id",
     "region_of", "resolve_event_id", "theme_of",
-    "aggregate", "events_between", "vocabulary",
+    "aggregate", "event_history", "events_between", "vocabulary",
 ]

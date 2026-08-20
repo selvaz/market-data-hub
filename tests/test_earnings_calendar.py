@@ -489,3 +489,26 @@ def test_audit_counts_the_two_contradictory_status_and_actual_pairs(con):
     a = audit(con)
     assert a["occurred_without_actual"] == 1
     assert a["pending_with_actual"] == 1
+
+
+# ---- storia di un evento --
+def test_the_history_shows_the_date_that_moved(con):
+    """The event carries the current answer; only the versions say it changed."""
+    from market_data_hub.earnings_calendar import event_history
+
+    ingest_observations(con, [_oss(release_ts_utc=datetime(2026, 9, 28, 6, 0),
+                                   vintage_date=date(2026, 9, 1))])
+    ingest_observations(con, [_oss(release_ts_utc=datetime(2026, 10, 2, 6, 0),
+                                   vintage_date=date(2026, 9, 20))])
+
+    eid = con.execute("SELECT event_id FROM earnings_events").fetchone()[0]
+    storia = event_history(con, eid)
+    assert storia["release_ts_utc"] == datetime(2026, 10, 2, 6, 0)
+    assert [v["release_ts_utc"] for v in storia["versions"]] == [
+        datetime(2026, 9, 28, 6, 0), datetime(2026, 10, 2, 6, 0)]
+
+
+def test_an_unknown_event_has_no_history(con):
+    from market_data_hub.earnings_calendar import event_history
+
+    assert event_history(con, "nonesiste") == {}
