@@ -82,3 +82,55 @@ def test_upsert_counts_are_truthful_under_intra_batch_pk_duplicates(tmp_db):
     con.close()
 
 
+
+def test_reader_waits_for_a_writer_holding_the_file(tmp_path, monkeypatch):
+    # An ingestion run holds an exclusive lock for the length of its
+    # transaction and DuckDB fails a reader outright instead of queueing it.
+    # Backtests and reports are scheduled independently of ingestion, so a
+    # lock that clears in seconds used to cost the whole run.
+    import subprocess
+    import sys
+    import time
+
+    import duckdb
+
+    path = str(tmp_path / "locked.duckdb")
+    duckdb.connect(path).close()
+    holder = subprocess.Popen([
+        sys.executable, "-c",
+        f"import duckdb, time; c = duckdb.connect(r'{path}'); "
+        "c.execute('create table x(a int)'); time.sleep(4); c.close()",
+    ])
+    try:
+        time.sleep(1.0)
+        monkeypatch.setattr(C, "_READER_LOCK_WAIT_S", 30.0)
+        monkeypatch.setattr(C, "_READER_LOCK_POLL_S", 0.5)
+        con = C._connect_read_only_waiting(path)     # would raise before
+        con.close()
+    finally:
+        holder.wait()
+
+
+def test_reader_still_raises_when_the_lock_outlives_the_budget(tmp_path, monkeypatch):
+    # Waiting is bounded: a lock that never clears must surface, not hang.
+    import subprocess
+    import sys
+    import time
+
+    import duckdb
+    import pytest
+
+    path = str(tmp_path / "stuck.duckdb")
+    duckdb.connect(path).close()
+    holder = subprocess.Popen([
+        sys.executable, "-c",
+        f"import duckdb, time; c = duckdb.connect(r'{path}'); time.sleep(5); c.close()",
+    ])
+    try:
+        time.sleep(1.0)
+        monkeypatch.setattr(C, "_READER_LOCK_WAIT_S", 1.0)
+        monkeypatch.setattr(C, "_READER_LOCK_POLL_S", 0.2)
+        with pytest.raises(duckdb.IOException):
+            C._connect_read_only_waiting(path)
+    finally:
+        holder.wait()

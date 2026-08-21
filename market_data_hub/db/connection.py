@@ -8,6 +8,7 @@ variable. The schema is applied (idempotently) on first open.
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -441,6 +442,33 @@ def _migrate_prices_to_listing_key(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("ALTER TABLE prices_daily_v7 RENAME TO prices_daily")
 
 
+_READER_LOCK_WAIT_S = float(os.environ.get("MARKET_DATA_READER_LOCK_WAIT_S", "300"))
+_READER_LOCK_POLL_S = 5.0
+
+
+def _connect_read_only_waiting(path: str) -> duckdb.DuckDBPyConnection:
+    """Open a reader, waiting out a writer that holds the file.
+
+    A writing ingestion run takes an exclusive lock for the length of its
+    transaction, and DuckDB fails a reader outright rather than queueing it.
+    Readers are long analytical jobs (backtests, reports) scheduled
+    independently of ingestion, so failing on a lock that clears in seconds
+    loses hours of work. Wait instead, up to
+    ``MARKET_DATA_READER_LOCK_WAIT_S`` (default 300); other IO errors, and a
+    lock that outlives the budget, still raise.
+    """
+    deadline = time.monotonic() + _READER_LOCK_WAIT_S
+    while True:
+        try:
+            return duckdb.connect(path, read_only=True)
+        except duckdb.IOException as exc:
+            if "being used by another process" not in str(exc):
+                raise
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(_READER_LOCK_POLL_S)
+
+
 def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
              ) -> duckdb.DuckDBPyConnection:
     """
@@ -458,7 +486,10 @@ def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
         apply_schema(tmp)
         tmp.close()
 
-    con = duckdb.connect(path, read_only=read_only)
+    if read_only:
+        con = _connect_read_only_waiting(path)
+    else:
+        con = duckdb.connect(path, read_only=read_only)
     if not read_only:
         # migrate() also calls apply_schema() internally, then walks any
         # pending `if current < N:` ladder steps (e.g. ALTER TABLE ADD COLUMN)
