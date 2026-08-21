@@ -111,7 +111,10 @@ def leggi(percorso, *, vintage_date=None) -> list:
     if vintage_date is None:
         vintage_date = datetime.fromtimestamp(percorso.stat().st_mtime,
                                               tz=timezone.utc).date()
-    tabella = pd.read_csv(percorso)
+    # Tickers are not missing values. Pandas reads "NA" -- National Bank of
+    # Canada -- as NaN by default, and the company reached the report as a
+    # row symbolled 'nan'. The same applies to NULL, NONE and a dozen others.
+    tabella = pd.read_csv(percorso, keep_default_na=False)
     osservazioni = []
     for _, r in tabella.iterrows():
         istante = _istante(r.get("release_ts"))
