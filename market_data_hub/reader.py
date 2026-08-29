@@ -273,6 +273,29 @@ def read_cftc_legacy(start=None, end=None, contract_market_name=None, *,
         "cftc_legacy_positioning", start, end, contract_market_name, db_path)
 
 
+def read_alfred_vintage(series_id: str, date: Optional[str] = None,
+                        as_of: Optional[str] = None, *,
+                        db_path=None) -> pd.DataFrame:
+    """Stored ALFRED observations for one series, optionally by date/vintage."""
+    con = _con(db_path)
+    try:
+        clauses = ["series_id = ?"]
+        params = [series_id]
+        if date is not None:
+            clauses.append("date = ?")
+            params.append(date)
+        if as_of is not None:
+            clauses.append("as_of = ?")
+            params.append(as_of)
+        where = " AND ".join(clauses)
+        return con.execute(
+            f"SELECT * FROM alfred_vintage_observations WHERE {where} "
+            "ORDER BY date, as_of", params).fetch_df()
+    finally:
+        con.close()
+
+
+
 def read_custom(series_ids: Union[str, List[str]], start: Optional[str] = None,
                 end: Optional[str] = None, wide: bool = True,
                 db_path: Optional[str] = None) -> pd.DataFrame:

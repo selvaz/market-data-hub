@@ -351,6 +351,18 @@ CREATE INDEX IF NOT EXISTS idx_msv ON macro_series_vintage (series_id, date);
 -- idx on run_id silently broke same-day vintage replacements. The report's
 -- WHERE run_id = ? scan is milliseconds on this table size; do not re-add.
 
+-- ALFRED stores vendor-published history; macro_series_vintage records only when our ingestion first saw a change.
+CREATE TABLE IF NOT EXISTS alfred_vintage_observations (
+    series_id  VARCHAR NOT NULL,
+    date       DATE    NOT NULL,
+    as_of      DATE    NOT NULL,
+    value      DOUBLE,
+    source     VARCHAR,
+    updated_at TIMESTAMP,
+    PRIMARY KEY (series_id, date, as_of)
+);
+CREATE INDEX IF NOT EXISTS idx_alfred_series_date ON alfred_vintage_observations (series_id, date);
+
 CREATE TABLE IF NOT EXISTS macro_panel_vintage (
     date          DATE    NOT NULL,
     country_iso3  VARCHAR NOT NULL,
