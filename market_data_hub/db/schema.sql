@@ -77,6 +77,46 @@ CREATE TABLE IF NOT EXISTS macro_series (
 );
 CREATE INDEX IF NOT EXISTS idx_macro_series ON macro_series (series_id);
 
+-- CFTC Commitments of Traders: weekly positioning by report date and contract.
+CREATE TABLE IF NOT EXISTS cftc_tff_positioning (
+    report_date DATE NOT NULL,
+    contract_market_name VARCHAR NOT NULL,
+    cftc_contract_market_code VARCHAR,
+    commodity_name VARCHAR,
+    commodity_subgroup_name VARCHAR,
+    open_interest_all DOUBLE,
+    dealer_long DOUBLE, dealer_short DOUBLE, dealer_spread DOUBLE,
+    asset_mgr_long DOUBLE, asset_mgr_short DOUBLE, asset_mgr_spread DOUBLE,
+    lev_money_long DOUBLE, lev_money_short DOUBLE, lev_money_spread DOUBLE,
+    other_rept_long DOUBLE, other_rept_short DOUBLE, other_rept_spread DOUBLE,
+    total_reportable_long DOUBLE, total_reportable_short DOUBLE,
+    nonreportable_long DOUBLE, nonreportable_short DOUBLE,
+    pct_oi_dealer_long DOUBLE, pct_oi_dealer_short DOUBLE,
+    pct_oi_asset_mgr_long DOUBLE, pct_oi_asset_mgr_short DOUBLE,
+    pct_oi_lev_money_long DOUBLE, pct_oi_lev_money_short DOUBLE,
+    traders_total DOUBLE,
+    source VARCHAR,
+    updated_at TIMESTAMP,
+    PRIMARY KEY (report_date, contract_market_name)
+);
+CREATE INDEX IF NOT EXISTS idx_cftc_tff_contract ON cftc_tff_positioning (contract_market_name, report_date);
+
+CREATE TABLE IF NOT EXISTS cftc_legacy_positioning (
+    report_date DATE NOT NULL,
+    contract_market_name VARCHAR NOT NULL,
+    cftc_contract_market_code VARCHAR,
+    commodity_name VARCHAR,
+    open_interest_all DOUBLE,
+    noncomm_long DOUBLE, noncomm_short DOUBLE, noncomm_spread DOUBLE,
+    comm_long DOUBLE, comm_short DOUBLE,
+    total_reportable_long DOUBLE, total_reportable_short DOUBLE,
+    nonreportable_long DOUBLE, nonreportable_short DOUBLE,
+    source VARCHAR,
+    updated_at TIMESTAMP,
+    PRIMARY KEY (report_date, contract_market_name)
+);
+CREATE INDEX IF NOT EXISTS idx_cftc_legacy_contract ON cftc_legacy_positioning (contract_market_name, report_date);
+
 -- ----------------------------------------------------------------------------
 -- 3b. macro_panel — cross-country macro panel (World Bank WDI/WGI, IMF WEO)
 --     Different model from macro_series: key (date, country, indicator).

@@ -235,6 +235,44 @@ def read_treasury_auctions(
         con.close()
 
 
+def _read_cftc(table: str, start: Optional[str], end: Optional[str],
+               contract_market_name: Optional[str],
+               db_path: Optional[str]) -> pd.DataFrame:
+    con = _con(db_path)
+    try:
+        clauses: list = []
+        params: list = []
+        if start:
+            clauses.append("report_date >= ?")
+            params.append(start)
+        if end:
+            clauses.append("report_date <= ?")
+            params.append(end)
+        if contract_market_name:
+            clauses.append("contract_market_name = ?")
+            params.append(contract_market_name)
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        return con.execute(
+            f"SELECT * FROM {table}{where} "
+            "ORDER BY contract_market_name, report_date", params).fetch_df()
+    finally:
+        con.close()
+
+
+def read_cftc_tff(start=None, end=None, contract_market_name=None, *,
+                  db_path=None) -> pd.DataFrame:
+    """TFF Futures Only COT positioning in long form."""
+    return _read_cftc(
+        "cftc_tff_positioning", start, end, contract_market_name, db_path)
+
+
+def read_cftc_legacy(start=None, end=None, contract_market_name=None, *,
+                     db_path=None) -> pd.DataFrame:
+    """Legacy Futures Only COT positioning in long form."""
+    return _read_cftc(
+        "cftc_legacy_positioning", start, end, contract_market_name, db_path)
+
+
 def read_custom(series_ids: Union[str, List[str]], start: Optional[str] = None,
                 end: Optional[str] = None, wide: bool = True,
                 db_path: Optional[str] = None) -> pd.DataFrame:
