@@ -161,6 +161,80 @@ def read_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,
         con.close()
 
 
+def read_treasury_cash_balance(
+        start: Optional[str] = None, end: Optional[str] = None,
+        account_type: Optional[str] = None, *,
+        db_path: Optional[str] = None) -> pd.DataFrame:
+    """Treasury cash-balance rows, optionally filtered by account type."""
+    con = _con(db_path)
+    try:
+        clauses: list = []
+        params: list = []
+        if start:
+            clauses.append("record_date >= ?")
+            params.append(start)
+        if end:
+            clauses.append("record_date <= ?")
+            params.append(end)
+        if account_type:
+            clauses.append("account_type = ?")
+            params.append(account_type)
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        return con.execute(
+            f"SELECT * FROM treasury_cash_balance{where} "
+            "ORDER BY record_date, account_type", params).fetch_df()
+    finally:
+        con.close()
+
+
+def read_treasury_debt(
+        start: Optional[str] = None, end: Optional[str] = None, *,
+        db_path: Optional[str] = None) -> pd.DataFrame:
+    """Daily U.S. public-debt totals."""
+    con = _con(db_path)
+    try:
+        clauses: list = []
+        params: list = []
+        if start:
+            clauses.append("record_date >= ?")
+            params.append(start)
+        if end:
+            clauses.append("record_date <= ?")
+            params.append(end)
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        return con.execute(
+            f"SELECT * FROM treasury_debt_outstanding{where} "
+            "ORDER BY record_date", params).fetch_df()
+    finally:
+        con.close()
+
+
+def read_treasury_auctions(
+        start: Optional[str] = None, end: Optional[str] = None,
+        security_type: Optional[str] = None, *,
+        db_path: Optional[str] = None) -> pd.DataFrame:
+    """Treasury auction results, optionally filtered by security type."""
+    con = _con(db_path)
+    try:
+        clauses: list = []
+        params: list = []
+        if start:
+            clauses.append("record_date >= ?")
+            params.append(start)
+        if end:
+            clauses.append("record_date <= ?")
+            params.append(end)
+        if security_type:
+            clauses.append("security_type = ?")
+            params.append(security_type)
+        where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
+        return con.execute(
+            f"SELECT * FROM treasury_auctions{where} "
+            "ORDER BY auction_date, cusip", params).fetch_df()
+    finally:
+        con.close()
+
+
 def read_custom(series_ids: Union[str, List[str]], start: Optional[str] = None,
                 end: Optional[str] = None, wide: bool = True,
                 db_path: Optional[str] = None) -> pd.DataFrame:

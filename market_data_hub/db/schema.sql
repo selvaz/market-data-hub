@@ -101,6 +101,62 @@ CREATE INDEX IF NOT EXISTS idx_panel_country ON macro_panel (country_iso3);
 CREATE INDEX IF NOT EXISTS idx_panel_indicator ON macro_panel (indicator_id);
 
 -- ----------------------------------------------------------------------------
+-- 3c. U.S. Treasury Fiscal Data -- purpose-fit fiscal and auction datasets
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS treasury_cash_balance (
+    record_date          DATE    NOT NULL,
+    account_type         VARCHAR NOT NULL,
+    open_today_bal       DOUBLE,
+    close_today_bal      DOUBLE,
+    open_month_bal       DOUBLE,
+    open_fiscal_year_bal DOUBLE,
+    source               VARCHAR,
+    updated_at           TIMESTAMP,
+    PRIMARY KEY (record_date, account_type)
+);
+CREATE INDEX IF NOT EXISTS idx_treasury_cash_account
+    ON treasury_cash_balance (account_type, record_date);
+
+-- The three amount columns below are DOUBLE (float64, ~15-17 significant
+-- decimal digits) over figures the vendor reports to the penny that already
+-- run to 14-15 digits before the decimal point (e.g. "40077529831942.94") --
+-- right at float64's precision edge, so the stored value can be off by a
+-- fraction of a dollar on the largest totals. Immaterial for macro/portfolio
+-- use (this data is read at trillion-dollar granularity), but a caller
+-- needing exact-penny precision should read the vendor API directly rather
+-- than trust this warehoused copy.
+CREATE TABLE IF NOT EXISTS treasury_debt_outstanding (
+    record_date         DATE NOT NULL PRIMARY KEY,
+    debt_held_public_amt DOUBLE,
+    intragov_hold_amt    DOUBLE,
+    tot_pub_debt_out_amt DOUBLE,
+    source               VARCHAR,
+    updated_at           TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS treasury_auctions (
+    record_date         DATE    NOT NULL,
+    cusip               VARCHAR NOT NULL,
+    security_type       VARCHAR,
+    security_term       VARCHAR,
+    auction_date        DATE,
+    issue_date          DATE,
+    maturity_date       DATE,
+    high_yield          DOUBLE,
+    avg_med_yield       DOUBLE,
+    high_discnt_rate    DOUBLE,
+    avg_med_discnt_rate DOUBLE,
+    total_tendered      DOUBLE,
+    total_accepted      DOUBLE,
+    bid_to_cover_ratio  DOUBLE,
+    source              VARCHAR,
+    updated_at          TIMESTAMP,
+    PRIMARY KEY (record_date, cusip)
+);
+CREATE INDEX IF NOT EXISTS idx_treasury_auctions_type
+    ON treasury_auctions (security_type, auction_date);
+
+-- ----------------------------------------------------------------------------
 -- 4. download_log — audit trail of every run (one row per symbol per run)
 -- ----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS download_log (
