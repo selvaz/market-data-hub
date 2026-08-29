@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 18
+SCHEMA_VERSION = 19
 
 
 def _default_db() -> str:
@@ -336,6 +336,12 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # created them above. The step advances the recorded version so an
         # existing DB does not report itself current while the tables are absent.
         current = 18
+    if current < 19:
+        # v18 -> v19: U.S. Treasury Fiscal Data (treasury_cash_balance,
+        # treasury_debt_outstanding, treasury_auctions). Additive: apply_schema()
+        # created them above. The step advances the recorded version so an
+        # existing DB does not report itself current while the tables are absent.
+        current = 19
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
