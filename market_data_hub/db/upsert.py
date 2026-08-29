@@ -71,6 +71,29 @@ _COLUMNS = {
         "total_tendered", "total_accepted", "bid_to_cover_ratio",
         "source", "updated_at",
     ],
+    "cftc_tff_positioning": [
+        "report_date", "contract_market_name", "cftc_contract_market_code",
+        "commodity_name", "commodity_subgroup_name", "open_interest_all",
+        "dealer_long", "dealer_short", "dealer_spread",
+        "asset_mgr_long", "asset_mgr_short", "asset_mgr_spread",
+        "lev_money_long", "lev_money_short", "lev_money_spread",
+        "other_rept_long", "other_rept_short", "other_rept_spread",
+        "total_reportable_long", "total_reportable_short",
+        "nonreportable_long", "nonreportable_short",
+        "pct_oi_dealer_long", "pct_oi_dealer_short",
+        "pct_oi_asset_mgr_long", "pct_oi_asset_mgr_short",
+        "pct_oi_lev_money_long", "pct_oi_lev_money_short",
+        "traders_total", "source", "updated_at",
+    ],
+    "cftc_legacy_positioning": [
+        "report_date", "contract_market_name", "cftc_contract_market_code",
+        "commodity_name", "open_interest_all",
+        "noncomm_long", "noncomm_short", "noncomm_spread",
+        "comm_long", "comm_short",
+        "total_reportable_long", "total_reportable_short",
+        "nonreportable_long", "nonreportable_short",
+        "source", "updated_at",
+    ],
 }
 
 # Non-NULL defaults for columns that may be absent from an incoming DataFrame.
@@ -96,6 +119,8 @@ _PK = {
     "treasury_cash_balance": ["record_date", "account_type"],
     "treasury_debt_outstanding": ["record_date"],
     "treasury_auctions": ["record_date", "cusip"],
+    "cftc_tff_positioning": ["report_date", "contract_market_name"],
+    "cftc_legacy_positioning": ["report_date", "contract_market_name"],
 }
 
 

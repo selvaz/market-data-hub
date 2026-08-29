@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 19
+SCHEMA_VERSION = 20
 
 
 def _default_db() -> str:
@@ -342,6 +342,13 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # created them above. The step advances the recorded version so an
         # existing DB does not report itself current while the tables are absent.
         current = 19
+    if current < 20:
+        # v19 -> v20: CFTC Commitments of Traders positioning
+        # (cftc_tff_positioning, cftc_legacy_positioning). Additive:
+        # apply_schema() created them above. The step advances the recorded
+        # version so an existing DB does not report itself current while
+        # the tables are absent.
+        current = 20
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
