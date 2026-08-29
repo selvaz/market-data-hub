@@ -69,7 +69,7 @@ def fetch_vintage_dates(series_id: str, *, api_key: str | None = None,
     response = _http_get(
         _VINTAGE_DATES_URL, params, timeout, retries, base_sleep)
     payload = response.json()
-    dates = payload.get("vintage_dates", [])
+    dates: list[str] = payload.get("vintage_dates") or []
     total = payload.get("count")
     if isinstance(total, int) and total > len(dates):
         # No pagination here on purpose (see docstring) -- but silently
