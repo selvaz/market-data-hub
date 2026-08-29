@@ -81,7 +81,7 @@ CREATE INDEX IF NOT EXISTS idx_macro_series ON macro_series (series_id);
 CREATE TABLE IF NOT EXISTS cftc_tff_positioning (
     report_date DATE NOT NULL,
     contract_market_name VARCHAR NOT NULL,
-    cftc_contract_market_code VARCHAR,
+    cftc_contract_market_code VARCHAR NOT NULL,
     commodity_name VARCHAR,
     commodity_subgroup_name VARCHAR,
     open_interest_all DOUBLE,
@@ -97,14 +97,19 @@ CREATE TABLE IF NOT EXISTS cftc_tff_positioning (
     traders_total DOUBLE,
     source VARCHAR,
     updated_at TIMESTAMP,
-    PRIMARY KEY (report_date, contract_market_name)
+    -- The CODE completes the identity, not the name. Two distinct contracts
+    -- can carry the same display name on one report date: observed live on
+    -- 2026-08-25 for SOFR-3M (codes 134741 and 134FM1, 13.0M vs 167k open
+    -- interest) and XRP (176740 and 176LM2). Keyed on the name alone the
+    -- upsert kept whichever row arrived last and silently dropped the other.
+    PRIMARY KEY (report_date, cftc_contract_market_code)
 );
 CREATE INDEX IF NOT EXISTS idx_cftc_tff_contract ON cftc_tff_positioning (contract_market_name, report_date);
 
 CREATE TABLE IF NOT EXISTS cftc_legacy_positioning (
     report_date DATE NOT NULL,
     contract_market_name VARCHAR NOT NULL,
-    cftc_contract_market_code VARCHAR,
+    cftc_contract_market_code VARCHAR NOT NULL,
     commodity_name VARCHAR,
     open_interest_all DOUBLE,
     noncomm_long DOUBLE, noncomm_short DOUBLE, noncomm_spread DOUBLE,
@@ -113,7 +118,9 @@ CREATE TABLE IF NOT EXISTS cftc_legacy_positioning (
     nonreportable_long DOUBLE, nonreportable_short DOUBLE,
     source VARCHAR,
     updated_at TIMESTAMP,
-    PRIMARY KEY (report_date, contract_market_name)
+    -- Same reason as the TFF table above: the code, not the name, is what
+    -- makes a contract unique on a report date.
+    PRIMARY KEY (report_date, cftc_contract_market_code)
 );
 CREATE INDEX IF NOT EXISTS idx_cftc_legacy_contract ON cftc_legacy_positioning (contract_market_name, report_date);
 

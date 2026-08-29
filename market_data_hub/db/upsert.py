@@ -122,8 +122,8 @@ _PK = {
     "treasury_cash_balance": ["record_date", "account_type"],
     "treasury_debt_outstanding": ["record_date"],
     "treasury_auctions": ["record_date", "cusip"],
-    "cftc_tff_positioning": ["report_date", "contract_market_name"],
-    "cftc_legacy_positioning": ["report_date", "contract_market_name"],
+    "cftc_tff_positioning": ["report_date", "cftc_contract_market_code"],
+    "cftc_legacy_positioning": ["report_date", "cftc_contract_market_code"],
     "alfred_vintage_observations": ["series_id", "date", "as_of"],
 }
 
