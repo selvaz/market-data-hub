@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 21
+SCHEMA_VERSION = 22
 
 
 def _default_db() -> str:
@@ -355,6 +355,44 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # recorded version so an existing DB does not report itself current
         # while the table is absent.
         current = 21
+    if current < 22:
+        # v21 -> v22: re-key the two CFTC tables on
+        # (report_date, cftc_contract_market_code) instead of
+        # (report_date, contract_market_name).
+        #
+        # The name is not unique on a report date. Found by running the
+        # ingestion for the first time: on 2026-08-25 the vendor returned two
+        # SOFR-3M rows (codes 134741 and 134FM1, 13.0M and 167k open interest)
+        # and two XRP rows (176740 and 176LM2), in BOTH reports. Under the old
+        # key the upsert kept whichever arrived last and dropped the other
+        # without a word -- so the tables would have started life already
+        # missing rows, and the loss would have looked like the vendor simply
+        # not listing that contract.
+        #
+        # DuckDB cannot alter a primary key in place, so the tables are
+        # rebuilt. Safe to do unconditionally here: they were introduced in
+        # v19/v20 and are fed only by a runner added in this same change, so
+        # nothing has written to them yet -- but the rows are carried over
+        # anyway rather than assuming that, and the DISTINCT ON keeps the
+        # highest open interest if a legacy duplicate somehow exists.
+        for tabella, indice in (
+                ("cftc_tff_positioning", "idx_cftc_tff_contract"),
+                ("cftc_legacy_positioning", "idx_cftc_legacy_contract")):
+            if not _table_exists(con, tabella):
+                continue    # fresh DB: apply_schema() already built it right
+            # The index depends on the table and blocks the rename;
+            # apply_schema() recreates it below.
+            con.execute(f"DROP INDEX IF EXISTS {indice}")
+            con.execute(f"ALTER TABLE {tabella} RENAME TO {tabella}_v21")
+            apply_schema(con)   # recreates it with the corrected key
+            con.execute(
+                f"INSERT INTO {tabella} SELECT * FROM {tabella}_v21 "
+                f"WHERE cftc_contract_market_code IS NOT NULL "
+                f"QUALIFY ROW_NUMBER() OVER ("
+                f"  PARTITION BY report_date, cftc_contract_market_code "
+                f"  ORDER BY open_interest_all DESC NULLS LAST) = 1")
+            con.execute(f"DROP TABLE {tabella}_v21")
+        current = 22
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
