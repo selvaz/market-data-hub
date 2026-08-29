@@ -56,6 +56,21 @@ _COLUMNS = {
         "symbol", "asset_class", "area", "category", "sub_group", "sector",
         "theme", "benchmark_proxy", "priority", "created_at", "updated_at",
     ],
+    "treasury_cash_balance": [
+        "record_date", "account_type", "open_today_bal", "close_today_bal",
+        "open_month_bal", "open_fiscal_year_bal", "source", "updated_at",
+    ],
+    "treasury_debt_outstanding": [
+        "record_date", "debt_held_public_amt", "intragov_hold_amt",
+        "tot_pub_debt_out_amt", "source", "updated_at",
+    ],
+    "treasury_auctions": [
+        "record_date", "cusip", "security_type", "security_term",
+        "auction_date", "issue_date", "maturity_date", "high_yield",
+        "avg_med_yield", "high_discnt_rate", "avg_med_discnt_rate",
+        "total_tendered", "total_accepted", "bid_to_cover_ratio",
+        "source", "updated_at",
+    ],
 }
 
 # Non-NULL defaults for columns that may be absent from an incoming DataFrame.
@@ -78,6 +93,9 @@ _PK = {
     "factor_returns": ["date", "factor_set", "factor"],
     "macro_panel_coverage": ["indicator_id"],
     "etf_classification": ["symbol"],
+    "treasury_cash_balance": ["record_date", "account_type"],
+    "treasury_debt_outstanding": ["record_date"],
+    "treasury_auctions": ["record_date", "cusip"],
 }
 
 

@@ -153,8 +153,13 @@ CREATE TABLE IF NOT EXISTS treasury_auctions (
     updated_at          TIMESTAMP,
     PRIMARY KEY (record_date, cusip)
 );
-CREATE INDEX IF NOT EXISTS idx_treasury_auctions_type
-    ON treasury_auctions (security_type, auction_date);
+-- No secondary index on security_type/auction_date, deliberately: neither is
+-- part of the PRIMARY KEY, and this repo's INSERT OR REPLACE path on DuckDB
+-- 1.4.x keeps the OLD value of an indexed non-key column on the conflict
+-- path (the same reason macro_series_vintage carries no index on run_id) --
+-- a corrected security_type or auction_date on a re-fetched row would
+-- silently stay stale. Query this table by record_date/cusip (the PK) or
+-- filter security_type without an index if that pattern becomes common.
 
 -- ----------------------------------------------------------------------------
 -- 4. download_log — audit trail of every run (one row per symbol per run)
