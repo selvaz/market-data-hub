@@ -94,6 +94,9 @@ _COLUMNS = {
         "nonreportable_long", "nonreportable_short",
         "source", "updated_at",
     ],
+    "alfred_vintage_observations": [
+        "series_id", "date", "as_of", "value", "source", "updated_at",
+    ],
 }
 
 # Non-NULL defaults for columns that may be absent from an incoming DataFrame.
@@ -121,6 +124,7 @@ _PK = {
     "treasury_auctions": ["record_date", "cusip"],
     "cftc_tff_positioning": ["report_date", "contract_market_name"],
     "cftc_legacy_positioning": ["report_date", "contract_market_name"],
+    "alfred_vintage_observations": ["series_id", "date", "as_of"],
 }
 
 

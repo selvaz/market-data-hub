@@ -19,7 +19,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 20
+SCHEMA_VERSION = 21
 
 
 def _default_db() -> str:
@@ -349,6 +349,12 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # version so an existing DB does not report itself current while
         # the tables are absent.
         current = 20
+    if current < 21:
+        # v20 -> v21: ALFRED vintage observations (alfred_vintage_observations).
+        # Additive: apply_schema() created it above. The step advances the
+        # recorded version so an existing DB does not report itself current
+        # while the table is absent.
+        current = 21
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
