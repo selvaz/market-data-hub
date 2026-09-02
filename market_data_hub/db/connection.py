@@ -8,6 +8,7 @@ variable. The schema is applied (idempotently) on first open.
 from __future__ import annotations
 
 import os
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -498,6 +499,53 @@ def _migrate_prices_to_listing_key(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("ALTER TABLE prices_daily_v7 RENAME TO prices_daily")
 
 
+_READER_LOCK_WAIT_S = float(os.environ.get("MARKET_DATA_READER_LOCK_WAIT_S", "300"))
+_READER_LOCK_POLL_S = 5.0
+
+#: How each platform says "another process holds this file". DuckDB reports
+#: the operating system's own wording, and the two share no substring at
+#: all -- verified by holding the file from a second process on each:
+#:
+#:   Windows  Cannot open file "...": The process cannot access the file
+#:            because it is being used by another process.
+#:   Linux    Could not set lock on file "...": Conflicting lock is held
+#:            in /opt/.../python3.11 (PID 2484).
+#:
+#: Matching one of them is why the waiter did nothing on the other: the
+#: guard re-raised immediately and the reader never waited. This is a tuple
+#: rather than a looser test because the contract is that only a lock is
+#: waited out -- a missing file, a permission error or a corrupt database
+#: are IOExceptions too, and waiting five minutes to re-raise them would be
+#: worse than failing at once.
+_LOCK_HELD_MARKERS = (
+    "being used by another process",  # Windows
+    "Conflicting lock",  # Linux, macOS
+)
+
+
+def _connect_read_only_waiting(path: str) -> duckdb.DuckDBPyConnection:
+    """Open a reader, waiting out a writer that holds the file.
+
+    A writing ingestion run takes an exclusive lock for the length of its
+    transaction, and DuckDB fails a reader outright rather than queueing it.
+    Readers are long analytical jobs (backtests, reports) scheduled
+    independently of ingestion, so failing on a lock that clears in seconds
+    loses hours of work. Wait instead, up to
+    ``MARKET_DATA_READER_LOCK_WAIT_S`` (default 300); other IO errors, and a
+    lock that outlives the budget, still raise.
+    """
+    deadline = time.monotonic() + _READER_LOCK_WAIT_S
+    while True:
+        try:
+            return duckdb.connect(path, read_only=True)
+        except duckdb.IOException as exc:
+            if not any(m in str(exc) for m in _LOCK_HELD_MARKERS):
+                raise
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(_READER_LOCK_POLL_S)
+
+
 def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
              ) -> duckdb.DuckDBPyConnection:
     """
@@ -515,7 +563,10 @@ def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
         apply_schema(tmp)
         tmp.close()
 
-    con = duckdb.connect(path, read_only=read_only)
+    if read_only:
+        con = _connect_read_only_waiting(path)
+    else:
+        con = duckdb.connect(path, read_only=read_only)
     if not read_only:
         # migrate() also calls apply_schema() internally, then walks any
         # pending `if current < N:` ladder steps (e.g. ALTER TABLE ADD COLUMN)

@@ -82,3 +82,92 @@ def test_upsert_counts_are_truthful_under_intra_batch_pk_duplicates(tmp_db):
     con.close()
 
 
+
+def test_reader_waits_for_a_writer_holding_the_file(tmp_path, monkeypatch):
+    # An ingestion run holds an exclusive lock for the length of its
+    # transaction and DuckDB fails a reader outright instead of queueing it.
+    # Backtests and reports are scheduled independently of ingestion, so a
+    # lock that clears in seconds used to cost the whole run.
+    import subprocess
+    import sys
+    import time
+
+    import duckdb
+
+    path = str(tmp_path / "locked.duckdb")
+    duckdb.connect(path).close()
+    holder = subprocess.Popen([
+        sys.executable, "-c",
+        f"import duckdb, time; c = duckdb.connect(r'{path}'); "
+        "c.execute('create table x(a int)'); time.sleep(4); c.close()",
+    ])
+    try:
+        time.sleep(1.0)
+        monkeypatch.setattr(C, "_READER_LOCK_WAIT_S", 30.0)
+        monkeypatch.setattr(C, "_READER_LOCK_POLL_S", 0.5)
+        con = C._connect_read_only_waiting(path)     # would raise before
+        con.close()
+    finally:
+        holder.wait()
+
+
+def test_reader_still_raises_when_the_lock_outlives_the_budget(tmp_path, monkeypatch):
+    # Waiting is bounded: a lock that never clears must surface, not hang.
+    import subprocess
+    import sys
+    import time
+
+    import duckdb
+    import pytest
+
+    path = str(tmp_path / "stuck.duckdb")
+    duckdb.connect(path).close()
+    holder = subprocess.Popen([
+        sys.executable, "-c",
+        f"import duckdb, time; c = duckdb.connect(r'{path}'); time.sleep(5); c.close()",
+    ])
+    try:
+        time.sleep(1.0)
+        monkeypatch.setattr(C, "_READER_LOCK_WAIT_S", 1.0)
+        monkeypatch.setattr(C, "_READER_LOCK_POLL_S", 0.2)
+        with pytest.raises(duckdb.IOException):
+            C._connect_read_only_waiting(path)
+    finally:
+        holder.wait()
+
+
+def test_the_lock_message_of_every_platform_is_recognised():
+    """The waiter must recognise a held lock on Linux as well as Windows.
+
+    DuckDB reports the operating system's own wording, and the two share no
+    substring: matching only Windows' phrasing made the waiter re-raise
+    immediately on Linux, so the feature did nothing on the platform CI runs
+    on -- caught by its own test failing there, not here.
+
+    Both strings below were taken from a real conflict: the Linux one from
+    the CI failure, the Windows one by holding the file from a second
+    process on this machine.
+    """
+    windows = (
+        r'IO Error: Cannot open file "C:\tmp\locked.duckdb": The process '
+        "cannot access the file because it is being used by another process."
+    )
+    linux = (
+        'IO Error: Could not set lock on file "/tmp/locked.duckdb": '
+        "Conflicting lock is held in /opt/hostedtoolcache/Python/3.11.16/"
+        "x64/bin/python3.11 (PID 2484)."
+    )
+    for msg in (windows, linux):
+        assert any(m in msg for m in C._LOCK_HELD_MARKERS), msg
+
+
+def test_an_unrelated_io_error_is_not_waited_out():
+    """Waiting is only ever for a lock. A missing file, a permission error
+    or a corrupt database are IOExceptions too, and spending the budget
+    before re-raising them would be worse than failing at once."""
+    for msg in (
+        'IO Error: No files found that match the pattern "/tmp/absent.duckdb"',
+        'IO Error: Cannot open file "/tmp/x.duckdb": Permission denied',
+        "IO Error: The file is not a valid DuckDB database file",
+    ):
+        assert not any(m in msg for m in C._LOCK_HELD_MARKERS), msg
