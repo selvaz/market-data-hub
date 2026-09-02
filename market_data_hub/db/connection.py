@@ -445,6 +445,26 @@ def _migrate_prices_to_listing_key(con: duckdb.DuckDBPyConnection) -> None:
 _READER_LOCK_WAIT_S = float(os.environ.get("MARKET_DATA_READER_LOCK_WAIT_S", "300"))
 _READER_LOCK_POLL_S = 5.0
 
+#: How each platform says "another process holds this file". DuckDB reports
+#: the operating system's own wording, and the two share no substring at
+#: all -- verified by holding the file from a second process on each:
+#:
+#:   Windows  Cannot open file "...": The process cannot access the file
+#:            because it is being used by another process.
+#:   Linux    Could not set lock on file "...": Conflicting lock is held
+#:            in /opt/.../python3.11 (PID 2484).
+#:
+#: Matching one of them is why the waiter did nothing on the other: the
+#: guard re-raised immediately and the reader never waited. This is a tuple
+#: rather than a looser test because the contract is that only a lock is
+#: waited out -- a missing file, a permission error or a corrupt database
+#: are IOExceptions too, and waiting five minutes to re-raise them would be
+#: worse than failing at once.
+_LOCK_HELD_MARKERS = (
+    "being used by another process",  # Windows
+    "Conflicting lock",  # Linux, macOS
+)
+
 
 def _connect_read_only_waiting(path: str) -> duckdb.DuckDBPyConnection:
     """Open a reader, waiting out a writer that holds the file.
@@ -462,7 +482,7 @@ def _connect_read_only_waiting(path: str) -> duckdb.DuckDBPyConnection:
         try:
             return duckdb.connect(path, read_only=True)
         except duckdb.IOException as exc:
-            if "being used by another process" not in str(exc):
+            if not any(m in str(exc) for m in _LOCK_HELD_MARKERS):
                 raise
             if time.monotonic() >= deadline:
                 raise
