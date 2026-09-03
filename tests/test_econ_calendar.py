@@ -419,6 +419,13 @@ def test_seed_file_carries_the_per_source_decisions(con):
     # FOMC decision.
     assert is_rejected(con, "myfxbook", "USA", "Capacity Utilization")
     assert not is_rejected(con, "myfxbook", "USA", "Inflation Rate YoY")
+    # Event-link country routing now separates national EUR releases from
+    # the genuine Euro Area aggregate, so these aggregate events are valid.
+    assert not is_rejected(con, "myfxbook", "EMU", "GDP Growth Rate QoQ")
+    assert not is_rejected(con, "myfxbook", "EMU", "Unemployment Rate")
+    assert not is_rejected(con, "myfxbook", "EMU", "Industrial Production MoM")
+    assert not is_rejected(con, "myfxbook", "EMU", "Industrial Sales MoM")
+    assert not is_rejected(con, "myfxbook", "EMU", "Retail Sales MoM")
     # rejection is not the same as never seen: resolve() returns None for both
     assert resolve(con, "myfxbook", "USA", "Capacity Utilization") is None
     assert ("myfxbook", "USA", "capacity utilization") in load_rejections(con)
@@ -1022,6 +1029,39 @@ def test_resuming_myfxbook_keeps_iso_codes_already_written():
     # the column as it really looks on a resumed run: both kinds at once
     misto = pd.Series(['USD', 'US', 'EUR', 'EU', 'GBP', 'GB'])
     assert list(misto.map(paese_iso)) == ['US', 'US', 'EU', 'EU', 'GB', 'GB']
+
+
+def test_myfxbook_event_href_refines_eur_currency_to_issuer_country():
+    """The visible EUR label must not turn German GDP into an EMU release."""
+    from market_data_hub.econ_calendar.collect.myfxbook import leggi
+
+    class Driver:
+        page_source = '''
+        <table>
+          <tr>
+            <td>Sep 07, 09:00</td><td></td><td></td><td>EUR</td>
+            <td><a href="/forex-economic-calendar/euro-area/gdp-growth-rate-qoq">GDP Growth Rate QoQ (Q2)</a></td>
+            <td>Low</td><td>0%</td><td>0.4%</td><td>0.4%</td>
+          </tr>
+          <tr>
+            <td>Sep 25, 07:00</td><td></td><td></td><td>EUR</td>
+            <td><a href="/forex-economic-calendar/germany/gdp-growth-rate-qoq">GDP Growth Rate QoQ (Q2)</a></td>
+            <td>Low</td><td>0.4%</td><td>0.2%</td><td>0.3%</td>
+          </tr>
+        </table>'''
+
+    rows = leggi(Driver(), 2026)
+    assert [(r['Paese'], r['Evento'], r['Periodo_Riferimento']) for r in rows] == [
+        ('EU', 'GDP Growth Rate QoQ', 'Q2'),
+        ('DE', 'GDP Growth Rate QoQ', 'Q2'),
+    ]
+
+
+def test_myfxbook_unknown_eur_href_does_not_fall_back_to_emu():
+    from market_data_hub.econ_calendar.collect.myfxbook import paese_da_href
+
+    # An unmapped issuer remains visibly unmatched instead of corrupting EMU.
+    assert paese_da_href('/forex-economic-calendar/cyprus/retail-sales-mom', 'EUR') == 'cyprus'
 
 
 def test_recent_days_are_collected_again():
