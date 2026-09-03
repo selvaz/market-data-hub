@@ -892,6 +892,10 @@ CREATE TABLE IF NOT EXISTS calendar_indicator_aliases (
     status              VARCHAR NOT NULL DEFAULT 'confirmed',
                                                -- confirmed | proposed | rejected
     decided_by          VARCHAR,               -- who: a person, or the seeding run
+    -- The file loader owns only the rows it wrote itself. This is separate
+    -- from decided_by: that field records who made the decision, while this
+    -- one tells reconciliation which decisions may disappear with the file.
+    seeded_from_file    BOOLEAN NOT NULL DEFAULT FALSE,
     decided_at          TIMESTAMP,
     note                VARCHAR,               -- why, when the choice is not obvious
     PRIMARY KEY (source, country_iso3, source_name_norm)

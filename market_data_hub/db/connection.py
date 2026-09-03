@@ -20,7 +20,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 22
+SCHEMA_VERSION = 23
 
 
 def _default_db() -> str:
@@ -394,6 +394,25 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
                 f"  ORDER BY open_interest_all DESC NULLS LAST) = 1")
             con.execute(f"DROP TABLE {tabella}_v21")
         current = 22
+    if current < 23:
+        # v22 -> v23: calendar_indicator_aliases records whether load_seed()
+        # itself wrote a decision. Reconciliation may delete only those rows:
+        # decided_by says who made the call and is deliberately caller-supplied,
+        # so it cannot safely stand in for ownership.
+        if _table_exists(con, "calendar_indicator_aliases"):
+            con.execute(
+                "ALTER TABLE calendar_indicator_aliases "
+                "ADD COLUMN IF NOT EXISTS seeded_from_file BOOLEAN DEFAULT FALSE"
+            )
+            con.execute(
+                "UPDATE calendar_indicator_aliases SET seeded_from_file = FALSE "
+                "WHERE seeded_from_file IS NULL"
+            )
+            con.execute(
+                "ALTER TABLE calendar_indicator_aliases "
+                "ALTER COLUMN seeded_from_file SET NOT NULL"
+            )
+        current = 23
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

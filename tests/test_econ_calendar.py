@@ -517,8 +517,8 @@ def test_reseeding_leaves_observation_seeded_bindings_alone(con):
     swept the whole table by status alone, so a binding bootstrapped from
     observed data (never recorded in the YAML at all) would have been
     deleted the moment anyone ran load_seed() again -- the very next regular
-    pipeline run. seed_from_observations() defaults decided_by to "seed",
-    which no real YAML entry uses; reconciliation excludes exactly that.
+    pipeline run. Ownership is explicit rather than inferred from the
+    caller-supplied decided_by field, so this remains true for any reviewer.
     """
     upsert_indicators(con, load_catalog_rows())
     ingest_observations(con, [CalendarObservation(
@@ -526,11 +526,18 @@ def test_reseeding_leaves_observation_seeded_bindings_alone(con):
         provenance="aggregator", source_event_name="Bootstrapped Name",
         release_utc=datetime(2026, 8, 14, 12, 30), actual="3.5%",
     )])
-    assert seed_from_observations(con) > 0
+    assert seed_from_observations(con, decided_by="alice") > 0
     assert resolve(con, "tradays", "USA", "Bootstrapped Name") == "us_earnings"
+
+    upsert_alias(
+        con, source="tradays", country_iso3="USA", source_name="Direct Name",
+        indicator_key="us_earnings", decided_by="alice",
+    )
+    assert resolve(con, "tradays", "USA", "Direct Name") == "us_earnings"
 
     load_seed(con)  # the file says nothing about this triple
     assert resolve(con, "tradays", "USA", "Bootstrapped Name") == "us_earnings"
+    assert resolve(con, "tradays", "USA", "Direct Name") == "us_earnings"
 
 
 # --- reference period: derived where no source publishes one ----------------

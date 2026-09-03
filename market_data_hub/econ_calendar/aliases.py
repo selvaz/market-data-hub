@@ -73,6 +73,7 @@ def upsert_alias(
     indicator_key: Optional[str],
     status: str = "confirmed",
     decided_by: Optional[str] = None,
+    seeded_from_file: bool = False,
     note: Optional[str] = None,
 ) -> str:
     """Record a decision about one name. Returns the normalised key."""
@@ -87,11 +88,11 @@ def upsert_alias(
         """
         INSERT OR REPLACE INTO calendar_indicator_aliases
             (source, country_iso3, source_name_norm, source_name_raw,
-             indicator_key, status, decided_by, decided_at, note)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+             indicator_key, status, decided_by, seeded_from_file, decided_at, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [source, country_iso3, norm, source_name, indicator_key, status,
-         decided_by, datetime.now(timezone.utc), note],
+         decided_by, seeded_from_file, datetime.now(timezone.utc), note],
     )
     return norm
 
@@ -213,6 +214,7 @@ def load_seed(
             con, source=r["source"], country_iso3=r["country_iso3"],
             source_name=r["name"], indicator_key=None, status="rejected",
             decided_by=r.get("decided_by", "econ_calendar_aliases.yaml"),
+            seeded_from_file=True,
             note=" ".join((r.get("reason") or "").split()),
         )
         vive.add((r["source"], r["country_iso3"], normalize_name(r["name"])))
@@ -223,6 +225,7 @@ def load_seed(
             source_name=r["name"], indicator_key=r["indicator_key"],
             status="confirmed",
             decided_by=r.get("decided_by", "econ_calendar_aliases.yaml"),
+            seeded_from_file=True,
             note=" ".join((r.get("reason") or "").split()),
         )
         vive.add((r["source"], r["country_iso3"], normalize_name(r["name"])))
@@ -233,21 +236,13 @@ def load_seed(
     # a rejection deleted from the YAML kept discarding real observations
     # forever: the file said the block was lifted, the table never heard.
     #
-    # Scoped to confirmed/rejected rows this function itself could plausibly
-    # own -- `decided_by != 'seed'` excludes seed_from_observations()'s own
-    # output (that function defaults decided_by to exactly "seed", never used
-    # by a real YAML entry). propose()'s 'proposed' rows are already outside
-    # the status filter. Found by Codex review: an earlier version of this
-    # reconciliation swept the whole table by status alone, which would have
-    # deleted a manually-bootstrapped binding the next time this ran, the
-    # moment anyone called seed_from_observations(). This is a targeted fix
-    # for the one collision that exists in this codebase's actual call
-    # graph today, not a general row-ownership mechanism -- a schema column
-    # marking rows load_seed() itself wrote would be the fuller answer if
-    # seed_from_observations() ever gains a caller with its own decided_by.
+    # Scoped to confirmed/rejected rows load_seed() itself wrote. decided_by
+    # says who made a decision and is caller-supplied, so it is not ownership:
+    # an observation seed or direct upsert can legitimately use any value.
+    # propose()'s rows are outside the status filter regardless.
     righe_gestite = con.execute(
         "SELECT source, country_iso3, source_name_norm FROM calendar_indicator_aliases "
-        "WHERE status IN ('confirmed', 'rejected') AND decided_by != 'seed'"
+        "WHERE status IN ('confirmed', 'rejected') AND seeded_from_file = TRUE"
     ).fetchall()
     obsolete = [r for r in righe_gestite if tuple(r) not in vive]
     for source, country_iso3, norm in obsolete:
