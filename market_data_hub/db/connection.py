@@ -404,12 +404,17 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
                 "ALTER TABLE calendar_indicator_aliases "
                 "ADD COLUMN IF NOT EXISTS seeded_from_file BOOLEAN DEFAULT FALSE"
             )
-            # v22's confirmed/rejected aliases were all written by load_seed().
-            # Marking them owned lets the first v23 load reconcile decisions
-            # already removed from the file; proposals were never file-owned.
+            # A v22 database did not record ownership, so custom decided_by
+            # values cannot distinguish a direct/observation upsert from a
+            # file decision after the fact. decided_by='seed' is the one
+            # concrete, checkable observation-seed case; exclude it. Every
+            # other legacy confirmed/rejected row is treated as file-owned so
+            # the first v23 load can reconcile decisions already removed from
+            # the file. Proposals were never file-owned.
             con.execute(
                 "UPDATE calendar_indicator_aliases SET seeded_from_file = TRUE "
-                "WHERE status IN ('confirmed', 'rejected')"
+                "WHERE status IN ('confirmed', 'rejected') "
+                "AND decided_by IS DISTINCT FROM 'seed'"
             )
             con.execute(
                 "ALTER TABLE calendar_indicator_aliases "
