@@ -426,6 +426,32 @@ def test_seed_file_carries_the_per_source_decisions(con):
     assert not is_rejected(con, "myfxbook", "EMU", "Industrial Production MoM")
     assert not is_rejected(con, "myfxbook", "EMU", "Industrial Sales MoM")
     assert not is_rejected(con, "myfxbook", "EMU", "Retail Sales MoM")
+    # MyFXBook spells these CPI-family releases as inflation rates.  The
+    # explicit, country-scoped aliases preserve headline/core/Tokyo distinctions.
+    assert {
+        (country, name): resolve(con, "myfxbook", country, name)
+        for country, name in {
+            ("BRA", "Inflation Rate YoY"), ("BRA", "Inflation Rate MoM"),
+            ("DEU", "Inflation Rate YoY"), ("IND", "Inflation Rate YoY"),
+            ("JPN", "Inflation Rate YoY"), ("JPN", "Core Inflation Rate YoY"),
+            ("JPN", "Tokyo CPI YoY"), ("KOR", "Inflation Rate YoY"),
+            ("MEX", "Inflation Rate YoY"), ("MEX", "Core Inflation Rate YoY"),
+            ("TWN", "Inflation Rate YoY"), ("USA", "Core Inflation Rate MoM"),
+        }
+    } == {
+        ("BRA", "Inflation Rate YoY"): "br_ipca_yy",
+        ("BRA", "Inflation Rate MoM"): "br_ipca_mm",
+        ("DEU", "Inflation Rate YoY"): "de_cpi_yy",
+        ("IND", "Inflation Rate YoY"): "in_cpi_yy",
+        ("JPN", "Inflation Rate YoY"): "jp_cpi_yy",
+        ("JPN", "Core Inflation Rate YoY"): "jp_core_cpi",
+        ("JPN", "Tokyo CPI YoY"): "jp_tokyo_cpi",
+        ("KOR", "Inflation Rate YoY"): "kr_cpi_yy",
+        ("MEX", "Inflation Rate YoY"): "mx_cpi_yy",
+        ("MEX", "Core Inflation Rate YoY"): "mx_core_cpi",
+        ("TWN", "Inflation Rate YoY"): "tw_cpi_yy",
+        ("USA", "Core Inflation Rate MoM"): "us_core_cpi_mm",
+    }
     # rejection is not the same as never seen: resolve() returns None for both
     assert resolve(con, "myfxbook", "USA", "Capacity Utilization") is None
     assert ("myfxbook", "USA", "capacity utilization") in load_rejections(con)

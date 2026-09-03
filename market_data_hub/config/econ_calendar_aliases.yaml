@@ -31,6 +31,90 @@ bindings:
     matches the genuine euro-area-wide release, not a member state''s own
     "Inflation Rate YoY" under the same bare name.'
 - source: myfxbook
+  country_iso3: BRA
+  name: Inflation Rate YoY
+  indicator_key: br_ipca_yy
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s Brazil Inflation Rate YoY page: the IBGE-sourced
+    headline release has a real published actual (4.64 percent).'
+- source: myfxbook
+  country_iso3: BRA
+  name: Inflation Rate MoM
+  indicator_key: br_ipca_mm
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s Brazil Inflation Rate MoM page: the IBGE-sourced
+    headline release has a real published actual (0.07 percent).'
+- source: myfxbook
+  country_iso3: DEU
+  name: Inflation Rate YoY
+  indicator_key: de_cpi_yy
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s Germany Inflation Rate YoY page: the Destatis
+    headline release has a real published actual (2.9 percent).'
+- source: myfxbook
+  country_iso3: IND
+  name: Inflation Rate YoY
+  indicator_key: in_cpi_yy
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s India Inflation Rate YoY page: the MoSPI
+    headline release has a real published actual (4.45 percent).'
+- source: myfxbook
+  country_iso3: JPN
+  name: Inflation Rate YoY
+  indicator_key: jp_cpi_yy
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s Japan Inflation Rate YoY page: the national
+    headline release has a real published actual (1.9 percent).'
+- source: myfxbook
+  country_iso3: JPN
+  name: Core Inflation Rate YoY
+  indicator_key: jp_core_cpi
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s Japan Core Inflation Rate YoY page: it explicitly
+    excludes fresh food and has a real published actual (1.8 percent).'
+- source: myfxbook
+  country_iso3: JPN
+  name: Tokyo CPI YoY
+  indicator_key: jp_tokyo_cpi
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s Japan Tokyo CPI YoY page: the Tokyo-specific
+    release has a real published actual (1.9 percent).'
+- source: myfxbook
+  country_iso3: KOR
+  name: Inflation Rate YoY
+  indicator_key: kr_cpi_yy
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s South Korea Inflation Rate YoY page: the
+    Statistics Korea headline release has a real published actual (3.2 percent).'
+- source: myfxbook
+  country_iso3: MEX
+  name: Inflation Rate YoY
+  indicator_key: mx_cpi_yy
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s Mexico Inflation Rate YoY page: the INEGI
+    headline release has a real published actual (3.12 percent).'
+- source: myfxbook
+  country_iso3: MEX
+  name: Core Inflation Rate YoY
+  indicator_key: mx_core_cpi
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s Mexico Core Inflation Rate YoY page: the
+    INEGI core release has a real published actual (3.95 percent).'
+- source: myfxbook
+  country_iso3: TWN
+  name: Inflation Rate YoY
+  indicator_key: tw_cpi_yy
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s Taiwan Inflation Rate YoY page: the DGBAS
+    headline release has a real published actual (2.54 percent).'
+- source: myfxbook
+  country_iso3: USA
+  name: Core Inflation Rate MoM
+  indicator_key: us_core_cpi_mm
+  decided_by: verified-2026-09-03
+  reason: 'Confirmed on MyFXBook''s United States Core Inflation Rate MoM page:
+    the BLS core CPI release has a real published actual (0.2 percent).'
+- source: myfxbook
   country_iso3: AUS
   name: Building Permits MoM
   indicator_key: au_building
