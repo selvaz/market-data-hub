@@ -18,6 +18,19 @@ rejections:
     roughly seven times the USD figure the indicator carries.'
 bindings:
 - source: myfxbook
+  country_iso3: EMU
+  name: Inflation Rate YoY
+  indicator_key: ez_hicp_yy
+  decided_by: verified-2026-09-03
+  reason: 'MyFXBook never uses "HICP" or "CPI" for the Eurozone flash print -- it
+    calls it "Inflation Rate YoY", which match_rules (hicp|cpi;yy) never matches.
+    ez_hicp_yy went from 0 myfxbook observations ever to missing a live T1 release
+    (3.52 percent for Aug 2026) entirely from the calendar. Safe to bind by name now,
+    specifically because country_iso3 is resolved from the event-link issuer
+    (market-data-hub#74) rather than the collapsed EUR currency: this triple only
+    matches the genuine euro-area-wide release, not a member state''s own
+    "Inflation Rate YoY" under the same bare name.'
+- source: myfxbook
   country_iso3: AUS
   name: Building Permits MoM
   indicator_key: au_building
