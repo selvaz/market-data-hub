@@ -509,6 +509,30 @@ def test_reseeding_leaves_proposed_rows_alone(con):
     assert resolve(con, "tradays", "USA", "Some Unruled Name") is None
 
 
+def test_reseeding_leaves_observation_seeded_bindings_alone(con):
+    """seed_from_observations() writes 'confirmed' rows too -- reconciliation
+    must not treat every confirmed row as its own to delete.
+
+    Found by Codex review on the first version of this reconciliation: it
+    swept the whole table by status alone, so a binding bootstrapped from
+    observed data (never recorded in the YAML at all) would have been
+    deleted the moment anyone ran load_seed() again -- the very next regular
+    pipeline run. seed_from_observations() defaults decided_by to "seed",
+    which no real YAML entry uses; reconciliation excludes exactly that.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [CalendarObservation(
+        indicator_key="us_earnings", country_iso3="USA", source="tradays",
+        provenance="aggregator", source_event_name="Bootstrapped Name",
+        release_utc=datetime(2026, 8, 14, 12, 30), actual="3.5%",
+    )])
+    assert seed_from_observations(con) > 0
+    assert resolve(con, "tradays", "USA", "Bootstrapped Name") == "us_earnings"
+
+    load_seed(con)  # the file says nothing about this triple
+    assert resolve(con, "tradays", "USA", "Bootstrapped Name") == "us_earnings"
+
+
 # --- reference period: derived where no source publishes one ----------------
 def _rilascio(con, indicator_key, release, *, period=None, ref=None, source="tradays"):
     ingest_observations(con, [CalendarObservation(

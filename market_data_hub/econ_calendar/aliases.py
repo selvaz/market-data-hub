@@ -229,15 +229,25 @@ def load_seed(
         n += 1
 
     # A rejection or binding removed from the file must stop applying, not
-    # linger as whatever it was decided the last time this ran. Scoped to
-    # confirmed/rejected -- the only two statuses this function ever writes
-    # (bare_alias's own 'proposed' rows, awaiting a human ruling, are a
-    # different lifecycle and must survive a reseed untouched). Without this,
+    # linger as whatever it was decided the last time this ran. Without this,
     # a rejection deleted from the YAML kept discarding real observations
     # forever: the file said the block was lifted, the table never heard.
+    #
+    # Scoped to confirmed/rejected rows this function itself could plausibly
+    # own -- `decided_by != 'seed'` excludes seed_from_observations()'s own
+    # output (that function defaults decided_by to exactly "seed", never used
+    # by a real YAML entry). propose()'s 'proposed' rows are already outside
+    # the status filter. Found by Codex review: an earlier version of this
+    # reconciliation swept the whole table by status alone, which would have
+    # deleted a manually-bootstrapped binding the next time this ran, the
+    # moment anyone called seed_from_observations(). This is a targeted fix
+    # for the one collision that exists in this codebase's actual call
+    # graph today, not a general row-ownership mechanism -- a schema column
+    # marking rows load_seed() itself wrote would be the fuller answer if
+    # seed_from_observations() ever gains a caller with its own decided_by.
     righe_gestite = con.execute(
         "SELECT source, country_iso3, source_name_norm FROM calendar_indicator_aliases "
-        "WHERE status IN ('confirmed', 'rejected')"
+        "WHERE status IN ('confirmed', 'rejected') AND decided_by != 'seed'"
     ).fetchall()
     obsolete = [r for r in righe_gestite if tuple(r) not in vive]
     for source, country_iso3, norm in obsolete:
