@@ -112,6 +112,16 @@ def _ask(prompt: str, *, model: str, effort: str, max_turns: int,
     rather than a whole day's research, so the simpler soft timeout is used
     here instead -- a known gap, worth revisiting if this is ever run at
     higher volume or the timeout starts being hit in practice.
+
+    Raises on ``envelope.ok is False`` rather than returning its (empty)
+    text. A failed call -- caught live: claude-agent-sdk missing from an
+    environment that only had plain ``lazybridge`` installed -- comes back
+    as an ok=False envelope with empty text, not an exception; letting that
+    fall through to ``_parse("")`` reads as a confident UNVERIFIED for every
+    single release, indistinguishable from the model genuinely finding
+    nothing. The caller's ``except Exception`` already exists to count and
+    print exactly this shape of failure once, instead of it hiding as 100%
+    of the day's checks quietly landing UNVERIFIED.
     """
     from lazybridge import Agent, ClaudeCodeEngine
 
@@ -121,7 +131,12 @@ def _ask(prompt: str, *, model: str, effort: str, max_turns: int,
             engine=ClaudeCodeEngine(model, system=_SYSTEM, web=True,
                                     reasoning_effort=effort, max_turns=max_turns),
         )
-        return str(await agente.run(prompt))
+        busta = await agente.run(prompt)
+        if not busta.ok:
+            errore = busta.model_dump().get("error") or {}
+            raise RuntimeError(
+                f"{errore.get('type', 'Error')}: {errore.get('message', 'call failed')}")
+        return busta.text()
 
     return asyncio.run(asyncio.wait_for(_chiedi(), timeout=timeout_s))
 

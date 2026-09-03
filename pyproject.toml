@@ -50,7 +50,13 @@ calendar = ["selenium>=4.15", "webdriver-manager>=4.0", "beautifulsoup4>=4.11"]
 # deferred inside run_validation() itself so it stays optional even when this
 # extra is not installed. Pinned to the range LazyTools/ecosystem's
 # compatibility.toml already carries for lazybridge across this workspace.
-validate = ["lazybridge>=1.3.0,<2.0"]
+# The plain "lazybridge" extra installs the framework but not
+# claude-agent-sdk, which ClaudeCodeEngine needs at call time -- without
+# claude-code here, every run_validation() call returns an empty, ok=False
+# envelope (ImportError inside the engine) that read as a quiet 100%
+# UNVERIFIED rate rather than a missing dependency. Caught live: the first
+# manual smoke test against a real T1 release came back empty.
+validate = ["lazybridge[claude-code]>=1.3.0,<2.0"]
 # Registers this repo's market DB as a Source (market_data_hub.dataspace_source)
 # so a cross-repository workflow can check every source's readiness together
 # before it starts writing. The distribution is `lazydataspace`, not
