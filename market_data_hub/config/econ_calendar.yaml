@@ -1064,7 +1064,7 @@ indicators:
   agency: Destatis
   rationale: 'Out a few hours before the area HICP, and it anticipates its surprise.'
   match_rules: cpi;yy
-  match_excludes: hicp|core
+  match_excludes: hicp|core|baden wuerttemberg|hesse|bavaria|brandenburg|north rhine westphalia|nordrhein-westfalen|westfalen|saxony
   macro_indicator_id: null
 - key: de_factory
   country_iso2: DE
