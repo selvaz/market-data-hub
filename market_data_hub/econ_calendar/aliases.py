@@ -73,6 +73,7 @@ def upsert_alias(
     indicator_key: Optional[str],
     status: str = "confirmed",
     decided_by: Optional[str] = None,
+    seeded_from_file: bool = False,
     note: Optional[str] = None,
 ) -> str:
     """Record a decision about one name. Returns the normalised key."""
@@ -87,11 +88,11 @@ def upsert_alias(
         """
         INSERT OR REPLACE INTO calendar_indicator_aliases
             (source, country_iso3, source_name_norm, source_name_raw,
-             indicator_key, status, decided_by, decided_at, note)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+             indicator_key, status, decided_by, seeded_from_file, decided_at, note)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [source, country_iso3, norm, source_name, indicator_key, status,
-         decided_by, datetime.now(timezone.utc), note],
+         decided_by, seeded_from_file, datetime.now(timezone.utc), note],
     )
     return norm
 
@@ -207,13 +208,16 @@ def load_seed(
         return 0
     doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     n = 0
+    vive: set[tuple[str, str, str]] = set()
     for r in doc.get("rejections", []):
         upsert_alias(
             con, source=r["source"], country_iso3=r["country_iso3"],
             source_name=r["name"], indicator_key=None, status="rejected",
             decided_by=r.get("decided_by", "econ_calendar_aliases.yaml"),
+            seeded_from_file=True,
             note=" ".join((r.get("reason") or "").split()),
         )
+        vive.add((r["source"], r["country_iso3"], normalize_name(r["name"])))
         n += 1
     for r in doc.get("bindings", []):
         upsert_alias(
@@ -221,9 +225,33 @@ def load_seed(
             source_name=r["name"], indicator_key=r["indicator_key"],
             status="confirmed",
             decided_by=r.get("decided_by", "econ_calendar_aliases.yaml"),
+            seeded_from_file=True,
             note=" ".join((r.get("reason") or "").split()),
         )
+        vive.add((r["source"], r["country_iso3"], normalize_name(r["name"])))
         n += 1
+
+    # A rejection or binding removed from the file must stop applying, not
+    # linger as whatever it was decided the last time this ran. Without this,
+    # a rejection deleted from the YAML kept discarding real observations
+    # forever: the file said the block was lifted, the table never heard.
+    #
+    # Scoped to confirmed/rejected rows load_seed() itself wrote. decided_by
+    # says who made a decision and is caller-supplied, so it is not ownership:
+    # an observation seed or direct upsert can legitimately use any value.
+    # propose()'s rows are outside the status filter regardless.
+    righe_gestite = con.execute(
+        "SELECT source, country_iso3, source_name_norm FROM calendar_indicator_aliases "
+        "WHERE status IN ('confirmed', 'rejected') AND seeded_from_file = TRUE"
+    ).fetchall()
+    obsolete = [r for r in righe_gestite if tuple(r) not in vive]
+    for source, country_iso3, norm in obsolete:
+        con.execute(
+            "DELETE FROM calendar_indicator_aliases "
+            "WHERE source = ? AND country_iso3 = ? AND source_name_norm = ? "
+            "AND status IN ('confirmed', 'rejected')",
+            [source, country_iso3, norm],
+        )
     return n
 
 

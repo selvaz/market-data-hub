@@ -8,6 +8,11 @@ from market_data_hub.db import connection as C
 def test_apply_schema_records_version(tmp_db):
     con = C.get_conn()  # get_conn() applies the schema on open
     assert C.get_schema_version(con) == C.SCHEMA_VERSION
+    columns = {row[1]: row for row in con.execute(
+        "PRAGMA table_info('calendar_indicator_aliases')"
+    ).fetchall()}
+    assert "seeded_from_file" in columns
+    assert columns["seeded_from_file"][3] is True
     # schema_applied_at is also recorded
     row = con.execute(
         "SELECT value FROM schema_meta WHERE key = 'schema_applied_at'"
@@ -70,4 +75,44 @@ def test_migrate_is_idempotent(tmp_db):
     v2 = C.migrate(con)  # running twice keeps the version stable
     assert v1 == v2 == C.SCHEMA_VERSION
     assert C.get_schema_version(con) == C.SCHEMA_VERSION
+    con.close()
+
+
+def test_migrate_adds_alias_file_ownership_column_to_v22_database(tmp_db):
+    con = C.get_conn()
+    con.execute("ALTER TABLE calendar_indicator_aliases DROP COLUMN seeded_from_file")
+    con.execute(
+        "INSERT INTO calendar_indicator_aliases "
+        "(source, country_iso3, source_name_norm, status) "
+        "VALUES ('test', 'USA', 'old alias', 'confirmed')"
+    )
+    con.execute(
+        "INSERT INTO calendar_indicator_aliases "
+        "(source, country_iso3, source_name_norm, status) "
+        "VALUES ('test', 'USA', 'old proposal', 'proposed')"
+    )
+    con.execute(
+        "INSERT INTO calendar_indicator_aliases "
+        "(source, country_iso3, source_name_norm, status, decided_by) "
+        "VALUES ('test', 'USA', 'observation seed', 'confirmed', 'seed')"
+    )
+    con.execute(
+        "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('schema_version', '22')"
+    )
+
+    assert C.migrate(con) == C.SCHEMA_VERSION == 23
+    columns = {row[1]: row for row in con.execute(
+        "PRAGMA table_info('calendar_indicator_aliases')"
+    ).fetchall()}
+    assert "seeded_from_file" in columns
+    assert columns["seeded_from_file"][3] is True
+    ownership = dict(con.execute(
+        "SELECT source_name_norm, seeded_from_file "
+        "FROM calendar_indicator_aliases WHERE source = 'test'"
+    ).fetchall())
+    assert ownership == {
+        "old alias": True,
+        "old proposal": False,
+        "observation seed": False,
+    }
     con.close()

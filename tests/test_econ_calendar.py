@@ -457,6 +457,89 @@ def test_seed_file_carries_the_per_source_decisions(con):
     assert ("myfxbook", "USA", "capacity utilization") in load_rejections(con)
 
 
+def test_reseeding_drops_a_rejection_removed_from_the_file(con, tmp_path):
+    """A decision reversed in the file must stop applying, not linger.
+
+    Caught live: PR #73 rejected four myfxbook/EMU names wholesale, #74
+    lifted the rejection once the real fix landed -- but load_seed() only
+    ever upserted what the file currently said, never deleted what it used
+    to say. On a database that had run #73, the lifted rejection kept
+    discarding real observations forever, because the table never heard the
+    file changed its mind.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    seed_v1 = tmp_path / "aliases_v1.yaml"
+    seed_v1.write_text(
+        "rejections:\n"
+        "- source: myfxbook\n"
+        "  country_iso3: EMU\n"
+        "  name: GDP Growth Rate QoQ\n"
+        "  decided_by: test-v1\n"
+        "bindings: []\n",
+        encoding="utf-8",
+    )
+    load_seed(con, seed_v1)
+    assert is_rejected(con, "myfxbook", "EMU", "GDP Growth Rate QoQ")
+
+    seed_v2 = tmp_path / "aliases_v2.yaml"
+    seed_v2.write_text("rejections: []\nbindings: []\n", encoding="utf-8")
+    load_seed(con, seed_v2)
+    assert not is_rejected(con, "myfxbook", "EMU", "GDP Growth Rate QoQ")
+    assert resolve(con, "myfxbook", "EMU", "GDP Growth Rate QoQ") is None
+
+
+def test_reseeding_leaves_proposed_rows_alone(con):
+    """Reconciliation only ever touches what load_seed itself writes.
+
+    A 'proposed' row -- a name the regex matched that nobody has ruled on
+    yet -- is a different lifecycle (bare_alias / seed_from_observations),
+    not a stale seed entry. Reseeding must not sweep it away just because
+    it isn't in the file: a proposal awaiting a human is not the same thing
+    as a decision that was reversed.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    propose(con, source="tradays", country_iso3="USA",
+            source_name="Some Unruled Name", indicator_key="us_earnings",
+            note="proposed by regex")
+    load_seed(con)
+    # Still proposed, not swept away for being absent from the seed file --
+    # and still not resolve()-able, since a proposal is not a decision.
+    assert any(r["source"] == "tradays" and r["source_name"] == "Some Unruled Name"
+               for r in unmapped(con))
+    assert resolve(con, "tradays", "USA", "Some Unruled Name") is None
+
+
+def test_reseeding_leaves_observation_seeded_bindings_alone(con):
+    """seed_from_observations() writes 'confirmed' rows too -- reconciliation
+    must not treat every confirmed row as its own to delete.
+
+    Found by Codex review on the first version of this reconciliation: it
+    swept the whole table by status alone, so a binding bootstrapped from
+    observed data (never recorded in the YAML at all) would have been
+    deleted the moment anyone ran load_seed() again -- the very next regular
+    pipeline run. Ownership is explicit rather than inferred from the
+    caller-supplied decided_by field, so this remains true for any reviewer.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [CalendarObservation(
+        indicator_key="us_earnings", country_iso3="USA", source="tradays",
+        provenance="aggregator", source_event_name="Bootstrapped Name",
+        release_utc=datetime(2026, 8, 14, 12, 30), actual="3.5%",
+    )])
+    assert seed_from_observations(con, decided_by="alice") > 0
+    assert resolve(con, "tradays", "USA", "Bootstrapped Name") == "us_earnings"
+
+    upsert_alias(
+        con, source="tradays", country_iso3="USA", source_name="Direct Name",
+        indicator_key="us_earnings", decided_by="alice",
+    )
+    assert resolve(con, "tradays", "USA", "Direct Name") == "us_earnings"
+
+    load_seed(con)  # the file says nothing about this triple
+    assert resolve(con, "tradays", "USA", "Bootstrapped Name") == "us_earnings"
+    assert resolve(con, "tradays", "USA", "Direct Name") == "us_earnings"
+
+
 # --- reference period: derived where no source publishes one ----------------
 def _rilascio(con, indicator_key, release, *, period=None, ref=None, source="tradays"):
     ingest_observations(con, [CalendarObservation(
