@@ -207,6 +207,7 @@ def load_seed(
         return 0
     doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
     n = 0
+    vive: set[tuple[str, str, str]] = set()
     for r in doc.get("rejections", []):
         upsert_alias(
             con, source=r["source"], country_iso3=r["country_iso3"],
@@ -214,6 +215,7 @@ def load_seed(
             decided_by=r.get("decided_by", "econ_calendar_aliases.yaml"),
             note=" ".join((r.get("reason") or "").split()),
         )
+        vive.add((r["source"], r["country_iso3"], normalize_name(r["name"])))
         n += 1
     for r in doc.get("bindings", []):
         upsert_alias(
@@ -223,7 +225,28 @@ def load_seed(
             decided_by=r.get("decided_by", "econ_calendar_aliases.yaml"),
             note=" ".join((r.get("reason") or "").split()),
         )
+        vive.add((r["source"], r["country_iso3"], normalize_name(r["name"])))
         n += 1
+
+    # A rejection or binding removed from the file must stop applying, not
+    # linger as whatever it was decided the last time this ran. Scoped to
+    # confirmed/rejected -- the only two statuses this function ever writes
+    # (bare_alias's own 'proposed' rows, awaiting a human ruling, are a
+    # different lifecycle and must survive a reseed untouched). Without this,
+    # a rejection deleted from the YAML kept discarding real observations
+    # forever: the file said the block was lifted, the table never heard.
+    righe_gestite = con.execute(
+        "SELECT source, country_iso3, source_name_norm FROM calendar_indicator_aliases "
+        "WHERE status IN ('confirmed', 'rejected')"
+    ).fetchall()
+    obsolete = [r for r in righe_gestite if tuple(r) not in vive]
+    for source, country_iso3, norm in obsolete:
+        con.execute(
+            "DELETE FROM calendar_indicator_aliases "
+            "WHERE source = ? AND country_iso3 = ? AND source_name_norm = ? "
+            "AND status IN ('confirmed', 'rejected')",
+            [source, country_iso3, norm],
+        )
     return n
 
 
