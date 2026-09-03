@@ -1033,6 +1033,8 @@ def test_resuming_myfxbook_keeps_iso_codes_already_written():
 
 def test_myfxbook_event_href_refines_eur_currency_to_issuer_country():
     """The visible EUR label must not turn German GDP into an EMU release."""
+    pytest.importorskip("bs4", reason="leggi() parses with BeautifulSoup, part of the "
+                         "optional [calendar] extra the base CI job does not install")
     from market_data_hub.econ_calendar.collect.myfxbook import leggi
 
     class Driver:
