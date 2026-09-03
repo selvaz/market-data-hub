@@ -1,18 +1,24 @@
 # -*- coding: utf-8 -*-
-"""
-run_econ_calendar.py — collect the economic release calendar and ingest it.
+"""run_econ_calendar.py — collect the economic release calendar and ingest it.
 
 Usage:
     python run_econ_calendar.py --db <path> --work-dir <dir>
-    python run_econ_calendar.py --db <path> --work-dir <dir> --sources nasdaq forexfactory
     python run_econ_calendar.py --db <path> --work-dir <dir> --no-collect   # re-ingest what is on disk
+    python run_econ_calendar.py --db <path> --work-dir <dir> --no-validate # skip the T1 web-search pass
     python run_econ_calendar.py --db <path> --audit-only
 
 Two halves that fail for different reasons and are therefore separable:
-collection writes one CSV per source into --work-dir, ingestion reads those CSVs
-and consolidates them into the calendar tables. --no-collect re-runs the second
-half alone, which is what you want after changing a matching rule: it costs no
-requests and no browser.
+collection writes myfxbook's CSV into --work-dir, ingestion reads that CSV
+and consolidates it into the calendar tables. --no-collect re-runs the second
+half alone, which is what you want after changing a matching rule: it costs
+no requests and no browser.
+
+A third, optional step follows ingestion: for that day's T1-criticality
+releases, an LLM with live web search cross-checks MyFXBook's own
+actual/previous/consensus against what actually published, and flags any
+mismatch in ``calendar_event_notes`` -- it does not correct the value.
+``--no-validate`` skips it, the way ``--no-collect`` skips downloading: no
+network cost, no LLM cost, useful for fast local iteration.
 
 --db is required and should be absolute. market-data-hub resolves a relative
 db_path inside its own repository, so a runner invoked from elsewhere with a
@@ -34,134 +40,76 @@ from market_data_hub.econ_calendar import (                           # noqa: E4
 from market_data_hub.econ_calendar.aliases import (                   # noqa: E402
     cadence_violations, load_aliases, load_rejections, load_seed, unmapped,
 )
-from market_data_hub.econ_calendar.audit import (                     # noqa: E402
-    disagreeing_bindings, suspect_matches,
-)
 from market_data_hub.econ_calendar.collect.consolidate import FONTI, raccogli  # noqa: E402
 from market_data_hub.econ_calendar.reference import (                 # noqa: E402
     infer_reference_dates, validate_lags,
 )
 
-# source name -> the CSV consolidate.py expects it in
-FILE_PER_FONTE = {fonte: file for file, (fonte, _) in FONTI.items()}
+# The single source's CSV name, read off consolidate.FONTI rather than
+# hardcoded a second time: {'myfxbook.csv': ('myfxbook', 'aggregator')}.
+MYFXBOOK_CSV = next(iter(FONTI))
 
 
-def exit_code(guasti: int, n_osservazioni: int) -> int:
-    """0 clean, 1 total failure, 2 degraded -- three outcomes, not two.
+def exit_code(n_osservazioni: int) -> int:
+    """0 clean, 1 failed -- two outcomes, not three.
 
-    One dead source does not void the others: the run above still ingests
-    what the rest collected, and a day covered by four sources is worth
-    having. But "some collected" and "all collected" used to both return 0,
-    which is indistinguishable to a caller that only reads the exit code --
-    and Task Scheduler is exactly such a caller.
+    The old three-way split (clean / degraded-exit-2 / failed) existed
+    because a dead source among five still left a run partially useful: "4
+    of 5 succeeded" needed to be distinguishable from "all 5 succeeded", or
+    a caller that only reads the exit code -- Task Scheduler is exactly such
+    a caller -- could not tell a degraded run from a clean one. Measured on
+    2026-08-17 with yahoo down: reference_date coverage came out at 11%,
+    against the 44% a clean run got, while the exit code still said 0.
 
-    The middle case is not cosmetic. Measured on 2026-08-17 with yahoo down:
-    reference_date coverage came out at 11%, against the 44% a clean run
-    gets, because yahoo is the only source that publishes the reference
-    period.
+    MyFXBook is the only source left, and that middle case goes with the
+    other four: there is no partial credit for one source, only whether it
+    produced anything to ingest. Two outcomes cover that completely.
 
-    Decided on `n_osservazioni`, not on `guasti` reaching every source: a
-    source can "succeed" -- raise nothing -- and still return an empty frame,
-    which is a total failure by outcome even though nothing crashed.
+    Decided on `n_osservazioni`, not on whether collection raised: a source
+    can "succeed" -- raise nothing -- and still return an empty frame, which
+    is a total failure by outcome even though nothing crashed.
     """
-    if n_osservazioni == 0:
-        return 1
-    if guasti == 0:
-        return 0
-    return 2
+    return 0 if n_osservazioni else 1
 
 
-def _scarta_csv_stantio(uscita: Path, scritto_da_se: bool) -> None:
-    """Remove a source's CSV when this run's collection did not replace it.
+def collect(work_dir: Path, da: str, a: str) -> bool:
+    """Download myfxbook into its CSV. Returns True on success, False on failure.
 
-    `--work-dir` is the live project's directory, written into day after day,
-    not a fresh one per run. A source that fails leaves whatever file was
-    there from a previous day untouched, and `raccogli()` reads it anyway --
-    it has no way to know the file is not from today. That is not only a
-    freshness problem: the rows would be ingested under today's vintage_date,
-    recording yesterday's reading as if it were observed today. It also
-    defeats the exit code above: a run where every source fails can still
-    have `n_osservazioni > 0` from leftover files, and get reported as
-    degraded rather than total failure.
-
-    Not for myfxbook: it writes its own file incrementally and resumes across
-    runs by design (`scritto_da_se=True`) -- clearing it would discard
-    correctly-collected earlier days along with the failed attempt.
+    No stale-CSV cleanup here, unlike the old multi-source version: myfxbook
+    writes incrementally and resumes across runs by design, so a failure
+    partway through still leaves whatever it managed to commit on disk, and
+    that is exactly what should survive -- there is no other source's file
+    that could go stale behind it.
     """
-    if scritto_da_se:
-        return
-    if uscita.exists():
-        uscita.unlink()
-        print(f'  removed stale {uscita.name} from a previous run', flush=True)
+    uscita = work_dir / MYFXBOOK_CSV
+    print(f'\n--- myfxbook -> {uscita.name} ---', flush=True)
+    try:
+        from market_data_hub.econ_calendar.collect.myfxbook import scarica
+        df = scarica(da, a, uscita)
+    except Exception as e:
+        print(f'  FAILED: {type(e).__name__}: {str(e)[:160]}', flush=True)
+        return False
 
-
-def collect(fonti, work_dir: Path, da: str, a: str,
-            yahoo_da: str, yahoo_a: str, settimane: int) -> int:
-    """Download each requested source into its CSV. Returns the failure count."""
-    guasti = 0
-    for fonte in fonti:
-        uscita = work_dir / FILE_PER_FONTE[fonte]
-        print(f'\n--- {fonte} -> {uscita.name} ---', flush=True)
-        # Set from `fonte`, before the call -- not after it returns. myfxbook
-        # writes incrementally and may have committed many resumable days to
-        # disk before raising midway (a transient browser failure, say). The
-        # exemption has to hold from the first byte it could have written, or
-        # a failure on exactly the call this flag is meant to protect finds
-        # it still False and the cleanup below deletes real, unrecoverable
-        # history -- its own `.fatte.txt` registry survives the deletion, so
-        # a later run would believe those days are already done and never
-        # re-fetch them. Found by an independent review after this PR merged.
-        scritto_da_se = fonte == 'myfxbook'
-        try:
-            # Imported per source: four of the five need selenium and a browser,
-            # and a run limited to nasdaq must not require either.
-            if fonte == 'nasdaq':
-                from market_data_hub.econ_calendar.collect.nasdaq import scarica
-                df = scarica(da, a)
-            elif fonte == 'forexfactory':
-                from market_data_hub.econ_calendar.collect.forexfactory import scarica
-                df = scarica()
-            elif fonte == 'myfxbook':
-                # Writes as it goes and keeps a resume registry: a day costs
-                # about thirteen seconds, so a half-finished run that started
-                # over would never finish.
-                from market_data_hub.econ_calendar.collect.myfxbook import scarica
-                df = scarica(da, a, uscita)
-            elif fonte == 'tradays':
-                from market_data_hub.econ_calendar.collect.tradays import scarica
-                df = scarica(settimane)
-            elif fonte == 'yahoo':
-                from market_data_hub.econ_calendar.collect.yahoo import scarica_intervallo
-                df = scarica_intervallo(yahoo_da, yahoo_a)
-            else:
-                raise ValueError(f'unknown source {fonte!r}')
-        except Exception as e:
-            # One dead source does not void the others: the consolidation is
-            # multi-source precisely so it can survive losing one, and a day
-            # covered by four is worth having.
-            guasti += 1
-            print(f'  FAILED: {type(e).__name__}: {str(e)[:160]}', flush=True)
-            _scarta_csv_stantio(uscita, scritto_da_se)
-            continue
-
-        if df is None or df.empty:
-            guasti += 1
-            print('  no rows', flush=True)
-            _scarta_csv_stantio(uscita, scritto_da_se)
-            continue
-        if not scritto_da_se:
-            df.to_csv(uscita, index=False, encoding='utf-8-sig')
-        print(f'  {len(df)} rows -> {uscita}', flush=True)
-    return guasti
+    if df is None or df.empty:
+        print('  no rows', flush=True)
+        return False
+    print(f'  {len(df)} rows -> {uscita}', flush=True)
+    return True
 
 
 def audit(con) -> None:
-    """The checks that say whether the run is worth trusting. Never fatal."""
+    """The checks that say whether the run is worth trusting. Never fatal.
+
+    Down to four checks now that myfxbook is the only source: the two that
+    used to run here, disagreeing_bindings and suspect_matches, existed
+    specifically to catch CROSS-SOURCE disagreement or name variance -- with
+    one source there is nothing left for either to compare, so they were
+    deleted along with audit.py rather than kept reporting an empty list
+    forever.
+    """
     print('\n=== audit ===')
-    for etichetta, fn in (('disagreeing values ', disagreeing_bindings),
-                          ('suspect names      ', suspect_matches),
-                          ('cadence violations ', cadence_violations),
-                          ('unmapped names     ', unmapped)):
+    for etichetta, fn in (('unmapped names     ', unmapped),
+                          ('cadence violations ', cadence_violations)):
         try:
             print(f'  {etichetta}: {len(fn(con))}')
         except Exception as e:
@@ -182,24 +130,21 @@ def audit(con) -> None:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description='economic calendar: collect and ingest')
+    p = argparse.ArgumentParser(description='economic calendar: collect and ingest (myfxbook)')
     p.add_argument('--db', required=True,
                    help='DuckDB path. Absolute: a relative one resolves inside the repo.')
     p.add_argument('--work-dir', default='.',
-                   help='where the per-source CSVs are written and read')
-    p.add_argument('--sources', nargs='+', choices=sorted(FILE_PER_FONTE),
-                   help='limit to the given sources (default: all)')
+                   help='where the myfxbook CSV is written and read')
     p.add_argument('--no-collect', action='store_true',
-                   help='skip downloading; ingest the CSVs already in --work-dir')
+                   help='skip downloading; ingest the CSV already in --work-dir')
+    p.add_argument('--no-validate', action='store_true',
+                   help='skip the T1 web-search validation pass after ingest '
+                        '(network + LLM cost; useful for fast local iteration)')
     p.add_argument('--audit-only', action='store_true',
                    help='run only the checks against the database')
-    p.add_argument('--yahoo-from', default=None)
-    p.add_argument('--yahoo-to', default=None)
     p.add_argument('--from', dest='da', default=None,
-                   help='start date for the day-by-day sources (nasdaq, myfxbook)')
+                   help='start date for myfxbook collection')
     p.add_argument('--to', dest='a', default=None)
-    p.add_argument('--settimane', type=int, default=13,
-                   help='quante settimane indietro chiedere a tradays')
     p.add_argument('--run-id', default=None)
     args = p.parse_args()
 
@@ -219,19 +164,12 @@ def main() -> int:
         con.close()
         return 0
 
-    fonti = args.sources or sorted(FILE_PER_FONTE)
-    guasti = 0
     oggi = date.today()
+    collezione_riuscita = True
     if not args.no_collect:
         da = args.da or str(oggi - timedelta(days=7))
         a = args.a or str(oggi)
-        # Yahoo is the only source that publishes the reference period, and its
-        # strength is the future: it is asked for a window reaching past the
-        # quarterlies rather than the same week as the others.
-        guasti = collect(fonti, work_dir, da, a,
-                         args.yahoo_from or da,
-                         args.yahoo_to or str(oggi + timedelta(days=45)),
-                         args.settimane)
+        collezione_riuscita = collect(work_dir, da, a)
 
     print('\n=== consolidation ===')
     catalogo = load_catalog_rows()
@@ -241,7 +179,7 @@ def main() -> int:
     legami = load_aliases(con)
     print(f'per-source decisions: {n_seed} ({len(respinti)} rejected, {len(legami)} bound)')
 
-    # raccogli() reads the CSVs by their bare names, so it has to run where they are
+    # raccogli() reads the CSV by its bare name, so it has to run where it is
     prima = os.getcwd()
     os.chdir(work_dir)
     try:
@@ -253,23 +191,21 @@ def main() -> int:
         print(f'  {f:14} {n:5} observations')
     print(f'  {"TOTAL":14} {len(osservazioni):5}')
     # Printed even when nothing failed, so a reader does not have to infer a
-    # clean run from the absence of a line -- the failure count above it is
-    # already easy to miss between two runs of numbers.
+    # clean run from the absence of a line.
     #
-    # Under --no-collect, `guasti` never leaves 0: no source was asked to run,
-    # so none can have failed. Printing "N/N succeeded" there would say a
-    # fresh collection just happened when it did not -- the CSVs on disk could
-    # be from a degraded run, or from days ago.
+    # Under --no-collect, collection was never attempted, so nothing about
+    # it can be reported as having succeeded or failed today -- the CSV on
+    # disk could be from a clean run, a failed one, or days ago.
     if args.no_collect:
-        print('  sources: not attempted (--no-collect; re-ingesting what is on disk)')
+        print('  collection: not attempted (--no-collect; re-ingesting what is on disk)')
     else:
-        print(f'  sources: {len(fonti) - guasti}/{len(fonti)} succeeded'
-              + (f'  ({guasti} failed, see FAILED lines above)' if guasti else ''))
+        print('  collection: ' + ('ok' if collezione_riuscita
+                                   else 'FAILED (see the FAILED/no rows line above)'))
 
     if not osservazioni:
         print('\nnothing to ingest.', file=sys.stderr)
         con.close()
-        return exit_code(guasti, 0)
+        return exit_code(0)
 
     esito = ingest_observations(
         con, osservazioni,
@@ -279,17 +215,27 @@ def main() -> int:
     # A period the source published is a fact; one derived from the indicator's
     # learned lag is an inference, and the two are kept apart in
     # reference_date_origin. Without this step only the first kind is ever
-    # recorded, and reference_date sits at what the sources happen to publish --
-    # measured here as 20% against 43% with it. only_stable=True is the default
-    # and stays: the indicators whose lag varies are mostly the euro-area
-    # aggregates, whose bindings are the ones known to be mixed, so filling
-    # those would be deriving a date from a contradiction.
+    # recorded, and reference_date sits at what the source happens to publish.
     dedotti = infer_reference_dates(con)
     print(f'reference dates inferred: {dedotti}')
 
+    if args.no_validate:
+        print('\nvalidate: skipped (--no-validate)')
+    else:
+        print('\n=== validate (T1, web search) ===')
+        try:
+            from market_data_hub.econ_calendar.validate import run_validation
+            esito_validazione = run_validation(
+                con, oggi, run_id=args.run_id or f'econ-calendar-{oggi}')
+            print(f'  {esito_validazione}')
+        except Exception as e:
+            # A validation failure costs the cross-check, not the ingest:
+            # everything above this point is already written and stands.
+            print(f'  could not run ({type(e).__name__}: {str(e)[:160]})')
+
     audit(con)
     con.close()
-    return exit_code(guasti, len(osservazioni))
+    return exit_code(len(osservazioni))
 
 
 if __name__ == '__main__':

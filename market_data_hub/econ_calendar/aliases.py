@@ -144,9 +144,8 @@ def seed_from_observations(
     Starting from what the regex accepted is the only sensible beginning --
     the alternative is 411 rows typed by hand -- but the seed is not verified
     by virtue of being the seed. It carries whatever errors the regex made and
-    nobody has caught yet. ``audit.suspect_matches`` is the review queue for
-    exactly this, and it is why this is a function somebody calls rather than
-    a step in the migration.
+    nobody has caught yet, which is why this is a function somebody calls
+    rather than a step in the migration: seeding is not the same as review.
 
     Existing rows are left alone. Re-seeding is a routine thing to do after a
     fresh load, and the observations it reads from are the OLD ones, still
@@ -322,9 +321,31 @@ def cadence_violations(
     """Indicators that released more often than their frequency allows.
 
     The check the alias table cannot perform on its own. A monthly indicator
-    with two released events in one August is a contradiction no amount of
+    with two released events in one period is a contradiction no amount of
     agreement between sources can excuse -- and that is exactly the shape the
     Real Earnings binding took, sitting next to the genuine payroll-day print.
+
+    The period an indicator is bucketed into is its ``reference_date`` --
+    what the release actually describes -- whenever one is populated, and
+    only falls back to the RELEASE date's own calendar period
+    (``date_trunc(unit, release_utc)``) for the events where it is not.
+
+    That distinction matters because release timing and reference timing can
+    diverge by weeks. Grouping by release date alone confirmed real false
+    positives in production: EZ GDP q/q, EZ Unemployment Rate, and South
+    Korea Exports/Trade Balance each showed several "releases" bucketed
+    together by when the prints happened to land, when in fact they were the
+    normal flash/second/final progression of ONE reference period, or a
+    revision of an older period landing release-wise beside the fresh print
+    of the next one -- both legitimate, neither a duplicate. Reference-date
+    grouping tells those apart because it asks what period a release
+    describes, not when it happened to arrive.
+
+    The fallback exists because not every indicator carries a reference_date:
+    weekly indicators are excluded from the inference in reference.py on
+    purpose (a month-lag rule cannot express "the week ending on a given
+    day"), so they -- and anything else the inference module could not
+    reach -- keep being checked the old way.
 
     Indicators tagged ``flash_final`` are allowed one extra release per period,
     not exempted from the check. Two events in one period is what a flash
@@ -339,20 +360,43 @@ def cadence_violations(
     purpose; it does not say nobody should count.
 
     One honest limit remains: the first month a revision is filed as its own
-    release will still show up. This reviews, it does not reject.
+    release, before any reference_date is known for it yet, will still show
+    up under the release-date fallback. This reviews, it does not reject.
     """
-    dove, parametri = "", []
+    dove, filtro_parametri = "", []
     if indicator_keys is not None:
         chiavi = list(indicator_keys)
         if not chiavi:
             return []
         dove = f"AND e.indicator_key IN ({','.join('?' * len(chiavi))})"
-        parametri = chiavi
+        filtro_parametri = chiavi
 
     fuori = []
     for freq, (unita, atteso) in _ATTESI.items():
-        righe = con.execute(
-            f"""
+        query = f"""
+            -- events whose reference_date is known: bucket by the PERIOD
+            -- THEY DESCRIBE, so revisions of one period never collide with
+            -- the fresh release of a different one just for landing close
+            -- together.
+            SELECT e.indicator_key, i.name, i.area, i.criticality,
+                   e.reference_date AS periodo,
+                   '|' || coalesce(i.tags, '') || '|' LIKE '%|flash_final|%'
+                       AS pubblica_due_volte,
+                   count(*) AS n,
+                   string_agg(strftime(e.release_utc, '%Y-%m-%d'), ', '
+                              ORDER BY e.release_utc) AS giorni
+            FROM calendar_events e
+            JOIN calendar_indicators i ON i.indicator_key = e.indicator_key
+            WHERE i.frequency = ? AND e.status = 'released'
+              AND e.reference_date IS NOT NULL {dove}
+            GROUP BY ALL
+            HAVING count(*) > ? + CASE WHEN pubblica_due_volte THEN 1 ELSE 0 END
+
+            UNION ALL
+
+            -- events with no reference_date: the old bucket, by the
+            -- RELEASE date's own calendar period -- the only signal left
+            -- when nothing says what period a release describes.
             SELECT e.indicator_key, i.name, i.area, i.criticality,
                    date_trunc('{unita}', e.release_utc) AS periodo,
                    '|' || coalesce(i.tags, '') || '|' LIKE '%|flash_final|%'
@@ -362,12 +406,14 @@ def cadence_violations(
                               ORDER BY e.release_utc) AS giorni
             FROM calendar_events e
             JOIN calendar_indicators i ON i.indicator_key = e.indicator_key
-            WHERE i.frequency = ? AND e.status = 'released' {dove}
+            WHERE i.frequency = ? AND e.status = 'released'
+              AND e.reference_date IS NULL {dove}
             GROUP BY ALL
             HAVING count(*) > ? + CASE WHEN pubblica_due_volte THEN 1 ELSE 0 END
-            """,
-            [freq, *parametri, atteso],
-        ).fetchall()
+        """
+        parametri = [freq, *filtro_parametri, atteso,
+                     freq, *filtro_parametri, atteso]
+        righe = con.execute(query, parametri).fetchall()
         for chiave, nome, area, crit, periodo, _due_volte, n, giorni in righe:
             fuori.append({
                 "indicator_key": chiave, "indicator_name": nome, "area": area,

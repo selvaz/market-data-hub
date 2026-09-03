@@ -39,11 +39,18 @@ dev = [
     "typing_extensions",
 ]
 # Scraping the economic release calendar. An extra rather than a dependency:
-# four of the five sources are read through a real browser, and nothing else in
-# the package needs one -- neither the ingestion, nor the audits, nor any
-# reader. The 3.9 leg of CI does not install this, so the modules that need it
-# must stay unimported until asked for (see econ_calendar/collect/__init__.py).
+# myfxbook is read through a real browser, and nothing else in the package
+# needs one -- neither the ingestion, nor the audits, nor any reader. The
+# 3.9 leg of CI does not install this, so the modules that need it must stay
+# unimported until asked for (see econ_calendar/collect/__init__.py).
 calendar = ["selenium>=4.15", "webdriver-manager>=4.0", "beautifulsoup4>=4.11"]
+# The T1 web-search validation pass (econ_calendar/validate.py), an agent
+# framework rather than a browser. Also an extra rather than a dependency for
+# the same reason: nothing else here needs an LLM engine, and the import is
+# deferred inside run_validation() itself so it stays optional even when this
+# extra is not installed. Pinned to the range LazyTools/ecosystem's
+# compatibility.toml already carries for lazybridge across this workspace.
+validate = ["lazybridge>=1.3.0,<2.0"]
 # Registers this repo's market DB as a Source (market_data_hub.dataspace_source)
 # so a cross-repository workflow can check every source's readiness together
 # before it starts writing. The distribution is `lazydataspace`, not

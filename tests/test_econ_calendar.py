@@ -26,10 +26,6 @@ from market_data_hub.econ_calendar.aliases import (
     unmapped,
     upsert_alias,
 )
-from market_data_hub.econ_calendar.audit import (
-    disagreeing_bindings,
-    suspect_matches,
-)
 from market_data_hub.econ_calendar.catalog import (
     available_series,
     catalogue_vocabulary,
@@ -142,7 +138,7 @@ def test_event_id_is_stable_across_collectors():
 def test_ingestion_writes_observations_and_event(con):
     upsert_indicators(con, load_catalog_rows())
     outcome = ingest_observations(con, [
-        _obs("tradays", actual="3.4%", consensus="2.7%", previous="3.5%", impact="high"),
+        _obs("myfxbook", actual="3.4%", consensus="2.7%", previous="3.5%", impact="high"),
         _obs("nasdaq", actual="3.4%", consensus="2.9%"),
     ])
     assert outcome["observations"] == 2 and outcome["events"] == 1
@@ -152,7 +148,7 @@ def test_ingestion_writes_observations_and_event(con):
         "SELECT actual, actual_num, consensus, consensus_source, n_sources, "
         "values_agree, status FROM calendar_events").fetchone()
     assert e[0] == "3.4%" and e[1] == 3.4
-    assert e[2] == "2.7%" and e[3] == "tradays"   # consensus from ONE named source
+    assert e[2] == "2.7%" and e[3] == "myfxbook"   # consensus from ONE named source
     assert e[4] == 2 and e[5] is True and e[6] == "released"
 
 
@@ -303,58 +299,6 @@ def test_distinct_releases_stay_distinct(con):
     assert n == 2
 
 
-# --- audit: is the matched row actually naming the indicator it was bound to --
-def _bind(con, indicator_key, source, name, day):
-    """One observation filed under `indicator_key` under the name `name`."""
-    ingest_observations(con, [CalendarObservation(
-        indicator_key=indicator_key, country_iso3="USA", source=source,
-        provenance="aggregator", source_event_name=name,
-        release_utc=datetime(2026, 8, day, 12, 30), actual="0.1%",
-        vintage_date=date(2026, 8, 14))])
-
-
-def test_audit_stays_quiet_when_the_names_agree(con):
-    upsert_indicators(con, load_catalog_rows())
-    for i, src in enumerate(("tradays", "nasdaq", "yahoo")):
-        _bind(con, "us_cpi_yy", src, "CPI y/y", 10 + i)
-    assert suspect_matches(con) == []
-
-
-def test_audit_catches_a_different_indicator_wearing_a_similar_name(con):
-    """The case this module exists for: BLS 'Real Earnings' rides out with the
-    CPI and was filed as Average Hourly Earnings, inheriting its T1 tier."""
-    upsert_indicators(con, load_catalog_rows())
-    for day in (3, 4, 5, 6):
-        _bind(con, "us_earnings", "tradays", "Average Hourly Earnings y/y", day)
-    _bind(con, "us_earnings", "tradays", "Real Earnings m/m", 12)
-
-    trovati = suspect_matches(con)
-    assert [s["indicator_key"] for s in trovati] == ["us_earnings"]
-    assert trovati[0]["source_names"] == ["Real Earnings m/m"]
-    assert "real" in trovati[0]["distinctive_words"]
-
-
-def test_audit_does_not_flag_the_indicator_s_ordinary_name(con):
-    """'HSBC India Manufacturing PMI' carries words the catalogue name lacks,
-    but it is 4 observations in 5: it is what the source calls the indicator,
-    not an intruder. Without the share ceiling the list drowns in these."""
-    upsert_indicators(con, load_catalog_rows())
-    for day in (3, 4, 5, 6):
-        _bind(con, "in_pmi_mfg", "nasdaq", "HSBC India Manufacturing PMI", day)
-    _bind(con, "in_pmi_mfg", "nasdaq", "Manufacturing PMI", 12)
-    assert suspect_matches(con) == []
-
-
-def test_audit_reads_through_the_abbreviations_sources_use(con):
-    """'Initial Jobless Clm' is the same words shortened to fit a column.
-    Flagging those buried the real errors under a hundred spelling variants."""
-    upsert_indicators(con, load_catalog_rows())
-    for day in (3, 4, 5, 6):
-        _bind(con, "us_claims", "tradays", "Initial Jobless Claims", day)
-    _bind(con, "us_claims", "tradays", "Initial Jobless Clm *", 12)
-    assert suspect_matches(con) == []
-
-
 # --- aliases: what a source means by a name, decided once and recorded -------
 def test_normalization_keeps_what_separates_indicators():
     """Gentler than the audit's: 'm/m' and 'y/y' are noise there and meaning
@@ -465,56 +409,19 @@ def test_cadence_quiet_when_the_indicator_behaves(con):
     assert cadence_violations(con, indicator_keys=["us_earnings"]) == []
 
 
-# --- the strongest binding detector: sources that disagree on the number -----
-def test_disagreement_names_both_readings(con):
-    """46 disagreements in the first full load, 46 of them binding errors.
-    The report has to show the names beside the values, because it is reading
-    them together that says which series each source actually filed."""
-    upsert_indicators(con, load_catalog_rows())
-    base = dict(indicator_key="au_wages", country_iso3="AUS",
-                provenance="aggregator", release_utc=datetime(2026, 5, 13, 1, 30),
-                vintage_date=date(2026, 8, 14))
-    ingest_observations(con, [
-        CalendarObservation(source="tradays", source_event_name="Wage Price Index y/y",
-                            actual="3.3%", **base),
-        CalendarObservation(source="nasdaq", source_event_name="Wage Price Index",
-                            actual="0.8%", **base),
-    ])
-    fuori = disagreeing_bindings(con)
-    assert len(fuori) == 1
-    assert fuori[0]["distinct_names"] == 2      # two names: a binding problem
-    letture = {r["source"]: (r["source_name"], r["actual"]) for r in fuori[0]["readings"]}
-    assert letture["nasdaq"] == ("Wage Price Index", "0.8%")
-
-
-def test_disagreement_under_one_name_is_marked_differently(con):
-    """One name and two numbers is a data problem, not a binding one, and the
-    caller must not go looking for a series that is not there."""
-    upsert_indicators(con, load_catalog_rows())
-    ingest_observations(con, [_obs("tradays", actual="3.4%"),
-                              _obs("nasdaq", actual="9.9%")])
-    fuori = disagreeing_bindings(con)
-    assert len(fuori) == 1 and fuori[0]["distinct_names"] == 1
-
-
-def test_agreeing_sources_produce_no_finding(con):
-    upsert_indicators(con, load_catalog_rows())
-    ingest_observations(con, [_obs("tradays", actual="3.4%"),
-                              _obs("nasdaq", actual="3.4%")])
-    assert disagreeing_bindings(con) == []
-
-
 def test_seed_file_carries_the_per_source_decisions(con):
     """A ruling that evaporates when the database is rebuilt is not a ruling,
     so the decisions live in a file beside the catalogue."""
     upsert_indicators(con, load_catalog_rows())
     assert load_seed(con) > 0
-    # Nasdaq publishes housing starts as a level where the indicator is m/m
-    assert is_rejected(con, "nasdaq", "USA", "Housing Starts")
-    assert not is_rejected(con, "tradays", "USA", "Housing Starts m/m")
+    # myfxbook's bare 'Capacity Utilization' was proposed for us_fomc by name
+    # reconciliation alone -- capacity utilisation has nothing to do with the
+    # FOMC decision.
+    assert is_rejected(con, "myfxbook", "USA", "Capacity Utilization")
+    assert not is_rejected(con, "myfxbook", "USA", "Inflation Rate YoY")
     # rejection is not the same as never seen: resolve() returns None for both
-    assert resolve(con, "nasdaq", "USA", "Housing Starts") is None
-    assert ("nasdaq", "USA", "housing starts") in load_rejections(con)
+    assert resolve(con, "myfxbook", "USA", "Capacity Utilization") is None
+    assert ("myfxbook", "USA", "capacity utilization") in load_rejections(con)
 
 
 # --- reference period: derived where no source publishes one ----------------
@@ -675,8 +582,8 @@ def test_consensus_survives_the_release_that_overwrites_it(con):
     lands, and vintage_date has day granularity, so both captures are the same
     row. Losing the earlier one makes every later surprise zero."""
     upsert_indicators(con, load_catalog_rows())
-    ingest_observations(con, [_obs("tradays", consensus="2.7%")])           # before
-    ingest_observations(con, [_obs("tradays", actual="3.4%", consensus=None)])  # after
+    ingest_observations(con, [_obs("myfxbook", consensus="2.7%")])           # before
+    ingest_observations(con, [_obs("myfxbook", actual="3.4%", consensus=None)])  # after
 
     e = con.execute("SELECT actual, consensus FROM calendar_events").fetchone()
     assert e == ("3.4%", "2.7%")
@@ -687,9 +594,9 @@ def test_consensus_comes_from_the_oldest_version_not_the_newest(con):
     print in the consensus field, and reading the newest version takes that
     replacement for an expectation."""
     upsert_indicators(con, load_catalog_rows())
-    ingest_observations(con, [_obs("tradays", consensus="2.7%",
+    ingest_observations(con, [_obs("myfxbook", consensus="2.7%",
                                    vintage_date=date(2026, 8, 11))])
-    ingest_observations(con, [_obs("tradays", actual="3.4%", consensus="3.4%",
+    ingest_observations(con, [_obs("myfxbook", actual="3.4%", consensus="3.4%",
                                    vintage_date=date(2026, 8, 12))])
     assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "2.7%"
 
@@ -723,7 +630,7 @@ def test_surprise_view_withholds_a_disputed_point(con):
     publishes surprises has to honour it, or the flag protects nothing."""
     upsert_indicators(con, load_catalog_rows())
     ingest_observations(con, [
-        _obs("tradays", actual="3.4%", consensus="2.7%"),
+        _obs("myfxbook", actual="3.4%", consensus="2.7%"),
         _obs("nasdaq", actual="3.4%", consensus="3.4%"),
     ])
     r = con.execute(
@@ -872,6 +779,75 @@ def test_a_third_release_is_still_caught_on_a_flash_final_indicator(con):
     assert fuori[0]["indicator_key"] == "ez_hicp_yy"
 
 
+# --- cadence, grouped by reference_date instead of the release calendar -----
+def test_cadence_no_longer_confuses_two_periods_released_close_together(con):
+    """The false positive this fix exists for: a revision of an OLDER period
+    landing, release-wise, beside the fresh release of the NEXT one. Bucketing
+    by release date merges them into one calendar-month bucket and reports two
+    releases where each period individually only had one -- exactly the shape
+    the EZ GDP q/q, EZ Unemployment Rate and South Korea Exports/Trade Balance
+    false positives took in production."""
+    upsert_indicators(con, load_catalog_rows())
+    base = dict(indicator_key="us_cpi_yy", country_iso3="USA", source="myfxbook",
+                provenance="aggregator", source_event_name="CPI y/y",
+                vintage_date=date(2026, 8, 14), actual="3.1%")
+    ingest_observations(con, [
+        # June's data, released (late) on 10 July
+        CalendarObservation(release_utc=datetime(2026, 7, 10, 12, 30),
+                            reference_date=date(2026, 6, 30), **base),
+        # July's data, released on 28 July -- same release month as above,
+        # different reference period, more than 18h apart so a distinct event
+        CalendarObservation(release_utc=datetime(2026, 7, 28, 12, 30),
+                            reference_date=date(2026, 7, 31), **base),
+    ])
+    assert cadence_violations(con, indicator_keys=["us_cpi_yy"]) == []
+
+
+def test_cadence_still_catches_a_real_violation_among_other_periods(con):
+    """The fix must not hide a genuine violation behind a decoy period: two
+    releases for the SAME reference period is still a contradiction, even
+    when a different, legitimately single-released period sits beside it."""
+    upsert_indicators(con, load_catalog_rows())
+    base = dict(indicator_key="us_cpi_yy", country_iso3="USA", source="myfxbook",
+                provenance="aggregator", source_event_name="CPI y/y",
+                vintage_date=date(2026, 8, 14), actual="3.1%")
+    ingest_observations(con, [
+        # June's data, released twice more than 18h apart -- a genuine
+        # duplicate/wrong-binding shape, not a flash/final (untagged indicator)
+        CalendarObservation(release_utc=datetime(2026, 7, 5, 12, 30),
+                            reference_date=date(2026, 6, 30), **base),
+        CalendarObservation(release_utc=datetime(2026, 7, 20, 12, 30),
+                            reference_date=date(2026, 6, 30), **base),
+        # July's data, released once -- fine on its own
+        CalendarObservation(release_utc=datetime(2026, 8, 3, 12, 30),
+                            reference_date=date(2026, 7, 31), **base),
+    ])
+    fuori = cadence_violations(con, indicator_keys=["us_cpi_yy"])
+    assert len(fuori) == 1
+    assert fuori[0]["releases"] == 2 and fuori[0]["period"] == "2026-06-30"
+
+
+def test_cadence_falls_back_to_the_release_bucket_without_a_reference_date(con):
+    """Weekly indicators (and anything else the inference module cannot
+    reach) never get a reference_date, so the release-date bucket -- the only
+    check that existed before this fix -- has to keep working for them."""
+    upsert_indicators(con, load_catalog_rows())
+    base = dict(indicator_key="us_claims", country_iso3="USA", source="myfxbook",
+                provenance="aggregator", source_event_name="Initial Jobless Claims",
+                vintage_date=date(2026, 8, 14), actual="220K")
+    ingest_observations(con, [
+        # two releases in the same ISO week, no reference_date on either --
+        # us_claims is weekly, excluded from reference-date inference
+        CalendarObservation(release_utc=datetime(2026, 8, 3, 12, 30), **base),
+        CalendarObservation(release_utc=datetime(2026, 8, 5, 12, 30), **base),
+    ])
+    assert con.execute(
+        "SELECT count(*) FROM calendar_events WHERE reference_date IS NOT NULL"
+    ).fetchone()[0] == 0
+    fuori = cadence_violations(con, indicator_keys=["us_claims"])
+    assert len(fuori) == 1 and fuori[0]["releases"] == 2
+
+
 def test_discovery_answers_without_knowing_an_indicator_key(con):
     """The point of the function: an agent asks in the terms it thinks in."""
     upsert_indicators(con, load_catalog_rows())
@@ -1003,10 +979,14 @@ def test_observations_are_stamped_with_the_day_they_were_collected(tmp_path, mon
     from market_data_hub.econ_calendar.collect.consolidate import raccogli
 
     monkeypatch.chdir(tmp_path)
-    (tmp_path / 'yahoo.csv').write_text(
-        'Paese,Evento,Orario,Data_Rilascio,Attuale,Previsto,Precedente\n'
-        'US,CPI YY,12:30 PM UTC,2026-08-13,3.1,3.0,2.9\n'
-        'US,Initial Jobless,12:30 PM UTC,2026-08-13,221K,225K,224K\n',
+    # 'CPI Inflation Rate YoY' does double duty: it is what myfxbook's timezone
+    # anchor looks for ('Inflation Rate' at 08:30 America/New_York) AND what
+    # the catalogue's match_rules for a *_cpi_yy indicator need ('cpi' and
+    # 'yy' both present) -- 12:30 UTC is 08:30 EDT on 13 August 2026.
+    (tmp_path / 'myfxbook.csv').write_text(
+        'Data_Rilascio,Orario,Paese,Importanza,Evento,Periodo_Riferimento,'
+        'Attuale,Previsto,Precedente,Revisione,Fonte\n'
+        '2026-08-13,12:30,US,high,CPI Inflation Rate YoY,Jul,3.1,3.0,2.9,,MyFXBook\n',
         encoding='utf-8')
 
     catalogo = [r for r in load_catalog_rows()
@@ -1152,111 +1132,44 @@ def test_recollected_row_replaces_the_stale_one_even_if_its_time_changed():
 
 # ---------------------------------------------------------------------------
 # The job used to exit 0 whenever anything at all was ingested, even with a
-# source down -- indistinguishable to Task Scheduler from a clean run.
-# D27, found 2026-08-17 enabling the job: yahoo died mid-collection and the
-# job reported success while reference_date coverage dropped to 11% (from a
-# clean run's 44%), because yahoo is the only source that publishes it.
+# source down -- indistinguishable to Task Scheduler from a clean run. That
+# was a three-way split (clean/degraded/failed) because a dead source among
+# several still left a partially useful run. MyFXBook is the only source
+# left, so there is no partial-credit case any more: exit_code() is now a
+# straight function of whether anything was produced to ingest.
 # ---------------------------------------------------------------------------
 
 
-def test_a_clean_run_with_all_sources_exits_zero():
+def test_a_clean_run_exits_zero():
     from run_econ_calendar import exit_code
 
-    assert exit_code(guasti=0, n_osservazioni=468) == 0
+    assert exit_code(468) == 0
 
 
-def test_a_degraded_run_exits_two_not_zero():
-    """The regression in full: one of five sources down, four still
-    delivered observations. This used to return 0."""
-    from run_econ_calendar import exit_code
-
-    assert exit_code(guasti=1, n_osservazioni=468) == 2
-    assert exit_code(guasti=4, n_osservazioni=12) == 2
-
-
-def test_every_source_down_exits_one():
-    from run_econ_calendar import exit_code
-
-    assert exit_code(guasti=5, n_osservazioni=0) == 1
-
-
-def test_zero_observations_is_a_failure_even_if_no_source_reported_a_crash():
-    """Sources can 'succeed' -- return an empty frame -- and still leave
+def test_zero_observations_is_a_failure():
+    """Collection can 'succeed' -- return an empty frame -- and still leave
     nothing to ingest; that is not a clean run either."""
     from run_econ_calendar import exit_code
 
-    assert exit_code(guasti=0, n_osservazioni=0) == 1
-
-
-def test_a_stale_csv_from_a_previous_run_is_removed_on_failure(tmp_path):
-    """The regression found by review: --work-dir is the live project's
-    directory, written into day after day. A source that fails today left
-    yesterday's file untouched and raccogli() read it anyway -- not just
-    stale data ingested under today's vintage, but a run where every source
-    fails today could still show n_osservazioni > 0 from leftovers, and be
-    reported as degraded instead of total failure.
-    """
-    from run_econ_calendar import _scarta_csv_stantio
-
-    stantio = tmp_path / "nasdaq.csv"
-    stantio.write_text("Paese,Evento\nUS,CPI\n", encoding="utf-8")
-    assert stantio.exists()
-
-    _scarta_csv_stantio(stantio, scritto_da_se=False)
-    assert not stantio.exists()
-
-
-def test_myfxbook_is_exempt_because_it_resumes_across_runs(tmp_path):
-    """myfxbook writes incrementally and resumes by design -- clearing its
-    file on a failed attempt would discard correctly-collected earlier days,
-    not just today's."""
-    from run_econ_calendar import _scarta_csv_stantio
-
-    proprio = tmp_path / "myfxbook.csv"
-    proprio.write_text("giorni gia raccolti\n", encoding="utf-8")
-
-    _scarta_csv_stantio(proprio, scritto_da_se=True)
-    assert proprio.exists(), "il file di myfxbook non deve mai essere cancellato qui"
+    assert exit_code(0) == 1
 
 
 def test_no_collect_does_not_claim_a_fresh_collection_succeeded():
-    """guasti stays 0 under --no-collect because no source was asked to run --
-    the summary must say that, not '5/5 succeeded', which implies a
-    collection that never happened."""
+    """--no-collect skips collection entirely, so the summary must say that
+    rather than reporting 'ok'/'FAILED' for a collection that never ran."""
     import inspect
 
     sorgente = inspect.getsource(__import__("run_econ_calendar").main)
     assert "args.no_collect" in sorgente
-    assert "not attempted" in sorgente or "no_collect" in sorgente.split(
-        "sources:")[0][-200:]
+    assert "not attempted" in sorgente
 
 
-def test_collect_actually_calls_the_stale_csv_cleanup_on_both_failure_paths():
-    """The helper being correct does not mean collect() calls it. Structural,
-    because exercising collect() itself needs a browser."""
-    import inspect
-
-    import run_econ_calendar as modulo
-
-    corpo = inspect.getsource(modulo.collect)
-    chiamate = corpo.count("_scarta_csv_stantio(")
-    assert chiamate == 2, (
-        f"collect() chiama _scarta_csv_stantio {chiamate} volte, attese 2 "
-        f"(il ramo 'FAILED' e il ramo 'no rows')"
-    )
-
-
-def test_myfxbook_file_survives_a_failure_inside_its_own_call(tmp_path, monkeypatch):
-    """The bug an independent review found after the PR above had merged.
-
-    `scritto_da_se = True` was assigned only after `scarica()` returned, so a
-    failure *inside* that call -- myfxbook writes incrementally and can have
-    committed many resumable days before a transient browser death -- left
-    the flag False, and the cleanup path deleted the file anyway. Its own
-    `.fatte.txt` registry is untouched by that deletion, so a later run would
-    believe those days were already done and never re-fetch the history just
-    destroyed.
-    """
+def test_collect_never_touches_the_csv_on_failure(tmp_path, monkeypatch):
+    """myfxbook writes incrementally and can have committed many resumable
+    days to disk before raising midway (a transient browser failure, say).
+    With myfxbook as the only source there is no other source's file that
+    could go stale behind a failed one, so collect() must never delete or
+    truncate it on failure -- whatever it managed to write stands."""
     import market_data_hub.econ_calendar.collect.myfxbook as mod_myfxbook
     from run_econ_calendar import collect
 
@@ -1272,10 +1185,19 @@ def test_myfxbook_file_survives_a_failure_inside_its_own_call(tmp_path, monkeypa
 
     monkeypatch.setattr(mod_myfxbook, "scarica", scarica_che_fallisce_a_meta)
 
-    guasti = collect(["myfxbook"], work_dir, "2026-08-01", "2026-08-16",
-                     "2026-08-01", "2026-08-16", 13)
+    riuscita = collect(work_dir, "2026-08-01", "2026-08-16")
 
-    assert guasti == 1
+    assert riuscita is False
     assert bersaglio.exists(), \
-        "il file di myfxbook e' stato cancellato da un fallimento dentro la sua stessa chiamata"
+        "il file di myfxbook e' stato toccato da un fallimento dentro la sua stessa chiamata"
     assert "gia raccolti" in bersaglio.read_text(encoding="utf-8")
+
+
+def test_collect_reports_failure_on_empty_or_missing_frame(tmp_path, monkeypatch):
+    import market_data_hub.econ_calendar.collect.myfxbook as mod_myfxbook
+    import pandas as pd
+    from run_econ_calendar import collect
+
+    monkeypatch.setattr(mod_myfxbook, "scarica",
+                        lambda da, a, uscita: pd.DataFrame())
+    assert collect(tmp_path, "2026-08-01", "2026-08-16") is False
