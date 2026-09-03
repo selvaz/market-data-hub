@@ -32,6 +32,7 @@ import pandas as pd
 # `leggi()` still fail loudly and immediately if the extra is missing.
 
 PERIODO = re.compile(r'\(([^)]{1,12})\)\s*$')
+PERCORSO_PAESE = re.compile(r'/forex-economic-calendar/([^/?#]+)')
 MESI = {m: i for i, m in enumerate(
     ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], 1)}
@@ -102,11 +103,17 @@ def leggi(d, anno):
         if mese not in MESI:
             continue
         evento = c[4].get_text(' ', strip=True)
+        collegamento = c[4].find('a', href=True)
         mp = PERIODO.search(evento)
         righe.append({
             'Data_Rilascio': f'{anno}-{MESI[mese]:02d}-{giorno:02d}',
             'Orario': ora,
-            'Paese': c[3].get_text(' ', strip=True),
+            # The visible column is a currency (EUR), not necessarily the
+            # issuing country.  The event URL carries the latter.
+            'Paese': paese_da_href(
+                collegamento.get('href') if collegamento else '',
+                c[3].get_text(' ', strip=True),
+            ),
             'Importanza': c[5].get_text(' ', strip=True).lower(),
             'Evento': PERIODO.sub('', evento).strip(),
             'Periodo_Riferimento': mp.group(1) if mp else 'N/D',
@@ -156,6 +163,16 @@ VALUTA_PAESE = {'USD': 'US', 'EUR': 'EU', 'GBP': 'GB', 'JPY': 'JP', 'CNY': 'CN',
                 'AUD': 'AU', 'CAD': 'CA', 'NZD': 'NZ', 'CHF': 'CH', 'INR': 'IN',
                 'MXN': 'MX', 'BRL': 'BR', 'KRW': 'KR', 'TWD': 'TW', 'ZAR': 'ZA'}
 
+# Confirmed from MyFXBook event URLs for the EUR releases whose identical
+# event names previously collapsed into the Euro Area.  Values are the ISO2
+# codes used in the raw collector CSV; catalog.to_iso3() maps EU to EMU.
+SLUG_PAESE = {
+    'austria': 'AT', 'belgium': 'BE', 'estonia': 'EE', 'france': 'FR',
+    'germany': 'DE', 'greece': 'GR', 'ireland': 'IE', 'lithuania': 'LT',
+    'netherlands': 'NL', 'portugal': 'PT', 'slovenia': 'SI', 'spain': 'ES',
+    'euro-area': 'EU',
+}
+
 
 def _iso_date(s):
     """'2026-08-16' -> date, anything else -> None."""
@@ -176,6 +193,25 @@ def paese_iso(valore):
     """
     v = str(valore).strip()
     return VALUTA_PAESE.get(v, v)
+
+
+def paese_da_href(href, valuta):
+    """Return MyFXBook's issuing-country code from an event link.
+
+    A country slug is authoritative over the currency shown in the table.
+    In particular, an unknown EUR slug must not fall back to ``EU``: that
+    would silently turn a national release into an EMU aggregate.  Keeping
+    the unknown slug makes it remain unmatched until it is explicitly mapped.
+    """
+    m = PERCORSO_PAESE.search(str(href or ''))
+    if not m:
+        return str(valuta).strip()
+    slug = m.group(1).lower()
+    if slug in SLUG_PAESE:
+        return SLUG_PAESE[slug]
+    if str(valuta).strip() == 'EUR':
+        return slug
+    return str(valuta).strip()
 
 
 def da_ricollezionare(fatte, rifai_giorni=7, oggi=None):

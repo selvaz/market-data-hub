@@ -16,41 +16,6 @@ rejections:
   decided_by: reconciled-2026-08-14
   reason: 'Proposed for cn_trade by name reconciliation. The same balance quoted in yuan:
     roughly seven times the USD figure the indicator carries.'
-- source: myfxbook
-  country_iso3: EMU
-  name: GDP Growth Rate QoQ
-  decided_by: verified-2026-09-03
-  reason: 'MyFXBook tags by currency, not issuing country (VALUTA_PAESE maps EUR -> EMU
-    for every euro-area member state). This bare name showed up on 22 of the last ~15
-    calendar days with mutually incompatible values (-0.1% to 0.4%, no coherent revision
-    pattern) -- caught live when a user spotted "Euro area GDP" dated for a day GDP is
-    never released on. It is not the eurozone aggregate repeating; it is different member
-    states'' national GDP prints landing under one indicator_key. Rejected wholesale
-    rather than reassigned, because nothing in the collected row (only currency + bare
-    name) says which country a given release actually belongs to.'
-- source: myfxbook
-  country_iso3: EMU
-  name: Unemployment Rate
-  decided_by: verified-2026-09-03
-  reason: 'Same EUR-currency-tags-every-member-state problem as GDP Growth Rate QoQ
-    above, worse here because unemployment genuinely differs a lot by country: 23
-    observations ranging 4.3% to 9.9%, incompatible with one monthly eurozone figure.'
-- source: myfxbook
-  country_iso3: EMU
-  name: Industrial Production MoM
-  decided_by: verified-2026-09-03
-  reason: Same EUR-currency-tags-every-member-state problem as GDP Growth Rate QoQ above.
-- source: myfxbook
-  country_iso3: EMU
-  name: Industrial Sales MoM
-  decided_by: verified-2026-09-03
-  reason: Same EUR-currency-tags-every-member-state problem, one stray observation
-    caught alongside Industrial Production MoM under the same indicator_key.
-- source: myfxbook
-  country_iso3: EMU
-  name: Retail Sales MoM
-  decided_by: verified-2026-09-03
-  reason: Same EUR-currency-tags-every-member-state problem as GDP Growth Rate QoQ above.
 bindings:
 - source: myfxbook
   country_iso3: AUS
