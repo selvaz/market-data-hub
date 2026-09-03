@@ -404,9 +404,12 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
                 "ALTER TABLE calendar_indicator_aliases "
                 "ADD COLUMN IF NOT EXISTS seeded_from_file BOOLEAN DEFAULT FALSE"
             )
+            # v22's confirmed/rejected aliases were all written by load_seed().
+            # Marking them owned lets the first v23 load reconcile decisions
+            # already removed from the file; proposals were never file-owned.
             con.execute(
-                "UPDATE calendar_indicator_aliases SET seeded_from_file = FALSE "
-                "WHERE seeded_from_file IS NULL"
+                "UPDATE calendar_indicator_aliases SET seeded_from_file = TRUE "
+                "WHERE status IN ('confirmed', 'rejected')"
             )
             con.execute(
                 "ALTER TABLE calendar_indicator_aliases "

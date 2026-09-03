@@ -87,6 +87,11 @@ def test_migrate_adds_alias_file_ownership_column_to_v22_database(tmp_db):
         "VALUES ('test', 'USA', 'old alias', 'confirmed')"
     )
     con.execute(
+        "INSERT INTO calendar_indicator_aliases "
+        "(source, country_iso3, source_name_norm, status) "
+        "VALUES ('test', 'USA', 'old proposal', 'proposed')"
+    )
+    con.execute(
         "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('schema_version', '22')"
     )
 
@@ -96,8 +101,9 @@ def test_migrate_adds_alias_file_ownership_column_to_v22_database(tmp_db):
     ).fetchall()}
     assert "seeded_from_file" in columns
     assert columns["seeded_from_file"][3] is True
-    assert con.execute(
-        "SELECT seeded_from_file FROM calendar_indicator_aliases "
-        "WHERE source = 'test'"
-    ).fetchone() == (False,)
+    ownership = dict(con.execute(
+        "SELECT source_name_norm, seeded_from_file "
+        "FROM calendar_indicator_aliases WHERE source = 'test'"
+    ).fetchall())
+    assert ownership == {"old alias": True, "old proposal": False}
     con.close()
