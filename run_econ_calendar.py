@@ -28,7 +28,7 @@ reader then answers "nothing found".
 import argparse
 import os
 import sys
-from datetime import date, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -91,7 +91,9 @@ def collect(work_dir: Path, da: str, a: str) -> bool:
         return False
 
     if df is None or df.empty:
-        print('  no rows', flush=True)
+        print('  WARNING: MyFXBook returned zero rows for the whole collection '
+              'window; no fallback source is configured.', file=sys.stderr,
+              flush=True)
         return False
     print(f'  {len(df)} rows -> {uscita}', flush=True)
     return True
@@ -164,7 +166,7 @@ def main() -> int:
         con.close()
         return 0
 
-    oggi = date.today()
+    oggi = datetime.now(UTC).date()
     collezione_riuscita = True
     if not args.no_collect:
         da = args.da or str(oggi - timedelta(days=7))

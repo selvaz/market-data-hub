@@ -128,7 +128,11 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
         # refusal is the point: an undated batch ingested anyway is a wrong
         # release instant, which is the one error the point-in-time bridge
         # exists to prevent.
-        scarto = measure(d, fonte)
+        # An empty file says that this source produced nothing, not that its
+        # timezone is unmeasurable.  Preserve TimezoneUnknown for a non-empty
+        # batch that lacks anchors, where ingesting an assumed instant would
+        # still be unsafe.
+        scarto = 0.0 if d.empty else measure(d, fonte)
         if scarto:
             print(f'  ({fonte}: {scarto:+.2f} h to UTC, measured from this batch)')
         d['norm'] = d.Evento.apply(lambda e: ' '.join(normalizza(e)))

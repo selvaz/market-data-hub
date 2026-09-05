@@ -1305,6 +1305,75 @@ def test_zero_observations_is_a_failure():
     assert exit_code(0) == 1
 
 
+def test_empty_myfxbook_window_fails_loudly_instead_of_crashing(
+        tmp_path, monkeypatch, capsys):
+    """A zero-row source window is not an unmeasurable timezone batch.
+
+    The runner must reach its empty-ingest branch instead of letting
+    ``measure()`` raise before consolidation returns -- but "no crash" is not
+    "success": with no fallback source left, zero rows for the whole window
+    is still the failure exit_code() always gave a source that produced
+    nothing (see test_zero_observations_is_a_failure). The fix removes the
+    traceback, not the exit code.
+    """
+    import pandas as pd
+    import sys
+
+    import market_data_hub.econ_calendar.collect.myfxbook as mod_myfxbook
+    from run_econ_calendar import main
+
+    def scarica_vuota(da, a, uscita):
+        pd.DataFrame(columns=[
+            'Data_Rilascio', 'Orario', 'Paese', 'Importanza', 'Evento',
+            'Periodo_Riferimento', 'Attuale', 'Previsto', 'Precedente',
+            'Revisione', 'Fonte',
+        ]).to_csv(uscita, index=False)
+        return pd.DataFrame()
+
+    monkeypatch.setattr(mod_myfxbook, 'scarica', scarica_vuota)
+    monkeypatch.setattr(sys, 'argv', [
+        'run_econ_calendar.py', '--db', str(tmp_path / 'calendar.duckdb'),
+        '--work-dir', str(tmp_path), '--no-validate',
+    ])
+
+    assert main() == 1
+    captured = capsys.readouterr()
+    assert 'WARNING: MyFXBook returned zero rows for the whole collection window' in captured.err
+    assert 'TimezoneUnknown' not in captured.err
+
+
+def test_default_collection_window_uses_utc_today(tmp_path, monkeypatch):
+    """UTC midnight can still be the previous local calendar day."""
+    import sys
+
+    import run_econ_calendar as runner
+
+    class ClockAtUtcMidnight:
+        @classmethod
+        def now(cls, tz):
+            assert tz is runner.UTC
+            return datetime(2026, 9, 5, 0, 30)
+
+    collected = {}
+
+    def collect_empty(work_dir, da, a):
+        collected['window'] = (da, a)
+        (work_dir / runner.MYFXBOOK_CSV).write_text(
+            'Data_Rilascio,Orario,Paese,Importanza,Evento,Periodo_Riferimento,'
+            'Attuale,Previsto,Precedente,Revisione,Fonte\n', encoding='utf-8')
+        return False
+
+    monkeypatch.setattr(runner, 'datetime', ClockAtUtcMidnight)
+    monkeypatch.setattr(runner, 'collect', collect_empty)
+    monkeypatch.setattr(sys, 'argv', [
+        'run_econ_calendar.py', '--db', str(tmp_path / 'calendar.duckdb'),
+        '--work-dir', str(tmp_path), '--no-validate',
+    ])
+
+    assert runner.main() == 1  # the window is right; it's just empty (see the test above)
+    assert collected['window'] == ('2026-08-29', '2026-09-05')
+
+
 def test_no_collect_does_not_claim_a_fresh_collection_succeeded():
     """--no-collect skips collection entirely, so the summary must say that
     rather than reporting 'ok'/'FAILED' for a collection that never ran."""
