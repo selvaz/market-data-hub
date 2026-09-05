@@ -47,6 +47,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
@@ -57,6 +58,29 @@ from market_data_hub.econ_calendar.ingest import (
     ingest_observations,
     parse_number,
 )
+
+# A compact figure at the START of a reply field: '2.5%', '-42.0K', '162K',
+# '$-73.261 B', '54.6'. Anchored, so a sentence that merely contains a number
+# ('rose for a third month (about 2.5%)') is not a figure.
+_FIGURE = re.compile(r'^\s*(\$?[-+]?\$?\d[\d,]*(?:\.\d+)?\s?(?:%|[KMBT]\b)?)')
+
+
+def _figure(testo: Optional[str]) -> Optional[str]:
+    """The figure a reply field starts with, or None.
+
+    The model is told to answer ACTUAL/PREVIOUS with the figure alone. On the
+    first production pass it answered '2.5% m/m (July, revised prior month
+    3.7%)': parse_number found the 2.5 inside, the gate passed, and the whole
+    sentence went into calendar_events.actual. What is stored must be the
+    figure; the raw reply stays in the note. A field that does not BEGIN
+    with a figure is not one -- the number in the middle of a sentence may
+    be the prior, the consensus, or a revision.
+    """
+    m = _FIGURE.match(testo or "")
+    if not m:
+        return None
+    figura = m.group(1).strip()
+    return figura if parse_number(figura) is not None else None
 
 _SYSTEM = (
     "You verify one economic data release against what was actually "
@@ -277,9 +301,11 @@ def run_validation(
             continue
 
         if not evento["actual"]:
+            # Fill only on a figure the field STARTS with, plus a source.
+            # parse_number alone let a whole sentence through (see _figure).
             if risultato["status"] == "UNVERIFIED":
                 esito["unverified"] += 1
-            elif parse_number(risultato["actual"]) is None or not risultato["sources"]:
+            elif _figure(risultato["actual"]) is None or not risultato["sources"]:
                 esito["found_unusable"] += 1
             else:
                 fills.append((evento, risultato))
@@ -305,8 +331,10 @@ def run_validation(
                 provenance="web",
                 source_event_name=evento["indicator_name"],
                 release_utc=evento["release_utc"],
-                actual=risultato["actual"],
-                previous=risultato["previous"] or None,
+                # The figures, not the fields: the note below keeps the raw
+                # reply, calendar_events gets '2.5%', never the sentence.
+                actual=_figure(risultato["actual"]),
+                previous=_figure(risultato["previous"]),
                 consensus=None,
                 impact=None,
                 vintage_date=oggi,

@@ -198,6 +198,43 @@ def test_validation_rejects_unusable_found_reply(con, monkeypatch, reply):
     assert summary["found_unusable"] == 1
 
 
+def test_web_fill_stores_the_figure_not_the_sentence_around_it(con, monkeypatch):
+    """Caught on the first production pass: the model answered
+    'ACTUAL: 2.5% m/m (July, revised prior month 3.7%)'. parse_number found
+    the 2.5 inside it, the gate passed, and the whole sentence went into
+    calendar_events.actual. The stored actual must be the compact figure;
+    the raw reply stays in the note."""
+    from market_data_hub.econ_calendar import validate
+
+    today = datetime.now().date()
+    _scheduled_t1(con, datetime.combine(today - timedelta(days=2), time(12)))
+    monkeypatch.setattr(validate, "_ask", lambda *args, **kwargs: (
+        "STATUS: FOUND\nACTUAL: 2.5% m/m (July, revised prior month 3.7%)\n"
+        "PREVIOUS: 3.7% (revised from 3.5%)\nNOTE: Destatis release.\n"
+        "SOURCES:\nhttps://www.destatis.de/x"))
+
+    summary = validate.run_validation(con, today)
+
+    actual, previous, num = con.execute(
+        "SELECT actual, previous, actual_num FROM calendar_events").fetchone()
+    assert (actual, previous, num) == ("2.5%", "3.7%", 2.5)
+    assert summary["filled"] == 1
+    raw = json.loads(con.execute(
+        "SELECT commentary_json FROM calendar_event_notes").fetchone()[0])
+    assert raw["published"]["actual"].startswith("2.5% m/m (July")
+
+    # and a reply with no figure at the start is still unusable, not a guess
+    con.execute("DELETE FROM calendar_events"); con.execute("DELETE FROM calendar_event_notes")
+    con.execute("DELETE FROM calendar_observations")
+    _scheduled_t1(con, datetime.combine(today - timedelta(days=2), time(12)))
+    monkeypatch.setattr(validate, "_ask", lambda *args, **kwargs: (
+        "STATUS: FOUND\nACTUAL: rose for a third month (about 2.5%)\n"
+        "SOURCES:\nhttps://www.destatis.de/x"))
+    summary = validate.run_validation(con, today)
+    assert con.execute("SELECT status, actual FROM calendar_events").fetchone() == ("scheduled", None)
+    assert summary["found_unusable"] == 1
+
+
 def test_web_fill_yields_to_aggregator_and_cannot_overwrite_it(con, monkeypatch):
     from market_data_hub.econ_calendar import validate
 
