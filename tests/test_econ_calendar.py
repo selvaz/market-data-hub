@@ -1702,6 +1702,35 @@ def test_empty_forexfactory_feed_writes_header_and_fails_the_run(tmp_path, monke
     assert 'WARNING: forexfactory returned zero rows for the whole collection window' in capsys.readouterr().err
 
 
+def test_us_goods_trade_balance_does_not_bind_to_the_total_balance(tmp_path, monkeypatch):
+    """Found in production history: the Census ADVANCE goods balance
+    (-$118.8B) had been bound to us_trade next to the total balance
+    (-$88.6B) for the same month -- two 'releases' of one indicator, the
+    first of them a different series. Forex Factory lists the advance print
+    as 'Goods Trade Balance' every month, so this must not recur. Australia's
+    headline IS the goods balance, so the exclusion is US-only."""
+    import pandas as pd
+
+    from market_data_hub.econ_calendar.collect.consolidate import raccogli
+    from market_data_hub.econ_calendar.collect.myfxbook import COLONNE
+
+    righe = [
+        dict(zip(COLONNE, ['2026-08-27', '12:30', 'US', 'medium', 'Goods Trade Balance',
+                           'N/D', '', '-$115.0B', '-$110.2B', '', 'ForexFactory'])),
+        dict(zip(COLONNE, ['2026-09-03', '12:30', 'US', 'medium', 'Trade Balance',
+                           'N/D', '', '-$90.0B', '-$85.4B', '', 'ForexFactory'])),
+        dict(zip(COLONNE, ['2026-09-03', '01:30', 'AU', 'low', 'Goods Trade Balance',
+                           'N/D', '', '5.10B', '4.80B', '', 'ForexFactory'])),
+    ]
+    pd.DataFrame(righe, columns=COLONNE).to_csv(
+        tmp_path / 'forexfactory.csv', index=False, encoding='utf-8-sig')
+    monkeypatch.chdir(tmp_path)
+    catalogo = [r for r in load_catalog_rows() if r['indicator_key'] in ('us_trade', 'au_trade')]
+    osservazioni, _ = raccogli(catalogo)
+    legati = sorted((o.indicator_key, o.source_event_name) for o in osservazioni)
+    assert legati == [('au_trade', 'Goods Trade Balance'), ('us_trade', 'Trade Balance')]
+
+
 def test_forexfactory_fixture_matches_the_real_catalogue(con, tmp_path, monkeypatch):
     import pandas as pd
 

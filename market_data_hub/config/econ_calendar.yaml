@@ -588,7 +588,12 @@ indicators:
   agency: BEA / Census Bureau
   rationale: 'Nominal and seasonal: it rarely changes a view.'
   match_rules: trade balance|international trade
-  match_excludes: goods advance
+  # 'goods', not 'goods advance': the Census advance goods balance reaches
+  # the sources as "Goods Trade Balance" (MyFXBook did, Forex Factory does),
+  # which the old phrase never matched -- so the goods-only print (-$118.8B)
+  # sat next to the total balance (-$88.6B) as a second release of the same
+  # month. Australia's headline IS the goods balance; this exclusion is US-only.
+  match_excludes: goods
   macro_indicator_id: null
 - key: cn_cpi_yy
   country_iso2: CN
