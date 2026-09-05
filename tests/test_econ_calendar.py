@@ -3,7 +3,7 @@
 import copy
 import json
 from calendar import monthrange
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 
 import duckdb
@@ -132,6 +132,131 @@ def test_parse_number(testo, atteso):
 
 def test_scale_does_not_confuse_millions_and_billions():
     assert parse_number("2.5 M") != parse_number("2.5 B")
+
+
+# --------------------------------------------------------------- validate --
+def _scheduled_t1(con, release_utc):
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs(
+        "forexfactory", release_utc=release_utc, actual=None,
+        previous="-23K", consensus="50K", vintage_date=release_utc.date(),
+    )])
+
+
+def test_validation_fills_scheduled_t1_from_a_sourced_web_reply(con, monkeypatch):
+    from market_data_hub.econ_calendar import validate
+
+    today = datetime.now().date()
+    _scheduled_t1(con, datetime.combine(today - timedelta(days=2), time(12)))
+    monkeypatch.setattr(validate, "_ask", lambda *args, **kwargs: (
+        "STATUS: MATCH\nACTUAL: 55K\nPREVIOUS: -23K\nNOTE: BLS release.\n"
+        "SOURCES:\nhttps://www.bls.gov/x"))
+
+    summary = validate.run_validation(con, today)
+
+    event = con.execute(
+        "SELECT status, actual, actual_provenance, actual_source FROM calendar_events"
+    ).fetchone()
+    assert event[:3] == ("released", "55K", "web")
+    assert event[3].startswith("web:")
+    note = con.execute(
+        "SELECT commentary_json, technical_source FROM calendar_event_notes"
+    ).fetchone()
+    assert json.loads(note[0])["check"] == "web_fill"
+    assert note[1] == "https://www.bls.gov/x"
+    assert summary["filled"] == 1
+
+
+def test_validation_leaves_unverified_scheduled_event_untouched(con, monkeypatch):
+    from market_data_hub.econ_calendar import validate
+
+    today = datetime.now().date()
+    _scheduled_t1(con, datetime.combine(today - timedelta(days=2), time(12)))
+    monkeypatch.setattr(validate, "_ask", lambda *args, **kwargs: "STATUS: UNVERIFIED")
+
+    summary = validate.run_validation(con, today)
+
+    assert con.execute("SELECT status, actual FROM calendar_events").fetchone() == ("scheduled", None)
+    assert con.execute("SELECT count(*) FROM calendar_event_notes").fetchone()[0] == 0
+    assert summary["unverified"] == 1
+
+
+@pytest.mark.parametrize("reply", [
+    "STATUS: FOUND\nACTUAL: n/a\nSOURCES:\nhttps://www.bls.gov/x",
+    "STATUS: FOUND\nACTUAL: 55K\nSOURCES:",
+])
+def test_validation_rejects_unusable_found_reply(con, monkeypatch, reply):
+    from market_data_hub.econ_calendar import validate
+
+    today = datetime.now().date()
+    _scheduled_t1(con, datetime.combine(today - timedelta(days=2), time(12)))
+    monkeypatch.setattr(validate, "_ask", lambda *args, **kwargs: reply)
+
+    summary = validate.run_validation(con, today)
+
+    assert con.execute("SELECT status, actual FROM calendar_events").fetchone() == ("scheduled", None)
+    assert summary["found_unusable"] == 1
+
+
+def test_web_fill_yields_to_aggregator_and_cannot_overwrite_it(con, monkeypatch):
+    from market_data_hub.econ_calendar import validate
+
+    today = datetime.now().date()
+    release = datetime.combine(today - timedelta(days=2), time(12))
+    _scheduled_t1(con, release)
+    monkeypatch.setattr(validate, "_ask", lambda *args, **kwargs: (
+        "STATUS: FOUND\nACTUAL: 55K\nSOURCES:\nhttps://www.bls.gov/x"))
+    validate.run_validation(con, today)
+
+    ingest_observations(con, [_obs(
+        "forexfactory", release_utc=release, actual="54K",
+        vintage_date=today,
+    )])
+    assert con.execute(
+        "SELECT actual, actual_provenance FROM calendar_events"
+    ).fetchone() == ("54K", "aggregator")
+
+    later_release = release - timedelta(days=1)
+    ingest_observations(con, [_obs(
+        "forexfactory", release_utc=later_release, actual="53K",
+        vintage_date=today,
+    )])
+    ingest_observations(con, [CalendarObservation(
+        indicator_key="us_cpi_yy", country_iso3="USA", source="web:sonnet",
+        provenance="web", source_event_name="CPI y/y", release_utc=later_release,
+        actual="52K", vintage_date=today,
+    )])
+    assert con.execute(
+        "SELECT actual, actual_provenance FROM calendar_events "
+        "WHERE release_utc = ?", [later_release]
+    ).fetchone() == ("53K", "aggregator")
+
+
+def test_validation_window_excludes_old_and_future_events_but_flags_released(con, monkeypatch):
+    from market_data_hub.econ_calendar import validate
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    today = now.date()
+    upsert_indicators(con, load_catalog_rows())
+    old = datetime.combine(today - timedelta(days=5), time(12))
+    future = now + timedelta(minutes=10)
+    released = datetime.combine(today - timedelta(days=1), time(12))
+    ingest_observations(con, [
+        _obs("old", release_utc=old, actual=None, vintage_date=old.date()),
+        _obs("future", release_utc=future, actual=None, vintage_date=today),
+        _obs("published", release_utc=released, actual="50K", vintage_date=today),
+    ])
+    monkeypatch.setattr(validate, "_ask", lambda *args, **kwargs: (
+        "STATUS: MISMATCH\nACTUAL: 55K\nNOTE: Published value differs.\n"
+        "SOURCES:\nhttps://www.bls.gov/x"))
+
+    summary = validate.run_validation(con, today, lookback_days=3)
+
+    assert summary["checked"] == 1 and summary["mismatch"] == 1
+    assert con.execute(
+        "SELECT actual FROM calendar_events WHERE release_utc = ?", [released]
+    ).fetchone()[0] == "50K"
+    assert con.execute("SELECT count(*) FROM calendar_event_notes").fetchone()[0] == 1
 
 
 # ------------------------------------------------------------- ingestione --

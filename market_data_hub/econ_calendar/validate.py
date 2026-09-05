@@ -37,10 +37,16 @@ from __future__ import annotations
 
 import asyncio
 import json
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Optional
 
 import duckdb
+
+from market_data_hub.econ_calendar.ingest import (
+    CalendarObservation,
+    ingest_observations,
+    parse_number,
+)
 
 _SYSTEM = (
     "You verify one economic data release against what was actually "
@@ -50,13 +56,16 @@ _SYSTEM = (
     "issuing agency's own release, or a reputable financial news report of "
     "it -- and compare.\n"
     "Reply in EXACTLY this format, nothing before or after:\n"
-    "STATUS: <MATCH|MISMATCH|UNVERIFIED>\n"
-    "ACTUAL: <the actual figure you found, or blank if it matches>\n"
-    "PREVIOUS: <the previous figure you found, or blank if it matches>\n"
+    "STATUS: <MATCH|MISMATCH|FOUND|UNVERIFIED>\n"
+    "ACTUAL: <the actual figure you found, or blank only for a recorded match>\n"
+    "PREVIOUS: <the previous figure you found, or blank only for a recorded match>\n"
     "NOTE: <one sentence: what disagrees, or why it could not be verified>\n"
     "SOURCES:\n"
     "<one url per line, the pages you actually used>\n"
-    "MATCH means our actual AND previous both agree with what you found. "
+    "When our calendar has no actual (it says N/D), do not call the result "
+    "MATCH or MISMATCH: find the published actual and previous and reply "
+    "FOUND with the actual filled in. MATCH means our recorded actual AND "
+    "previous both agree with what you found. "
     "MISMATCH means at least one of them disagrees -- report the correct "
     "value you found for the field(s) that disagree, leave the rest blank. "
     "UNVERIFIED means you could not find the real published figures at "
@@ -64,24 +73,28 @@ _SYSTEM = (
 )
 
 
-def _t1_events_for_day(con: duckdb.DuckDBPyConnection, day: date) -> list[dict]:
-    """That day's T1-criticality releases, with what our calendar recorded."""
+def _t1_events_for_window(
+    con: duckdb.DuckDBPyConnection, *, now_utc: datetime, lookback_days: int,
+) -> list[dict]:
+    """Recent, safely-past T1 releases, including ones awaiting an actual."""
+    earliest = now_utc - timedelta(days=lookback_days)
+    latest = now_utc - timedelta(minutes=30)
     righe = con.execute(
         """
-        SELECT e.event_id, i.name, i.area, i.country_iso3, e.release_utc,
-               e.actual, e.previous, e.consensus
+        SELECT e.event_id, e.indicator_key, i.name, i.area, i.country_iso3,
+               e.release_utc, e.actual, e.previous, e.consensus
         FROM calendar_events e
         JOIN calendar_indicators i ON i.indicator_key = e.indicator_key
-        WHERE i.criticality = 'T1' AND e.status = 'released'
-          AND e.release_utc::date = ?
+        WHERE i.criticality = 'T1'
+          AND e.release_utc BETWEEN ? AND ?
         ORDER BY e.release_utc
         """,
-        [day],
+        [earliest.replace(tzinfo=None), latest.replace(tzinfo=None)],
     ).fetchall()
     return [
-        {"event_id": r[0], "indicator_name": r[1], "area": r[2],
-         "country_iso3": r[3], "release_utc": r[4],
-         "actual": r[5], "previous": r[6], "consensus": r[7]}
+        {"event_id": r[0], "indicator_key": r[1], "indicator_name": r[2],
+         "area": r[3], "country_iso3": r[4], "release_utc": r[5],
+         "actual": r[6], "previous": r[7], "consensus": r[8]}
         for r in righe
     ]
 
@@ -94,8 +107,11 @@ def _prompt(evento: dict) -> str:
         f"Our calendar recorded -- actual: {evento['actual'] or 'N/D'}, "
         f"previous: {evento['previous'] or 'N/D'}, "
         f"consensus: {evento['consensus'] or 'N/D'}\n"
-        "Find what was actually published and check our calendar's actual and "
-        "previous against it."
+        "Find the published actual and previous. "
+        + ("Our actual is missing: return FOUND with the published actual; "
+           "MATCH/MISMATCH cannot apply until one is recorded."
+           if not evento["actual"] else
+           "Check our calendar's actual and previous against it.")
     )
 
 
@@ -159,7 +175,7 @@ def _parse(testo: str) -> dict:
         chiave, valore = chiave.strip().upper(), valore.strip()
         if chiave == "STATUS":
             stato = valore.upper() if valore.upper() in (
-                "MATCH", "MISMATCH", "UNVERIFIED") else "UNVERIFIED"
+                "MATCH", "MISMATCH", "FOUND", "UNVERIFIED") else "UNVERIFIED"
         elif chiave == "ACTUAL":
             campi["actual"] = valore
         elif chiave == "PREVIOUS":
@@ -173,9 +189,16 @@ def _parse(testo: str) -> dict:
 
 
 def _write_note(con: duckdb.DuckDBPyConnection, evento: dict, esito: dict,
-                 *, model: str, run_id: Optional[str]) -> None:
-    """Record a mismatch. Never touches calendar_events -- MyFXBook's own
-    value stands there; this only says a human should look at it.
+                *, model: str, run_id: Optional[str], check: str = "calendar_vs_published") -> None:
+    """Record what the web check found, next to what the calendar had.
+
+    Two kinds of note share this function. ``check="calendar_vs_published"``
+    is a MISMATCH on an event that already had an actual: the stored value
+    stands, the note says a human should look. ``check="web_fill"`` is the
+    audit trail of an actual this module itself supplied for an event that
+    had none: the value went in through ingest_observations with
+    provenance 'web' (lowest precedence), and the note keeps the sources it
+    came from so the number is never anonymous.
 
     calendar_event_notes is shared with the press-commentary enrichment this
     package already writes (drivers/components/technical_source/etc.): this
@@ -183,8 +206,8 @@ def _write_note(con: duckdb.DuckDBPyConnection, evento: dict, esito: dict,
     columns a validation check actually has content for.
     """
     contenuto = json.dumps({
-        "check": "myfxbook_vs_published",
-        "myfxbook": {"actual": evento["actual"], "previous": evento["previous"],
+        "check": check,
+        "calendar": {"actual": evento["actual"], "previous": evento["previous"],
                      "consensus": evento["consensus"]},
         "published": {"actual": esito["actual"] or None,
                        "previous": esito["previous"] or None},
@@ -203,24 +226,33 @@ def _write_note(con: duckdb.DuckDBPyConnection, evento: dict, esito: dict,
 
 def run_validation(
     con: duckdb.DuckDBPyConnection,
-    day: date,
+    day: Optional[date] = None,
     *,
     run_id: Optional[str] = None,
     model: str = "sonnet",
     effort: str = "low",
     max_turns: int = 8,
     timeout_s: float = 240.0,
+    lookback_days: int = 3,
 ) -> dict:
-    """Cross-check every T1 release of `day` against what actually published.
+    """Fill or cross-check recent, safely-past T1 releases.
 
     Returns a summary -- how many were checked, matched, mismatched or could
     not be verified -- so the caller can print it without reading the notes
     table back. A mismatch is written to calendar_event_notes; a match or an
     unverified check writes nothing, because neither is actionable.
     """
-    eventi = _t1_events_for_day(con, day)
+    if lookback_days < 0:
+        raise ValueError("lookback_days must be non-negative")
+    now_utc = datetime.now(timezone.utc)
+    if day is not None:
+        now_utc = datetime.combine(day, now_utc.timetz())
+    eventi = _t1_events_for_window(
+        con, now_utc=now_utc, lookback_days=lookback_days)
     esito = {"checked": len(eventi), "match": 0, "mismatch": 0,
-             "unverified": 0, "errors": 0}
+             "unverified": 0, "errors": 0, "filled": 0,
+             "found_unusable": 0}
+    fills: list[tuple[dict, dict]] = []
     for evento in eventi:
         try:
             testo = _ask(_prompt(evento), model=model, effort=effort,
@@ -234,6 +266,15 @@ def run_validation(
                   f'({type(e).__name__}: {str(e)[:120]})', flush=True)
             continue
 
+        if not evento["actual"]:
+            if risultato["status"] == "UNVERIFIED":
+                esito["unverified"] += 1
+            elif parse_number(risultato["actual"]) is None or not risultato["sources"]:
+                esito["found_unusable"] += 1
+            else:
+                fills.append((evento, risultato))
+            continue
+
         if risultato["status"] == "MISMATCH":
             esito["mismatch"] += 1
             _write_note(con, evento, risultato, model=model, run_id=run_id)
@@ -243,4 +284,28 @@ def run_validation(
             esito["match"] += 1
         else:
             esito["unverified"] += 1
+
+    if fills:
+        oggi = now_utc.date()
+        osservazioni = [
+            CalendarObservation(
+                indicator_key=evento["indicator_key"],
+                country_iso3=evento["country_iso3"],
+                source=f"web:{model}",
+                provenance="web",
+                source_event_name=evento["indicator_name"],
+                release_utc=evento["release_utc"],
+                actual=risultato["actual"],
+                previous=risultato["previous"] or None,
+                consensus=None,
+                impact=None,
+                vintage_date=oggi,
+            )
+            for evento, risultato in fills
+        ]
+        ingest_result = ingest_observations(con, osservazioni, run_id=run_id)
+        esito["filled"] = ingest_result["observations"]
+        for evento, risultato in fills:
+            _write_note(con, evento, risultato, model=model, run_id=run_id,
+                        check="web_fill")
     return esito

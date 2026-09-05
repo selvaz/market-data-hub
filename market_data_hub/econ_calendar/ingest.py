@@ -28,12 +28,13 @@ import duckdb
 # could merge back together.
 _EVENT_GRAIN = "day"
 
-# On the published value, whoever issues the figure wins. On the consensus
+# On the published value, whoever issues the figure wins; web validation
+# fills are a last-resort placeholder. On the consensus
 # there is no sensible precedence: different survey providers give different
 # numbers, and mixing them manufactures surprises. Pick ONE source, say so.
 # Forex Factory is that one source: the calendar is collected from its public
 # feed, so there is no longer a genuine choice to make here, only a name to record.
-_PROVENANCE_RANK = {"official": 0, "aggregator": 1}
+_PROVENANCE_RANK = {"official": 0, "aggregator": 1, "web": 2}
 DEFAULT_CONSENSUS_SOURCE = "forexfactory"
 
 
@@ -44,7 +45,7 @@ class CalendarObservation:
     indicator_key: str
     country_iso3: str
     source: str
-    provenance: str                      # 'official' | 'aggregator'
+    provenance: str                      # 'official' | 'aggregator' | 'web'
     source_event_name: str
     release_utc: datetime
     release_precision: str = "minute"    # 'minute' | 'day'
@@ -423,7 +424,9 @@ def consolidate_events(
                         return r[campo], r[0], r[1]
             return None, None, None
 
-        # published value: issuing agencies first, then aggregators
+        # published value: issuing agencies first, then aggregators, then
+        # web validation fills. The latter must never displace a sourced
+        # calendar value when a better observation arrives.
         per_provenienza = sorted(osservazioni, key=lambda r: _PROVENANCE_RANK[r[1]])
         ordine_valore = [r[0] for r in per_provenienza]
         actual, actual_src, actual_prov = scegli(5, ordine_valore)

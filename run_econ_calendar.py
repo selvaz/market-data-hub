@@ -140,6 +140,8 @@ def main() -> int:
     p.add_argument('--no-validate', action='store_true',
                    help='skip the T1 web-search validation pass after ingest '
                         '(network + LLM cost; useful for fast local iteration)')
+    p.add_argument('--validate-lookback-days', type=int, default=3,
+                   help='days of safely-past T1 releases to validate/fill (default: 3)')
     p.add_argument('--audit-only', action='store_true',
                    help='run only the checks against the database')
     p.add_argument('--from', dest='da', default=None,
@@ -226,7 +228,8 @@ def main() -> int:
         try:
             from market_data_hub.econ_calendar.validate import run_validation
             esito_validazione = run_validation(
-                con, oggi, run_id=args.run_id or f'econ-calendar-{oggi}')
+                con, oggi, run_id=args.run_id or f'econ-calendar-{oggi}',
+                lookback_days=args.validate_lookback_days)
             print(f'  {esito_validazione}')
         except Exception as e:
             # A validation failure costs the cross-check, not the ingest:
