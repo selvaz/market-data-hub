@@ -217,14 +217,21 @@ def test_web_fill_stores_the_figure_not_the_sentence_around_it(con, monkeypatch)
 
     actual, previous, num = con.execute(
         "SELECT actual, previous, actual_num FROM calendar_events").fetchone()
-    assert (actual, previous, num) == ("2.5%", "3.7%", 2.5)
+    # previous stays '-23K': the seeding aggregator observation outranks the
+    # web one for previous exactly as it would for actual.
+    assert (actual, previous, num) == ("2.5%", "-23K", 2.5)
+    # the web observation itself carries the compact figures, not the fields
+    assert con.execute(
+        "SELECT actual, previous FROM calendar_observations WHERE source LIKE 'web:%'"
+    ).fetchone() == ("2.5%", "3.7%")
     assert summary["filled"] == 1
     raw = json.loads(con.execute(
         "SELECT commentary_json FROM calendar_event_notes").fetchone()[0])
     assert raw["published"]["actual"].startswith("2.5% m/m (July")
 
     # and a reply with no figure at the start is still unusable, not a guess
-    con.execute("DELETE FROM calendar_events"); con.execute("DELETE FROM calendar_event_notes")
+    con.execute("DELETE FROM calendar_events")
+    con.execute("DELETE FROM calendar_event_notes")
     con.execute("DELETE FROM calendar_observations")
     _scheduled_t1(con, datetime.combine(today - timedelta(days=2), time(12)))
     monkeypatch.setattr(validate, "_ask", lambda *args, **kwargs: (
