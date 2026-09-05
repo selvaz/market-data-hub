@@ -1,19 +1,29 @@
 # -*- coding: utf-8 -*-
-"""T1 validation: cross-check MyFXBook's own reading against what published.
+"""T1 validation: check -- and, when nothing else supplied one, fill -- the
+actual of recent T1 releases against what actually published.
 
-Single-sourcing on MyFXBook drops the redundancy the old five-source
-pipeline had almost by accident: when four other scrapers also saw a
-release, an outlier reading stood out on its own just from disagreeing with
-the rest. Nothing catches MyFXBook misreading its own page any more.
+Single-sourcing drops the redundancy the old five-source pipeline had
+almost by accident: when four other scrapers also saw a release, an outlier
+reading stood out on its own just from disagreeing with the rest. Rather
+than bolt on a second scraper -- which is how the calendar ended up with
+five sources disagreeing with each other in the first place -- this runs a
+narrow, targeted check instead: for the T1-criticality releases of the last
+few days only, an LLM with live web search looks up what actually
+published.
 
-Rather than bolt on a second scraper -- which is how the calendar ended up
-with five sources disagreeing with each other in the first place -- this
-runs a narrow, targeted check instead: for the day's T1-criticality releases
-only, an LLM with live web search looks up what actually published and
-compares it against MyFXBook's actual/previous/consensus. A mismatch is
-written to ``calendar_event_notes``; nothing here ever corrects MyFXBook's
-own value in ``calendar_events``, it only flags where the two disagree, for
-a human to look at.
+Two outcomes, decided by whether the event already has an actual:
+
+* It has one (some source supplied it): the web figure is compared against
+  it. A mismatch is written to ``calendar_event_notes``; the stored value is
+  never corrected here, the note says a human should look.
+* It has none (the current source, Forex Factory's feed, publishes no
+  actuals at all): a confident, sourced web figure -- a number that parses
+  and at least one URL, nothing less -- is fed to ``ingest_observations``
+  as an observation with provenance ``'web'``, the lowest rank, so any
+  aggregator's or agency's value overrides it the moment it arrives and it
+  never displaces one. A ``web_fill`` note keeps the URLs. UNVERIFIED, or a
+  reply without a parseable number or a source, writes nothing: a guessed
+  print is worse than a missing one.
 
 The engine is LazyBridge's ``ClaudeCodeEngine`` with ``web=True``, mirroring
 investmentcommittee's weekly-earnings research step
