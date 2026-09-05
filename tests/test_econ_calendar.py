@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 """Economic calendar tests: catalogue, ingestion, consolidation."""
+import copy
+import json
 from calendar import monthrange
 from datetime import date, datetime
+from pathlib import Path
 
 import duckdb
 import pytest
@@ -16,6 +19,7 @@ from market_data_hub.econ_calendar import (
 )
 from market_data_hub.econ_calendar.aliases import (
     cadence_violations,
+    load_aliases,
     is_rejected,
     load_rejections,
     load_seed,
@@ -61,6 +65,11 @@ def _obs(source, provenance="aggregator", **kw):
     )
     base.update(kw)
     return CalendarObservation(**base)
+
+
+def _ff_fixture():
+    return json.loads((Path(__file__).parent / 'fixtures' /
+                       'ff_calendar_thisweek_2026-09-05.json').read_text())
 
 
 # ------------------------------------------------------------------ schema --
@@ -138,7 +147,7 @@ def test_event_id_is_stable_across_collectors():
 def test_ingestion_writes_observations_and_event(con):
     upsert_indicators(con, load_catalog_rows())
     outcome = ingest_observations(con, [
-        _obs("myfxbook", actual="3.4%", consensus="2.7%", previous="3.5%", impact="high"),
+        _obs("forexfactory", actual="3.4%", consensus="2.7%", previous="3.5%", impact="high"),
         _obs("nasdaq", actual="3.4%", consensus="2.9%"),
     ])
     assert outcome["observations"] == 2 and outcome["events"] == 1
@@ -148,7 +157,7 @@ def test_ingestion_writes_observations_and_event(con):
         "SELECT actual, actual_num, consensus, consensus_source, n_sources, "
         "values_agree, status FROM calendar_events").fetchone()
     assert e[0] == "3.4%" and e[1] == 3.4
-    assert e[2] == "2.7%" and e[3] == "myfxbook"   # consensus from ONE named source
+    assert e[2] == "2.7%" and e[3] == "forexfactory"   # consensus from ONE named source
     assert e[4] == 2 and e[5] is True and e[6] == "released"
 
 
@@ -698,8 +707,8 @@ def test_consensus_survives_the_release_that_overwrites_it(con):
     lands, and vintage_date has day granularity, so both captures are the same
     row. Losing the earlier one makes every later surprise zero."""
     upsert_indicators(con, load_catalog_rows())
-    ingest_observations(con, [_obs("myfxbook", consensus="2.7%")])           # before
-    ingest_observations(con, [_obs("myfxbook", actual="3.4%", consensus=None)])  # after
+    ingest_observations(con, [_obs("forexfactory", consensus="2.7%")])           # before
+    ingest_observations(con, [_obs("forexfactory", actual="3.4%", consensus=None)])  # after
 
     e = con.execute("SELECT actual, consensus FROM calendar_events").fetchone()
     assert e == ("3.4%", "2.7%")
@@ -710,9 +719,9 @@ def test_consensus_comes_from_the_oldest_version_not_the_newest(con):
     print in the consensus field, and reading the newest version takes that
     replacement for an expectation."""
     upsert_indicators(con, load_catalog_rows())
-    ingest_observations(con, [_obs("myfxbook", consensus="2.7%",
+    ingest_observations(con, [_obs("forexfactory", consensus="2.7%",
                                    vintage_date=date(2026, 8, 11))])
-    ingest_observations(con, [_obs("myfxbook", actual="3.4%", consensus="3.4%",
+    ingest_observations(con, [_obs("forexfactory", actual="3.4%", consensus="3.4%",
                                    vintage_date=date(2026, 8, 12))])
     assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "2.7%"
 
@@ -746,7 +755,7 @@ def test_surprise_view_withholds_a_disputed_point(con):
     publishes surprises has to honour it, or the flag protects nothing."""
     upsert_indicators(con, load_catalog_rows())
     ingest_observations(con, [
-        _obs("myfxbook", actual="3.4%", consensus="2.7%"),
+        _obs("forexfactory", actual="3.4%", consensus="2.7%"),
         _obs("nasdaq", actual="3.4%", consensus="3.4%"),
     ])
     r = con.execute(
@@ -1095,14 +1104,12 @@ def test_observations_are_stamped_with_the_day_they_were_collected(tmp_path, mon
     from market_data_hub.econ_calendar.collect.consolidate import raccogli
 
     monkeypatch.chdir(tmp_path)
-    # 'CPI Inflation Rate YoY' does double duty: it is what myfxbook's timezone
-    # anchor looks for ('Inflation Rate' at 08:30 America/New_York) AND what
-    # the catalogue's match_rules for a *_cpi_yy indicator need ('cpi' and
-    # 'yy' both present) -- 12:30 UTC is 08:30 EDT on 13 August 2026.
-    (tmp_path / 'myfxbook.csv').write_text(
+    # Forex Factory writes UTC already, so 12:30 is the actual UTC release
+    # time and no anchor-derived offset is applied during consolidation.
+    (tmp_path / 'forexfactory.csv').write_text(
         'Data_Rilascio,Orario,Paese,Importanza,Evento,Periodo_Riferimento,'
         'Attuale,Previsto,Precedente,Revisione,Fonte\n'
-        '2026-08-13,12:30,US,high,CPI Inflation Rate YoY,Jul,3.1,3.0,2.9,,MyFXBook\n',
+        '2026-08-13,12:30,US,high,CPI y/y,Jul,3.1,3.0,2.9,,ForexFactory\n',
         encoding='utf-8')
 
     catalogo = [r for r in load_catalog_rows()
@@ -1305,7 +1312,7 @@ def test_zero_observations_is_a_failure():
     assert exit_code(0) == 1
 
 
-def test_empty_myfxbook_window_fails_loudly_instead_of_crashing(
+def test_empty_collection_window_fails_loudly_instead_of_crashing(
         tmp_path, monkeypatch, capsys):
     """A zero-row source window is not an unmeasurable timezone batch.
 
@@ -1319,7 +1326,7 @@ def test_empty_myfxbook_window_fails_loudly_instead_of_crashing(
     import pandas as pd
     import sys
 
-    import market_data_hub.econ_calendar.collect.myfxbook as mod_myfxbook
+    import market_data_hub.econ_calendar.collect.forexfactory as mod_forexfactory
     from run_econ_calendar import main
 
     def scarica_vuota(da, a, uscita):
@@ -1330,7 +1337,7 @@ def test_empty_myfxbook_window_fails_loudly_instead_of_crashing(
         ]).to_csv(uscita, index=False)
         return pd.DataFrame()
 
-    monkeypatch.setattr(mod_myfxbook, 'scarica', scarica_vuota)
+    monkeypatch.setattr(mod_forexfactory, 'scarica', scarica_vuota)
     monkeypatch.setattr(sys, 'argv', [
         'run_econ_calendar.py', '--db', str(tmp_path / 'calendar.duckdb'),
         '--work-dir', str(tmp_path), '--no-validate',
@@ -1338,7 +1345,7 @@ def test_empty_myfxbook_window_fails_loudly_instead_of_crashing(
 
     assert main() == 1
     captured = capsys.readouterr()
-    assert 'WARNING: MyFXBook returned zero rows for the whole collection window' in captured.err
+    assert 'WARNING: forexfactory returned zero rows for the whole collection window' in captured.err
     assert 'TimezoneUnknown' not in captured.err
 
 
@@ -1358,7 +1365,7 @@ def test_default_collection_window_uses_utc_today(tmp_path, monkeypatch):
 
     def collect_empty(work_dir, da, a):
         collected['window'] = (da, a)
-        (work_dir / runner.MYFXBOOK_CSV).write_text(
+        (work_dir / runner.SOURCE_CSV).write_text(
             'Data_Rilascio,Orario,Paese,Importanza,Evento,Periodo_Riferimento,'
             'Attuale,Previsto,Precedente,Revisione,Fonte\n', encoding='utf-8')
         return False
@@ -1390,11 +1397,11 @@ def test_collect_never_touches_the_csv_on_failure(tmp_path, monkeypatch):
     With myfxbook as the only source there is no other source's file that
     could go stale behind a failed one, so collect() must never delete or
     truncate it on failure -- whatever it managed to write stands."""
-    import market_data_hub.econ_calendar.collect.myfxbook as mod_myfxbook
+    import market_data_hub.econ_calendar.collect.forexfactory as mod_forexfactory
     from run_econ_calendar import collect
 
     work_dir = tmp_path
-    bersaglio = work_dir / "myfxbook.csv"
+    bersaglio = work_dir / "forexfactory.csv"
     bersaglio.write_text("giorni gia raccolti, prima della chiamata che fallisce\n",
                          encoding="utf-8")
 
@@ -1403,7 +1410,7 @@ def test_collect_never_touches_the_csv_on_failure(tmp_path, monkeypatch):
         assert uscita == bersaglio
         raise RuntimeError("browser died mid-collection")
 
-    monkeypatch.setattr(mod_myfxbook, "scarica", scarica_che_fallisce_a_meta)
+    monkeypatch.setattr(mod_forexfactory, "scarica", scarica_che_fallisce_a_meta)
 
     riuscita = collect(work_dir, "2026-08-01", "2026-08-16")
 
@@ -1414,10 +1421,145 @@ def test_collect_never_touches_the_csv_on_failure(tmp_path, monkeypatch):
 
 
 def test_collect_reports_failure_on_empty_or_missing_frame(tmp_path, monkeypatch):
-    import market_data_hub.econ_calendar.collect.myfxbook as mod_myfxbook
+    import market_data_hub.econ_calendar.collect.forexfactory as mod_forexfactory
     import pandas as pd
     from run_econ_calendar import collect
 
-    monkeypatch.setattr(mod_myfxbook, "scarica",
+    monkeypatch.setattr(mod_forexfactory, "scarica",
                         lambda da, a, uscita: pd.DataFrame())
     assert collect(tmp_path, "2026-08-01", "2026-08-16") is False
+
+
+# ----------------------------------------------------------- Forex Factory --
+class _FeedResponse:
+    def __init__(self, payload=None, status_code=200, error=None):
+        self.payload = payload
+        self.status_code = status_code
+        self.error = error
+
+    def json(self):
+        if self.error:
+            raise self.error
+        return self.payload
+
+
+def test_forexfactory_rows_and_csv_follow_the_collector_contract(tmp_path, monkeypatch):
+    import pandas as pd
+
+    from market_data_hub.econ_calendar.collect import forexfactory
+    from market_data_hub.econ_calendar.collect.myfxbook import COLONNE
+
+    feed = _ff_fixture()
+    righe = forexfactory._righe(feed, '2026-08-30', '2026-09-06')
+    assert righe and all(list(riga) == COLONNE for riga in righe)
+    monkeypatch.setattr(forexfactory.requests, 'get',
+                        lambda *args, **kwargs: _FeedResponse(feed))
+    out = tmp_path / 'forexfactory.csv'
+    forexfactory.scarica('2026-08-30', '2026-09-06', out)
+    assert out.read_bytes().startswith(b'\xef\xbb\xbf')
+    assert list(pd.read_csv(out).columns) == COLONNE
+
+
+def test_forexfactory_rows_convert_utc_and_countries_from_the_fixture():
+    from market_data_hub.econ_calendar.collect import forexfactory
+
+    righe = forexfactory._righe(_ff_fixture(), '2026-08-30', '2026-09-06')
+    per_evento = {r['Evento']: r for r in righe}
+    aud_gdp = next(r for r in righe if r['Paese'] == 'AU' and r['Evento'] == 'GDP q/q')
+    assert (aud_gdp['Data_Rilascio'], aud_gdp['Orario']) == \
+        ('2026-09-02', '01:30')
+    assert per_evento['German Prelim CPI m/m']['Paese'] == 'DE'
+    assert per_evento['German Prelim CPI m/m']['Evento'] == 'German Prelim CPI m/m'
+    assert per_evento['CPI Flash Estimate y/y']['Paese'] == 'EU'
+    assert {'US', 'CN', 'CH'} <= {r['Paese'] for r in righe}
+    assert not any(r['Paese'] == 'All' for r in righe)
+    titles = {r['Evento'] for r in righe}
+    assert 'Labor Day' not in titles
+
+
+def test_forexfactory_recollection_keeps_the_later_forecast(tmp_path, monkeypatch):
+    from market_data_hub.econ_calendar.collect import forexfactory
+
+    first = _ff_fixture()
+    second = copy.deepcopy(first)
+    changed = next(e for e in second if e['title'] == 'GDP q/q' and e['country'] == 'AUD')
+    changed['forecast'] = '9.9%'
+    responses = iter((_FeedResponse(first), _FeedResponse(second)))
+    monkeypatch.setattr(forexfactory.requests, 'get', lambda *args, **kwargs: next(responses))
+    out = tmp_path / 'forexfactory.csv'
+    forexfactory.scarica('2026-08-30', '2026-09-06', out)
+    raccolti = forexfactory.scarica('2026-08-30', '2026-09-06', out)
+    gdp = raccolti[(raccolti.Paese == 'AU') & (raccolti.Evento == 'GDP q/q')]
+    assert len(gdp) == 1 and gdp.iloc[0].Previsto == '9.9%'
+
+
+def test_forexfactory_scarica_failure_paths_are_clear(tmp_path, monkeypatch):
+    import requests
+
+    from market_data_hub.econ_calendar.collect import forexfactory
+
+    out = tmp_path / 'forexfactory.csv'
+    monkeypatch.setattr(forexfactory.requests, 'get',
+                        lambda *args, **kwargs: _FeedResponse(status_code=429))
+    with pytest.raises(RuntimeError, match='429'):
+        forexfactory.scarica('2026-08-30', '2026-09-06', out)
+    monkeypatch.setattr(forexfactory.requests, 'get',
+                        lambda *args, **kwargs: _FeedResponse(error=ValueError('bad json')))
+    with pytest.raises(RuntimeError, match='invalid JSON'):
+        forexfactory.scarica('2026-08-30', '2026-09-06', out)
+    monkeypatch.setattr(forexfactory.requests, 'get',
+                        lambda *args, **kwargs: (_ for _ in ()).throw(requests.RequestException('offline')))
+    with pytest.raises(RuntimeError, match='request failed'):
+        forexfactory.scarica('2026-08-30', '2026-09-06', out)
+
+
+def test_empty_forexfactory_feed_writes_header_and_fails_the_run(tmp_path, monkeypatch, capsys):
+    import sys
+
+    import market_data_hub.econ_calendar.collect.forexfactory as forexfactory
+    import run_econ_calendar as runner
+
+    monkeypatch.setattr(forexfactory.requests, 'get',
+                        lambda *args, **kwargs: _FeedResponse([]))
+    monkeypatch.setattr(sys, 'argv', [
+        'run_econ_calendar.py', '--db', str(tmp_path / 'calendar.duckdb'),
+        '--work-dir', str(tmp_path), '--no-validate',
+    ])
+    assert runner.main() == 1
+    assert (tmp_path / runner.SOURCE_CSV).read_text(encoding='utf-8-sig').strip() == \
+        ','.join(['Data_Rilascio', 'Orario', 'Paese', 'Importanza', 'Evento',
+                  'Periodo_Riferimento', 'Attuale', 'Previsto', 'Precedente',
+                  'Revisione', 'Fonte'])
+    assert 'WARNING: forexfactory returned zero rows for the whole collection window' in capsys.readouterr().err
+
+
+def test_forexfactory_fixture_matches_the_real_catalogue(con, tmp_path, monkeypatch):
+    import pandas as pd
+
+    from market_data_hub.econ_calendar.collect import forexfactory
+    from market_data_hub.econ_calendar.collect.consolidate import raccogli
+
+    righe = forexfactory._righe(_ff_fixture(), '2026-08-30', '2026-09-06')
+    pd.DataFrame(righe).to_csv(tmp_path / 'forexfactory.csv', index=False, encoding='utf-8-sig')
+    catalogo = load_catalog_rows()
+    upsert_indicators(con, catalogo)
+    load_seed(con)
+    monkeypatch.chdir(tmp_path)
+    osservazioni, per_fonte = raccogli(catalogo, load_rejections(con), load_aliases(con))
+    assert per_fonte == {'forexfactory': 28}
+    assert len(osservazioni) == 28
+    legati = {(o.indicator_key, o.source_event_name) for o in osservazioni}
+    assert {
+        ('us_nfp', 'Non-Farm Employment Change'),
+        ('ca_boc', 'Overnight Rate'),
+        ('de_factory', 'German Factory Orders m/m'),
+        ('ez_hicp_yy', 'CPI Flash Estimate y/y'),
+        ('us_claims', 'Unemployment Claims'),
+        ('us_ism_mfg', 'ISM Manufacturing PMI'),
+        ('au_gdp', 'GDP q/q'),
+    } <= legati
+    assert ('us_earnings', 'Average Hourly Earnings m/m') not in legati
+    assert ('cn_pmi_nbs_mfg', 'Non-Manufacturing PMI') not in legati
+    assert not any(o.source_event_name in {
+        'ADP Non-Farm Employment Change', '5-y Loan Prime Rate',
+    } for o in osservazioni)

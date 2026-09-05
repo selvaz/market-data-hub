@@ -792,7 +792,11 @@ indicators:
   agency: NBS
   rationale: 'Large state-owned firms: it diverges systematically from Caixin, and the divergence is the signal.'
   match_rules: mfg|manufacturing;pmi
-  match_excludes: 'ratingdog|caixin|markit|global|private'
+  # 'non manufacturing': Forex Factory's "Non-Manufacturing PMI" tokenizes to
+  # "non manufacturing pmi" and satisfied mfg|manufacturing;pmi -- the services
+  # survey was landing on the manufacturing indicator. No NBS non-manufacturing
+  # key exists yet; excluding it is a coverage gap made explicit, not a fix.
+  match_excludes: 'ratingdog|caixin|markit|global|private|non manufacturing'
   macro_indicator_id: null
 - key: cn_loans
   country_iso2: CN
@@ -843,7 +847,7 @@ indicators:
   agency: PBoC
   rationale: 'The reference rate for loans: guided in practice by the PBoC.'
   match_rules: prime rate|lpr
-  match_excludes: '5y'
+  match_excludes: '5y|5 y'
   macro_indicator_id: bis_policy_rate
 - key: ez_hicp_yy
   country_iso2: EU

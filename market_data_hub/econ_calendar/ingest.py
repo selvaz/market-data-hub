@@ -31,10 +31,10 @@ _EVENT_GRAIN = "day"
 # On the published value, whoever issues the figure wins. On the consensus
 # there is no sensible precedence: different survey providers give different
 # numbers, and mixing them manufactures surprises. Pick ONE source, say so.
-# MyFXBook is that one source: the calendar was rebuilt around it alone, so
-# there is no longer a genuine choice to make here, only a name to record.
+# Forex Factory is that one source: the calendar is collected from its public
+# feed, so there is no longer a genuine choice to make here, only a name to record.
 _PROVENANCE_RANK = {"official": 0, "aggregator": 1}
-DEFAULT_CONSENSUS_SOURCE = "myfxbook"
+DEFAULT_CONSENSUS_SOURCE = "forexfactory"
 
 
 @dataclass

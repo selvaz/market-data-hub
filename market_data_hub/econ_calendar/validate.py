@@ -45,7 +45,7 @@ import duckdb
 _SYSTEM = (
     "You verify one economic data release against what was actually "
     "published. You are given the indicator, the country, the release "
-    "date, and what our calendar (MyFXBook) recorded for actual, previous "
+    "date, and what our calendar recorded for actual, previous "
     "and consensus. Search the web for the real published figures -- the "
     "issuing agency's own release, or a reputable financial news report of "
     "it -- and compare.\n"
@@ -65,7 +65,7 @@ _SYSTEM = (
 
 
 def _t1_events_for_day(con: duckdb.DuckDBPyConnection, day: date) -> list[dict]:
-    """That day's T1-criticality releases, with what MyFXBook recorded."""
+    """That day's T1-criticality releases, with what our calendar recorded."""
     righe = con.execute(
         """
         SELECT e.event_id, i.name, i.area, i.country_iso3, e.release_utc,
@@ -91,10 +91,10 @@ def _prompt(evento: dict) -> str:
         f"Indicator: {evento['indicator_name']} ({evento['area']}, "
         f"{evento['country_iso3']})\n"
         f"Release date: {evento['release_utc']}\n"
-        f"MyFXBook recorded -- actual: {evento['actual'] or 'N/D'}, "
+        f"Our calendar recorded -- actual: {evento['actual'] or 'N/D'}, "
         f"previous: {evento['previous'] or 'N/D'}, "
         f"consensus: {evento['consensus'] or 'N/D'}\n"
-        "Find what was actually published and check MyFXBook's actual and "
+        "Find what was actually published and check our calendar's actual and "
         "previous against it."
     )
 

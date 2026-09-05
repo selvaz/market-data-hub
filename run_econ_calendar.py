@@ -8,13 +8,13 @@ Usage:
     python run_econ_calendar.py --db <path> --audit-only
 
 Two halves that fail for different reasons and are therefore separable:
-collection writes myfxbook's CSV into --work-dir, ingestion reads that CSV
+collection writes the configured source CSV into --work-dir, ingestion reads that CSV
 and consolidates it into the calendar tables. --no-collect re-runs the second
 half alone, which is what you want after changing a matching rule: it costs
-no requests and no browser.
+no requests.
 
 A third, optional step follows ingestion: for that day's T1-criticality
-releases, an LLM with live web search cross-checks MyFXBook's own
+releases, an LLM with live web search cross-checks our calendar's
 actual/previous/consensus against what actually published, and flags any
 mismatch in ``calendar_event_notes`` -- it does not correct the value.
 ``--no-validate`` skips it, the way ``--no-collect`` skips downloading: no
@@ -46,8 +46,9 @@ from market_data_hub.econ_calendar.reference import (                 # noqa: E4
 )
 
 # The single source's CSV name, read off consolidate.FONTI rather than
-# hardcoded a second time: {'myfxbook.csv': ('myfxbook', 'aggregator')}.
-MYFXBOOK_CSV = next(iter(FONTI))
+# hardcoded a second time.
+SOURCE_CSV = next(iter(FONTI))
+SOURCE_NAME = FONTI[SOURCE_CSV][0]
 
 
 def exit_code(n_osservazioni: int) -> int:
@@ -61,7 +62,7 @@ def exit_code(n_osservazioni: int) -> int:
     2026-08-17 with yahoo down: reference_date coverage came out at 11%,
     against the 44% a clean run got, while the exit code still said 0.
 
-    MyFXBook is the only source left, and that middle case goes with the
+    The one configured source leaves no middle case, and that goes with the
     other four: there is no partial credit for one source, only whether it
     produced anything to ingest. Two outcomes cover that completely.
 
@@ -73,25 +74,22 @@ def exit_code(n_osservazioni: int) -> int:
 
 
 def collect(work_dir: Path, da: str, a: str) -> bool:
-    """Download myfxbook into its CSV. Returns True on success, False on failure.
+    """Download the configured source into its CSV. Returns True on success.
 
-    No stale-CSV cleanup here, unlike the old multi-source version: myfxbook
-    writes incrementally and resumes across runs by design, so a failure
-    partway through still leaves whatever it managed to commit on disk, and
-    that is exactly what should survive -- there is no other source's file
-    that could go stale behind it.
+    No stale-CSV cleanup occurs: a failed collection must not erase the
+    accumulated history already available for ingestion.
     """
-    uscita = work_dir / MYFXBOOK_CSV
-    print(f'\n--- myfxbook -> {uscita.name} ---', flush=True)
+    uscita = work_dir / SOURCE_CSV
+    print(f'\n--- {SOURCE_NAME} -> {uscita.name} ---', flush=True)
     try:
-        from market_data_hub.econ_calendar.collect.myfxbook import scarica
+        from market_data_hub.econ_calendar.collect.forexfactory import scarica
         df = scarica(da, a, uscita)
     except Exception as e:
         print(f'  FAILED: {type(e).__name__}: {str(e)[:160]}', flush=True)
         return False
 
     if df is None or df.empty:
-        print('  WARNING: MyFXBook returned zero rows for the whole collection '
+        print(f'  WARNING: {SOURCE_NAME} returned zero rows for the whole collection '
               'window; no fallback source is configured.', file=sys.stderr,
               flush=True)
         return False
@@ -102,7 +100,7 @@ def collect(work_dir: Path, da: str, a: str) -> bool:
 def audit(con) -> None:
     """The checks that say whether the run is worth trusting. Never fatal.
 
-    Down to four checks now that myfxbook is the only source: the two that
+    Down to four checks now that there is only one collection source: the two that
     used to run here, disagreeing_bindings and suspect_matches, existed
     specifically to catch CROSS-SOURCE disagreement or name variance -- with
     one source there is nothing left for either to compare, so they were
@@ -132,11 +130,11 @@ def audit(con) -> None:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description='economic calendar: collect and ingest (myfxbook)')
+    p = argparse.ArgumentParser(description=f'economic calendar: collect and ingest ({SOURCE_NAME})')
     p.add_argument('--db', required=True,
                    help='DuckDB path. Absolute: a relative one resolves inside the repo.')
     p.add_argument('--work-dir', default='.',
-                   help='where the myfxbook CSV is written and read')
+                   help=f'where the {SOURCE_NAME} CSV is written and read')
     p.add_argument('--no-collect', action='store_true',
                    help='skip downloading; ingest the CSV already in --work-dir')
     p.add_argument('--no-validate', action='store_true',
@@ -145,7 +143,7 @@ def main() -> int:
     p.add_argument('--audit-only', action='store_true',
                    help='run only the checks against the database')
     p.add_argument('--from', dest='da', default=None,
-                   help='start date for myfxbook collection')
+                   help=f'start date for {SOURCE_NAME} collection')
     p.add_argument('--to', dest='a', default=None)
     p.add_argument('--run-id', default=None)
     args = p.parse_args()

@@ -1,4 +1,43 @@
 rejections:
+- source: forexfactory
+  country_iso3: CAN
+  name: BOC Press Conference
+  decided_by: forexfactory-2026-09-05
+  reason: A press conference is commentary, not the numeric policy-rate release.
+- source: forexfactory
+  country_iso3: GBR
+  name: BOE Gov Bailey Speaks
+  decided_by: forexfactory-2026-09-05
+  reason: A governor speech is commentary, not an economic data release.
+- source: forexfactory
+  country_iso3: DEU
+  name: German Buba President Nagel Speaks
+  decided_by: forexfactory-2026-09-05
+  reason: A central-bank speech is commentary, not an economic data release.
+- source: forexfactory
+  country_iso3: NZL
+  name: RBNZ Press Conference
+  decided_by: forexfactory-2026-09-05
+  reason: A press conference is commentary, not the numeric policy-rate release.
+- source: forexfactory
+  country_iso3: NZL
+  name: RBNZ Gov Breman Speaks
+  decided_by: forexfactory-2026-09-05
+  reason: A central-bank speech is commentary, not an economic data release.
+- source: forexfactory
+  country_iso3: CAN
+  name: BOC Rate Statement
+  decided_by: forexfactory-2026-09-05
+  reason: The statement has no numeric decision; Overnight Rate is the value-bearing release.
+- source: forexfactory
+  country_iso3: USA
+  name: Average Hourly Earnings m/m
+  decided_by: reviewed-2026-09-05
+  reason: 'us_earnings is the y/y series (its match_excludes already carry "mm" for exactly
+    this reason); Forex Factory publishes the m/m print. Binding the monthly change to the
+    annual indicator is the wrong-scale error the single-source rebuild exists to prevent
+    (see nasdaq CPI m/m vs y/y in PR #71). No us_earnings_mm indicator exists yet -- a
+    coverage gap, not a matching one.'
 - source: myfxbook
   country_iso3: USA
   name: Capacity Utilization
@@ -17,6 +56,18 @@ rejections:
   reason: 'Proposed for cn_trade by name reconciliation. The same balance quoted in yuan:
     roughly seven times the USD figure the indicator carries.'
 bindings:
+- source: forexfactory
+  country_iso3: USA
+  name: Non-Farm Employment Change
+  indicator_key: us_nfp
+  decided_by: forexfactory-2026-09-05
+  reason: Forex Factory's payroll title uses Employment Change instead of Payrolls.
+- source: forexfactory
+  country_iso3: CAN
+  name: Overnight Rate
+  indicator_key: ca_boc
+  decided_by: forexfactory-2026-09-05
+  reason: The Overnight Rate row carries the Bank of Canada numeric policy decision.
 - source: myfxbook
   country_iso3: EMU
   name: Inflation Rate YoY

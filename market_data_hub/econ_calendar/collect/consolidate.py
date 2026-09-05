@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""MyFXBook's CSV, matched against the catalogue and turned into observations.
+"""Forex Factory's CSV, matched against the catalogue and turned into observations.
 
 Single-sourced on purpose. The calendar used to reconcile five scraped
 sources (forexfactory, myfxbook, nasdaq, tradays, yahoo) against each other,
@@ -7,11 +7,9 @@ and that reconciliation was itself the source of real, worsening
 data-quality bugs: cross-source name mismatches, a wrong-scale binding
 (nasdaq's bare event names bound to the wrong reading -- caught and
 rejected for DEU/CAN/USA, then again for GBR/BRA/AUS), a name-collision bug
-in the old cross-source matcher. MyFXBook alone gets 76% real
-(non-"N/D") reference-period coverage plus a native importance tag on every
-row -- better than the five-source pipeline's 31%, from one source, with
-none of the reconciliation machinery. Reconciling sources that already
-agreed on nothing worth keeping was never the win it looked like.
+in the old cross-source matcher. The current public JSON feed is collected
+once per day and accumulated locally, so the rest of this module remains a
+single-source matcher without cross-source reconciliation.
 """
 import re
 from datetime import date, datetime, timedelta
@@ -30,9 +28,9 @@ MESI = {m: i for i, m in enumerate(
 
 # file scaricato -> (nome fonte, provenienza). Un solo file oggi, ma la forma
 # resta un dict: raccogli() lo legge in un ciclo generico, e run_econ_calendar.py
-# lo usa per sapere sotto quale nome myfxbook.scarica() deve scrivere.
+# lo usa per sapere sotto quale nome il collettore deve scrivere.
 FONTI = {
-    'myfxbook.csv': ('myfxbook', 'aggregator'),
+    'forexfactory.csv': ('forexfactory', 'aggregator'),
 }
 
 
@@ -114,7 +112,7 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
     un nome legato a un indicatore anche quando la regex non lo riconosce (o
     NON legato a nessun altro anche se la regex lo riconoscerebbe). Entrambi
     vengono da `config/econ_calendar_aliases.yaml`, e oggi contengono solo
-    decisioni su myfxbook -- le altre fonti non collezionano piu' nulla.
+    decisioni su forexfactory -- le altre fonti non collezionano piu' nulla.
     """
     legami = legami or {}
     osservazioni, per_fonte, scartati, aggiunti = [], {}, 0, 0
