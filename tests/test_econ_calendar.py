@@ -900,6 +900,55 @@ def test_consensus_comes_from_the_oldest_version_not_the_newest(con):
     assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "2.7%"
 
 
+def test_the_consensus_is_the_last_forecast_before_the_release(con):
+    """Collecting the future means seeing an event on several mornings.
+
+    Forex Factory revises its forecast in that time, so "the first thing we
+    ever saw" is a week-old estimate nobody was holding when the figure came
+    out -- and the surprise, the one number a reader acts on, would be measured
+    against it. The release lands on 12 August; the forecast moved from 2.5%
+    on the 8th to 2.7% on the 10th.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("forexfactory", consensus="2.5%",
+                                   vintage_date=date(2026, 8, 8))])
+    ingest_observations(con, [_obs("forexfactory", consensus="2.7%",
+                                   vintage_date=date(2026, 8, 10))])
+    ingest_observations(con, [_obs("forexfactory", actual="3.4%", consensus="3.4%",
+                                   vintage_date=date(2026, 8, 12))])
+
+    assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "2.7%"
+
+
+def test_a_same_day_overwrite_loses_the_forecast_and_this_is_why(con):
+    """A limitation written down, not a behaviour anybody chose.
+
+    `calendar_observations` is keyed by (event, source, vintage_date), and
+    `vintage_date` is a DATE. Two captures of the same event by the same
+    source on one day are therefore the same row: the second replaces the
+    first. When a provider empties the consensus field on release, the event
+    keeps the forecast it already consolidated -- that case has its own test
+    above. But when the provider REPLACES the forecast with the printed value
+    on the same day, the forecast is gone from the store and the surprise
+    collapses to zero, and no ordering rule can recover what was overwritten.
+
+    Recording it as a test rather than a comment because the fix is a schema
+    change -- a vintage with a time, not a date -- and whoever makes it should
+    find this asserting the old behaviour and turn it around.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("forexfactory", consensus="2.7%",
+                                   vintage_date=date(2026, 8, 12))])
+    ingest_observations(con, [_obs("forexfactory", actual="3.4%", consensus="3.4%",
+                                   vintage_date=date(2026, 8, 12))])
+
+    righe = con.execute(
+        "SELECT count(*) FROM calendar_observations WHERE source = 'forexfactory'"
+    ).fetchone()[0]
+    assert righe == 1, "same day, same source: one row, and the later one won"
+    assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "3.4%"
+
+
 def test_a_known_minute_outranks_a_day_only_placeholder(con):
     """A source publishing only a date arrives as midnight. Taking the earliest
     timestamp would record midnight as the release instant, and the bridge then

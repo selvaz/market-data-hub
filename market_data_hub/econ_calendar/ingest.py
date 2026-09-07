@@ -381,20 +381,46 @@ def consolidate_events(
         if not osservazioni:
             continue
 
-        # The consensus is read from the OLDEST version each source carried,
-        # not the newest. A forecast only exists before the print, and
-        # providers routinely replace it with the published number afterwards;
-        # reading the latest row would take that replacement for an
-        # expectation and report a surprise of zero.
+        # The consensus is the LAST version each source carried BEFORE the
+        # release, and both halves of that are load-bearing.
+        #
+        # Before the release, because a forecast only exists until the print
+        # and providers routinely replace the field with the published number
+        # afterwards; reading the newest row outright would take that
+        # replacement for an expectation and report a surprise of zero.
+        #
+        # The last one rather than the first, because the collection now
+        # reaches into the future and sees the same event on several mornings
+        # before it happens. Forex Factory revises its forecast in that time,
+        # so "the first thing we ever saw" is a week-old estimate that nobody
+        # was holding by the time the figure came out -- and the surprise, the
+        # one number a reader acts on, would be measured against it.
+        #
+        # A vintage collected on the release day itself is not counted as
+        # pre-release: `vintage_date` is a date, so it cannot say whether the
+        # row was fetched before or after the print, and guessing in the
+        # direction of "before" is how the published number gets recorded as
+        # the expectation. Events first seen on their release day fall back to
+        # the earliest row they have -- and among rows of the SAME day, to one
+        # that carries no `actual`, because a row already holding the printed
+        # figure is exactly the one whose consensus field the provider has
+        # overwritten. Ordering by date alone left that tie to the engine.
         primo_consenso = {
             fonte: valore
             for fonte, valore in con.execute(
                 """
                 SELECT source, consensus FROM (
-                    SELECT source, consensus, row_number() OVER (
-                               PARTITION BY source ORDER BY vintage_date ASC) AS rn
-                    FROM calendar_observations
-                    WHERE event_id = ? AND consensus IS NOT NULL AND consensus <> ''
+                    SELECT o.source, o.consensus, row_number() OVER (
+                               PARTITION BY o.source
+                               ORDER BY (o.vintage_date < e.release_utc::DATE) DESC,
+                                        CASE WHEN o.vintage_date < e.release_utc::DATE
+                                             THEN o.vintage_date END DESC,
+                                        (o.actual IS NULL OR o.actual = '') DESC,
+                                        o.vintage_date ASC) AS rn
+                    FROM calendar_observations o
+                    JOIN calendar_events e ON e.event_id = o.event_id
+                    WHERE o.event_id = ?
+                      AND o.consensus IS NOT NULL AND o.consensus <> ''
                 ) WHERE rn = 1
                 """,
                 [eid],
