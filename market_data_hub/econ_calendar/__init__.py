@@ -45,11 +45,17 @@ from market_data_hub.econ_calendar.ingest import (
     ingest_observations,
     make_event_id,
 )
+from market_data_hub.econ_calendar.macro_bridge import (
+    bridged_indicators,
+    fill_from_macro_series,
+)
 
 __all__ = [
     "CalendarObservation",
+    "bridged_indicators",
     "cadence_violations",
     "consolidate_events",
+    "fill_from_macro_series",
     "infer_reference_dates",
     "ingest_observations",
     "learn_lags",
