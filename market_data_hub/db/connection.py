@@ -597,6 +597,16 @@ def _connect_waiting(path: str, *, read_only: bool, budget_s: float,
     corrupt database are IOExceptions too, and waiting five minutes before
     re-raising them would be worse than failing at once.
 
+    What the budget bounds is the time spent WAITING, and one last attempt is
+    made when it expires: a lock that clears during the final sleep yields a
+    connection rather than a failure, which is the whole point of having
+    waited. The alternative reading -- give up without trying again -- throws
+    away the outcome the budget was spent on.
+
+    The two budgets are read from the environment once, at import. That is a
+    start-up setting, not a knob: a process that edits ``os.environ`` and then
+    opens a connection keeps the value it started with.
+
     Residual risks, deliberately accepted: two waiting writers serialize, a
     lock outliving the budget still raises, and a forgotten connection is
     indistinguishable from honest contention, so it delays its own alarm by
