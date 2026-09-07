@@ -136,6 +136,103 @@ def test_reader_still_raises_when_the_lock_outlives_the_budget(tmp_path, monkeyp
         holder.wait()
 
 
+def test_writer_waits_then_connects_when_the_lock_clears(tmp_path, monkeypatch):
+    import subprocess
+    import sys
+    import time
+
+    import duckdb
+
+    path = str(tmp_path / "writer-waits.duckdb")
+    duckdb.connect(path).close()
+    holder = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            "import duckdb, sys, time; "
+            "c = duckdb.connect(sys.argv[1]); "
+            "print('locked', flush=True); "
+            "time.sleep(0.3); c.close()",
+            path,
+        ],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        assert holder.stdout is not None
+        assert holder.stdout.readline().strip() == "locked"
+        monkeypatch.setattr(C, "_WRITER_LOCK_WAIT_S", 2.0)
+        monkeypatch.setattr(C, "_WRITER_LOCK_POLL_S", 0.05)
+        started = time.perf_counter()
+        con = C._connect_read_write_waiting(path)
+        waited = time.perf_counter() - started
+        con.close()
+        # Without this the test would also pass if the writer had connected
+        # at once -- which is the very thing it exists to rule out.
+        assert waited >= 0.2, f"the writer did not wait for the lock ({waited:.3f}s)"
+    finally:
+        holder.wait(timeout=5)
+
+
+def test_writer_reraises_unrelated_io_error_immediately(monkeypatch):
+    import time
+
+    import duckdb
+    import pytest
+
+    def fail_immediately(*args, **kwargs):
+        raise duckdb.IOException("IO Error: Permission denied")
+
+    def unexpected_sleep(seconds):
+        pytest.fail(f"non-lock IOException slept for {seconds} seconds")
+
+    monkeypatch.setattr(C.duckdb, "connect", fail_immediately)
+    monkeypatch.setattr(C.time, "sleep", unexpected_sleep)
+    monkeypatch.setattr(C, "_WRITER_LOCK_WAIT_S", 30.0)
+
+    started = time.perf_counter()
+    with pytest.raises(duckdb.IOException, match="Permission denied"):
+        C._connect_read_write_waiting("unreachable.duckdb")
+    assert time.perf_counter() - started < 0.2
+
+
+def test_writer_raises_when_the_lock_outlives_the_budget(tmp_path, monkeypatch):
+    import subprocess
+    import sys
+
+    import duckdb
+    import pytest
+
+    path = str(tmp_path / "writer-times-out.duckdb")
+    duckdb.connect(path).close()
+    holder = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            "import duckdb, sys; "
+            "c = duckdb.connect(sys.argv[1]); "
+            "print('locked', flush=True); "
+            "sys.stdin.readline(); c.close()",
+            path,
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        assert holder.stdout is not None
+        assert holder.stdout.readline().strip() == "locked"
+        monkeypatch.setattr(C, "_WRITER_LOCK_WAIT_S", 0.15)
+        monkeypatch.setattr(C, "_WRITER_LOCK_POLL_S", 0.02)
+        with pytest.raises(duckdb.IOException):
+            C._connect_read_write_waiting(path)
+    finally:
+        assert holder.stdin is not None
+        holder.stdin.write("\n")
+        holder.stdin.flush()
+        holder.wait(timeout=5)
+
+
 def test_the_lock_message_of_every_platform_is_recognised():
     """The waiter must recognise a held lock on Linux as well as Windows.
 

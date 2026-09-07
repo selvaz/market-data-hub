@@ -528,6 +528,8 @@ def _migrate_prices_to_listing_key(con: duckdb.DuckDBPyConnection) -> None:
 
 _READER_LOCK_WAIT_S = float(os.environ.get("MARKET_DATA_READER_LOCK_WAIT_S", "300"))
 _READER_LOCK_POLL_S = 5.0
+_WRITER_LOCK_WAIT_S = float(os.environ.get("MARKET_DATA_WRITER_LOCK_WAIT_S", "300"))
+_WRITER_LOCK_POLL_S = 5.0
 
 #: How each platform says "another process holds this file". DuckDB reports
 #: the operating system's own wording, and the two share no substring at
@@ -573,6 +575,28 @@ def _connect_read_only_waiting(path: str) -> duckdb.DuckDBPyConnection:
             time.sleep(_READER_LOCK_POLL_S)
 
 
+def _connect_read_write_waiting(path: str) -> duckdb.DuckDBPyConnection:
+    """Open a writer, waiting out another process that holds the file.
+
+    Contention is normal on a machine with long-lived readers, rather than a
+    programming error: DuckDB gives the file to one writer, and a job that
+    fails instantly can lose hours of work even when the lock clears seconds
+    later. Wait up to ``MARKET_DATA_WRITER_LOCK_WAIT_S`` (default 300), but
+    re-raise non-lock IO errors immediately. Two waiting writers serialize;
+    if the first keeps the file beyond this budget, the second still fails.
+    """
+    deadline = time.monotonic() + _WRITER_LOCK_WAIT_S
+    while True:
+        try:
+            return duckdb.connect(path, read_only=False)
+        except duckdb.IOException as exc:
+            if not any(m in str(exc) for m in _LOCK_HELD_MARKERS):
+                raise
+            if time.monotonic() >= deadline:
+                raise
+            time.sleep(_WRITER_LOCK_POLL_S)
+
+
 def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
              ) -> duckdb.DuckDBPyConnection:
     """
@@ -593,7 +617,7 @@ def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
     if read_only:
         con = _connect_read_only_waiting(path)
     else:
-        con = duckdb.connect(path, read_only=read_only)
+        con = _connect_read_write_waiting(path)
     if not read_only:
         # migrate() also calls apply_schema() internally, then walks any
         # pending `if current < N:` ladder steps (e.g. ALTER TABLE ADD COLUMN)
