@@ -152,7 +152,7 @@ def test_writer_waits_then_connects_when_the_lock_clears(tmp_path, monkeypatch):
             "import duckdb, sys, time; "
             "c = duckdb.connect(sys.argv[1]); "
             "print('locked', flush=True); "
-            "time.sleep(0.3); c.close()",
+            "time.sleep(1.0); c.close()",
             path,
         ],
         stdout=subprocess.PIPE,
@@ -169,7 +169,7 @@ def test_writer_waits_then_connects_when_the_lock_clears(tmp_path, monkeypatch):
         con.close()
         # Without this the test would also pass if the writer had connected
         # at once -- which is the very thing it exists to rule out.
-        assert waited >= 0.2, f"the writer did not wait for the lock ({waited:.3f}s)"
+        assert waited >= 0.3, f"the writer did not wait for the lock ({waited:.3f}s)"
     finally:
         holder.wait(timeout=5)
 
@@ -268,3 +268,114 @@ def test_an_unrelated_io_error_is_not_waited_out():
         "IO Error: The file is not a valid DuckDB database file",
     ):
         assert not any(m in msg for m in C._LOCK_HELD_MARKERS), msg
+
+
+def test_writer_waits_out_a_reader_which_is_the_real_production_case(tmp_path,
+                                                                     monkeypatch):
+    """The holder that actually blocks writers here is a READER.
+
+    Ten long-lived MCP servers hold the hub open read-only and take no
+    advisory lock. A test that puts two writers in contention exercises a
+    case that barely happens, and would not notice if DuckDB worded the
+    reader-held lock differently.
+    """
+    import subprocess
+    import sys
+    import time
+
+    import duckdb
+
+    path = str(tmp_path / "reader-holds.duckdb")
+    duckdb.connect(path).close()
+    holder = subprocess.Popen(
+        [
+            sys.executable,
+            "-c",
+            "import duckdb, sys, time; "
+            "c = duckdb.connect(sys.argv[1], read_only=True); "
+            "print('locked', flush=True); "
+            "time.sleep(1.0); c.close()",
+            path,
+        ],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        assert holder.stdout is not None
+        assert holder.stdout.readline().strip() == "locked"
+        monkeypatch.setattr(C, "_WRITER_LOCK_WAIT_S", 5.0)
+        monkeypatch.setattr(C, "_WRITER_LOCK_POLL_S", 0.05)
+        started = time.perf_counter()
+        con = C._connect_read_write_waiting(path)
+        waited = time.perf_counter() - started
+        con.close()
+        assert waited >= 0.3, f"the writer did not wait for the reader ({waited:.3f}s)"
+    finally:
+        holder.wait(timeout=10)
+
+
+def test_the_budget_is_an_upper_bound_even_with_a_longer_poll():
+    """A poll longer than what is left must not outlive the budget.
+
+    Checking the deadline and then sleeping a fixed interval lets the call
+    return after the budget has expired, or raise a whole poll late. Either
+    way the number the caller set would not be the bound it claims to be.
+    """
+    import time
+
+    import duckdb
+    import pytest
+
+    def always_locked(*args, **kwargs):
+        raise duckdb.IOException(
+            'IO Error: Cannot open file "x.duckdb": The process cannot access '
+            "the file because it is being used by another process."
+        )
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(C.duckdb, "connect", always_locked)
+        started = time.perf_counter()
+        with pytest.raises(duckdb.IOException):
+            C._connect_waiting("x.duckdb", read_only=False,
+                               budget_s=0.2, poll_s=30.0)
+        elapsed = time.perf_counter() - started
+    assert elapsed < 1.0, f"slept past the budget ({elapsed:.3f}s of 0.2s)"
+
+
+def test_a_path_that_reads_like_a_lock_message_is_not_a_lock():
+    """The path is inside the message, so it must not be matched.
+
+    A database under a directory named like the wording we look for would
+    otherwise make every IO error on it -- a missing file, a permission
+    problem -- look like a held lock, and be retried for five minutes before
+    raising anyway.
+    """
+    import duckdb
+
+    lock = duckdb.IOException(
+        'IO Error: Cannot open file "/data/hub.duckdb": The process cannot '
+        "access the file because it is being used by another process."
+    )
+    impostor = duckdb.IOException(
+        'IO Error: Cannot open file "/srv/being used by another process/'
+        'hub.duckdb": Permission denied'
+    )
+    assert C._is_lock_held(lock)
+    assert not C._is_lock_held(impostor)
+
+
+def test_a_nonsense_budget_falls_back_instead_of_waiting_forever():
+    """``monotonic() >= nan`` is always false: the loop would never end."""
+    import pytest
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setenv("MARKET_DATA_WRITER_LOCK_WAIT_S", "nan")
+        assert C._budget_from_env("MARKET_DATA_WRITER_LOCK_WAIT_S", "300") == 300.0
+        mp.setenv("MARKET_DATA_WRITER_LOCK_WAIT_S", "inf")
+        assert C._budget_from_env("MARKET_DATA_WRITER_LOCK_WAIT_S", "300") == 300.0
+        mp.setenv("MARKET_DATA_WRITER_LOCK_WAIT_S", "-1")
+        assert C._budget_from_env("MARKET_DATA_WRITER_LOCK_WAIT_S", "300") == 300.0
+        mp.setenv("MARKET_DATA_WRITER_LOCK_WAIT_S", "not a number")
+        assert C._budget_from_env("MARKET_DATA_WRITER_LOCK_WAIT_S", "300") == 300.0
+        mp.setenv("MARKET_DATA_WRITER_LOCK_WAIT_S", "12.5")
+        assert C._budget_from_env("MARKET_DATA_WRITER_LOCK_WAIT_S", "300") == 12.5
