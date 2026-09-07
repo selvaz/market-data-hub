@@ -117,12 +117,21 @@ _SYSTEM = (
 _CAMPI = ("event_id", "indicator_key", "indicator_name", "area",
           "country_iso3", "release_utc", "actual", "previous", "consensus")
 
+# A value the bridge already took from an agency series is not re-checked
+# against the web. The pass deliberately includes events that HAVE an actual,
+# so a wrong figure can be caught -- but the point of the bridge is to replace
+# a paid, unreproducible lookup with the number FRED already published in this
+# same file, and asking a language model to audit a Federal Reserve series
+# against a news page spends money to make the answer worse. Without this
+# clause every bridged release paid for its search anyway, every qualifying
+# run, and the bridge saved nothing.
 _SELECT_EVENTI = """
     SELECT e.event_id, e.indicator_key, i.name, i.area, i.country_iso3,
            e.release_utc, e.actual, e.previous, e.consensus
     FROM calendar_events e
     JOIN calendar_indicators i ON i.indicator_key = e.indicator_key
     WHERE i.criticality = 'T1'
+      AND NOT (e.actual IS NOT NULL AND e.actual_provenance = 'derived')
 """
 
 # How many times one event may be looked up before it is left alone. A release

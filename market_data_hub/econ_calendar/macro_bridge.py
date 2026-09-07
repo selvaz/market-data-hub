@@ -28,12 +28,18 @@ somebody adds carelessly to the YAML is rejected here unless the indicator's
 archetype is a pure level in the same unit -- ``_IDENTITY_VALUE_TYPES``. A
 level-to-change mapping cannot reach the write path by being written down.
 
-*The value is the first vintage, not today's.* ``macro_series`` holds the
-latest revision; ``macro_series_vintage`` holds what the hub saw the first time
-it collected that observation. ``calendar_events.actual`` is what was
-*published*, so the first vintage is the honest answer and a later revision
-must not silently rewrite history. An observation with no vintage row is
-skipped rather than read from the revised table.
+*The value is the first vintage, and only when that vintage can BE the
+publication.* ``macro_series`` holds the latest revision;
+``macro_series_vintage`` holds what this hub saw the first time it collected an
+observation -- which is the published figure only if the hub was already
+collecting that series when it came out. Usually it was not: UNRATE's 319
+observations back to 2000 all carry one vintage date, the day of the historical
+backfill, by which time every one of them had already been revised. So the
+earliest vintage is accepted only when the hub saw it within a few days of the
+release; otherwise nothing is written. An observation with no vintage row is
+skipped too, rather than read from the revised table: a value with no
+publication date attached has no business in a column that says what came out
+that day.
 
 Precedence: the observation is written with provenance ``'derived'``, which
 ranks below an agency and below an aggregator (the print itself always wins)
@@ -44,7 +50,7 @@ that came from a real source is never touched.
 from __future__ import annotations
 
 import json
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Iterable, Optional
 
 import duckdb
@@ -127,18 +133,44 @@ def bridged_indicators(con: duckdb.DuckDBPyConnection) -> list[dict]:
     return esito
 
 
+#: How long after a release the hub may first have seen the value and still be
+#: holding the ORIGINAL print rather than a revision.
+#:
+#: Seven days, and the number is not arbitrary. The vintage table records when
+#: THIS HUB first collected an observation, which is only the publication value
+#: if the hub was already collecting that series when it came out. It usually
+#: was not: UNRATE holds 319 observations reaching back to 2000, and every one
+#: before July 2026 carries the same vintage date, 2026-07-10 -- the day of the
+#: historical backfill, by which time each of those figures had already been
+#: revised, some of them many times. Treating that as "what was published"
+#: would write a 2026 revision into a column that says what came out in 2003,
+#: and `derived` outranks `web`, so the later cross-check could not correct it.
+#:
+#: From July 2026 on the same series shows what an honest first print looks
+#: like: the August observation was first seen on 2026-09-04, the day the
+#: figure was released. The window separates the two cases, and it is generous
+#: on purpose -- a collection that fell a few days behind is still the first
+#: print, while a backfill is years late and never passes.
+_VINTAGE_WINDOW_DAYS = 7
+
+
 def _first_vintage(
     con: duckdb.DuckDBPyConnection, series_id: str, grain: str,
-    reference_date: date,
+    reference_date: date, release_date: date,
 ) -> Optional[tuple[date, float, date]]:
     """(observation date, value, vintage date) for the event's period, or None.
 
-    Reads ``macro_series_vintage`` and takes the EARLIEST vintage: what the
-    calendar records is the value that was published, and a revision collected
-    weeks later is a different number. ``macro_series`` (the revised table) is
-    deliberately not consulted as a fallback -- a value with no vintage row has
-    no publication date attached to it, and filling from it would put a figure
-    of unknown age into a column that is supposed to say what came out that day.
+    Reads ``macro_series_vintage`` and takes the EARLIEST vintage, then checks
+    that the earliest vintage can actually BE the publication: the hub must
+    have collected it no earlier than the release and no later than
+    ``_VINTAGE_WINDOW_DAYS`` after it. Without that check the earliest vintage
+    is merely the first value this hub ever saw, which for anything predating
+    the historical backfill is a revision wearing the date of the backfill.
+
+    ``macro_series`` (the revised table) is deliberately not consulted as a
+    fallback -- a value with no vintage row has no publication date attached to
+    it, and filling from it would put a figure of unknown age into a column
+    that is supposed to say what came out that day.
 
     Refuses when the period holds more than one distinct observation date: that
     means the grain is wrong for this series, and picking one of them would be
@@ -159,7 +191,10 @@ def _first_vintage(
         return None
     if len({r[0] for r in righe}) != 1:
         return None
-    return righe[0]
+    data_oss, valore, vintage = righe[0]
+    if not (release_date <= vintage <= release_date + timedelta(days=_VINTAGE_WINDOW_DAYS)):
+        return None
+    return data_oss, valore, vintage
 
 
 def fill_from_macro_series(
@@ -216,8 +251,11 @@ def fill_from_macro_series(
                 esito["skipped_future"] += 1
                 continue
             trovato = _first_vintage(con, ind["macro_series_id"], grana,
-                                     reference_date)
+                                     reference_date, release_utc.date())
             if trovato is None:
+                # One counter for both refusals on purpose: neither is an
+                # error, and the summary already says how many candidates
+                # there were. What matters is that a refusal is never a fill.
                 esito["no_series_observation"] += 1
                 continue
             data_oss, valore, vintage = trovato

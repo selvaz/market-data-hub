@@ -604,3 +604,63 @@ def test_the_runner_fills_from_the_bridge_before_paying_for_a_web_search(tmp_pat
                 "4.1%", "macro_series:UNRATE")
     finally:
         con.close()
+
+
+def test_a_backfilled_vintage_is_refused_because_it_is_a_revision(con):
+    """The earliest vintage is only the print if the hub was there to see it.
+
+    Measured on production: UNRATE holds 319 observations back to 2000 and
+    every one before July 2026 carries the SAME vintage date, 2026-07-10 --
+    the day of the historical backfill, by which time each figure had already
+    been revised. Taking the earliest vintage there records a 2026 revision as
+    what came out years earlier, and `derived` outranks `web`, so the later
+    cross-check could never correct it.
+    """
+    _catalogo(con)
+    # Collected years after the fact, exactly as a backfill does.
+    _serie(con, "UNRATE", [(date(2020, 4, 1), 14.7, date(2026, 7, 10))])
+    _evento(con, "us_unemp", release_utc=datetime(2020, 5, 8, 12, 30),
+            reference_date=date(2020, 4, 30))
+
+    esito = fill_from_macro_series(con, now_utc=datetime(2026, 9, 7, tzinfo=timezone.utc))
+
+    assert esito["filled"] == 0
+    assert con.execute("SELECT actual_num FROM calendar_events").fetchone() == (None,)
+
+
+def test_a_vintage_collected_days_after_the_release_is_still_the_print(con):
+    """The window is generous on purpose: a collection that fell behind by a
+    few days is still the first print, while a backfill is years late."""
+    _catalogo(con)
+    _serie(con, "UNRATE", [(date(2026, 8, 1), 4.1, date(2026, 9, 7))])
+    _evento(con, "us_unemp", release_utc=datetime(2026, 9, 4, 12, 30),
+            reference_date=date(2026, 8, 31))
+
+    fill_from_macro_series(con, now_utc=datetime(2026, 9, 10, tzinfo=timezone.utc))
+
+    assert con.execute("SELECT actual_num FROM calendar_events").fetchone() == (4.1,)
+
+
+def test_a_bridged_value_is_not_sent_to_the_paid_web_check(con, monkeypatch):
+    """The bridge exists to replace the paid lookup, not to run alongside it.
+
+    The primary pass deliberately includes events that already have an actual,
+    so a wrong figure can be caught. But a value taken from a Federal Reserve
+    series in this same file has nothing to gain from a language model reading
+    a news page about it, and without the exclusion every bridged release paid
+    for its search anyway, on every qualifying run.
+    """
+    from market_data_hub.econ_calendar.validate import _t1_events_for_window
+
+    _catalogo(con)
+    _serie(con, "UNRATE", [(date(2026, 8, 1), 4.1, date(2026, 9, 4))])
+    _evento(con, "us_unemp", release_utc=datetime(2026, 9, 4, 12, 30),
+            reference_date=date(2026, 8, 31))
+    fill_from_macro_series(con, now_utc=datetime(2026, 9, 5, tzinfo=timezone.utc))
+    assert con.execute(
+        "SELECT actual_provenance FROM calendar_events").fetchone() == ("derived",)
+
+    restanti = _t1_events_for_window(
+        con, now_utc=datetime(2026, 9, 5, tzinfo=timezone.utc), lookback_days=3)
+
+    assert [e["indicator_key"] for e in restanti] == []
