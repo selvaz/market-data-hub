@@ -1560,7 +1560,11 @@ def test_default_collection_window_uses_utc_today(tmp_path, monkeypatch):
     ])
 
     assert runner.main() == 1  # the window is right; it's just empty (see the test above)
-    assert collected['window'] == ('2026-08-29', '2026-09-05')
+    # Seven days back and seven forward. The forward half is the point: the
+    # window ended at 'today' until now, so the archive's furthest event was
+    # always the current evening and anything asking what is due next week got
+    # an empty answer that read like "nothing is scheduled".
+    assert collected['window'] == ('2026-08-29', '2026-09-12')
 
 
 def test_no_collect_does_not_claim_a_fresh_collection_succeeded():
