@@ -84,6 +84,10 @@ archetypes:
   value_type: Migliaia di posti
   description: 'Net change in the number of employed people in the month.'
   methodology: 'From a household sample survey, so with a wide standard error: in Australia and Canada a single month says little, and the full-time/part-time split is what counts.'
+- key: employment_qq
+  value_type: Variazione % t/t
+  description: 'Euro-area employment against the previous quarter, in per cent rather than in persons.'
+  methodology: 'Eurostat publishes the euro-area labour input as a rate of change, not as a headcount: it is not comparable with the American or Canadian employment change, which are levels in thousands. It comes out with GDP, first as a flash and then as a final, and the pair employment/GDP is how productivity is read.'
 - key: claims
   value_type: Migliaia di domande
   description: 'New weekly claims for unemployment benefit in the US.'
@@ -168,6 +172,10 @@ archetypes:
   value_type: Indice diffusione 0-100
   description: 'US ISM services index.'
   methodology: 'A shorter series (from 1997) with less recessionary history, so its thresholds are less reliable. The employment component is followed as a leading indicator of payrolls.'
+- key: ism_prices
+  value_type: Indice di diffusione
+  description: 'Prices paid by American manufacturers for their inputs, as reported by the ISM panel.'
+  methodology: 'A diffusion index like the headline ISM: above 50 more firms are paying more than are paying less. It leads the goods component of the CPI by a few months and is the fastest read on input-cost pressure available, but it says how many firms saw prices rise, never by how much.'
 - key: ivey
   value_type: Indice diffusione 0-100
   description: 'Canadian purchasing managers'' index published by the Ivey Business School.'
@@ -336,6 +344,23 @@ indicators:
   match_rules: jolts|job openings
   match_excludes: ''
   macro_indicator_id: null
+- key: us_adp
+  country_iso2: US
+  area: US
+  name: ADP Non-Farm Employment Change
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
+  archetype: employment_change
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: ADP Research Institute
+  rationale: 'Two days before payrolls, from private payroll processing rather than a survey. It moves the market on its own even though its record as a predictor of the BLS figure is poor: the two measure different universes, and ADP was re-methodologised in 2022 exactly because of that gap.'
+  match_rules: adp
+  match_excludes: ''
+  macro_indicator_id: null
 - key: us_cpi_yy
   country_iso2: US
   area: US
@@ -489,6 +514,67 @@ indicators:
   match_rules: ism;non|services|n mfg
   match_excludes: 'employment|new orders|price|inventories|deliveries|backlog|s p global|business activity|bus act'
   macro_indicator_id: null
+- key: us_ism_prices
+  country_iso2: US
+  area: US
+  name: ISM Manufacturing Prices
+  # Filed under Surveys, not Inflation, although inflation is what it says: it
+  # is a diffusion index off the ISM panel, and in this catalogue data_type
+  # 'soft' and category 'Surveys' are the same statement made twice. 'side:
+  # supply' and the policy_input tag are what a reader filtering for price
+  # pressure finds it by.
+  category: 'Surveys'
+  tags: 'policy_input'
+  side: 'supply'
+  data_type: 'soft'
+  archetype: ism_prices
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: ISM
+  rationale: 'Published in the same minute as the headline ISM and read straight after it: it is the first monthly signal on input costs, weeks before the PPI and the CPI.'
+  # 'mfg|manufacturing' is required, not optional. ISM publishes a prices index
+  # for the services survey too, under a name that differs by one word, and a
+  # rule asking only for 'ism' and 'price' would file both here: two different
+  # surveys under one indicator, which is the wrong-scale error the alias table
+  # exists to prevent.
+  match_rules: 'ism;price;mfg|manufacturing'
+  match_excludes: 'non|services|s p global'
+  macro_indicator_id: null
+- key: us_pmi_mfg
+  country_iso2: US
+  area: US
+  name: S&P Global Manufacturing PMI
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
+  archetype: pmi_mfg
+  freq: M
+  criticality: T3
+  nature: leading
+  agency: S&P Global
+  rationale: 'The internationally comparable survey, useful only next to the PMIs of other countries: in the United States the ISM is the one the market trades, and the two diverge routinely because their panels differ.'
+  match_rules: 'mfg|manufacturing;pmi'
+  match_excludes: 'ism|services|composite|non'
+  macro_indicator_id: null
+- key: us_pmi_svc
+  country_iso2: US
+  area: US
+  name: S&P Global Services PMI
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
+  archetype: pmi_svc
+  freq: M
+  criticality: T3
+  nature: leading
+  agency: S&P Global
+  rationale: 'Same standing as the manufacturing one: comparable across countries, second to the ISM at home.'
+  match_rules: 'services;pmi'
+  match_excludes: 'ism|mfg|manufacturing|composite|non'
+  macro_indicator_id: null
 - key: us_indprod
   country_iso2: US
   area: US
@@ -573,6 +659,23 @@ indicators:
   rationale: 'The headline is dominated by aircraft orders; read core capital goods only.'
   match_rules: durable
   match_excludes: 'ex |ex-|r mm|revised|shipment|nondef|non def|core'
+  macro_indicator_id: null
+- key: us_factory
+  country_iso2: US
+  area: US
+  name: Factory Orders m/m
+  category: 'Investment'
+  tags: null
+  side: 'demand'
+  data_type: 'hard'
+  archetype: factory_orders
+  freq: M
+  criticality: T3
+  nature: leading
+  agency: Census Bureau
+  rationale: 'Mostly already known: it extends the durable goods report published a week earlier to non-durables, so the surprise it can carry is small.'
+  match_rules: 'factory orders'
+  match_excludes: 'german|yy'
   macro_indicator_id: null
 - key: us_housing
   country_iso2: US
@@ -769,7 +872,7 @@ indicators:
 - key: cn_pmi_caixin_mfg
   country_iso2: CN
   area: CN
-  name: Caixin Manufacturing PMI
+  name: Caixin/RatingDog Manufacturing PMI
   category: 'Surveys'
   tags: null
   side: null
@@ -778,15 +881,20 @@ indicators:
   freq: M
   criticality: T1
   nature: leading
-  agency: Caixin / S&P Global
+  agency: RatingDog / S&P Global
   rationale: 'Small, private, exporting firms: more sensitive to the global cycle than the official survey.'
-  match_rules: caixin;mfg|manufacturing
+  # 'ratingdog' is the same survey under a new sponsor: S&P Global's China PMI
+  # passed from Caixin to RatingDog and the feed changed the name with it, so a
+  # rule asking only for 'caixin' stopped matching a T1 release without anything
+  # saying so. The two names are one continuous series and share one key on
+  # purpose: splitting them would cut the history in half at the rename.
+  match_rules: caixin|ratingdog;mfg|manufacturing
   match_excludes: ''
   macro_indicator_id: null
 - key: cn_pmi_caixin_svc
   country_iso2: CN
   area: CN
-  name: Caixin Services PMI
+  name: Caixin/RatingDog Services PMI
   category: 'Surveys'
   tags: null
   side: null
@@ -795,9 +903,9 @@ indicators:
   freq: M
   criticality: T2
   nature: leading
-  agency: Caixin / S&P Global
+  agency: RatingDog / S&P Global
   rationale: 'Useful paired with manufacturing to separate domestic from external demand.'
-  match_rules: caixin;services|composite
+  match_rules: caixin|ratingdog;services|composite
   match_excludes: ''
   macro_indicator_id: null
 - key: cn_pmi_nbs_mfg
@@ -817,9 +925,26 @@ indicators:
   match_rules: mfg|manufacturing;pmi
   # 'non manufacturing': Forex Factory's "Non-Manufacturing PMI" tokenizes to
   # "non manufacturing pmi" and satisfied mfg|manufacturing;pmi -- the services
-  # survey was landing on the manufacturing indicator. No NBS non-manufacturing
-  # key exists yet; excluding it is a coverage gap made explicit, not a fix.
+  # survey was landing on the manufacturing indicator. The exclusion stays, and
+  # the survey it used to hide now has a key of its own, cn_pmi_nbs_svc.
   match_excludes: 'ratingdog|caixin|markit|global|private|non manufacturing'
+  macro_indicator_id: null
+- key: cn_pmi_nbs_svc
+  country_iso2: CN
+  area: CN
+  name: NBS Non-Manufacturing PMI
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
+  archetype: nbs_pmi
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: NBS
+  rationale: 'Services and construction, which is where Chinese policy support shows up first: it has held above 50 through months in which the manufacturing survey did not.'
+  match_rules: 'non manufacturing|non mfg;pmi'
+  match_excludes: 'ratingdog|caixin|markit|global|private'
   macro_indicator_id: null
 - key: cn_loans
   country_iso2: CN
@@ -948,6 +1073,23 @@ indicators:
   # riempimento non scatta. Resta dichiarato perche' e' l'identita' della serie,
   # non una promessa che ci siano dati.
   macro_series_id: LRHUTTTTEZM156S
+- key: ez_employment
+  country_iso2: EU
+  area: EZ
+  name: Employment Change q/q
+  category: 'Labour'
+  tags: 'flash_final'
+  side: null
+  data_type: 'hard'
+  archetype: employment_qq
+  freq: Q
+  criticality: T3
+  nature: lagging
+  agency: Eurostat
+  rationale: 'Released with GDP and read against it: employment growing faster than output is falling productivity, which is the euro area''s standing problem.'
+  match_rules: 'employment;qq'
+  match_excludes: 'german|french|italian|spanish|yy'
+  macro_indicator_id: null
 - key: ez_pmi_mfg
   country_iso2: EU
   area: EZ
@@ -1101,6 +1243,28 @@ indicators:
   match_rules: cpi;yy
   match_excludes: hicp|core|baden wuerttemberg|hesse|bavaria|brandenburg|north rhine westphalia|nordrhein-westfalen|westfalen|saxony
   macro_indicator_id: null
+- key: de_cpi_mm
+  country_iso2: DE
+  area: EZ
+  name: German CPI m/m
+  category: 'Inflation'
+  tags: 'flash_final'
+  side: null
+  data_type: 'hard'
+  archetype: cpi_mm
+  freq: M
+  criticality: T1
+  nature: coincident
+  agency: Destatis
+  rationale: 'The preliminary print lands hours before the euro-area flash and is the best pre-read of it: the market has usually finished repricing the HICP by the time Eurostat publishes.'
+  # The Laender publish their own CPI in the same hour and Forex Factory has
+  # carried them; the exclusions mirror de_cpi_yy's for that reason. 'mm' and
+  # 'yy' are what keeps the two German indicators apart, and they must: both
+  # prints land in the same minute, and one indicator carrying both would put
+  # two different numbers on one event.
+  match_rules: cpi;mm
+  match_excludes: hicp|core|baden wuerttemberg|hesse|bavaria|brandenburg|north rhine westphalia|nordrhein-westfalen|westfalen|saxony
+  macro_indicator_id: null
 - key: de_factory
   country_iso2: DE
   area: EZ
@@ -1134,6 +1298,57 @@ indicators:
   rationale: 'Confirms what orders had already said.'
   match_rules: industrial;mm
   match_excludes: orders
+  macro_indicator_id: null
+- key: de_pmi_mfg
+  country_iso2: DE
+  area: EZ
+  name: German Manufacturing PMI
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
+  archetype: pmi_mfg
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: HCOB / S&P Global
+  rationale: 'German industry is the cyclical engine of the area: this survey turns before the hard production data and before the euro-area aggregate that contains it.'
+  match_rules: 'mfg|manufacturing;pmi'
+  match_excludes: 'services|composite'
+  macro_indicator_id: null
+- key: de_pmi_svc
+  country_iso2: DE
+  area: EZ
+  name: German Services PMI
+  category: 'Surveys'
+  tags: 'flash_final'
+  side: null
+  data_type: 'soft'
+  archetype: pmi_svc
+  freq: M
+  criticality: T2
+  nature: leading
+  agency: HCOB / S&P Global
+  rationale: 'The domestic half of German demand: it has repeatedly held the country out of recession while manufacturing contracted, and the gap between the two is the thing to read.'
+  match_rules: 'services;pmi'
+  match_excludes: 'mfg|manufacturing|composite'
+  macro_indicator_id: null
+- key: de_retail
+  country_iso2: DE
+  area: EZ
+  name: German Retail Sales m/m
+  category: 'Consumption'
+  tags: 'revision_prone'
+  side: 'demand'
+  data_type: 'hard'
+  archetype: retail
+  freq: M
+  criticality: T3
+  nature: coincident
+  agency: Destatis
+  rationale: 'Volatile and heavily revised month to month; it earns its place as an early piece of the euro-area retail aggregate, which arrives a week later.'
+  match_rules: 'retail sales;mm'
+  match_excludes: 'yy'
   macro_indicator_id: null
 - key: uk_cpi_yy
   country_iso2: GB
@@ -1491,6 +1706,25 @@ indicators:
   rationale: 'Structurally stable: not informative.'
   match_rules: unemployment|jobless;rate
   match_excludes: ''
+  macro_indicator_id: null
+- key: jp_earnings
+  country_iso2: JP
+  area: JP
+  name: Average Cash Earnings y/y
+  category: 'Labour'
+  tags: 'policy_input'
+  side: null
+  data_type: 'hard'
+  archetype: earnings
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: MHLW
+  rationale: 'The variable the Bank of Japan conditions normalisation on: it wants wage growth that sustains 2% inflation, and this is the monthly evidence between one shunto and the next. Revised heavily, because the sample of surveyed firms rotates.'
+  # 'real' is excluded because the CPI-deflated version of the same series is
+  # published beside it, in the same minute, under a name one word away.
+  match_rules: 'cash earnings'
+  match_excludes: 'real'
   macro_indicator_id: null
 - key: jp_boj
   country_iso2: JP
@@ -2172,6 +2406,23 @@ indicators:
   match_rules: ivey
   match_excludes: ''
   macro_indicator_id: null
+- key: ca_pmi_mfg
+  country_iso2: CA
+  area: CA
+  name: Manufacturing PMI
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
+  archetype: pmi_mfg
+  freq: M
+  criticality: T3
+  nature: leading
+  agency: S&P Global
+  rationale: 'Canadian manufacturing is small and largely an appendix of the American cycle, so this mostly repeats what the ISM already said; it is here for comparability with the other PMIs, not for a signal of its own.'
+  match_rules: 'mfg|manufacturing;pmi'
+  match_excludes: 'services|composite|ivey'
+  macro_indicator_id: null
 - key: ca_trade
   country_iso2: CA
   area: CA
@@ -2664,4 +2915,111 @@ indicators:
   rationale: 'Partly duplicates the information in exports.'
   match_rules: trade;balance
   match_excludes: ''
+  macro_indicator_id: null
+- key: ch_cpi_mm
+  country_iso2: CH
+  area: CH
+  name: CPI m/m
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
+  archetype: cpi_mm
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: BFS
+  rationale: 'Swiss inflation reaches a multi-asset book through the franc rather than through Swiss demand: it is the number that decides whether the SNB has room to let the currency stay strong.'
+  match_rules: cpi;mm
+  match_excludes: core
+  macro_indicator_id: null
+- key: ch_cpi_yy
+  country_iso2: CH
+  area: CH
+  name: CPI y/y
+  category: 'Inflation'
+  tags: null
+  side: null
+  data_type: 'hard'
+  archetype: cpi_yy
+  freq: M
+  criticality: T2
+  nature: coincident
+  agency: BFS
+  rationale: 'The annual rate the SNB states its objective against, a 0-2% band rather than a point target.'
+  match_rules: cpi;yy
+  match_excludes: core
+  macro_indicator_id: null
+- key: ch_gdp
+  country_iso2: CH
+  area: CH
+  name: GDP q/q
+  category: 'Growth'
+  tags: null
+  side: null
+  data_type: 'hard'
+  archetype: gdp_qq
+  freq: Q
+  criticality: T3
+  nature: coincident
+  agency: SECO
+  rationale: 'Small and stable: it rarely surprises, and the figure to read is the one adjusted for sporting events, whose licensing revenue distorts Swiss quarters.'
+  match_rules: gdp;qq
+  match_excludes: ''
+  macro_indicator_id: null
+- key: ch_unemp
+  country_iso2: CH
+  area: CH
+  name: Unemployment Rate
+  category: 'Labour'
+  tags: null
+  side: null
+  data_type: 'hard'
+  archetype: unemployment_rate
+  freq: M
+  criticality: T3
+  nature: lagging
+  agency: SECO
+  rationale: 'A registered-unemployment count, not an ILO survey, so the level is not comparable with anybody else''s; what it says is the direction.'
+  match_rules: unemployment|jobless;rate
+  match_excludes: ''
+  macro_indicator_id: null
+- key: ch_pmi_mfg
+  country_iso2: CH
+  area: CH
+  name: Manufacturing PMI
+  category: 'Surveys'
+  tags: null
+  side: null
+  data_type: 'soft'
+  archetype: pmi_mfg
+  freq: M
+  criticality: T3
+  nature: leading
+  agency: procure.ch / UBS
+  rationale: 'A small open economy''s survey, read mostly as a second opinion on the German industrial cycle it depends on.'
+  match_rules: 'mfg|manufacturing;pmi'
+  match_excludes: 'services|composite'
+  macro_indicator_id: null
+- key: nz_rbnz
+  country_iso2: NZ
+  area: NZ
+  name: RBNZ Official Cash Rate
+  category: 'Monetary policy'
+  tags: null
+  side: null
+  data_type: null
+  archetype: policy_rate
+  freq: E
+  criticality: T2
+  nature: policy
+  agency: RBNZ
+  rationale: 'The first inflation-targeting central bank, and still one that moves in larger steps than its peers: for a multi-asset book it is a carry and a currency, not a growth signal.'
+  # The decision arrives inside a block of four rows -- rate, rate statement,
+  # monetary policy statement, press conference -- of which only this one
+  # carries a number. The other three are ruled out by name in
+  # econ_calendar_aliases.yaml; the exclusions here are the second lock, so a
+  # commentary row cannot land on the decision even if a ruling is removed.
+  match_rules: 'official cash|rbnz;rate'
+  match_excludes: 'speak|speech|governor|minutes|statement|conference|press'
   macro_indicator_id: null

@@ -55,6 +55,71 @@ rejections:
   decided_by: reconciled-2026-08-14
   reason: 'Proposed for cn_trade by name reconciliation. The same balance quoted in yuan:
     roughly seven times the USD figure the indicator carries.'
+- source: forexfactory
+  country_iso3: AUS
+  name: RBA Assist Gov Hunter Speaks
+  decided_by: coverage-2026-09-07
+  reason: A central-bank speech is commentary, not an economic data release.
+- source: forexfactory
+  country_iso3: AUS
+  name: RBA Assist Gov Jones Speaks
+  decided_by: coverage-2026-09-07
+  reason: A central-bank speech is commentary, not an economic data release.
+- source: forexfactory
+  country_iso3: GBR
+  name: MPC Member Pill Speaks
+  decided_by: coverage-2026-09-07
+  reason: A central-bank speech is commentary, not an economic data release.
+- source: forexfactory
+  country_iso3: JPN
+  name: 10-y Bond Auction
+  decided_by: coverage-2026-09-07
+  reason: 'An auction result, not a macroeconomic release: the feed carries it as a
+    pair (yield and bid-to-cover) in one field, which no indicator in this catalogue
+    can hold, and the auction calendar belongs to debt management rather than to the
+    statistical one.'
+- source: forexfactory
+  country_iso3: JPN
+  name: 30-y Bond Auction
+  decided_by: coverage-2026-09-07
+  reason: 'An auction result, not a macroeconomic release: same reason as the 10-year.'
+- source: forexfactory
+  country_iso3: NZL
+  name: RBNZ Rate Statement
+  decided_by: coverage-2026-09-07
+  reason: The statement has no numeric decision; Official Cash Rate is the value-bearing release.
+- source: forexfactory
+  country_iso3: NZL
+  name: RBNZ Monetary Policy Statement
+  decided_by: coverage-2026-09-07
+  reason: 'The quarterly policy document: prose and projections, published beside the
+    decision, with no figure in the calendar row.'
+- source: forexfactory
+  country_iso3: USA
+  name: Beige Book
+  decided_by: coverage-2026-09-07
+  reason: 'Twelve districts of anecdote with no number attached: the row exists to say
+    when it was published.'
+- source: forexfactory
+  country_iso3: USA
+  name: FOMC Member Barr Speaks
+  decided_by: coverage-2026-09-07
+  reason: A central-bank speech is commentary, not an economic data release.
+- source: forexfactory
+  country_iso3: USA
+  name: FOMC Member Goolsbee Speaks
+  decided_by: coverage-2026-09-07
+  reason: A central-bank speech is commentary, not an economic data release.
+- source: forexfactory
+  country_iso3: USA
+  name: FOMC Member Hammack Speaks
+  decided_by: coverage-2026-09-07
+  reason: A central-bank speech is commentary, not an economic data release.
+- source: forexfactory
+  country_iso3: USA
+  name: FOMC Member Waller Speaks
+  decided_by: coverage-2026-09-07
+  reason: A central-bank speech is commentary, not an economic data release.
 bindings:
 - source: forexfactory
   country_iso3: USA
