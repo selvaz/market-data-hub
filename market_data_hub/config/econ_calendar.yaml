@@ -10,6 +10,18 @@
 #
 # freq: M mensile, Q trimestrale, A annuale, W settimanale, E a calendario
 # (riunioni di banca centrale).
+#
+# macro_series_id: il ponte verso `macro_series`, la serie storica che sta gia'
+# nello stesso database. Serve a riempire `calendar_events.actual` in modo
+# deterministico quando nessuna fonte pubblica il valore, e per questo si compila
+# SOLO quando la serie misura esattamente la stessa cosa dell'indicatore:
+# stessa grandezza, stessa unita', stessa trasformazione. Un indice non e' una
+# variazione percentuale, un livello mensile non e' un m/m, un tasso effettivo
+# non e' un tasso obiettivo. Nel dubbio si lascia assente: una mappatura
+# sbagliata produce un numero credibile e falso, che e' molto peggio di un
+# buco. macro_bridge.py rifiuta comunque, a runtime, qualunque mappatura il cui
+# archetipo non sia un livello puro (value_type '%'), cosi' che una mappatura
+# distratta aggiunta qui non arrivi mai a scrivere.
 
 archetypes:
 - key: cpi_yy
@@ -267,6 +279,12 @@ indicators:
   match_rules: unemployment|jobless;rate
   match_excludes: insurance|claims|u6
   macro_indicator_id: null
+  # FRED UNRATE, 'MACRO | US | Unemployment Rate': la quota di forza lavoro
+  # disoccupata, mensile, destagionalizzata, in punti percentuali. E' lo stesso
+  # oggetto che il calendario stampa insieme ai payroll, nella stessa unita' e
+  # senza alcuna trasformazione. Verificato contro l'hub il 07/09/2026: evento
+  # us_unemp del 04/09 (periodo Ago 2026) actual 4.1%, UNRATE 2026-08-01 = 4.1.
+  macro_series_id: UNRATE
 - key: us_earnings
   country_iso2: US
   area: US
@@ -922,6 +940,14 @@ indicators:
   match_rules: unemployment|jobless;rate
   match_excludes: german|french|italian|spanish
   macro_indicator_id: null
+  # FRED LRHUTTTTEZM156S, 'MACRO | EA | Harmonised Unemployment Rate (Total
+  # monthly)': stessa definizione armonizzata che Eurostat pubblica per l'area
+  # euro, mensile, in punti percentuali, nessuna trasformazione. Il ponte e'
+  # corretto ma oggi inerte: la serie nell'hub si ferma a gennaio 2023, quindi
+  # nessun evento recente trova un'osservazione nel proprio periodo e il
+  # riempimento non scatta. Resta dichiarato perche' e' l'identita' della serie,
+  # non una promessa che ci siano dati.
+  macro_series_id: LRHUTTTTEZM156S
 - key: ez_pmi_mfg
   country_iso2: EU
   area: EZ

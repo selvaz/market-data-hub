@@ -34,7 +34,14 @@ _EVENT_GRAIN = "day"
 # numbers, and mixing them manufactures surprises. Pick ONE source, say so.
 # Forex Factory is that one source: the calendar is collected from its public
 # feed, so there is no longer a genuine choice to make here, only a name to record.
-_PROVENANCE_RANK = {"official": 0, "aggregator": 1, "web": 2}
+#
+# 'derived' sits between the aggregator and the web fill. It is the value read
+# out of the hub's own macro series (macro_bridge.py): the issuing agency's
+# number, so it beats an LLM reading a news page, but it is a statistical
+# series rather than the release wire, so any calendar source that actually
+# carries the print still outranks it. The integers are only a sort key --
+# nothing persists them -- so renumbering 'web' to make room is free.
+_PROVENANCE_RANK = {"official": 0, "aggregator": 1, "derived": 2, "web": 3}
 DEFAULT_CONSENSUS_SOURCE = "forexfactory"
 
 

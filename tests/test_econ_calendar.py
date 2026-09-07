@@ -294,7 +294,12 @@ def test_validation_window_excludes_old_and_future_events_but_flags_released(con
         "STATUS: MISMATCH\nACTUAL: 55K\nNOTE: Published value differs.\n"
         "SOURCES:\nhttps://www.bls.gov/x"))
 
-    summary = validate.run_validation(con, today, lookback_days=3)
+    # catchup_days=0 keeps this a test of the PRIMARY window alone. The
+    # catch-up pass deliberately reaches further back than the window and
+    # would pick the 5-day-old event up; that it does so is asserted in
+    # test_econ_calendar_honest_values.py.
+    summary = validate.run_validation(con, today, lookback_days=3,
+                                      catchup_days=0)
 
     assert summary["checked"] == 1 and summary["mismatch"] == 1
     assert con.execute(
@@ -1288,7 +1293,7 @@ def test_observations_are_stamped_with_the_day_they_were_collected(tmp_path, mon
     # Bracket the call: crossing UTC midnight mid-run must not fail the test,
     # but a pinned date outside the bracket still must.
     prima = datetime.utcnow().date()
-    osservazioni, _ = raccogli(catalogo)
+    osservazioni, _, _ = raccogli(catalogo)
     dopo = datetime.utcnow().date()
 
     assert osservazioni, 'il csv di prova deve produrre almeno una osservazione'
@@ -1461,16 +1466,22 @@ def test_recollected_row_replaces_the_stale_one_even_if_its_time_changed():
 # The job used to exit 0 whenever anything at all was ingested, even with a
 # source down -- indistinguishable to Task Scheduler from a clean run. That
 # was a three-way split (clean/degraded/failed) because a dead source among
-# several still left a partially useful run. MyFXBook is the only source
-# left, so there is no partial-credit case any more: exit_code() is now a
-# straight function of whether anything was produced to ingest.
+# several still left a partially useful run, and it was collapsed to two when
+# one source was left, on the grounds that a single source leaves no partial
+# credit.
+#
+# The partial credit that matters turned out not to be about sources at all
+# but about ROWS: ONE observation out of a 126-row feed exited 0. The middle
+# case is back, decided on the row counts. The full matrix lives in
+# test_econ_calendar_honest_values.py; these two keep the original claims.
 # ---------------------------------------------------------------------------
 
 
 def test_a_clean_run_exits_zero():
     from run_econ_calendar import exit_code
 
-    assert exit_code(468) == 0
+    assert exit_code({'rows': 500, 'matched': 468, 'ruled_out': 10,
+                      'unseen': 22}, 468) == 0
 
 
 def test_zero_observations_is_a_failure():
@@ -1478,7 +1489,9 @@ def test_zero_observations_is_a_failure():
     nothing to ingest; that is not a clean run either."""
     from run_econ_calendar import exit_code
 
-    assert exit_code(0) == 1
+    # a feed that produced rows nothing could be made of: a fault
+    assert exit_code({'rows': 126, 'matched': 0, 'ruled_out': 0,
+                      'unseen': 126}, 0) == 1
 
 
 def test_empty_collection_window_fails_loudly_instead_of_crashing(
@@ -1527,7 +1540,7 @@ def test_default_collection_window_uses_utc_today(tmp_path, monkeypatch):
     class ClockAtUtcMidnight:
         @classmethod
         def now(cls, tz):
-            assert tz is runner.UTC
+            assert tz is runner.timezone.utc
             return datetime(2026, 9, 5, 0, 30)
 
     collected = {}
@@ -1726,7 +1739,7 @@ def test_us_goods_trade_balance_does_not_bind_to_the_total_balance(tmp_path, mon
         tmp_path / 'forexfactory.csv', index=False, encoding='utf-8-sig')
     monkeypatch.chdir(tmp_path)
     catalogo = [r for r in load_catalog_rows() if r['indicator_key'] in ('us_trade', 'au_trade')]
-    osservazioni, _ = raccogli(catalogo)
+    osservazioni, _, _ = raccogli(catalogo)
     legati = sorted((o.indicator_key, o.source_event_name) for o in osservazioni)
     assert legati == [('au_trade', 'Goods Trade Balance'), ('us_trade', 'Trade Balance')]
 
@@ -1743,9 +1756,20 @@ def test_forexfactory_fixture_matches_the_real_catalogue(con, tmp_path, monkeypa
     upsert_indicators(con, catalogo)
     load_seed(con)
     monkeypatch.chdir(tmp_path)
-    osservazioni, per_fonte = raccogli(catalogo, load_rejections(con), load_aliases(con))
+    osservazioni, per_fonte, conteggi = raccogli(catalogo, load_rejections(con), load_aliases(con))
     assert per_fonte == {'forexfactory': 28}
     assert len(osservazioni) == 28
+    # The three row verdicts on a real captured feed, and they must partition
+    # it: 28 rows produced the 28 observations above, 5 were kept out by an
+    # explicit ruling (the old counter said 60 for these same 5, counting each
+    # once per catalogue entry sharing its country), and 77 met no rule and no
+    # ruling at all -- the category that had no counter and no line in the log.
+    assert conteggi['rows'] == 110
+    assert (conteggi['matched'], conteggi['ruled_out'], conteggi['unseen']) == (28, 5, 77)
+    assert (conteggi['matched'] + conteggi['ruled_out']
+            + conteggi['unseen']) == conteggi['rows']
+    assert conteggi['unseen_uncovered_country'] == 27
+    assert conteggi['per_source']['forexfactory']['unseen'] == 77
     legati = {(o.indicator_key, o.source_event_name) for o in osservazioni}
     assert {
         ('us_nfp', 'Non-Farm Employment Change'),

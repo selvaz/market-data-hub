@@ -113,9 +113,41 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
     NON legato a nessun altro anche se la regex lo riconoscerebbe). Entrambi
     vengono da `config/econ_calendar_aliases.yaml`, e oggi contengono solo
     decisioni su forexfactory -- le altre fonti non collezionano piu' nulla.
+
+    Returns ``(osservazioni, per_fonte, conteggi)``.
+
+    ``conteggi`` counts ROWS OF THE FEED, and it exists because the old counter
+    did not. ``scartati`` was incremented inside the indicator x row double
+    loop, so a single rejected row was counted once per catalogue entry sharing
+    its country: the production feed of 07/09/2026 printed '60 righe respinte'
+    for what are, in fact, 5 rows. And the far larger category had no counter at
+    all -- of 126 rows, 89 met no matching rule and no ruling, and nothing in
+    the run said so. Among them the German preliminary CPI, ISM prices, ADP
+    employment and Swiss inflation: the rows a reader would most want to know
+    about were the ones the log was silent on.
+
+    Three disjoint buckets, adding up to the row count:
+
+    ``matched``
+        produced at least one observation.
+    ``ruled_out``
+        an explicit decision in the alias table kept it out (rejected, or bound
+        to an indicator that is not this row's). Somebody looked at this row.
+    ``unseen``
+        neither. No rule fired and nobody ever ruled on it. ``match_excludes``
+        firing counts here, not as a rejection: an exclusion is a catalogue
+        entry saying 'not me', not a decision about the row. Split further into
+        ``unseen_uncovered_country`` (the feed's country appears in no
+        catalogue entry, so no rule was even evaluated) and the remainder,
+        where rules ran and none matched.
     """
     legami = legami or {}
-    osservazioni, per_fonte, scartati, aggiunti = [], {}, 0, 0
+    osservazioni, per_fonte, aggiunti = [], {}, 0
+    conteggi = {'rows': 0, 'matched': 0, 'ruled_out': 0, 'unseen': 0,
+                'unseen_uncovered_country': 0, 'per_source': {}}
+    paesi_catalogo = {p.strip()
+                      for voce in catalogo
+                      for p in str(voce['country_iso2']).split('|')}
     for file, (fonte, prov) in FONTI.items():
         if not Path(file).exists():
             print(f'  (assente: {file})')
@@ -135,15 +167,18 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
             print(f'  ({fonte}: {scarto:+.2f} h to UTC, measured from this batch)')
         d['norm'] = d.Evento.apply(lambda e: ' '.join(normalizza(e)))
         n = 0
+        # Row-level verdicts, keyed on the frame's index so each row is counted
+        # once however many catalogue entries look at it.
+        agganciate, con_decisione = set(), set()
         for voce in catalogo:
             iso2 = {p.strip() for p in str(voce['country_iso2']).split('|')}
             sub = d[d.Paese.isin(iso2)]
             if sub.empty:
                 continue
-            for _, r in sub.iterrows():
+            for indice, r in sub.iterrows():
                 terna = (fonte, voce['country_iso3'], normalize_name(r.Evento))
                 if terna in respinti:
-                    scartati += 1
+                    con_decisione.add(indice)
                     continue
                 legato = legami.get(terna)
                 if legato is not None:
@@ -152,6 +187,10 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
                     # la regex non lo riconosce, e NON entra su nessun altro
                     # anche se la regex lo riconoscerebbe.
                     if legato != voce['indicator_key']:
+                        # A binding to another indicator is still a decision
+                        # somebody took about this row; if no catalogue entry
+                        # ends up claiming it, that is why.
+                        con_decisione.add(indice)
                         continue
                     aggiunti += 1
                 elif not regola_ok(r.norm, voce['match_rules'], voce['match_excludes']):
@@ -159,6 +198,7 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
                 ist, prec = istante(r.Data_Rilascio, r.Orario, scarto)
                 if ist is None:
                     continue
+                agganciate.add(indice)
                 periodo = r.get('Periodo_Riferimento', '')
                 periodo = None if periodo in ('N/D', '', 'nan') else periodo
                 osservazioni.append(CalendarObservation(
@@ -181,6 +221,23 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
                 ))
                 n += 1
         per_fonte[fonte] = n
-    if scartati or aggiunti:
-        print(f'  ({scartati} righe respinte, {aggiunti} agganciate da decisioni per fonte)')
-    return osservazioni, per_fonte
+
+        # A row that ended up matched is matched, whatever else was decided
+        # about it against some other indicator: the buckets are disjoint and
+        # 'matched' wins.
+        con_decisione -= agganciate
+        non_viste = [i for i in d.index
+                     if i not in agganciate and i not in con_decisione]
+        senza_paese = [i for i in non_viste
+                       if d.at[i, 'Paese'] not in paesi_catalogo]
+        dettaglio = {'rows': len(d), 'matched': len(agganciate),
+                     'ruled_out': len(con_decisione), 'unseen': len(non_viste),
+                     'unseen_uncovered_country': len(senza_paese)}
+        conteggi['per_source'][fonte] = dettaglio
+        for chiave, valore in dettaglio.items():
+            conteggi[chiave] += valore
+
+    if conteggi['ruled_out'] or aggiunti:
+        print(f'  ({conteggi["ruled_out"]} righe respinte da una decisione, '
+              f'{aggiunti} agganciate da decisioni per fonte)')
+    return osservazioni, per_fonte, conteggi

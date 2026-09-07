@@ -28,7 +28,7 @@ reader then answers "nothing found".
 import argparse
 import os
 import sys
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -51,26 +51,61 @@ SOURCE_CSV = next(iter(FONTI))
 SOURCE_NAME = FONTI[SOURCE_CSV][0]
 
 
-def exit_code(n_osservazioni: int) -> int:
-    """0 clean, 1 failed -- two outcomes, not three.
+EXIT_OK = 0
+EXIT_FAILED = 1
+EXIT_DEGRADED = 2
+EXIT_NOTHING_TO_DO = 3
 
-    The old three-way split (clean / degraded-exit-2 / failed) existed
-    because a dead source among five still left a run partially useful: "4
-    of 5 succeeded" needed to be distinguishable from "all 5 succeeded", or
-    a caller that only reads the exit code -- Task Scheduler is exactly such
-    a caller -- could not tell a degraded run from a clean one. Measured on
-    2026-08-17 with yahoo down: reference_date coverage came out at 11%,
-    against the 44% a clean run got, while the exit code still said 0.
+# Above this share of feed rows that no rule ever looked at, the run is
+# reported as degraded rather than clean.
+#
+# 50%: the catalogue is meant to be a description of what matters in this feed,
+# and once more than half of the feed falls through it unexamined the
+# catalogue has stopped describing it. The threshold is set where it changes
+# the answer today rather than where it is comfortable -- measured on the
+# production feed of 07/09/2026, 89 of 126 rows (70.6%) met no rule and no
+# ruling, among them the German preliminary CPI, ISM prices, ADP employment and
+# Swiss inflation, while the run exited 0. Raising the bar until today's run
+# passes would be choosing not to be told.
+SOGLIA_RIGHE_NON_VISTE = 0.50
 
-    The one configured source leaves no middle case, and that goes with the
-    other four: there is no partial credit for one source, only whether it
-    produced anything to ingest. Two outcomes cover that completely.
 
-    Decided on `n_osservazioni`, not on whether collection raised: a source
-    can "succeed" -- raise nothing -- and still return an empty frame, which
-    is a total failure by outcome even though nothing crashed.
+def exit_code(conteggi: dict, n_osservazioni: int, *,
+              collezione_fallita: bool = False,
+              soglia: float = SOGLIA_RIGHE_NON_VISTE) -> int:
+    """What the run is worth, in the one byte Task Scheduler reads.
+
+    Four outcomes, and the middle two are the point. The previous version
+    returned ``0 if n_osservazioni else 1``: ONE observation out of a
+    126-row feed exited 0, and ``audit()`` is documented as never fatal, so a
+    run in which the calendar had almost entirely stopped understanding its
+    source was indistinguishable from a healthy one.
+
+    ``EXIT_NOTHING_TO_DO`` (3) is not invented here: it is the ecosystem's
+    convention for 'this run had no work and that is fine, do not go red',
+    used by LazyRay in ``run_stress_monitor.py`` ("Exit 3 ('nothing to do'),
+    not a red task") and ``run_dalio_v2.py`` (``--if-changed``). It applies
+    when the feed held no rows at all and nothing failed to fetch them --
+    a re-ingest of an absent CSV, say -- which is an empty in-tray, not a
+    fault.
+
+    ``EXIT_DEGRADED`` (2) restores the middle case this file's own history
+    records: 'clean / degraded-exit-2 / failed' existed because a caller that
+    reads only the exit code could not otherwise tell a half-working run from
+    a working one, and it was dropped when five sources became one on the
+    grounds that a single source leaves no partial credit. That reasoning was
+    about SOURCES; the partial credit that actually matters is about ROWS, and
+    it is measurable: matched, ruled out, and never looked at.
     """
-    return 0 if n_osservazioni else 1
+    if not conteggi.get('rows'):
+        return EXIT_FAILED if collezione_fallita else EXIT_NOTHING_TO_DO
+    if not n_osservazioni:
+        # The feed spoke and the catalogue understood none of it. Not an empty
+        # in-tray: a total matching failure, which is a fault.
+        return EXIT_FAILED
+    if conteggi['unseen'] > soglia * conteggi['rows']:
+        return EXIT_DEGRADED
+    return EXIT_OK
 
 
 def collect(work_dir: Path, da: str, a: str) -> bool:
@@ -95,6 +130,28 @@ def collect(work_dir: Path, da: str, a: str) -> bool:
         return False
     print(f'  {len(df)} rows -> {uscita}', flush=True)
     return True
+
+
+def stampa_conteggi(conteggi: dict) -> None:
+    """The three row verdicts, separately, because only one of them was visible.
+
+    The old line said '60 righe respinte' and meant nothing: the counter lived
+    inside the indicator x row double loop, so one rejected row was counted
+    once per catalogue entry that shared its country. Five rows, printed as
+    sixty. The category nobody could see at all was the third one -- the rows
+    no rule looked at -- and on the production feed it is the majority.
+    """
+    righe = conteggi.get('rows') or 0
+    if not righe:
+        return
+    quota = 100 * conteggi['unseen'] / righe
+    print(f'\n  feed rows            {righe:5}')
+    print(f'    matched            {conteggi["matched"]:5}')
+    print(f'    ruled out          {conteggi["ruled_out"]:5}   '
+          f'(an explicit decision in the alias table)')
+    print(f'    never looked at    {conteggi["unseen"]:5}   ({quota:.0f}%; '
+          f'{conteggi["unseen_uncovered_country"]} in countries the catalogue '
+          f'does not cover)')
 
 
 def audit(con) -> None:
@@ -140,6 +197,9 @@ def main() -> int:
     p.add_argument('--no-validate', action='store_true',
                    help='skip the T1 web-search validation pass after ingest '
                         '(network + LLM cost; useful for fast local iteration)')
+    p.add_argument('--no-bridge', action='store_true',
+                   help='skip filling missing actuals from the macro series '
+                        'already in this database (no network, no LLM cost)')
     p.add_argument('--validate-lookback-days', type=int, default=3,
                    help='days of safely-past T1 releases to validate/fill (default: 3)')
     p.add_argument('--audit-only', action='store_true',
@@ -166,7 +226,12 @@ def main() -> int:
         con.close()
         return 0
 
-    oggi = datetime.now(UTC).date()
+    # `timezone.utc`, not the `datetime.UTC` alias: that alias arrived in
+    # 3.11, and pyproject declares `requires-python = ">=3.9"` while CI
+    # tests 3.9 and 3.10. This one import failed both of them, on main,
+    # before this branch existed -- the whole file could not even be
+    # collected there.
+    oggi = datetime.now(timezone.utc).date()
     collezione_riuscita = True
     if not args.no_collect:
         da = args.da or str(oggi - timedelta(days=7))
@@ -185,13 +250,14 @@ def main() -> int:
     prima = os.getcwd()
     os.chdir(work_dir)
     try:
-        osservazioni, per_fonte = raccogli(catalogo, respinti, legami)
+        osservazioni, per_fonte, conteggi = raccogli(catalogo, respinti, legami)
     finally:
         os.chdir(prima)
 
     for f, n in sorted(per_fonte.items()):
         print(f'  {f:14} {n:5} observations')
     print(f'  {"TOTAL":14} {len(osservazioni):5}')
+    stampa_conteggi(conteggi)
     # Printed even when nothing failed, so a reader does not have to infer a
     # clean run from the absence of a line.
     #
@@ -204,10 +270,12 @@ def main() -> int:
         print('  collection: ' + ('ok' if collezione_riuscita
                                    else 'FAILED (see the FAILED/no rows line above)'))
 
+    codice = exit_code(conteggi, len(osservazioni),
+                       collezione_fallita=not (args.no_collect or collezione_riuscita))
     if not osservazioni:
         print('\nnothing to ingest.', file=sys.stderr)
         con.close()
-        return exit_code(0)
+        return codice
 
     esito = ingest_observations(
         con, osservazioni,
@@ -220,6 +288,26 @@ def main() -> int:
     # recorded, and reference_date sits at what the source happens to publish.
     dedotti = infer_reference_dates(con)
     print(f'reference dates inferred: {dedotti}')
+
+    # Before the web pass, not after: the bridge is deterministic, free and
+    # reproducible, so anything it can fill must not be paid for a second time
+    # by sending an LLM to look the same number up on the internet.
+    if args.no_bridge:
+        print('\nmacro bridge: skipped (--no-bridge)')
+    else:
+        print('\n=== macro bridge (fill from this database) ===')
+        try:
+            from market_data_hub.econ_calendar.macro_bridge import (
+                bridged_indicators, fill_from_macro_series,
+            )
+            for i in (x for x in bridged_indicators(con) if not x['usable']):
+                print(f'  refused {i["indicator_key"]} -> '
+                      f'{i["macro_series_id"]}: {i["reason"]}')
+            print(f'  {fill_from_macro_series(con, run_id=args.run_id or f"econ-calendar-{oggi}")}')
+        except Exception as e:
+            # Same contract as the validation pass: losing the bridge costs
+            # the fill, not the ingest, which is already committed above.
+            print(f'  could not run ({type(e).__name__}: {str(e)[:160]})')
 
     if args.no_validate:
         print('\nvalidate: skipped (--no-validate)')
@@ -238,7 +326,13 @@ def main() -> int:
 
     audit(con)
     con.close()
-    return exit_code(len(osservazioni))
+    if codice == EXIT_DEGRADED:
+        print(f'\nDEGRADED: {conteggi["unseen"]} of {conteggi["rows"]} feed rows '
+              f'({100 * conteggi["unseen"] / conteggi["rows"]:.0f}%) met no matching '
+              f'rule and no ruling, over the {100 * SOGLIA_RIGHE_NON_VISTE:.0f}% '
+              f'threshold. What was ingested stands; the catalogue has stopped '
+              f'describing the feed.', file=sys.stderr)
+    return codice
 
 
 if __name__ == '__main__':
