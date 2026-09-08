@@ -374,7 +374,15 @@ def main() -> int:
     con.close()
     # Said loudly, every run, and deliberately NOT in the exit code: see
     # exit_code's docstring for why an always-on alarm is furniture.
-    if conteggi.get('rows') and conteggi['unseen'] > SOGLIA_RIGHE_NON_VISTE * conteggi['rows']:
+    #
+    # Only on a run that is otherwise clean. A feed that produced NO
+    # observations at all is a matching failure, exit 1, and its rows are
+    # unseen by definition -- so this predicate is true there too, and would
+    # append a second diagnostic ending "what was ingested stands" to a run
+    # that ingested nothing. Two verdicts on one run, one of them false, in
+    # the log somebody opens precisely because something went wrong.
+    if (codice == EXIT_OK and conteggi.get('rows')
+            and conteggi['unseen'] > SOGLIA_RIGHE_NON_VISTE * conteggi['rows']):
         print(f'\nDEGRADED: {conteggi["unseen"]} of {conteggi["rows"]} feed rows '
               f'({100 * conteggi["unseen"] / conteggi["rows"]:.0f}%) met no matching '
               f'rule and no ruling, over the {100 * SOGLIA_RIGHE_NON_VISTE:.0f}% '

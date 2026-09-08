@@ -577,6 +577,31 @@ def test_the_runner_says_degraded_out_loud_while_still_exiting_clean(
     assert 'DEGRADED' in capsys.readouterr().err
 
 
+def test_a_total_matching_failure_gets_one_verdict_not_two(tmp_path, monkeypatch,
+                                                            capsys):
+    """A feed nobody matched is a fault, and only a fault.
+
+    Its rows are unseen by definition, so the coverage predicate is true there
+    too -- and it would append a second diagnostic ending "what was ingested
+    stands" to a run that ingested nothing. Two verdicts on one run, one of
+    them false, in the log somebody opens precisely because something went
+    wrong.
+    """
+    import run_econ_calendar as runner
+
+    db = tmp_path / 'hub.duckdb'
+    con = cx.get_conn(str(db))
+    con.close()
+    _feed(tmp_path, [f'2026-08-31,21:00,NZ,low,Regional Survey {i},Aug,,,49.7,,ForexFactory'
+                     for i in range(10)])
+    monkeypatch.setattr('sys.argv', [
+        'run_econ_calendar.py', '--db', str(db), '--work-dir', str(tmp_path),
+        '--no-collect', '--no-validate', '--no-bridge'])
+
+    assert runner.main() == runner.EXIT_FAILED
+    assert 'DEGRADED' not in capsys.readouterr().err
+
+
 def test_the_runner_reports_nothing_to_do_when_there_is_no_feed(tmp_path, monkeypatch):
     import run_econ_calendar as runner
 
