@@ -7,7 +7,9 @@ variable. The schema is applied (idempotently) on first open.
 """
 from __future__ import annotations
 
+import math
 import os
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -526,8 +528,27 @@ def _migrate_prices_to_listing_key(con: duckdb.DuckDBPyConnection) -> None:
     con.execute("ALTER TABLE prices_daily_v7 RENAME TO prices_daily")
 
 
-_READER_LOCK_WAIT_S = float(os.environ.get("MARKET_DATA_READER_LOCK_WAIT_S", "300"))
+def _budget_from_env(name: str, default: str) -> float:
+    """A wait budget from the environment, defensively.
+
+    A non-finite or negative value would turn a bound into no bound at all:
+    ``time.monotonic() >= float("nan")`` is always false, so a permanently
+    held lock would be waited on forever, which is the one outcome a budget
+    exists to prevent. Fall back to the default rather than hang.
+    """
+    try:
+        value = float(os.environ.get(name, default))
+    except ValueError:
+        return float(default)
+    if not math.isfinite(value) or value < 0:
+        return float(default)
+    return value
+
+
+_READER_LOCK_WAIT_S = _budget_from_env("MARKET_DATA_READER_LOCK_WAIT_S", "300")
 _READER_LOCK_POLL_S = 5.0
+_WRITER_LOCK_WAIT_S = _budget_from_env("MARKET_DATA_WRITER_LOCK_WAIT_S", "300")
+_WRITER_LOCK_POLL_S = 5.0
 
 #: How each platform says "another process holds this file". DuckDB reports
 #: the operating system's own wording, and the two share no substring at
@@ -550,27 +571,76 @@ _LOCK_HELD_MARKERS = (
 )
 
 
-def _connect_read_only_waiting(path: str) -> duckdb.DuckDBPyConnection:
-    """Open a reader, waiting out a writer that holds the file.
+def _is_lock_held(exc: BaseException) -> bool:
+    """Whether this IO error is another process holding the file.
 
-    A writing ingestion run takes an exclusive lock for the length of its
-    transaction, and DuckDB fails a reader outright rather than queueing it.
-    Readers are long analytical jobs (backtests, reports) scheduled
-    independently of ingestion, so failing on a lock that clears in seconds
-    loses hours of work. Wait instead, up to
-    ``MARKET_DATA_READER_LOCK_WAIT_S`` (default 300); other IO errors, and a
-    lock that outlives the budget, still raise.
+    DuckDB embeds the database path in its message, so matching the raw text
+    would call any IO error a held lock as soon as a directory happened to be
+    named like the wording we look for. Strip the quoted path first: what is
+    left is the operating system's own sentence about the lock.
     """
-    deadline = time.monotonic() + _READER_LOCK_WAIT_S
+    return any(m in re.sub(r'"[^"]*"', '""', str(exc)) for m in _LOCK_HELD_MARKERS)
+
+
+def _connect_waiting(path: str, *, read_only: bool, budget_s: float,
+                     poll_s: float) -> duckdb.DuckDBPyConnection:
+    """Open the database, waiting out another process that holds the file.
+
+    DuckDB gives the file to one writer and fails everyone else outright
+    rather than queueing them. On a machine with long-lived readers that take
+    no advisory lock, contention is the normal condition rather than a
+    programming error, and a job dying instantly loses hours of work over a
+    lock that clears in seconds. Both directions therefore wait, on separate
+    budgets so they can be tuned apart.
+
+    Only a held lock is waited out. A missing file, a permission error or a
+    corrupt database are IOExceptions too, and waiting five minutes before
+    re-raising them would be worse than failing at once.
+
+    What the budget bounds is the time spent WAITING, and one last attempt is
+    made when it expires: a lock that clears during the final sleep yields a
+    connection rather than a failure, which is the whole point of having
+    waited. The alternative reading -- give up without trying again -- throws
+    away the outcome the budget was spent on.
+
+    The two budgets are read from the environment once, at import. That is a
+    start-up setting, not a knob: a process that edits ``os.environ`` and then
+    opens a connection keeps the value it started with.
+
+    Residual risks, deliberately accepted: two waiting writers serialize, a
+    lock outliving the budget still raises, and a forgotten connection is
+    indistinguishable from honest contention, so it delays its own alarm by
+    the length of the budget.
+    """
+    deadline = time.monotonic() + budget_s
     while True:
         try:
-            return duckdb.connect(path, read_only=True)
+            return duckdb.connect(path, read_only=read_only)
         except duckdb.IOException as exc:
-            if not any(m in str(exc) for m in _LOCK_HELD_MARKERS):
+            if not _is_lock_held(exc):
                 raise
-            if time.monotonic() >= deadline:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
                 raise
-            time.sleep(_READER_LOCK_POLL_S)
+            # Never sleep past the deadline. A fixed poll longer than what is
+            # left would either hand back a connection after the budget had
+            # expired, or raise a whole poll interval late -- in both cases
+            # the budget would not be the bound it claims to be.
+            time.sleep(min(poll_s, remaining))
+
+
+def _connect_read_only_waiting(path: str) -> duckdb.DuckDBPyConnection:
+    """A reader, waiting out whoever holds the file."""
+    return _connect_waiting(path, read_only=True,
+                            budget_s=_READER_LOCK_WAIT_S,
+                            poll_s=_READER_LOCK_POLL_S)
+
+
+def _connect_read_write_waiting(path: str) -> duckdb.DuckDBPyConnection:
+    """A writer, waiting out whoever holds the file."""
+    return _connect_waiting(path, read_only=False,
+                            budget_s=_WRITER_LOCK_WAIT_S,
+                            poll_s=_WRITER_LOCK_POLL_S)
 
 
 def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
@@ -585,15 +655,18 @@ def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
     Path(path).parent.mkdir(parents=True, exist_ok=True)
 
     if read_only and not os.path.exists(path):
-        # a reader on a nonexistent DB: create it once in write mode
-        tmp = duckdb.connect(path)
+        # A reader on a nonexistent DB: create it once in write mode. Two
+        # readers can see the file missing at the same instant, and the loser
+        # of that race meets the winner's lock -- the same contention as
+        # anywhere else, so it waits here too rather than failing outright.
+        tmp = _connect_read_write_waiting(path)
         apply_schema(tmp)
         tmp.close()
 
     if read_only:
         con = _connect_read_only_waiting(path)
     else:
-        con = duckdb.connect(path, read_only=read_only)
+        con = _connect_read_write_waiting(path)
     if not read_only:
         # migrate() also calls apply_schema() internally, then walks any
         # pending `if current < N:` ladder steps (e.g. ALTER TABLE ADD COLUMN)

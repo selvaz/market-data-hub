@@ -381,23 +381,62 @@ def consolidate_events(
         if not osservazioni:
             continue
 
-        # The consensus is read from the OLDEST version each source carried,
-        # not the newest. A forecast only exists before the print, and
-        # providers routinely replace it with the published number afterwards;
-        # reading the latest row would take that replacement for an
-        # expectation and report a surprise of zero.
+        # The consensus is the LAST version each source carried BEFORE the
+        # release, and both halves of that are load-bearing.
+        #
+        # Before the release, because a forecast only exists until the print
+        # and providers routinely replace the field with the published number
+        # afterwards; reading the newest row outright would take that
+        # replacement for an expectation and report a surprise of zero.
+        #
+        # The last one rather than the first, because the collection now
+        # reaches into the future and sees the same event on several mornings
+        # before it happens. Forex Factory revises its forecast in that time,
+        # so "the first thing we ever saw" is a week-old estimate that nobody
+        # was holding by the time the figure came out -- and the surprise, the
+        # one number a reader acts on, would be measured against it.
+        #
+        # A vintage collected on the release day itself is not counted as
+        # pre-release: `vintage_date` is a date, so it cannot say whether the
+        # row was fetched before or after the print, and guessing in the
+        # direction of "before" is how the published number gets recorded as
+        # the expectation. Events first seen on their release day fall back to
+        # the earliest row they have, exactly as before.
+        #
+        # There is no same-day tie to break: the primary key is
+        # (event_id, source, vintage_date), so one source has at most one row
+        # per day. An earlier attempt at a tie-break on "the row without an
+        # actual" was worse than useless -- it could not fire, and it let a
+        # NEWER post-release row outrank the older one the fallback promises.
+        # The release date comes from the observations in hand, NOT from a
+        # join back to calendar_events. On the first consolidation of an event
+        # that row does not exist yet, and the join returned nothing at all:
+        # the consensus was then read from the newest observation, which is the
+        # single outcome this whole rule exists to prevent. The earliest date
+        # the sources claim is used, which errs the safe way -- a vintage
+        # counts as pre-release only if it precedes every claimed release.
+        giorno_rilascio = min(
+            r[3].date() if hasattr(r[3], "date") else r[3]
+            for r in osservazioni if r[3] is not None
+        ) if any(r[3] is not None for r in osservazioni) else None
         primo_consenso = {
             fonte: valore
             for fonte, valore in con.execute(
                 """
                 SELECT source, consensus FROM (
                     SELECT source, consensus, row_number() OVER (
-                               PARTITION BY source ORDER BY vintage_date ASC) AS rn
+                               PARTITION BY source
+                               ORDER BY (? IS NOT NULL AND vintage_date < ?) DESC,
+                                        CASE WHEN ? IS NOT NULL AND vintage_date < ?
+                                             THEN vintage_date END DESC,
+                                        vintage_date ASC) AS rn
                     FROM calendar_observations
-                    WHERE event_id = ? AND consensus IS NOT NULL AND consensus <> ''
+                    WHERE event_id = ?
+                      AND consensus IS NOT NULL AND consensus <> ''
                 ) WHERE rn = 1
                 """,
-                [eid],
+                [giorno_rilascio, giorno_rilascio,
+                 giorno_rilascio, giorno_rilascio, eid],
             ).fetchall()
         }
         osservazioni = [

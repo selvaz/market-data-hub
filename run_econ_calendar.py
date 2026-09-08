@@ -51,6 +51,7 @@ SOURCE_CSV = next(iter(FONTI))
 SOURCE_NAME = FONTI[SOURCE_CSV][0]
 
 
+<<<<<<< HEAD
 EXIT_OK = 0
 EXIT_FAILED = 1
 EXIT_DEGRADED = 2
@@ -70,6 +71,53 @@ EXIT_NOTHING_TO_DO = 3
 SOGLIA_RIGHE_NON_VISTE = 0.50
 
 
+=======
+# How far the collection reaches, in days either side of today.
+#
+# Backwards, to catch a figure the feed published late or revised. Forwards,
+# because a calendar that only records what has already come out is half a
+# calendar: the reason to keep one is to know what is due. The window ended at
+# `oggi` until now, so the archive's furthest event was always this evening and
+# every consumer asking "what is scheduled next week" got an empty answer that
+# read like "nothing is scheduled".
+#
+# Seven days ahead is what a weekly reader needs, but it is a FILTER, not a
+# promise: the source publishes one feed, `ff_calendar_thisweek.json`, and
+# there is no next-week equivalent -- `ff_calendar_nextweek.json` answers 404,
+# checked. So the real horizon is the end of the current week: six days ahead
+# on a Monday, two on a Friday. The constant simply stops throwing away
+# whatever the feed does offer, which is most of it -- measured live on
+# 07/09/2026, one fetch returned 76 rows of which 60 were in the future, with
+# their consensus figures attached.
+#
+# A future release has no published value, which is correct and already
+# handled: it is ingested with status 'scheduled', the bridge skips it
+# (`skipped_future`) and the web validation's window ends half an hour in the
+# past, so nothing goes looking for a number that does not exist yet.
+LOOKBACK_DAYS = 7
+LOOKAHEAD_DAYS = 7
+
+
+EXIT_OK = 0
+EXIT_FAILED = 1
+EXIT_DEGRADED = 2
+EXIT_NOTHING_TO_DO = 3
+
+# Above this share of feed rows that no rule ever looked at, the run is
+# reported as degraded rather than clean.
+#
+# 50%: the catalogue is meant to be a description of what matters in this feed,
+# and once more than half of the feed falls through it unexamined the
+# catalogue has stopped describing it. The threshold is set where it changes
+# the answer today rather than where it is comfortable -- measured on the
+# production feed of 07/09/2026, 89 of 126 rows (70.6%) met no rule and no
+# ruling, among them the German preliminary CPI, ISM prices, ADP employment and
+# Swiss inflation, while the run exited 0. Raising the bar until today's run
+# passes would be choosing not to be told.
+SOGLIA_RIGHE_NON_VISTE = 0.50
+
+
+>>>>>>> origin/main
 def exit_code(conteggi: dict, n_osservazioni: int, *,
               collezione_fallita: bool = False,
               soglia: float = SOGLIA_RIGHE_NON_VISTE) -> int:
@@ -234,8 +282,8 @@ def main() -> int:
     oggi = datetime.now(timezone.utc).date()
     collezione_riuscita = True
     if not args.no_collect:
-        da = args.da or str(oggi - timedelta(days=7))
-        a = args.a or str(oggi)
+        da = args.da or str(oggi - timedelta(days=LOOKBACK_DAYS))
+        a = args.a or str(oggi + timedelta(days=LOOKAHEAD_DAYS))
         collezione_riuscita = collect(work_dir, da, a)
 
     print('\n=== consolidation ===')
@@ -272,6 +320,7 @@ def main() -> int:
 
     codice = exit_code(conteggi, len(osservazioni),
                        collezione_fallita=not (args.no_collect or collezione_riuscita))
+<<<<<<< HEAD
     # Nothing new to ingest is not a reason to skip the rest.
     #
     # The bridge and the catch-up validation below work on events ALREADY in
@@ -285,6 +334,12 @@ def main() -> int:
             con, osservazioni,
             run_id=args.run_id or f'econ-calendar-{oggi}')
         print(f'\ningested: {esito}')
+=======
+    if not osservazioni:
+        print('\nnothing to ingest.', file=sys.stderr)
+        con.close()
+        return codice
+>>>>>>> origin/main
 
         # A period the source published is a fact; one derived from the
         # indicator's learned lag is an inference, and the two are kept apart
@@ -296,6 +351,26 @@ def main() -> int:
     else:
         print('\nnothing to ingest; running the recovery passes over what is '
               'already stored.', file=sys.stderr)
+
+    # Before the web pass, not after: the bridge is deterministic, free and
+    # reproducible, so anything it can fill must not be paid for a second time
+    # by sending an LLM to look the same number up on the internet.
+    if args.no_bridge:
+        print('\nmacro bridge: skipped (--no-bridge)')
+    else:
+        print('\n=== macro bridge (fill from this database) ===')
+        try:
+            from market_data_hub.econ_calendar.macro_bridge import (
+                bridged_indicators, fill_from_macro_series,
+            )
+            for i in (x for x in bridged_indicators(con) if not x['usable']):
+                print(f'  refused {i["indicator_key"]} -> '
+                      f'{i["macro_series_id"]}: {i["reason"]}')
+            print(f'  {fill_from_macro_series(con, run_id=args.run_id or f"econ-calendar-{oggi}")}')
+        except Exception as e:
+            # Same contract as the validation pass: losing the bridge costs
+            # the fill, not the ingest, which is already committed above.
+            print(f'  could not run ({type(e).__name__}: {str(e)[:160]})')
 
     # Before the web pass, not after: the bridge is deterministic, free and
     # reproducible, so anything it can fill must not be paid for a second time

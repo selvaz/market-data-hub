@@ -1073,6 +1073,7 @@ indicators:
   # riempimento non scatta. Resta dichiarato perche' e' l'identita' della serie,
   # non una promessa che ci siano dati.
   macro_series_id: LRHUTTTTEZM156S
+<<<<<<< HEAD
 - key: ez_employment
   country_iso2: EU
   area: EZ
@@ -1090,6 +1091,8 @@ indicators:
   match_rules: 'employment;qq'
   match_excludes: 'german|french|italian|spanish|yy'
   macro_indicator_id: null
+=======
+>>>>>>> origin/main
 - key: ez_pmi_mfg
   country_iso2: EU
   area: EZ
