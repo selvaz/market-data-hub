@@ -920,6 +920,43 @@ def test_the_consensus_is_the_last_forecast_before_the_release(con):
     assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "2.7%"
 
 
+def test_the_forecast_survives_when_every_vintage_arrives_at_once(con):
+    """The first consolidation of an event, which is where a join would fail.
+
+    Reading the release date from `calendar_events` looked natural and was a
+    regression: on the first ingest of an event that row does not exist yet,
+    the join returned nothing, and the consensus was then taken from the
+    NEWEST observation -- the single outcome this rule exists to prevent. The
+    existing tests missed it because they ingest in separate calls, so the
+    event is already there by the second one.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [
+        _obs("forexfactory", consensus="2.7%", vintage_date=date(2026, 8, 10)),
+        _obs("forexfactory", actual="3.4%", consensus="3.4%",
+             vintage_date=date(2026, 8, 12)),
+    ])
+
+    e = con.execute("SELECT actual, consensus FROM calendar_events").fetchone()
+    assert e == ("3.4%", "2.7%")
+
+
+def test_the_fallback_is_the_oldest_row_not_the_newest_without_an_actual(con):
+    """When nothing precedes the release day, the oldest row wins -- full stop.
+
+    A tie-break on "the row that carries no actual" could not fire at all
+    (the key is one row per source per day) and quietly let a LATER
+    post-release row outrank the older one the fallback promises.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("forexfactory", actual="3.4%", consensus="3.4%",
+                                   vintage_date=date(2026, 8, 12))])
+    ingest_observations(con, [_obs("forexfactory", actual=None, consensus="3.5%",
+                                   vintage_date=date(2026, 8, 13))])
+
+    assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "3.4%"
+
+
 def test_a_same_day_overwrite_loses_the_forecast_and_this_is_why(con):
     """A limitation written down, not a behaviour anybody chose.
 

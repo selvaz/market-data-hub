@@ -401,29 +401,42 @@ def consolidate_events(
         # row was fetched before or after the print, and guessing in the
         # direction of "before" is how the published number gets recorded as
         # the expectation. Events first seen on their release day fall back to
-        # the earliest row they have -- and among rows of the SAME day, to one
-        # that carries no `actual`, because a row already holding the printed
-        # figure is exactly the one whose consensus field the provider has
-        # overwritten. Ordering by date alone left that tie to the engine.
+        # the earliest row they have, exactly as before.
+        #
+        # There is no same-day tie to break: the primary key is
+        # (event_id, source, vintage_date), so one source has at most one row
+        # per day. An earlier attempt at a tie-break on "the row without an
+        # actual" was worse than useless -- it could not fire, and it let a
+        # NEWER post-release row outrank the older one the fallback promises.
+        # The release date comes from the observations in hand, NOT from a
+        # join back to calendar_events. On the first consolidation of an event
+        # that row does not exist yet, and the join returned nothing at all:
+        # the consensus was then read from the newest observation, which is the
+        # single outcome this whole rule exists to prevent. The earliest date
+        # the sources claim is used, which errs the safe way -- a vintage
+        # counts as pre-release only if it precedes every claimed release.
+        giorno_rilascio = min(
+            r[3].date() if hasattr(r[3], "date") else r[3]
+            for r in osservazioni if r[3] is not None
+        ) if any(r[3] is not None for r in osservazioni) else None
         primo_consenso = {
             fonte: valore
             for fonte, valore in con.execute(
                 """
                 SELECT source, consensus FROM (
-                    SELECT o.source, o.consensus, row_number() OVER (
-                               PARTITION BY o.source
-                               ORDER BY (o.vintage_date < e.release_utc::DATE) DESC,
-                                        CASE WHEN o.vintage_date < e.release_utc::DATE
-                                             THEN o.vintage_date END DESC,
-                                        (o.actual IS NULL OR o.actual = '') DESC,
-                                        o.vintage_date ASC) AS rn
-                    FROM calendar_observations o
-                    JOIN calendar_events e ON e.event_id = o.event_id
-                    WHERE o.event_id = ?
-                      AND o.consensus IS NOT NULL AND o.consensus <> ''
+                    SELECT source, consensus, row_number() OVER (
+                               PARTITION BY source
+                               ORDER BY (? IS NOT NULL AND vintage_date < ?) DESC,
+                                        CASE WHEN ? IS NOT NULL AND vintage_date < ?
+                                             THEN vintage_date END DESC,
+                                        vintage_date ASC) AS rn
+                    FROM calendar_observations
+                    WHERE event_id = ?
+                      AND consensus IS NOT NULL AND consensus <> ''
                 ) WHERE rn = 1
                 """,
-                [eid],
+                [giorno_rilascio, giorno_rilascio,
+                 giorno_rilascio, giorno_rilascio, eid],
             ).fetchall()
         }
         osservazioni = [
