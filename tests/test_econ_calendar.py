@@ -1266,9 +1266,9 @@ def test_vocabulary_tells_a_caller_what_it_can_filter_on(con):
     exactly like a legitimate 'nothing matched'."""
     upsert_indicators(con, load_catalog_rows())
     v = catalogue_vocabulary(con)
-    assert v["data_type"] == {"hard": 111, "soft": 18}
+    assert v["data_type"] == {"hard": 121, "soft": 26}
     assert set(v["side"]) == {"demand", "supply"}
-    assert v["category"]["Inflation"] == 29
+    assert v["category"]["Inflation"] == 32
     # tags are pipe-packed in the column and counted individually here
     assert "flash_final" in v["tags"] and "|" not in "".join(v["tags"])
 
@@ -1277,7 +1277,7 @@ def test_filters_are_case_insensitive(con):
     """An agent writing 'inflation' should get the answer, not silence."""
     upsert_indicators(con, load_catalog_rows())
     assert (len(available_series(con, category="inflation"))
-            == len(available_series(con, category="Inflation")) == 29)
+            == len(available_series(con, category="Inflation")) == 32)
     assert len(available_series(con, country="usa")) == \
         len(available_series(con, country="USA"))
 
@@ -1617,6 +1617,49 @@ def test_empty_collection_window_fails_loudly_instead_of_crashing(
     assert 'TimezoneUnknown' not in captured.err
 
 
+def test_a_day_with_nothing_to_ingest_still_runs_the_recovery_passes(
+        tmp_path, monkeypatch, capsys):
+    """A quiet feed must not cost the pass that closes old holes.
+
+    The bridge and the catch-up validation work on events ALREADY stored and
+    need no fresh observations -- the catch-up exists precisely to revisit
+    releases whose value is still missing weeks later. Returning early on an
+    empty feed meant that on exactly those days, the one pass whose whole job
+    is to fill the gaps did not run.
+    """
+    import sys
+
+    import pandas as pd
+
+    import market_data_hub.econ_calendar.collect.forexfactory as mod_forexfactory
+    import market_data_hub.econ_calendar.macro_bridge as mod_bridge
+    import market_data_hub.econ_calendar.validate as mod_validate
+    from run_econ_calendar import main
+
+    def scarica_vuota(da, a, uscita):
+        pd.DataFrame(columns=[
+            'Data_Rilascio', 'Orario', 'Paese', 'Importanza', 'Evento',
+            'Periodo_Riferimento', 'Attuale', 'Previsto', 'Precedente',
+            'Revisione', 'Fonte',
+        ]).to_csv(uscita, index=False)
+        return pd.DataFrame()
+
+    chiamate = []
+    monkeypatch.setattr(mod_forexfactory, 'scarica', scarica_vuota)
+    monkeypatch.setattr(mod_bridge, 'fill_from_macro_series',
+                        lambda *a, **k: chiamate.append('bridge') or {'filled': 0})
+    monkeypatch.setattr(mod_validate, 'run_validation',
+                        lambda *a, **k: chiamate.append('validate') or {'checked': 0})
+    monkeypatch.setattr(sys, 'argv', [
+        'run_econ_calendar.py', '--db', str(tmp_path / 'calendar.duckdb'),
+        '--work-dir', str(tmp_path),
+    ])
+
+    main()
+
+    assert chiamate == ['bridge', 'validate'], capsys.readouterr().out
+
+
 def test_default_collection_window_uses_utc_today(tmp_path, monkeypatch):
     """UTC midnight can still be the previous local calendar day."""
     import sys
@@ -1847,19 +1890,24 @@ def test_forexfactory_fixture_matches_the_real_catalogue(con, tmp_path, monkeypa
     load_seed(con)
     monkeypatch.chdir(tmp_path)
     osservazioni, per_fonte, conteggi = raccogli(catalogo, load_rejections(con), load_aliases(con))
-    assert per_fonte == {'forexfactory': 28}
-    assert len(osservazioni) == 28
+    assert per_fonte == {'forexfactory': 45}
+    assert len(osservazioni) == 45
     # The three row verdicts on a real captured feed, and they must partition
-    # it: 28 rows produced the 28 observations above, 5 were kept out by an
-    # explicit ruling (the old counter said 60 for these same 5, counting each
-    # once per catalogue entry sharing its country), and 77 met no rule and no
-    # ruling at all -- the category that had no counter and no line in the log.
+    # it. They were 28 / 5 / 77 when the catalogue described 141 indicators:
+    # 5 rows kept out by an explicit ruling (the old counter said 60 for those
+    # same 5, counting each once per catalogue entry sharing its country) and
+    # 77 -- 70% of the feed -- that met no rule and no ruling at all. The
+    # coverage pass moved 17 of those into the catalogue and ruled on 14 more,
+    # which is what these numbers record.
     assert conteggi['rows'] == 110
-    assert (conteggi['matched'], conteggi['ruled_out'], conteggi['unseen']) == (28, 5, 77)
+    assert (conteggi['matched'], conteggi['ruled_out'], conteggi['unseen']) == (45, 19, 46)
     assert (conteggi['matched'] + conteggi['ruled_out']
             + conteggi['unseen']) == conteggi['rows']
-    assert conteggi['unseen_uncovered_country'] == 27
-    assert conteggi['per_source']['forexfactory']['unseen'] == 77
+    # Nothing shrank this one: France, Italy and Spain have no catalogue entry,
+    # so raccogli() never builds a triple for them and not even a ruling can
+    # reach their rows. It is the one structural hole the pass left open.
+    assert conteggi['unseen_uncovered_country'] == 13
+    assert conteggi['per_source']['forexfactory']['unseen'] == 46
     legati = {(o.indicator_key, o.source_event_name) for o in osservazioni}
     assert {
         ('us_nfp', 'Non-Farm Employment Change'),
@@ -1869,9 +1917,13 @@ def test_forexfactory_fixture_matches_the_real_catalogue(con, tmp_path, monkeypa
         ('us_claims', 'Unemployment Claims'),
         ('us_ism_mfg', 'ISM Manufacturing PMI'),
         ('au_gdp', 'GDP q/q'),
+        ('us_adp', 'ADP Non-Farm Employment Change'),
+        ('cn_pmi_nbs_svc', 'Non-Manufacturing PMI'),
+        ('de_cpi_mm', 'German Prelim CPI m/m'),
+        ('us_ism_prices', 'ISM Manufacturing Prices'),
+        ('nz_rbnz', 'Official Cash Rate'),
     } <= legati
     assert ('us_earnings', 'Average Hourly Earnings m/m') not in legati
     assert ('cn_pmi_nbs_mfg', 'Non-Manufacturing PMI') not in legati
-    assert not any(o.source_event_name in {
-        'ADP Non-Farm Employment Change', '5-y Loan Prime Rate',
-    } for o in osservazioni)
+    assert not any(o.source_event_name in {'5-y Loan Prime Rate'}
+                   for o in osservazioni)
