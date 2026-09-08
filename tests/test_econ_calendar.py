@@ -1531,6 +1531,49 @@ def test_empty_collection_window_fails_loudly_instead_of_crashing(
     assert 'TimezoneUnknown' not in captured.err
 
 
+def test_a_day_with_nothing_to_ingest_still_runs_the_recovery_passes(
+        tmp_path, monkeypatch, capsys):
+    """A quiet feed must not cost the pass that closes old holes.
+
+    The bridge and the catch-up validation work on events ALREADY stored and
+    need no fresh observations -- the catch-up exists precisely to revisit
+    releases whose value is still missing weeks later. Returning early on an
+    empty feed meant that on exactly those days, the one pass whose whole job
+    is to fill the gaps did not run.
+    """
+    import sys
+
+    import pandas as pd
+
+    import market_data_hub.econ_calendar.collect.forexfactory as mod_forexfactory
+    import market_data_hub.econ_calendar.macro_bridge as mod_bridge
+    import market_data_hub.econ_calendar.validate as mod_validate
+    from run_econ_calendar import main
+
+    def scarica_vuota(da, a, uscita):
+        pd.DataFrame(columns=[
+            'Data_Rilascio', 'Orario', 'Paese', 'Importanza', 'Evento',
+            'Periodo_Riferimento', 'Attuale', 'Previsto', 'Precedente',
+            'Revisione', 'Fonte',
+        ]).to_csv(uscita, index=False)
+        return pd.DataFrame()
+
+    chiamate = []
+    monkeypatch.setattr(mod_forexfactory, 'scarica', scarica_vuota)
+    monkeypatch.setattr(mod_bridge, 'fill_from_macro_series',
+                        lambda *a, **k: chiamate.append('bridge') or {'filled': 0})
+    monkeypatch.setattr(mod_validate, 'run_validation',
+                        lambda *a, **k: chiamate.append('validate') or {'checked': 0})
+    monkeypatch.setattr(sys, 'argv', [
+        'run_econ_calendar.py', '--db', str(tmp_path / 'calendar.duckdb'),
+        '--work-dir', str(tmp_path),
+    ])
+
+    main()
+
+    assert chiamate == ['bridge', 'validate'], capsys.readouterr().out
+
+
 def test_default_collection_window_uses_utc_today(tmp_path, monkeypatch):
     """UTC midnight can still be the previous local calendar day."""
     import sys

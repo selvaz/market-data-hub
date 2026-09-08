@@ -272,22 +272,30 @@ def main() -> int:
 
     codice = exit_code(conteggi, len(osservazioni),
                        collezione_fallita=not (args.no_collect or collezione_riuscita))
-    if not osservazioni:
-        print('\nnothing to ingest.', file=sys.stderr)
-        con.close()
-        return codice
+    # Nothing new to ingest is not a reason to skip the rest.
+    #
+    # The bridge and the catch-up validation below work on events ALREADY in
+    # the database and need no fresh observations at all -- the catch-up
+    # exists precisely to revisit releases whose value is still missing weeks
+    # later. Returning here meant that on any day the feed gave us nothing,
+    # the one pass whose whole job is to close old holes did not run, which is
+    # the opposite of what a quiet day should cost.
+    if osservazioni:
+        esito = ingest_observations(
+            con, osservazioni,
+            run_id=args.run_id or f'econ-calendar-{oggi}')
+        print(f'\ningested: {esito}')
 
-    esito = ingest_observations(
-        con, osservazioni,
-        run_id=args.run_id or f'econ-calendar-{oggi}')
-    print(f'\ningested: {esito}')
-
-    # A period the source published is a fact; one derived from the indicator's
-    # learned lag is an inference, and the two are kept apart in
-    # reference_date_origin. Without this step only the first kind is ever
-    # recorded, and reference_date sits at what the source happens to publish.
-    dedotti = infer_reference_dates(con)
-    print(f'reference dates inferred: {dedotti}')
+        # A period the source published is a fact; one derived from the
+        # indicator's learned lag is an inference, and the two are kept apart
+        # in reference_date_origin. Without this step only the first kind is
+        # ever recorded, and reference_date sits at what the source happens to
+        # publish.
+        dedotti = infer_reference_dates(con)
+        print(f'reference dates inferred: {dedotti}')
+    else:
+        print('\nnothing to ingest; running the recovery passes over what is '
+              'already stored.', file=sys.stderr)
 
     # Before the web pass, not after: the bridge is deterministic, free and
     # reproducible, so anything it can fill must not be paid for a second time
