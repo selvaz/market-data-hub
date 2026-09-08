@@ -51,6 +51,32 @@ SOURCE_CSV = next(iter(FONTI))
 SOURCE_NAME = FONTI[SOURCE_CSV][0]
 
 
+# How far the collection reaches, in days either side of today.
+#
+# Backwards, to catch a figure the feed published late or revised. Forwards,
+# because a calendar that only records what has already come out is half a
+# calendar: the reason to keep one is to know what is due. The window ended at
+# `oggi` until now, so the archive's furthest event was always this evening and
+# every consumer asking "what is scheduled next week" got an empty answer that
+# read like "nothing is scheduled".
+#
+# Seven days ahead is what a weekly reader needs, but it is a FILTER, not a
+# promise: the source publishes one feed, `ff_calendar_thisweek.json`, and
+# there is no next-week equivalent -- `ff_calendar_nextweek.json` answers 404,
+# checked. So the real horizon is the end of the current week: six days ahead
+# on a Monday, two on a Friday. The constant simply stops throwing away
+# whatever the feed does offer, which is most of it -- measured live on
+# 07/09/2026, one fetch returned 76 rows of which 60 were in the future, with
+# their consensus figures attached.
+#
+# A future release has no published value, which is correct and already
+# handled: it is ingested with status 'scheduled', the bridge skips it
+# (`skipped_future`) and the web validation's window ends half an hour in the
+# past, so nothing goes looking for a number that does not exist yet.
+LOOKBACK_DAYS = 7
+LOOKAHEAD_DAYS = 7
+
+
 EXIT_OK = 0
 EXIT_FAILED = 1
 EXIT_DEGRADED = 2
@@ -234,8 +260,8 @@ def main() -> int:
     oggi = datetime.now(timezone.utc).date()
     collezione_riuscita = True
     if not args.no_collect:
-        da = args.da or str(oggi - timedelta(days=7))
-        a = args.a or str(oggi)
+        da = args.da or str(oggi - timedelta(days=LOOKBACK_DAYS))
+        a = args.a or str(oggi + timedelta(days=LOOKAHEAD_DAYS))
         collezione_riuscita = collect(work_dir, da, a)
 
     print('\n=== consolidation ===')

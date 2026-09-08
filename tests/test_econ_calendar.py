@@ -900,6 +900,92 @@ def test_consensus_comes_from_the_oldest_version_not_the_newest(con):
     assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "2.7%"
 
 
+def test_the_consensus_is_the_last_forecast_before_the_release(con):
+    """Collecting the future means seeing an event on several mornings.
+
+    Forex Factory revises its forecast in that time, so "the first thing we
+    ever saw" is a week-old estimate nobody was holding when the figure came
+    out -- and the surprise, the one number a reader acts on, would be measured
+    against it. The release lands on 12 August; the forecast moved from 2.5%
+    on the 8th to 2.7% on the 10th.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("forexfactory", consensus="2.5%",
+                                   vintage_date=date(2026, 8, 8))])
+    ingest_observations(con, [_obs("forexfactory", consensus="2.7%",
+                                   vintage_date=date(2026, 8, 10))])
+    ingest_observations(con, [_obs("forexfactory", actual="3.4%", consensus="3.4%",
+                                   vintage_date=date(2026, 8, 12))])
+
+    assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "2.7%"
+
+
+def test_the_forecast_survives_when_every_vintage_arrives_at_once(con):
+    """The first consolidation of an event, which is where a join would fail.
+
+    Reading the release date from `calendar_events` looked natural and was a
+    regression: on the first ingest of an event that row does not exist yet,
+    the join returned nothing, and the consensus was then taken from the
+    NEWEST observation -- the single outcome this rule exists to prevent. The
+    existing tests missed it because they ingest in separate calls, so the
+    event is already there by the second one.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [
+        _obs("forexfactory", consensus="2.7%", vintage_date=date(2026, 8, 10)),
+        _obs("forexfactory", actual="3.4%", consensus="3.4%",
+             vintage_date=date(2026, 8, 12)),
+    ])
+
+    e = con.execute("SELECT actual, consensus FROM calendar_events").fetchone()
+    assert e == ("3.4%", "2.7%")
+
+
+def test_the_fallback_is_the_oldest_row_not_the_newest_without_an_actual(con):
+    """When nothing precedes the release day, the oldest row wins -- full stop.
+
+    A tie-break on "the row that carries no actual" could not fire at all
+    (the key is one row per source per day) and quietly let a LATER
+    post-release row outrank the older one the fallback promises.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("forexfactory", actual="3.4%", consensus="3.4%",
+                                   vintage_date=date(2026, 8, 12))])
+    ingest_observations(con, [_obs("forexfactory", actual=None, consensus="3.5%",
+                                   vintage_date=date(2026, 8, 13))])
+
+    assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "3.4%"
+
+
+def test_a_same_day_overwrite_loses_the_forecast_and_this_is_why(con):
+    """A limitation written down, not a behaviour anybody chose.
+
+    `calendar_observations` is keyed by (event, source, vintage_date), and
+    `vintage_date` is a DATE. Two captures of the same event by the same
+    source on one day are therefore the same row: the second replaces the
+    first. When a provider empties the consensus field on release, the event
+    keeps the forecast it already consolidated -- that case has its own test
+    above. But when the provider REPLACES the forecast with the printed value
+    on the same day, the forecast is gone from the store and the surprise
+    collapses to zero, and no ordering rule can recover what was overwritten.
+
+    Recording it as a test rather than a comment because the fix is a schema
+    change -- a vintage with a time, not a date -- and whoever makes it should
+    find this asserting the old behaviour and turn it around.
+    """
+    upsert_indicators(con, load_catalog_rows())
+    ingest_observations(con, [_obs("forexfactory", consensus="2.7%",
+                                   vintage_date=date(2026, 8, 12))])
+    ingest_observations(con, [_obs("forexfactory", actual="3.4%", consensus="3.4%",
+                                   vintage_date=date(2026, 8, 12))])
+
+    righe = con.execute(
+        "SELECT count(*) FROM calendar_observations WHERE source = 'forexfactory'"
+    ).fetchone()[0]
+    assert righe == 1, "same day, same source: one row, and the later one won"
+    assert con.execute("SELECT consensus FROM calendar_events").fetchone()[0] == "3.4%"
+
+
 def test_a_known_minute_outranks_a_day_only_placeholder(con):
     """A source publishing only a date arrives as midnight. Taking the earliest
     timestamp would record midnight as the release instant, and the bridge then
@@ -1560,7 +1646,11 @@ def test_default_collection_window_uses_utc_today(tmp_path, monkeypatch):
     ])
 
     assert runner.main() == 1  # the window is right; it's just empty (see the test above)
-    assert collected['window'] == ('2026-08-29', '2026-09-05')
+    # Seven days back and seven forward. The forward half is the point: the
+    # window ended at 'today' until now, so the archive's furthest event was
+    # always the current evening and anything asking what is due next week got
+    # an empty answer that read like "nothing is scheduled".
+    assert collected['window'] == ('2026-08-29', '2026-09-12')
 
 
 def test_no_collect_does_not_claim_a_fresh_collection_succeeded():
