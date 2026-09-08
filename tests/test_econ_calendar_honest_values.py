@@ -518,13 +518,20 @@ def test_exit_code_is_clean_when_the_feed_is_mostly_understood():
     assert exit_code(conteggi, 70) == EXIT_OK
 
 
-def test_exit_code_says_degraded_when_most_rows_were_never_looked_at():
-    """The production shape on 07/09/2026: 32 rows matched, so the old rule
-    exited 0, while 89 of 126 rows met no rule at all."""
-    from run_econ_calendar import EXIT_DEGRADED, exit_code
+def test_degraded_coverage_does_not_change_the_exit_code():
+    """A standing condition is not an alarm, and 2 was not ours to spend.
+
+    The production shape on 07/09/2026: 89 of 126 rows met no rule. It has
+    been like that every day this calendar has existed, so wiring it to the
+    exit code made the task red every morning -- and `run_marketdata_job.ps1`,
+    the wrapper that launches this job, already reads 2 as "configuration
+    refused", so a degraded run wrote a false sentence into its own log.
+    The number is said in the log instead, in full, on every run.
+    """
+    from run_econ_calendar import EXIT_OK, exit_code
 
     conteggi = {'rows': 126, 'matched': 32, 'ruled_out': 5, 'unseen': 89}
-    assert exit_code(conteggi, 32) == EXIT_DEGRADED
+    assert exit_code(conteggi, 32) == EXIT_OK
 
 
 def test_exit_code_fails_when_nothing_was_hooked_at_all():
@@ -545,9 +552,14 @@ def test_exit_code_separates_an_empty_feed_from_a_broken_one():
     assert exit_code(vuoto, 0, collezione_fallita=True) == EXIT_FAILED
 
 
-def test_the_runner_exits_degraded_on_a_feed_it_mostly_ignores(tmp_path, monkeypatch):
-    """End to end through main(), because the exit code is the only thing the
-    scheduler reads and the wiring is where it gets lost."""
+def test_the_runner_says_degraded_out_loud_while_still_exiting_clean(
+        tmp_path, monkeypatch, capsys):
+    """End to end through main(): the sentence must be there, the red must not.
+
+    Reporting it and alarming on it are different jobs. A reader who opens the
+    log has to find the three counts; a scheduler that goes red every morning
+    teaches the same reader to stop opening it.
+    """
     import run_econ_calendar as runner
 
     db = tmp_path / 'hub.duckdb'
@@ -561,7 +573,8 @@ def test_the_runner_exits_degraded_on_a_feed_it_mostly_ignores(tmp_path, monkeyp
         'run_econ_calendar.py', '--db', str(db), '--work-dir', str(tmp_path),
         '--no-collect', '--no-validate', '--no-bridge'])
 
-    assert runner.main() == runner.EXIT_DEGRADED
+    assert runner.main() == runner.EXIT_OK
+    assert 'DEGRADED' in capsys.readouterr().err
 
 
 def test_the_runner_reports_nothing_to_do_when_there_is_no_feed(tmp_path, monkeypatch):

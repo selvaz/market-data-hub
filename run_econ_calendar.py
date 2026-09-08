@@ -79,20 +79,25 @@ LOOKAHEAD_DAYS = 7
 
 EXIT_OK = 0
 EXIT_FAILED = 1
-EXIT_DEGRADED = 2
+# 2 is NOT free: `run_marketdata_job.ps1`, the wrapper that launches this job,
+# already reads it as "configuration refused" and writes that into the log.
 EXIT_NOTHING_TO_DO = 3
 
-# Above this share of feed rows that no rule ever looked at, the run is
-# reported as degraded rather than clean.
+# Above this share of feed rows that no rule ever looked at, the run SAYS it is
+# degraded -- in the log, in full, every time. It does not change the exit code.
 #
-# 50%: the catalogue is meant to be a description of what matters in this feed,
-# and once more than half of the feed falls through it unexamined the
-# catalogue has stopped describing it. The threshold is set where it changes
-# the answer today rather than where it is comfortable -- measured on the
-# production feed of 07/09/2026, 89 of 126 rows (70.6%) met no rule and no
-# ruling, among them the German preliminary CPI, ISM prices, ADP employment and
-# Swiss inflation, while the run exited 0. Raising the bar until today's run
-# passes would be choosing not to be told.
+# 50%: the catalogue is meant to describe what matters in this feed, and once
+# more than half falls through it unexamined the catalogue has stopped
+# describing it. Measured on the production feed of 07/09/2026: 89 of 126 rows
+# unseen before the coverage pass, 101 of 186 after it -- the pass moved 34
+# rows into the catalogue and the forward window then brought a fresh week of
+# uncatalogued ones with it.
+#
+# Which is the point: this is a STANDING CONDITION, not an event. It has been
+# true every day this calendar has existed, so wiring it to the exit code made
+# the task red every morning, and a task that is always red is one nobody
+# reads. The number belongs where a person looks -- the log, and the macro
+# document's own coverage line.
 SOGLIA_RIGHE_NON_VISTE = 0.50
 
 
@@ -115,13 +120,22 @@ def exit_code(conteggi: dict, n_osservazioni: int, *,
     a re-ingest of an absent CSV, say -- which is an empty in-tray, not a
     fault.
 
-    ``EXIT_DEGRADED`` (2) restores the middle case this file's own history
-    records: 'clean / degraded-exit-2 / failed' existed because a caller that
-    reads only the exit code could not otherwise tell a half-working run from
-    a working one, and it was dropped when five sources became one on the
-    grounds that a single source leaves no partial credit. That reasoning was
-    about SOURCES; the partial credit that actually matters is about ROWS, and
-    it is measurable: matched, ruled out, and never looked at.
+    Degraded coverage is NOT one of them, and that is a reversal of my own
+    earlier decision, made after running the thing.
+
+    It was exit 2, on the argument that raising the bar until today's run
+    passes would be choosing not to be told. Two facts came out of the first
+    real run. The wrapper that launches this job, `run_marketdata_job.ps1`,
+    already spends 2 on "configuration refused", so a degraded run wrote a
+    false sentence into its own log. And the measurement is a STANDING
+    CONDITION, not an event: the catalogue has never described more than half
+    this feed, so the task would have been red every morning, which is how a
+    reader is taught to stop reading red.
+
+    An exit code is an alarm, and an alarm that is always on is furniture. The
+    coverage numbers are printed in full on every run and carried into the
+    macro document that a person actually reads; a real fault -- the feed
+    spoke and the catalogue understood NONE of it -- is still exit 1.
     """
     if not conteggi.get('rows'):
         return EXIT_FAILED if collezione_fallita else EXIT_NOTHING_TO_DO
@@ -129,8 +143,6 @@ def exit_code(conteggi: dict, n_osservazioni: int, *,
         # The feed spoke and the catalogue understood none of it. Not an empty
         # in-tray: a total matching failure, which is a fault.
         return EXIT_FAILED
-    if conteggi['unseen'] > soglia * conteggi['rows']:
-        return EXIT_DEGRADED
     return EXIT_OK
 
 
@@ -360,7 +372,9 @@ def main() -> int:
 
     audit(con)
     con.close()
-    if codice == EXIT_DEGRADED:
+    # Said loudly, every run, and deliberately NOT in the exit code: see
+    # exit_code's docstring for why an always-on alarm is furniture.
+    if conteggi.get('rows') and conteggi['unseen'] > SOGLIA_RIGHE_NON_VISTE * conteggi['rows']:
         print(f'\nDEGRADED: {conteggi["unseen"]} of {conteggi["rows"]} feed rows '
               f'({100 * conteggi["unseen"] / conteggi["rows"]:.0f}%) met no matching '
               f'rule and no ruling, over the {100 * SOGLIA_RIGHE_NON_VISTE:.0f}% '
