@@ -684,3 +684,63 @@ yahoo:
   area: Global
   name: ALT | Merger Arbitrage | IQ Merger Arbitrage ETF
   priority: 1
+- symbol: EEM
+  asset_class: EQUITY
+  area: Emerging Markets
+  name: EQUITY | EM | iShares MSCI Emerging Markets
+  priority: 1
+- symbol: ACWX
+  asset_class: EQUITY
+  area: Global ex-US
+  name: EQUITY | Global ex-US | iShares MSCI ACWI ex U.S.
+  priority: 1
+- symbol: EFA
+  asset_class: EQUITY
+  area: Developed Markets
+  name: EQUITY | DM | iShares MSCI EAFE
+  priority: 1
+- symbol: EWD
+  asset_class: EQUITY
+  area: Sweden
+  name: EQUITY | Europe | iShares MSCI Sweden
+  priority: 1
+- symbol: EWH
+  asset_class: EQUITY
+  area: Hong Kong
+  name: EQUITY | Hong Kong | iShares MSCI Hong Kong
+  priority: 1
+- symbol: EWL
+  asset_class: EQUITY
+  area: Switzerland
+  name: EQUITY | Europe | iShares MSCI Switzerland
+  priority: 1
+- symbol: EWN
+  asset_class: EQUITY
+  area: Netherlands
+  name: EQUITY | Europe | iShares MSCI Netherlands
+  priority: 1
+- symbol: EWP
+  asset_class: EQUITY
+  area: Spain
+  name: EQUITY | Europe | iShares MSCI Spain
+  priority: 1
+- symbol: EPOL
+  asset_class: EQUITY
+  area: Poland
+  name: EQUITY | Europe | iShares MSCI Poland
+  priority: 1
+- symbol: XLK
+  asset_class: EQUITY
+  area: USA
+  name: EQUITY | US | Technology Select Sector SPDR
+  priority: 1
+- symbol: BCI
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Broad | abrdn Bloomberg All Commodity Strategy K-1 Free
+  priority: 2
+- symbol: DX-Y.NYB
+  asset_class: FX
+  area: USD
+  name: FX | USD | US Dollar Index (DXY)
+  priority: 2
