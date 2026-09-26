@@ -83,7 +83,7 @@ _COLUMNS = {
         "pct_oi_dealer_long", "pct_oi_dealer_short",
         "pct_oi_asset_mgr_long", "pct_oi_asset_mgr_short",
         "pct_oi_lev_money_long", "pct_oi_lev_money_short",
-        "traders_total", "source", "updated_at",
+        "traders_total", "source", "updated_at", "report_variant",
     ],
     "cftc_legacy_positioning": [
         "report_date", "contract_market_name", "cftc_contract_market_code",
@@ -92,7 +92,7 @@ _COLUMNS = {
         "comm_long", "comm_short",
         "total_reportable_long", "total_reportable_short",
         "nonreportable_long", "nonreportable_short",
-        "source", "updated_at",
+        "source", "updated_at", "report_variant",
     ],
     "alfred_vintage_observations": [
         "series_id", "date", "as_of", "value", "source", "updated_at",
@@ -107,6 +107,8 @@ _COLUMNS = {
 # ingested ticker's daily bars would never appear — default it to FALSE here.
 _COLUMN_DEFAULTS = {
     "prices_daily": {"is_live": False},
+    "cftc_tff_positioning": {"report_variant": "futures_only"},
+    "cftc_legacy_positioning": {"report_variant": "futures_only"},
 }
 
 _PK = {

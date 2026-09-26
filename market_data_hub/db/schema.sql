@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS cftc_tff_positioning (
     traders_total DOUBLE,
     source VARCHAR,
     updated_at TIMESTAMP,
+    report_variant VARCHAR DEFAULT 'futures_only', -- futures_only | futures_options
     -- The CODE completes the identity, not the name. Two distinct contracts
     -- can carry the same display name on one report date: observed live on
     -- 2026-08-25 for SOFR-3M (codes 134741 and 134FM1, 13.0M vs 167k open
@@ -118,6 +119,7 @@ CREATE TABLE IF NOT EXISTS cftc_legacy_positioning (
     nonreportable_long DOUBLE, nonreportable_short DOUBLE,
     source VARCHAR,
     updated_at TIMESTAMP,
+    report_variant VARCHAR DEFAULT 'futures_only', -- futures_only | futures_options
     -- Same reason as the TFF table above: the code, not the name, is what
     -- makes a contract unique on a report date.
     PRIMARY KEY (report_date, cftc_contract_market_code)
