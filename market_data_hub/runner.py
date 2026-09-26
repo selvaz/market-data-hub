@@ -115,6 +115,8 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
 
         # amortize the shared batch-fetch time across the symbols in the group
         fetch_sec = (time.perf_counter() - t0) / max(len(syms), 1)
+        from market_data_hub.db.identity import AmbiguousSymbolError
+        group_ok = group_empty = group_ambiguous = 0
         for sym, df in batch.items():
             st = datetime.now(timezone.utc)
             t_sym = time.perf_counter()
@@ -122,16 +124,30 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
                 log_run(con, run_id=run_id, started_at=st, source="yahoo",
                         symbol=sym, rows_added=0, rows_updated=0,
                         status="empty", error_msg=None, duration_sec=fetch_sec)
+                group_empty += 1
                 continue
             df = df.copy()
             df["source"] = "yahoo"
             df["is_live"] = False
-            added, updated = upsert(con, "prices_daily", df)
+            try:
+                added, updated = upsert(con, "prices_daily", df)
+            except AmbiguousSymbolError as ex:
+                message = f"ambiguous listing; symbol skipped: {ex}"
+                _log(f"  ! {sym}: {message}")
+                log_run(con, run_id=run_id, started_at=st, source="yahoo",
+                        symbol=sym, rows_added=0, rows_updated=0,
+                        status="error", error_msg=message,
+                        duration_sec=fetch_sec + (time.perf_counter() - t_sym))
+                group_ambiguous += 1
+                continue
             log_run(con, run_id=run_id, started_at=st, source="yahoo",
                     symbol=sym, rows_added=added, rows_updated=updated,
                     status="ok", error_msg=None,
                     duration_sec=fetch_sec + (time.perf_counter() - t_sym))
-        _log(f"  group start={gstart_k} n={len(syms)} ok ({time.perf_counter()-t0:.1f}s)")
+            group_ok += 1
+        _log(f"  group start={gstart_k} n={len(syms)} completed={group_ok} "
+             f"empty={group_empty} ambiguous_skipped={group_ambiguous} "
+             f"({time.perf_counter()-t0:.1f}s)")
         time.sleep(sleep)
 
 

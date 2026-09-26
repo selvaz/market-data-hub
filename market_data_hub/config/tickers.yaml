@@ -369,6 +369,11 @@ yahoo:
   area: USA
   name: FI | US | VanEck High Yield Muni
   priority: 1
+- symbol: BCI
+  asset_class: COMMODITIES
+  area: Global
+  name: COMMODITIES | Broad | abrdn Bloomberg All Commodity Strategy K-1 Free ETF
+  priority: 2
 - symbol: DBC
   asset_class: COMMODITIES
   area: Global
