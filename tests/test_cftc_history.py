@@ -69,10 +69,11 @@ def _make_zip(path: Path, report: str, rows: List[Dict[str, str]],
 
 
 def _tff_row(report_date: str = "2026-09-22",
-             code: str = "043602", dealer_long: str = "46404") -> Dict[str, str]:
+             code: str = "043602", dealer_long: str = "46404",
+             name: str = "10-YEAR U.S. TREASURY") -> Dict[str, str]:
     row = {header: "1" for header in _headers("tff")}
     row.update({
-        "Market_and_Exchange_Names": "10-YEAR U.S. TREASURY",
+        "Market_and_Exchange_Names": name,
         "CFTC_Contract_Market_Code": code,
         "Open_Interest_All": "2813176",
         "Report_Date_as_YYYY-MM-DD": report_date,
@@ -130,7 +131,7 @@ def test_legacy_historical_zip_maps_old_space_delimited_headers(tmp_path):
 
     assert list(frame.columns) == cftc_cot._LEGACY_COLS
     assert frame.loc[0, "report_date"].date() == date(2025, 12, 30)
-    assert frame.loc[0, "contract_market_name"].startswith("CRUDE OIL")
+    assert frame.loc[0, "contract_market_name"] == "CRUDE OIL, LIGHT SWEET"
     assert frame.loc[0, "cftc_contract_market_code"] == "067651"
     assert frame.loc[0, "noncomm_spread"] == 164300
     assert frame.loc[0, "comm_short"] == 1043500
@@ -230,6 +231,58 @@ def test_backfill_preserves_socrata_classification_and_updates_positions(
         con.close()
 
 
+def test_backfill_preserves_existing_name_and_normalizes_new_archive_name(
+        tmp_path, monkeypatch):
+    import run_cftc_cot
+
+    monkeypatch.setattr(
+        run_cftc_cot, "_today", lambda: date(2026, 9, 26))
+    first_date = date(2025, 1, 6)
+    second_date = date(2025, 1, 13)
+    archive_name = "ARCHIVE MARKET - CME"
+    archive = _make_zip(tmp_path / "names.zip", "tff", [
+        _tff_row(first_date.isoformat(), name=archive_name),
+        _tff_row(second_date.isoformat(), name=archive_name),
+    ])
+    seed_frame = next(cftc_history.iter_archive_batches(
+        archive, "tff", first_date, first_date))
+    seed_frame.loc[0, "contract_market_name"] = "SOCRATA MARKET"
+    db_path = tmp_path / "cftc-name-overlap.duckdb"
+    con = cx.get_conn(str(db_path))
+    try:
+        assert upsert(con, "cftc_tff_positioning", seed_frame) == (1, 0)
+    finally:
+        con.close()
+
+    spec = cftc_history.ArchiveSpec(
+        "tff", first_date.year, first_date.year, "names.zip")
+    monkeypatch.setattr(
+        cftc_history, "historical_archive_plan",
+        lambda _report, _start, _end: [spec])
+    monkeypatch.setattr(
+        cftc_history, "download_archive",
+        lambda _url, destination: _copy_fixture(archive, destination))
+
+    args = SimpleNamespace(
+        db=db_path, backfill_years=2, only="tff", dry_run=False)
+    assert run_cftc_cot._run_historical_backfill(args) == 0
+
+    con = cx.get_conn(str(db_path), read_only=True)
+    try:
+        names = con.execute(
+            "SELECT report_date, contract_market_name "
+            "FROM cftc_tff_positioning WHERE cftc_contract_market_code = '043602' "
+            "AND report_date IN (?, ?) ORDER BY report_date",
+            [first_date, second_date],
+        ).fetchall()
+        assert names == [
+            (first_date, "SOCRATA MARKET"),
+            (second_date, "ARCHIVE MARKET"),
+        ]
+    finally:
+        con.close()
+
+
 @pytest.mark.parametrize("old_version", [21, 23])
 def test_schema_migration_adds_nullable_variant_to_existing_cftc_rows(
         tmp_path, old_version):
@@ -273,6 +326,64 @@ def test_malformed_archive_is_rejected_before_a_write(tmp_path):
     with pytest.raises(cftc_history.CFTCArchiveError, match="missing required"):
         cftc_history.count_archive_rows(
             archive, "tff", date(2026, 1, 1), date(2026, 12, 31))
+
+
+def test_blank_and_absent_numeric_fields_remain_nullable(tmp_path):
+    blank_archive = _make_zip(
+        tmp_path / "blank.zip", "tff", [_tff_row(dealer_long="")])
+    assert cftc_history.count_archive_rows(
+        blank_archive, "tff", date(2026, 1, 1), date(2026, 12, 31)) == {
+            2026: 1}
+    blank_frame = next(cftc_history.iter_archive_batches(
+        blank_archive, "tff", date(2026, 1, 1), date(2026, 12, 31)))
+    assert pd.isna(blank_frame.loc[0, "dealer_long"])
+
+    headers = [header for header in _headers("tff")
+               if header != "DEALER_POSITIONS_LONG_ALL"]
+    row = _tff_row()
+    del row["DEALER_POSITIONS_LONG_ALL"]
+    absent_archive = _make_zip(
+        tmp_path / "absent.zip", "tff", [row], headers=headers)
+    assert cftc_history.count_archive_rows(
+        absent_archive, "tff", date(2026, 1, 1), date(2026, 12, 31)) == {
+            2026: 1}
+    absent_frame = next(cftc_history.iter_archive_batches(
+        absent_archive, "tff", date(2026, 1, 1), date(2026, 12, 31)))
+    assert pd.isna(absent_frame.loc[0, "dealer_long"])
+
+
+def test_invalid_numeric_archive_fails_preflight_before_database_open(
+        tmp_path, monkeypatch, capsys):
+    import run_cftc_cot
+
+    monkeypatch.setattr(
+        run_cftc_cot, "_today", lambda: date(2026, 9, 26))
+    archive = _make_zip(
+        tmp_path / "invalid-tff.zip", "tff",
+        [_tff_row(dealer_long="not-a-number")])
+    spec = cftc_history.ArchiveSpec(
+        "tff", 2026, 2026, "invalid-tff.zip")
+    monkeypatch.setattr(
+        cftc_history, "historical_archive_plan",
+        lambda _report, _start, _end: [spec])
+    monkeypatch.setattr(
+        cftc_history, "download_archive",
+        lambda _url, destination: _copy_fixture(archive, destination))
+    monkeypatch.setattr(
+        cx, "get_conn",
+        lambda *_args, **_kwargs: pytest.fail(
+            "invalid archive must be rejected before opening the DB"))
+
+    args = SimpleNamespace(
+        db=tmp_path / "never-open.duckdb", backfill_years=1,
+        only="tff", dry_run=False)
+    assert run_cftc_cot._run_historical_backfill(args) == 1
+    error = capsys.readouterr().err
+    assert "invalid-tff.zip" in error
+    assert "row 2" in error
+    assert "dealer_positions_long_all" in error
+    assert "not-a-number" in error
+    assert not (tmp_path / "never-open.duckdb").exists()
 
 
 def test_archive_batches_have_a_fixed_maximum_size(tmp_path):

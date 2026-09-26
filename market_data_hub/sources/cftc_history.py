@@ -174,11 +174,24 @@ def _header_mapping(report: str,
             header_to_api[header] = api_field
 
     found = set(header_to_api.values())
-    missing = sorted((set(rename) | {"open_interest_all"}) - found)
+    # Socrata's _normalize() fills absent output columns with None. Historical
+    # files may likewise omit nullable positioning fields, but a usable report
+    # date is always required; contract identifiers are checked per row below.
+    missing = sorted({"report_date_as_yyyy_mm_dd"} - found)
     if missing:
         raise CFTCArchiveError(
             f"{report} CSV is missing required fields: {', '.join(missing)}")
     return header_to_api
+
+
+def _numeric_api_fields(report: str) -> set[str]:
+    if report == "tff":
+        rename = cftc_cot._TFF_RENAME
+    elif report == "legacy":
+        rename = cftc_cot._LEGACY_RENAME
+    else:
+        raise ValueError("report must be 'tff' or 'legacy'")
+    return (set(rename) - {"report_date_as_yyyy_mm_dd"}) | {"open_interest_all"}
 
 
 def _iter_api_rows(path: Path, report: str
@@ -197,12 +210,15 @@ def _iter_api_rows(path: Path, report: str
                                       errors="replace", newline="") as text:
                     reader = csv.DictReader(text)
                     header_to_api = _header_mapping(report, reader.fieldnames)
+                    numeric_fields = _numeric_api_fields(report)
                     variant_header = next(
                         (name for name in reader.fieldnames or []
                          if _token(name) == "futonlyorcombined"), None)
                     for row_number, raw_row in enumerate(reader, start=2):
                         if None in raw_row or any(
-                                value is None for value in raw_row.values()):
+                                value is None
+                                and header_to_api.get(header) not in numeric_fields
+                                for header, value in raw_row.items()):
                             raise CFTCArchiveError(
                                 f"malformed CSV row {row_number}: field count differs from header")
                         if variant_header:
@@ -211,7 +227,7 @@ def _iter_api_rows(path: Path, report: str
                                 raise CFTCArchiveError(
                                     f"unexpected report variant {variant!r} on row {row_number}")
                         api_row = {
-                            api_name: raw_row[header]
+                            api_name: raw_row[header] or ""
                             for header, api_name in header_to_api.items()
                         }
                         yield api_row, row_number
@@ -234,6 +250,18 @@ def _report_date(row: Mapping[str, str], row_number: int) -> date:
             f"invalid report date {raw_date!r} on CSV row {row_number}") from exc
 
 
+def _validate_numeric_fields(path: Path, row: Mapping[str, str],
+                             row_number: int, numeric_fields: set[str]) -> None:
+    for column in numeric_fields:
+        raw_value = row.get(column)
+        if raw_value is None or not raw_value.strip():
+            continue
+        if pd.isna(pd.to_numeric(raw_value, errors="coerce")):
+            raise CFTCArchiveError(
+                f"invalid numeric value {raw_value!r} in archive "
+                f"{Path(path).name}, CSV row {row_number}, column {column}")
+
+
 def count_archive_rows(path: Path, report: str, start: date, end: date
                        ) -> Dict[int, int]:
     """Validate an archive and count eligible upsert candidates by report year.
@@ -242,6 +270,7 @@ def count_archive_rows(path: Path, report: str, start: date, end: date
     memory. It is also used as the validation pass before any database write.
     """
     counts: Counter = Counter()
+    numeric_fields = _numeric_api_fields(report)
     for row, row_number in _iter_api_rows(Path(path), report):
         report_date = _report_date(row, row_number)
         if not row.get("contract_market_name", "").strip():
@@ -250,6 +279,7 @@ def count_archive_rows(path: Path, report: str, start: date, end: date
         if not row.get("cftc_contract_market_code", "").strip():
             raise CFTCArchiveError(
                 f"missing contract code on CSV row {row_number}")
+        _validate_numeric_fields(Path(path), row, row_number, numeric_fields)
         if start <= report_date <= end:
             counts[report_date.year] += 1
     return dict(counts)

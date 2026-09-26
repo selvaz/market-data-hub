@@ -210,11 +210,14 @@ def _run_historical_backfill(args: argparse.Namespace) -> int:
                                     frame["report_date"].dt.year == year]
                                 preserved_metadata = (
                                     ("commodity_name", "commodity_subgroup_name")
-                                    if report == "tff" else ("commodity_name",)
+                                    if report == "tff" else
+                                    ("commodity_name",)
                                 )
                                 added, updated = upsert(
                                     con, table, year_frame,
-                                    preserve_non_null_columns=preserved_metadata)
+                                    preserve_non_null_columns=preserved_metadata,
+                                    prefer_existing_non_null_columns=(
+                                        "contract_market_name",))
                                 archive_added += added
                                 archive_updated += updated
                         log_run(
