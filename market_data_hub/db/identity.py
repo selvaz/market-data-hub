@@ -264,7 +264,7 @@ def resolve_empty_duplicate_listing(con, *, symbol: str,
             f"it has {price_count} price rows")
 
     aliases = con.execute("""
-        SELECT namespace, value, target_type
+        SELECT namespace, value, target_type, valid_from
         FROM identifier_aliases
         WHERE target_type = 'listing' AND target_id = ? AND valid_to IS NULL
     """, [deactivate_listing_id]).fetchall()
@@ -278,13 +278,29 @@ def resolve_empty_duplicate_listing(con, *, symbol: str,
     effective_date = now.date()
     con.execute("BEGIN TRANSACTION")
     try:
-        for namespace, value, target_type in aliases:
+        for namespace, value, target_type, valid_from in aliases:
             collision = con.execute("""
-                SELECT 1 FROM identifier_aliases
+                SELECT valid_from FROM identifier_aliases
                 WHERE namespace = ? AND value = ? AND target_type = ?
                   AND target_id = ?
             """, [namespace, value, target_type, keep_listing_id]).fetchone()
             if collision:
+                keeper_valid_from = collision[0]
+                if keeper_valid_from is None or valid_from is None:
+                    merged_valid_from = None
+                else:
+                    merged_valid_from = min(keeper_valid_from, valid_from)
+                # The keeper row already occupies the alias primary key, so
+                # merge the validity interval into it before removing the
+                # duplicate row. An active retiree alias makes the merged
+                # mapping active; keep the earliest open/start boundary.
+                con.execute("""
+                    UPDATE identifier_aliases
+                    SET valid_from = ?, valid_to = NULL, updated_at = ?
+                    WHERE namespace = ? AND value = ? AND target_type = ?
+                      AND target_id = ?
+                """, [merged_valid_from, now, namespace, value, target_type,
+                      keep_listing_id])
                 con.execute("""
                     DELETE FROM identifier_aliases
                     WHERE namespace = ? AND value = ? AND target_type = ?

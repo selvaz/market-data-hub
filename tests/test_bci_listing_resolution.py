@@ -13,7 +13,7 @@ from market_data_hub.db.identity import (
     resolve_empty_duplicate_listing,
 )
 from market_data_hub.db.upsert import upsert
-from market_data_hub.services.prices import register_listing
+from market_data_hub.services.prices import register_listing, resolve_instrument
 
 
 def _make_bci_duplicate(db_path: str) -> tuple[str, str]:
@@ -67,6 +67,34 @@ def test_empty_duplicate_resolution_is_explicit_idempotent_and_preserves_alias(t
     assert remaining_duplicates == []
 
 
+def test_resolution_reactivates_expired_keeper_alias_before_coalescing(tmp_db):
+    keep_id, duplicate_id = _make_bci_duplicate(tmp_db)
+    alias_value = "BCI-FIGI-ALIAS"
+    con = get_conn(tmp_db)
+    try:
+        con.execute("""
+            INSERT INTO identifier_aliases
+                (namespace, value, target_type, target_id, valid_from, valid_to)
+            VALUES ('figi', ?, 'listing', ?, DATE '2018-01-01', DATE '2020-12-31'),
+                   ('figi', ?, 'listing', ?, DATE '2021-01-01', NULL)
+        """, [alias_value, keep_id, alias_value, duplicate_id])
+
+        result = resolve_empty_duplicate_listing(
+            con, symbol="BCI", keep_listing_id=keep_id,
+            deactivate_listing_id=duplicate_id)
+        aliases = con.execute(
+            "SELECT target_id, valid_from, valid_to FROM identifier_aliases "
+            "WHERE namespace = 'figi' AND value = ? AND target_type = 'listing'",
+            [alias_value]).fetchall()
+    finally:
+        con.close()
+
+    candidates = resolve_instrument(alias_value, db_path=tmp_db)
+    assert result["changed"] is True
+    assert aliases == [(keep_id, dt.date(2018, 1, 1), None)]
+    assert [candidate["listing_id"] for candidate in candidates] == [keep_id]
+
+
 def test_resolution_refuses_to_retire_a_duplicate_with_price_rows(tmp_db):
     keep_id, duplicate_id = _make_bci_duplicate(tmp_db)
     con = get_conn(tmp_db)
@@ -114,6 +142,18 @@ def test_duplicate_listing_dry_run_is_read_only(tmp_db, capsys):
     finally:
         con.close()
     assert active_count == 2
+
+
+def test_duplicate_listing_dry_run_rejects_missing_database(tmp_path, capsys):
+    from scripts.resolve_duplicate_listings import main
+
+    missing_db = tmp_path / "typo.duckdb"
+    with pytest.raises(SystemExit) as exc_info:
+        main(["--db", str(missing_db)])
+
+    assert exc_info.value.code == 2
+    assert f"database file does not exist: {missing_db}" in capsys.readouterr().err
+    assert not missing_db.exists()
 
 
 def test_yahoo_run_reports_ambiguous_symbol_and_continues(tmp_db, monkeypatch):

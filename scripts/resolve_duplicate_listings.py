@@ -17,9 +17,11 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
+import duckdb
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from market_data_hub.db.connection import get_conn  # noqa: E402
+from market_data_hub.db.connection import get_conn, resolve_db_path  # noqa: E402
 from market_data_hub.db.identity import (  # noqa: E402
     duplicate_active_listings,
     resolve_empty_duplicate_listing,
@@ -61,8 +63,18 @@ def main(argv: Optional[List[str]] = None) -> int:
         parser.error("listing IDs are accepted only with --apply")
 
     if not args.apply:
+        db_path = resolve_db_path(args.db)
+        if not Path(db_path).is_file():
+            parser.error(f"database file does not exist: {db_path}")
         print("DRY RUN (read_only=True); no database changes will be made.")
-        con = get_conn(args.db, read_only=True)
+        # Do not use get_conn(read_only=True) here: that convenience helper
+        # creates and initializes a missing database before opening it.
+        # DuckDB's direct read_only connection also protects against the file
+        # disappearing between the existence check and connection.
+        try:
+            con = duckdb.connect(db_path, read_only=True)
+        except duckdb.Error as exc:
+            parser.error(f"could not open database read-only at {db_path}: {exc}")
         try:
             rows = duplicate_active_listings(con, symbol=args.symbol)
         finally:
