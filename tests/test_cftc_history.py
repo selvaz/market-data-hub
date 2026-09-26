@@ -8,6 +8,7 @@ import sys
 import zipfile
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Dict, List, Optional
 
 import pandas as pd
@@ -176,6 +177,59 @@ def test_upsert_is_idempotent_and_refreshes_updated_at_for_overlap(tmp_path):
         con.close()
 
 
+def test_backfill_preserves_socrata_classification_and_updates_positions(
+        tmp_path, monkeypatch):
+    import run_cftc_cot
+
+    monkeypatch.setattr(
+        run_cftc_cot, "_today", lambda: date(2026, 9, 26))
+
+    fixture_date = date(2025, 1, 6)
+    archive = _make_zip(
+        tmp_path / "overlap.zip", "tff",
+        [_tff_row(fixture_date.isoformat(), dealer_long="46404")])
+    archived_frame = next(cftc_history.iter_archive_batches(
+        archive, "tff", fixture_date, fixture_date))
+
+    existing = archived_frame.copy()
+    existing["commodity_name"] = "Financial"
+    existing["commodity_subgroup_name"] = "Treasury"
+    existing["dealer_long"] = 40000
+    db_path = tmp_path / "cftc-overlap.duckdb"
+    con = cx.get_conn(str(db_path))
+    try:
+        assert upsert(con, "cftc_tff_positioning", existing) == (1, 0)
+    finally:
+        con.close()
+
+    spec = cftc_history.ArchiveSpec(
+        "tff", fixture_date.year, fixture_date.year,
+        f"fut_fin_txt_{fixture_date.year}.zip")
+    monkeypatch.setattr(
+        cftc_history, "historical_archive_plan",
+        lambda _report, _start, _end: [spec])
+    monkeypatch.setattr(
+        cftc_history, "download_archive",
+        lambda _url, destination: _copy_fixture(archive, destination))
+
+    args = SimpleNamespace(
+        db=db_path, backfill_years=1, only="tff", dry_run=False)
+    assert run_cftc_cot._run_historical_backfill(args) == 0
+
+    con = cx.get_conn(str(db_path), read_only=True)
+    try:
+        commodity_name, subgroup_name, dealer_long = con.execute(
+            "SELECT commodity_name, commodity_subgroup_name, dealer_long "
+            "FROM cftc_tff_positioning WHERE report_date = ? "
+            "AND cftc_contract_market_code = '043602'",
+            [fixture_date],
+        ).fetchone()
+        assert (commodity_name, subgroup_name) == ("Financial", "Treasury")
+        assert dealer_long == 46404
+    finally:
+        con.close()
+
+
 @pytest.mark.parametrize("old_version", [21, 23])
 def test_schema_migration_adds_nullable_variant_to_existing_cftc_rows(
         tmp_path, old_version):
@@ -239,8 +293,11 @@ def test_archive_batches_have_a_fixed_maximum_size(tmp_path):
 
 def test_cli_dry_run_reports_year_counts_without_opening_database(
         tmp_path, monkeypatch, capsys):
-    current_year = date.today().year
-    fixture_date = date(current_year, 1, 6).isoformat()
+    import run_cftc_cot
+
+    today = date(2026, 1, 5)
+    monkeypatch.setattr(run_cftc_cot, "_today", lambda: today)
+    fixture_date = date(2026, 1, 4).isoformat()
     archive = _make_zip(tmp_path / "fixture.zip", "tff",
                         [_tff_row(fixture_date)])
     monkeypatch.setattr(sys, "argv", [
@@ -253,10 +310,9 @@ def test_cli_dry_run_reports_year_counts_without_opening_database(
         cx, "get_conn",
         lambda *_args, **_kwargs: pytest.fail("dry-run must not open the DB"))
 
-    from run_cftc_cot import main
-    assert main() == 0
+    assert run_cftc_cot.main() == 0
     output = capsys.readouterr().out
-    assert f"{current_year}: 1 would upsert rows" in output
+    assert f"{today.year}: 1 would upsert rows" in output
     assert "no database connection opened" in output
     assert not (tmp_path / "never-open.duckdb").exists()
 

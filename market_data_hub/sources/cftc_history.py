@@ -15,7 +15,7 @@ from collections import Counter
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-from typing import Dict, Iterator, List, Mapping, Optional, Tuple
+from typing import Dict, Iterator, List, Mapping, Optional, Sequence, Tuple
 
 import pandas as pd
 import requests
@@ -149,7 +149,8 @@ _LEGACY_ARCHIVE_ALIASES = {
 }
 
 
-def _header_mapping(report: str, headers: Optional[List[str]]) -> Dict[str, str]:
+def _header_mapping(report: str,
+                    headers: Optional[Sequence[str]]) -> Dict[str, str]:
     if report == "tff":
         rename = cftc_cot._TFF_RENAME
         aliases = dict(_COMMON_ARCHIVE_ALIASES, **_TFF_ARCHIVE_ALIASES)
@@ -226,7 +227,8 @@ def _report_date(row: Mapping[str, str], row_number: int) -> date:
         parsed = pd.to_datetime(raw_date, errors="raise")
         if pd.isna(parsed):
             raise ValueError("empty date")
-        return parsed.date()
+        normalized = pd.Timestamp(parsed).strftime("%Y-%m-%d")
+        return date.fromisoformat(normalized)
     except Exception as exc:
         raise CFTCArchiveError(
             f"invalid report date {raw_date!r} on CSV row {row_number}") from exc

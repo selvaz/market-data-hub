@@ -62,6 +62,11 @@ REPORTS = {
 DEFAULT_LOOKBACK_DAYS = 56
 
 
+def _today() -> date:
+    """Today's date, kept injectable for deterministic window tests."""
+    return date.today()
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -95,7 +100,7 @@ def main() -> int:
         print("ERROR: --dry-run requires --backfill-years", file=sys.stderr)
         return 2
 
-    end = args.end or date.today().isoformat()
+    end = args.end or _today().isoformat()
     start = args.start or (date.fromisoformat(end)
                            - timedelta(days=args.lookback_days)).isoformat()
     if start > end:
@@ -148,7 +153,7 @@ def main() -> int:
 
 def _run_historical_backfill(args: argparse.Namespace) -> int:
     """Download, validate, then stream CFTC archive rows into the existing tables."""
-    end_date = date.today()
+    end_date = _today()
     # The number names full calendar years of history before the current year;
     # e.g. in 2026, --backfill-years 20 starts on 2006-01-01.
     start_date = date(end_date.year - args.backfill_years, 1, 1)
@@ -203,7 +208,13 @@ def _run_historical_backfill(args: argparse.Namespace) -> int:
                             for year in sorted(frame["report_date"].dt.year.unique()):
                                 year_frame = frame.loc[
                                     frame["report_date"].dt.year == year]
-                                added, updated = upsert(con, table, year_frame)
+                                preserved_metadata = (
+                                    ("commodity_name", "commodity_subgroup_name")
+                                    if report == "tff" else ("commodity_name",)
+                                )
+                                added, updated = upsert(
+                                    con, table, year_frame,
+                                    preserve_non_null_columns=preserved_metadata)
                                 archive_added += added
                                 archive_updated += updated
                         log_run(

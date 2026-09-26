@@ -8,6 +8,7 @@ and inserts new ones. Returns (rows_added, rows_total).
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from typing import Dict
 
 import duckdb
 import pandas as pd
@@ -105,7 +106,7 @@ _COLUMNS = {
 # as NULL. ``prices_daily.is_live`` NULL is silently invisible to reads that
 # filter ``is_live = FALSE`` (read_prices / extract_series level), so a freshly
 # ingested ticker's daily bars would never appear — default it to FALSE here.
-_COLUMN_DEFAULTS = {
+_COLUMN_DEFAULTS: Dict[str, Dict[str, object]] = {
     "prices_daily": {"is_live": False},
     "cftc_tff_positioning": {"report_variant": "futures_only"},
     "cftc_legacy_positioning": {"report_variant": "futures_only"},
@@ -178,7 +179,8 @@ def _count_existing(con: duckdb.DuckDBPyConnection, table: str,
 
 
 def upsert(con: duckdb.DuckDBPyConnection, table: str,
-           df: pd.DataFrame, *, outer_txn: bool = False) -> tuple[int, int]:
+           df: pd.DataFrame, *, outer_txn: bool = False,
+           preserve_non_null_columns: tuple[str, ...] = ()) -> tuple[int, int]:
     """
     Atomic upsert. Returns (rows_added, rows_updated).
     Columns missing in the df are filled with NULL; updated_at is set.
@@ -196,6 +198,14 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
         raise ValueError(f"Table not handled by upsert(): {table}")
 
     cols = _COLUMNS[table]
+    unknown_preserved = set(preserve_non_null_columns) - set(cols)
+    if unknown_preserved:
+        raise ValueError(
+            f"Columns to preserve are not in {table}: "
+            f"{sorted(unknown_preserved)}")
+    primary_keys = set(_PK[table])
+    if primary_keys.intersection(preserve_non_null_columns):
+        raise ValueError("Primary-key columns cannot use null-preserving updates")
     out = df.copy()
 
     if table == "prices_daily" and ("listing_id" not in out.columns
@@ -225,10 +235,28 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
     try:
         updated = _count_existing(con, table, out)
         added = len(out) - updated
-        con.execute(
-            f"INSERT OR REPLACE INTO {table} ({col_list}) "
-            f"SELECT {col_list} FROM _upsert_src"
-        )
+        if preserve_non_null_columns:
+            primary_key_list = ", ".join(_PK[table])
+            assignments = []
+            for column in cols:
+                if column in primary_keys:
+                    continue
+                if column in preserve_non_null_columns:
+                    value = f"COALESCE(excluded.{column}, {table}.{column})"
+                else:
+                    value = f"excluded.{column}"
+                assignments.append(f"{column} = {value}")
+            con.execute(
+                f"INSERT INTO {table} ({col_list}) "
+                f"SELECT {col_list} FROM _upsert_src "
+                f"ON CONFLICT ({primary_key_list}) DO UPDATE SET "
+                f"{', '.join(assignments)}"
+            )
+        else:
+            con.execute(
+                f"INSERT OR REPLACE INTO {table} ({col_list}) "
+                f"SELECT {col_list} FROM _upsert_src"
+            )
         if not outer_txn:
             con.execute("COMMIT")
     except Exception:
