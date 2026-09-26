@@ -166,3 +166,149 @@ class AmbiguousSymbolError(RuntimeError):
     """A bare symbol maps to more than one active listing: the caller must
     pass an explicit listing_id (audit CA-01 — collisions must never be
     resolved silently)."""
+
+
+def duplicate_active_listings(con, symbol: Optional[str] = None):
+    """Describe symbols with multiple active listings and their price counts.
+
+    This is an inventory operation only. It deliberately does not decide
+    which venue is canonical: real dual listings are valid and must be
+    distinguished from accidental empty duplicates by an operator.
+    """
+    rows = con.execute("""
+        WITH duplicated AS (
+            SELECT symbol
+            FROM listings
+            WHERE active_to IS NULL AND (? IS NULL OR symbol = ?)
+            GROUP BY symbol
+            HAVING COUNT(*) > 1
+        )
+        SELECT l.symbol, l.listing_id, l.instrument_id, l.exchange,
+               l.currency, l.provider, l.provider_symbol,
+               COUNT(p.date) AS price_rows, MIN(p.date) AS first_date,
+               MAX(p.date) AS last_date
+        FROM listings l
+        JOIN duplicated d ON d.symbol = l.symbol
+        LEFT JOIN prices_daily p ON p.listing_id = l.listing_id
+        WHERE l.active_to IS NULL
+        GROUP BY l.symbol, l.listing_id, l.instrument_id, l.exchange,
+                 l.currency, l.provider, l.provider_symbol
+        ORDER BY l.symbol, l.listing_id
+    """, [symbol, symbol]).fetchall()
+    columns = ("symbol", "listing_id", "instrument_id", "exchange",
+               "currency", "provider", "provider_symbol", "price_rows",
+               "first_date", "last_date")
+    return [dict(zip(columns, row)) for row in rows]
+
+
+def resolve_empty_duplicate_listing(con, *, symbol: str,
+                                    keep_listing_id: str,
+                                    deactivate_listing_id: str):
+    """Retire an explicitly selected, empty duplicate listing atomically.
+
+    This API never infers which listing to keep. The two IDs must be the only
+    active listings for ``symbol`` and must share the same instrument,
+    provider, and provider symbol. The listing being retired must have no
+    price bars, so history is never moved or discarded. Active aliases on the
+    retired row are moved to the keeper (colliding aliases are coalesced), and
+    the old listing row is retained with ``active_to`` set for auditability.
+
+    The operation is idempotent: an already inactive empty listing with its
+    active aliases moved returns ``changed=False``. Callers that write to a
+    shared database should hold the hub's writer lock around this API.
+    """
+    if not symbol or not keep_listing_id or not deactivate_listing_id:
+        raise ValueError("symbol and both listing IDs are required")
+    if keep_listing_id == deactivate_listing_id:
+        raise ValueError("keeper and duplicate listing IDs must be different")
+
+    rows = con.execute("""
+        SELECT listing_id, instrument_id, symbol, provider, provider_symbol,
+               active_to
+        FROM listings
+        WHERE listing_id IN (?, ?)
+    """, [keep_listing_id, deactivate_listing_id]).fetchall()
+    by_id = {row[0]: row for row in rows}
+    if set(by_id) != {keep_listing_id, deactivate_listing_id}:
+        raise ValueError("both listing IDs must exist in listings")
+
+    keeper = by_id[keep_listing_id]
+    duplicate = by_id[deactivate_listing_id]
+    if keeper[2] != symbol or duplicate[2] != symbol:
+        raise ValueError("both listings must have the requested symbol")
+    if keeper[1] != duplicate[1] or keeper[3] != duplicate[3] \
+            or keeper[4] != duplicate[4]:
+        raise ValueError(
+            "listings must share instrument_id, provider, and provider_symbol")
+    if keeper[5] is not None:
+        raise ValueError("the keeper listing must be active")
+
+    active_ids = {row[0] for row in con.execute(
+        "SELECT listing_id FROM listings "
+        "WHERE symbol = ? AND active_to IS NULL", [symbol]).fetchall()}
+    expected_active = {keep_listing_id}
+    if duplicate[5] is None:
+        expected_active.add(deactivate_listing_id)
+    if active_ids != expected_active:
+        raise ValueError(
+            f"expected only the selected listings active for {symbol}; "
+            f"found {sorted(active_ids)}")
+
+    price_count_row = con.execute(
+        "SELECT COUNT(*) FROM prices_daily WHERE listing_id = ?",
+        [deactivate_listing_id]).fetchone()
+    price_count = int(price_count_row[0]) if price_count_row else 0
+    if price_count:
+        raise ValueError(
+            f"refusing to retire {deactivate_listing_id}: "
+            f"it has {price_count} price rows")
+
+    aliases = con.execute("""
+        SELECT namespace, value, target_type
+        FROM identifier_aliases
+        WHERE target_type = 'listing' AND target_id = ? AND valid_to IS NULL
+    """, [deactivate_listing_id]).fetchall()
+    already_inactive = duplicate[5] is not None
+    if already_inactive and not aliases:
+        return {"symbol": symbol, "keep_listing_id": keep_listing_id,
+                "deactivated_listing_id": deactivate_listing_id,
+                "price_rows": 0, "changed": False}
+
+    now = datetime.now(timezone.utc)
+    effective_date = now.date()
+    con.execute("BEGIN TRANSACTION")
+    try:
+        for namespace, value, target_type in aliases:
+            collision = con.execute("""
+                SELECT 1 FROM identifier_aliases
+                WHERE namespace = ? AND value = ? AND target_type = ?
+                  AND target_id = ?
+            """, [namespace, value, target_type, keep_listing_id]).fetchone()
+            if collision:
+                con.execute("""
+                    DELETE FROM identifier_aliases
+                    WHERE namespace = ? AND value = ? AND target_type = ?
+                      AND target_id = ?
+                """, [namespace, value, target_type, deactivate_listing_id])
+            else:
+                con.execute("""
+                    UPDATE identifier_aliases
+                    SET target_id = ?, updated_at = ?
+                    WHERE namespace = ? AND value = ? AND target_type = ?
+                      AND target_id = ? AND valid_to IS NULL
+                """, [keep_listing_id, now, namespace, value, target_type,
+                      deactivate_listing_id])
+
+        if not already_inactive:
+            con.execute("""
+                UPDATE listings SET active_to = ?, updated_at = ?
+                WHERE listing_id = ? AND active_to IS NULL
+            """, [effective_date, now, deactivate_listing_id])
+        con.execute("COMMIT")
+    except Exception:
+        con.execute("ROLLBACK")
+        raise
+
+    return {"symbol": symbol, "keep_listing_id": keep_listing_id,
+            "deactivated_listing_id": deactivate_listing_id,
+            "price_rows": 0, "changed": True}

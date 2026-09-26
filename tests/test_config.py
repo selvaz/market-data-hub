@@ -17,10 +17,22 @@ def test_live_config_is_valid():
 
 def test_catalog_counts():
     # Yahoo list (FRED IDs filtered out by get_yahoo_tickers)
-    assert len(get_yahoo_tickers()) == 148
+    assert len(get_yahoo_tickers()) == 149
     assert len(get_fred_series()) == 77   # 45 + 32 cross-country 10Y yields (IRLTLT01*)
     assert len(get_macro_panel_specs()) == 83   # ...+imf_policy_rate +iip_net/ext_debt_nonres/fx_debt (IMF SDMX)
     assert len(get_countries()) == 64
+
+
+def test_bci_remains_in_the_daily_yahoo_universe_once():
+    """BCI must stay daily-downloadable after its empty duplicate is retired."""
+    tickers = get_yahoo_tickers()
+    bci = [entry for entry in tickers if entry["symbol"] == "BCI"]
+
+    assert len(tickers) == 149
+    assert len(bci) == 1
+    assert bci[0]["asset_class"] == "COMMODITIES"
+    assert bci[0]["name"] == (
+        "COMMODITIES | Broad | abrdn Bloomberg All Commodity Strategy K-1 Free ETF")
 
 
 def test_no_fred_ids_in_yahoo_universe():
