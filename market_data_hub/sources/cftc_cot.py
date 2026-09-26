@@ -77,6 +77,13 @@ _LEGACY_COLS = [
 ]
 
 
+def _socrata_contract_market_name(value: object) -> object:
+    """Drop the exchange suffix used by some CFTC names after ``' - '``."""
+    if value is None or pd.isna(value):
+        return None
+    return str(value).split(" - ", 1)[0]
+
+
 def _http_get(url: str, params: dict, timeout: int, retries: int,
               base_sleep: float) -> requests.Response:
     """GET one Socrata page with bounded retry and exponential backoff."""
@@ -138,6 +145,8 @@ def _normalize(rows: list[dict], rename: dict[str, str], columns: list[str],
         if column not in df.columns and column != "source":
             df[column] = None
     df["report_date"] = pd.to_datetime(df["report_date"], errors="coerce")
+    df["contract_market_name"] = df["contract_market_name"].map(
+        _socrata_contract_market_name)
     text_columns = {
         "report_date", "contract_market_name", "cftc_contract_market_code",
         "commodity_name", "commodity_subgroup_name", "source",

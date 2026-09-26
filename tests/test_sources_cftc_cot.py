@@ -107,7 +107,17 @@ def test_legacy_real_shape_including_vendor_typo(monkeypatch):
     assert pd.api.types.is_numeric_dtype(df["noncomm_spread"])
     assert df.loc[0, "noncomm_spread"] == 164300
     assert df.loc[0, "comm_short"] == 1043500
+    assert df.loc[0, "contract_market_name"] == "CRUDE OIL, LIGHT SWEET"
     assert df.loc[0, "source"] == "cftc_legacy"
+
+
+def test_missing_contract_market_name_stays_null():
+    df = cftc_cot._normalize(
+        [{"report_date_as_yyyy_mm_dd": "2026-08-25",
+          "cftc_contract_market_code": "067651"}],
+        cftc_cot._LEGACY_RENAME, cftc_cot._LEGACY_COLS, "cftc_legacy")
+
+    assert pd.isna(df.loc[0, "contract_market_name"])
 
 
 def test_pagination_concatenates_pages(monkeypatch):

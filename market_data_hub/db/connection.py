@@ -22,7 +22,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 23
+SCHEMA_VERSION = 24
 
 
 def _default_db() -> str:
@@ -387,6 +387,12 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
             # apply_schema() recreates it below.
             con.execute(f"DROP INDEX IF EXISTS {indice}")
             con.execute(f"ALTER TABLE {tabella} RENAME TO {tabella}_v21")
+            # v24's nullable report discriminator is the last physical column
+            # in both fresh and migrated tables. Add it to this pre-v22 copy
+            # too so INSERT ... SELECT * keeps matching column order.
+            con.execute(
+                f"ALTER TABLE {tabella}_v21 ADD COLUMN IF NOT EXISTS "
+                "report_variant VARCHAR DEFAULT 'futures_only'")
             apply_schema(con)   # recreates it with the corrected key
             con.execute(
                 f"INSERT INTO {tabella} SELECT * FROM {tabella}_v21 "
@@ -423,6 +429,21 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
                 "ALTER COLUMN seeded_from_file SET NOT NULL"
             )
         current = 23
+    if current < 24:
+        # v23 -> v24: CFTC report rows carry a nullable Futures Only versus
+        # Futures-and-Options Combined discriminator. Current ingestion has
+        # always stored Futures Only, so preserve that meaning on old rows and
+        # use it as the insert default for new rows in both tables.
+        for table in ("cftc_tff_positioning", "cftc_legacy_positioning"):
+            if not _table_exists(con, table):
+                continue    # fresh DB already has the column from schema.sql
+            con.execute(
+                f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS "
+                "report_variant VARCHAR DEFAULT 'futures_only'")
+            con.execute(
+                f"UPDATE {table} SET report_variant = 'futures_only' "
+                "WHERE report_variant IS NULL")
+        current = 24
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

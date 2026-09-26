@@ -100,7 +100,7 @@ def test_migrate_adds_alias_file_ownership_column_to_v22_database(tmp_db):
         "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('schema_version', '22')"
     )
 
-    assert C.migrate(con) == C.SCHEMA_VERSION == 23
+    assert C.migrate(con) == C.SCHEMA_VERSION
     columns = {row[1]: row for row in con.execute(
         "PRAGMA table_info('calendar_indicator_aliases')"
     ).fetchall()}
