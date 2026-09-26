@@ -734,11 +734,6 @@ yahoo:
   area: USA
   name: EQUITY | US | Technology Select Sector SPDR
   priority: 1
-- symbol: HYXU
-  asset_class: FIXED_INCOME
-  area: Global ex-US
-  name: FI | Global ex-US | iShares Global ex USD High Yield Corporate
-  priority: 1
 - symbol: BCI
   asset_class: COMMODITIES
   area: Global
