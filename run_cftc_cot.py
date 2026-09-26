@@ -112,36 +112,46 @@ def main() -> int:
     print(f"window: {start} -> {end}  ({', '.join(scelti)})\n")
 
     fallite: list[str] = []
-    con = None
-    try:
-        # Cooperate with the same DB lock as the historical writer so a daily
-        # refresh cannot enter while the backfill is committing a batch.
-        with db_write_lock(str(args.db)):
-            con = cx.get_conn(str(args.db))
-            for nome in scelti:
-                fetch, tabella = REPORTS[nome]
-                print(f"--- {nome} -> {tabella} ---")
+    # Fetch BEFORE taking the writer lock: a slow or unavailable Socrata
+    # endpoint must not hold the shared advisory lock and make unrelated
+    # scheduled writers time out.
+    frames: list[tuple[str, str, object]] = []
+    for nome in scelti:
+        fetch, tabella = REPORTS[nome]
+        print(f"--- {nome} -> {tabella} ---")
+        try:
+            frame = fetch(start, end)
+        except Exception as e:
+            print(f"  FAILED: {type(e).__name__}: {str(e)[:160]}",
+                  file=sys.stderr)
+            fallite.append(nome)
+            continue
+        if frame.empty:
+            # A window shorter than the weekly cadence, or one that lands
+            # entirely between releases, legitimately returns nothing.
+            print("  0 rows (no release in this window)")
+            continue
+        frames.append((nome, tabella, frame))
+
+    if frames:
+        try:
+            # Cooperate with the same DB lock as the historical writer so a daily
+            # refresh cannot enter while the backfill is committing a batch.
+            with db_write_lock(str(args.db)):
+                con = cx.get_conn(str(args.db))
                 try:
-                    frame = fetch(start, end)
-                except Exception as e:
-                    print(f"  FAILED: {type(e).__name__}: {str(e)[:160]}",
-                          file=sys.stderr)
-                    fallite.append(nome)
-                    continue
-                if frame.empty:
-                    # A window shorter than the weekly cadence, or one that lands
-                    # entirely between releases, legitimately returns nothing.
-                    print("  0 rows (no release in this window)")
-                    continue
-                upsert(con, tabella, frame)
-                print(f"  {len(frame)} rows -> {tabella}")
-    except Exception as e:
-        print(f"FAILED CFTC database write: {type(e).__name__}: {e}",
-              file=sys.stderr)
-        return 1
-    finally:
-        if con is not None:
-            con.close()
+                    for nome, tabella, frame in frames:
+                        upsert(con, tabella, frame)
+                        print(f"  {nome}: {len(frame)} rows -> {tabella}")
+                finally:
+                    # Close the DuckDB handle BEFORE the advisory lock is
+                    # released, so a waiting writer never finds the file
+                    # still owned by this process.
+                    con.close()
+        except Exception as e:
+            print(f"FAILED CFTC database write: {type(e).__name__}: {e}",
+                  file=sys.stderr)
+            return 1
 
     print()
     _stampa_audit(args.db, scelti)
