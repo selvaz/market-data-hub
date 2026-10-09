@@ -6,6 +6,7 @@ Usage:
     python run_econ_calendar.py --db <path> --work-dir <dir> --no-collect   # re-ingest what is on disk
     python run_econ_calendar.py --db <path> --work-dir <dir> --no-validate # skip the T1 web-search pass
     python run_econ_calendar.py --db <path> --audit-only
+    python run_econ_calendar.py --archive-only [--raw-dir <dir>]
 
 Two halves that fail for different reasons and are therefore separable:
 collection writes the configured source CSV into --work-dir, ingestion reads that CSV
@@ -226,8 +227,12 @@ def audit(con) -> None:
 
 def main() -> int:
     p = argparse.ArgumentParser(description=f'economic calendar: collect and ingest ({SOURCE_NAME})')
-    p.add_argument('--db', required=True,
+    p.add_argument('--db',
                    help='DuckDB path. Absolute: a relative one resolves inside the repo.')
+    p.add_argument('--archive-only', action='store_true',
+                   help='archive the raw Forex Factory feed only; no DB or market_data lock')
+    p.add_argument('--raw-dir', default=None,
+                   help=r'raw archive directory (default: C:\ProgramData\InvestmentCommittee\econ_calendar\raw)')
     p.add_argument('--work-dir', default='.',
                    help=f'where the {SOURCE_NAME} CSV is written and read')
     p.add_argument('--no-collect', action='store_true',
@@ -247,6 +252,20 @@ def main() -> int:
     p.add_argument('--to', dest='a', default=None)
     p.add_argument('--run-id', default=None)
     args = p.parse_args()
+
+    if args.archive_only:
+        from market_data_hub.econ_calendar.collect.forexfactory import archive_raw, DEFAULT_RAW_DIR
+        try:
+            code = archive_raw(args.raw_dir if args.raw_dir is not None else DEFAULT_RAW_DIR)
+        except (RuntimeError, OSError) as e:
+            print(f'raw archive FAILED: {e}', file=sys.stderr, flush=True)
+            return EXIT_FAILED
+        print('raw archive: ' + ('written' if code == EXIT_OK else 'unchanged'), flush=True)
+        return code
+    if not args.db:
+        p.error('--db is required unless --archive-only is used')
+    if args.raw_dir is not None:
+        p.error('--raw-dir requires --archive-only')
 
     work_dir = Path(args.work_dir).resolve()
     work_dir.mkdir(parents=True, exist_ok=True)
