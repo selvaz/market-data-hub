@@ -146,6 +146,16 @@ def test_raw_archive_fetch_failure_leaves_no_partial_file(raw_archive, monkeypat
     assert not raw.exists() or not list(raw.iterdir())
 
 
+@pytest.mark.parametrize('body', [b'', b'<html>Request denied</html>', b'{"error": "rate limited"}'])
+def test_raw_archive_rejects_a_non_feed_body(raw_archive, monkeypatch, body):
+    # An HTTP 200 block page or empty body must not become the day's snapshot.
+    runner, ff, raw = raw_archive
+    monkeypatch.setattr(ff.requests, 'get', lambda *a, **k:
+                        type('Response', (), {'status_code': 200, 'content': body})())
+    assert runner.main() == 1
+    assert not raw.exists() or not list(raw.iterdir())
+
+
 def test_raw_archive_rename_failure_cleans_temp(raw_archive, monkeypatch):
     runner, ff, raw = raw_archive
     monkeypatch.setattr(ff.requests, 'get', lambda *a, **k:

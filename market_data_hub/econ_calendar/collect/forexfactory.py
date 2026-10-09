@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Collect Forex Factory's public current-week JSON calendar feed."""
+import json
 import os
 import tempfile
 from datetime import datetime, timezone
@@ -36,6 +37,14 @@ def archive_raw(directory=DEFAULT_RAW_DIR) -> int:
     if response.status_code != 200:
         raise RuntimeError(f'Forex Factory feed returned HTTP {response.status_code}')
     content = response.content
+    # Bytes are stored unchanged; this only refuses a block page or empty body
+    # that would otherwise become the day's snapshot.
+    try:
+        is_feed = isinstance(json.loads(content), list)
+    except ValueError:
+        is_feed = False
+    if not is_feed:
+        raise RuntimeError('Forex Factory feed is not a JSON list; nothing archived')
     fetched = datetime.now()
     day = fetched.strftime('%Y-%m-%d')
     directory = Path(directory)
