@@ -72,6 +72,103 @@ def _ff_fixture():
                        'ff_calendar_thisweek_2026-09-05.json').read_text())
 
 
+@pytest.fixture()
+def raw_archive(monkeypatch, tmp_path):
+    import sys
+    import run_econ_calendar as runner
+    from market_data_hub.econ_calendar.collect import forexfactory
+    from market_data_hub import lock
+
+    def forbidden(*args, **kwargs):
+        pytest.fail('archive mode opened a DB or acquired the market_data lock')
+
+    monkeypatch.setattr(cx, 'get_conn', forbidden)
+    monkeypatch.setattr(duckdb, 'connect', forbidden)
+    monkeypatch.setattr(lock, 'db_write_lock', forbidden)
+    monkeypatch.setattr(sys, 'argv', [
+        'run_econ_calendar.py', '--archive-only', '--raw-dir', str(tmp_path / 'raw'),
+        '--work-dir', str(tmp_path / 'unused'),
+    ])
+
+    class LocalClock:
+        @classmethod
+        def now(cls):
+            # Local fetch day, even though UTC is already the following day.
+            return datetime(2026, 9, 5, 23, 30, 12,
+                            tzinfo=timezone(timedelta(hours=-7)))
+
+    monkeypatch.setattr(forexfactory, 'datetime', LocalClock)
+    return runner, forexfactory, tmp_path / 'raw'
+
+
+def test_raw_archive_first_unchanged_changed_and_unchanged_revision(raw_archive, monkeypatch):
+    runner, ff, raw = raw_archive
+    recorded = (Path(__file__).parent / 'fixtures' /
+                'ff_calendar_thisweek_2026-09-05.json').read_bytes()
+    revised = recorded.replace(b'G20 Meetings', b'G20 Revised Meetings')
+    assert revised != recorded
+    calls = []
+    contents = iter([recorded, recorded, revised, revised])
+
+    def fetch(url, **kwargs):
+        calls.append(url)
+        response = type('Response', (), {'status_code': 200, 'content': next(contents)})()
+        return response
+
+    monkeypatch.setattr(ff.requests, 'get', fetch)
+    assert runner.main() == 0
+    assert (raw / '2026-09-05.json').read_bytes() == recorded
+    assert runner.main() == 3
+    assert len(list(raw.iterdir())) == 1
+    assert runner.main() == 0
+    assert (raw / '2026-09-05.233012.json').read_bytes() == revised
+    assert (raw / '2026-09-05.json').read_bytes() == recorded
+    assert runner.main() == 3
+    assert len(list(raw.iterdir())) == 2
+    assert calls == [ff.URL] * 4
+    assert not (raw.parent / 'unused').exists()
+
+
+@pytest.mark.parametrize('failure', ['network', 'http'])
+def test_raw_archive_fetch_failure_leaves_no_partial_file(raw_archive, monkeypatch, failure):
+    runner, ff, raw = raw_archive
+    calls = []
+
+    def fetch(*args, **kwargs):
+        calls.append(args)
+        if failure == 'network':
+            raise ff.requests.RequestException('recorded offline failure')
+        return type('Response', (), {'status_code': 503, 'content': b'error'})()
+
+    monkeypatch.setattr(ff.requests, 'get', fetch)
+    assert runner.main() == 1
+    assert len(calls) == 1
+    assert not raw.exists() or not list(raw.iterdir())
+
+
+@pytest.mark.parametrize('body', [b'', b'<html>Request denied</html>', b'{"error": "rate limited"}'])
+def test_raw_archive_rejects_a_non_feed_body(raw_archive, monkeypatch, body):
+    # An HTTP 200 block page or empty body must not become the day's snapshot.
+    runner, ff, raw = raw_archive
+    monkeypatch.setattr(ff.requests, 'get', lambda *a, **k:
+                        type('Response', (), {'status_code': 200, 'content': body})())
+    assert runner.main() == 1
+    assert not raw.exists() or not list(raw.iterdir())
+
+
+def test_raw_archive_rename_failure_cleans_temp(raw_archive, monkeypatch):
+    runner, ff, raw = raw_archive
+    monkeypatch.setattr(ff.requests, 'get', lambda *a, **k:
+                        type('Response', (), {'status_code': 200, 'content': b'[]\n'})())
+
+    def fail_rename(*args):
+        raise OSError('recorded rename failure')
+
+    monkeypatch.setattr(Path, 'rename', fail_rename)
+    assert runner.main() == 1
+    assert not list(raw.iterdir())
+
+
 # ------------------------------------------------------------------ schema --
 def test_migration_creates_the_tables(con):
     tables = {r[0] for r in con.execute(
