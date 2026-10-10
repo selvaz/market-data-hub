@@ -24,6 +24,16 @@ freshness, rather than assuming a daily FRED publication.
 Sources: [Federal Reserve H.10](https://www.federalreserve.gov/releases/h10/)
 and [FRED daily-rates explanation](https://fred.stlouisfed.org/categories/94?t=usa).
 
+All 23 H.10 pairs configure `max_lag_days: 10`: coverage flags them stalled
+only when the last observation is more than 10 calendar days old. Their
+detected observation frequency remains D for gap detection and scoring.
+The optional non-negative integer override is passed to `is_stalled()` by
+the coverage builder, which stores the verdict in `coverage_report.stalled`
+and `status`. Both `v_stalled` and `reader.get_stalled()` read that stored
+verdict. Existing flags are refreshed by the next coverage rebuild; no
+schema migration is needed. Series without an override retain their usual
+frequency-based limits, including three days for ordinary daily series.
+
 ## Verified series and quote conventions
 
 Verified on 2026-10-10: every series page returned HTTP 200 with the exact

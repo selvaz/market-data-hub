@@ -3,8 +3,9 @@
 stalled_detector.py — detection of stalled series and last-date check.
 
 A series is "stalled" if the number of days since the last observation exceeds
-the allowed threshold for its frequency. The thresholds are freq-aware: an
-annual series is not flagged as stalled for a normal delay of ~12 months.
+the allowed threshold for its frequency or a configured publication-lag override.
+The thresholds are freq-aware: an annual series is not flagged as stalled for
+a normal delay of ~12 months.
 """
 from __future__ import annotations
 
@@ -43,9 +44,18 @@ def lag_days(last_date, as_of: Optional[date] = None) -> Optional[int]:
 
 
 def is_stalled(last_date, freq: Optional[str],
-               as_of: Optional[date] = None) -> bool:
-    """True if the series is stalled beyond the threshold for its frequency."""
+               as_of: Optional[date] = None, *,
+               max_lag_days: Optional[int] = None) -> bool:
+    """True when calendar lag exceeds the override or frequency-based default.
+
+    Observation frequency is independent of publication cadence: a daily series
+    published weekly can supply max_lag_days without changing its frequency.
+    Missing observations remain stalled, even with an override.
+    """
+    if max_lag_days is not None and (type(max_lag_days) is not int or max_lag_days < 0):
+        raise ValueError("max_lag_days must be a non-negative integer")
+    threshold = _threshold_for(freq) if max_lag_days is None else max_lag_days
     lag = lag_days(last_date, as_of)
     if lag is None:
         return True  # no data = effectively stalled
-    return lag > _threshold_for(freq)
+    return lag > threshold

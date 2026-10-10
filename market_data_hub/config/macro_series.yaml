@@ -467,6 +467,8 @@ fred:
   country: CHL
 
 # --- Daily bilateral H.10 FX rates (daily observations, published weekly).
+# max_lag_days measures calendar age since the observation, not release time.
+# Ten days covers the previous business week and a delayed Monday release.
 # Verified FRED IDs/units: tests/fixtures/fred_h10_series_metadata.json.
 # unit is persisted in macro_series by fetch_fred; other metadata is available
 # through get_fred_series(). Positive oriented log changes = currency stronger.
@@ -481,6 +483,7 @@ fred:
   unit: MXN per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXBZUS
   asset_class: FX
   area: Brazil
@@ -491,6 +494,7 @@ fred:
   unit: BRL per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXINUS
   asset_class: FX
   area: India
@@ -501,6 +505,7 @@ fred:
   unit: INR per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXCHUS
   asset_class: FX
   area: China
@@ -511,6 +516,7 @@ fred:
   unit: CNY per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXKOUS
   asset_class: FX
   area: South Korea
@@ -521,6 +527,7 @@ fred:
   unit: KRW per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXJPUS
   asset_class: FX
   area: Japan
@@ -531,6 +538,7 @@ fred:
   unit: JPY per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXSZUS
   asset_class: FX
   area: Switzerland
@@ -541,6 +549,7 @@ fred:
   unit: CHF per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXCAUS
   asset_class: FX
   area: Canada
@@ -551,6 +560,7 @@ fred:
   unit: CAD per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXUSUK
   asset_class: FX
   area: United Kingdom
@@ -561,6 +571,7 @@ fred:
   unit: USD per GBP
   quote_convention: usd_per_currency_unit
   currency_strength_orientation: 1
+  max_lag_days: 10
 - symbol: DEXUSEU
   asset_class: FX
   area: Euro Area
@@ -571,6 +582,7 @@ fred:
   unit: USD per EUR
   quote_convention: usd_per_currency_unit
   currency_strength_orientation: 1
+  max_lag_days: 10
 - symbol: DEXUSAL
   asset_class: FX
   area: Australia
@@ -581,6 +593,7 @@ fred:
   unit: USD per AUD
   quote_convention: usd_per_currency_unit
   currency_strength_orientation: 1
+  max_lag_days: 10
 - symbol: DEXSFUS
   asset_class: FX
   area: South Africa
@@ -591,6 +604,7 @@ fred:
   unit: ZAR per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXTAUS
   asset_class: FX
   area: Taiwan
@@ -601,6 +615,7 @@ fred:
   unit: TWD per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXHKUS
   asset_class: FX
   area: Hong Kong
@@ -611,6 +626,7 @@ fred:
   unit: HKD per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXMAUS
   asset_class: FX
   area: Malaysia
@@ -621,6 +637,7 @@ fred:
   unit: MYR per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXTHUS
   asset_class: FX
   area: Thailand
@@ -631,6 +648,7 @@ fred:
   unit: THB per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXSIUS
   asset_class: FX
   area: Singapore
@@ -641,6 +659,7 @@ fred:
   unit: SGD per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXNOUS
   asset_class: FX
   area: Norway
@@ -651,6 +670,7 @@ fred:
   unit: NOK per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXSDUS
   asset_class: FX
   area: Sweden
@@ -661,6 +681,7 @@ fred:
   unit: SEK per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXDNUS
   asset_class: FX
   area: Denmark
@@ -671,6 +692,7 @@ fred:
   unit: DKK per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
 - symbol: DEXUSNZ
   asset_class: FX
   area: New Zealand
@@ -681,6 +703,7 @@ fred:
   unit: USD per NZD
   quote_convention: usd_per_currency_unit
   currency_strength_orientation: 1
+  max_lag_days: 10
 - symbol: DEXVZUS
   asset_class: FX
   area: Venezuela
@@ -691,6 +714,7 @@ fred:
   unit: VES per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10
   notes: FRED redenomination break on 2021-10-04; see series notes before computing returns across this date.
 - symbol: DEXSLUS
   asset_class: FX
@@ -702,3 +726,4 @@ fred:
   unit: LKR per USD
   quote_convention: currency_units_per_usd
   currency_strength_orientation: -1
+  max_lag_days: 10

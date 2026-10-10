@@ -325,6 +325,7 @@ panel countries have no OECD long-rate series and stay uncovered.)*
 | VIX indices | daily | 0–1 d | 3 d |
 | Crypto (Binance) | 1h/4h/1d | < 1 candle | 3 d (1d) |
 | FRED rates / credit / energy / USD | daily | 1–2 d | 3 d |
+| FRED H.10 bilateral FX (published weekly) | daily | previous business week | 10 calendar days (`max_lag_days`) |
 | FRED financial-stress (NFCI, STLFSI4, WALCL) | weekly | 3–7 d | 10 d |
 | FRED CPI / PCE / employment / production | monthly | 15–45 d | 45 d |
 | FRED GDP | quarterly | 30–90 d | 120 d |
