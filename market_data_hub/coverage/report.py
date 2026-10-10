@@ -24,14 +24,16 @@ from market_data_hub.db.upsert import upsert
 
 
 def _meta_lookup() -> Dict[str, dict]:
-    """Map symbol/series_id -> {asset_class, priority}."""
+    """Map symbol/series_id -> classification, priority and publication-lag limit."""
     m: Dict[str, dict] = {}
     for e in get_yahoo_tickers():
         m[e["symbol"]] = {"asset_class": e.get("asset_class", ""),
-                          "priority": e.get("priority", 3)}
+                          "priority": e.get("priority", 3),
+                          "max_lag_days": e.get("max_lag_days")}
     for e in get_fred_series():
         m[e["symbol"]] = {"asset_class": e.get("asset_class", "MACRO"),
-                          "priority": e.get("priority", 2)}
+                          "priority": e.get("priority", 2),
+                          "max_lag_days": e.get("max_lag_days")}
     return m
 
 
@@ -40,7 +42,9 @@ def _row_for(symbol: str, source: str, df: pd.DataFrame, date_col: str,
     first, last, obs = date_span(df[date_col])
     freq = detect_frequency(df[date_col]) if obs >= 3 else "UNKNOWN"
     lag = lag_days(last)
-    stalled = is_stalled(last, freq)
+    # Persist this verdict so v_stalled and reader.get_stalled() use the same
+    # publication-aware limit, while freq_detected still describes observations.
+    stalled = is_stalled(last, freq, max_lag_days=meta.get("max_lag_days"))
     mpct = missing_pct(df[date_col], freq)
     gaps = gap_count(df[date_col], freq)
     flags = check_prices(df)

@@ -6,7 +6,7 @@
 > *query* this catalogue programmatically (by asset class, area, sector, pillar)
 > and pull analysis-ready series, see [EXTRACTION.md](EXTRACTION.md).
 
-Totals: **137 Yahoo symbols** + **77 FRED series** + **6 crypto × 3 timeframes**.
+Totals: **137 Yahoo symbols** + **100 FRED series** + **6 crypto × 3 timeframes**.
 
 The Yahoo tables below describe the configured daily universe. Actual
 historical availability, freshness, and gaps are operational data held in
@@ -213,6 +213,11 @@ point normally is on a healthy day.
 
 ## 3. macro_series — FRED (single-value macro)
 
+The FRED universe includes [23 daily H.10 bilateral FX rates](fred-fx.md),
+with explicit quote units persisted in `macro_series.unit`. The linked note
+lists verified IDs, quote conventions and country-monitor coverage gaps.
+H.10 daily observations are published weekly for the preceding business week.
+
 - **Table:** `macro_series` · **Backfill start:** 2000-01-01
 - **Access:** official API with key (public CSV blocked by proxy — see notes)
 
@@ -320,6 +325,7 @@ panel countries have no OECD long-rate series and stay uncovered.)*
 | VIX indices | daily | 0–1 d | 3 d |
 | Crypto (Binance) | 1h/4h/1d | < 1 candle | 3 d (1d) |
 | FRED rates / credit / energy / USD | daily | 1–2 d | 3 d |
+| FRED H.10 bilateral FX (published weekly) | daily | previous business week | 10 calendar days (`max_lag_days`) |
 | FRED financial-stress (NFCI, STLFSI4, WALCL) | weekly | 3–7 d | 10 d |
 | FRED CPI / PCE / employment / production | monthly | 15–45 d | 45 d |
 | FRED GDP | quarterly | 30–90 d | 120 d |

@@ -66,6 +66,16 @@ def validate() -> list[str]:
             if not i.get(field):
                 errors.append(f"macro_panel.yaml: '{i.get('id', '?')}' missing '{field}'")
 
+    # 5. Optional per-series publication lag is measured in calendar days.
+    for label, entries in (("tickers.yaml", tickers), ("macro_series.yaml", fred)):
+        for entry in entries:
+            if "max_lag_days" in entry:
+                value = entry["max_lag_days"]
+                if type(value) is not int or value < 0:
+                    errors.append(
+                        f"{label}: '{entry.get('symbol', '?')}' max_lag_days "
+                        "must be a non-negative integer")
+
     return errors
 
 

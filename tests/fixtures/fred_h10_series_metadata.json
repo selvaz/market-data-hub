@@ -1,0 +1,167 @@
+{
+  "verified_on": "2026-10-10",
+  "method": "HTTP 200 and matching series ID in FRED page title; recorded published units and frequency",
+  "series": [
+    {
+      "series_id": "DEXMXUS",
+      "url": "https://fred.stlouisfed.org/series/DEXMXUS",
+      "title": "Mexican Pesos to U.S. Dollar Spot Exchange Rate (DEXMXUS) | FRED | St. Louis Fed",
+      "units": "Mexican Pesos to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXBZUS",
+      "url": "https://fred.stlouisfed.org/series/DEXBZUS",
+      "title": "Brazilian Reals to U.S. Dollar Spot Exchange Rate (DEXBZUS) | FRED | St. Louis Fed",
+      "units": "Brazilian Reals to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXINUS",
+      "url": "https://fred.stlouisfed.org/series/DEXINUS",
+      "title": "Indian Rupees to U.S. Dollar Spot Exchange Rate (DEXINUS) | FRED | St. Louis Fed",
+      "units": "Indian Rupees to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXCHUS",
+      "url": "https://fred.stlouisfed.org/series/DEXCHUS",
+      "title": "Chinese Yuan Renminbi to U.S. Dollar Spot Exchange Rate (DEXCHUS) | FRED | St. Louis Fed",
+      "units": "Chinese Yuan Renminbi to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXKOUS",
+      "url": "https://fred.stlouisfed.org/series/DEXKOUS",
+      "title": "South Korean Won to U.S. Dollar Spot Exchange Rate (DEXKOUS) | FRED | St. Louis Fed",
+      "units": "South Korean Won to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXJPUS",
+      "url": "https://fred.stlouisfed.org/series/DEXJPUS",
+      "title": "Japanese Yen to U.S. Dollar Spot Exchange Rate (DEXJPUS) | FRED | St. Louis Fed",
+      "units": "Japanese Yen to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXSZUS",
+      "url": "https://fred.stlouisfed.org/series/DEXSZUS",
+      "title": "Swiss Francs to U.S. Dollar Spot Exchange Rate (DEXSZUS) | FRED | St. Louis Fed",
+      "units": "Swiss Francs to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXCAUS",
+      "url": "https://fred.stlouisfed.org/series/DEXCAUS",
+      "title": "Canadian Dollars to U.S. Dollar Spot Exchange Rate (DEXCAUS) | FRED | St. Louis Fed",
+      "units": "Canadian Dollars to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXUSUK",
+      "url": "https://fred.stlouisfed.org/series/DEXUSUK",
+      "title": "U.S. Dollars to U.K. Pound Sterling Spot Exchange Rate (DEXUSUK) | FRED | St. Louis Fed",
+      "units": "U.S. Dollars to One U.K. Pound Sterling",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXUSEU",
+      "url": "https://fred.stlouisfed.org/series/DEXUSEU",
+      "title": "U.S. Dollars to Euro Spot Exchange Rate (DEXUSEU) | FRED | St. Louis Fed",
+      "units": "U.S. Dollars to One Euro",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXUSAL",
+      "url": "https://fred.stlouisfed.org/series/DEXUSAL",
+      "title": "U.S. Dollars to Australian Dollar Spot Exchange Rate (DEXUSAL) | FRED | St. Louis Fed",
+      "units": "U.S. Dollars to One Australian Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXSFUS",
+      "url": "https://fred.stlouisfed.org/series/DEXSFUS",
+      "title": "South African Rand to U.S. Dollar Spot Exchange Rate (DEXSFUS) | FRED | St. Louis Fed",
+      "units": "South African Rand to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXTAUS",
+      "url": "https://fred.stlouisfed.org/series/DEXTAUS",
+      "title": "Taiwan Dollars to U.S. Dollar Spot Exchange Rate (DEXTAUS) | FRED | St. Louis Fed",
+      "units": "Taiwan Dollars to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXHKUS",
+      "url": "https://fred.stlouisfed.org/series/DEXHKUS",
+      "title": "Hong Kong Dollars to U.S. Dollar Spot Exchange Rate (DEXHKUS) | FRED | St. Louis Fed",
+      "units": "Hong Kong Dollars to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXMAUS",
+      "url": "https://fred.stlouisfed.org/series/DEXMAUS",
+      "title": "Malaysian Ringgit to U.S. Dollar Spot Exchange Rate (DEXMAUS) | FRED | St. Louis Fed",
+      "units": "Malaysian Ringgit to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXTHUS",
+      "url": "https://fred.stlouisfed.org/series/DEXTHUS",
+      "title": "Thai Baht to U.S. Dollar Spot Exchange Rate (DEXTHUS) | FRED | St. Louis Fed",
+      "units": "Thai Baht to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXSIUS",
+      "url": "https://fred.stlouisfed.org/series/DEXSIUS",
+      "title": "Singapore Dollars to U.S. Dollar Spot Exchange Rate (DEXSIUS) | FRED | St. Louis Fed",
+      "units": "Singapore Dollars to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXNOUS",
+      "url": "https://fred.stlouisfed.org/series/DEXNOUS",
+      "title": "Norwegian Kroner to U.S. Dollar Spot Exchange Rate (DEXNOUS) | FRED | St. Louis Fed",
+      "units": "Norwegian Kroner to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXSDUS",
+      "url": "https://fred.stlouisfed.org/series/DEXSDUS",
+      "title": "Swedish Kronor to U.S. Dollar Spot Exchange Rate (DEXSDUS) | FRED | St. Louis Fed",
+      "units": "Swedish Kronor to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXDNUS",
+      "url": "https://fred.stlouisfed.org/series/DEXDNUS",
+      "title": "Danish Kroner to U.S. Dollar Spot Exchange Rate (DEXDNUS) | FRED | St. Louis Fed",
+      "units": "Danish Kroner to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXUSNZ",
+      "url": "https://fred.stlouisfed.org/series/DEXUSNZ",
+      "title": "U.S. Dollars to New Zealand Dollar Spot Exchange Rate (DEXUSNZ) | FRED | St. Louis Fed",
+      "units": "U.S. Dollars to One New Zealand Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXVZUS",
+      "url": "https://fred.stlouisfed.org/series/DEXVZUS",
+      "title": "Venezuelan Bolivares to U.S. Dollar Spot Exchange Rate (DEXVZUS) | FRED | St. Louis Fed",
+      "units": "Venezuelan Bolivares to One U.S. Dollar",
+      "frequency": "Daily"
+    },
+    {
+      "series_id": "DEXSLUS",
+      "url": "https://fred.stlouisfed.org/series/DEXSLUS",
+      "title": "Sri Lankan Rupees to U.S. Dollar Spot Exchange Rate (DEXSLUS) | FRED | St. Louis Fed",
+      "units": "Sri Lankan Rupees to One U.S. Dollar",
+      "frequency": "Daily"
+    }
+  ]
+}
