@@ -26,7 +26,7 @@ from `docs/` by the `docs` workflow on every push to `main`).
 |----------|------|---------|-----------|
 | Yahoo Finance | 111 symbols (ETFs, equity, FX, VIX indices, daily crypto) — OHLCV + adj_close | `prices_daily` | daily |
 | Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
-| FRED | 77 macro series (US/EA rates, real yields, CPI, GDP, credit spreads, financial-conditions & liquidity, cross-country 10Y yields) | `macro_series` | D/M/Q |
+| FRED | 100 macro series (US/EA rates, real yields, CPI, GDP, credit spreads, financial-conditions & liquidity, cross-country 10Y yields, [23 daily H.10 FX rates](docs/fred-fx.md)) | `macro_series` | D/M/Q |
 | World Bank + IMF + BIS + ECB | 83 cross-country indicators (WDI/WGI/WEO/BIS/IMF SDMX/ECB) × 64 countries | `macro_panel` | annual |
 | Ken French Data Library | Fama-French 5 factors + momentum (Mkt-RF, SMB, HML, RMW, CMA, Mom, RF) | `factor_returns` | D/M |
 
@@ -198,7 +198,7 @@ market_data_hub/
   sources/    yahoo.py  binance.py  fred.py  worldbank.py  imf.py  imf_sdmx.py  bis.py  ecb.py
   coverage/   freq_detector  stalled_detector  gap_detector  quality_checks  score  report
   db/         schema.sql  connection.py  upsert.py
-  config/     tickers.yaml (111)  macro_series.yaml (77)  macro_panel.yaml (83)  countries.yaml (64)  settings.yaml
+  config/     tickers.yaml (111)  macro_series.yaml (100)  macro_panel.yaml (83)  countries.yaml (64)  settings.yaml
   regime/     estimate.py  report.py                         per-symbol HMM regime monitor (needs LazyHMM)
   reader.py   catalog.py  extract.py  agent_tools.py  config_loader.py  runner.py  country_dashboard.py
 run_daily.py  run_backfill.py  diagnose.py  setup_scheduler.ps1  make_country_dashboard.py
