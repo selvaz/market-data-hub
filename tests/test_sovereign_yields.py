@@ -319,19 +319,20 @@ def test_runner_idempotence_revisions_and_unavailable_series(cb, monkeypatch, tm
 def test_runner_distinguishes_stale_unavailable_fault_and_noop(cb, monkeypatch, tmp_db,
                                                               outcome, expected):
     from market_data_hub import runner
-    entries = [spec("CB_IT_10Y")] if outcome != "disabled" else []
+    # Exercise an actual current feed; BdI is intentionally history-only.
+    entries = [spec("CB_GB_10Y")] if outcome != "disabled" else []
     monkeypatch.setattr(runner, "get_sovereign_yields", lambda: entries)
     def fetch(*args, **kwargs):
         if outcome == "unavailable":
             raise cb.SourceUnavailable("recorded source unavailable")
         if outcome == "fault":
             raise ValueError("programming failure")
-        return cb.parse_response(entries[0], (FIX / "bdi.csv").read_bytes())
+        return cb.parse_response(entries[0], (FIX / "boe.csv").read_bytes())
     monkeypatch.setattr(cb, "fetch_yield", fetch)
     cfg = {"backfill_start": {"sovereign_yields": "2023-01-01"},
            "http": {"timeout": 10, "max_retries": 1}}
     with get_conn(tmp_db) as con:
-        assert runner.run_sovereign_yields(con, cfg, "test", end="2026-10-11") == expected
+        assert runner.run_sovereign_yields(con, cfg, "test", end="2026-10-19") == expected
         if outcome == "stale":
             assert con.execute("SELECT status FROM download_log").fetchone()[0] == "stalled"
         else:
@@ -375,7 +376,14 @@ def test_daily_job_wiring_and_catalog():
     required = {"DEU", "FRA", "ITA", "ESP", "PRT", "GRC", "NLD", "BEL", "AUT", "IRL", "GBR", "JPN", "CHE", "SWE", "MEX", "BRA", "ARG", "CHN", "IND", "IDN", "ZAF", "TUR", "POL", "KOR", "COL", "CHL", "PER"}
     assert required <= {x["country"] for x in entries}
     assert all(x["unit"] == "%" and x["frequency"] == "D" and
-               x["max_lag_days"] == 3 and x["lag_calendar"] == "business" for x in entries)
+               x["lag_calendar"] == "business" for x in entries)
+    current = [x for x in entries if x.get('role', 'current') == 'current']
+    history = [x for x in entries if x.get('role') == 'history']
+    assert all(x['max_lag_days'] == 3 for x in current)
+    assert [x['symbol'] for x in history] == ['CB_IT_10Y']
+    assert history[0]['enabled'] and history[0]['history_reason']
+    assert sum(bool(x['enabled']) for x in entries) == 23
+    assert all(x['disabled_reason'].strip() for x in entries if not x['enabled'])
     assert validate() == []
 
 

@@ -2,6 +2,7 @@
 # Unavailable countries remain visible; never silently use monthly/auction data.
 defaults: &daily
   enabled: true
+  role: current
   unit: "%"
   frequency: D
   asset_class: MACRO
@@ -70,6 +71,8 @@ series:
     country: DEU
     source: Deutsche Bundesbank
     provider: bundesbank
+    enabled: false  # known gap, not a daily failure: Bundesbank answers with an anti-bot challenge from this machine; DEU_BUND10_FA is the daily Bund
+    disabled_reason: "Bundesbank Enodia anti-bot challenge from this machine; not bypassed"
     name: 10y federal securities, curve-derived par yield
     provider_code: D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A
     endpoint: https://api.statistiken.bundesbank.de/rest/data/BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A
@@ -78,6 +81,8 @@ series:
     country: DEU
     source: Deutsche Bundesbank
     provider: bundesbank
+    enabled: false  # known gap, not a daily failure: Bundesbank answers with an anti-bot challenge from this machine; DEU_BUND10_FA is the daily Bund
+    disabled_reason: "Bundesbank Enodia anti-bot challenge from this machine; not bypassed"
     name: 2y federal securities, curve-derived par yield
     provider_code: D.I.ZAR.ZI.EUR.S1311.B.A604.R02XX.R.A.A._Z._Z.A
     endpoint: https://api.statistiken.bundesbank.de/rest/data/BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R02XX.R.A.A._Z._Z.A
@@ -95,6 +100,10 @@ series:
     country: ITA
     source: Banca d'Italia
     provider: bdi
+    # Monthly batch of daily observations (Mercato finanziario, mid-month):
+    # official history, not the current reading (ITA_BTP10_MOT is).
+    role: history
+    history_reason: Daily BMK0200 observations are released in monthly batches; ITA_BTP10_MOT supplies the current yield. Freshness is still flagged after three business days.
     name: 10y BTP benchmark gross yield to maturity
     provider_code: MFN_BMK.D.020.922.0.EUR.210
     endpoint: https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/BMK0200
@@ -191,6 +200,8 @@ series:
     country: KOR
     source: Bank of Korea
     provider: ecos
+    enabled: false  # known gap, not a daily failure: needs ECOS_API_KEY; enable once the key is registered
+    disabled_reason: "needs ECOS_API_KEY"
     name: 10y Treasury bond market yield
     provider_code: "010210000"
     dataset: 817Y002
@@ -245,6 +256,8 @@ series:
     country: PRT
     source: Banco de Portugal
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Only monthly 10y averages verified in BPstat; daily endpoint unresolved"
     name: 10y government bond yield (unresolved)
     unavailable_reason: Only monthly 10y averages verified in BPstat; daily endpoint unresolved
   - <<: *daily
@@ -252,6 +265,8 @@ series:
     country: GRC
     source: Bank of Greece
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Daily benchmark table exists but HTTP 403 from this machine; historical endpoint not verified"
     name: 10y government bond benchmark (unresolved transport)
     unavailable_reason: Daily benchmark table exists but HTTP 403 from this machine; historical endpoint not verified
   - <<: *daily
@@ -259,6 +274,8 @@ series:
     country: NLD
     source: De Nederlandsche Bank
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Daily 10y endpoint unverified; API discovery returned 404 and documentation HTTP 403"
     name: 10y government bond yield (unresolved)
     unavailable_reason: Daily 10y endpoint unverified; API discovery returned 404 and documentation HTTP 403
   - <<: *daily
@@ -266,6 +283,8 @@ series:
     country: AUT
     source: Oesterreichische Nationalbank
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Daily UDRB is a basket of maturities published weekly; exact daily 10y endpoint unresolved"
     name: 10y government bond yield (unresolved)
     unavailable_reason: Daily UDRB is a basket of maturities published weekly; exact daily 10y endpoint unresolved
   - <<: *daily
@@ -273,6 +292,8 @@ series:
     country: IRL
     source: Central Bank of Ireland
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Daily 10y endpoint unresolved; public interest-rate statistics did not identify one"
     name: 10y government bond yield (unresolved)
     unavailable_reason: Daily 10y endpoint unresolved; public interest-rate statistics did not identify one
   - <<: *daily
@@ -280,6 +301,8 @@ series:
     country: MEX
     source: Banco de Mexico
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Daily nominal M-bond 10y SIE identifier unverified; do not use monthly SF17808 or FX SF63528"
     name: 10y nominal M-bond yield (unresolved)
     key_env: BANXICO_API_TOKEN
     unavailable_reason: Daily nominal M-bond 10y SIE identifier unverified; do not use monthly SF17808 or FX SF63528
@@ -288,6 +311,8 @@ series:
     country: BRA
     source: Banco Central do Brasil
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Constant 10y sovereign SGS identifier unresolved; supplementary Treasury NTN-F quotes retain explicit fixed maturities"
     name: 10y local-currency government bond yield (unresolved)
     unavailable_reason: Constant 10y sovereign SGS identifier unresolved; supplementary Treasury NTN-F quotes retain explicit fixed maturities
   - <<: *daily
@@ -295,6 +320,8 @@ series:
     country: ARG
     source: Banco Central de la Republica Argentina
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "No sovereign 10y yield or country-risk series found in all 1610 BCRA v4 monetary catalog entries"
     name: 10y sovereign yield (not found in monetary catalog)
     unavailable_reason: No sovereign 10y yield or country-risk series found in all 1610 BCRA v4 monetary catalog entries
   - <<: *daily
@@ -302,6 +329,8 @@ series:
     country: IND
     source: Reserve Bank of India
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "CCIL current 9Y-10Y G-sec quote works; daily historical endpoint unverified"
     name: 10y G-sec yield (historical endpoint unresolved)
     unavailable_reason: CCIL current 9Y-10Y G-sec quote works; daily historical endpoint unverified
   - <<: *daily
@@ -309,6 +338,8 @@ series:
     country: IDN
     source: Bank Indonesia
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Daily 10y endpoint unresolved; DJPPR hostname DNS failure and BI portal only metadata"
     name: 10y local-currency government bond yield (unresolved)
     unavailable_reason: Daily 10y endpoint unresolved; DJPPR hostname DNS failure and BI portal only metadata
   - <<: *daily
@@ -316,6 +347,8 @@ series:
     country: ZAF
     source: South African Reserve Bank
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Constant-tenor daily 10y endpoint unresolved; supplementary R209 and R2030 retain explicit bond identities"
     name: Constant 10y government bond yield (unresolved)
     unavailable_reason: Constant-tenor daily 10y endpoint unresolved; supplementary R209 and R2030 retain explicit bond identities
   - <<: *daily
@@ -323,6 +356,8 @@ series:
     country: TUR
     source: Central Bank of the Republic of Turkiye
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "EVDS2 migrated to EVDS3; current daily 10y API endpoint and series identifier unverified"
     name: 10y local-currency government benchmark yield (unresolved)
     key_env: EVDS_API_KEY
     unavailable_reason: EVDS2 migrated to EVDS3; current daily 10y API endpoint and series identifier unverified
@@ -331,6 +366,8 @@ series:
     country: POL
     source: Narodowy Bank Polski
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Daily 10y endpoint unverified; NBP blocked HTTP 403, MF security catalogue did not expose daily yield"
     name: 10y government bond yield (unresolved)
     unavailable_reason: Daily 10y endpoint unverified; NBP blocked HTTP 403, MF security catalogue did not expose daily yield
   - <<: *daily
@@ -338,6 +375,8 @@ series:
     country: COL
     source: Banco de la Republica
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Official daily 10y COP zero-coupon TES exists, published weekly; machine-readable history endpoint unresolved"
     name: 10y COP zero-coupon TES yield (endpoint unresolved)
     unavailable_reason: Official daily 10y COP zero-coupon TES exists, published weekly; machine-readable history endpoint unresolved
   - <<: *daily
@@ -345,6 +384,8 @@ series:
     country: CHL
     source: Banco Central de Chile
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Siete API needs token; government 10y secondary-market identifier unverified; BCP and BTP auction rates are not equivalent"
     name: 10y CLP government bond secondary-market yield (unresolved)
     key_env: BCCH_API_TOKEN
     unavailable_reason: Siete API needs token; government 10y secondary-market identifier unverified; BCP and BTP auction rates are not equivalent
@@ -353,5 +394,7 @@ series:
     country: PER
     source: Banco Central de Reserva del Peru
     provider: unavailable
+    enabled: false  # known gap, not a daily failure: no verified daily endpoint (see unavailable_reason)
+    disabled_reason: "Daily local-currency 10y PD31893DD verified in BCRP catalogue; API and CSV return HTML challenges from this machine, positive response format unverified"
     name: 10y PEN government bond yield (unresolved)
     unavailable_reason: Daily local-currency 10y PD31893DD verified in BCRP catalogue; API and CSV return HTML challenges from this machine, positive response format unverified

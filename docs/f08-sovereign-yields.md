@@ -9,6 +9,13 @@ Bundesbank REST remains blocked by Enodia; the **ECB AAA 10y spot curve remains
 the explicitly labelled official stand-in** when a fresh aligned Bund leg is
 unavailable. Four ECB curves and France's no-key TEC10 CSV also work.
 
+F08f collection policy keeps all 42 sovereign entries discoverable, with **23
+enabled feeds: 22 current and one history**. The 16 unresolved providers, two
+Bundesbank challenge endpoints and Korea ECOS are statically disabled, each with
+a machine-readable `disabled_reason`. Their known gaps do not affect daily exit
+codes. `CB_IT_10Y` is explicitly documented `role: history`; `ITA_BTP10_MOT`
+remains Italy's current feed. This configuration has not been deployed here.
+
 The evidence ledger is [f08-probes.json](f08-probes.json): original request URL,
 UTC probe time, HTTP status, content type, byte count and original-response SHA256
 for 170 machine probes, plus parser audits of complete responses and code-computed
@@ -206,12 +213,24 @@ headless browser, UA/IP rotation or challenge-cookie replay was used.
   National holiday lists are **not prepopulated**. Missing holiday/weekend quotes
   remain missing; there is no interpolation or forward fill. Genuine publisher
   weekend quotes (China) are retained.
+  `role` defaults to `current`: enabled current feeds must satisfy this contract
+  and stale data degrades the run. History must explicitly declare `role: history`
+  and a non-empty `history_reason`. A history-specific non-negative integer
+  business-day lag is permitted for coverage, documented in `history_reason`;
+  BMK0200 retains the three-business-day limit so its staleness remains visible.
+  History is fetched on the same daily schedule, with stale observations logged
+  as `stalled` and flagged in coverage, without setting the degraded exit flag.
+  History fetch/parser failures and absence of any ingested history still count
+  as failures. An empty refresh of existing stale history returns no work, `3`.
+  Disabled feeds are skipped regardless of runtime credentials and must carry a
+  non-empty `disabled_reason`; comments alone do not satisfy validation.
 * Coverage keeps the actual publisher and represents requested unavailable feeds
   once sovereign ingestion has been attempted. Legacy FRED lag settings remain
   calendar-based. Stored `lag_days` remains calendar days; the stalled decision
   for these daily series uses business days.
-* Sovereign run codes: 0 successful/fresh, 1 internal/config/DB fault, 2 missing,
-  blocked or stale feeds (including partial/all-unavailable), 3 no work, 9 a live
+* Sovereign run codes: 0 successful ingestion with current freshness satisfied
+  (history may be stale), 1 internal/config/DB fault, 2 missing, blocked or stale
+  enabled current feeds or failed history ingestion, 3 no work, 9 a live
   writer owns the lock. Daily/backfill CLIs preserve these codes, including when
   the daily report is requested. Existing collectors retain their existing
   error-accounting behavior; this change does not retrofit their statuses.
@@ -309,6 +328,16 @@ ECB, Germany, France, Italy, Spain and Belgium.
 | `BANXICO_API_TOKEN` | [Banxico SIE token registration](https://www.banxico.org.mx/SieAPIRest/service/v1/token) | Necessary for future API access, **not sufficient**: daily nominal M-bond 10y code still needs verification/implementation. |
 | `EVDS_API_KEY` | Register at [TCMB EVDS3](https://evds3.tcmb.gov.tr/) | Necessary for future API access; EVDS3 endpoint and daily 10y identifier still need verification/implementation. |
 | `BCCH_API_TOKEN` | Follow [BCCh API access instructions](https://si3.bcentral.cl/estadisticas/Principal1/Web_Services/acceso_api_en.html) | Necessary for future Siete access; secondary-market CLP government 10y series still needs verification/implementation. Current documentation specifies token, not legacy username/password. |
+
+Korea is statically configured `enabled: false`, `disabled_reason: needs
+ECOS_API_KEY`. Setting the environment variable does not change collection.
+After registering, set `ECOS_API_KEY` in the ingestion process environment,
+explicitly change `CB_KR_10Y` to `enabled: true` in `sovereign_yields.yaml`, remove
+its `disabled_reason`, validate configuration, and verify the official response
+and backfill with the real key. Once enabled it is a current feed: a missing key
+or stale publication degrades the run. Other disabled entries require their
+documented access/endpoint issue to be resolved before explicitly enabling them;
+no anti-bot challenge is solved or bypassed.
 
 For Bundesbank REST/Greece/Poland/Peru, publisher access from the runtime needs
 resolving without treating a challenge as data. Germany's issuer and Italy's MOT
@@ -623,3 +652,71 @@ No code or tests changed after this full run began; only validation documentatio
 was completed afterward. All four F08d pytest basetemps were under `%TEMP%` and
 removed afterward. No production DB or ingestion, scheduled task, Telegram,
 push, or PR write was performed. The local F08d commit sits on top of `dd5ca76`.
+
+## F08f known gaps and history validation
+
+Completed the local WIP on `fix/sovereign-known-gaps-not-degraded`, based on
+`b3a93a9` after PR #90. The 19 statically disabled entries remain in discovery
+with `disabled_reason`; ECOS stays disabled even if a runtime key is present.
+BdI's 40-day workaround is replaced by explicit documented `role: history` and
+the real three-business-day freshness limit. MOT remains current. History
+staleness is logged and flagged without affecting the degraded exit flag;
+enabled current staleness and actual ingestion failures still affect exit codes.
+No coverage check, source, freshness threshold for current data, or scheduler
+was removed or loosened. The four older contract tests now exercise roles and
+static availability, retaining a stale-current exit-2 regression.
+
+Tests were expanded first in `tests/test_sovereign_known_gaps.py`; the initial
+run also reproduced the four old-assumption failures:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest tests/test_sovereign_known_gaps.py tests/test_sovereign_review.py tests/test_sovereign_merge.py tests/test_sovereign_yields.py -q --basetemp "$env:TEMP/f08f-red" --tb=short
+```
+
+```text
+17 failed, 97 passed in 28.35s
+```
+
+Final targeted run, including existing parsing, bond, spread and catalog tests:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest tests/test_sovereign_known_gaps.py tests/test_sovereign_review.py tests/test_sovereign_merge.py tests/test_sovereign_yields.py tests/test_sovereign_bonds.py tests/test_sovereign_spreads.py tests/test_config.py tests/test_catalog.py -q --basetemp "$env:TEMP/f08f-targeted" --tb=short
+```
+
+```text
+215 passed in 45.37s
+```
+
+Static/config gates ran unpiped with the required interpreter:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m ruff check market_data_hub/catalog.py market_data_hub/runner.py validate_config.py tests/test_sovereign_known_gaps.py tests/test_sovereign_review.py tests/test_sovereign_merge.py tests/test_sovereign_yields.py
+& C:/ProgramData/spyder-6/python.exe -X utf8 validate_config.py
+```
+
+```text
+All checks passed!
+CONFIG OK — tickers=154 fred=106 panel=83 countries=64 nyfed_acm=1 sovereign_yields=42
+```
+
+Both exited 0. Catalog counts include disabled entries and history. Regression
+HTTP is mocked; database tests use temporary databases.
+
+The full suite ran **once at the end, after all code and test changes**:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest -q --basetemp "$env:TEMP/f08f-full" --tb=short
+```
+
+Exact final line (exit 0):
+
+```text
+763 passed, 1 warning in 460.35s (0:07:40)
+```
+
+The warning is the existing ALFRED test's deliberately truncated vintage list.
+Only this validation documentation was completed after the full run began; no
+code or tests changed. All three F08f pytest basetemps were under `%TEMP%` and
+removed afterward. The local WIP commit was amended into the completed fix,
+retaining `b3a93a9` as its parent. No production DB or ingestion, deployment,
+scheduled task, Telegram, push, or PR write was performed.

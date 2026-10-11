@@ -84,9 +84,27 @@ def validate() -> list[str]:
     from market_data_hub.sources.sovereign_yields import PROVIDERS
     for entry in sovereign:
         prefix = f"sovereign_yields.yaml: '{entry.get('symbol', '?')}'"
+        role = entry.get("role", "current")
+        if role not in ("current", "history"):
+            errors.append(f"{prefix} role must be current or history")
+        if role == "history":
+            reason = entry.get("history_reason")
+            if not isinstance(reason, str) or not reason.strip():
+                errors.append(f"{prefix} explicit role history requires a documented history_reason")
+            lag = entry.get("max_lag_days")
+            if type(lag) is not int or lag < 0:
+                errors.append(f"{prefix} history max_lag_days must be a non-negative integer")
+        elif entry.get("max_lag_days") != 3 or type(entry.get("max_lag_days")) is not int:
+            errors.append(f"{prefix} current max_lag_days must be 3")
+        if type(entry.get("enabled", True)) is not bool:
+            errors.append(f"{prefix} enabled must be a boolean")
+        if not entry.get("enabled", True):
+            reason = entry.get("disabled_reason")
+            if not isinstance(reason, str) or not reason.strip():
+                errors.append(f"{prefix} disabled entries require a non-empty disabled_reason")
         for field, expected in (("unit", "%"), ("frequency", "D"),
-                                ("max_lag_days", 3), ("lag_calendar", "business")):
-            if entry.get(field) != expected or (field == "max_lag_days" and type(entry.get(field)) is not int):
+                                ("lag_calendar", "business")):
+            if entry.get(field) != expected:
                 errors.append(f"{prefix} {field} must be {expected!r}")
         if not re.fullmatch(r"[A-Z]{3}", str(entry.get("country", ""))):
             errors.append(f"{prefix} country must be ISO3")
