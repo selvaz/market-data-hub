@@ -21,9 +21,9 @@ UTC probe time, HTTP status, content type, byte count and original-response SHA2
 for 170 machine probes, plus parser audits of complete responses and code-computed
 spread results. Redirect tokens
 and response excerpts are omitted. Small offline recordings and their provenance
-are in [the fixture manifest](../tests/fixtures/sovereign_yields/manifest.json).
+are in [the fixture manifest](https://github.com/selvaz/market-data-hub/blob/main/tests/fixtures/sovereign_yields/manifest.json).
 F08c's recorded tables/PDF have a separate
-[bond fixture manifest](../tests/fixtures/sovereign_bonds/manifest.json).
+[bond fixture manifest](https://github.com/selvaz/market-data-hub/blob/main/tests/fixtures/sovereign_bonds/manifest.json).
 An HTTP 200 containing a portal shell or challenge is not counted as data.
 
 ## Machine probe table
@@ -245,7 +245,7 @@ explicitly authorizes the daily ECB AAA curve as the Bund stand-in described abo
 
 ## Spreads computed in code (F08b/F08c, G10)
 
-[market_data_hub/sovereign_spreads.py](../market_data_hub/sovereign_spreads.py)
+[market_data_hub/sovereign_spreads.py](https://github.com/selvaz/market-data-hub/blob/main/market_data_hub/sovereign_spreads.py)
 provides `derive_sovereign_spreads(observations, catalog, as_of=...)`. Pass long-form
 `macro_series` rows with date, series_id, value, unit, frequency and country, and
 `get_sovereign_yields()`, in the consumer's analysis step **before** presenting

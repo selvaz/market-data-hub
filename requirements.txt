@@ -4,6 +4,7 @@ curl_cffi>=0.6      # direct Yahoo chart API (sources/yahoo_direct.py), no yfina
 pandas>=2.0
 numpy
 requests
+pypdf>=4,<7      # Finanzagentur daily Bund yields PDF (market_data_hub/sources/sovereign_bonds.py)
 pyarrow
 openpyxl
 pyyaml

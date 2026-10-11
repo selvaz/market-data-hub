@@ -15,7 +15,7 @@ import xml.etree.ElementTree as ET
 from datetime import timedelta
 from html.parser import HTMLParser
 from io import BytesIO, StringIO
-from typing import Optional
+from typing import Dict, Optional
 from zipfile import ZipFile
 
 import numpy as np
@@ -188,7 +188,7 @@ def parse_response(meta: dict, body: bytes) -> pd.DataFrame:
             if header is None or "Unit : %" not in text[:300]:
                 raise SourceUnavailable("unexpected JGB header or unit")
             reader = csv.DictReader(StringIO("\n".join(lines[header:])))
-            if meta["provider_code"] not in reader.fieldnames:
+            if meta["provider_code"] not in (reader.fieldnames or ()):
                 raise SourceUnavailable("missing JGB maturity")
             rows = [(r["Date"], r[meta["provider_code"]]) for r in reader
                     if re.fullmatch(r"\d{4}/\d{1,2}/\d{1,2}", r["Date"] or "")]
@@ -211,13 +211,13 @@ def parse_response(meta: dict, body: bytes) -> pd.DataFrame:
             metadata = {r[0]: r[column] for r in table[1:6]}
             if metadata.get("FRECUENCIA") != "DIARIA" or metadata.get("DESCRIPCIÓN DE LAS UNIDADES") != "Porcentaje":
                 raise SourceUnavailable("BdE series must be daily, in percent")
-            months = dict(zip("ENE FEB MAR ABR MAY JUN JUL AGO SEP OCT NOV DIC".split(), range(1, 13)))
+            months: Dict[str, int] = dict(zip("ENE FEB MAR ABR MAY JUN JUL AGO SEP OCT NOV DIC".split(), range(1, 13)))
             rows = []
-            for r in table[6:]:
-                match = re.fullmatch(r"(\d{2}) ([A-Z]{3}) (\d{4})", r[0])
+            for line in table[6:]:
+                match = re.fullmatch(r"(\d{2}) ([A-Z]{3}) (\d{4})", line[0])
                 if match:
                     day, month, year = match.groups()
-                    rows.append((f"{year}-{months[month]:02d}-{day}", r[column]))
+                    rows.append((f"{year}-{months[month]:02d}-{day}", line[column]))
         elif provider == "snb":
             if text.lstrip().startswith("{"):
                 payload = json.loads(text)
