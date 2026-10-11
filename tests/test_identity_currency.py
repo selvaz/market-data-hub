@@ -104,3 +104,31 @@ def test_sync_currency_overrides_leaves_non_override_symbols_untouched(tmp_db) -
     finally:
         con.close()
     assert row[0] == "EUR"  # untouched: SPY has no explicit override
+
+
+def test_run_yahoo_corrects_a_listing_created_before_its_override(tmp_db, monkeypatch) -> None:
+    """Codex review on #89: run_yahoo only calls the insert-only
+    ensure_listing, so a TTF=F row created before its EUR override would
+    keep its old currency. run_yahoo must sync the overrides itself."""
+    from market_data_hub import runner
+
+    class _StopAfterRegistration(Exception):
+        pass
+
+    def _stop(con):
+        raise _StopAfterRegistration
+
+    monkeypatch.setattr(runner, "get_yahoo_tickers", lambda: [{"symbol": "TTF=F"}])
+    monkeypatch.setattr(runner, "_last_prices", _stop)
+    con = get_conn(tmp_db)
+    try:
+        ensure_listing(con, "TTF=F", currency="USD")
+        try:
+            runner.run_yahoo(con, {"incremental": {"tail_refresh_days": 5},
+                                   "backfill_start": {"yahoo": "2020-01-01"}}, "t")
+        except _StopAfterRegistration:
+            pass
+        row = con.execute("SELECT currency FROM listings WHERE symbol = 'TTF=F'").fetchone()
+    finally:
+        con.close()
+    assert row[0] == "EUR"

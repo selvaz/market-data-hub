@@ -81,10 +81,13 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
     # keeps the anagrafica (instrument, listing, ticker alias) in sync with
     # the daily universe even when Yahoo is temporarily unavailable; a later
     # successful run will attach the same deterministic listing ids to prices.
-    from market_data_hub.db.identity import ensure_listing
+    from market_data_hub.db.identity import ensure_listing, sync_currency_overrides
     for entry in tickers:
         ensure_listing(con, entry["symbol"], kind=entry.get("asset_class", "OTHER"),
                        name=entry.get("name"))
+    # ensure_listing is insert-only: a listing created before its currency
+    # override existed (e.g. TTF=F in EUR) is corrected here.
+    sync_currency_overrides(con)
     tail = cfg["incremental"]["tail_refresh_days"]
     gstart = cfg["backfill_start"]["yahoo"]
     last = _last_prices(con)
