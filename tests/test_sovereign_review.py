@@ -37,7 +37,13 @@ def test_catalog_sovereign_discovery_metadata_search_and_dataset_count(monkeypat
     assert symbol in entries.index
     r = entries.loc[symbol]
     assert r.source == spec(symbol)['source'] and r.country == spec(symbol)['country']
-    assert r.unit == '%' and r.frequency == 'D' and r.max_lag_days == 3
+    assert r.unit == '%' and r.frequency == 'D'
+    assert r.role == spec(symbol).get('role', 'current')
+    assert r.max_lag_days == spec(symbol)['max_lag_days']
+    if r.role == 'current':
+        assert r.max_lag_days == 3
+    else:
+        assert r.history_reason == spec(symbol)['history_reason']
     assert symbol in set(catalog.list_macro_series(frequency='D', with_coverage=False).series_id)
     card = catalog.describe_series(symbol)
     assert card['domain'] == 'macro' and card['series_id'] == symbol

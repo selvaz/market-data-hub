@@ -214,6 +214,8 @@ def run_sovereign_yields(con, cfg: dict, run_id: str, *,
 
     Missing credentials/transport/series and stale publications stay visible in
     download_log and coverage_report. They never trigger a substitute source.
+    A documented history role keeps stale observations flagged without degrading
+    current data; absent history and fetch/programming failures still count.
     """
     end = end or _today()
     entries = [e for e in get_sovereign_yields() if e.get("enabled", True)]
@@ -270,7 +272,8 @@ def run_sovereign_yields(con, cfg: dict, run_id: str, *,
                           holidays=entry.get("holidays", ())):
                 status = "stalled" if latest is not None else "unavailable"
                 error = f"latest observation {latest.date().isoformat() if latest is not None else 'absent'} exceeds business-day freshness limit"
-                degraded = True
+                if entry.get("role", "current") == "current" or latest is None:
+                    degraded = True
             elif df.empty:
                 status = "empty"
         except cb.SourceUnavailable as exc:

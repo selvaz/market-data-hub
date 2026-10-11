@@ -291,9 +291,11 @@ def list_macro_series(frequency: Optional[str] = None, category: Optional[str] =
         c["series_id"] = c.pop("symbol")
         c["country"] = e.get("country")
         for field in ("source", "unit", "frequency", "enabled", "provider", "provider_code",
-                      "max_lag_days", "lag_calendar", "unavailable_reason", "history_mode", "selection_rule"):
+                      "max_lag_days", "lag_calendar", "unavailable_reason", "disabled_reason",
+                      "history_reason", "history_mode", "selection_rule"):
             c[field] = e.get(field)
         if e["symbol"] in sovereign_ids:
+            c["role"] = e.get("role", "current")
             c["category"] = e.get("category", "CREDIT" if e["symbol"].startswith("SPREAD_") else "RATES")
             c["group"] = e.get("group", "Sovereign yields")
         rows.append(c)
