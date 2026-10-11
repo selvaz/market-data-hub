@@ -6,7 +6,11 @@
 > *query* this catalogue programmatically (by asset class, area, sector, pillar)
 > and pull analysis-ready series, see [EXTRACTION.md](EXTRACTION.md).
 
-Totals: **137 Yahoo symbols** + **100 FRED series** + **6 crypto × 3 timeframes**.
+Totals: **154 Yahoo symbols** + **106 FRED series** + **1 NY Fed ACM monthly series** + **6 crypto × 3 timeframes**.
+
+The [F05 free sources](free-sources.md) include term premia, EM corporate OAS,
+hourly earnings, retail/spot diesel and continuous commodity futures, with
+verified units, publication-lag limits and history/roll caveats.
 
 The Yahoo tables below describe the configured daily universe. Actual
 historical availability, freshness, and gaps are operational data held in

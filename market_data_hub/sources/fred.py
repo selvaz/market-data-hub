@@ -83,7 +83,9 @@ def fetch_fred(series_id: str, start: str, end: str, *,
     df["series_id"] = series_id
     df["series_name"] = meta.get("name", series_id)
     df["unit"] = meta.get("unit")
-    df["frequency"] = None  # inferred by the coverage engine
+    # Preserve verified native frequency, including short recorded windows
+    # where date-spacing inference cannot reliably recover the cadence.
+    df["frequency"] = meta.get("frequency")
     df["source"] = "fred"
     df["country"] = meta.get("country", "US")
     return df[["date", "series_id", "value", "series_name", "unit",

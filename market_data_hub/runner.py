@@ -3,11 +3,11 @@
 runner.py — orchestrator of the incremental daily download.
 
 Modes:
-  full      : Yahoo + FRED + Binance + panel + factors (default EOD, incremental)
+  full      : Yahoo + FRED + NY Fed ACM + Binance + panel + factors (default EOD, incremental)
   backfill  : same sources, but forcing the per-source backfill_start dates
               from settings.yaml instead of the incremental logic
   live-only : intraday live price injection only (liquid assets)
-  sources   : subset of {yahoo, fred, binance, macro_panel, factors}
+  sources   : subset of {yahoo, fred, nyfed_acm, binance, macro_panel, factors}
 
 Flow for each source:
   1. read last_date from the DB for each symbol
@@ -26,7 +26,7 @@ from typing import Dict, List, Optional
 import pandas as pd
 
 from market_data_hub.config_loader import (
-    get_settings, get_yahoo_tickers, get_fred_series,
+    get_settings, get_yahoo_tickers, get_fred_series, get_nyfed_acm_series,
     get_countries, get_macro_panel_specs)
 from market_data_hub.db.connection import get_conn
 from market_data_hub.db.upsert import upsert, log_run, record_vintage
@@ -35,6 +35,7 @@ from market_data_hub.coverage.report import (
     rebuild_coverage, rebuild_macro_panel_coverage)
 from market_data_hub.sources import yahoo as yh
 from market_data_hub.sources import fred as fr
+from market_data_hub.sources import nyfed_acm as acm
 from market_data_hub.sources import binance as bn
 from market_data_hub.sources import macro_panel as mp
 from market_data_hub.sources import factors as fac
@@ -80,10 +81,13 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
     # keeps the anagrafica (instrument, listing, ticker alias) in sync with
     # the daily universe even when Yahoo is temporarily unavailable; a later
     # successful run will attach the same deterministic listing ids to prices.
-    from market_data_hub.db.identity import ensure_listing
+    from market_data_hub.db.identity import ensure_listing, sync_currency_overrides
     for entry in tickers:
         ensure_listing(con, entry["symbol"], kind=entry.get("asset_class", "OTHER"),
                        name=entry.get("name"))
+    # ensure_listing is insert-only: a listing created before its currency
+    # override existed (e.g. TTF=F in EUR) is corrected here.
+    sync_currency_overrides(con)
     tail = cfg["incremental"]["tail_refresh_days"]
     gstart = cfg["backfill_start"]["yahoo"]
     last = _last_prices(con)
@@ -199,6 +203,38 @@ def run_fred(con, cfg: dict, run_id: str, *, start_override: Optional[str] = Non
                     error_msg=str(ex), duration_sec=time.perf_counter() - t_start)
         time.sleep(sleep)
     _log("FRED: completed")
+
+
+# --------------------------------------------------------------- NY FED ACM
+def run_nyfed_acm(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None,
+                  end: Optional[str] = None) -> None:
+    """Use the existing macro upsert/vintage/log path for the monthly ACM CSV."""
+    end = end or _today()
+    global_start = cfg["backfill_start"].get("nyfed_acm", "1961-01-01")
+    tail_days = int(cfg.get("incremental", {}).get("fred_tail_days", 95))
+    last = _last_macro(con)
+    http = cfg["http"]
+    for meta in get_nyfed_acm_series():
+        sid = meta["symbol"]
+        start = start_override or global_start
+        if not start_override and sid in last:
+            start = max(global_start, (last[sid] - timedelta(days=tail_days)).date().isoformat())
+        st = datetime.now(timezone.utc)
+        t0 = time.perf_counter()
+        try:
+            df = acm.fetch_acm(start, end, meta=meta, timeout=http["timeout"],
+                               retries=http["max_retries"], base_sleep=http["retry_base_sleep"])
+            added, updated = (0, 0) if df.empty else upsert(con, "macro_series", df)
+            if not df.empty:
+                record_vintage(con, "macro_series", df, _today(), run_id=run_id)
+            log_run(con, run_id=run_id, started_at=st, source="nyfed_acm", symbol=sid,
+                    rows_added=added, rows_updated=updated, status="empty" if df.empty else "ok",
+                    error_msg=None, duration_sec=time.perf_counter() - t0)
+        except Exception as ex:
+            log_run(con, run_id=run_id, started_at=st, source="nyfed_acm", symbol=sid,
+                    rows_added=0, rows_updated=0, status="error", error_msg=str(ex),
+                    duration_sec=time.perf_counter() - t0)
+    _log("NY FED ACM: completed")
 
 
 # --------------------------------------------------------------- BINANCE
@@ -443,7 +479,7 @@ def run_live(con, cfg: dict, run_id: str) -> None:
 
 # --------------------------------------------------------------- ENTRY
 # Default source set for a full run.
-_DEFAULT_SOURCES = ["yahoo", "fred", "binance", "macro_panel", "factors"]
+_DEFAULT_SOURCES = ["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors"]
 
 
 def run(mode: str = "full", sources: Optional[List[str]] = None,
@@ -483,6 +519,8 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
                 run_yahoo(con, cfg, run_id, start_override=_start("yahoo"), end=end)
             if "fred" in active:
                 run_fred(con, cfg, run_id, start_override=_start("fred"), end=end)
+            if "nyfed_acm" in active:
+                run_nyfed_acm(con, cfg, run_id, start_override=_start("nyfed_acm"), end=end)
             if "binance" in active:
                 run_binance(con, cfg, run_id, start_override=_start("binance"), end=end)
             if "macro_panel" in active:

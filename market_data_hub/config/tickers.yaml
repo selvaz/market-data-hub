@@ -744,3 +744,54 @@ yahoo:
   area: USD
   name: FX | USD | US Dollar Index (DXY)
   priority: 2
+# F05: provider-selected front-month continuous aliases, not fixed contracts.
+- symbol: BZ=F
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Energy | Brent Futures Continuous
+  priority: 2
+  instrument_type: futures_continuous
+  currency: USD
+  unit: USD per barrel
+  frequency: D
+  notes: Yahoo front-month alias; contract rolls can cause price jumps. Not a back-adjusted or total-return series.
+- symbol: CL=F
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Energy | WTI Crude Oil Futures Continuous
+  priority: 2
+  instrument_type: futures_continuous
+  currency: USD
+  unit: USD per barrel
+  frequency: D
+  notes: Yahoo front-month alias; contract rolls can cause price jumps. Not a back-adjusted or total-return series.
+- symbol: GC=F
+  asset_class: COMMODITIES
+  area: Global
+  name: CMDTY | Metals | Gold Futures Continuous
+  priority: 2
+  instrument_type: futures_continuous
+  currency: USD
+  unit: USD per troy ounce
+  frequency: D
+  notes: Yahoo front-month alias; contract rolls can cause price jumps. Not a back-adjusted or total-return series.
+- symbol: TTF=F
+  asset_class: COMMODITIES
+  area: Europe
+  name: CMDTY | Energy | Dutch TTF Natural Gas Futures Continuous
+  priority: 2
+  instrument_type: futures_continuous
+  currency: EUR
+  unit: EUR per MWh
+  frequency: D
+  notes: Yahoo front-month alias; contract rolls can cause price jumps. Not a back-adjusted or total-return series.
+- symbol: NG=F
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Energy | Henry Hub Natural Gas Futures Continuous
+  priority: 2
+  instrument_type: futures_continuous
+  currency: USD
+  unit: USD per MMBtu
+  frequency: D
+  notes: Yahoo front-month alias; contract rolls can cause price jumps. Not a back-adjusted or total-return series.

@@ -32,7 +32,7 @@ import pandas as pd
 from market_data_hub import reader
 from market_data_hub.config_loader import (
     get_countries,
-    get_fred_series,
+    get_macro_series,
     get_macro_panel_specs,
     get_settings,
     get_yahoo_tickers,
@@ -163,9 +163,9 @@ def list_datasets() -> List[Dict[str, Any]]:
             "domain": "macro",
             "table": "macro_series",
             "primary_key": ["date", "series_id"],
-            "frequency": "D/M/Q/A",
-            "n_series": len(get_fred_series()),
-            "description": "Single-value FRED macro series (rates, CPI, GDP, credit, liquidity).",
+            "frequency": "D/W/M/Q/A",
+            "n_series": len(get_macro_series()),
+            "description": "Single-value FRED and NY Fed ACM macro series (rates, CPI, GDP, credit, liquidity).",
             "discovery": "list_macro_series()",
         },
         {
@@ -259,15 +259,15 @@ def list_sectors(area: Optional[str] = None) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# Macro series (FRED)
+# Single-value macro series (FRED + NY Fed ACM)
 # ---------------------------------------------------------------------------
 def list_macro_series(frequency: Optional[str] = None, category: Optional[str] = None,
                       with_coverage: bool = True,
                       db_path: Optional[str] = None) -> pd.DataFrame:
-    """FRED single-value macro series. `category` filters the name prefix
+    """FRED and NY Fed ACM single-value macro series. `category` filters the name prefix
     (RATES/MACRO/CREDIT/RISK/LIQ/FX/...). Coverage is matched on series_id."""
     rows = []
-    for e in get_fred_series():
+    for e in get_macro_series():
         c = _classify(e)
         c["series_id"] = c.pop("symbol")
         c["country"] = e.get("country")
@@ -446,7 +446,7 @@ def search(query: str, db_path: Optional[str] = None) -> pd.DataFrame:
         if _match(e["symbol"], e["name"], e["sector"], e["area"], e["group"], e["asset_class"]):
             out.append({"domain": "prices", "key": e["symbol"], "name": e["name"],
                         "tag": e["asset_class"], "detail": e["sector"] or e["area"]})
-    for e in get_fred_series():
+    for e in get_macro_series():
         if _match(e.get("symbol"), e.get("name"), e.get("area")):
             out.append({"domain": "macro", "key": e.get("symbol"), "name": e.get("name"),
                         "tag": e.get("asset_class"), "detail": e.get("area")})

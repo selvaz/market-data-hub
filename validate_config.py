@@ -33,6 +33,7 @@ def validate() -> list[str]:
 
     tickers = _y("tickers.yaml").get("yahoo", [])
     fred = _y("macro_series.yaml").get("fred", [])
+    acm = _y("macro_series.yaml").get("nyfed_acm", [])
     panel = _y("macro_panel.yaml").get("indicators", [])
     countries = _y("countries.yaml").get("countries", [])
 
@@ -53,7 +54,7 @@ def validate() -> list[str]:
 
     # 3. No duplicate symbols / ids in any catalog.
     for label, ids in (("tickers.yaml", ticker_syms),
-                       ("macro_series.yaml", [e.get("symbol") for e in fred]),
+                       ("macro_series.yaml", [e.get("symbol") for e in fred + acm]),
                        ("macro_panel.yaml", [i.get("id") for i in panel]),
                        ("countries.yaml", [c.get("iso3") for c in countries])):
         dups = sorted({x for x in ids if ids.count(x) > 1})
@@ -67,7 +68,7 @@ def validate() -> list[str]:
                 errors.append(f"macro_panel.yaml: '{i.get('id', '?')}' missing '{field}'")
 
     # 5. Optional per-series publication lag is measured in calendar days.
-    for label, entries in (("tickers.yaml", tickers), ("macro_series.yaml", fred)):
+    for label, entries in (("tickers.yaml", tickers), ("macro_series.yaml", fred + acm)):
         for entry in entries:
             if "max_lag_days" in entry:
                 value = entry["max_lag_days"]
@@ -75,6 +76,13 @@ def validate() -> list[str]:
                     errors.append(
                         f"{label}: '{entry.get('symbol', '?')}' max_lag_days "
                         "must be a non-negative integer")
+
+    for entry in acm:
+        for field in ("symbol", "name", "unit", "country", "asset_class"):
+            if not entry.get(field):
+                errors.append(f"macro_series.yaml: NY Fed ACM missing '{field}'")
+        if entry.get("frequency") != "M" or entry.get("source") != "nyfed_acm":
+            errors.append("macro_series.yaml: NY Fed ACM chart CSV must have frequency M and source nyfed_acm")
 
     return errors
 
@@ -86,11 +94,12 @@ def main() -> int:
         for e in errors:
             print("  -", e)
         return 1
-    print("CONFIG OK — tickers={} fred={} panel={} countries={}".format(
+    print("CONFIG OK — tickers={} fred={} panel={} countries={} nyfed_acm={}".format(
         len(_y("tickers.yaml").get("yahoo", [])),
         len(_y("macro_series.yaml").get("fred", [])),
         len(_y("macro_panel.yaml").get("indicators", [])),
         len(_y("countries.yaml").get("countries", [])),
+        len(_y("macro_series.yaml").get("nyfed_acm", [])),
     ))
     return 0
 
