@@ -3,11 +3,11 @@
 runner.py — orchestrator of the incremental daily download.
 
 Modes:
-  full      : Yahoo + FRED + NY Fed ACM + Binance + panel + factors (default EOD, incremental)
+  full      : Yahoo + FRED + NY Fed ACM + sovereign yields + Binance + panel + factors
   backfill  : same sources, but forcing the per-source backfill_start dates
               from settings.yaml instead of the incremental logic
   live-only : intraday live price injection only (liquid assets)
-  sources   : subset of {yahoo, fred, nyfed_acm, binance, macro_panel, factors}
+  sources   : subset of {yahoo, fred, nyfed_acm, sovereign_yields, binance, macro_panel, factors}
 
 Flow for each source:
   1. read last_date from the DB for each symbol
@@ -27,7 +27,7 @@ import pandas as pd
 
 from market_data_hub.config_loader import (
     get_settings, get_yahoo_tickers, get_fred_series, get_nyfed_acm_series,
-    get_countries, get_macro_panel_specs)
+    get_countries, get_macro_panel_specs, get_sovereign_yields)
 from market_data_hub.db.connection import get_conn
 from market_data_hub.db.upsert import upsert, log_run, record_vintage
 from market_data_hub.lock import db_write_lock, DBLockTimeout
@@ -39,6 +39,8 @@ from market_data_hub.sources import nyfed_acm as acm
 from market_data_hub.sources import binance as bn
 from market_data_hub.sources import macro_panel as mp
 from market_data_hub.sources import factors as fac
+from market_data_hub.sources import sovereign_yields as cb
+from market_data_hub.coverage.stalled_detector import is_stalled
 
 
 def _today() -> str:
@@ -203,6 +205,86 @@ def run_fred(con, cfg: dict, run_id: str, *, start_override: Optional[str] = Non
                     error_msg=str(ex), duration_sec=time.perf_counter() - t_start)
         time.sleep(sleep)
     _log("FRED: completed")
+
+
+def run_sovereign_yields(con, cfg: dict, run_id: str, *,
+                        start_override: Optional[str] = None,
+                        end: Optional[str] = None) -> int:
+    """Serial atomic macro upserts; 0 ok, 1 fault, 2 degraded, 3 nothing to do.
+
+    Missing credentials/transport/series and stale publications stay visible in
+    download_log and coverage_report. They never trigger a substitute source.
+    """
+    end = end or _today()
+    entries = [e for e in get_sovereign_yields() if e.get("enabled", True)]
+    if not entries:
+        return 3
+    start = cfg["backfill_start"]["sovereign_yields"]
+    tail = cfg.get("incremental", {}).get("sovereign_tail_days", 7)
+    http = cfg["http"]
+    last = _last_macro(con)
+    cache = {}
+    degraded = fault = wrote = False
+    _log(f"SOVEREIGN YIELDS: {len(entries)} official daily series")
+    for entry in entries:
+        sid = entry["symbol"]
+        since = start_override or (max(start, (last[sid] - timedelta(days=tail)).date().isoformat())
+                                   if sid in last else start)
+        st = datetime.now(timezone.utc)
+        t0 = time.perf_counter()
+        added = updated = 0
+        status, error = "ok", None
+        try:
+            if pd.Timestamp(since) > pd.Timestamp(end) and start_override is None:
+                # A current DB can be ahead of a historical --end. No HTTP,
+                # freshness reclassification or write is needed for this series.
+                log_run(con, run_id=run_id, started_at=st, source="sovereign_yields", symbol=sid,
+                        rows_added=0, rows_updated=0, status="noop", error_msg=None,
+                        duration_sec=time.perf_counter() - t0)
+                _log(f"  {sid}: noop (incremental start after requested end)")
+                continue
+            df = cb.fetch_yield(entry, since, end, timeout=http["timeout"],
+                                retries=http["max_retries"],
+                                base_sleep=http.get("retry_base_sleep", 1.0), cache=cache)
+            latest = last.get(sid)
+            if not df.empty:
+                if entry["provider"] in {"mot", "finanzagentur"}:
+                    # Yield, vintage and per-day bond identity commit together.
+                    con.execute("BEGIN TRANSACTION")
+                    try:
+                        counts = upsert(con, "macro_series", df, outer_txn=True)
+                        upsert(con, "sovereign_bond_metadata", df, outer_txn=True)
+                        record_vintage(con, "macro_series", df, _today(), run_id=run_id)
+                        con.execute("COMMIT")
+                    except Exception:
+                        con.execute("ROLLBACK")
+                        raise
+                    added, updated = counts
+                else:
+                    added, updated = upsert(con, "macro_series", df)
+                    record_vintage(con, "macro_series", df, _today(), run_id=run_id)
+                wrote = True
+                latest = max(df.date.max(), latest) if latest is not None else df.date.max()
+            if is_stalled(latest, "D", as_of=pd.Timestamp(end).date(),
+                          max_lag_days=entry["max_lag_days"], lag_calendar=entry["lag_calendar"],
+                          holidays=entry.get("holidays", ())):
+                status = "stalled" if latest is not None else "unavailable"
+                error = f"latest observation {latest.date().isoformat() if latest is not None else 'absent'} exceeds business-day freshness limit"
+                degraded = True
+            elif df.empty:
+                status = "empty"
+        except cb.SourceUnavailable as exc:
+            degraded = True
+            status, error = "unavailable", str(exc)
+        except Exception as exc:
+            # A programming/DB/config failure is a fault, not an unavailable feed.
+            fault = True
+            status, error = "error", f"{type(exc).__name__}: sovereign collector fault"
+        log_run(con, run_id=run_id, started_at=st, source="sovereign_yields", symbol=sid,
+                rows_added=added, rows_updated=updated, status=status, error_msg=error,
+                duration_sec=time.perf_counter() - t0)
+        _log(f"  {sid}: {status}" + (f" ({error})" if error else ""))
+    return 1 if fault else 2 if degraded else 0 if wrote else 3
 
 
 # --------------------------------------------------------------- NY FED ACM
@@ -479,12 +561,12 @@ def run_live(con, cfg: dict, run_id: str) -> None:
 
 # --------------------------------------------------------------- ENTRY
 # Default source set for a full run.
-_DEFAULT_SOURCES = ["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors"]
+_DEFAULT_SOURCES = ["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors", "sovereign_yields"]
 
 
 def run(mode: str = "full", sources: Optional[List[str]] = None,
         start_override: Optional[str] = None, end: Optional[str] = None,
-        db_path: Optional[str] = None) -> None:
+        db_path: Optional[str] = None) -> int:
     cfg = get_settings()
     run_id = ("backfill_" if mode == "backfill" else "") + uuid.uuid4().hex[:12]
     t0 = time.time()
@@ -498,9 +580,10 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
         lock_ctx.__enter__()
     except DBLockTimeout as ex:
         _log(f"SKIP: {ex}")
-        return
+        return 9
 
     con = None
+    result = 0
     try:
         con = get_conn(db_path)
 
@@ -521,6 +604,11 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
                 run_fred(con, cfg, run_id, start_override=_start("fred"), end=end)
             if "nyfed_acm" in active:
                 run_nyfed_acm(con, cfg, run_id, start_override=_start("nyfed_acm"), end=end)
+            if "sovereign_yields" in active:
+                result = run_sovereign_yields(con, cfg, run_id,
+                                             start_override=_start("sovereign_yields"), end=end)
+                if result == 3 and len(active) > 1:
+                    result = 0
             if "binance" in active:
                 run_binance(con, cfg, run_id, start_override=_start("binance"), end=end)
             if "macro_panel" in active:
@@ -549,6 +637,7 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
         con = None
 
         _log(f"=== END {run_id} ({time.time()-t0:.1f}s) ===")
+        return result
     finally:
         if con is not None:
             con.close()

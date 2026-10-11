@@ -1,0 +1,26 @@
+[
+  {
+    "Period": "2026-10-08T00:00:00",
+    "Timeseries": "6.25% 2036 (R209) (closing yields)",
+    "Description": "Government stock - 6.25% 2036 (R209) (closing yields)",
+    "Value": 8.99,
+    "FormatNumber": "0.00",
+    "FormatDate": "yyyy-MM-dd"
+  },
+  {
+    "Period": "2026-10-07T00:00:00",
+    "Timeseries": "6.25% 2036 (R209) (closing yields)",
+    "Description": "Government stock - 6.25% 2036 (R209) (closing yields)",
+    "Value": 8.985,
+    "FormatNumber": "0.00",
+    "FormatDate": "yyyy-MM-dd"
+  },
+  {
+    "Period": "2026-10-06T00:00:00",
+    "Timeseries": "6.25% 2036 (R209) (closing yields)",
+    "Description": "Government stock - 6.25% 2036 (R209) (closing yields)",
+    "Value": 8.965,
+    "FormatNumber": "0.00",
+    "FormatDate": "yyyy-MM-dd"
+  }
+]

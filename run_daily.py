@@ -3,14 +3,14 @@
 run_daily.py — entry point for the incremental daily download.
 
 Usage:
-    python run_daily.py                          # full: yahoo + fred + binance + macro_panel + live
+    python run_daily.py                          # all default sources + live
     python run_daily.py --report --open          # full + HTML report + open in browser
     python run_daily.py --live-only              # live intraday price injection only
     python run_daily.py --sources yahoo fred     # specific sources
     python run_daily.py --end 2024-12-31
 
-Note: without --sources it downloads ALL sources (yahoo, fred, binance,
-macro_panel) + live injection.
+Note: without --sources it downloads ALL sources (yahoo, fred, nyfed_acm,
+sovereign_yields, binance, macro_panel, factors) + live injection.
 """
 import argparse
 import sys
@@ -26,9 +26,10 @@ def main() -> int:
     p.add_argument("--live-only", action="store_true",
                    help="live intraday price injection only")
     p.add_argument("--sources", nargs="+",
-                   choices=["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors"],
+                   choices=["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors", "sovereign_yields"],
                    help="limit to the given sources")
     p.add_argument("--end", help="end date (default: today UTC)")
+    p.add_argument("--start", help="override inclusive start date (supports official-yield backfill)")
     p.add_argument("--db", help="DuckDB DB path (override settings)")
     p.add_argument("--report", action="store_true",
                    help="generate HTML/MD report when the download finishes")
@@ -42,8 +43,10 @@ def main() -> int:
 
     mode = "live-only" if args.live_only else "full"
 
+    run_status = 0
     try:
-        run(mode=mode, sources=args.sources, end=args.end, db_path=args.db)
+        run_status = run(mode=mode, sources=args.sources, start_override=args.start,
+                         end=args.end, db_path=args.db) or 0
     except Exception as e:
         print(f"ERROR during download: {e}", file=sys.stderr)
         import traceback
@@ -51,6 +54,10 @@ def main() -> int:
         # continue to the report anyway if requested
         if not args.report:
             return 1
+        run_status = 1
+
+    if run_status == 9:
+        return 9
 
     if args.report and not args.live_only:
         print("\n--- Generating report ---")
@@ -101,8 +108,9 @@ def main() -> int:
             print(f"ERROR generating report: {e}", file=sys.stderr)
             import traceback
             traceback.print_exc()
+            run_status = 1
 
-    return 0
+    return run_status
 
 
 if __name__ == "__main__":

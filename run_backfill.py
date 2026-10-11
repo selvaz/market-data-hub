@@ -26,15 +26,18 @@ from market_data_hub.runner import run  # noqa: E402
 def main() -> int:
     p = argparse.ArgumentParser(description="market_data_hub historical backfill")
     p.add_argument("--sources", nargs="+",
-                   choices=["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors"],
-                   default=["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors"])
+                   choices=["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors", "sovereign_yields"],
+                   default=["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors", "sovereign_yields"])
     p.add_argument("--start", help="override start date for ALL sources")
     p.add_argument("--db", help="DuckDB DB path")
     args = p.parse_args()
 
-    run(mode="backfill", sources=args.sources, start_override=args.start,
-        db_path=args.db)
-    return 0
+    try:
+        return run(mode="backfill", sources=args.sources, start_override=args.start,
+                   db_path=args.db) or 0
+    except Exception as exc:
+        print(f"ERROR during backfill: {type(exc).__name__}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

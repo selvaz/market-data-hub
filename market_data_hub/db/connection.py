@@ -22,7 +22,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 24
+SCHEMA_VERSION = 25
 
 
 def _default_db() -> str:
@@ -444,6 +444,10 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
                 f"UPDATE {table} SET report_variant = 'futures_only' "
                 "WHERE report_variant IS NULL")
         current = 24
+    if current < 25:
+        # v24 -> v25: additive sovereign_bond_metadata table is created by
+        # apply_schema above; macro history and its vintage rows are unchanged.
+        current = 25
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

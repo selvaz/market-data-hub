@@ -35,6 +35,7 @@ from market_data_hub.config_loader import (
     get_macro_series,
     get_macro_panel_specs,
     get_settings,
+    get_sovereign_yields,
     get_yahoo_tickers,
 )
 
@@ -145,6 +146,19 @@ def _attach_coverage(df: pd.DataFrame, db_path: Optional[str]) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Datasets overview
 # ---------------------------------------------------------------------------
+def _macro_entries() -> List[Dict[str, Any]]:
+    """FRED, NY Fed ACM and sovereign entries for every discovery surface.
+
+    Include configured unavailable/disabled feeds so absence remains discoverable.
+    Derived spreads appear only if explicitly listed, never synthesized here.
+    """
+    entries = {e["symbol"]: dict(e, source=e.get("source", "FRED"))
+               for e in get_macro_series()}
+    for entry in get_sovereign_yields():
+        entries[entry["symbol"]] = dict(entry)
+    return list(entries.values())
+
+
 def list_datasets() -> List[Dict[str, Any]]:
     """The domains available in the hub, with the table and how to query them."""
     settings = get_settings()
@@ -164,8 +178,8 @@ def list_datasets() -> List[Dict[str, Any]]:
             "table": "macro_series",
             "primary_key": ["date", "series_id"],
             "frequency": "D/W/M/Q/A",
-            "n_series": len(get_macro_series()),
-            "description": "Single-value FRED and NY Fed ACM macro series (rates, CPI, GDP, credit, liquidity).",
+            "n_series": len(_macro_entries()),
+            "description": "Single-value macro series: FRED, NY Fed ACM and daily sovereign yields from central banks, issuers and MOT; configured spreads if listed.",
             "discovery": "list_macro_series()",
         },
         {
@@ -259,18 +273,29 @@ def list_sectors(area: Optional[str] = None) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# Single-value macro series (FRED + NY Fed ACM)
+# Macro series (FRED, NY Fed ACM and configured sovereign yields/spreads)
 # ---------------------------------------------------------------------------
 def list_macro_series(frequency: Optional[str] = None, category: Optional[str] = None,
                       with_coverage: bool = True,
                       db_path: Optional[str] = None) -> pd.DataFrame:
-    """FRED and NY Fed ACM single-value macro series. `category` filters the name prefix
-    (RATES/MACRO/CREDIT/RISK/LIQ/FX/...). Coverage is matched on series_id."""
+    """FRED, NY Fed ACM and sovereign universe before ingestion; coverage uses series_id.
+
+    `category` filters name taxonomy; sovereign yields default to RATES and
+    configured spreads to CREDIT. Frequency uses detected coverage where present,
+    otherwise the configured frequency. Publisher/unit/availability stay visible.
+    """
     rows = []
-    for e in get_macro_series():
+    sovereign_ids = {e["symbol"] for e in get_sovereign_yields()}
+    for e in _macro_entries():
         c = _classify(e)
         c["series_id"] = c.pop("symbol")
         c["country"] = e.get("country")
+        for field in ("source", "unit", "frequency", "enabled", "provider", "provider_code",
+                      "max_lag_days", "lag_calendar", "unavailable_reason", "history_mode", "selection_rule"):
+            c[field] = e.get(field)
+        if e["symbol"] in sovereign_ids:
+            c["category"] = e.get("category", "CREDIT" if e["symbol"].startswith("SPREAD_") else "RATES")
+            c["group"] = e.get("group", "Sovereign yields")
         rows.append(c)
     df = pd.DataFrame(rows)
     if category:
@@ -280,8 +305,9 @@ def list_macro_series(frequency: Optional[str] = None, category: Optional[str] =
         cov = _coverage_lookup(db_path)
         for col in ("first_date", "last_date", "obs_count", "freq_detected", "lag_days", "stalled"):
             df[col] = df["series_id"].map(cov[col]) if (not cov.empty and col in cov.columns) else pd.NA
-    if frequency and "freq_detected" in df.columns:
-        df = df[df["freq_detected"] == frequency].reset_index(drop=True)
+    if frequency:
+        freq = df["freq_detected"].fillna(df["frequency"]) if "freq_detected" in df else df["frequency"]
+        df = df[freq == frequency].reset_index(drop=True)
     return df
 
 
@@ -432,7 +458,7 @@ def describe_series(symbol_or_id: str, db_path: Optional[str] = None) -> Dict[st
 
 def search(query: str, db_path: Optional[str] = None) -> pd.DataFrame:
     """Case-insensitive substring match over symbol/name/sector/area/id across
-    the prices universe, the FRED macro series and the cross-country indicators.
+    prices, configured macro series and cross-country indicators.
     Returns a unified frame: (domain, key, name, asset_class/pillar, area/sector)."""
     q = (query or "").strip().lower()
     out: List[Dict[str, Any]] = []
@@ -446,10 +472,11 @@ def search(query: str, db_path: Optional[str] = None) -> pd.DataFrame:
         if _match(e["symbol"], e["name"], e["sector"], e["area"], e["group"], e["asset_class"]):
             out.append({"domain": "prices", "key": e["symbol"], "name": e["name"],
                         "tag": e["asset_class"], "detail": e["sector"] or e["area"]})
-    for e in get_macro_series():
-        if _match(e.get("symbol"), e.get("name"), e.get("area")):
+    for e in _macro_entries():
+        if _match(e.get("symbol"), e.get("name"), e.get("area"), e.get("country"), e.get("source")):
             out.append({"domain": "macro", "key": e.get("symbol"), "name": e.get("name"),
-                        "tag": e.get("asset_class"), "detail": e.get("area")})
+                        "tag": e.get("asset_class"), "detail": e.get("area") or e.get("country"),
+                        "source": e.get("source"), "country": e.get("country")})
     for s in get_macro_panel_specs():
         if _match(s.get("id"), s.get("name"), s.get("pillar")):
             out.append({"domain": "macro_panel", "key": s.get("id"), "name": s.get("name"),
