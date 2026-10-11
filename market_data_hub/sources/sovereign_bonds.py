@@ -64,15 +64,16 @@ def _mot_list(body: bytes) -> tuple[list[dict], set[int]]:
     bonds = []
     listed = []
     for row in tables[0]:
-        if not row or not re.search(r"IT\d{10}", row[0]):
+        found = re.search(r"IT\d{10}", row[0]) if row else None
+        if found is None:
             continue
         if len(row) != 6:
             raise SourceUnavailable("changed MOT universe row")
-        listed.append(re.search(r"IT\d{10}", row[0])[0])
+        listed.append(found[0])
         # Excludes strips, linkers (Btpi), BTP Italia and step-up retail bonds.
         if not re.match(r"^Btp(?:-| (?:Green )?(?:Tf|Fx) )", row[1], re.I):
             continue
-        isin = re.search(r"IT\d{10}", row[0])[0]
+        isin = found[0]
         try:
             maturity = pd.to_datetime(row[4], format="%d/%m/%Y")
         except ValueError:
@@ -99,7 +100,7 @@ def _snapshot(meta: dict, when: pd.Timestamp, bond: dict, value: float,
 
 def _mot_bond(meta: dict, body: bytes, expected: dict, url: str) -> pd.DataFrame:
     _, tables = _tables(body)
-    fields = {}
+    fields: dict = {}
     for table in tables:
         for row in table:
             if len(row) == 2:
@@ -173,7 +174,8 @@ def parse_finanzagentur(meta: dict, body: bytes) -> pd.DataFrame:
 
 
 def _request_date() -> date:
-    return pd.Timestamp.now(tz="Europe/Rome").date()
+    today: date = pd.Timestamp.now(tz="Europe/Rome").date()
+    return today
 
 
 def fetch_bond(meta: dict, get) -> pd.DataFrame:
