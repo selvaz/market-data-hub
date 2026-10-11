@@ -231,6 +231,14 @@ def run_sovereign_yields(con, cfg: dict, run_id: str, *,
         added = updated = 0
         status, error = "ok", None
         try:
+            if pd.Timestamp(since) > pd.Timestamp(end) and start_override is None:
+                # A current DB can be ahead of a historical --end. No HTTP,
+                # freshness reclassification or write is needed for this series.
+                log_run(con, run_id=run_id, started_at=st, source="sovereign_yields", symbol=sid,
+                        rows_added=0, rows_updated=0, status="noop", error_msg=None,
+                        duration_sec=time.perf_counter() - t0)
+                _log(f"  {sid}: noop (incremental start after requested end)")
+                continue
             df = cb.fetch_yield(entry, since, end, timeout=http["timeout"],
                                 retries=http["max_retries"],
                                 base_sleep=http.get("retry_base_sleep", 1.0), cache=cache)

@@ -48,10 +48,11 @@ def derive_sovereign_spreads(observations: pd.DataFrame, catalog: list[dict], *,
     histories cannot produce a fresh spread. Each leg's holiday calendar and lag
     threshold are respected. Identical duplicates are collapsed; unresolved,
     conflicting revisions raise ValueError (a caller should read upserted rows).
-    Italy prefers its fresh MOT snapshot and a fresh Finanzagentur Bund on common
-    dates; otherwise its reference is the labelled ECB AAA stand-in. BMK0200
-    remains independent history and supplies Italy only when MOT is absent/older
-    and stale. A caller may LEFT JOIN sovereign_bond_metadata to include ISINs.
+    On each Italy observation date, MOT takes precedence over BMK0200 and an
+    available same-date Finanzagentur Bund takes precedence over ECB AAA. Neither
+    historical choice depends on as_of freshness. Status describes only the
+    current country row/reference; historical rows retain their identities even
+    during a later outage. LEFT JOIN sovereign_bond_metadata to include ISINs.
     """
     reference = next((e for e in catalog if e["symbol"] == REFERENCE_ID), None)
     if reference is None:
@@ -62,7 +63,7 @@ def derive_sovereign_spreads(observations: pd.DataFrame, catalog: list[dict], *,
                  and re.fullmatch(r"CB_[A-Z]{2}_10Y", e["symbol"])]
     bond_entries = [e for e in catalog if e.get("enabled", True)
                     and e["symbol"] in {BUND_ID, ITALY_CURRENT_ID}]
-    if not any(e["country"] == "ITA" for e in countries):
+    if pd.Timestamp(as_of) >= pd.Timestamp(EURO_SINCE["ITA"]) and not any(e["country"] == "ITA" for e in countries):
         countries.extend(e for e in bond_entries if e["symbol"] == ITALY_CURRENT_ID)
     selected = {e["symbol"]: e for e in [reference, *countries, *bond_entries]}
     required = {"date", "series_id", "value", "unit", "frequency", "country"}
@@ -94,36 +95,49 @@ def derive_sovereign_spreads(observations: pd.DataFrame, catalog: list[dict], *,
 
     frames, statuses = [], []
     for meta in countries:
-        if meta["country"] == "ITA" and ITALY_CURRENT_ID in selected:
-            mot = data[data.series_id == ITALY_CURRENT_ID]
-            official = data[data.series_id == meta["symbol"]]
-            if not mot.empty and (not stalled(mot.date.max(), selected[ITALY_CURRENT_ID])
-                                  or official.empty or mot.date.max() >= official.date.max()):
-                meta = selected[ITALY_CURRENT_ID]
         symbol = meta["symbol"]
-        country = data[(data.series_id == symbol)
-                       & (data.date >= pd.Timestamp(EURO_SINCE[meta["country"]]))][["date", "value", "isin"]]
+        country_code = "IT_10Y" if meta["country"] == "ITA" else symbol[3:]
+        country = data[data.series_id == symbol][["date", "value", "isin", "series_id"]]
+        if meta["country"] == "ITA" and ITALY_CURRENT_ID in selected:
+            mot = data[data.series_id == ITALY_CURRENT_ID][["date", "value", "isin", "series_id"]]
+            country = pd.concat([country, mot]).drop_duplicates("date", keep="last")
+        country = country[country.date >= pd.Timestamp(EURO_SINCE[meta["country"]])].sort_values("date")
+        country = country.rename(columns={"series_id": "country_series_id"})
         last_country = country.date.max()
+        if not country.empty:
+            # Metadata/holiday calendar belongs to the latest actual country leg.
+            meta = selected[country.country_series_id.iloc[-1]]
+            symbol = meta["symbol"]
+        base = data[data.series_id == REFERENCE_ID][["date", "value", "isin"]]
+        aligned = country.merge(base, on="date", how="left", suffixes=("_country", "_reference"), validate="one_to_one")
+        aligned["reference_id"] = REFERENCE_ID
         ref = reference
         if meta["country"] == "ITA" and BUND_ID in selected:
-            bund = data[data.series_id == BUND_ID]
-            common = country.merge(bund[["date"]], on="date")
-            if (not stalled(last_country, meta) and not stalled(bund.date.max(), selected[BUND_ID])
-                    and not stalled(common.date.max(), meta) and not stalled(common.date.max(), selected[BUND_ID])):
+            bund = data[data.series_id == BUND_ID][["date", "value", "isin"]].rename(
+                columns={"value": "value_bund", "isin": "isin_bund"})
+            aligned = aligned.merge(bund, on="date", how="left", validate="one_to_one")
+            has_bund = aligned.value_bund.notna()
+            aligned.loc[has_bund, "reference_id"] = BUND_ID
+            aligned.loc[has_bund, "value_reference"] = aligned.loc[has_bund, "value_bund"]
+            aligned.loc[has_bund, "isin_reference"] = aligned.loc[has_bund, "isin_bund"]
+            # The current status uses the latest country's dated reference.
+            # A stale same-date Bund remains labelled Bund and is marked stale;
+            # an outage on a newer date selects ECB for that newer date only.
+            if (bund.date == last_country).any():
                 ref = selected[BUND_ID]
+        aligned = aligned[aligned.value_reference.notna()].copy()
         reference_id = ref["symbol"]
         base = data[data.series_id == reference_id][["date", "value", "isin"]]
         last_base = base.date.max()
         suffix = "BUND_FA" if reference_id == BUND_ID else "ECB_AAA"
-        country_code = "IT_10Y" if symbol == ITALY_CURRENT_ID else symbol[3:]
         spread_id = f"SPREAD_{country_code}_VS_{suffix}"
-        aligned = country.merge(base, on="date", how="inner", suffixes=("_country", "_reference"), validate="one_to_one")
-        last_common = aligned.date.max()
+        current_history = aligned[aligned.reference_id == reference_id]
+        last_common = current_history.date.max()
         missing = pd.isna(last_country) or pd.isna(last_base)
         freshness = pd.NaT if missing else min(last_country, last_base)
         stale = (missing or stalled(last_country, meta) or stalled(last_base, ref)
                  or stalled(last_common, meta) or stalled(last_common, ref))
-        reason = "missing_leg" if missing else ("no_common_date" if aligned.empty else ("stale" if stale else "fresh"))
+        reason = "missing_leg" if missing else ("no_common_date" if current_history.empty else ("stale" if stale else "fresh"))
         statuses.append(dict(series_id=spread_id, country=meta["country"], reference_id=reference_id,
                              last_country_date=last_country, last_reference_date=last_base,
                              freshness_date=freshness, last_spread_date=last_common,
@@ -133,11 +147,13 @@ def derive_sovereign_spreads(observations: pd.DataFrame, catalog: list[dict], *,
         aligned["value"] = 100.0 * (aligned.value_country - aligned.value_reference)
         aligned["country_isin"] = aligned.isin_country
         aligned["reference_isin"] = aligned.isin_reference
-        label = "Finanzagentur nominal Bund 10y reference yield" if reference_id == BUND_ID else "ECB AAA 10y spot (Bund stand-in)"
-        for key, value in dict(series_id=spread_id, country=meta["country"],
-                               series_name=f"{meta['country']} 10y yield minus {label}",
-                               unit="bp", frequency="D", source="derived:sovereign_yields",
-                               country_series_id=symbol, reference_id=reference_id).items():
+        labels = {BUND_ID: "Finanzagentur nominal Bund 10y reference yield",
+                  REFERENCE_ID: "ECB AAA 10y spot (Bund stand-in)"}
+        suffixes = {BUND_ID: "BUND_FA", REFERENCE_ID: "ECB_AAA"}
+        aligned["series_id"] = f"SPREAD_{country_code}_VS_" + aligned.reference_id.map(suffixes)
+        aligned["series_name"] = f"{meta['country']} 10y yield minus " + aligned.reference_id.map(labels)
+        for key, value in dict(country=meta["country"], unit="bp", frequency="D",
+                               source="derived:sovereign_yields").items():
             aligned[key] = value
         frames.append(aligned[OBS_COLUMNS])
     history = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=OBS_COLUMNS)

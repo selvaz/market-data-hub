@@ -236,12 +236,14 @@ apps. The new function is pure, opens no DB and does not persist derived rows.
 
 It derives every configured, enabled euro-country `CB_<ISO2>_10Y` with available
 observations, including Italy/France/Portugal/Greece/etc when their feeds become
-available, plus the current `ITA_BTP10_MOT` entry. Italy prefers a fresh MOT
-leg; if it is absent or stale and older, the official history leg remains visible
-with its own freshness. **When Italy and `DEU_BUND10_FA` are fresh and have a fresh
-common date, Italy uses `SPREAD_IT_10Y_VS_BUND_FA`. Otherwise the reference is the
-labelled ECB AAA stand-in**, with `SPREAD_IT_10Y_VS_ECB_AAA`. Other euro countries
-retain their ECB reference. Both input IDs are in observations and status, and
+available, plus the current `ITA_BTP10_MOT` entry. Following F08d, Italy's country
+leg and reference are selected **per observation date**: MOT takes precedence
+over BMK0200 on overlap, while dates present only in official history remain.
+**A same-date `DEU_BUND10_FA` leg selects `SPREAD_IT_10Y_VS_BUND_FA`; otherwise a
+same-date ECB AAA leg selects `SPREAD_IT_10Y_VS_ECB_AAA`.** Neither selection uses
+the query's freshness state. A later Bund outage or later `as_of` cannot relabel
+or remove an existing dated Bund spread when its inputs are unchanged. Other euro
+countries retain their ECB reference. Both input IDs are in observations and status, and
 optional joined ISINs are retained as `country_isin` / `reference_isin`.
 EM and other currencies are excluded, including local-currency history
 before a country's euro adoption date. Series IDs are
@@ -253,14 +255,19 @@ the proxy is a continuously compounded spot curve while country feeds include
 benchmark YTMs and constant-maturity reference rates.
 
 `SpreadResult.observations` contains historical derived rows;
-`SpreadResult.status` contains an explicit row for every configured euro 10y.
+`SpreadResult.status` contains one current status row for every configured euro
+10y, not separate current statuses for each historical reference. For Italy it
+uses the reference selected on the latest country observation date. A stale
+same-date Bund stays labelled Bund and is marked stale; an outage on a newer
+country date allows ECB on that newer date while retaining previous Bund rows.
 `freshness_date` is the older leg's latest observation; `last_spread_date` is the
 latest common date. A current result is stalled if either leg **or** the latest
 common date is more than three business days old on either leg's configured
 holiday calendar. This also catches recent but disjoint histories. Missing legs
 and missing common dates have explicit reasons. Historical stalled results remain
-available, so consumers **must join status and require `stalled == False` before
-labelling a value current**. Conflicting unresolved revisions, nonfinite values,
+available, so consumers **must match the current status's series ID and
+`last_spread_date`, and require `stalled == False`, before labelling a value
+current**. Conflicting unresolved revisions, nonfinite values,
 wrong units/frequency/country and intraday dates raise errors; future observations
 are excluded for the requested as-of date.
 
@@ -531,3 +538,88 @@ responses were under `%TEMP%` and removed afterward; the committed recordings
 and original-response hashes preserve the evidence. No production DB was opened,
 no production ingestion or scheduled-task/Telegram action was performed, and
 there was no push or PR change. The local F08c commit sits on top of `917ffda`.
+
+## F08d review fixes and validation
+
+Read all four [PR #90 review comments](https://github.com/selvaz/market-data-hub/pull/90)
+with `gh api repos/selvaz/market-data-hub/pulls/90/comments`. Changes on top of
+`dd5ca76` address:
+
+* [Public macro discovery](https://github.com/selvaz/market-data-hub/pull/90#discussion_r4241111318):
+  one combined declared FRED/sovereign universe feeds `list_macro_series`,
+  `describe_series`, `search` and `list_datasets`. All 42 sovereign entries are
+  discoverable before ingestion, retaining publisher, country, unit, declared
+  frequency, lag policy, provider and availability metadata. Macro dataset count
+  is 142. A spread is exposed if explicitly listed, never invented by discovery.
+  Search also matches publisher/country; daily filtering falls back to declared
+  frequency where coverage has no detected frequency.
+* [Incremental ranges beyond --end](https://github.com/selvaz/market-data-hub/pull/90#discussion_r4241111321):
+  when no explicit start is supplied and the computed start is after end, log
+  `noop` with zero rows and perform no HTTP/series write. An all-no-op run returns
+  3; other eligible series can still run and determine the result. Explicitly
+  reversed caller bounds still return fault 1, rather than hiding invalid input.
+* [Stable dated Italy spreads](https://github.com/selvaz/market-data-hub/pull/90#discussion_r4241236025):
+  country legs and references are selected per date. MOT wins overlapping
+  BMK0200 dates; a dated Bund wins over ECB on that date, even when that dated
+  result is stale at a later query time. Older official history is retained.
+  Only the latest country row's reference gets a current freshness status. A
+  newer date without Bund may use ECB without removing previous Bund rows.
+* [Historical-only JGB fetching](https://github.com/selvaz/market-data-hub/pull/90#discussion_r4241236028):
+  do not request the unrelated current-month export when the requested end is
+  before the current month. Historical archive-only ranges therefore survive a
+  current-export outage. Ranges crossing the month boundary still fetch both;
+  ranges wholly within the current month fetch current only.
+
+Tests were written first for all four findings. Initial command:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest tests/test_sovereign_review.py -q --basetemp "$env:TEMP/f08d-red" --tb=short
+```
+
+```text
+12 failed in 8.26s
+```
+
+Final targeted command includes existing catalog, yield, bond and spread tests
+plus 17 new review/boundary regressions:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest tests/test_sovereign_review.py tests/test_sovereign_spreads.py tests/test_sovereign_bonds.py tests/test_sovereign_yields.py tests/test_catalog.py -q --basetemp "$env:TEMP/f08d-targeted-final" --tb=short
+```
+
+```text
+175 passed in 29.23s
+```
+
+Static/config checks used the required interpreter and ran unpiped:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m ruff check market_data_hub/catalog.py market_data_hub/runner.py market_data_hub/sovereign_spreads.py market_data_hub/sources/sovereign_yields.py tests/test_sovereign_review.py
+& C:/ProgramData/spyder-6/python.exe -X utf8 validate_config.py
+```
+
+```text
+All checks passed!
+CONFIG OK — tickers=149 fred=100 panel=83 countries=64 sovereign_yields=42
+```
+
+Both exited 0. No source registration, catalog series identity or production
+configuration changed. New regression HTTP is mocked and databases are temporary.
+
+The full suite ran **once at the end of F08d, after all code and test changes**:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest -q --basetemp "$env:TEMP/f08d-full" --tb=short
+```
+
+Exact final line (exit 0):
+
+```text
+714 passed, 1 warning in 449.07s (0:07:29)
+```
+
+The warning is the existing ALFRED test's deliberately truncated vintage list.
+No code or tests changed after this full run began; only validation documentation
+was completed afterward. All four F08d pytest basetemps were under `%TEMP%` and
+removed afterward. No production DB or ingestion, scheduled task, Telegram,
+push, or PR write was performed. The local F08d commit sits on top of `dd5ca76`.

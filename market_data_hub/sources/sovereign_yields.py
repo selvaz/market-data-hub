@@ -384,7 +384,8 @@ def fetch_yield(meta: dict, start: str, end: str, *, timeout: int = 30,
         current_month = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize().replace(day=1)
         if first < current_month:
             bodies.append(get(meta["history_endpoint"]))
-        bodies.append(get(url))
+        if last >= current_month:
+            bodies.append(get(url))
     elif provider == "riksbank":
         bodies = [get(f"{url}/{code}/{start}/{end}")]
     elif provider == "chinabond":
