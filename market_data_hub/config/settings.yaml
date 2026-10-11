@@ -15,6 +15,7 @@ reports:
 backfill_start:
   yahoo: "2010-01-01"
   fred:  "2000-01-01"
+  nyfed_acm: "1961-01-01"  # official ten-year monthly chart CSV
   binance: "2018-01-01"
   factors: "1990-01-01"   # Fama-French (Ken French) history start
   sovereign_yields: "2023-01-01"  # >=3 years on the initial official-yield run

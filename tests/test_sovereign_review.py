@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 
 from market_data_hub import catalog, runner
-from market_data_hub.config_loader import get_fred_series, get_sovereign_yields
+from market_data_hub.config_loader import get_macro_series, get_sovereign_yields
 from market_data_hub.db.connection import get_conn
 from market_data_hub.db.upsert import upsert
 from market_data_hub.sources import sovereign_yields as cb
@@ -46,7 +46,7 @@ def test_catalog_sovereign_discovery_metadata_search_and_dataset_count(monkeypat
     assert hit[['domain', 'key']].to_dict('records') == [{'domain': 'macro', 'key': symbol}]
     assert symbol in set(catalog.search(spec(symbol)['source']).key)
     dataset = next(d for d in catalog.list_datasets() if d['domain'] == 'macro')
-    assert dataset['n_series'] == len(get_fred_series()) + len(get_sovereign_yields())
+    assert dataset['n_series'] == len(get_macro_series()) + len(get_sovereign_yields())
 
 
 def test_catalog_listed_spread_is_discovered_without_inventing_derived_series(monkeypatch):

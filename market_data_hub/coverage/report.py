@@ -14,7 +14,7 @@ from typing import Dict
 import duckdb
 import pandas as pd
 
-from market_data_hub.config_loader import get_yahoo_tickers, get_fred_series, get_sovereign_yields
+from market_data_hub.config_loader import get_yahoo_tickers, get_macro_series, get_sovereign_yields
 from market_data_hub.coverage.freq_detector import detect_frequency
 from market_data_hub.coverage.stalled_detector import lag_days, is_stalled
 from market_data_hub.coverage.gap_detector import missing_pct, gap_count, date_span
@@ -30,7 +30,7 @@ def _meta_lookup() -> Dict[str, dict]:
         m[e["symbol"]] = {"asset_class": e.get("asset_class", ""),
                           "priority": e.get("priority", 3),
                           "max_lag_days": e.get("max_lag_days")}
-    for e in get_fred_series():
+    for e in get_macro_series():
         m[e["symbol"]] = {"asset_class": e.get("asset_class", "MACRO"),
                           "priority": e.get("priority", 2),
                           "max_lag_days": e.get("max_lag_days")}
@@ -105,12 +105,14 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
             rows.append(_row_for(symbol, src or "yahoo", g, "date",
                                  meta.get(symbol, {}), run_id))
 
-    # --- macro_series (fred) ---
+    # --- macro_series (FRED + NY Fed ACM + sovereign yields) ---
     mdf = con.execute(
         "SELECT date, series_id, value, source FROM macro_series ORDER BY series_id, date"
     ).fetch_df()
     if not mdf.empty:
         for sid, g in mdf.groupby("series_id"):
+            # Rows are date-ordered: keep the latest recorded publisher for all
+            # macro providers, ignoring null sources in older/newer rows.
             source = g.source.dropna().iloc[-1] if g.source.notna().any() else "fred"
             rows.append(_row_for(sid, source, g, "date",
                                  meta.get(sid, {"asset_class": "MACRO",

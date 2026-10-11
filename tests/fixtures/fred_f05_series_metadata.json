@@ -1,0 +1,62 @@
+{
+  "verified_on": "2026-10-11",
+  "method": "HTTP 200, matching FRED title ID, published units/frequency/seasonal adjustment",
+  "series": [
+    {
+      "series_id": "THREEFYTP10",
+      "url": "https://fred.stlouisfed.org/series/THREEFYTP10",
+      "http_status": 200,
+      "title": "Term Premium on a 10 Year Zero Coupon Bond (THREEFYTP10) | FRED | St. Louis Fed",
+      "units": "Percent",
+      "frequency": "Daily",
+      "seasonal_adjustment": "Not Seasonally Adjusted"
+    },
+    {
+      "series_id": "BAMLEMCBPIOAS",
+      "url": "https://fred.stlouisfed.org/series/BAMLEMCBPIOAS",
+      "http_status": 200,
+      "title": "ICE BofA Emerging Markets Corporate Plus Index Option-Adjusted Spread (BAMLEMCBPIOAS) | FRED | St. Louis Fed",
+      "units": "Percent",
+      "frequency": "Daily",
+      "seasonal_adjustment": "Not Seasonally Adjusted",
+      "history_limit": "3 years from April 2026 (FRED series notes)"
+    },
+    {
+      "series_id": "BAMLEMHBHYCRPIOAS",
+      "url": "https://fred.stlouisfed.org/series/BAMLEMHBHYCRPIOAS",
+      "http_status": 200,
+      "title": "ICE BofA High Yield Emerging Markets Corporate Plus Index Option-Adjusted Spread (BAMLEMHBHYCRPIOAS) | FRED | St. Louis Fed",
+      "units": "Percent",
+      "frequency": "Daily",
+      "seasonal_adjustment": "Not Seasonally Adjusted",
+      "history_limit": "3 years from April 2026 (FRED series notes)"
+    },
+    {
+      "series_id": "CES0500000003",
+      "url": "https://fred.stlouisfed.org/series/CES0500000003",
+      "http_status": 200,
+      "title": "Average Hourly Earnings of All Employees, Total Private (CES0500000003) | FRED | St. Louis Fed",
+      "units": "Dollars per Hour",
+      "frequency": "Monthly",
+      "seasonal_adjustment": "Seasonally Adjusted"
+    },
+    {
+      "series_id": "GASDESW",
+      "url": "https://fred.stlouisfed.org/series/GASDESW",
+      "http_status": 200,
+      "title": "US Diesel Sales Price (GASDESW) | FRED | St. Louis Fed",
+      "units": "Dollars per Gallon",
+      "frequency": "Weekly, Ending Monday",
+      "seasonal_adjustment": "Not Seasonally Adjusted"
+    },
+    {
+      "series_id": "DDFUELNYH",
+      "url": "https://fred.stlouisfed.org/series/DDFUELNYH",
+      "http_status": 200,
+      "title": "Ultra-Low-Sulfur No. 2 Diesel Fuel Prices: New York Harbor (DDFUELNYH) | FRED | St. Louis Fed",
+      "units": "Dollars per Gallon",
+      "frequency": "Daily",
+      "seasonal_adjustment": "Not Seasonally Adjusted"
+    }
+  ]
+}

@@ -32,7 +32,7 @@ import pandas as pd
 from market_data_hub import reader
 from market_data_hub.config_loader import (
     get_countries,
-    get_fred_series,
+    get_macro_series,
     get_macro_panel_specs,
     get_settings,
     get_sovereign_yields,
@@ -147,13 +147,13 @@ def _attach_coverage(df: pd.DataFrame, db_path: Optional[str]) -> pd.DataFrame:
 # Datasets overview
 # ---------------------------------------------------------------------------
 def _macro_entries() -> List[Dict[str, Any]]:
-    """One declared macro universe for every discovery surface.
+    """FRED, NY Fed ACM and sovereign entries for every discovery surface.
 
     Include configured unavailable/disabled feeds so absence remains discoverable.
     Derived spreads appear only if explicitly listed, never synthesized here.
     """
     entries = {e["symbol"]: dict(e, source=e.get("source", "FRED"))
-               for e in get_fred_series()}
+               for e in get_macro_series()}
     for entry in get_sovereign_yields():
         entries[entry["symbol"]] = dict(entry)
     return list(entries.values())
@@ -177,9 +177,9 @@ def list_datasets() -> List[Dict[str, Any]]:
             "domain": "macro",
             "table": "macro_series",
             "primary_key": ["date", "series_id"],
-            "frequency": "D/M/Q/A",
+            "frequency": "D/W/M/Q/A",
             "n_series": len(_macro_entries()),
-            "description": "Single-value macro series: FRED and daily sovereign yields from central banks, issuers and MOT; configured spreads if listed.",
+            "description": "Single-value macro series: FRED, NY Fed ACM and daily sovereign yields from central banks, issuers and MOT; configured spreads if listed.",
             "discovery": "list_macro_series()",
         },
         {
@@ -273,12 +273,12 @@ def list_sectors(area: Optional[str] = None) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# Macro series (FRED and configured sovereign yields/spreads)
+# Macro series (FRED, NY Fed ACM and configured sovereign yields/spreads)
 # ---------------------------------------------------------------------------
 def list_macro_series(frequency: Optional[str] = None, category: Optional[str] = None,
                       with_coverage: bool = True,
                       db_path: Optional[str] = None) -> pd.DataFrame:
-    """Declared macro universe, even before ingestion. Coverage uses series_id.
+    """FRED, NY Fed ACM and sovereign universe before ingestion; coverage uses series_id.
 
     `category` filters name taxonomy; sovereign yields default to RATES and
     configured spreads to CREDIT. Frequency uses detected coverage where present,

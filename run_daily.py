@@ -3,14 +3,14 @@
 run_daily.py — entry point for the incremental daily download.
 
 Usage:
-    python run_daily.py                          # full: yahoo + fred + binance + macro_panel + live
+    python run_daily.py                          # all default sources + live
     python run_daily.py --report --open          # full + HTML report + open in browser
     python run_daily.py --live-only              # live intraday price injection only
     python run_daily.py --sources yahoo fred     # specific sources
     python run_daily.py --end 2024-12-31
 
-Note: without --sources it downloads ALL sources (yahoo, fred, binance,
-macro_panel) + live injection.
+Note: without --sources it downloads ALL sources (yahoo, fred, nyfed_acm,
+sovereign_yields, binance, macro_panel, factors) + live injection.
 """
 import argparse
 import sys
@@ -26,7 +26,7 @@ def main() -> int:
     p.add_argument("--live-only", action="store_true",
                    help="live intraday price injection only")
     p.add_argument("--sources", nargs="+",
-                   choices=["yahoo", "fred", "binance", "macro_panel", "factors", "sovereign_yields"],
+                   choices=["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors", "sovereign_yields"],
                    help="limit to the given sources")
     p.add_argument("--end", help="end date (default: today UTC)")
     p.add_argument("--start", help="override inclusive start date (supports official-yield backfill)")

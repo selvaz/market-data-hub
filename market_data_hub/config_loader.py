@@ -64,6 +64,16 @@ def get_sovereign_yields() -> List[Dict[str, Any]]:
 
 
 @lru_cache(maxsize=1)
+def get_nyfed_acm_series() -> List[Dict[str, Any]]:
+    return _load_yaml("macro_series.yaml").get("nyfed_acm", [])
+
+
+def get_macro_series() -> List[Dict[str, Any]]:
+    """Configured single-value macro universe, with FRED IDs kept separate."""
+    return get_fred_series() + get_nyfed_acm_series()
+
+
+@lru_cache(maxsize=1)
 def get_countries() -> List[Dict[str, Any]]:
     countries: List[Dict[str, Any]] = _load_yaml("countries.yaml").get("countries", [])
     return countries
