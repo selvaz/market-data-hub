@@ -236,8 +236,21 @@ def run_sovereign_yields(con, cfg: dict, run_id: str, *,
                                 base_sleep=http.get("retry_base_sleep", 1.0), cache=cache)
             latest = last.get(sid)
             if not df.empty:
-                added, updated = upsert(con, "macro_series", df)
-                record_vintage(con, "macro_series", df, _today(), run_id=run_id)
+                if entry["provider"] in {"mot", "finanzagentur"}:
+                    # Yield, vintage and per-day bond identity commit together.
+                    con.execute("BEGIN TRANSACTION")
+                    try:
+                        counts = upsert(con, "macro_series", df, outer_txn=True)
+                        upsert(con, "sovereign_bond_metadata", df, outer_txn=True)
+                        record_vintage(con, "macro_series", df, _today(), run_id=run_id)
+                        con.execute("COMMIT")
+                    except Exception:
+                        con.execute("ROLLBACK")
+                        raise
+                    added, updated = counts
+                else:
+                    added, updated = upsert(con, "macro_series", df)
+                    record_vintage(con, "macro_series", df, _today(), run_id=run_id)
                 wrote = True
                 latest = max(df.date.max(), latest) if latest is not None else df.date.max()
             if is_stalled(latest, "D", as_of=pd.Timestamp(end).date(),

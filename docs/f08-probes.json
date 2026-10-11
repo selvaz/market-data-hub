@@ -1307,6 +1307,222 @@
       "content_type": "application/vnd.sdmx.genericdata+xml; version=2.1; charset=utf-8",
       "bytes": 231021,
       "sha256": "fba2e24604574aa671942bf7a8da6847ef559a00c89dfd6be62caf3b7abb7a40"
+    },
+    {
+      "label": "f08c_finanz_downloads",
+      "url": "https://www.deutsche-finanzagentur.de/en/download-center",
+      "probed_at": "2026-10-11T09:53:19.773839+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 166945,
+      "sha256": "6b177490b59dd095dfe2822e72db349db67deedb7f535d66b24adab2da9d1846"
+    },
+    {
+      "label": "f08c_finanz_home",
+      "url": "https://www.deutsche-finanzagentur.de/en/federal-securities",
+      "probed_at": "2026-10-11T09:52:34.634415+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 97236,
+      "sha256": "48a754b693c54523949fd3e0541407583c6e8e17c25cac72cc27463ca9db9ae4"
+    },
+    {
+      "label": "f08c_finanz_main",
+      "url": "https://www.deutsche-finanzagentur.de/en/",
+      "probed_at": "2026-10-11T09:53:19.777317+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 228075,
+      "sha256": "1d29971a3c385e56a578b13222b62c34b145519e540b98f8eb3929c2054688ff"
+    },
+    {
+      "label": "f08c_finanz_old",
+      "url": "https://www.deutsche-finanzagentur.de/en/federal-securities/prices-and-yields",
+      "probed_at": "2026-10-11T09:52:34.635091+00:00",
+      "status": 404,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 228075,
+      "sha256": "1d29971a3c385e56a578b13222b62c34b145519e540b98f8eb3929c2054688ff"
+    },
+    {
+      "label": "f08c_finanz_prices",
+      "url": "https://www.deutsche-finanzagentur.de/fileadmin/user_upload/Institutionelle-investoren/bundesbank/Rendite_engl.pdf",
+      "probed_at": "2026-10-11T09:53:19.775258+00:00",
+      "status": 200,
+      "content_type": "application/pdf",
+      "bytes": 313599,
+      "sha256": "e517d81a55fa0eb4ef9065724da848f6988128517b61d1c83e75867516a31f5f"
+    },
+    {
+      "label": "f08c_finanz_trade",
+      "url": "https://www.deutsche-finanzagentur.de/en/federal-securities/trading/tradeable-securities",
+      "probed_at": "2026-10-11T09:53:19.776312+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 214217,
+      "sha256": "96fed82745eb3f467fb05773efdbb0a0841e7bee892a0c5085aefdf1c4696f91"
+    },
+    {
+      "label": "f08c_mot_bond",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/scheda/IT0005729931-MOTX.html?lang=it",
+      "probed_at": "2026-10-11T09:58:55.031666+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 61646,
+      "sha256": "bd3fa7f60ebfbc3d308b30a33ea072315e0290131fc25287d72bf2ed66f3bf76"
+    },
+    {
+      "label": "f08c_mot_chart",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/grafico.html?isin=IT0005729931&mic=MOTX&lang=it",
+      "probed_at": "2026-10-11T09:59:22.677949+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 46952,
+      "sha256": "40e2e7d30bc71d9dfdca5014214997f7f82a7ac0b6bd730174c83877a3d2ce34"
+    },
+    {
+      "label": "f08c_mot_details",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/dati-completi.html?isin=IT0005729931&mic=MOTX&lang=it",
+      "probed_at": "2026-10-11T09:59:22.677601+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 57797,
+      "sha256": "dc9994e401b5ec216e852e0320ddf6a7606465b0b9808a9d1190621d4af5393b"
+    },
+    {
+      "label": "f08c_mot_history_widget",
+      "url": "https://grafici.borsaitaliana.it/interactive-chart/IT0005729931-MOTX?lang=it",
+      "probed_at": "2026-10-11T09:59:55.990548+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 1282,
+      "sha256": "0c0fdd7e0e6f673cc8d64ab083ca2a7dfcd78e59fc535b61e1d1379f1149a1d1"
+    },
+    {
+      "label": "f08c_mot_list",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html",
+      "probed_at": "2026-10-11T09:52:34.633094+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 92398,
+      "sha256": "784313c449384233051accb056eae75c57bc322b25363ee9a080d36fd78468d1"
+    },
+    {
+      "label": "f08c_mot_official",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/listino-ufficiale.html?isin=IT0005729931&mic=MOTX&lang=it",
+      "probed_at": "2026-10-11T09:59:22.674538+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 49327,
+      "sha256": "6531356d51bcb13229c70fbb1c521130cbc3d0871146286119b2656283719f34"
+    },
+    {
+      "label": "f08c_mot_page10",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=10",
+      "probed_at": "2026-10-11T09:57:36.561758+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 92745,
+      "sha256": "f56fcd1908165abfd0c44fe25d7ec0a3d96822251212af5a0799bf70183c6780"
+    },
+    {
+      "label": "f08c_mot_page11",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=11",
+      "probed_at": "2026-10-11T09:57:36.665588+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 91841,
+      "sha256": "a987b2c8870c7a07ae6d7a932bb721878bf89d686df62369da0d49c357520edd"
+    },
+    {
+      "label": "f08c_mot_page12",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=12",
+      "probed_at": "2026-10-11T10:06:09.464914+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 49407,
+      "sha256": "0ddca33cb5cc29444149c3c4551093e704b8d10d6f597a7b0d91918f83e6f5b3"
+    },
+    {
+      "label": "f08c_mot_page2",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=2",
+      "probed_at": "2026-10-11T09:57:36.018539+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 92676,
+      "sha256": "76a8e66f2c9a6b8e87fe4d4cc4fd526af14040a9002b601eb6c048a2f216b4d3"
+    },
+    {
+      "label": "f08c_mot_page3",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=3",
+      "probed_at": "2026-10-11T09:57:36.020071+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 92594,
+      "sha256": "1016d90f580ce487c6717b0c4440ba923221b075d61c210c5cd0de8726336250"
+    },
+    {
+      "label": "f08c_mot_page4",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=4",
+      "probed_at": "2026-10-11T09:57:36.020676+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 92690,
+      "sha256": "2769a135b4a88886c768428929dadf04429e880694a0a449981c92737561ca98"
+    },
+    {
+      "label": "f08c_mot_page5",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=5",
+      "probed_at": "2026-10-11T09:57:36.022132+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 92650,
+      "sha256": "de911902c5954e89902f11d084865cffeed796a32491533c2f05b3c2115f76a5"
+    },
+    {
+      "label": "f08c_mot_page6",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=6",
+      "probed_at": "2026-10-11T09:57:36.023146+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 92674,
+      "sha256": "b63a8dea57e125dd8f376434f0c6dd2244d3a35de6ca97c85d4ffb51cae4d32d"
+    },
+    {
+      "label": "f08c_mot_page7",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=7",
+      "probed_at": "2026-10-11T09:57:36.024944+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 92623,
+      "sha256": "25fc3909672900f3bb1e7ae2d79a10005e0de45af33b9c16c99c4bdf8ed85f0c"
+    },
+    {
+      "label": "f08c_mot_page8",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=8",
+      "probed_at": "2026-10-11T09:57:36.395201+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 92602,
+      "sha256": "3bd24f7cd2b9e2f957ff48c6ecfe718fc2588466800a48f5de452f55d038772e"
+    },
+    {
+      "label": "f08c_mot_page9",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html?page=9",
+      "probed_at": "2026-10-11T09:57:36.545992+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 92720,
+      "sha256": "b9825c1af7eaf7fa4c3599c12e1cffbc957b13df6063b5051864cdd7769cae71"
+    },
+    {
+      "label": "f08c_mot_yield",
+      "url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/obbligazioni-in-euro/rendimenti-effettivi.html?isin=IT0005729931&mic=MOTX&lang=it",
+      "probed_at": "2026-10-11T09:59:22.675865+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 49019,
+      "sha256": "f360a7c87311bca8c37d5046a2a933fac79b6f2a6b2d4672e32e1f5de0f0fd08"
     }
   ],
   "recording_parser_audit": [
@@ -1623,5 +1839,84 @@
         "bundesbank_blocked"
       ]
     }
+  },
+  "f08c_parser_audit": [
+    {
+      "date": "2026-10-09T00:00:00",
+      "series_id": "ITA_BTP10_MOT",
+      "value": 4.6,
+      "series_name": "Nearest 10y nominal fixed-rate BTP, MOT published gross yield",
+      "unit": "%",
+      "frequency": "D",
+      "source": "Borsa Italiana",
+      "country": "ITA",
+      "isin": "IT0005729931",
+      "maturity_date": "2036-10-01T00:00:00",
+      "coupon_percent": 4.0,
+      "reference_price": 95.64,
+      "price_type": "venue_yield_reference_clean",
+      "selection_rule": "nearest_10y_residual_then_earlier_maturity_then_isin",
+      "source_url": "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/scheda/IT0005729931-MOTX.html?lang=it"
+    },
+    {
+      "date": "2026-10-09T00:00:00",
+      "series_id": "DEU_BUND10_FA",
+      "value": 3.47,
+      "series_name": "Nearest 10y conventional nominal Bund, issuer published reference yield",
+      "unit": "%",
+      "frequency": "D",
+      "source": "Bundesrepublik Deutschland Finanzagentur",
+      "country": "DEU",
+      "isin": "DE000BU2Z072",
+      "maturity_date": "2036-08-15T00:00:00",
+      "coupon_percent": 3.0,
+      "reference_price": 96.15,
+      "price_type": "bundesbank_noon_reference_clean",
+      "selection_rule": "nearest_10y_residual_then_earlier_maturity_then_isin",
+      "source_url": "https://www.deutsche-finanzagentur.de/fileadmin/user_upload/Institutionelle-investoren/bundesbank/Rendite_engl.pdf"
+    }
+  ],
+  "f08c_spread_audit": {
+    "as_of": "2026-10-11",
+    "computed_by": "derive_sovereign_spreads; complete original HTTP bodies parsed, no DB opened",
+    "observations": [
+      {
+        "date": "2026-10-09T00:00:00",
+        "series_id": "SPREAD_IT_10Y_VS_BUND_FA",
+        "value": 112.99999999999994,
+        "series_name": "ITA 10y yield minus Finanzagentur nominal Bund 10y reference yield",
+        "unit": "bp",
+        "frequency": "D",
+        "source": "derived:sovereign_yields",
+        "country": "ITA",
+        "country_series_id": "ITA_BTP10_MOT",
+        "reference_id": "DEU_BUND10_FA",
+        "country_isin": "IT0005729931",
+        "reference_isin": "DE000BU2Z072"
+      }
+    ],
+    "status": [
+      {
+        "series_id": "SPREAD_IT_10Y_VS_BUND_FA",
+        "country": "ITA",
+        "reference_id": "DEU_BUND10_FA",
+        "last_country_date": "2026-10-09T00:00:00",
+        "last_reference_date": "2026-10-09T00:00:00",
+        "freshness_date": "2026-10-09T00:00:00",
+        "last_spread_date": "2026-10-09T00:00:00",
+        "stalled": false,
+        "reason": "fresh",
+        "country_series_id": "ITA_BTP10_MOT"
+      }
+    ]
+  },
+  "f08c_investigation": {
+    "mot_universe": "12 pages, 441 listed rows, 105 fixed-rate nominal BTPs; nearest maturity 2036-10-01 (IT0005729931), 8 days from the observation date plus ten years.",
+    "mot_yield": "Published gross YTM 4.6%, yield reference clean price 95.64, date 2026-10-09. Page credits Skipper Informatica Srl for calculations. Official market price 94.89651 is dated 2026-10-08 and is not paired with this yield.",
+    "mot_history": "No plain-HTTP historical yield/ISIN download found on bond/detail/yield/official-list/chart pages. Chart iframe is a JS-only web-component shell containing an Incapsula script; no scripts, tokens, authenticated API or challenge path followed. Current-only daily accumulation.",
+    "finanzagentur": "Download centre links the current daily PDF; HTTP 200, ordinary one-page PDF. Conventional nominal DBR closest to ten years: DE000BU2Z072, maturity 2036-08-15, coupon 3%, clean noon reference price 96.15, yield 3.47%, date 2026-10-09. Source issuer republishes Bundesbank reference prices at Frankfurt Stock Exchange.",
+    "finanzagentur_history": "Issuer home has literal historical 10y chart values, but historical ISINs and selection/roll semantics are not established; not used as backfill for this distinct bond series. Current PDF daily accumulation.",
+    "challenge_policy": "No anti-bot, PoW or JS challenge solved, emulated or bypassed. No browser, JS execution, UA/IP rotation, or challenge-cookie replay. Earlier Bundesbank/AFT challenged endpoints left alone.",
+    "production": "No production database opened, no production ingestion, schedules, Telegram, push or PR mutation."
   }
 }

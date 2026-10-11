@@ -89,7 +89,7 @@ def validate() -> list[str]:
                 errors.append(f"{prefix} {field} must be {expected!r}")
         if not re.fullmatch(r"[A-Z]{3}", str(entry.get("country", ""))):
             errors.append(f"{prefix} country must be ISO3")
-        if not re.fullmatch(r"CB_(?:[A-Z]{2}_(?:\d+Y|R209|R2030|NTNF_\d{4})|EA_(?:AAA|ALL)_(?:2|10)Y)", str(entry.get("symbol", ""))):
+        if not re.fullmatch(r"(?:CB_(?:[A-Z]{2}_(?:\d+Y|R209|R2030|NTNF_\d{4})|EA_(?:AAA|ALL)_(?:2|10)Y)|ITA_BTP10_MOT|DEU_BUND10_FA)", str(entry.get("symbol", ""))):
             errors.append(f"{prefix} invalid symbol")
         if not entry.get("source") or not entry.get("name"):
             errors.append(f"{prefix} source and name are required")
@@ -118,6 +118,21 @@ def validate() -> list[str]:
                 errors.append(f"{prefix} maturity must be an ISO date")
             if entry.get("provider_code") != "Tesouro Prefixado com Juros Semestrais":
                 errors.append(f"{prefix} provider_code must identify nominal NTN-F")
+        bond_contracts = {
+            "mot": ("ITA_BTP10_MOT", "ITA", "Borsa Italiana", "nearest_10y_nominal_btp",
+                    "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html"),
+            "finanzagentur": ("DEU_BUND10_FA", "DEU", "Bundesrepublik Deutschland Finanzagentur",
+                            "nearest_10y_nominal_bund",
+                            "https://www.deutsche-finanzagentur.de/fileadmin/user_upload/Institutionelle-investoren/bundesbank/Rendite_engl.pdf"),
+        }
+        bond_provider = next((p for p, c in bond_contracts.items() if c[0] == entry.get("symbol")), None)
+        if provider in bond_contracts or bond_provider:
+            contract = bond_contracts.get(provider)
+            actual = tuple(entry.get(k) for k in ("symbol", "country", "source", "provider_code", "endpoint"))
+            if (actual != contract or entry.get("key_env")
+                    or entry.get("selection_rule") != "nearest_10y_residual_then_earlier_maturity_then_isin"
+                    or entry.get("history_mode") != "current_only_daily_accumulation"):
+                errors.append(f"{prefix} bond snapshot requires its venue/issuer identity, endpoint and roll/history rules")
         if entry.get("key_env") and not re.fullmatch(r"[A-Z][A-Z0-9_]+", entry["key_env"]):
             errors.append(f"{prefix} key_env must name an environment variable")
         try:

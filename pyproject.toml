@@ -16,6 +16,7 @@ dependencies = [
     "pandas>=2.0",
     "numpy",
     "requests",
+    "pypdf>=4,<7",  # Official Finanzagentur daily prices/yields PDF; plain HTTP.
     "pyarrow",
     "openpyxl",
     "pyyaml",

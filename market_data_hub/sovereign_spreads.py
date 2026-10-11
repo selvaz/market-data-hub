@@ -1,4 +1,4 @@
-"""Pure daily euro sovereign spreads against the ECB AAA 10y Bund stand-in.
+"""Pure daily euro sovereign spreads with explicit dated reference selection.
 
 Consumers pass macro_series observations and the sovereign_yields catalog before
 presenting results to an LLM/dashboard. This function opens no database and writes
@@ -17,6 +17,8 @@ import pandas as pd
 from market_data_hub.coverage.stalled_detector import is_stalled
 
 REFERENCE_ID = "CB_EA_AAA_10Y"
+BUND_ID = "DEU_BUND10_FA"
+ITALY_CURRENT_ID = "ITA_BTP10_MOT"
 # Membership and adoption dates are explicit: earlier local-currency observations
 # must not enter a EUR spread if a country's history crosses its adoption date.
 # https://www.ecb.europa.eu/euro/intro/html/index.en.html
@@ -25,9 +27,9 @@ EURO_SINCE.update(GRC="2001-01-01", SVN="2007-01-01", CYP="2008-01-01", MLT="200
                   SVK="2009-01-01", EST="2011-01-01", LVA="2014-01-01", LTU="2015-01-01",
                   HRV="2023-01-01", BGR="2026-01-01")
 OBS_COLUMNS = ["date", "series_id", "value", "series_name", "unit", "frequency",
-               "source", "country", "country_series_id", "reference_id"]
+               "source", "country", "country_series_id", "reference_id", "country_isin", "reference_isin"]
 STATUS_COLUMNS = ["series_id", "country", "reference_id", "last_country_date",
-                  "last_reference_date", "freshness_date", "last_spread_date", "stalled", "reason"]
+                  "last_reference_date", "freshness_date", "last_spread_date", "stalled", "reason", "country_series_id"]
 
 
 @dataclass(frozen=True)
@@ -38,7 +40,7 @@ class SpreadResult:
 
 def derive_sovereign_spreads(observations: pd.DataFrame, catalog: list[dict], *,
                             as_of: date) -> SpreadResult:
-    """100 * (country percent yield - ECB AAA percent spot rate), on common dates.
+    """100 * (country percent yield - labelled reference), on common dates.
 
     Returns each configured euro-country 10y series' history and an explicit status
     row, including missing legs. Neither missing dates nor future quotes are filled.
@@ -46,6 +48,10 @@ def derive_sovereign_spreads(observations: pd.DataFrame, catalog: list[dict], *,
     histories cannot produce a fresh spread. Each leg's holiday calendar and lag
     threshold are respected. Identical duplicates are collapsed; unresolved,
     conflicting revisions raise ValueError (a caller should read upserted rows).
+    Italy prefers its fresh MOT snapshot and a fresh Finanzagentur Bund on common
+    dates; otherwise its reference is the labelled ECB AAA stand-in. BMK0200
+    remains independent history and supplies Italy only when MOT is absent/older
+    and stale. A caller may LEFT JOIN sovereign_bond_metadata to include ISINs.
     """
     reference = next((e for e in catalog if e["symbol"] == REFERENCE_ID), None)
     if reference is None:
@@ -54,7 +60,11 @@ def derive_sovereign_spreads(observations: pd.DataFrame, catalog: list[dict], *,
                  and e.get("country") in EURO_SINCE
                  and pd.Timestamp(as_of) >= pd.Timestamp(EURO_SINCE[e["country"]])
                  and re.fullmatch(r"CB_[A-Z]{2}_10Y", e["symbol"])]
-    selected = {e["symbol"]: e for e in [reference, *countries]}
+    bond_entries = [e for e in catalog if e.get("enabled", True)
+                    and e["symbol"] in {BUND_ID, ITALY_CURRENT_ID}]
+    if not any(e["country"] == "ITA" for e in countries):
+        countries.extend(e for e in bond_entries if e["symbol"] == ITALY_CURRENT_ID)
+    selected = {e["symbol"]: e for e in [reference, *countries, *bond_entries]}
     required = {"date", "series_id", "value", "unit", "frequency", "country"}
     if not required <= set(observations.columns):
         raise ValueError("observations require daily macro_series fields")
@@ -73,8 +83,8 @@ def derive_sovereign_spreads(observations: pd.DataFrame, catalog: list[dict], *,
     if (data.groupby(["series_id", "date"]).value.nunique() > 1).any():
         raise ValueError("conflicting revisions: read upserted macro_series rows")
     data = data.drop_duplicates(["series_id", "date"]).sort_values("date")
-    base = data[data.series_id == REFERENCE_ID][["date", "value"]]
-    last_base = base.date.max()
+    if "isin" not in data:
+        data["isin"] = None
 
     def stalled(when, meta):
         return is_stalled(when, "D", as_of=as_of,
@@ -84,29 +94,50 @@ def derive_sovereign_spreads(observations: pd.DataFrame, catalog: list[dict], *,
 
     frames, statuses = [], []
     for meta in countries:
+        if meta["country"] == "ITA" and ITALY_CURRENT_ID in selected:
+            mot = data[data.series_id == ITALY_CURRENT_ID]
+            official = data[data.series_id == meta["symbol"]]
+            if not mot.empty and (not stalled(mot.date.max(), selected[ITALY_CURRENT_ID])
+                                  or official.empty or mot.date.max() >= official.date.max()):
+                meta = selected[ITALY_CURRENT_ID]
         symbol = meta["symbol"]
         country = data[(data.series_id == symbol)
-                       & (data.date >= pd.Timestamp(EURO_SINCE[meta["country"]]))][["date", "value"]]
+                       & (data.date >= pd.Timestamp(EURO_SINCE[meta["country"]]))][["date", "value", "isin"]]
         last_country = country.date.max()
-        spread_id = f"SPREAD_{symbol[3:]}_VS_ECB_AAA"
+        ref = reference
+        if meta["country"] == "ITA" and BUND_ID in selected:
+            bund = data[data.series_id == BUND_ID]
+            common = country.merge(bund[["date"]], on="date")
+            if (not stalled(last_country, meta) and not stalled(bund.date.max(), selected[BUND_ID])
+                    and not stalled(common.date.max(), meta) and not stalled(common.date.max(), selected[BUND_ID])):
+                ref = selected[BUND_ID]
+        reference_id = ref["symbol"]
+        base = data[data.series_id == reference_id][["date", "value", "isin"]]
+        last_base = base.date.max()
+        suffix = "BUND_FA" if reference_id == BUND_ID else "ECB_AAA"
+        country_code = "IT_10Y" if symbol == ITALY_CURRENT_ID else symbol[3:]
+        spread_id = f"SPREAD_{country_code}_VS_{suffix}"
         aligned = country.merge(base, on="date", how="inner", suffixes=("_country", "_reference"), validate="one_to_one")
         last_common = aligned.date.max()
         missing = pd.isna(last_country) or pd.isna(last_base)
         freshness = pd.NaT if missing else min(last_country, last_base)
-        stale = (missing or stalled(last_country, meta) or stalled(last_base, reference)
-                 or stalled(last_common, meta) or stalled(last_common, reference))
+        stale = (missing or stalled(last_country, meta) or stalled(last_base, ref)
+                 or stalled(last_common, meta) or stalled(last_common, ref))
         reason = "missing_leg" if missing else ("no_common_date" if aligned.empty else ("stale" if stale else "fresh"))
-        statuses.append(dict(series_id=spread_id, country=meta["country"], reference_id=REFERENCE_ID,
+        statuses.append(dict(series_id=spread_id, country=meta["country"], reference_id=reference_id,
                              last_country_date=last_country, last_reference_date=last_base,
                              freshness_date=freshness, last_spread_date=last_common,
-                             stalled=bool(stale), reason=reason))
+                             stalled=bool(stale), reason=reason, country_series_id=symbol))
         if aligned.empty:
             continue
         aligned["value"] = 100.0 * (aligned.value_country - aligned.value_reference)
+        aligned["country_isin"] = aligned.isin_country
+        aligned["reference_isin"] = aligned.isin_reference
+        label = "Finanzagentur nominal Bund 10y reference yield" if reference_id == BUND_ID else "ECB AAA 10y spot (Bund stand-in)"
         for key, value in dict(series_id=spread_id, country=meta["country"],
-                               series_name=f"{meta['country']} 10y yield minus ECB AAA 10y spot (Bund stand-in)",
+                               series_name=f"{meta['country']} 10y yield minus {label}",
                                unit="bp", frequency="D", source="derived:sovereign_yields",
-                               country_series_id=symbol, reference_id=REFERENCE_ID).items():
+                               country_series_id=symbol, reference_id=reference_id).items():
             aligned[key] = value
         frames.append(aligned[OBS_COLUMNS])
     history = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=OBS_COLUMNS)

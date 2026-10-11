@@ -1,19 +1,22 @@
 # F08: official daily sovereign yields
 
-Probe date: **11 October 2026**, from this Windows worktree, including the F08b
-continuation. Four ECB daily curves and France's public no-key TEC10 CSV work.
-Germany remains blocked by Enodia; the **ECB AAA 10y spot curve is the explicitly
-approved official stand-in for the Bund**, under its own aggregate series ID.
-Code derives fresh Spain, Belgium and France spreads against that curve. Italy's
-daily observations arrive in monthly batches and end in August: **a fresh Italian
-daily stress indicator is still unavailable**.
+Probe date: **11 October 2026**, from this Windows worktree, including F08b/F08c.
+**Italy and Germany now have fresh daily 10y bond yields through plain HTTP**:
+MOT publishes the BTP gross yield and Finanzagentur publishes the Bund reference
+yield, both dated October 9. Code computes their aligned **113 bp Italy/Bund
+spread**. Banca d'Italia BMK0200 stays as official history, last August 31.
+Bundesbank REST remains blocked by Enodia; the **ECB AAA 10y spot curve remains
+the explicitly labelled official stand-in** when a fresh aligned Bund leg is
+unavailable. Four ECB curves and France's no-key TEC10 CSV also work.
 
 The evidence ledger is [f08-probes.json](f08-probes.json): original request URL,
 UTC probe time, HTTP status, content type, byte count and original-response SHA256
-for 146 machine probes, plus parser audits of complete responses and code-computed
+for 170 machine probes, plus parser audits of complete responses and code-computed
 spread results. Redirect tokens
 and response excerpts are omitted. Small offline recordings and their provenance
 are in [the fixture manifest](../tests/fixtures/sovereign_yields/manifest.json).
+F08c's recorded tables/PDF have a separate
+[bond fixture manifest](../tests/fixtures/sovereign_bonds/manifest.json).
 An HTTP 200 containing a portal shell or challenge is not counted as data.
 
 ## Machine probe table
@@ -28,8 +31,10 @@ definitions establish a daily series but access fails, that distinction is expli
 |---|---|---|---|---|---|
 | Euro area, AAA (Bund stand-in) | ECB | [YC / G_N_A / SR_10Y](https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y?format=csvdata&startPeriod=2023-01-01); [SR_2Y](https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y?format=csvdata&startPeriod=2023-01-01) | Business-daily (`B`), stored `D` | **2026-10-08**, both | **Works, no key:** 962 observations each from 2023-01-02; 10y 3.51918971%, 2y 3.0331429854%. Svensson spot curve, continuous compounding; not a German national yield. |
 | Euro area, all ratings | ECB | [YC / G_N_C / SR_10Y](https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y?format=csvdata&startPeriod=2023-01-01); [SR_2Y](https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_2Y?format=csvdata&startPeriod=2023-01-01) | Business-daily (`B`), stored `D` | **2026-10-08**, both | **Works, no key:** 962 observations each from 2023-01-02; 10y 4.1258286142%, 2y 3.2485820015%. |
+| Germany, current | Bundesrepublik Deutschland Finanzagentur (issuer) | [Daily prices/yields PDF](https://www.deutsche-finanzagentur.de/fileadmin/user_upload/Institutionelle-investoren/bundesbank/Rendite_engl.pdf), linked by [download centre](https://www.deutsche-finanzagentur.de/en/download-center) | Daily current snapshot | **2026-10-09** | **Works, HTTP 200, no key/challenge:** `DEU_BUND10_FA`, 3.47%, clean reference price 96.15, ISIN DE000BU2Z072. Conventional nominal Bund nearest ten-year residual maturity; daily accumulation, historical ISIN backfill unverified. |
 | Germany | Deutsche Bundesbank | [BBSIS daily REST](https://api.statistiken.bundesbank.de/rest/data/BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A?startPeriod=2026-10-01); ZAR/R10XX, R02XX for 2y | Daily, published definition | — | **Not found from machine:** REST, CSV and series page return HTTP 400 Enodia challenge. SDMX adapter configured; successful live parsing unverified. |
 | France | Banque de France | [Public Webstat custom CSV / TEC10](https://webstat.banque-france.fr/export/csv/fr/catalog/FM/FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA) | Daily | **2026-10-09** | **Works, no key:** 5,615 nonmissing observations since 2004-11-03, latest 4.795%. Active catalog switched to recorded CSV. AFT home/daily/definition/history paths return HTTP 403 challenges; tokenless JSON export remains 404. |
+| Italy, current | Borsa Italiana MOT (regulated venue, explicitly authorized in F08c) | [BTP universe](https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html); [selected bond/yield](https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/scheda/IT0005729931-MOTX.html?lang=it) | Daily current snapshot | **2026-10-09** | **Works, HTTP 200, no key/challenge:** `ITA_BTP10_MOT`, published gross yield 4.60%, yield reference price 95.64, ISIN IT0005729931. Fixed nominal BTP nearest ten-year residual maturity; daily accumulation, no plain-HTTP historical download found in probed pages. |
 | Italy | Banca d'Italia | [BDS BMK0200 ZIP/CSV](https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/BMK0200), `MFN_BMK.D.020.922.0.EUR.210` | Daily observations, monthly batch | **2026-08-31** | **Works, stale:** active table in September 2026 report; no fresh daily alternative found in BDI/MEF/ECB probes below. Collector reports stalled/degraded. |
 | Spain | Banco de Espana | [ti_1_3.csv](https://www.bde.es/webbe/es/estadisticas/compartido/datos/csv/ti_1_3.csv), `D_G0B1F0ZP` | Daily | **2026-10-07** | **Works:** secondary-market non-stripped government 10y yield. The 1–2y maturity bucket is not labelled constant 2y. |
 | Portugal | Banco de Portugal | [BPstat table 484](https://bpstat.bportugal.pt/conteudos/quadros/484); [domain API](https://bpstat.bportugal.pt/data/v1/domains/) | Monthly 2/5/10y averages verified | — for daily | **Not found:** daily 10y endpoint unresolved; monthly data excluded. |
@@ -94,14 +99,87 @@ archive path all returned HTTP 403 challenges from this machine; no AFT adapter
 was added. The optional keyed JSON adapter remains tested for callers explicitly
 choosing it, but the active French series no longer requires registration.
 
+## Current Italy and Germany bonds (F08c)
+
+`sources/sovereign_bonds.py` is dispatched by the existing sovereign collector;
+the daily job already reads this catalog. Both new entries have `%`, `D`, ISO3
+country and three-business-day freshness limits. **No API registration is needed.**
+`CB_IT_10Y` / BMK0200 remains the Banca d'Italia monthly-batch official history;
+`ITA_BTP10_MOT` is the current Italian stress leg. The Bundesbank curve IDs remain
+separate from `DEU_BUND10_FA`, the current German bond/reference leg.
+
+Selection runs against the complete published universe on the **observation
+date**, minimizing the absolute calendar-day distance between maturity and that
+date plus ten years. February 29 targets clamp to February 28 where necessary;
+ties choose the earlier maturity, then lexical ISIN. The series rolls when
+another eligible maturity becomes closer; it does not splice old ISIN prices
+into the newly selected bond or select a further bond to hide missing data.
+
+* MOT: 12 plain-HTTP pages, 441 listed rows and 105 eligible fixed nominal BTPs
+  in the complete live recording. Conventional fixed coupons and nominal Green
+  BTPs qualify; strips, inflation-linked BTP/BTP Italia and step-up
+  Valore/Futura/Piu bonds do not. The selected instrument is checked again on its
+  own page for ISIN, issuer, maturity, EUR currency, plain-vanilla structure,
+  semiannual fixed coupon and no indexation.
+* Finanzagentur: conventional nominal `DBR` securities, including conventional
+  twins and zero coupons; inflation-linked `DBRI`, green `G`, Schatz `BKO` and
+  Bobl `OBL` are excluded. Residual maturity determines selection even if a bond
+  originally had a longer tenor. The selected August 2036 Bund matches the
+  issuer home page's 10-year 3.47% headline on October 9.
+
+MOT's yield table publishes **gross effective YTM 4.60%**, **clean yield-reference
+price 95.64**, and **reference date 2026-10-09**. Its calculations are credited to
+Skipper Informatica Srl on the venue page. We store that published yield directly;
+no price-to-yield calculation is necessary. The separate `Prezzo ufficiale`
+94.89651 is dated October 8, and the official-list close 95.42 is not the yield
+table's reference price: neither is paired with October 9's yield.
+
+Finanzagentur's accessible [current daily PDF](https://www.deutsche-finanzagentur.de/fileadmin/user_upload/Institutionelle-investoren/bundesbank/Rendite_engl.pdf)
+publishes yield **3.47%**, clean price **96.15**, ISIN **DE000BU2Z072**, coupon
+**3%** and maturity **2036-08-15** on **2026-10-09**. It republishes the Bundesbank
+reference price at Frankfurt Stock Exchange (noon); it is not a closing price.
+The old `/en/federal-securities/prices-and-yields` URL is 404. No challenge is
+present in the PDF or download-centre response. `pypdf>=4,<7` is the added runtime
+dependency for text extraction; no browser or JavaScript is used.
+
+The yield stays in `macro_series`; additive schema **v25** adds
+`sovereign_bond_metadata`, keyed by `(date, series_id)`, with ISIN, maturity,
+annual coupon, reference price, price type, roll rule and source URL. Yield,
+metadata and vintage rows commit in one transaction. Re-observation replaces
+the same daily keys without duplicates; a metadata-write failure rolls everything
+back and returns fault `1`. Only temporary test DBs were migrated in this work.
+Consumers can retrieve traceable spread inputs with:
+
+```sql
+SELECT m.*, b.isin
+FROM macro_series m
+LEFT JOIN sovereign_bond_metadata b USING (date, series_id)
+```
+
+**Backfill limitation:** no plain-HTTP historical yield/ISIN download was found
+on the probed MOT bond, details, yield, official-list or chart pages. The chart
+iframe returns a JS web-component shell with an Incapsula script; no scripts,
+auth tokens, API calls or challenge path were followed. Finanzagentur's PDF is
+current-only. Its home-page chart includes historical 10y values, but historical
+ISINs and roll semantics were not established, so they are not assigned to this
+distinct bond series. Both collectors accept the existing inclusive start/end
+arguments and return only the dated current snapshot if it falls in the range.
+They accumulate from the first authorized production run. Three-year history
+continues to come from the existing official history feeds; it is not invented
+for these new series.
+
+The original Bundesbank Enodia and AFT challenged endpoints were left alone.
+No anti-bot/proof-of-work/JS challenge was solved, emulated or bypassed; no
+headless browser, UA/IP rotation or challenge-cookie replay was used.
+
 ## Implemented behavior
 
 * New `sources/sovereign_yields.py` accepts inclusive start/end dates and emits
   canonical `macro_series` rows: `CB_<ISO2>_10Y` and optional `_2Y`, ISO3 country,
   `%` units, declared frequency `D`, actual official publisher in `source`.
-* Config contains 40 requested/supplementary series across 27 countries plus the
-  euro-area aggregate: 24 entries use 14 active provider formats; 16 unresolved
-  entries fail explicitly as unavailable. Germany has no successful live response;
+* Config contains 42 requested/supplementary series across 27 countries plus the
+  euro-area aggregate: 26 entries use 16 active provider formats; 16 unresolved
+  entries fail explicitly as unavailable. Bundesbank REST has no successful live response;
   Korea's successful recording uses the public sample key.
 * `CB_EA_AAA_10Y`, `CB_EA_AAA_2Y`, `CB_EA_ALL_10Y`, `CB_EA_ALL_2Y`
   use publisher `ECB` and region marker `EMU` (an aggregate, not national ISO3).
@@ -138,13 +216,15 @@ choosing it, but the active French series no longer requires registration.
   the daily report is requested. Existing collectors retain their existing
   error-accounting behavior; this change does not retrofit their statuses.
 
-No commercial, ECB monthly, OECD monthly, overnight-policy-rate or mismatched
+F08c explicitly authorizes Borsa Italiana's public regulated MOT venue pages for
+the distinct Italian current series. No commercial aggregator, ECB monthly,
+OECD monthly, overnight-policy-rate or mismatched
 currency/maturity replacement is implemented. Absence of an official daily
 series has not been conclusively established for the unresolved countries, so
 unresolved alternative publishers are not presented as approved fallbacks. F08b
 explicitly authorizes the daily ECB AAA curve as the Bund stand-in described above.
 
-## Spreads computed in code (F08b, G10)
+## Spreads computed in code (F08b/F08c, G10)
 
 [market_data_hub/sovereign_spreads.py](../market_data_hub/sovereign_spreads.py)
 provides `derive_sovereign_spreads(observations, catalog, as_of=...)`. Pass long-form
@@ -156,12 +236,19 @@ apps. The new function is pure, opens no DB and does not persist derived rows.
 
 It derives every configured, enabled euro-country `CB_<ISO2>_10Y` with available
 observations, including Italy/France/Portugal/Greece/etc when their feeds become
-available. EM and other currencies are excluded, including local-currency history
+available, plus the current `ITA_BTP10_MOT` entry. Italy prefers a fresh MOT
+leg; if it is absent or stale and older, the official history leg remains visible
+with its own freshness. **When Italy and `DEU_BUND10_FA` are fresh and have a fresh
+common date, Italy uses `SPREAD_IT_10Y_VS_BUND_FA`. Otherwise the reference is the
+labelled ECB AAA stand-in**, with `SPREAD_IT_10Y_VS_ECB_AAA`. Other euro countries
+retain their ECB reference. Both input IDs are in observations and status, and
+optional joined ISINs are retained as `country_isin` / `reference_isin`.
+EM and other currencies are excluded, including local-currency history
 before a country's euro adoption date. Series IDs are
 `SPREAD_<ISO2>_10Y_VS_ECB_AAA`, unit `bp`, with both input IDs retained. Arithmetic
 is `100 * (country_percent_yield - CB_EA_AAA_10Y)` on an inner join of exact dates,
 without interpolation or forward fill. These are **spreads against an official
-AAA spot proxy**, not literal BTP/Bund spreads or pure measures of credit risk:
+AAA spot proxy** whenever the reference is ECB, and are not pure measures of credit risk:
 the proxy is a continuously compounded spot curve while country feeds include
 benchmark YTMs and constant-maturity reference rates.
 
@@ -177,7 +264,23 @@ labelling a value current**. Conflicting unresolved revisions, nonfinite values,
 wrong units/frequency/country and intraday dates raise errors; future observations
 are excluded for the requested as-of date.
 
-Code-computed results from complete live recordings, as of **2026-10-11**:
+F08c code-computed current result from the complete live MOT/PDF recordings,
+as of **2026-10-11**:
+
+| Country | Latest common date | Reference | Spread (bp) | Status |
+|---|---|---|---:|---|
+| Italy | 2026-10-09 | Finanzagentur Bund, DE000BU2Z072 | **113.00** | Fresh; country ISIN IT0005729931 |
+
+`f08c_parser_audit` and `f08c_spread_audit` in the ledger record the full-precision
+code result (112.99999999999994 bp) and freshness date October 9. This compares
+MOT's yield reference with the German noon reference, not simultaneous intraday
+prices. If the Bund is unavailable and Italy has only October 9 while ECB ends
+October 8, there is **no common date**: the fallback is labelled and stalled,
+without inventing an October 9 ECB quote. Consumers must still require a fresh
+status. Published yield rounding limits spread precision.
+
+Earlier F08b code-computed results from complete recordings, as of **2026-10-11**;
+the Italy row below is BMK0200 history, superseded as a current leg by F08c:
 
 | Country | Latest common date | Spread vs ECB AAA 10y (bp) | Current status |
 |---|---|---:|---|
@@ -200,9 +303,10 @@ ECB, Germany, France, Italy, Spain and Belgium.
 | `EVDS_API_KEY` | Register at [TCMB EVDS3](https://evds3.tcmb.gov.tr/) | Necessary for future API access; EVDS3 endpoint and daily 10y identifier still need verification/implementation. |
 | `BCCH_API_TOKEN` | Follow [BCCh API access instructions](https://si3.bcentral.cl/estadisticas/Principal1/Web_Services/acceso_api_en.html) | Necessary for future Siete access; secondary-market CLP government 10y series still needs verification/implementation. Current documentation specifies token, not legacy username/password. |
 
-For Germany/Greece/Poland/Peru, publisher access from the runtime needs resolving
-without treating a challenge as data. Italy needs a fresher official daily
-release; Switzerland's 2y needs a current endpoint. The remaining catalogued
+For Bundesbank REST/Greece/Poland/Peru, publisher access from the runtime needs
+resolving without treating a challenge as data. Germany's issuer and Italy's MOT
+current series work without registration; historical bond/ISIN backfill remains
+unverified. Switzerland's 2y needs a current endpoint. The remaining catalogued
 countries need verified series definitions and historical endpoints, not just
 API credentials. Argentina specifically needs confirmation from BCRA/another
 official publisher whether a daily sovereign yield or official country-risk
@@ -352,3 +456,78 @@ CONFIG OK — tickers=149 fred=100 panel=83 countries=64 sovereign_yields=40
 All gates exited 0. Production databases and ingestion, scheduled tasks and
 Telegram were untouched. Changes are committed locally on the existing F08
 branch, on top of `b39f487`; no push or PR is performed.
+
+## F08c final validation
+
+Tests were written before implementation using the new plain-HTTP recordings.
+The initial run, before catalog entries, collectors or metadata storage existed:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest tests/test_sovereign_bonds.py -q --basetemp "$env:TEMP/f08c-red"
+```
+
+```text
+16 failed in 5.15s
+```
+
+The subsequent audit demonstrated empty-page acceptance and a MOT-only Italy
+catalog failing before fixes. It also identified two older CFTC migration tests
+hard-coded to schema v24; their version assertion now requires `SCHEMA_VERSION`
+while retaining all variant/default/data checks (`4 failed, 50 passed in 16.62s`).
+A malformed MOT maturity was demonstrated failing before converting the external
+format error to explicit unavailable/degraded status
+(`1 failed, 41 deselected in 3.78s`).
+
+Final targeted tests include all 42 new cases, existing collectors/spreads,
+metadata migration and existing CFTC schema preservation:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest tests/test_sovereign_bonds.py tests/test_sovereign_yields.py tests/test_sovereign_spreads.py tests/test_cftc_history.py tests/test_schema_version.py -q --basetemp "$env:TEMP/f08c-targeted-final" --tb=short
+```
+
+```text
+168 passed in 35.54s
+```
+
+Coverage includes published gross yield versus net yield, reference versus
+official price dates, complete pagination/caching, missing/duplicate/malformed
+pages, nominal eligibility, roll/tie/leap-day rules, challenge rejection,
+inclusive range filtering without false backfill, ISIN preservation, idempotent
+upserts and atomic rollback, stale exit code 2/fault code 1, Bund preference,
+labelled ECB fallback and disjoint dates without forward fill.
+
+Static/config gates used the required interpreter and ran unpiped:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m ruff check market_data_hub/sources/sovereign_bonds.py market_data_hub/sources/sovereign_yields.py market_data_hub/sovereign_spreads.py market_data_hub/runner.py market_data_hub/db/upsert.py market_data_hub/db/connection.py tests/test_sovereign_bonds.py tests/test_cftc_history.py validate_config.py
+& C:/ProgramData/spyder-6/python.exe -X utf8 validate_config.py
+```
+
+```text
+All checks passed!
+CONFIG OK — tickers=149 fred=100 panel=83 countries=64 sovereign_yields=42
+```
+
+Both exited 0. The probe ledger was checked for 170 unique labels and original
+response hashes; its F08c parser/spread audit uses complete live responses and
+opens no database. The recorded HTML fixtures retain original table whitespace.
+
+The full suite ran **once at the end of F08c, after all code and test changes**:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest -q --basetemp "$env:TEMP/f08c-full" --tb=short
+```
+
+Exact final line (exit 0):
+
+```text
+697 passed, 1 warning in 471.56s (0:07:51)
+```
+
+The warning is the existing ALFRED test's deliberately truncated vintage list.
+No code or tests changed after this full run began; only validation documentation
+was completed afterward. All F08c pytest basetemps and original probe scratch
+responses were under `%TEMP%` and removed afterward; the committed recordings
+and original-response hashes preserve the evidence. No production DB was opened,
+no production ingestion or scheduled-task/Telegram action was performed, and
+there was no push or PR change. The local F08c commit sits on top of `917ffda`.

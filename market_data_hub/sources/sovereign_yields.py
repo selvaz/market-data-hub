@@ -24,7 +24,7 @@ import requests
 
 COLUMNS = ["date", "series_id", "value", "series_name", "unit",
            "frequency", "source", "country"]
-PROVIDERS = {"ecb", "bundesbank", "webstat", "webstat_csv", "bdi", "bde", "nbb", "boe", "mof",
+PROVIDERS = {"mot", "finanzagentur", "ecb", "bundesbank", "webstat", "webstat_csv", "bdi", "bde", "nbb", "boe", "mof",
              "snb", "riksbank", "ecos", "chinabond", "sarb", "tesouro", "unavailable"}
 _GENERIC = "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic"
 _MISSING = {"", "-", "_", ".", "N/E", "N/D", "NA", "N/A", "NaN"}
@@ -364,6 +364,10 @@ def fetch_yield(meta: dict, start: str, end: str, *, timeout: int = 30,
 
     url = meta["endpoint"]
     code = meta.get("provider_code")
+    if provider in {"mot", "finanzagentur"}:
+        from .sovereign_bonds import fetch_bond
+        df = fetch_bond(meta, get)
+        return df[(df.date >= first) & (df.date <= last)].reset_index(drop=True)
     if provider == "ecb":
         bodies = [get(url, {"format": "csvdata", "startPeriod": start, "endPeriod": end})]
     elif provider in {"bundesbank", "nbb"}:

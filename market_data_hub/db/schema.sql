@@ -63,6 +63,22 @@ CREATE INDEX IF NOT EXISTS idx_crypto_symbol_tf ON crypto_ohlcv (symbol, timefra
 -- ----------------------------------------------------------------------------
 -- 3. macro_series — single-value macro series (FRED: rates, CPI, GDP, credit, ...)
 -- ----------------------------------------------------------------------------
+-- Bond identity and reference price for current sovereign benchmark snapshots.
+-- Join to macro_series on (date, series_id); never assign today's ISIN to history.
+CREATE TABLE IF NOT EXISTS sovereign_bond_metadata (
+    date DATE NOT NULL,
+    series_id VARCHAR NOT NULL,
+    isin VARCHAR NOT NULL,
+    maturity_date DATE NOT NULL,
+    coupon_percent DOUBLE NOT NULL,
+    reference_price DOUBLE NOT NULL,
+    price_type VARCHAR NOT NULL,
+    selection_rule VARCHAR NOT NULL,
+    source_url VARCHAR NOT NULL,
+    updated_at TIMESTAMP,
+    PRIMARY KEY (date, series_id)
+);
+
 CREATE TABLE IF NOT EXISTS macro_series (
     date        DATE        NOT NULL,
     series_id   VARCHAR     NOT NULL,   -- e.g. 'FEDFUNDS', 'DGS10', 'CPIAUCSL'

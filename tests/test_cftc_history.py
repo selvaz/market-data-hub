@@ -305,7 +305,7 @@ def test_schema_migration_adds_nullable_variant_to_existing_cftc_rows(
 
     con = cx.get_conn(str(db_path))
     try:
-        assert cx.get_schema_version(con) == 24
+        assert cx.get_schema_version(con) == cx.SCHEMA_VERSION
         row = con.execute(
             "SELECT cftc_contract_market_code, report_variant "
             "FROM cftc_legacy_positioning").fetchone()

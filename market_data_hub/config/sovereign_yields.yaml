@@ -11,6 +11,26 @@ defaults: &daily
   # Optional explicit national market closures: holidays: [YYYY-MM-DD, ...]
 
 series:
+  - <<: *daily
+    symbol: ITA_BTP10_MOT
+    country: ITA
+    source: Borsa Italiana
+    provider: mot
+    name: Nearest 10y nominal fixed-rate BTP, MOT published gross yield
+    provider_code: nearest_10y_nominal_btp
+    endpoint: https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html
+    selection_rule: nearest_10y_residual_then_earlier_maturity_then_isin
+    history_mode: current_only_daily_accumulation
+  - <<: *daily
+    symbol: DEU_BUND10_FA
+    country: DEU
+    source: Bundesrepublik Deutschland Finanzagentur
+    provider: finanzagentur
+    name: Nearest 10y conventional nominal Bund, issuer published reference yield
+    provider_code: nearest_10y_nominal_bund
+    endpoint: https://www.deutsche-finanzagentur.de/fileadmin/user_upload/Institutionelle-investoren/bundesbank/Rendite_engl.pdf
+    selection_rule: nearest_10y_residual_then_earlier_maturity_then_isin
+    history_mode: current_only_daily_accumulation
   # EMU is an aggregate region marker, not a national ISO3 code. ECB AAA is
   # the explicit Bund stand-in; never relabel these curves as German yields.
   - <<: *daily
