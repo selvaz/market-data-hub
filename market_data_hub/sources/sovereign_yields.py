@@ -24,7 +24,7 @@ import requests
 
 COLUMNS = ["date", "series_id", "value", "series_name", "unit",
            "frequency", "source", "country"]
-PROVIDERS = {"bundesbank", "webstat", "bdi", "bde", "nbb", "boe", "mof",
+PROVIDERS = {"ecb", "bundesbank", "webstat", "webstat_csv", "bdi", "bde", "nbb", "boe", "mof",
              "snb", "riksbank", "ecos", "chinabond", "sarb", "tesouro", "unavailable"}
 _GENERIC = "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic"
 _MISSING = {"", "-", "_", ".", "N/E", "N/D", "NA", "N/A", "NaN"}
@@ -157,7 +157,24 @@ def parse_response(meta: dict, body: bytes) -> pd.DataFrame:
         # MoF's English CSV has a CP932-encoded footnote, even though its
         # data/header fields are ASCII. Keep decoding strict and provider-specific.
         text = _text(body, "cp932" if provider == "mof" else "cp1252") if not body.startswith(b"PK") else ""
-        if provider in {"bundesbank", "nbb"}:
+        if provider == "ecb":
+            code = meta["provider_code"]
+            if not re.fullmatch(r"B\.U2\.EUR\.4F\.G_N_[AC]\.SV_C_YM\.SR_(?:2|10)Y", code):
+                raise SourceUnavailable("unsupported ECB yield curve key")
+            dimensions = dict(zip(
+                ["FREQ", "REF_AREA", "CURRENCY", "PROVIDER_FM", "INSTRUMENT_FM",
+                 "PROVIDER_FM_ID", "DATA_TYPE_FM"], code.split(".")))
+            reader = csv.DictReader(StringIO(text))
+            expected = {**dimensions, "KEY": f"YC.{code}", "UNIT": "PCPA",
+                        "UNIT_MULT": "0", "TIME_FORMAT": "P1D"}
+            if not set(expected) | {"TIME_PERIOD", "OBS_VALUE", "OBS_STATUS"} <= set(reader.fieldnames or ()):
+                raise SourceUnavailable("unexpected ECB yield curve CSV header")
+            rows = []
+            for r in reader:
+                if any(r[k] != v for k, v in expected.items()) or r["OBS_STATUS"] not in {"A", "P"}:
+                    raise SourceUnavailable("unexpected ECB series, frequency, unit, or observation status")
+                rows.append((r["TIME_PERIOD"], r["OBS_VALUE"]))
+        elif provider in {"bundesbank", "nbb"}:
             rows = _sdmx(meta, body)
         elif provider == "boe":
             reader = csv.DictReader(StringIO(text))
@@ -236,6 +253,27 @@ def parse_response(meta: dict, body: bytes) -> pd.DataFrame:
                     raise SourceUnavailable("unexpected ECOS series, daily period, or unit")
             rows = [(pd.to_datetime(r["TIME"], format="%Y%m%d").date().isoformat(), r["DATA_VALUE"])
                     for r in observations]
+        elif provider == "webstat_csv":
+            reader = csv.DictReader(StringIO(text), delimiter=";")
+            code = meta["provider_code"]
+            if not re.fullmatch(r"FM\.D\.FR\.EUR\.FR2\.BB\.FRMOYTEC10\.HSTA", code):
+                raise SourceUnavailable("unsupported Webstat TEC10 key")
+            expected = dict(zip(["FREQ", "REF_AREA", "CURRENCY", "PROVIDER_FM",
+                                 "INSTRUMENT_FM", "PROVIDER_FM_ID", "DATA_TYPE_FM"], code.split(".")[1:]))
+            expected.update(series_key=code, dataset_id="FM", UNIT="PC", UNIT_MULT="0")
+            required = set(expected) | {"time_period", "time_period_start", "time_period_end", "obs_value", "OBS_STATUS"}
+            if not required <= set(reader.fieldnames or ()):
+                raise SourceUnavailable("unexpected Webstat CSV header")
+            rows = []
+            for r in reader:
+                period = r["time_period"]
+                if (any(r[k] != v for k, v in expected.items())
+                        or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", period)
+                        or r["time_period_start"] != period or r["time_period_end"] != period
+                        or r["OBS_STATUS"] not in {"A", "P", "M"}
+                        or (r["OBS_STATUS"] == "M" and r["obs_value"].strip() not in _MISSING)):
+                    raise SourceUnavailable("unexpected Webstat daily period, metadata, or observation status")
+                rows.append((period, r["obs_value"]))
         elif provider == "webstat":
             payload = json.loads(text)
             if not isinstance(payload, list):
@@ -326,7 +364,9 @@ def fetch_yield(meta: dict, start: str, end: str, *, timeout: int = 30,
 
     url = meta["endpoint"]
     code = meta.get("provider_code")
-    if provider in {"bundesbank", "nbb"}:
+    if provider == "ecb":
+        bodies = [get(url, {"format": "csvdata", "startPeriod": start, "endPeriod": end})]
+    elif provider in {"bundesbank", "nbb"}:
         bodies = [get(url, {"startPeriod": start, "endPeriod": end},
                       {"Accept": "application/vnd.sdmx.genericdata+xml;version=2.1"})]
     elif provider == "boe":

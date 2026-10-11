@@ -1,14 +1,17 @@
 # F08: official daily sovereign yields
 
-Probe date: **11 October 2026**, from this Windows worktree. The collector is
-implemented, but **fresh coverage of the whole requested universe is incomplete**.
-Germany is blocked by an HTTP challenge and Italy's official benchmark export
-ends in August. Consequently these probes do not establish a working daily
-Italy-minus-Bund stress product.
+Probe date: **11 October 2026**, from this Windows worktree, including the F08b
+continuation. Four ECB daily curves and France's public no-key TEC10 CSV work.
+Germany remains blocked by Enodia; the **ECB AAA 10y spot curve is the explicitly
+approved official stand-in for the Bund**, under its own aggregate series ID.
+Code derives fresh Spain, Belgium and France spreads against that curve. Italy's
+daily observations arrive in monthly batches and end in August: **a fresh Italian
+daily stress indicator is still unavailable**.
 
 The evidence ledger is [f08-probes.json](f08-probes.json): original request URL,
 UTC probe time, HTTP status, content type, byte count and original-response SHA256
-for 116 machine probes, plus parser audits of complete responses. Redirect tokens
+for 146 machine probes, plus parser audits of complete responses and code-computed
+spread results. Redirect tokens
 and response excerpts are omitted. Small offline recordings and their provenance
 are in [the fixture manifest](../tests/fixtures/sovereign_yields/manifest.json).
 An HTTP 200 containing a portal shell or challenge is not counted as data.
@@ -23,9 +26,11 @@ definitions establish a daily series but access fails, that distinction is expli
 
 | Country | Official source | Endpoint / series probed | Frequency | Last observation | Status / limitation |
 |---|---|---|---|---|---|
+| Euro area, AAA (Bund stand-in) | ECB | [YC / G_N_A / SR_10Y](https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y?format=csvdata&startPeriod=2023-01-01); [SR_2Y](https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y?format=csvdata&startPeriod=2023-01-01) | Business-daily (`B`), stored `D` | **2026-10-08**, both | **Works, no key:** 962 observations each from 2023-01-02; 10y 3.51918971%, 2y 3.0331429854%. Svensson spot curve, continuous compounding; not a German national yield. |
+| Euro area, all ratings | ECB | [YC / G_N_C / SR_10Y](https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y?format=csvdata&startPeriod=2023-01-01); [SR_2Y](https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_2Y?format=csvdata&startPeriod=2023-01-01) | Business-daily (`B`), stored `D` | **2026-10-08**, both | **Works, no key:** 962 observations each from 2023-01-02; 10y 4.1258286142%, 2y 3.2485820015%. |
 | Germany | Deutsche Bundesbank | [BBSIS daily REST](https://api.statistiken.bundesbank.de/rest/data/BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A?startPeriod=2026-10-01); ZAR/R10XX, R02XX for 2y | Daily, published definition | — | **Not found from machine:** REST, CSV and series page return HTTP 400 Enodia challenge. SDMX adapter configured; successful live parsing unverified. |
-| France | Banque de France | [Webstat observations export](https://webstat.banque-france.fr/api/explore/v2.1/catalog/datasets/observations/exports/json?refine=series_key:FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA), TEC10 | Daily | — | **Needs key:** new API returns 404 dataset-not-found without key; old API returns 401. Keyed adapter implemented, positive response schema tested against documentation, not a live keyed recording. |
-| Italy | Banca d'Italia | [BDS BMK0200 ZIP/CSV](https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/BMK0200), `MFN_BMK.D.020.922.0.EUR.210` | Daily observations, delayed release | **2026-08-31** | **Works, stale:** 10y BTP gross benchmark YTM; collector reports stalled/degraded. |
+| France | Banque de France | [Public Webstat custom CSV / TEC10](https://webstat.banque-france.fr/export/csv/fr/catalog/FM/FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA) | Daily | **2026-10-09** | **Works, no key:** 5,615 nonmissing observations since 2004-11-03, latest 4.795%. Active catalog switched to recorded CSV. AFT home/daily/definition/history paths return HTTP 403 challenges; tokenless JSON export remains 404. |
+| Italy | Banca d'Italia | [BDS BMK0200 ZIP/CSV](https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/BMK0200), `MFN_BMK.D.020.922.0.EUR.210` | Daily observations, monthly batch | **2026-08-31** | **Works, stale:** active table in September 2026 report; no fresh daily alternative found in BDI/MEF/ECB probes below. Collector reports stalled/degraded. |
 | Spain | Banco de Espana | [ti_1_3.csv](https://www.bde.es/webbe/es/estadisticas/compartido/datos/csv/ti_1_3.csv), `D_G0B1F0ZP` | Daily | **2026-10-07** | **Works:** secondary-market non-stripped government 10y yield. The 1–2y maturity bucket is not labelled constant 2y. |
 | Portugal | Banco de Portugal | [BPstat table 484](https://bpstat.bportugal.pt/conteudos/quadros/484); [domain API](https://bpstat.bportugal.pt/data/v1/domains/) | Monthly 2/5/10y averages verified | — for daily | **Not found:** daily 10y endpoint unresolved; monthly data excluded. |
 | Greece | Bank of Greece | [Government securities table](https://www.bankofgreece.gr/en/statistics/financial-markets-and-interest-rates/greek-government-securities) | Daily, published definition | — | **Not found from machine:** HTTP 403; historical endpoint unverified. |
@@ -54,16 +59,55 @@ definitions establish a daily series but access fails, that distinction is expli
 The Bundesbank key proposed in the task is a real daily series, as shown by its
 [official series list](https://www.bundesbank.de/en/statistics/money-and-capital-markets/interest-rates-and-yields/daily-term-structure-on-listed-federal-securities-651570).
 The failing response from this machine therefore does **not** prove the key is wrong.
+The F08b repeat again returned HTTP 400 Enodia. No proof-of-work script was
+executed and no challenge was solved or bypassed.
+
+## Italy and France investigation (F08b)
+
+Italy's BMK0200 is **active, with a publication lag consistent with monthly
+batches**. The [15 September 2026 report](https://www.bancaditalia.it/pubblicazioni/mercato-finanziario/2026-mercato-finanziario/statistiche_MFN_20260915.pdf)
+explicitly lists BMK0200 as the daily benchmark table in BDS and covers July–August.
+The downloaded ZIP member is stamped `20260910_155110`; its last nonmissing 10y
+observation is August 31. Banca d'Italia's market-statistics page describes monthly
+publication, and its [2026 calendar](https://www.bancaditalia.it/statistiche/calendario-pubblicazioni/Cal_mese_ita_2026.pdf)
+schedules the next market report on October 15. The calendar's reference period
+and the report's supplementary yields can differ; that schedule does not guarantee
+a particular new daily yield date. These findings support publication lag rather
+than discontinuation, but do not make the feed usable as a current stress input.
+
+BMK0100 and QMOT0100 exports both returned data with monthly series keys. MEF's
+[principal interest-rates page](https://www.dt.mef.gov.it/it/debito_pubblico/dati_statistici/principali_tassi_di_interesse/)
+links annual/issuance statistics (the 2025 PDF), not a fresh daily secondary-market
+10y quote. ECB's country IRS endpoint returns monthly data; the daily counterpart
+and daily Italy FM queries returned 404. These probes did **not** identify a fresh,
+backfillable official daily Italian 10y alternative; they do not establish absence
+across all official datasets. The all-rating euro-area curve is not substituted
+for Italy. All URLs, outcomes and evidence links are in `f08b_investigation` in the
+probe ledger.
+
+France's documented [Webstat custom CSV export](https://webstat.banque-france.fr/export/csv/fr/catalog/FM/FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA)
+works without `WEBSTAT_API_KEY` and supplies more than three years of history.
+Its UTF-8 BOM, semicolon delimiters, decimal commas, percent unit and metadata
+are checked. Blank weekend/holiday records marked `OBS_STATUS=M` are skipped.
+AFT's daily TEC10 page, home, French/English definition pages and historical
+archive path all returned HTTP 403 challenges from this machine; no AFT adapter
+was added. The optional keyed JSON adapter remains tested for callers explicitly
+choosing it, but the active French series no longer requires registration.
 
 ## Implemented behavior
 
 * New `sources/sovereign_yields.py` accepts inclusive start/end dates and emits
   canonical `macro_series` rows: `CB_<ISO2>_10Y` and optional `_2Y`, ISO3 country,
   `%` units, declared frequency `D`, actual official publisher in `source`.
-* Config contains 36 requested/supplementary series across 27 countries: 20
-  entries use 13 implemented provider formats; 16 unresolved entries fail
-  explicitly as unavailable. Germany and France have adapters but no successful
-  live responses; Korea's successful recording uses the public sample key.
+* Config contains 40 requested/supplementary series across 27 countries plus the
+  euro-area aggregate: 24 entries use 14 active provider formats; 16 unresolved
+  entries fail explicitly as unavailable. Germany has no successful live response;
+  Korea's successful recording uses the public sample key.
+* `CB_EA_AAA_10Y`, `CB_EA_AAA_2Y`, `CB_EA_ALL_10Y`, `CB_EA_ALL_2Y`
+  use publisher `ECB` and region marker `EMU` (an aggregate, not national ISO3).
+  Original business-daily frequency `B` is normalized to the hub's daily `D`.
+  Exact YC dimensions, percent-per-annum units and multiplier zero are required.
+  The existing daily/backfill runner automatically includes these catalog entries.
 * SARB R209/R2030 have explicit bond IDs. Their residual maturity declines with
   time, so neither is silently stored as a constant 10y yield.
 * Brazil uses the expressly requested Tesouro Nacional source for nominal NTN-F
@@ -97,21 +141,60 @@ The failing response from this machine therefore does **not** prove the key is w
 No commercial, ECB monthly, OECD monthly, overnight-policy-rate or mismatched
 currency/maturity replacement is implemented. Absence of an official daily
 series has not been conclusively established for the unresolved countries, so
-alternative publishers are not presented as approved fallbacks.
+unresolved alternative publishers are not presented as approved fallbacks. F08b
+explicitly authorizes the daily ECB AAA curve as the Bund stand-in described above.
 
-The collector supplies daily inputs; it does not synthesize a spread when either
-leg is unavailable or stale. Use matching observation dates to compute
-`100 * (CB_country_10Y - CB_DE_10Y)` in basis points. Series definitions differ:
-the UK and Switzerland are zero-coupon curves, Germany is an annual-coupon
-derived yield, and other countries include benchmark or constant-maturity yields.
-Those definitions remain in series names. Cross-currency EM differences also
-include domestic rates/currency effects, not just sovereign credit risk.
+## Spreads computed in code (F08b, G10)
+
+[market_data_hub/sovereign_spreads.py](../market_data_hub/sovereign_spreads.py)
+provides `derive_sovereign_spreads(observations, catalog, as_of=...)`. Pass long-form
+`macro_series` rows with date, series_id, value, unit, frequency and country, and
+`get_sovereign_yields()`, in the consumer's analysis step **before** presenting
+results to an LLM or dashboard. There is no internal derived-series ingestion
+pipeline in this hub: `custom_series` is the public write surface for downstream
+apps. The new function is pure, opens no DB and does not persist derived rows.
+
+It derives every configured, enabled euro-country `CB_<ISO2>_10Y` with available
+observations, including Italy/France/Portugal/Greece/etc when their feeds become
+available. EM and other currencies are excluded, including local-currency history
+before a country's euro adoption date. Series IDs are
+`SPREAD_<ISO2>_10Y_VS_ECB_AAA`, unit `bp`, with both input IDs retained. Arithmetic
+is `100 * (country_percent_yield - CB_EA_AAA_10Y)` on an inner join of exact dates,
+without interpolation or forward fill. These are **spreads against an official
+AAA spot proxy**, not literal BTP/Bund spreads or pure measures of credit risk:
+the proxy is a continuously compounded spot curve while country feeds include
+benchmark YTMs and constant-maturity reference rates.
+
+`SpreadResult.observations` contains historical derived rows;
+`SpreadResult.status` contains an explicit row for every configured euro 10y.
+`freshness_date` is the older leg's latest observation; `last_spread_date` is the
+latest common date. A current result is stalled if either leg **or** the latest
+common date is more than three business days old on either leg's configured
+holiday calendar. This also catches recent but disjoint histories. Missing legs
+and missing common dates have explicit reasons. Historical stalled results remain
+available, so consumers **must join status and require `stalled == False` before
+labelling a value current**. Conflicting unresolved revisions, nonfinite values,
+wrong units/frequency/country and intraday dates raise errors; future observations
+are excluded for the requested as-of date.
+
+Code-computed results from complete live recordings, as of **2026-10-11**:
+
+| Country | Latest common date | Spread vs ECB AAA 10y (bp) | Current status |
+|---|---|---:|---|
+| Spain | 2026-10-07 | 55.764878 | Fresh |
+| Belgium | 2026-10-08 | 87.081029 | Fresh |
+| France | 2026-10-08 | 137.881029 | Fresh; French leg itself extends to October 9 |
+| Italy | 2026-08-31 | 76.052645 | **Stale history only; unavailable as current stress** |
+
+Full-precision arithmetic and both curve/country parser audits are recorded in
+`f08b_spread_audit` and `f08b_parser_audit` in the ledger. Other requested countries'
+machine observations in the table above are retained from F08; F08b re-probed
+ECB, Germany, France, Italy, Spain and Belgium.
 
 ## Owner actions and remaining verification
 
 | Environment variable | Free registration / source | What registration enables |
 |---|---|---|
-| `WEBSTAT_API_KEY` | Create a [Webstat account](https://webstat.banque-france.fr/), then generate a profile API key; see [migration guide](https://webstat.banque-france.fr/pages/guide-migration-api/) | Implemented TEC10 adapter uses `Authorization: Apikey ...`. Must verify a real keyed response and >=3 years of history. Missing key is unavailable. |
 | `ECOS_API_KEY` | Register for an [ECOS Open API key](https://ecos.bok.or.kr/api/) | Implemented 817Y002/010210000 adapter; verify full pagination/backfill with real key. It deliberately does not use sample as a production substitute. |
 | `BANXICO_API_TOKEN` | [Banxico SIE token registration](https://www.banxico.org.mx/SieAPIRest/service/v1/token) | Necessary for future API access, **not sufficient**: daily nominal M-bond 10y code still needs verification/implementation. |
 | `EVDS_API_KEY` | Register at [TCMB EVDS3](https://evds3.tcmb.gov.tr/) | Necessary for future API access; EVDS3 endpoint and daily 10y identifier still need verification/implementation. |
@@ -131,7 +214,9 @@ Brazilian NTN-F 2037 starts 2026-02-02; SARB R209 starts 2025-12-09 even when
 requested from 2023. Those fixed bonds cannot supply three years before issuance.
 ChinaBond's 2023
 and 2026 year queries work; chunking covers intervening years in the collector.
-Full keyed France/Korea history and blocked Germany history remain unverified.
+ECB and France history now work without keys. Full keyed Korea history and blocked
+Germany history remain unverified. `WEBSTAT_API_KEY` is optional for the retained
+JSON adapter and is not needed for the active France catalog.
 
 `scripts/probe_sovereign_yields.py OUTPUT_DIR label=URL ...` reproduces read-only
 probes and saves original responses. It never opens a hub database. Do not run
@@ -144,6 +229,9 @@ responses, negative yields, genuine weekend dates, explicit holiday closures,
 staleness, backfill, pagination, retries/redaction, revision upserts and exit codes.
 
 ## Validation evidence
+
+The results in this subsection record the original **F08 / `b39f487`** work.
+Final F08b evidence after all code changes is recorded in the following subsection.
 
 All commands used `C:/ProgramData/spyder-6/python.exe`, unpiped. Pytest basetemps
 were isolated `f08-pytest-*` directories under `%TEMP%`, removed after completion.
@@ -184,7 +272,8 @@ The full suite was executed once, as requested:
 
 That run collected before the final Japan encoding regression and late Treasury
 addition; both were validated in the final 64-test targeted run. The full suite
-was not repeated after those changes. The two warnings concern an existing
+was not repeated in F08 after those changes; F08b reruns the full suite after all
+changes. The two warnings concern an existing
 Telegram script docstring escape and an ALFRED fixture's deliberately truncated
 vintage list, not sovereign data or a Telegram send.
 
@@ -202,3 +291,64 @@ CONFIG OK — tickers=149 fred=100 panel=83 countries=64 sovereign_yields=36
 ```
 
 `git diff --check` exited 0; Git emitted only LF-to-CRLF conversion notices.
+
+## F08b final validation
+
+Tests were written before implementation, using small recordings from the new
+machine probes. The first ECB/spread run ended with:
+
+```text
+6 failed, 11 passed, 14 errors in 4.43s
+```
+
+The newly discovered public French CSV was also demonstrated failing before its
+adapter/catalog change:
+
+```text
+2 failed, 8 passed, 31 deselected in 3.45s
+```
+
+An additional euro-adoption regression failed before correcting eligibility and
+excluding pre-adoption local-currency dates (`1 failed, 42 deselected in 3.65s`).
+The final targeted run covers exact keys, tenors, units, multipliers, missing
+weekends, forecast rejection, inclusive backfill, common-date arithmetic, both
+legs' freshness, holiday boundaries, disjoint histories, revisions, future dates
+and temporary-DB runner upserts:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest tests/test_sovereign_spreads.py tests/test_sovereign_yields.py --basetemp "$env:TEMP/f08b-pytest-final-target2" --tb=short -q
+```
+
+```text
+107 passed in 17.64s
+```
+
+The full suite ran **once in F08b, after every code change**, including all changes
+in the original F08 commit. No code or tests changed after this run:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m pytest --basetemp "$env:TEMP/f08b-pytest-full" -q
+```
+
+```text
+655 passed, 1 warning in 458.60s (0:07:38)
+```
+
+The warning is the existing ALFRED test's deliberately truncated vintage list.
+All pytest basetemps used for F08b were under `%TEMP%` and removed afterward.
+Final static/config commands, unpiped:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m ruff check market_data_hub/sources/sovereign_yields.py market_data_hub/sovereign_spreads.py tests/test_sovereign_spreads.py tests/test_sovereign_yields.py validate_config.py
+& C:/ProgramData/spyder-6/python.exe -X utf8 validate_config.py
+git diff --check
+```
+
+```text
+All checks passed!
+CONFIG OK — tickers=149 fred=100 panel=83 countries=64 sovereign_yields=40
+```
+
+All gates exited 0. Production databases and ingestion, scheduled tasks and
+Telegram were untouched. Changes are committed locally on the existing F08
+branch, on top of `b39f487`; no push or PR is performed.

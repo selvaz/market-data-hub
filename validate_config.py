@@ -89,7 +89,7 @@ def validate() -> list[str]:
                 errors.append(f"{prefix} {field} must be {expected!r}")
         if not re.fullmatch(r"[A-Z]{3}", str(entry.get("country", ""))):
             errors.append(f"{prefix} country must be ISO3")
-        if not re.fullmatch(r"CB_[A-Z]{2}_(?:\d+Y|R209|R2030|NTNF_\d{4})", str(entry.get("symbol", ""))):
+        if not re.fullmatch(r"CB_(?:[A-Z]{2}_(?:\d+Y|R209|R2030|NTNF_\d{4})|EA_(?:AAA|ALL)_(?:2|10)Y)", str(entry.get("symbol", ""))):
             errors.append(f"{prefix} invalid symbol")
         if not entry.get("source") or not entry.get("name"):
             errors.append(f"{prefix} source and name are required")
@@ -102,6 +102,15 @@ def validate() -> list[str]:
         else:
             if not str(entry.get("endpoint", "")).startswith("https://") or not entry.get("provider_code"):
                 errors.append(f"{prefix} HTTPS endpoint and provider_code required")
+        if provider == "ecb" or str(entry.get("symbol", "")).startswith("CB_EA_"):
+            match = re.fullmatch(r"CB_EA_(AAA|ALL)_(2|10)Y", str(entry.get("symbol", "")))
+            code = (f"B.U2.EUR.4F.G_N_{'A' if match[1] == 'AAA' else 'C'}.SV_C_YM.SR_{match[2]}Y"
+                    if match else None)
+            if (provider != "ecb" or entry.get("country") != "EMU" or entry.get("source") != "ECB"
+                    or not code or entry.get("provider_code") != code
+                    or entry.get("endpoint") != f"https://data-api.ecb.europa.eu/service/data/YC/{code}"
+                    or entry.get("key_env")):
+                errors.append(f"{prefix} ECB curve requires its matching YC key, endpoint, ECB publisher and EMU region")
         if provider == "tesouro":
             try:
                 date.fromisoformat(entry.get("maturity", ""))

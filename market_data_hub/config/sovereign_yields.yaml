@@ -11,6 +11,40 @@ defaults: &daily
   # Optional explicit national market closures: holidays: [YYYY-MM-DD, ...]
 
 series:
+  # EMU is an aggregate region marker, not a national ISO3 code. ECB AAA is
+  # the explicit Bund stand-in; never relabel these curves as German yields.
+  - <<: *daily
+    symbol: CB_EA_AAA_10Y
+    country: EMU
+    source: ECB
+    provider: ecb
+    name: Euro-area AAA government 10y spot rate, continuous compounding (Bund stand-in)
+    provider_code: B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y
+    endpoint: https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y
+  - <<: *daily
+    symbol: CB_EA_AAA_2Y
+    country: EMU
+    source: ECB
+    provider: ecb
+    name: Euro-area AAA government 2y spot rate, continuous compounding
+    provider_code: B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y
+    endpoint: https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y
+  - <<: *daily
+    symbol: CB_EA_ALL_10Y
+    country: EMU
+    source: ECB
+    provider: ecb
+    name: Euro-area all-rating government 10y spot rate, continuous compounding
+    provider_code: B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y
+    endpoint: https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y
+  - <<: *daily
+    symbol: CB_EA_ALL_2Y
+    country: EMU
+    source: ECB
+    provider: ecb
+    name: Euro-area all-rating government 2y spot rate, continuous compounding
+    provider_code: B.U2.EUR.4F.G_N_C.SV_C_YM.SR_2Y
+    endpoint: https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_2Y
   - <<: *daily
     symbol: CB_DE_10Y
     country: DEU
@@ -31,11 +65,11 @@ series:
     symbol: CB_FR_10Y
     country: FRA
     source: Banque de France
-    provider: webstat
+    provider: webstat_csv
     name: 10y OAT constant-maturity TEC10
     provider_code: FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA
-    endpoint: https://webstat.banque-france.fr/api/explore/v2.1/catalog/datasets/observations/exports/json
-    key_env: WEBSTAT_API_KEY
+    endpoint: https://webstat.banque-france.fr/export/csv/fr/catalog/FM/FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA
+    probe_note: Documented public CSV export works without a key, including history
   - <<: *daily
     symbol: CB_IT_10Y
     country: ITA
@@ -44,7 +78,7 @@ series:
     name: 10y BTP benchmark gross yield to maturity
     provider_code: MFN_BMK.D.020.922.0.EUR.210
     endpoint: https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/BMK0200
-    probe_note: Daily observations, delayed publication; stale on 2026-10-11
+    probe_note: BMK0200 remains in the September 2026 report; monthly batch of daily observations, stale on 2026-10-11
   - <<: *daily
     symbol: CB_ES_10Y
     country: ESP

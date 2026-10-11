@@ -29,6 +29,13 @@ def spec(symbol):
     return next(e for e in get_sovereign_yields() if e["symbol"] == symbol)
 
 
+def keyed_webstat_spec():
+    # Retain regression coverage for the optional keyed JSON adapter. The active
+    # France catalog now uses the positively recorded, no-key CSV export.
+    return dict(spec("CB_FR_10Y"), provider="webstat", key_env="WEBSTAT_API_KEY",
+                endpoint="https://webstat.banque-france.fr/api/explore/v2.1/catalog/datasets/observations/exports/json")
+
+
 @pytest.mark.parametrize("symbol,fixture,latest,value", [
     ("CB_GB_10Y", "boe.csv", "2026-10-07", 5.4412),
     ("CB_JP_10Y", "jgb_current.csv", "2026-10-08", 3.089),
@@ -185,7 +192,8 @@ def test_missing_key_is_unavailable_without_http(cb, monkeypatch, symbol, env):
     request = Mock(side_effect=AssertionError("must not make HTTP calls without a key"))
     monkeypatch.setattr(cb, "_request", request)
     with pytest.raises(cb.SourceUnavailable, match=env):
-        cb.fetch_yield(spec(symbol), "2023-01-01", "2026-10-11")
+        cb.fetch_yield(keyed_webstat_spec() if symbol == "CB_FR_10Y" else spec(symbol),
+                       "2023-01-01", "2026-10-11")
     request.assert_not_called()
 
 
@@ -213,7 +221,7 @@ def test_webstat_rejects_monthly_periods_and_forecasts(cb, changes):
            "time_period_end": "2026-10-07", "obs_status": "A", "obs_value": 3.5}
     row.update(changes)
     with pytest.raises(cb.SourceUnavailable):
-        cb.parse_response(spec("CB_FR_10Y"), json.dumps([row]).encode())
+        cb.parse_response(keyed_webstat_spec(), json.dumps([row]).encode())
 
 
 def test_webstat_documented_schema_and_authorization(cb, monkeypatch):
@@ -225,7 +233,7 @@ def test_webstat_documented_schema_and_authorization(cb, monkeypatch):
     request = Mock(return_value=response(json.dumps([row]).encode()))
     monkeypatch.setenv("WEBSTAT_API_KEY", "private-test-key")
     monkeypatch.setattr(cb, "_request", request)
-    df = cb.fetch_yield(spec("CB_FR_10Y"), "2023-01-01", "2026-10-11")
+    df = cb.fetch_yield(keyed_webstat_spec(), "2023-01-01", "2026-10-11")
     assert df.value.tolist() == [3.5]
     assert request.call_args.kwargs["headers"] == {"Authorization": "Apikey private-test-key"}
     assert request.call_args.kwargs["params"]["refine"].endswith(row["series_key"])

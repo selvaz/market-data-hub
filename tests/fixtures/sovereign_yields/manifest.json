@@ -214,5 +214,60 @@
     "sha256": "75d297b48b6ab5b76a35f665e995a764d00d81ff09c78447f71469c26386bc28",
     "fixture": "tesouro.csv",
     "reduction": "Original header and selected 2033/2037 rows, 2023-01-02 and 2026-10-08/09; includes real-rate controls"
+  },
+  {
+    "label": "ecb_aaa10",
+    "url": "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y?format=csvdata&startPeriod=2023-01-01",
+    "probed_at": "2026-10-11T09:18:01.610543+00:00",
+    "status": 200,
+    "content_type": "text/csv",
+    "bytes": 535754,
+    "sha256": "0c1a98e2a424c2223bc51d9c7c6a1e7ceb6619c5667feff15298215591f398f3",
+    "fixture": "ecb_aaa10.csv",
+    "reduction": "Original header and fields, first and final three observations; no values changed"
+  },
+  {
+    "label": "ecb_aaa2",
+    "url": "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y?format=csvdata&startPeriod=2023-01-01",
+    "probed_at": "2026-10-11T09:18:01.611815+00:00",
+    "status": 200,
+    "content_type": "text/csv",
+    "bytes": 531916,
+    "sha256": "994a35f0ef76f24b16b4c8009ffe11e8b7ff1e1c37e5913ca3e891a015071a5b",
+    "fixture": "ecb_aaa2.csv",
+    "reduction": "Original header and fields, first and final three observations; no values changed"
+  },
+  {
+    "label": "ecb_all10",
+    "url": "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y?format=csvdata&startPeriod=2023-01-01",
+    "probed_at": "2026-10-11T09:18:01.613414+00:00",
+    "status": 200,
+    "content_type": "text/csv",
+    "bytes": 541522,
+    "sha256": "a9be0588ae7f3cdb425c18f9ab8b5636a859f208cbf82764b23799632c2b0e3b",
+    "fixture": "ecb_all10.csv",
+    "reduction": "Original header and fields, first and final three observations; no values changed"
+  },
+  {
+    "label": "ecb_all2",
+    "url": "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_2Y?format=csvdata&startPeriod=2023-01-01",
+    "probed_at": "2026-10-11T09:18:01.614684+00:00",
+    "status": 200,
+    "content_type": "text/csv",
+    "bytes": 537668,
+    "sha256": "1ee8ac07ab3787ce86623eb7d0bd01abb93ac2bbe036732850d8b5a8588bbb37",
+    "fixture": "ecb_all2.csv",
+    "reduction": "Original header and fields, first and final three observations; no values changed"
+  },
+  {
+    "label": "bdfr_custom_csv",
+    "url": "https://webstat.banque-france.fr/export/csv/fr/catalog/FM/FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA",
+    "probed_at": "2026-10-11T09:23:38.655362+00:00",
+    "status": 200,
+    "content_type": "text/csv",
+    "bytes": 2051911,
+    "sha256": "39313e39136a94ccdd93317db37314d50b9ae01eeca60862b903e2849a76f063",
+    "fixture": "webstat_tec10.csv",
+    "reduction": "Original header and fields, 2023-01-02 and four October dates including missing Sunday; no values changed"
   }
 ]

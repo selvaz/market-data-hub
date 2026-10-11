@@ -1037,6 +1037,276 @@
       "content_type": "application/json;charset=utf-8",
       "bytes": 57238,
       "sha256": "6f527644d2243020b65842e41156448613f433028d05d40125f39581f43662f9"
+    },
+    {
+      "label": "aft_archive_tec",
+      "url": "https://www.aft.gouv.fr/articles/historique-de-l-indice-tec-10_180.html",
+      "probed_at": "2026-10-11T09:23:38.656357+00:00",
+      "status": 403,
+      "content_type": "text/html; charset=UTF-8",
+      "bytes": 5675,
+      "sha256": "e1b4a060cfdd238ad0f1797236a9bfae33bf99b9664c2da007a535553074df86"
+    },
+    {
+      "label": "aft_definition",
+      "url": "https://www.aft.gouv.fr/fr/oat-tec-10",
+      "probed_at": "2026-10-11T09:18:44.039435+00:00",
+      "status": 403,
+      "content_type": "text/html; charset=UTF-8",
+      "bytes": 5530,
+      "sha256": "426f90660f1b6778b59d7a6ab5f19ffbd678c586de3a5652b149473a04c36e99"
+    },
+    {
+      "label": "aft_en",
+      "url": "https://www.aft.gouv.fr/en/tec-10-oat",
+      "probed_at": "2026-10-11T09:18:44.039435+00:00",
+      "status": 403,
+      "content_type": "text/html; charset=UTF-8",
+      "bytes": 5530,
+      "sha256": "e3f4bed0af79962243edd0b2de6d5c380ba8f2d2149979bfec97b157a38b2ffe"
+    },
+    {
+      "label": "aft_home",
+      "url": "https://www.aft.gouv.fr/fr",
+      "probed_at": "2026-10-11T09:18:44.037376+00:00",
+      "status": 403,
+      "content_type": "text/html; charset=UTF-8",
+      "bytes": 5476,
+      "sha256": "9de0e476908ae10662f2edc812012fb0c6687984e4123de8c1fef952fcc97da6"
+    },
+    {
+      "label": "aft_tec",
+      "url": "https://www.aft.gouv.fr/fr/tec-10-du-jour",
+      "probed_at": "2026-10-11T09:18:01.615567+00:00",
+      "status": 403,
+      "content_type": "text/html; charset=UTF-8",
+      "bytes": 5542,
+      "sha256": "42b7a7ce28e1cc5771d50294b66e161b1820f12d87c3f5003fca132d508561a7"
+    },
+    {
+      "label": "bde_daily",
+      "url": "https://www.bde.es/webbe/es/estadisticas/compartido/datos/csv/ti_1_3.csv",
+      "probed_at": "2026-10-11T09:26:29.807200+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 1346746,
+      "sha256": "cbc918be348659e3b361eafc2010e858853986501e38367373af7969c7fabd4f"
+    },
+    {
+      "label": "bdfr_custom_csv",
+      "url": "https://webstat.banque-france.fr/export/csv/fr/catalog/FM/FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA",
+      "probed_at": "2026-10-11T09:23:38.655362+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 2051911,
+      "sha256": "39313e39136a94ccdd93317db37314d50b9ae01eeca60862b903e2849a76f063"
+    },
+    {
+      "label": "bdfr_rates",
+      "url": "https://www.banque-france.fr/fr/statistiques/taux-et-cours/les-indices-obligataires",
+      "probed_at": "2026-10-11T09:19:07.621935+00:00",
+      "status": 403,
+      "content_type": "text/html",
+      "bytes": 458,
+      "sha256": "adfe2b1054129462e3425af47485782bcf0012d3513be60bc2f08686d61a6482"
+    },
+    {
+      "label": "bdfr_tec_nokey",
+      "url": "https://webstat.banque-france.fr/api/explore/v2.1/catalog/datasets/observations/exports/json?refine=series_key:FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA",
+      "probed_at": "2026-10-11T09:19:07.620596+00:00",
+      "status": 404,
+      "content_type": "application/json",
+      "bytes": 105,
+      "sha256": "31a2ec0e474b8cbb4272008924a1009d220588045d9bba780906461a4286d723"
+    },
+    {
+      "label": "bdi_calendar",
+      "url": "https://www.bancaditalia.it/statistiche/calendario-pubblicazioni/Cal_mese_ita_2026.pdf",
+      "probed_at": "2026-10-11T09:18:44.041502+00:00",
+      "status": 200,
+      "content_type": "application/pdf",
+      "bytes": 449948,
+      "sha256": "033c34ea1bffc42309392e866804e18a8210701ce8b8693752954dd1ff98f633"
+    },
+    {
+      "label": "bdi_daily",
+      "url": "https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/BMK0200",
+      "probed_at": "2026-10-11T09:18:01.807300+00:00",
+      "status": 200,
+      "content_type": "application/zip",
+      "bytes": 213225,
+      "sha256": "8e533dfd0bfd7004ac17f53a92b983c51f28a82cb89bf40ba64bfc1e8b637efe"
+    },
+    {
+      "label": "bdi_markets",
+      "url": "https://www.bancaditalia.it/statistiche/tematiche/moneta-intermediari-finanza/mercati/index.html",
+      "probed_at": "2026-10-11T09:18:01.616763+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 105401,
+      "sha256": "271ecbc37de52e80f0e03af84779dab2f7f79fafe28f2f4feacbdcaf1e7c95db"
+    },
+    {
+      "label": "bdi_monthly",
+      "url": "https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/BMK0100",
+      "probed_at": "2026-10-11T09:18:44.043581+00:00",
+      "status": 200,
+      "content_type": "application/zip",
+      "bytes": 11231,
+      "sha256": "b05d2008f52eca05a53f6f0e613a24dbcb6715a6568870fc7ac442c978108dcd"
+    },
+    {
+      "label": "bdi_mot",
+      "url": "https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/QMOT0100",
+      "probed_at": "2026-10-11T09:18:44.168268+00:00",
+      "status": 200,
+      "content_type": "application/zip",
+      "bytes": 31129,
+      "sha256": "309be7d8a2df483b8aba9e45f772a5d278aa375ebf11cb04f12683b6fb163b42"
+    },
+    {
+      "label": "bdi_report_latest",
+      "url": "https://www.bancaditalia.it/pubblicazioni/mercato-finanziario/2026-mercato-finanziario/statistiche_MFN_20260915.pdf",
+      "probed_at": "2026-10-11T09:19:43.672384+00:00",
+      "status": 200,
+      "content_type": "application/pdf",
+      "bytes": 1508882,
+      "sha256": "97657523a0097a523086ac0d0f62b0bfe9c4d758b8227f25681b6e01c8d6365f"
+    },
+    {
+      "label": "bdi_reports",
+      "url": "https://www.bancaditalia.it/pubblicazioni/mercato-finanziario/2026-mercato-finanziario/index.html",
+      "probed_at": "2026-10-11T09:18:44.041502+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 102398,
+      "sha256": "16ab594d2910b1efbcc60b5bf047adf7ceb6bfd28e79a2a2e2efc40304e912ea"
+    },
+    {
+      "label": "bundesbank_blocked",
+      "url": "https://api.statistiken.bundesbank.de/rest/data/BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A?startPeriod=2026-10-01",
+      "probed_at": "2026-10-11T09:26:29.809264+00:00",
+      "status": 400,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 6122,
+      "sha256": "0f3338124950c882df92da4920d20a029bbe9b4263aa9b7b1b1ce75490442e39"
+    },
+    {
+      "label": "ecb_aaa10",
+      "url": "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_10Y?format=csvdata&startPeriod=2023-01-01",
+      "probed_at": "2026-10-11T09:18:01.610543+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 535754,
+      "sha256": "0c1a98e2a424c2223bc51d9c7c6a1e7ceb6619c5667feff15298215591f398f3"
+    },
+    {
+      "label": "ecb_aaa2",
+      "url": "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_A.SV_C_YM.SR_2Y?format=csvdata&startPeriod=2023-01-01",
+      "probed_at": "2026-10-11T09:18:01.611815+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 531916,
+      "sha256": "994a35f0ef76f24b16b4c8009ffe11e8b7ff1e1c37e5913ca3e891a015071a5b"
+    },
+    {
+      "label": "ecb_all10",
+      "url": "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_10Y?format=csvdata&startPeriod=2023-01-01",
+      "probed_at": "2026-10-11T09:18:01.613414+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 541522,
+      "sha256": "a9be0588ae7f3cdb425c18f9ab8b5636a859f208cbf82764b23799632c2b0e3b"
+    },
+    {
+      "label": "ecb_all2",
+      "url": "https://data-api.ecb.europa.eu/service/data/YC/B.U2.EUR.4F.G_N_C.SV_C_YM.SR_2Y?format=csvdata&startPeriod=2023-01-01",
+      "probed_at": "2026-10-11T09:18:01.614684+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 537668,
+      "sha256": "1ee8ac07ab3787ce86623eb7d0bd01abb93ac2bbe036732850d8b5a8588bbb37"
+    },
+    {
+      "label": "ecb_fm_it_all",
+      "url": "https://data-api.ecb.europa.eu/service/data/FM/D.IT.....?format=csvdata&startPeriod=2026-10-01",
+      "probed_at": "2026-10-11T09:19:07.617527+00:00",
+      "status": 404,
+      "content_type": "application/problem+json",
+      "bytes": 418,
+      "sha256": "d96e93108b1ea537ce0cdf6c66a7bdeadf28ba25e94d18bbb18c09affeb6e012"
+    },
+    {
+      "label": "ecb_fm_italy",
+      "url": "https://data-api.ecb.europa.eu/service/data/FM/D.IT?format=csvdata&startPeriod=2026-10-01",
+      "probed_at": "2026-10-11T09:18:44.193324+00:00",
+      "status": 400,
+      "content_type": "text/html",
+      "bytes": 12174,
+      "sha256": "6e0030d04c3d6170af6410dcbd0439020efef44342cd6d94b2c68d27bb81e450"
+    },
+    {
+      "label": "ecb_irs_it_daily",
+      "url": "https://data-api.ecb.europa.eu/service/data/IRS/D.IT.L.L40.CI.0000.EUR.N.Z?format=csvdata&startPeriod=2026-10-01",
+      "probed_at": "2026-10-11T09:19:07.618919+00:00",
+      "status": 404,
+      "content_type": "application/problem+json",
+      "bytes": 463,
+      "sha256": "98e4ff8513a2a6469304a55eb2ba78a23eeb1fc860d1f5d0349204f2a9b4dea2"
+    },
+    {
+      "label": "ecb_irs_it_monthly",
+      "url": "https://data-api.ecb.europa.eu/service/data/IRS/M.IT.L.L40.CI.0000.EUR.N.Z?format=csvdata&startPeriod=2026-01-01",
+      "probed_at": "2026-10-11T09:19:43.673704+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 3218,
+      "sha256": "e5fdcc7d5193a54c05d112e4f7a65ab0db9727d5306a7667c4d0ccb76089412e"
+    },
+    {
+      "label": "ecb_it_fm",
+      "url": "https://data-api.ecb.europa.eu/service/data/FM/D.IT.EUR.4F.BB.IT10YT_RR.YLDE?format=csvdata&startPeriod=2026-10-01",
+      "probed_at": "2026-10-11T09:18:02.150451+00:00",
+      "status": 404,
+      "content_type": "application/problem+json",
+      "bytes": 469,
+      "sha256": "febae9f1b90b126182140f1fda25664b45aaa90a264d3b1071554e8402193fe4"
+    },
+    {
+      "label": "mef_rates",
+      "url": "https://www.dt.mef.gov.it/it/debito_pubblico/dati_statistici/principali_tassi_di_interesse/",
+      "probed_at": "2026-10-11T09:19:43.671372+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 132047,
+      "sha256": "2458048a1fe594d734e84cf1e1fb2bbafe5a6f0ad49955f29482ee6e6182249c"
+    },
+    {
+      "label": "mef_rates_pdf",
+      "url": "https://www.dt.mef.gov.it/export/sites/sitodt/modules/documenti_it/debito_pubblico/dati_statistici/principali_tassi_interesse/Principali-tassi-di-interesse-2025.pdf",
+      "probed_at": "2026-10-11T09:23:38.657500+00:00",
+      "status": 200,
+      "content_type": "application/pdf",
+      "bytes": 58341,
+      "sha256": "1a3bc5a9f7626bc2563e065e11da998006e2d8a9b2ebe81be42453b07c78549c"
+    },
+    {
+      "label": "mef_stats",
+      "url": "https://www.dt.mef.gov.it/it/debito_pubblico/dati_statistici/",
+      "probed_at": "2026-10-11T09:18:44.181015+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 482917,
+      "sha256": "cb1d780b58a5ab79d05d777d7272567091058c7bf6b773f5d9dc2d243490bc50"
+    },
+    {
+      "label": "nbb_daily",
+      "url": "https://nsidisseminate-stat.nbb.be/rest/data/BE2,DF_IROLOBE2,1.0/D.10Y.F?startPeriod=2023-01-01",
+      "probed_at": "2026-10-11T09:26:29.807200+00:00",
+      "status": 200,
+      "content_type": "application/vnd.sdmx.genericdata+xml; version=2.1; charset=utf-8",
+      "bytes": 231021,
+      "sha256": "fba2e24604574aa671942bf7a8da6847ef559a00c89dfd6be62caf3b7abb7a40"
     }
   ],
   "recording_parser_audit": [
@@ -1208,5 +1478,150 @@
       "last": "2026-10-09",
       "latest_value": 12.57
     }
-  ]
+  ],
+  "f08b_parser_audit": [
+    {
+      "symbol": "CB_EA_AAA_10Y",
+      "probe": "ecb_aaa10",
+      "rows": 962,
+      "first": "2023-01-02",
+      "last": "2026-10-08",
+      "latest_value": 3.51918971
+    },
+    {
+      "symbol": "CB_EA_AAA_2Y",
+      "probe": "ecb_aaa2",
+      "rows": 962,
+      "first": "2023-01-02",
+      "last": "2026-10-08",
+      "latest_value": 3.0331429854
+    },
+    {
+      "symbol": "CB_EA_ALL_10Y",
+      "probe": "ecb_all10",
+      "rows": 962,
+      "first": "2023-01-02",
+      "last": "2026-10-08",
+      "latest_value": 4.1258286142
+    },
+    {
+      "symbol": "CB_EA_ALL_2Y",
+      "probe": "ecb_all2",
+      "rows": 962,
+      "first": "2023-01-02",
+      "last": "2026-10-08",
+      "latest_value": 3.2485820015
+    },
+    {
+      "symbol": "CB_FR_10Y",
+      "probe": "bdfr_custom_csv",
+      "rows": 5615,
+      "first": "2004-11-03",
+      "last": "2026-10-09",
+      "latest_value": 4.795
+    },
+    {
+      "symbol": "CB_IT_10Y",
+      "probe": "bdi_daily",
+      "rows": 9008,
+      "first": "1991-03-05",
+      "last": "2026-08-31",
+      "latest_value": 4.10012
+    },
+    {
+      "symbol": "CB_ES_10Y",
+      "probe": "bde_daily",
+      "rows": 8835,
+      "first": "1989-07-18",
+      "last": "2026-10-07",
+      "latest_value": 4.096
+    },
+    {
+      "symbol": "CB_BE_10Y",
+      "probe": "nbb_daily",
+      "rows": 938,
+      "first": "2023-01-02",
+      "last": "2026-10-09",
+      "latest_value": 4.31
+    }
+  ],
+  "f08b_spread_audit": [
+    {
+      "country": "FRA",
+      "date": "2026-10-08",
+      "value_bp": 137.88102899999996,
+      "stalled": false,
+      "reference_id": "CB_EA_AAA_10Y"
+    },
+    {
+      "country": "ITA",
+      "date": "2026-08-31",
+      "value_bp": 76.05264494000004,
+      "stalled": true,
+      "reference_id": "CB_EA_AAA_10Y"
+    },
+    {
+      "country": "ESP",
+      "date": "2026-10-07",
+      "value_bp": 55.764878130000014,
+      "stalled": false,
+      "reference_id": "CB_EA_AAA_10Y"
+    },
+    {
+      "country": "BEL",
+      "date": "2026-10-08",
+      "value_bp": 87.08102899999997,
+      "stalled": false,
+      "reference_id": "CB_EA_AAA_10Y"
+    }
+  ],
+  "f08b_investigation": {
+    "italy": {
+      "conclusion": "Monthly batch of daily observations; active BMK0200 explicitly listed in the 2026-09-15 report. No fresh daily Italian 10y alternative found in these probes.",
+      "evidence": [
+        "bdi_daily",
+        "bdi_reports",
+        "bdi_report_latest",
+        "bdi_calendar",
+        "bdi_monthly",
+        "bdi_mot",
+        "mef_stats",
+        "mef_rates",
+        "mef_rates_pdf",
+        "ecb_it_fm",
+        "ecb_fm_it_all",
+        "ecb_irs_it_daily",
+        "ecb_irs_it_monthly"
+      ],
+      "report_date": "2026-09-15",
+      "report_period": "July-August 2026",
+      "bmk0200_archive_filename": "20260910_155110-TIMESERIES-MULTICUBE.csv",
+      "last_daily_10y": "2026-08-31",
+      "next_scheduled_market_report": "2026-10-15",
+      "next_yield_observation_date_not_guaranteed": true
+    },
+    "france": {
+      "conclusion": "Webstat documented public custom CSV returns 5,615 nonmissing daily TEC10 observations through 2026-10-09 without credentials. AFT daily/definition/home/history paths return HTTP403 challenges.",
+      "evidence": [
+        "bdfr_custom_csv",
+        "bdfr_tec_nokey",
+        "bdfr_rates",
+        "aft_tec",
+        "aft_home",
+        "aft_definition",
+        "aft_en",
+        "aft_archive_tec"
+      ]
+    },
+    "ecb": {
+      "conclusion": "Four business-daily YC spot curves work without credentials, 962 observations each from 2023-01-02 through 2026-10-08. AAA is an explicit Bund stand-in, not Germany. Bundesbank still returns Enodia; challenge not solved or bypassed.",
+      "evidence": [
+        "ecb_aaa10",
+        "ecb_aaa2",
+        "ecb_all10",
+        "ecb_all2",
+        "bundesbank_blocked"
+      ]
+    }
+  }
 }
