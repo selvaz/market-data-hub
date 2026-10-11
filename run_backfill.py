@@ -26,8 +26,8 @@ from market_data_hub.runner import run  # noqa: E402
 def main() -> int:
     p = argparse.ArgumentParser(description="market_data_hub historical backfill")
     p.add_argument("--sources", nargs="+",
-                   choices=["yahoo", "fred", "binance", "macro_panel", "factors"],
-                   default=["yahoo", "fred", "binance", "macro_panel","factors"])
+                   choices=["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors"],
+                   default=["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors"])
     p.add_argument("--start", help="override start date for ALL sources")
     p.add_argument("--db", help="DuckDB DB path")
     args = p.parse_args()

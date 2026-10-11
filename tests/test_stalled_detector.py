@@ -24,7 +24,7 @@ H10_IDS = {entry["series_id"] for entry in json.loads(
 def test_all_h10_series_configure_ten_day_publication_lag():
     entries = get_fred_series()
     overridden = {entry["symbol"] for entry in entries if "max_lag_days" in entry}
-    assert overridden == H10_IDS
+    assert overridden == H10_IDS | {"THREEFYTP10", "CES0500000003", "GASDESW", "DDFUELNYH"}
     assert all(entry["max_lag_days"] == 10 for entry in entries
                if entry["symbol"] in H10_IDS)
 

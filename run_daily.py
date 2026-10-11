@@ -26,7 +26,7 @@ def main() -> int:
     p.add_argument("--live-only", action="store_true",
                    help="live intraday price injection only")
     p.add_argument("--sources", nargs="+",
-                   choices=["yahoo", "fred", "binance", "macro_panel", "factors"],
+                   choices=["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors"],
                    help="limit to the given sources")
     p.add_argument("--end", help="end date (default: today UTC)")
     p.add_argument("--db", help="DuckDB DB path (override settings)")

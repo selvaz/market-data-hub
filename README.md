@@ -24,9 +24,10 @@ from `docs/` by the `docs` workflow on every push to `main`).
 
 | Source | What | Table | Frequency |
 |----------|------|---------|-----------|
-| Yahoo Finance | 111 symbols (ETFs, equity, FX, VIX indices, daily crypto) — OHLCV + adj_close | `prices_daily` | daily |
+| Yahoo Finance | 154 symbols (ETFs, equity, FX, VIX indices, daily crypto, [continuous commodity futures](docs/free-sources.md#yahoo-continuous-futures)) — OHLCV + adj_close | `prices_daily` | daily |
 | Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
-| FRED | 100 macro series (US/EA rates, real yields, CPI, GDP, credit spreads, financial-conditions & liquidity, cross-country 10Y yields, [23 daily H.10 FX rates](docs/fred-fx.md)) | `macro_series` | D/M/Q |
+| FRED | 106 macro series (US/EA rates, real yields, CPI, GDP, credit spreads, financial-conditions & liquidity, cross-country 10Y yields, [23 daily H.10 FX rates](docs/fred-fx.md), [F05 term premium, EM OAS, wages and diesel](docs/free-sources.md)) | `macro_series` | D/W/M/Q |
+| NY Fed ACM | [Ten-year monthly term premium](docs/free-sources.md#ny-fed-acm-official-monthly-csv), official public chart CSV | `macro_series` | M |
 | World Bank + IMF + BIS + ECB | 83 cross-country indicators (WDI/WGI/WEO/BIS/IMF SDMX/ECB) × 64 countries | `macro_panel` | annual |
 | Ken French Data Library | Fama-French 5 factors + momentum (Mkt-RF, SMB, HML, RMW, CMA, Mom, RF) | `factor_returns` | D/M |
 

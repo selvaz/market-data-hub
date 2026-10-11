@@ -1,4 +1,83 @@
+nyfed_acm:
+- symbol: NYFED_ACM_TP10_MONTHLY
+  source: nyfed_acm
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | NY Fed ACM 10-Year Term Premium Monthly
+  priority: 1
+  country: US
+  unit: Percent
+  frequency: M
+  max_lag_days: 45
+  notes: Official NY Fed chart CSV; monthly last-business-day estimates, not the daily Excel series. Model estimates can be revised.
+
 fred:
+# F05: published metadata verified in tests/fixtures/fred_f05_series_metadata.json.
+# Daily observations can be published weekly; lag limits are calendar days.
+- symbol: THREEFYTP10
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | Kim-Wright 10-Year Zero-Coupon Term Premium
+  priority: 1
+  country: US
+  unit: Percent
+  frequency: D
+  seasonal_adjustment: Not Seasonally Adjusted
+  max_lag_days: 10
+  notes: Daily model estimates updated weekly; percent, not basis points.
+- symbol: BAMLEMCBPIOAS
+  asset_class: MACRO
+  area: Emerging Markets
+  name: CREDIT | EM | ICE BofA Corporate Plus Option-Adjusted Spread
+  priority: 2
+  country: US
+  unit: Percent
+  frequency: D
+  seasonal_adjustment: Not Seasonally Adjusted
+  notes: EM non-sovereign corporate/quasi-government debt; FRED/ICE history limited to 3 years from April 2026. Percent, not basis points.
+- symbol: BAMLEMHBHYCRPIOAS
+  asset_class: MACRO
+  area: Emerging Markets
+  name: CREDIT | EM | ICE BofA High Yield Corporate Plus Option-Adjusted Spread
+  priority: 2
+  country: US
+  unit: Percent
+  frequency: D
+  seasonal_adjustment: Not Seasonally Adjusted
+  notes: High-yield subset of EM Corporate Plus; FRED/ICE history limited to 3 years from April 2026. Percent, not basis points.
+- symbol: CES0500000003
+  asset_class: MACRO
+  area: USA
+  name: LABOR | US | Average Hourly Earnings of All Employees Total Private
+  priority: 2
+  country: US
+  unit: Dollars per Hour
+  frequency: M
+  seasonal_adjustment: Seasonally Adjusted
+  max_lag_days: 70
+  notes: Monthly level indexed to month start; allows the reference month plus the following monthly release cycle. Not a wage growth rate.
+- symbol: GASDESW
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Energy | US Retail Diesel Sales Price
+  priority: 2
+  country: US
+  unit: Dollars per Gallon
+  frequency: W
+  seasonal_adjustment: Not Seasonally Adjusted
+  max_lag_days: 10
+  notes: Weekly ending Monday; EIA retail diesel survey, distinct from NY Harbor spot.
+- symbol: DDFUELNYH
+  asset_class: COMMODITIES
+  area: USA
+  name: CMDTY | Energy | NY Harbor Ultra-Low-Sulfur No. 2 Diesel Spot Price
+  priority: 2
+  country: US
+  unit: Dollars per Gallon
+  frequency: D
+  seasonal_adjustment: Not Seasonally Adjusted
+  max_lag_days: 10
+  notes: Daily EIA spot observations with weekly publication; distinct from GASDESW retail survey.
 - symbol: DCOILBRENTEU
   asset_class: COMMODITIES
   area: Global

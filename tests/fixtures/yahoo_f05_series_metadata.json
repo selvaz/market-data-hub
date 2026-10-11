@@ -1,0 +1,46 @@
+{
+  "verified_on": "2026-10-11",
+  "method": "Yahoo chart v8 HTTP 200; provider meta",
+  "series": [
+    {
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/BZ=F",
+      "http_status": 200,
+      "symbol": "BZ=F",
+      "currency": "USD",
+      "instrumentType": "FUTURE",
+      "shortName": "Brent Crude Oil Last Day Financ"
+    },
+    {
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/CL=F",
+      "http_status": 200,
+      "symbol": "CL=F",
+      "currency": "USD",
+      "instrumentType": "FUTURE",
+      "shortName": "Crude Oil Nov 26"
+    },
+    {
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/GC=F",
+      "http_status": 200,
+      "symbol": "GC=F",
+      "currency": "USD",
+      "instrumentType": "ALTSYMBOL",
+      "shortName": "Gold Dec 26"
+    },
+    {
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/TTF=F",
+      "http_status": 200,
+      "symbol": "TTF=F",
+      "currency": "EUR",
+      "instrumentType": "FUTURE",
+      "shortName": "Dutch TTF Natural Gas Calendar "
+    },
+    {
+      "url": "https://query1.finance.yahoo.com/v8/finance/chart/NG=F",
+      "http_status": 200,
+      "symbol": "NG=F",
+      "currency": "USD",
+      "instrumentType": "FUTURE",
+      "shortName": "Natural Gas Nov 26"
+    }
+  ]
+}

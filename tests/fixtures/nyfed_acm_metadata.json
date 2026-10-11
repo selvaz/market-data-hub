@@ -1,0 +1,18 @@
+{
+  "verified_on": "2026-10-11",
+  "url": "https://www.newyorkfed.org/medialibrary/media/research/data_indicators/acmPlot_data.csv",
+  "http_status": 200,
+  "columns": [
+    "RunDates",
+    "TERMYld",
+    "ACMFITYld",
+    "GSWYld"
+  ],
+  "frequency": "Monthly, end of month (last business day)",
+  "unit": "Percent",
+  "maturity_years": 10,
+  "value_column": "TERMYld",
+  "evidence_url": "https://www.newyorkfed.org/medialibrary/research/interactives/term-premia/js/main-es2015.js",
+  "evidence": "Official chart maps the second CSV column to ACM term premium; title Ten-Year Treasury Term Premium and Yield Fit, y-axis Percent; CSV dates are monthly.",
+  "latest_date": "30-Sep-2026"
+}

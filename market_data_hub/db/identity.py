@@ -43,6 +43,7 @@ _CURRENCY_OVERRIDES = {
     "IBCL.DE": "EUR",
     "IEAC.AS": "EUR",
     "EEM": "USD",
+    "TTF=F": "EUR",  # Dutch TTF continuous futures quote in EUR per MWh
 }
 _DEFAULT_CURRENCY = "USD"
 
