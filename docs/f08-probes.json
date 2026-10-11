@@ -1,0 +1,1212 @@
+{
+  "probes": [
+    {
+      "label": "ar_api",
+      "url": "https://api.bcra.gob.ar/estadisticas/v3.0/Monetarias",
+      "probed_at": "2026-10-11T08:14:25.535669+00:00",
+      "status": 410,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 85,
+      "sha256": "43dfac14913ab009013f280739a3d7723a0c5853811cbe8fad1ceee61564dc83"
+    },
+    {
+      "label": "ar_v4",
+      "url": "https://api.bcra.gob.ar/estadisticas/v4.0/Monetarias",
+      "probed_at": "2026-10-11T08:21:19.170953+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 347911,
+      "sha256": "6ea0d2b608bf09b3bc9290efa099416088bb63d4e13c46d5ce3422c69c1546ab"
+    },
+    {
+      "label": "ar_v4_rest",
+      "url": "https://api.bcra.gob.ar/estadisticas/v4.0/Monetarias?offset=1000&limit=1000",
+      "probed_at": "2026-10-11T08:22:48.360509+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 212328,
+      "sha256": "8267624a71e9c76cc7c9c424cf5ff6d1d182c6fb61f26fa02313debc8ada369e"
+    },
+    {
+      "label": "at_page",
+      "url": "https://www.oenb.at/en/daten-und-forschung/datenangebot/zinssaetze-wechselkurse/renditen-oesterreichischer-bundesanleihen.html",
+      "probed_at": "2026-10-11T08:14:24.984669+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 100853,
+      "sha256": "5a583716b31523b10219ab2de71d0f75f79b25b8fea8965bc2201d5a2235d06e"
+    },
+    {
+      "label": "be_10",
+      "url": "https://nsidisseminate-stat.nbb.be/rest/data/BE2,DF_IROLOBE2,1.0/D.10Y.F?startPeriod=2023-01-01",
+      "probed_at": "2026-10-11T08:25:31.497914+00:00",
+      "status": 200,
+      "content_type": "application/vnd.sdmx.genericdata+xml; version=2.1; charset=utf-8",
+      "bytes": 231021,
+      "sha256": "45e7312b1b4d1542963975499dbe388026a8228f261bec7edd24e17733945409"
+    },
+    {
+      "label": "be_2",
+      "url": "https://nsidisseminate-stat.nbb.be/rest/data/BE2,DF_IROLOBE2,1.0/D.2Y.F?startPeriod=2026-10-01",
+      "probed_at": "2026-10-11T08:25:32.033596+00:00",
+      "status": 200,
+      "content_type": "application/vnd.sdmx.genericdata+xml; version=2.1; charset=utf-8",
+      "bytes": 3053,
+      "sha256": "2c91d6236fdd952f30187d31074f94e5357f3dff40768043ad94434ccf58cd59"
+    },
+    {
+      "label": "be_bonds",
+      "url": "https://nsidisseminate-stat.nbb.be/rest/data/BE2,DF_IROLOBE2,1.0/all?startPeriod=2026-10-01",
+      "probed_at": "2026-10-11T08:23:52.113746+00:00",
+      "status": 200,
+      "content_type": "application/vnd.sdmx.genericdata+xml; version=2.1; charset=utf-8",
+      "bytes": 87426,
+      "sha256": "e9d6dd745147c74bbbd1a81a03396e8466277d678864b66f499a2111590127e1"
+    },
+    {
+      "label": "be_dsd",
+      "url": "https://nsidisseminate-stat.nbb.be/rest/dataflow/BE2/DF_IROLOBE2/1.0?references=all",
+      "probed_at": "2026-10-11T08:23:52.114538+00:00",
+      "status": 200,
+      "content_type": "application/vnd.sdmx.structure+xml; version=2.1; charset=utf-8",
+      "bytes": 67192,
+      "sha256": "a6499cc170c100257b9d9f175de61e46328343ca2ae1f1a7e523c08356ced7a2"
+    },
+    {
+      "label": "be_flows",
+      "url": "https://nsidisseminate-stat.nbb.be/rest/dataflow/BE2/all/latest",
+      "probed_at": "2026-10-11T08:22:47.379561+00:00",
+      "status": 200,
+      "content_type": "application/vnd.sdmx.structure+xml; version=2.1; charset=utf-8",
+      "bytes": 578848,
+      "sha256": "205244ee7ccb9aeb87c4af2980b460b258e93b8ad9f4df4305141c7741b9a7b9"
+    },
+    {
+      "label": "be_page",
+      "url": "https://www.nbb.be/doc/dq/sdds/190.htm",
+      "probed_at": "2026-10-11T08:14:24.975539+00:00",
+      "status": 200,
+      "content_type": "text/html",
+      "bytes": 28875,
+      "sha256": "02f7a619ec424e219f564d6eb7690636e8b095c0029673e5fbc3cf58112e9391"
+    },
+    {
+      "label": "be_yields",
+      "url": "https://nsidisseminate-stat.nbb.be/rest/data/BE2,DF_IROLOYLD,1.0/all?startPeriod=2026-10-01",
+      "probed_at": "2026-10-11T08:23:52.112506+00:00",
+      "status": 404,
+      "content_type": "text/plain",
+      "bytes": 14,
+      "sha256": "561bbca5e9218b3118675bf69a7d4916bac5a1b54b1d0abd268a7adca13fc0dc"
+    },
+    {
+      "label": "br_catalog_search",
+      "url": "https://dadosabertos.bcb.gov.br/api/3/action/package_search?q=NTN&rows=20",
+      "probed_at": "2026-10-11T08:27:25.269076+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 6402,
+      "sha256": "02d881a37c5e6f10972fbea4b9e6a03e1b36e343db4bd5634dcf230ea7c60746"
+    },
+    {
+      "label": "br_sgs",
+      "url": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.11/dados?formato=json&dataInicial=01/10/2026&dataFinal=11/10/2026",
+      "probed_at": "2026-10-11T08:14:25.515293+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 288,
+      "sha256": "70e146dfca2ac68348c6a4943a6d55752e9d4c261520180c1888e2e2889d657c"
+    },
+    {
+      "label": "br_sgs_catalog",
+      "url": "https://www3.bcb.gov.br/sgspub/localizarseries/localizarSeries.do?method=prepararTelaLocalizarSeries",
+      "probed_at": "2026-10-11T08:23:52.987859+00:00",
+      "status": 502,
+      "content_type": "text/html",
+      "bytes": 5015,
+      "sha256": "34e426d2a8f30663be4d50cbeec9c100fdf5df8488c97e6041e21fcad55e287f"
+    },
+    {
+      "label": "br_td",
+      "url": "https://www.tesourodireto.com.br/json/br/com/b3/tesourodireto/service/api/treasurybondsinfo.json",
+      "probed_at": "2026-10-11T08:22:49.402792+00:00",
+      "status": 410,
+      "content_type": "text/html",
+      "bytes": 4,
+      "sha256": "283bb9deef02e6843abfb538efa1eca70801bd8a701c3f98191e123496339247"
+    },
+    {
+      "label": "br_treasury_csv",
+      "url": "https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/precotaxatesourodireto.csv",
+      "probed_at": "2026-10-11T08:59:05.690783+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 14584922,
+      "sha256": "75d297b48b6ab5b76a35f665e995a764d00d81ff09c78447f71469c26386bc28"
+    },
+    {
+      "label": "ch_csv",
+      "url": "https://data.snb.ch/api/cube/rendoblim/data/csv/en",
+      "probed_at": "2026-10-11T08:14:25.218766+00:00",
+      "status": 200,
+      "content_type": "text/csv;charset=UTF-8",
+      "bytes": 142138,
+      "sha256": "cc52fa40bd50d45db67c869f4dd13a8c5c2f813eed8d704e358f6bc1e9576ddd"
+    },
+    {
+      "label": "ch_currentpage",
+      "url": "https://www.snb.ch/en/the-snb/mandates-goals/statistics/statistics-pub/current_interest_exchange_rates",
+      "probed_at": "2026-10-11T08:48:15.345557+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 89339,
+      "sha256": "cf375f3f6f3411a49d5ba2955a04c77cb0a3e516b995ad8ef04586a239a400fb"
+    },
+    {
+      "label": "ch_daily",
+      "url": "https://data.snb.ch/api/cube/rendoblid/data/csv/en",
+      "probed_at": "2026-10-11T08:21:18.462626+00:00",
+      "status": 200,
+      "content_type": "text/csv;charset=UTF-8",
+      "bytes": 5461632,
+      "sha256": "35b0a1dd49eff0a66b9eb7983eaaf2d566e8396af0a041be7b08a1e97180f8fe"
+    },
+    {
+      "label": "ch_dimensions",
+      "url": "https://data.snb.ch/api/cube/rendeiduebd/dimensions/en",
+      "probed_at": "2026-10-11T08:47:20.999631+00:00",
+      "status": 200,
+      "content_type": "application/json",
+      "bytes": 1341,
+      "sha256": "d2ced65c70a302c9191cde2287624d8bfd6ffaa6e27fd4e41e6ee662f9ef330f"
+    },
+    {
+      "label": "ch_livejson",
+      "url": "https://www.snb.ch/public/rates/interestRates",
+      "probed_at": "2026-10-11T08:49:30.086604+00:00",
+      "status": 200,
+      "content_type": "application/json;charset=UTF-8",
+      "bytes": 16341,
+      "sha256": "863f4730ffe576b35c90532475bde446dfa12e06cd3b101b68bbd081866920a8"
+    },
+    {
+      "label": "ch_liverss",
+      "url": "https://www.snb.ch/public/rss/en/interestRates",
+      "probed_at": "2026-10-11T08:49:30.089606+00:00",
+      "status": 200,
+      "content_type": "application/xml;charset=UTF-8",
+      "bytes": 73761,
+      "sha256": "2b95d7208f40292cb41073020b60f0cf888a409f91414a829e0ca6698f6eefe2"
+    },
+    {
+      "label": "ch_livexlsx",
+      "url": "https://www.snb.ch/public/rates/interestRates.xlsx",
+      "probed_at": "2026-10-11T08:49:30.087619+00:00",
+      "status": 200,
+      "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "bytes": 52751,
+      "sha256": "8a50e3ad1852508fbe085790be69464ae883deb988e40deed45cdbd043b13d7c"
+    },
+    {
+      "label": "ch_new",
+      "url": "https://data.snb.ch/api/cube/rendobli/data/csv/en",
+      "probed_at": "2026-10-11T08:25:32.054392+00:00",
+      "status": 404,
+      "content_type": "text/plain;charset=UTF-8",
+      "bytes": 51,
+      "sha256": "de2fd08cb3f204e9c8b6b8e408cfbbbcf219e5b1eb4be30b741ec5f17864ed40"
+    },
+    {
+      "label": "ch_portal",
+      "url": "https://data.snb.ch/en",
+      "probed_at": "2026-10-11T08:48:15.347072+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 3460,
+      "sha256": "4263f24162a7d1853010d9d518f203fa1c456b3c1d05ccda7e62deef6a85724f"
+    },
+    {
+      "label": "ch_replacement",
+      "url": "https://data.snb.ch/api/cube/rendeiduebd/data/csv/en?fromDate=2023-01-01&toDate=2026-10-11",
+      "probed_at": "2026-10-11T08:47:20.999170+00:00",
+      "status": 200,
+      "content_type": "text/csv;charset=UTF-8",
+      "bytes": 1478708,
+      "sha256": "33797a13a20c1e29bb025455676a492743c2315a45cd923e04ab1e8dc7f3dfea"
+    },
+    {
+      "label": "cl_api",
+      "url": "https://si3.bcentral.cl/SieteRestWS/SieteRestWS.ashx?function=GetSeries&timeseries=F022.BCLP.TIS.D10.NO.Z.D&firstdate=2026-10-01&lastdate=2026-10-11",
+      "probed_at": "2026-10-11T08:14:27.060408+00:00",
+      "status": 200,
+      "content_type": "text/html",
+      "bytes": 388,
+      "sha256": "07396562fead5a6fa5e51abe2e203df95198b4e184fe6d5aeeda65a060b0242e"
+    },
+    {
+      "label": "cl_auth",
+      "url": "https://si3.bcentral.cl/SieteRestWS/SieteRestWS.ashx?token=&function=GetSeries&timeseries=F022.BCLP.TIS.AN10.NO.Z.D&firstdate=2026-10-01&lastdate=2026-10-11",
+      "probed_at": "2026-10-11T08:25:32.190741+00:00",
+      "status": 200,
+      "content_type": "text/html",
+      "bytes": 388,
+      "sha256": "07396562fead5a6fa5e51abe2e203df95198b4e184fe6d5aeeda65a060b0242e"
+    },
+    {
+      "label": "cl_btp",
+      "url": "https://si3.bcentral.cl/Search/Buscar/Index/?Idioma=ES&st=BTP%2010",
+      "probed_at": "2026-10-11T08:23:52.618060+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 47268,
+      "sha256": "3bde62785b4382d3c8c5ed800fd2168c2235689bb565b38281fb4f8bd7487248"
+    },
+    {
+      "label": "cl_docs",
+      "url": "https://si3.bcentral.cl/estadisticas/Principal1/Web_Services/documentacion_en.html",
+      "probed_at": "2026-10-11T08:22:49.099741+00:00",
+      "status": 200,
+      "content_type": "text/html",
+      "bytes": 207425,
+      "sha256": "d881db226f00bbaf2c8216619cdf83201581842fc2794867637c688170abde94"
+    },
+    {
+      "label": "cl_search",
+      "url": "https://si3.bcentral.cl/Search/Buscar/Index/?Idioma=ES&st=F022.BTP.TIS",
+      "probed_at": "2026-10-11T08:27:25.523417+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 24580,
+      "sha256": "4090f0d7cb1902ca8ee98f3bbeb7d83b3dd36d7476e01cf293ccafe540b1b846"
+    },
+    {
+      "label": "cl_secondary",
+      "url": "https://si3.bcentral.cl/Search/Buscar/Index/?Idioma=ES&st=Tesoreria%2010%20secundario",
+      "probed_at": "2026-10-11T08:25:32.158081+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 24746,
+      "sha256": "5493dbdfec5136c9542a225a324aa9bb0c8d6ea0251fd3e3d339709bba3a8741"
+    },
+    {
+      "label": "cn_10",
+      "url": "https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/historyQuery?startDate=2026-10-01&endDate=2026-10-11&gjqx=10&qxId=hzsylqx&locale=en_US",
+      "probed_at": "2026-10-11T08:22:47.381608+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 7450,
+      "sha256": "6dc559cb5d832eb2bbc0844f07acc235882a1b4f5fd67b6d411146bf18afb352"
+    },
+    {
+      "label": "cn_2023",
+      "url": "https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/historyQuery?startDate=2023-01-01&endDate=2023-12-31&gjqx=10&qxId=hzsylqx&locale=en_US",
+      "probed_at": "2026-10-11T08:27:24.994962+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 78092,
+      "sha256": "72f62f3d2258df5012d86e2f70c11f11c811e66ed2fdc2fa6cee4061474ecf0d"
+    },
+    {
+      "label": "cn_curve",
+      "url": "https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/more?locale=en_US",
+      "probed_at": "2026-10-11T08:14:25.941194+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 17843,
+      "sha256": "c327a54aae972e81314f1d9fdfc334f36458a694414d924f979e44a320adb120"
+    },
+    {
+      "label": "cn_download",
+      "url": "https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/historyDown?startDate=2023-01-01&endDate=2026-10-11&gjqx=10&qxId=hzsylqx&locale=en_US",
+      "probed_at": "2026-10-11T08:22:47.732568+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 6460,
+      "sha256": "0ac68a0bc9f8690b957df0fa50f3b1694215fe0cf974b63494ae1dd42edaa772"
+    },
+    {
+      "label": "cn_history",
+      "url": "https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/showHistory?locale=en_US",
+      "probed_at": "2026-10-11T08:21:19.629005+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 6572,
+      "sha256": "dee47d898ac050909738f4de18f2afb7ce5bbdd8754454c6b8c223fdcc163c3f"
+    },
+    {
+      "label": "cn_shortdownload",
+      "url": "https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/historyDown?startDate=2026-10-01&endDate=2026-10-11&gjqx=10&qxId=hzsylqx&locale=en_US",
+      "probed_at": "2026-10-11T08:23:52.119178+00:00",
+      "status": 200,
+      "content_type": "application/x-msdownload",
+      "bytes": 3948,
+      "sha256": "d1e530f2cf66646a2e1ae17d955dbb3bcf9a44fe5352aebc27892d3654550b66"
+    },
+    {
+      "label": "cn_year",
+      "url": "https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/historyQuery?startDate=2026-01-01&endDate=2026-10-11&gjqx=10&qxId=hzsylqx&locale=en_US",
+      "probed_at": "2026-10-11T08:27:24.996728+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 60646,
+      "sha256": "9c6a2be956cc7c055b2361b3d89840e4a8912ee5dadc72b6865d9ad9c7d59dbd"
+    },
+    {
+      "label": "co_catalog",
+      "url": "https://totoro.banrep.gov.co/estadisticas-economicas/faces/pages/Buscador.xhtml",
+      "probed_at": "2026-10-11T08:23:52.901306+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 832433,
+      "sha256": "a3824a5fbb5c4969547b6ab01dcd47548ce6ce5af7eb48c16564615881212c40"
+    },
+    {
+      "label": "co_page",
+      "url": "https://www.banrep.gov.co/es/estadisticas/tasas-interes",
+      "probed_at": "2026-10-11T08:14:26.780732+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "bytes": 15292,
+      "sha256": "8e92060c679efce9028ca8e53a6abe15b994eac26d526b631702c6eab1e9e40e"
+    },
+    {
+      "label": "co_series",
+      "url": "https://suameca.banrep.gov.co/estadisticas-economicas/informacionSerie/640001/deuda_publica_tasas_cero_cupon_tes/",
+      "probed_at": "2026-10-11T08:21:19.643729+00:00",
+      "error": "HTTP transport failure"
+    },
+    {
+      "label": "de_csv",
+      "url": "https://www.bundesbank.de/statistic-rmi/StatisticDownload?tsId=BBSIS.D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A&its_csvFormat=en&mode=its",
+      "probed_at": "2026-10-11T08:14:24.754301+00:00",
+      "status": 400,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 6106,
+      "sha256": "1617cb3a75c83a1ba1f0094307d4db632744e73675551b37eccbb09cf5590e3b"
+    },
+    {
+      "label": "de_officialpage",
+      "url": "https://www.bundesbank.de/en/statistics/money-and-capital-markets/interest-rates-and-yields/daily-term-structure-on-listed-federal-securities-651570",
+      "probed_at": "2026-10-11T08:48:15.348742+00:00",
+      "status": 400,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 6106,
+      "sha256": "45dc23eb978a2f092035d13abde3051186c7351ecb1a8a0f8031a972df515193"
+    },
+    {
+      "label": "de_rest",
+      "url": "https://api.statistiken.bundesbank.de/rest/data/BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A?startPeriod=2026-10-01",
+      "probed_at": "2026-10-11T08:14:24.752397+00:00",
+      "status": 400,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 6122,
+      "sha256": "225025ca63098ba87f05fc8a576781ea6c8bb418e790f186ad442a19eb87458f"
+    },
+    {
+      "label": "de_seriespage",
+      "url": "https://statistiken.bundesbank.de/statistiken-en/timeseries/BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A",
+      "probed_at": "2026-10-11T08:48:15.347835+00:00",
+      "status": 400,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 6118,
+      "sha256": "1f9abccb5b6c4922df09e3f1bfb9cfc0e5165bccb4ed748d413d1ab8c13dab4f"
+    },
+    {
+      "label": "es_csv",
+      "url": "https://www.bde.es/webbe/es/estadisticas/compartido/datos/csv/ti_1_2.csv",
+      "probed_at": "2026-10-11T08:14:24.757172+00:00",
+      "status": 404,
+      "content_type": "text/html;charset=ISO-8859-1",
+      "bytes": 10389,
+      "sha256": "91048d295000b2fdc834c546ae3b2c91f05aca5f8e9620643553c4f9ba509761"
+    },
+    {
+      "label": "es_daily",
+      "url": "https://www.bde.es/webbe/es/estadisticas/compartido/datos/csv/ti_1_4.csv",
+      "probed_at": "2026-10-11T08:22:47.376562+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 492792,
+      "sha256": "b84e370ae2902ebaa4eed01bf63317556141e7905ab8205155dd3b11fa5fd4ac"
+    },
+    {
+      "label": "es_page",
+      "url": "https://www.bde.es/webbe/es/estadisticas/temas/tipos-interes.html",
+      "probed_at": "2026-10-11T08:21:18.867333+00:00",
+      "status": 200,
+      "content_type": "text/html",
+      "bytes": 442455,
+      "sha256": "107186c9876a7c4b7d61a8559f24e1afe6a3337840726613ac2da4ce2b8d0821"
+    },
+    {
+      "label": "es_ti11",
+      "url": "https://www.bde.es/webbe/es/estadisticas/compartido/datos/csv/ti_1_1.csv",
+      "probed_at": "2026-10-11T08:22:47.378555+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 263839,
+      "sha256": "39aac92041cbfcf183c8af4a592f436ff64607bf634772fb1b23fc6f013a16ba"
+    },
+    {
+      "label": "es_ti13",
+      "url": "https://www.bde.es/webbe/es/estadisticas/compartido/datos/csv/ti_1_3.csv",
+      "probed_at": "2026-10-11T08:22:47.377559+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 1346746,
+      "sha256": "cbc918be348659e3b361eafc2010e858853986501e38367373af7969c7fabd4f"
+    },
+    {
+      "label": "fr_api",
+      "url": "https://api.webstat.banque-france.fr/webstat-fr/v1/data/FM/D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA?startPeriod=2026-10-01",
+      "probed_at": "2026-10-11T08:21:18.683217+00:00",
+      "status": 401,
+      "content_type": "application/json",
+      "bytes": 96,
+      "sha256": "fa10917cfaea92334d12d45b82ec722160d9ba7050b3e9c991235c0b956b983a"
+    },
+    {
+      "label": "fr_catalog",
+      "url": "https://webstat.banque-france.fr/en/catalog/fm/FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA",
+      "probed_at": "2026-10-11T08:21:18.744865+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 479070,
+      "sha256": "ae54943ef33ebfaba29a281a40ccb1ffa2c761c1dcbcdf175392ea351ee14af8"
+    },
+    {
+      "label": "fr_obs",
+      "url": "https://webstat.banque-france.fr/api/explore/v2.1/catalog/datasets/observations/exports/json?refine=series_key:FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA",
+      "probed_at": "2026-10-11T08:22:49.283881+00:00",
+      "status": 404,
+      "content_type": "application/json",
+      "bytes": 105,
+      "sha256": "31a2ec0e474b8cbb4272008924a1009d220588045d9bba780906461a4286d723"
+    },
+    {
+      "label": "fr_series",
+      "url": "https://webstat.banque-france.fr/api/explore/v2.1/catalog/datasets/series/records?where=search(title_fr,%22TEC%2010%22)&limit=10",
+      "probed_at": "2026-10-11T08:14:24.754301+00:00",
+      "status": 404,
+      "content_type": "application/json",
+      "bytes": 99,
+      "sha256": "81de291c74940c47ea3b0a47bc070861119a6605d70573f6de8115d9d6aefca8"
+    },
+    {
+      "label": "gr_page",
+      "url": "https://www.bankofgreece.gr/en/statistics/financial-markets-and-interest-rates/greek-government-securities",
+      "probed_at": "2026-10-11T08:14:24.907425+00:00",
+      "status": 403,
+      "content_type": "text/html",
+      "bytes": 487,
+      "sha256": "6db89ffd1ae869483bd031be5a04f01753252d931d4a12a4404c34675afd1f1a"
+    },
+    {
+      "label": "id_bi",
+      "url": "https://www.bi.go.id/en/iru/economic-market-data/default.aspx",
+      "probed_at": "2026-10-11T08:22:48.687787+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 377707,
+      "sha256": "91a8d3d4f49fb337bd43018803bbf661f5065495c9f03f608a208f16ddf11388"
+    },
+    {
+      "label": "id_page",
+      "url": "https://www.djppr.kemenkeu.go.id/",
+      "probed_at": "2026-10-11T08:21:05.811269+00:00",
+      "error": "DNS resolution failed"
+    },
+    {
+      "label": "ie_page",
+      "url": "https://www.centralbank.ie/statistics/interest-rates-exchange-rates",
+      "probed_at": "2026-10-11T08:14:25.064287+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 110772,
+      "sha256": "1ea3dfd842029193fe8ae1f42312a726aaedf966615e5aa3f01a5b7bcfc4898a"
+    },
+    {
+      "label": "in_ccil",
+      "url": "https://www.ccilindia.com/web/ccil/tenor-wise-indicative-yields",
+      "probed_at": "2026-10-11T08:22:48.577950+00:00",
+      "status": 404,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 1100,
+      "sha256": "9a498df6abd2ca3f839dbc3a3fe056f1a0d6705276f96ac61ee4335ff8ec991b"
+    },
+    {
+      "label": "in_ccil_home",
+      "url": "https://www.ccilindia.com/",
+      "probed_at": "2026-10-11T08:23:53.744197+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 330755,
+      "sha256": "f9b67eaca314073aca9a327c9764566e0a648ed9cc9a07b699a03ddeccf0a1c5"
+    },
+    {
+      "label": "in_rbi",
+      "url": "https://data.rbi.org.in/",
+      "probed_at": "2026-10-11T08:14:26.052606+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=UTF-8",
+      "bytes": 50732,
+      "sha256": "a828601c562500f7982833fa27785c7098229f6e1feb229bfabb7fa361dee022"
+    },
+    {
+      "label": "in_yields",
+      "url": "https://www.ccilindia.com/tenorwise-indicative-yields",
+      "probed_at": "2026-10-11T08:25:31.496184+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 146004,
+      "sha256": "660abd8629958c56ae03431972c63f4010fc9afddca229b4238f6f3e06afb937"
+    },
+    {
+      "label": "it_bds",
+      "url": "https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/BMK0200",
+      "probed_at": "2026-10-11T08:21:18.679425+00:00",
+      "status": 200,
+      "content_type": "application/zip",
+      "bytes": 213225,
+      "sha256": "8e533dfd0bfd7004ac17f53a92b983c51f28a82cb89bf40ba64bfc1e8b637efe"
+    },
+    {
+      "label": "it_catalog",
+      "url": "https://infostat.bancaditalia.it/inquiry/rest/v1/datasets/BMK0200",
+      "probed_at": "2026-10-11T08:14:24.756598+00:00",
+      "status": 404,
+      "content_type": "text/html",
+      "bytes": 1565,
+      "sha256": "276aaff336d61436eaa4d79baf693cdebc15f6976cc56a92c236245d2d2cad37"
+    },
+    {
+      "label": "jp_all",
+      "url": "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/historical/jgbcme_all.csv",
+      "probed_at": "2026-10-11T08:21:18.434437+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 1195548,
+      "sha256": "ffeb33ecaf557f4e443b9aebc0a2d66550dbd3d9648dcf6a61dd552fc5d7ccdd"
+    },
+    {
+      "label": "jp_current",
+      "url": "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcm.csv",
+      "probed_at": "2026-10-11T08:14:25.177425+00:00",
+      "status": 404,
+      "content_type": "text/html",
+      "bytes": 20481,
+      "sha256": "df1499ecd0d55689e40a235c653f9ad5f92b05c980450bcd2b3c06df3e869e54"
+    },
+    {
+      "label": "jp_history",
+      "url": "https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv",
+      "probed_at": "2026-10-11T08:14:25.163074+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 845,
+      "sha256": "59344f7942d4fdf2d1fe10ad0a117794a707e3c08b9092c30e4772b3d02aff49"
+    },
+    {
+      "label": "jp_ja",
+      "url": "https://www.mof.go.jp/jgbs/reference/interest_rate/jgbcm.csv",
+      "probed_at": "2026-10-11T08:21:18.444011+00:00",
+      "status": 200,
+      "content_type": "text/csv",
+      "bytes": 865,
+      "sha256": "332c8712c58d34407c7fc55c4cf8bdcb288915528f798faa4ab1a882b8c11fe2"
+    },
+    {
+      "label": "kr_api",
+      "url": "https://ecos.bok.or.kr/api/StatisticSearch/sample/json/en/1/10/817Y002/D/20261001/20261011/010210000",
+      "probed_at": "2026-10-11T08:14:26.732672+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=UTF-8",
+      "bytes": 1705,
+      "sha256": "3f5007140731a75d1f08c1fc6b097113a277218ab69739099cf280fcb61b8abc"
+    },
+    {
+      "label": "kr_meta",
+      "url": "https://ecos.bok.or.kr/api/StatisticItemList/sample/json/en/1/100/817Y002",
+      "probed_at": "2026-10-11T08:25:32.040381+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=UTF-8",
+      "bytes": 87,
+      "sha256": "e6b57440c9701eeb699817345b7c0b61c9702a554a52b9870abe6420908bd8da"
+    },
+    {
+      "label": "mx_api",
+      "url": "https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF3006/datos/2026-10-01/2026-10-11",
+      "probed_at": "2026-10-11T08:14:25.513785+00:00",
+      "status": 400,
+      "content_type": "application/json;charset=UTF-8",
+      "bytes": 214,
+      "sha256": "696b02a4a18c3a90b6e2692c2b7be9dcb5bf4b615c2aedcadcdc1073d8eaabbe"
+    },
+    {
+      "label": "mx_catalog",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF300",
+      "probed_at": "2026-10-11T08:14:25.272842+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 1766393,
+      "sha256": "1fcfd88da52b14c5892d6349f78e15f597610d222b5452484fd417d54f4181a0"
+    },
+    {
+      "label": "mx_cf101",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF101",
+      "probed_at": "2026-10-11T08:23:52.385338+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 261023,
+      "sha256": "2bc3b5478ebb6843b4ae967a289afdf550323918224a55e543360e119401db7d"
+    },
+    {
+      "label": "mx_cf102",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF102",
+      "probed_at": "2026-10-11T08:23:52.478734+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 252116,
+      "sha256": "06a48cf78dd97c44ea4a231266e9da1bebb3996bd34bbb0a63ba8bc0fa6fee87"
+    },
+    {
+      "label": "mx_cf107",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF107",
+      "probed_at": "2026-10-11T08:25:31.493614+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 1140620,
+      "sha256": "79aba025ed2089e3ab7f4e3b395adf402d63dca51c8d9e6bb23eaf57480dda17"
+    },
+    {
+      "label": "mx_cf110",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF110",
+      "probed_at": "2026-10-11T08:25:31.494126+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=ISO-8859-1",
+      "bytes": 28233,
+      "sha256": "ca8d64d2d5de7b1e0842102dd9a2e66b5baa9ac207fff9be5f0fd97e42c8202e"
+    },
+    {
+      "label": "mx_cf111",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF111",
+      "probed_at": "2026-10-11T08:22:47.843601+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 156451,
+      "sha256": "3851bf345fb7102d04157776350ad51cf8e34ed1595cfb41c76fc0a1a5913d86"
+    },
+    {
+      "label": "mx_cf112",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF112",
+      "probed_at": "2026-10-11T08:27:26.274459+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 204272,
+      "sha256": "ecad5dc2d701ce4e800971044c0a3757081f0de2f3f1fa1ebc03f65a74813ae2"
+    },
+    {
+      "label": "mx_cf113",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF113",
+      "probed_at": "2026-10-11T08:25:31.495663+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 269505,
+      "sha256": "4c63b2c9474f6006f62be7b48a5e54118b1ccac9387e8d5b24fb949651996e09"
+    },
+    {
+      "label": "mx_cf114",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF114",
+      "probed_at": "2026-10-11T08:22:48.029805+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 579170,
+      "sha256": "4f9f7c77f24e275cb4212b4dadedc63057cd52291b66bd5002a814792e5e8025"
+    },
+    {
+      "label": "mx_cf115",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF115",
+      "probed_at": "2026-10-11T08:27:26.642072+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 412988,
+      "sha256": "cbfe5066fd1805c9a5021bc9f69d12ba9977cd44f409797af9dd6b930238e3ad"
+    },
+    {
+      "label": "mx_cf117",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF117",
+      "probed_at": "2026-10-11T08:25:31.492379+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 383593,
+      "sha256": "d93a1b0efce85d812cd75d577bca76e044461956943d9ed7dfbdda322b5e71d8"
+    },
+    {
+      "label": "mx_cf300",
+      "url": "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?accion=consultarCuadro&idCuadro=CF300&locale=es",
+      "probed_at": "2026-10-11T08:47:21.001745+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=ISO-8859-1",
+      "bytes": 1766393,
+      "sha256": "1fcfd88da52b14c5892d6349f78e15f597610d222b5452484fd417d54f4181a0"
+    },
+    {
+      "label": "nl_api",
+      "url": "https://api.dnb.nl/statistics/metadata/v1/dataflows",
+      "probed_at": "2026-10-11T08:14:24.972777+00:00",
+      "status": 404,
+      "content_type": "application/json",
+      "bytes": 54,
+      "sha256": "3494d22a0b9ae1678a72df5841b7a6ec60e75499b91341f9763a556d6b8cb1f9"
+    },
+    {
+      "label": "nl_docs",
+      "url": "https://www.dnb.nl/en/statistics/access-to-statistics-through-api-services/",
+      "probed_at": "2026-10-11T08:21:19.914213+00:00",
+      "status": 403,
+      "content_type": "text/html",
+      "bytes": 452,
+      "sha256": "24dd36f9bd93721f3168e2ad05480f69072dfcf43a05afc4b9be1a8cdf2dd170"
+    },
+    {
+      "label": "pe_api",
+      "url": "https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD31895DD/json/2026-10-01/2026-10-11",
+      "probed_at": "2026-10-11T08:14:27.568803+00:00",
+      "status": 200,
+      "content_type": "text/html",
+      "bytes": 1162,
+      "sha256": "c78ec4e9cb0b066ea34d4e3209f846792fb5b8150bbb5c79bfb51e5c17c961ce"
+    },
+    {
+      "label": "pe_catalog",
+      "url": "https://estadisticas.bcrp.gob.pe/estadisticas/series/diarias",
+      "probed_at": "2026-10-11T08:22:49.501458+00:00",
+      "status": 200,
+      "content_type": "text/html",
+      "bytes": 1056,
+      "sha256": "3ffa7a2e31fc886436a798a57ee51d9cbe962580dd788f0a036602e63bec1da3"
+    },
+    {
+      "label": "pe_catalog_slash",
+      "url": "https://estadisticas.bcrp.gob.pe/estadisticas/series/diarias/",
+      "probed_at": "2026-10-11T08:59:05.692832+00:00",
+      "status": 200,
+      "content_type": "text/html",
+      "bytes": 1160,
+      "sha256": "ed464b812f07a55d0f0f281117b87f424dac4c064fa20f0086a6edd8b2f2a0ca"
+    },
+    {
+      "label": "pe_pen_api",
+      "url": "https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD31893DD/json/2023-01-01/2026-10-11",
+      "probed_at": "2026-10-11T09:00:17.251033+00:00",
+      "status": 200,
+      "content_type": "text/html",
+      "bytes": 1156,
+      "sha256": "798ff591e246b12596f5a9af823017ccd3cc1936770a97110b5e67b4366290e2"
+    },
+    {
+      "label": "pe_pen_csv",
+      "url": "https://estadisticas.bcrp.gob.pe/estadisticas/series/api/PD31893DD/csv/2023-01-01/2026-10-11",
+      "probed_at": "2026-10-11T09:00:17.252379+00:00",
+      "status": 200,
+      "content_type": "text/html",
+      "bytes": 1160,
+      "sha256": "de4b18a370a186fd58b87820f63969eed881012875fbff2e28bc13cc2b1d9144"
+    },
+    {
+      "label": "pl_data",
+      "url": "https://nbp.pl/statystyka-i-sprawozdawczosc/statystyka-monetarna-i-finansowa/stopy-procentowe/",
+      "probed_at": "2026-10-11T08:23:53.903697+00:00",
+      "status": 403,
+      "content_type": "text/html",
+      "bytes": 856,
+      "sha256": "3333d20aa59a8c7abcff81c0c58a842c2e2b0692fbc44811c45a528231f92533"
+    },
+    {
+      "label": "pl_mf",
+      "url": "https://www.gov.pl/web/finance/treasury-securities",
+      "probed_at": "2026-10-11T08:22:49.027750+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=UTF-8",
+      "bytes": 40908,
+      "sha256": "831e0f9a699666f04ec5a1f463974bf3f3fbec1df8d45efe34423608d680ae85"
+    },
+    {
+      "label": "pl_page",
+      "url": "https://nbp.pl/en/statistic-and-financial-reporting/interest-rates/",
+      "probed_at": "2026-10-11T08:14:26.578189+00:00",
+      "status": 403,
+      "content_type": "text/html",
+      "bytes": 855,
+      "sha256": "af859866626816797ccd33408449e505f07afaf3a83c29473fcf24bf5e9a178c"
+    },
+    {
+      "label": "pt_domain",
+      "url": "https://bpstat.bportugal.pt/data/v1/domains/22/",
+      "probed_at": "2026-10-11T08:23:53.761870+00:00",
+      "status": 200,
+      "content_type": "application/json",
+      "bytes": 605,
+      "sha256": "3044be4ee15f53841ecb345895804869bd9a60d3ea00c022084afcb890f57686"
+    },
+    {
+      "label": "pt_domains",
+      "url": "https://bpstat.bportugal.pt/data/v1/domains/",
+      "probed_at": "2026-10-11T08:14:24.758018+00:00",
+      "status": 200,
+      "content_type": "application/json",
+      "bytes": 49967,
+      "sha256": "91ddd10fedd8d3b6fb24ef2b40fa68b84a796512659236d6a392890aba330ae6"
+    },
+    {
+      "label": "pt_meta",
+      "url": "https://bpstat.bportugal.pt/data/v1/domains/22/series?lang=EN",
+      "probed_at": "2026-10-11T08:27:25.380095+00:00",
+      "status": 404,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 179,
+      "sha256": "5547992afdadb59737c5c0feb1a35dff294cd27145bf290c031737ecf8a2577d"
+    },
+    {
+      "label": "pt_series",
+      "url": "https://bpstat.bportugal.pt/data/v1/domains/22/series/",
+      "probed_at": "2026-10-11T08:22:48.300886+00:00",
+      "status": 404,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 179,
+      "sha256": "5547992afdadb59737c5c0feb1a35dff294cd27145bf290c031737ecf8a2577d"
+    },
+    {
+      "label": "pt_table",
+      "url": "https://bpstat.bportugal.pt/conteudos/quadros/484",
+      "probed_at": "2026-10-11T08:21:19.996086+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 5424,
+      "sha256": "ca86519b1c7dc486db09486eb411ccaa97e6d39d4cd147ced03d2644f7d078e4"
+    },
+    {
+      "label": "se_10",
+      "url": "https://api.riksbank.se/swea/v1/Observations/SEGVB10YC/2026-10-01/2026-10-11",
+      "probed_at": "2026-10-11T08:21:18.454367+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 253,
+      "sha256": "3aba3bbb1bbc77aeaaad1355093d1b2260fd37764af6d63866404fff9be7844c"
+    },
+    {
+      "label": "se_2",
+      "url": "https://api.riksbank.se/swea/v1/Observations/SEGVB2YC/2026-10-01/2026-10-11",
+      "probed_at": "2026-10-11T08:21:18.457667+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 253,
+      "sha256": "a75c375ed769cc80761c9708879faa0f98b28fdaf40d39ccb021614dfcc4d5fd"
+    },
+    {
+      "label": "se_api",
+      "url": "https://api.riksbank.se/swea/v1/Observations/SWEGVB10/2026-10-01/2026-10-11",
+      "probed_at": "2026-10-11T08:14:25.258715+00:00",
+      "status": 204,
+      "content_type": null,
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "label": "se_history",
+      "url": "https://api.riksbank.se/swea/v1/Observations/SEGVB10YC/2023-01-01/2026-10-11",
+      "probed_at": "2026-10-11T08:27:24.994149+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 33931,
+      "sha256": "2c06448068c4af0ad01afa3a14fe495b230d6ce7ca9faaf0c015d780d396c371"
+    },
+    {
+      "label": "se_series",
+      "url": "https://api.riksbank.se/swea/v1/Series",
+      "probed_at": "2026-10-11T08:21:18.452302+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 35745,
+      "sha256": "39d066b3180a9e1aade8ce6d39eec3e323a4ebbc853271943d11b40682aacbcd"
+    },
+    {
+      "label": "tr_api",
+      "url": "https://evds2.tcmb.gov.tr/service/evds/series=TP.TAHVIL.Y10&startDate=01-10-2026&endDate=11-10-2026&type=json",
+      "probed_at": "2026-10-11T08:14:26.423496+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 1355,
+      "sha256": "cf7aea887bd6353b1b8da0445fa60b4594e8722a69edd3eba61da6c0687ef9b6"
+    },
+    {
+      "label": "tr_v3",
+      "url": "https://evds3.tcmb.gov.tr/service/evds/series=TP.TAHVIL.Y10&startDate=01-10-2026&endDate=11-10-2026&type=json",
+      "probed_at": "2026-10-11T08:21:19.328865+00:00",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "bytes": 1355,
+      "sha256": "cf7aea887bd6353b1b8da0445fa60b4594e8722a69edd3eba61da6c0687ef9b6"
+    },
+    {
+      "label": "uk_2",
+      "url": "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&Datefrom=01/Oct/2026&Dateto=now&SeriesCodes=IUDMNPY&CSVF=TN&UsingCodes=Y&VPD=Y&VFD=N",
+      "probed_at": "2026-10-11T08:27:24.993076+00:00",
+      "status": 200,
+      "content_type": "application/csv",
+      "bytes": 114,
+      "sha256": "46112bf4ba0757e9ab6a385af5f626a5731a5233a6289d6716517302986e19d2"
+    },
+    {
+      "label": "uk_csv",
+      "url": "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&Datefrom=01/Oct/2026&Dateto=now&SeriesCodes=IUDMNZC&CSVF=TN&UsingCodes=Y&VPD=Y&VFD=N",
+      "probed_at": "2026-10-11T08:14:25.135629+00:00",
+      "status": 200,
+      "content_type": "application/csv",
+      "bytes": 112,
+      "sha256": "a13cbb74df70638f0513d7e329e4a38c1776fbe70483f2ac2e3810cd110984a2"
+    },
+    {
+      "label": "uk_history",
+      "url": "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp?csv.x=yes&Datefrom=01/Jan/2023&Dateto=now&SeriesCodes=IUDMNZC&CSVF=TN&UsingCodes=Y&VPD=Y&VFD=N",
+      "probed_at": "2026-10-11T08:27:24.991642+00:00",
+      "status": 200,
+      "content_type": "application/csv",
+      "bytes": 18955,
+      "sha256": "719c9abbe21ba548f7f2a20b91f9293318feb5b51576769f462b0c41ce53e2ab"
+    },
+    {
+      "label": "za_current",
+      "url": "https://www.resbank.co.za/en/home/what-we-do/statistics/key-statistics/current-market-rates",
+      "probed_at": "2026-10-11T08:21:19.061871+00:00",
+      "status": 200,
+      "content_type": "text/html;charset=utf-8",
+      "bytes": 78270,
+      "sha256": "87633ea44cbe79ee4b49d6c8be9e3bfd7c7142c35762327914dbefea7752e272"
+    },
+    {
+      "label": "za_history",
+      "url": "https://custom.resbank.co.za/SarbWebApi/WebIndicators/Shared/GetTimeseriesObservations/MMRD709A/2023-01-01/2026-10-11",
+      "probed_at": "2026-10-11T08:27:24.997956+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 44497,
+      "sha256": "c9faed100ff772d37d9a1e861ec0e1b786a30bb86a2022a4864fd0b285ad637e"
+    },
+    {
+      "label": "za_page",
+      "url": "https://www.resbank.co.za/en/home/what-we-do/statistics/key-statistics/selected-daily-rates",
+      "probed_at": "2026-10-11T08:14:26.319782+00:00",
+      "status": 404,
+      "content_type": "text/html;charset=utf-8",
+      "bytes": 73664,
+      "sha256": "296349be5de3b22bbc7119045d22f6c22fd7374a05a13eefc423fb3713411584"
+    },
+    {
+      "label": "za_r2030",
+      "url": "https://custom.resbank.co.za/SarbWebApi/WebIndicators/Shared/GetTimeseriesObservations/MMRD708A/2026-10-01/2026-10-11",
+      "probed_at": "2026-10-11T08:23:52.115617+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 2527,
+      "sha256": "6ca91a74d31cb6dcbf86fbedbb84081c32a7d075e29d9be89413d12839135146"
+    },
+    {
+      "label": "za_r209",
+      "url": "https://custom.resbank.co.za/SarbWebApi/WebIndicators/Shared/GetTimeseriesObservations/MMRD709A/2026-10-01/2026-10-11",
+      "probed_at": "2026-10-11T08:23:52.116616+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 1297,
+      "sha256": "e10050e7f1cdad690a9aa5e0db17dbdbb75ddfb2298e5e211885b77a5e2f2051"
+    },
+    {
+      "label": "za_rates",
+      "url": "https://custom.resbank.co.za/SarbWebApi/WebIndicators/CurrentMarketRates",
+      "probed_at": "2026-10-11T08:22:47.380554+00:00",
+      "status": 200,
+      "content_type": "application/json; charset=utf-8",
+      "bytes": 5305,
+      "sha256": "44fa639872c62e303d4243832233fb7bfbe4583f8930a3e22a13ca7960a0dd7c"
+    },
+    {
+      "label": "za_swagger",
+      "url": "https://custom.resbank.co.za/SarbWebApi/swagger/v1/swagger.json",
+      "probed_at": "2026-10-11T08:21:19.148020+00:00",
+      "status": 200,
+      "content_type": "application/json;charset=utf-8",
+      "bytes": 57238,
+      "sha256": "6f527644d2243020b65842e41156448613f433028d05d40125f39581f43662f9"
+    }
+  ],
+  "recording_parser_audit": [
+    {
+      "symbol": "CB_GB_10Y",
+      "probe": "uk_history",
+      "rows": 952,
+      "first": "2023-01-03",
+      "last": "2026-10-07",
+      "latest_value": 5.4412
+    },
+    {
+      "symbol": "CB_IT_10Y",
+      "probe": "it_bds",
+      "rows": 9008,
+      "first": "1991-03-05",
+      "last": "2026-08-31",
+      "latest_value": 4.10012
+    },
+    {
+      "symbol": "CB_ES_10Y",
+      "probe": "es_ti13",
+      "rows": 8835,
+      "first": "1989-07-18",
+      "last": "2026-10-07",
+      "latest_value": 4.096
+    },
+    {
+      "symbol": "CB_BE_10Y",
+      "probe": "be_10",
+      "rows": 938,
+      "first": "2023-01-02",
+      "last": "2026-10-09",
+      "latest_value": 4.31
+    },
+    {
+      "symbol": "CB_BE_2Y",
+      "probe": "be_2",
+      "rows": 7,
+      "first": "2026-10-01",
+      "last": "2026-10-09",
+      "latest_value": 3.28
+    },
+    {
+      "symbol": "CB_JP_10Y",
+      "probe": "jp_all",
+      "rows": 9948,
+      "first": "1986-07-05",
+      "last": "2026-09-30",
+      "latest_value": 3.057
+    },
+    {
+      "symbol": "CB_CH_10Y",
+      "probe": "ch_replacement",
+      "rows": 938,
+      "first": "2023-01-03",
+      "last": "2026-09-30",
+      "latest_value": 0.586
+    },
+    {
+      "symbol": "CB_CH_2Y",
+      "probe": "ch_replacement",
+      "rows": 938,
+      "first": "2023-01-03",
+      "last": "2026-09-30",
+      "latest_value": 0.287
+    },
+    {
+      "symbol": "CB_SE_10Y",
+      "probe": "se_history",
+      "rows": 946,
+      "first": "2023-01-02",
+      "last": "2026-10-09",
+      "latest_value": 3.197
+    },
+    {
+      "symbol": "CB_SE_2Y",
+      "probe": "se_2",
+      "rows": 7,
+      "first": "2026-10-01",
+      "last": "2026-10-09",
+      "latest_value": 2.714
+    },
+    {
+      "symbol": "CB_KR_10Y",
+      "probe": "kr_api",
+      "rows": 5,
+      "first": "2026-10-01",
+      "last": "2026-10-08",
+      "latest_value": 4.395
+    },
+    {
+      "symbol": "CB_CN_10Y",
+      "probe": "cn_2023",
+      "rows": 250,
+      "first": "2023-01-03",
+      "last": "2023-12-31",
+      "latest_value": 2.5553
+    },
+    {
+      "symbol": "CB_ZA_R209",
+      "probe": "za_r209",
+      "rows": 6,
+      "first": "2026-10-01",
+      "last": "2026-10-08",
+      "latest_value": 8.99
+    },
+    {
+      "symbol": "CB_ZA_R2030",
+      "probe": "za_r2030",
+      "rows": 6,
+      "first": "2026-10-01",
+      "last": "2026-10-08",
+      "latest_value": 8.22
+    },
+    {
+      "symbol": "CB_JP_10Y",
+      "probe": "jp_history",
+      "rows": 6,
+      "first": "2026-10-01",
+      "last": "2026-10-08",
+      "latest_value": 3.089
+    },
+    {
+      "symbol": "CB_JP_2Y",
+      "probe": "jp_history",
+      "rows": 6,
+      "first": "2026-10-01",
+      "last": "2026-10-08",
+      "latest_value": 1.936
+    },
+    {
+      "symbol": "CB_CH_10Y",
+      "probe": "ch_livejson",
+      "rows": 250,
+      "first": "2025-10-13",
+      "last": "2026-10-09",
+      "latest_value": 0.579
+    },
+    {
+      "symbol": "CB_CN_10Y",
+      "probe": "cn_year",
+      "rows": 189,
+      "first": "2026-01-04",
+      "last": "2026-10-10",
+      "latest_value": 1.6849
+    },
+    {
+      "symbol": "CB_ZA_R209",
+      "probe": "za_history",
+      "rows": 206,
+      "first": "2025-12-09",
+      "last": "2026-10-08",
+      "latest_value": 8.99
+    },
+    {
+      "symbol": "CB_BR_NTNF_2033",
+      "probe": "br_treasury_csv",
+      "rows": 1158,
+      "first": "2022-02-21",
+      "last": "2026-10-09",
+      "latest_value": 12.59
+    },
+    {
+      "symbol": "CB_BR_NTNF_2037",
+      "probe": "br_treasury_csv",
+      "rows": 173,
+      "first": "2026-02-02",
+      "last": "2026-10-09",
+      "latest_value": 12.57
+    }
+  ]
+}

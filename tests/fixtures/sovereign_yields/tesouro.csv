@@ -1,0 +1,7 @@
+Tipo Titulo;Data Vencimento;Data Base;Taxa Compra Manha;Taxa Venda Manha;PU Compra Manha;PU Venda Manha;PU Base Manha
+Tesouro Prefixado com Juros Semestrais;01/01/2033;09/10/2026;12,59;12,71;925,33;920,42;920,42
+Tesouro Prefixado com Juros Semestrais;01/01/2037;09/10/2026;12,57;12,69;891,19;884,94;884,94
+Tesouro Prefixado com Juros Semestrais;01/01/2037;08/10/2026;12,91;13,03;874,41;868,32;868,32
+Tesouro Prefixado com Juros Semestrais;01/01/2033;08/10/2026;12,91;13,03;913,03;908,19;908,19
+Tesouro Prefixado com Juros Semestrais;01/01/2033;02/01/2023;12,80;12,92;852,85;846,79;846,79
+Tesouro IPCA+ com Juros Semestrais;15/08/2050;09/10/2026;6,52;6,64;4539,30;4469,79;4469,79

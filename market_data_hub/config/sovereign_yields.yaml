@@ -1,0 +1,303 @@
+# Original official daily observations only. See docs/f08-sovereign-yields.md.
+# Unavailable countries remain visible; never silently use monthly/auction data.
+defaults: &daily
+  enabled: true
+  unit: "%"
+  frequency: D
+  asset_class: MACRO
+  priority: 1
+  max_lag_days: 3
+  lag_calendar: business
+  # Optional explicit national market closures: holidays: [YYYY-MM-DD, ...]
+
+series:
+  - <<: *daily
+    symbol: CB_DE_10Y
+    country: DEU
+    source: Deutsche Bundesbank
+    provider: bundesbank
+    name: 10y federal securities, curve-derived par yield
+    provider_code: D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A
+    endpoint: https://api.statistiken.bundesbank.de/rest/data/BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R10XX.R.A.A._Z._Z.A
+  - <<: *daily
+    symbol: CB_DE_2Y
+    country: DEU
+    source: Deutsche Bundesbank
+    provider: bundesbank
+    name: 2y federal securities, curve-derived par yield
+    provider_code: D.I.ZAR.ZI.EUR.S1311.B.A604.R02XX.R.A.A._Z._Z.A
+    endpoint: https://api.statistiken.bundesbank.de/rest/data/BBSIS/D.I.ZAR.ZI.EUR.S1311.B.A604.R02XX.R.A.A._Z._Z.A
+  - <<: *daily
+    symbol: CB_FR_10Y
+    country: FRA
+    source: Banque de France
+    provider: webstat
+    name: 10y OAT constant-maturity TEC10
+    provider_code: FM.D.FR.EUR.FR2.BB.FRMOYTEC10.HSTA
+    endpoint: https://webstat.banque-france.fr/api/explore/v2.1/catalog/datasets/observations/exports/json
+    key_env: WEBSTAT_API_KEY
+  - <<: *daily
+    symbol: CB_IT_10Y
+    country: ITA
+    source: Banca d'Italia
+    provider: bdi
+    name: 10y BTP benchmark gross yield to maturity
+    provider_code: MFN_BMK.D.020.922.0.EUR.210
+    endpoint: https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/BMK0200
+    probe_note: Daily observations, delayed publication; stale on 2026-10-11
+  - <<: *daily
+    symbol: CB_ES_10Y
+    country: ESP
+    source: Banco de Espana
+    provider: bde
+    name: 10y non-stripped Spanish government bonds, secondary-market yield
+    provider_code: D_G0B1F0ZP
+    endpoint: https://www.bde.es/webbe/es/estadisticas/compartido/datos/csv/ti_1_3.csv
+  - <<: *daily
+    symbol: CB_BE_10Y
+    country: BEL
+    source: National Bank of Belgium
+    provider: nbb
+    name: 10y OLO reference rate, fixed residual term
+    provider_code: D.10Y.F
+    dimensions: {FREQ: D, IROLOBE2_MATUR: 10Y, IROLOBE2_TYPE: F}
+    endpoint: https://nsidisseminate-stat.nbb.be/rest/data/BE2,DF_IROLOBE2,1.0/D.10Y.F
+  - <<: *daily
+    symbol: CB_BE_2Y
+    country: BEL
+    source: National Bank of Belgium
+    provider: nbb
+    name: 2y OLO reference rate, fixed residual term
+    provider_code: D.2Y.F
+    dimensions: {FREQ: D, IROLOBE2_MATUR: 2Y, IROLOBE2_TYPE: F}
+    endpoint: https://nsidisseminate-stat.nbb.be/rest/data/BE2,DF_IROLOBE2,1.0/D.2Y.F
+  - <<: *daily
+    symbol: CB_GB_10Y
+    country: GBR
+    source: Bank of England
+    provider: boe
+    name: 10y nominal zero-coupon gilt yield (fitted curve)
+    provider_code: IUDMNZC
+    endpoint: https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp
+  - <<: *daily
+    symbol: CB_JP_10Y
+    country: JPN
+    source: Japan Ministry of Finance
+    provider: mof
+    name: 10y JGB constant-maturity yield
+    provider_code: 10Y
+    endpoint: https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv
+    history_endpoint: https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/historical/jgbcme_all.csv
+  - <<: *daily
+    symbol: CB_JP_2Y
+    country: JPN
+    source: Japan Ministry of Finance
+    provider: mof
+    name: 2y JGB constant-maturity yield
+    provider_code: 2Y
+    endpoint: https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/jgbcme.csv
+    history_endpoint: https://www.mof.go.jp/english/policy/jgbs/reference/interest_rate/historical/jgbcme_all.csv
+  - <<: *daily
+    symbol: CB_CH_10Y
+    country: CHE
+    source: Swiss National Bank
+    provider: snb
+    name: 10y Swiss Confederation spot yield
+    provider_code: 10J
+    endpoint: https://data.snb.ch/api/cube/rendeiduebd/data/csv/en
+    current_endpoint: https://www.snb.ch/public/rates/interestRates
+    probe_note: Daily current 10y plus replacement history cube; old rendoblid discontinued
+  - <<: *daily
+    symbol: CB_CH_2Y
+    country: CHE
+    source: Swiss National Bank
+    provider: snb
+    name: 2y Swiss Confederation spot yield
+    provider_code: 2J
+    endpoint: https://data.snb.ch/api/cube/rendeiduebd/data/csv/en
+    probe_note: 2y export ends 2026-09-30; no current 2y in SNB daily chart
+  - <<: *daily
+    symbol: CB_SE_10Y
+    country: SWE
+    source: Sveriges Riksbank
+    provider: riksbank
+    name: 10y Swedish government benchmark bond yield
+    provider_code: SEGVB10YC
+    endpoint: https://api.riksbank.se/swea/v1/Observations
+  - <<: *daily
+    symbol: CB_SE_2Y
+    country: SWE
+    source: Sveriges Riksbank
+    provider: riksbank
+    name: 2y Swedish government benchmark bond yield
+    provider_code: SEGVB2YC
+    endpoint: https://api.riksbank.se/swea/v1/Observations
+  - <<: *daily
+    symbol: CB_KR_10Y
+    country: KOR
+    source: Bank of Korea
+    provider: ecos
+    name: 10y Treasury bond market yield
+    provider_code: "010210000"
+    dataset: 817Y002
+    endpoint: https://ecos.bok.or.kr/api/StatisticSearch
+    key_env: ECOS_API_KEY
+  - <<: *daily
+    symbol: CB_CN_10Y
+    country: CHN
+    source: China Central Depository & Clearing (ChinaBond)
+    provider: chinabond
+    name: 10y RMB ChinaBond Government Bond Yield Curve
+    provider_code: 10Y
+    endpoint: https://yield.chinabond.com.cn/cbweb-pbc-web/pbc/historyQuery
+  - <<: *daily
+    symbol: CB_ZA_R209
+    country: ZAF
+    source: South African Reserve Bank
+    provider: sarb
+    name: R209 government stock closing yield (2036 bond, not constant 10y)
+    provider_code: MMRD709A
+    bond_label: R209
+    endpoint: https://custom.resbank.co.za/SarbWebApi/WebIndicators/Shared/GetTimeseriesObservations
+  - <<: *daily
+    symbol: CB_ZA_R2030
+    country: ZAF
+    source: South African Reserve Bank
+    provider: sarb
+    name: R2030 government stock closing yield (2030 bond, not constant 10y)
+    provider_code: MMRD708A
+    bond_label: R2030
+    endpoint: https://custom.resbank.co.za/SarbWebApi/WebIndicators/Shared/GetTimeseriesObservations
+  - <<: *daily
+    symbol: CB_BR_NTNF_2033
+    country: BRA
+    source: Tesouro Nacional
+    provider: tesouro
+    name: NTN-F 2033 nominal BRL morning purchase yield (fixed maturity, not constant 10y)
+    provider_code: Tesouro Prefixado com Juros Semestrais
+    maturity: "2033-01-01"
+    endpoint: https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/precotaxatesourodireto.csv
+  - <<: *daily
+    symbol: CB_BR_NTNF_2037
+    country: BRA
+    source: Tesouro Nacional
+    provider: tesouro
+    name: NTN-F 2037 nominal BRL morning purchase yield (fixed maturity, near 10y in October 2026)
+    provider_code: Tesouro Prefixado com Juros Semestrais
+    maturity: "2037-01-01"
+    endpoint: https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/precotaxatesourodireto.csv
+  - <<: *daily
+    symbol: CB_PT_10Y
+    country: PRT
+    source: Banco de Portugal
+    provider: unavailable
+    name: 10y government bond yield (unresolved)
+    unavailable_reason: Only monthly 10y averages verified in BPstat; daily endpoint unresolved
+  - <<: *daily
+    symbol: CB_GR_10Y
+    country: GRC
+    source: Bank of Greece
+    provider: unavailable
+    name: 10y government bond benchmark (unresolved transport)
+    unavailable_reason: Daily benchmark table exists but HTTP 403 from this machine; historical endpoint not verified
+  - <<: *daily
+    symbol: CB_NL_10Y
+    country: NLD
+    source: De Nederlandsche Bank
+    provider: unavailable
+    name: 10y government bond yield (unresolved)
+    unavailable_reason: Daily 10y endpoint unverified; API discovery returned 404 and documentation HTTP 403
+  - <<: *daily
+    symbol: CB_AT_10Y
+    country: AUT
+    source: Oesterreichische Nationalbank
+    provider: unavailable
+    name: 10y government bond yield (unresolved)
+    unavailable_reason: Daily UDRB is a basket of maturities published weekly; exact daily 10y endpoint unresolved
+  - <<: *daily
+    symbol: CB_IE_10Y
+    country: IRL
+    source: Central Bank of Ireland
+    provider: unavailable
+    name: 10y government bond yield (unresolved)
+    unavailable_reason: Daily 10y endpoint unresolved; public interest-rate statistics did not identify one
+  - <<: *daily
+    symbol: CB_MX_10Y
+    country: MEX
+    source: Banco de Mexico
+    provider: unavailable
+    name: 10y nominal M-bond yield (unresolved)
+    key_env: BANXICO_API_TOKEN
+    unavailable_reason: Daily nominal M-bond 10y SIE identifier unverified; do not use monthly SF17808 or FX SF63528
+  - <<: *daily
+    symbol: CB_BR_10Y
+    country: BRA
+    source: Banco Central do Brasil
+    provider: unavailable
+    name: 10y local-currency government bond yield (unresolved)
+    unavailable_reason: Constant 10y sovereign SGS identifier unresolved; supplementary Treasury NTN-F quotes retain explicit fixed maturities
+  - <<: *daily
+    symbol: CB_AR_10Y
+    country: ARG
+    source: Banco Central de la Republica Argentina
+    provider: unavailable
+    name: 10y sovereign yield (not found in monetary catalog)
+    unavailable_reason: No sovereign 10y yield or country-risk series found in all 1610 BCRA v4 monetary catalog entries
+  - <<: *daily
+    symbol: CB_IN_10Y
+    country: IND
+    source: Reserve Bank of India
+    provider: unavailable
+    name: 10y G-sec yield (historical endpoint unresolved)
+    unavailable_reason: CCIL current 9Y-10Y G-sec quote works; daily historical endpoint unverified
+  - <<: *daily
+    symbol: CB_ID_10Y
+    country: IDN
+    source: Bank Indonesia
+    provider: unavailable
+    name: 10y local-currency government bond yield (unresolved)
+    unavailable_reason: Daily 10y endpoint unresolved; DJPPR hostname DNS failure and BI portal only metadata
+  - <<: *daily
+    symbol: CB_ZA_10Y
+    country: ZAF
+    source: South African Reserve Bank
+    provider: unavailable
+    name: Constant 10y government bond yield (unresolved)
+    unavailable_reason: Constant-tenor daily 10y endpoint unresolved; supplementary R209 and R2030 retain explicit bond identities
+  - <<: *daily
+    symbol: CB_TR_10Y
+    country: TUR
+    source: Central Bank of the Republic of Turkiye
+    provider: unavailable
+    name: 10y local-currency government benchmark yield (unresolved)
+    key_env: EVDS_API_KEY
+    unavailable_reason: EVDS2 migrated to EVDS3; current daily 10y API endpoint and series identifier unverified
+  - <<: *daily
+    symbol: CB_PL_10Y
+    country: POL
+    source: Narodowy Bank Polski
+    provider: unavailable
+    name: 10y government bond yield (unresolved)
+    unavailable_reason: Daily 10y endpoint unverified; NBP blocked HTTP 403, MF security catalogue did not expose daily yield
+  - <<: *daily
+    symbol: CB_CO_10Y
+    country: COL
+    source: Banco de la Republica
+    provider: unavailable
+    name: 10y COP zero-coupon TES yield (endpoint unresolved)
+    unavailable_reason: Official daily 10y COP zero-coupon TES exists, published weekly; machine-readable history endpoint unresolved
+  - <<: *daily
+    symbol: CB_CL_10Y
+    country: CHL
+    source: Banco Central de Chile
+    provider: unavailable
+    name: 10y CLP government bond secondary-market yield (unresolved)
+    key_env: BCCH_API_TOKEN
+    unavailable_reason: Siete API needs token; government 10y secondary-market identifier unverified; BCP and BTP auction rates are not equivalent
+  - <<: *daily
+    symbol: CB_PE_10Y
+    country: PER
+    source: Banco Central de Reserva del Peru
+    provider: unavailable
+    name: 10y PEN government bond yield (unresolved)
+    unavailable_reason: Daily local-currency 10y PD31893DD verified in BCRP catalogue; API and CSV return HTML challenges from this machine, positive response format unverified

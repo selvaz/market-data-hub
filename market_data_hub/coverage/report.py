@@ -14,7 +14,7 @@ from typing import Dict
 import duckdb
 import pandas as pd
 
-from market_data_hub.config_loader import get_yahoo_tickers, get_fred_series
+from market_data_hub.config_loader import get_yahoo_tickers, get_fred_series, get_sovereign_yields
 from market_data_hub.coverage.freq_detector import detect_frequency
 from market_data_hub.coverage.stalled_detector import lag_days, is_stalled
 from market_data_hub.coverage.gap_detector import missing_pct, gap_count, date_span
@@ -34,17 +34,25 @@ def _meta_lookup() -> Dict[str, dict]:
         m[e["symbol"]] = {"asset_class": e.get("asset_class", "MACRO"),
                           "priority": e.get("priority", 2),
                           "max_lag_days": e.get("max_lag_days")}
+    for e in get_sovereign_yields():
+        if e.get("enabled", True):
+            m[e["symbol"]] = {"asset_class": "MACRO", "priority": e.get("priority", 1),
+                              "max_lag_days": e["max_lag_days"],
+                              "lag_calendar": e["lag_calendar"],
+                              "holidays": e.get("holidays", ()), "frequency": "D"}
     return m
 
 
 def _row_for(symbol: str, source: str, df: pd.DataFrame, date_col: str,
              meta: dict, run_id: str) -> dict:
     first, last, obs = date_span(df[date_col])
-    freq = detect_frequency(df[date_col]) if obs >= 3 else "UNKNOWN"
+    freq = meta.get("frequency") or (detect_frequency(df[date_col]) if obs >= 3 else "UNKNOWN")
     lag = lag_days(last)
     # Persist this verdict so v_stalled and reader.get_stalled() use the same
     # publication-aware limit, while freq_detected still describes observations.
-    stalled = is_stalled(last, freq, max_lag_days=meta.get("max_lag_days"))
+    stalled = is_stalled(last, freq, max_lag_days=meta.get("max_lag_days"),
+                         lag_calendar=meta.get("lag_calendar", "calendar"),
+                         holidays=meta.get("holidays", ()))
     mpct = missing_pct(df[date_col], freq)
     gaps = gap_count(df[date_col], freq)
     flags = check_prices(df)
@@ -99,13 +107,26 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
 
     # --- macro_series (fred) ---
     mdf = con.execute(
-        "SELECT date, series_id, value FROM macro_series ORDER BY series_id, date"
+        "SELECT date, series_id, value, source FROM macro_series ORDER BY series_id, date"
     ).fetch_df()
     if not mdf.empty:
         for sid, g in mdf.groupby("series_id"):
-            rows.append(_row_for(sid, "fred", g, "date",
+            source = g.source.dropna().iloc[-1] if g.source.notna().any() else "fred"
+            rows.append(_row_for(sid, source, g, "date",
                                  meta.get(sid, {"asset_class": "MACRO",
                                                 "priority": 2}), run_id))
+
+    # Requested daily feeds must remain visible even before their first success.
+    present = set(mdf.series_id) if not mdf.empty else set()
+    attempted = any(str(s).startswith("CB_") for s in present) or bool(con.execute(
+        "SELECT count(*) FROM download_log WHERE source='sovereign_yields'").fetchone()[0])
+    for entry in get_sovereign_yields():
+        sid = entry["symbol"]
+        if attempted and entry.get("enabled", True) and sid not in present:
+            row = _row_for(sid, entry["source"], pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]")}),
+                           "date", meta[sid], run_id)
+            row.update(status="unavailable", error_msg=entry.get("unavailable_reason", "no official observations ingested"))
+            rows.append(row)
 
     # --- crypto_ohlcv (binance) — key symbol:timeframe ---
     cdf = con.execute(

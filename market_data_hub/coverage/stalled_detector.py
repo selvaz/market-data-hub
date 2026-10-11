@@ -13,6 +13,7 @@ from datetime import date
 from typing import Optional
 
 import pandas as pd
+import numpy as np
 
 # Tolerance thresholds before flagging "stalled" (days), per frequency.
 # Daily 3d covers a long weekend + holidays. Aligned with checks1_improved.py.
@@ -45,8 +46,9 @@ def lag_days(last_date, as_of: Optional[date] = None) -> Optional[int]:
 
 def is_stalled(last_date, freq: Optional[str],
                as_of: Optional[date] = None, *,
-               max_lag_days: Optional[int] = None) -> bool:
-    """True when calendar lag exceeds the override or frequency-based default.
+               max_lag_days: Optional[int] = None,
+               lag_calendar: str = "calendar", holidays=()) -> bool:
+    """True when the chosen lag calendar exceeds the override/default limit.
 
     Observation frequency is independent of publication cadence: a daily series
     published weekly can supply max_lag_days without changing its frequency.
@@ -58,4 +60,14 @@ def is_stalled(last_date, freq: Optional[str],
     lag = lag_days(last_date, as_of)
     if lag is None:
         return True  # no data = effectively stalled
+    if lag_calendar not in {"calendar", "business"}:
+        raise ValueError("lag_calendar must be calendar or business")
+    if lag_calendar == "business":
+        # Count working dates after the observation, through as_of inclusive.
+        # National market-closure dates can be supplied in the series catalog.
+        ld = pd.Timestamp(last_date).date()
+        ref = as_of or pd.Timestamp.now(tz="UTC").date()
+        lag = int(np.busday_count(ld + pd.Timedelta(days=1),
+                                 ref + pd.Timedelta(days=1),
+                                 holidays=list(holidays)))
     return lag > threshold

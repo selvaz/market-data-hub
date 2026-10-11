@@ -58,6 +58,12 @@ def get_fred_series() -> List[Dict[str, Any]]:
 
 
 @lru_cache(maxsize=1)
+def get_sovereign_yields() -> List[Dict[str, Any]]:
+    """Official daily yields; credentials are resolved at fetch time from env."""
+    return _load_yaml("sovereign_yields.yaml").get("series", [])
+
+
+@lru_cache(maxsize=1)
 def get_countries() -> List[Dict[str, Any]]:
     countries: List[Dict[str, Any]] = _load_yaml("countries.yaml").get("countries", [])
     return countries
