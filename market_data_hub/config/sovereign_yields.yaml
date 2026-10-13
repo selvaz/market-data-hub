@@ -175,6 +175,8 @@ series:
     country: CHE
     source: Swiss National Bank
     provider: snb
+    enabled: false  # known gap, not a daily failure: the SNB 2y export stopped at 2026-09-30
+    disabled_reason: "SNB 2y export ends 2026-09-30; no current 2y in the SNB daily chart (first live run 2026-10-13 stalled)"
     name: 2y Swiss Confederation spot yield
     provider_code: 2J
     endpoint: https://data.snb.ch/api/cube/rendeiduebd/data/csv/en

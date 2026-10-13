@@ -382,7 +382,7 @@ def test_daily_job_wiring_and_catalog():
     assert all(x['max_lag_days'] == 3 for x in current)
     assert [x['symbol'] for x in history] == ['CB_IT_10Y']
     assert history[0]['enabled'] and history[0]['history_reason']
-    assert sum(bool(x['enabled']) for x in entries) == 23
+    assert sum(bool(x['enabled']) for x in entries) == 22  # CB_CH_2Y disabled 2026-10-13 (SNB 2y export stopped)
     assert all(x['disabled_reason'].strip() for x in entries if not x['enabled'])
     assert validate() == []
 
