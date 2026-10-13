@@ -96,7 +96,7 @@ def test_validation_reports_both_counts_and_checks_both_contracts(monkeypatch, c
     assert 'fred=106' in output and 'nyfed_acm=1' in output and 'sovereign_yields=42' in output
     # The catalog count includes disabled gaps and the enabled history feed.
     entries = config_loader.get_sovereign_yields()
-    assert len(entries) == 42 and sum(e['enabled'] for e in entries) == 23
+    assert len(entries) == 42 and sum(e['enabled'] for e in entries) == 22
     assert [e['symbol'] for e in entries if e.get('role') == 'history'] == ['CB_IT_10Y']
     load = validate_config._y
     def invalid(name):
