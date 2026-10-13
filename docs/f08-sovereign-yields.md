@@ -9,9 +9,11 @@ Bundesbank REST remains blocked by Enodia; the **ECB AAA 10y spot curve remains
 the explicitly labelled official stand-in** when a fresh aligned Bund leg is
 unavailable. Four ECB curves and France's no-key TEC10 CSV also work.
 
-F08f collection policy keeps all 42 sovereign entries discoverable, with **23
-enabled feeds: 22 current and one history**. The 16 unresolved providers, two
-Bundesbank challenge endpoints and Korea ECOS are statically disabled, each with
+F08f collection policy keeps all 42 sovereign entries discoverable, with **22
+enabled feeds: 21 current and one history**. The 16 unresolved providers, two
+Bundesbank challenge endpoints, Korea ECOS and the Swiss 2y (`CB_CH_2Y`, whose
+SNB export stopped at 2026-09-30; disabled 2026-10-13 after the first live
+runs) are statically disabled, each with
 a machine-readable `disabled_reason`. Their known gaps do not affect daily exit
 codes. `CB_IT_10Y` is explicitly documented `role: history`; `ITA_BTP10_MOT`
 remains Italy's current feed. This configuration has not been deployed here.
