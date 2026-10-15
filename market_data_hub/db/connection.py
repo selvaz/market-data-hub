@@ -25,17 +25,13 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 SCHEMA_VERSION = 25
 
 
-def _default_db() -> str:
-    """Last-resort DB path when neither db_path, MARKET_DATA_DB nor settings.yaml
-    provide one.
+class DatabaseNotConfigured(RuntimeError):
+    """No database path was given: there is deliberately no implicit default.
 
-    Keep the default repo-local so a clone is self-contained and does not depend
-    on machine-specific drive letters.
+    A silent repo-local (or, for an installed wheel, environment-local) default
+    let a process that missed its configuration write into a second, parallel
+    database instead of the real one.
     """
-    return str(_REPO_ROOT / "market_data.duckdb")
-
-
-_DEFAULT_DB = _default_db()
 
 
 def _repo_local(path: str) -> str:
@@ -54,9 +50,11 @@ def resolve_db_path(db_path: Optional[str] = None) -> str:
     is exactly the bug that once made a freshly-generated regime plot
     resolve as "not found" elsewhere in this codebase.
 
-    Resolution order: explicit ``db_path``, then ``MARKET_DATA_DB``, then
-    ``settings.yaml``, then the repo-local default. Relative paths are
-    resolved against the repo root so a clone stays self-contained.
+    Resolution order: explicit ``db_path``, then ``MARKET_DATA_DB``, then a
+    ``db_path`` set in ``settings.yaml``. There is no implicit default: with none
+    of them, :class:`DatabaseNotConfigured` is raised, so a misconfigured process
+    fails instead of writing into a parallel database. Relative paths are resolved
+    against the repo root.
     """
     if db_path:
         return _repo_local(db_path)
@@ -71,7 +69,10 @@ def resolve_db_path(db_path: Optional[str] = None) -> str:
             return _repo_local(s["db_path"])
     except Exception:
         pass
-    return _DEFAULT_DB
+    raise DatabaseNotConfigured(
+        "no market-data database configured: set MARKET_DATA_DB (or pass db_path, "
+        "or set db_path in settings.yaml)"
+    )
 
 
 def _table_exists(con: duckdb.DuckDBPyConnection, name: str) -> bool:

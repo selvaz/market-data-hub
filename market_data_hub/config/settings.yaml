@@ -2,8 +2,10 @@
 # market_data_hub — global settings
 # ============================================================================
 
-# Path of the DuckDB database (override with env MARKET_DATA_DB)
-db_path: "market_data.duckdb"
+# Path of the DuckDB database: set env MARKET_DATA_DB (production does). There is
+# deliberately no default here: a relative default silently created a second
+# database next to the code. You may set an ABSOLUTE db_path for a local setup.
+# db_path: "C:/path/to/market_data.duckdb"
 
 # Report output directory (override with env MARKET_DATA_REPORT_DIR).
 # Relative paths are resolved from the repo root. This is used for the daily

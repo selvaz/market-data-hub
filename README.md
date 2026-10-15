@@ -77,6 +77,9 @@ needed if you used this script.
 ## Usage
 
 ```bash
+# the database location is required (no implicit default)
+export MARKET_DATA_DB="$HOME/data/market_data.duckdb"   # PowerShell: $env:MARKET_DATA_DB = '...'
+
 # initial historical load (Yahoo 2010, FRED 2000, Binance 2018)
 python run_backfill.py
 

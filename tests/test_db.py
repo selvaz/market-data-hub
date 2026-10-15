@@ -6,6 +6,7 @@ import datetime as dt
 
 import duckdb
 import pandas as pd
+import pytest
 
 from market_data_hub.db import connection as C
 from market_data_hub.db.upsert import upsert
@@ -18,8 +19,12 @@ def test_resolve_prefers_explicit_then_env(monkeypatch, tmp_path):
     assert C.resolve_db_path() == str(tmp_path / "env.duckdb")
 
 
-def test_default_db_is_repo_local():
-    assert C._default_db().endswith("market_data.duckdb")
+def test_no_configured_database_is_an_error(monkeypatch):
+    monkeypatch.delenv("MARKET_DATA_DB", raising=False)
+    monkeypatch.setattr("market_data_hub.config_loader.get_settings", lambda: {})
+    with pytest.raises(C.DatabaseNotConfigured):
+        C.resolve_db_path()
+    # An explicit relative path is still resolved against the repo root.
     assert C.resolve_db_path("market_data.duckdb").endswith("market_data.duckdb")
 
 
