@@ -35,10 +35,12 @@ pip install 'market-data-hub @ git+https://github.com/selvaz/market-data-hub.git
 1. **FRED API key** (required on networks where the public CSV endpoint is
    blocked): set the `FRED_API_KEY` environment variable. Do not commit keys in
    `settings.yaml`.
-2. **Database path** — resolution order:
-   explicit `db_path=` argument — `MARKET_DATA_DB` env var ---
-   `settings.yaml::db_path` — platform default
-   (`.\market_data.duckdb`, relative to the repo root).
+2. **Database path** (required) — set `MARKET_DATA_DB` to the DuckDB file, e.g.
+   `export MARKET_DATA_DB=$HOME/data/market_data.duckdb` (PowerShell:
+   `$env:MARKET_DATA_DB = 'C:\data\market_data.duckdb'`). Resolution order: explicit
+   `db_path=` argument, then `MARKET_DATA_DB`, then an absolute `settings.yaml::db_path`.
+   There is no default: without one of them every command stops with
+   `DatabaseNotConfigured`, so a process can never write into a second database.
 3. **SSL / corporate proxy** — handled automatically on first import:
    `_ssl_bootstrap` builds a CA bundle (certifi + Windows root CAs) and exports
    it to `SSL_CERT_FILE` / `REQUESTS_CA_BUNDLE` / `CURL_CA_BUNDLE`, so
