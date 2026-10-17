@@ -53,6 +53,7 @@ nav:
   - Data catalogue: DATA_CATALOG.md
   - Extraction & agent tools: EXTRACTION.md
   - lazydatacore contract: LAZYDATACORE.md
+  - Macro release contracts: macro-releases.md
   - Design notes:
       - Ecosystem rationalization (IT): ECOSYSTEM_RATIONALIZATION.md
       - Deep audit (2026-07): DEEP_AUDIT_2026-07.md
