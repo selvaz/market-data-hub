@@ -47,7 +47,8 @@ def _redact(text, limit=200):
 
 def _utc_z(moment):
     """ISO 8601 UTC with a Z suffix; a naive moment is read as local time."""
-    return moment.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+    # Microseconds kept: two captures in the same second must stay ordered.
+    return moment.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
 
 def _feed_week(feed):
@@ -211,7 +212,18 @@ class Snapshot(tuple):
     def __new__(cls, captured_at_utc, path, captured_at_source):
         self = super().__new__(cls, (captured_at_utc, path))
         self.captured_at_source = captured_at_source
+        self.order = float('inf')  # manifest line index; files without one sort last on ties
         return self
+
+
+def _parse_captured(text):
+    """UTC datetime from a manifest timestamp, with or without microseconds."""
+    for fmt in ('%Y-%m-%dT%H:%M:%S.%fZ', '%Y-%m-%dT%H:%M:%SZ'):
+        try:
+            return datetime.strptime(text, fmt).replace(tzinfo=timezone.utc)
+        except ValueError:
+            continue
+    raise ValueError(f'bad captured_at_utc: {text!r}')
 
 
 def load_snapshots(directory=DEFAULT_RAW_DIR):
@@ -228,24 +240,30 @@ def load_snapshots(directory=DEFAULT_RAW_DIR):
     found = {}
     manifest = directory / MANIFEST_NAME
     if manifest.exists():
-        for raw_line in manifest.read_text(encoding='utf-8').splitlines():
+        for order, raw_line in enumerate(manifest.read_text(encoding='utf-8').splitlines()):
             try:
                 entry = json.loads(raw_line)
-                if entry['outcome'] != 'written' or not entry['file']:
+                # 'unchanged' also proves the file's content was seen then.
+                if entry['outcome'] not in ('written', 'unchanged') or not entry['file']:
                     continue
-                moment = datetime.strptime(entry['captured_at_utc'], '%Y-%m-%dT%H:%M:%SZ')
+                moment = _parse_captured(entry['captured_at_utc'])
                 path = directory / Path(entry['file']).name
             except (ValueError, KeyError, TypeError):
                 continue
-            if path.exists():
-                found[path.name] = Snapshot(moment.replace(tzinfo=timezone.utc), path,
-                                            'manifest')
+            if not path.exists():
+                continue
+            earlier = found.get(path.name)
+            # Earliest evidence wins; manifest line order breaks exact ties.
+            if earlier is None or (moment, order) < (earlier[0], earlier.order):
+                snap = Snapshot(moment, path, 'manifest')
+                snap.order = order
+                found[path.name] = snap
     if directory.is_dir():
         for path in directory.iterdir():
             if _SNAPSHOT_NAME.match(path.name) and path.name not in found:
                 moment = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc)
                 found[path.name] = Snapshot(moment, path, 'mtime')
-    return sorted(found.values(), key=lambda s: (s[0], s[1].name))
+    return sorted(found.values(), key=lambda s: (s[0], s.order, s[1].name))
 
 
 def paese_iso(country, title):

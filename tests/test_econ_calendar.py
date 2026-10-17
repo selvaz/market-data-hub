@@ -202,7 +202,7 @@ def test_manifest_lines_for_written_unchanged_and_failed(raw_archive, monkeypatc
     days = sorted(e['date'][:10] for e in json.loads(recorded))
     # 23:30:12 at UTC-7 is 06:30:12Z the next day; local_date stays the local one.
     assert written == {
-        'captured_at_utc': '2026-09-06T06:30:12Z', 'local_date': '2026-09-05',
+        'captured_at_utc': '2026-09-06T06:30:12.000000Z', 'local_date': '2026-09-05',
         'outcome': 'written', 'file': str(raw / '2026-09-05.json'),
         'sha256': sha, 'bytes': len(recorded), 'http_status': 200, 'error': None,
         'feed_week_start': days[0], 'feed_week_end': days[-1],
@@ -2192,3 +2192,39 @@ def test_forexfactory_fixture_matches_the_real_catalogue(con, tmp_path, monkeypa
     assert ('cn_pmi_nbs_mfg', 'Non-Manufacturing PMI') not in legati
     assert not any(o.source_event_name in {'5-y Loan Prime Rate'}
                    for o in osservazioni)
+
+
+def test_load_snapshots_keeps_subsecond_order(tmp_path):
+    """Two different feeds captured within one second: the later one wins."""
+    from market_data_hub.econ_calendar.collect.forexfactory import load_snapshots
+    raw = tmp_path / 'raw'
+    raw.mkdir()
+    for name in ('2026-09-05.json', '2026-09-05.090000.json'):
+        (raw / name).write_text('[]')
+    lines = [
+        {'captured_at_utc': '2026-09-05T09:00:00.100000Z', 'outcome': 'written',
+         'file': str(raw / '2026-09-05.json')},
+        {'captured_at_utc': '2026-09-05T09:00:00.900000Z', 'outcome': 'written',
+         'file': str(raw / '2026-09-05.090000.json')},
+    ]
+    (raw / 'manifest.jsonl').write_text('\n'.join(json.dumps(x) for x in lines) + '\n', encoding='utf-8')
+    release = datetime(2026, 9, 5, 9, 0, 1, tzinfo=timezone.utc)
+    snaps = load_snapshots(raw)
+    assert [p.name for t, p in snaps if t < release][-1] == '2026-09-05.090000.json'
+
+
+def test_load_snapshots_uses_unchanged_evidence_over_mtime(tmp_path):
+    """A pre-manifest snapshot later confirmed 'unchanged' keeps that exact time,
+    even if a restore moved its mtime after the release."""
+    from market_data_hub.econ_calendar.collect.forexfactory import load_snapshots
+    raw = tmp_path / 'raw'
+    raw.mkdir()
+    (raw / '2026-09-05.json').write_text('[]')
+    (raw / 'manifest.jsonl').write_text(json.dumps(
+        {'captured_at_utc': '2026-09-05T09:00:00Z', 'outcome': 'unchanged',
+         'file': str(raw / '2026-09-05.json')}) + '\n', encoding='utf-8')
+    late = datetime(2026, 9, 5, 12, 0, tzinfo=timezone.utc).timestamp()
+    os.utime(raw / '2026-09-05.json', (late, late))
+    [snap] = load_snapshots(raw)
+    assert snap[0] == datetime(2026, 9, 5, 9, 0, tzinfo=timezone.utc)
+    assert snap.captured_at_source == 'manifest'

@@ -33,7 +33,7 @@ earlier lines are never rewritten. One line per run, not per HTTP call.
 
 | field | meaning |
 |---|---|
-| `captured_at_utc` | ISO 8601 UTC with `Z`, taken when the final response arrived (when the last attempt ended, for a failure) |
+| `captured_at_utc` | ISO 8601 UTC with microseconds and `Z` (e.g. `2026-10-17T21:30:00.123456Z`), taken when the final response arrived (when the last attempt ended, for a failure) |
 | `local_date` | local date of that moment (the snapshot's file-name date) |
 | `outcome` | `written`, `unchanged` or `failed` |
 | `file` | snapshot path; for `unchanged`, the identical existing snapshot; `null` for `failed` |
