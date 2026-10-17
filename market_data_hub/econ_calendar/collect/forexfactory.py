@@ -247,7 +247,8 @@ def load_snapshots(directory=DEFAULT_RAW_DIR):
                 if entry['outcome'] not in ('written', 'unchanged') or not entry['file']:
                     continue
                 moment = _parse_captured(entry['captured_at_utc'])
-                path = directory / Path(entry['file']).name
+                # Windows-written paths must resolve on any OS: split on both separators.
+                path = directory / str(entry['file']).replace('\\', '/').rsplit('/', 1)[-1]
             except (ValueError, KeyError, TypeError):
                 continue
             if not path.exists():

@@ -2228,3 +2228,16 @@ def test_load_snapshots_uses_unchanged_evidence_over_mtime(tmp_path):
     [snap] = load_snapshots(raw)
     assert snap[0] == datetime(2026, 9, 5, 9, 0, tzinfo=timezone.utc)
     assert snap.captured_at_source == 'manifest'
+
+
+def test_load_snapshots_resolves_windows_paths_on_any_os(tmp_path):
+    from market_data_hub.econ_calendar.collect.forexfactory import load_snapshots
+    raw = tmp_path / 'raw'
+    raw.mkdir()
+    (raw / '2026-09-05.json').write_text('[]')
+    (raw / 'manifest.jsonl').write_text(json.dumps(
+        {'captured_at_utc': '2026-09-05T09:00:00Z', 'outcome': 'written',
+         'file': 'C:\ProgramData\InvestmentCommittee\econ_calendar\raw\2026-09-05.json'}) + '\n',
+        encoding='utf-8')
+    [snap] = load_snapshots(raw)
+    assert snap[1].name == '2026-09-05.json' and snap.captured_at_source == 'manifest'
