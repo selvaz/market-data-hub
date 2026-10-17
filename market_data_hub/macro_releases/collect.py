@@ -1,0 +1,74 @@
+"""Explicit-path, manual official collection. No scheduler or production default."""
+from __future__ import annotations
+
+import argparse
+from datetime import date, datetime
+import json
+from pathlib import Path
+import re
+
+from .adapters import persist
+from .bea import BEAAdapter
+from .bls import BLSAdapter, shift_month
+from .catalogue import FAMILIES
+from .eurostat import EurostatAdapter
+from .fred import FREDAdapter
+from .http import FetchError, HttpClient
+from .ons import ONSAdapter
+from .store import open_writer
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--db", required=True, type=Path)
+    parser.add_argument("--families", required=True)
+    parser.add_argument("--since", default=shift_month(date.today().strftime("%Y-%m"), -4))
+    parser.add_argument("--with-redistributors", action="store_true",
+                        help="Also collect unverified FRED/ALFRED evidence")
+    args = parser.parse_args(argv)
+    families = list(dict.fromkeys(args.families.split(",")))
+    if not families or any(f not in FAMILIES for f in families):
+        parser.error("--families must contain comma-separated names: " + ",".join(FAMILIES))
+    if not re.fullmatch(r"\d{4}-\d{2}", args.since):
+        parser.error("--since must be YYYY-MM")
+    try:
+        datetime.strptime(args.since, "%Y-%m")
+    except ValueError:
+        parser.error("--since must be a real month")
+    target = args.db.resolve()
+    if any(p.lower() == "programdata" for p in target.parts):
+        parser.error("This manual development collector refuses ProgramData paths")
+    client = HttpClient()
+    result = {"db": str(target), "families": {}, "failures": {}}
+    adapters = [(BLSAdapter(client), [f for f in families if f in ("us_cpi", "us_payrolls")]),
+                (BEAAdapter(client), [f for f in families if f == "us_gdp"]),
+                (EurostatAdapter(client), [f for f in families if f == "ea_hicp"]),
+                (ONSAdapter(client), [f for f in families if f == "uk_gdp"])]
+    if args.with_redistributors:
+        adapters.append((FREDAdapter(client), [f for f in families if f.startswith("us_")]))
+    for adapter, selected in adapters:
+        if not selected:
+            continue
+        name = type(adapter).__name__
+        try:
+            observations = adapter.fetch(selected, args.since)
+            if not observations:
+                raise FetchError("No observations in requested window")
+            # Fetch/parse completely before acquiring the single writer. Each
+            # Store.put is short; no HTTP ever runs inside the writer lifetime.
+            with open_writer(target) as writer:
+                before = writer.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0]
+                ids = persist(writer, observations)
+                added = writer.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] - before
+            result["families"][name] = {"families": selected, "observations": len(observations),
+                                        "new_vintages": added, "reused_vintages": len(ids) - added,
+                                        "unavailable": [{"indicator": o.indicator_id, "period": o.period,
+                                                         "reason": o.printed} for o in observations if o.value is None]}
+        except (FetchError, ValueError) as exc:
+            result["failures"][name] = str(exc)
+    print(json.dumps(result, indent=2))
+    return 1 if result["failures"] else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,6 @@
+{
+  "url": "https://www.bls.gov/news.release/archives/empsit_09042026.htm",
+  "retrieved_at": "2026-10-17T17:43:44.619106+00:00",
+  "sha256": "425b8052caa8812085a0efcf4ab398f0f50bee17078ef4f83092798f346eda9c",
+  "acquisition": "web.run issuer page response; JSON-encoded tool text, not raw HTTP or BLS v2"
+}

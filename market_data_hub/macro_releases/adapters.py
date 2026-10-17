@@ -1,0 +1,124 @@
+"""Shared adapter interface and short writes into the M4 store."""
+from __future__ import annotations
+
+from dataclasses import dataclass
+import base64
+import json
+from typing import Optional, Protocol
+
+from .catalogue import INDICATORS
+from .http import Document
+from .models import Discrepancy, Reading, ReleaseEvent, SourceSeries, ValueVintage
+
+PARSER_VERSION = "official-adapters:m5-v1"
+
+
+def document_payload(document):
+    try:
+        return {"encoding": "utf-8", "body": document.body.decode("utf-8")}
+    except UnicodeDecodeError:
+        return {"encoding": "base64", "body": base64.b64encode(document.body).decode("ascii")}
+
+
+@dataclass(frozen=True)
+class Observation:
+    indicator_id: str
+    family: str
+    period: str
+    value: Optional[float]
+    printed: str
+    series_key: str
+    source: str
+    document: Document
+    edition: str
+    published_at: str
+    stage: str = "regular"
+    revision: str = "initial"
+    precision: str = "date_only"
+    provider_vintage: Optional[str] = None
+    method: str = "api"
+    published: bool = True
+    inputs: tuple = ()
+    formula: Optional[str] = None
+    event_stage: Optional[str] = None
+
+
+class Adapter(Protocol):
+    def fetch(self, families: list[str], since: str) -> list[Observation]: ...
+
+
+def persist(store, observations):
+    """Mirror differences attach to the exact official edition, never replace it.
+
+    M6 owns general resolution. This only compares these exact mapped measures,
+    in their declared unit/scale and same event/stage. Mirrors remain unverified.
+    """
+    ids = []
+    for obs in observations:
+        indicator = INDICATORS[obs.indicator_id]
+        issuer = indicator.issuer_id
+        mirror = obs.source != issuer
+        store.put(indicator)
+        event_stage = obs.event_stage or obs.stage
+        event_id = ":".join((issuer, obs.family, event_stage, obs.edition))
+        store.put(ReleaseEvent(id=event_id, issuer_id=issuer, family=obs.family,
+                               estimate_stage=event_stage, edition=obs.edition))
+        series_id = ":".join((obs.source, obs.indicator_id, obs.series_key,
+                              "published" if obs.published else "derived"))
+        store.put(SourceSeries(id=series_id, indicator_id=indicator.id,
+                               source_id=obs.source, issuer_id=issuer,
+                               distributor_id=obs.source, source_key=obs.series_key,
+                               is_published=obs.published,
+                               evidence_role="mirror" if mirror else "issuer"))
+        store.put(Reading(
+            indicator_id=indicator.id, release_event_id=event_id, source_id=obs.source,
+            series_key=obs.series_key, period_key=obs.period, reference_period=obs.period,
+            edition=obs.edition, estimate_stage=obs.stage, value=obs.value,
+            published_as=obs.printed, unit=indicator.unit, scale=indicator.scale,
+            issuer_id=issuer, distributor_id=obs.source,
+            evidence_origin_id=f"{obs.source}:{obs.series_key}", published_at=obs.published_at,
+            publication_precision=obs.precision, first_seen_at=obs.document.retrieved_at,
+            retrieved_at=obs.document.retrieved_at, content_hash=obs.document.document_hash,
+            parser_version=PARSER_VERSION, extraction_method=obs.method,
+            verification_status="unverified" if mirror or not obs.published or obs.value is None else "verified", url=obs.document.url,
+            reading_kind="unavailable" if obs.value is None else ("actual" if obs.published else "derived"),
+            raw_payload_json=json.dumps({"provider_vintage": obs.provider_vintage,
+                                         "document": document_payload(obs.document)}),
+        ))
+        if obs.value is None:
+            continue  # Keep the issuer's nonnumeric evidence, never invent a vintage.
+        vintage_id = store.put(ValueVintage(
+            indicator_id=indicator.id, reference_period=obs.period, release_event_id=event_id,
+            source_series_id=series_id, value=obs.value, published_as=obs.printed,
+            unit=indicator.unit, scale=indicator.scale, estimate_stage=obs.stage,
+            revision_kind=obs.revision, issuer_published_at=obs.published_at,
+            publication_precision=obs.precision, provider_vintage_id=obs.provider_vintage,
+            first_seen_at=obs.document.retrieved_at, retrieved_at=obs.document.retrieved_at,
+            document_hash=obs.document.document_hash, parser_version=PARSER_VERSION,
+            extraction_method=obs.method, verification_status="unverified" if mirror or not obs.published else "verified",
+            derived_from_json=json.dumps(obs.inputs), formula_version=obs.formula,
+        ))
+        ids.append(vintage_id)
+        # Also reconcile mirrors fetched before the issuer, without mutating them.
+        official = store.conn.execute(
+            "SELECT v.* FROM value_vintages v JOIN source_series s ON s.id=v.source_series_id "
+            "WHERE v.indicator_id=? AND v.reference_period=? AND v.release_event_id=? "
+            "AND v.estimate_stage=? AND v.verification_status='verified' AND s.evidence_role='issuer' "
+            "AND s.is_published=1 ORDER BY v.id DESC LIMIT 1",
+            (indicator.id, obs.period, event_id, obs.stage),
+        ).fetchone()
+        if official is not None:
+            mirrors = store.conn.execute(
+                "SELECT * FROM readings WHERE indicator_id=? AND reference_period=? "
+                "AND release_event_id=? AND estimate_stage=? AND distributor_id != issuer_id",
+                (indicator.id, obs.period, event_id, obs.stage),
+            ).fetchall()
+            for row in mirrors:
+                if row["unit"] == official["unit"] and row["scale"] == official["scale"]:
+                    # Official API rates are printed to 0.1 pp; counts to 1 thousand.
+                    tolerance = 0.05 if indicator.unit == "%" else 0.5
+                    if abs(row["value"] - official["value"]) > tolerance + 1e-10:
+                        store.put(Discrepancy(reading_id=row["id"], selected_vintage_id=official["id"],
+                                              reason="Exact edition differs from issuer published precision",
+                                              recorded_at=obs.document.retrieved_at))
+    return ids

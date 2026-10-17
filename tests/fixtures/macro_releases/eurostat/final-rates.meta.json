@@ -1,0 +1,12 @@
+{
+  "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr",
+  "request": {
+    "lang": "EN",
+    "geo": "EA20",
+    "coicop18": "TOTAL",
+    "sinceTimePeriod": "2026-06"
+  },
+  "retrieved_at": "2026-10-17T17:36:18.453272+00:00",
+  "sha256": "0ea549c17bb8a4696cd5d6185d48c67db649e0564cd1696d7ea1ae27cb113976",
+  "credential_redacted": false
+}

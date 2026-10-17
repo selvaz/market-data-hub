@@ -1,0 +1,5 @@
+# Issuer fixtures are captured evidence: never normalize their line endings or
+# rewrite publisher whitespace. Metadata SHA-256 values cover the exact bytes.
+tests/fixtures/macro_releases/** -text -whitespace
+tests/fixtures/macro_releases/**/*.html -diff
+tests/fixtures/macro_releases/**/*.csv -diff

@@ -1,0 +1,19 @@
+{
+  "url": "https://api.bls.gov/publicAPI/v2/timeseries/data/",
+  "request": {
+    "seriesid": [
+      "CUSR0000SA0",
+      "CUUR0000SA0",
+      "CUSR0000SA0L1E",
+      "CUUR0000SA0L1E",
+      "CES0000000001"
+    ],
+    "startyear": "2025",
+    "endyear": "2026",
+    "calculations": true,
+    "catalog": true
+  },
+  "retrieved_at": "2026-10-17T17:34:11.769825+00:00",
+  "sha256": "1faf752c599dddef9774b6e10878f903d83df3082eaf4119ab894462e6e47062",
+  "credential_redacted": false
+}

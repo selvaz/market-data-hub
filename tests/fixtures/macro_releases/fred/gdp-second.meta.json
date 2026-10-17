@@ -1,0 +1,14 @@
+{
+  "url": "https://api.stlouisfed.org/fred/series/observations",
+  "request": {
+    "series_id": "A191RL1Q225SBEA",
+    "file_type": "json",
+    "observation_start": "2026-04-01",
+    "observation_end": "2026-04-01",
+    "realtime_start": "2026-08-26",
+    "realtime_end": "2026-08-26"
+  },
+  "retrieved_at": "2026-10-17T17:36:23.268111+00:00",
+  "sha256": "2e51908bb87bff90397d0ccec58f89c917491f1f123c9293f13d9616c6f4a031",
+  "credential_redacted": false
+}
