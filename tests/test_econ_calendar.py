@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Economic calendar tests: catalogue, ingestion, consolidation."""
 import copy
+import hashlib
 import json
+import os
 from calendar import monthrange
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
@@ -98,7 +100,19 @@ def raw_archive(monkeypatch, tmp_path):
                             tzinfo=timezone(timedelta(hours=-7)))
 
     monkeypatch.setattr(forexfactory, 'datetime', LocalClock)
+    # Never really wait out the retry backoff; record what was asked for.
+    forexfactory.sleeps = sleeps = []
+    monkeypatch.setattr(forexfactory, '_sleep', sleeps.append, raising=False)
     return runner, forexfactory, tmp_path / 'raw'
+
+
+def _snapshots(raw):
+    return sorted(p.name for p in raw.glob('2*.json'))
+
+
+def _manifest(raw):
+    return [json.loads(line) for line in
+            (raw / 'manifest.jsonl').read_text(encoding='utf-8').splitlines()]
 
 
 def test_raw_archive_first_unchanged_changed_and_unchanged_revision(raw_archive, monkeypatch):
@@ -119,12 +133,12 @@ def test_raw_archive_first_unchanged_changed_and_unchanged_revision(raw_archive,
     assert runner.main() == 0
     assert (raw / '2026-09-05.json').read_bytes() == recorded
     assert runner.main() == 3
-    assert len(list(raw.iterdir())) == 1
+    assert len(_snapshots(raw)) == 1
     assert runner.main() == 0
     assert (raw / '2026-09-05.233012.json').read_bytes() == revised
     assert (raw / '2026-09-05.json').read_bytes() == recorded
     assert runner.main() == 3
-    assert len(list(raw.iterdir())) == 2
+    assert len(_snapshots(raw)) == 2
     assert calls == [ff.URL] * 4
     assert not (raw.parent / 'unused').exists()
 
@@ -142,8 +156,9 @@ def test_raw_archive_fetch_failure_leaves_no_partial_file(raw_archive, monkeypat
 
     monkeypatch.setattr(ff.requests, 'get', fetch)
     assert runner.main() == 1
-    assert len(calls) == 1
-    assert not raw.exists() or not list(raw.iterdir())
+    assert len(calls) == 2  # one retry, never more
+    assert ff.sleeps == [ff.RETRY_BACKOFF_S]
+    assert _snapshots(raw) == []
 
 
 @pytest.mark.parametrize('body', [b'', b'<html>Request denied</html>', b'{"error": "rate limited"}'])
@@ -153,7 +168,7 @@ def test_raw_archive_rejects_a_non_feed_body(raw_archive, monkeypatch, body):
     monkeypatch.setattr(ff.requests, 'get', lambda *a, **k:
                         type('Response', (), {'status_code': 200, 'content': body})())
     assert runner.main() == 1
-    assert not raw.exists() or not list(raw.iterdir())
+    assert _snapshots(raw) == []
 
 
 def test_raw_archive_rename_failure_cleans_temp(raw_archive, monkeypatch):
@@ -166,7 +181,160 @@ def test_raw_archive_rename_failure_cleans_temp(raw_archive, monkeypatch):
 
     monkeypatch.setattr(Path, 'rename', fail_rename)
     assert runner.main() == 1
-    assert not list(raw.iterdir())
+    assert [p.name for p in raw.iterdir()] == ['manifest.jsonl']  # no temp file left
+    assert _manifest(raw)[0]['outcome'] == 'failed'
+
+
+def _response(status=200, content=b'[]\n'):
+    return type('Response', (), {'status_code': status, 'content': content})()
+
+
+def test_manifest_lines_for_written_unchanged_and_failed(raw_archive, monkeypatch):
+    runner, ff, raw = raw_archive
+    recorded = (Path(__file__).parent / 'fixtures' /
+                'ff_calendar_thisweek_2026-09-05.json').read_bytes()
+    replies = iter([_response(200, recorded), _response(200, recorded),
+                    _response(404, b'gone')])
+    monkeypatch.setattr(ff.requests, 'get', lambda *a, **k: next(replies))
+    assert [runner.main() for _ in range(3)] == [0, 3, 1]
+    written, unchanged, failed = _manifest(raw)
+    sha = hashlib.sha256(recorded).hexdigest()
+    days = sorted(e['date'][:10] for e in json.loads(recorded))
+    # 23:30:12 at UTC-7 is 06:30:12Z the next day; local_date stays the local one.
+    assert written == {
+        'captured_at_utc': '2026-09-06T06:30:12Z', 'local_date': '2026-09-05',
+        'outcome': 'written', 'file': str(raw / '2026-09-05.json'),
+        'sha256': sha, 'bytes': len(recorded), 'http_status': 200, 'error': None,
+        'feed_week_start': days[0], 'feed_week_end': days[-1],
+    }
+    assert unchanged['outcome'] == 'unchanged'
+    assert unchanged['file'] == str(raw / '2026-09-05.json')
+    assert unchanged['sha256'] == sha
+    assert failed['outcome'] == 'failed'
+    assert failed['file'] is None
+    assert failed['http_status'] == 404
+    assert 'HTTP 404' in failed['error']
+    assert len(failed['error']) <= 200
+    assert _snapshots(raw) == ['2026-09-05.json']
+    assert len((raw / 'manifest.jsonl').read_text().splitlines()) == 3
+
+
+def test_429_retries_once_after_backoff_then_succeeds(raw_archive, monkeypatch):
+    runner, ff, raw = raw_archive
+    replies = iter([_response(429, b'slow down'), _response(200)])
+    calls = []
+    monkeypatch.setattr(ff.requests, 'get', lambda *a, **k: calls.append(1) or next(replies))
+    assert runner.main() == 0
+    assert len(calls) == 2
+    assert ff.sleeps == [ff.RETRY_BACKOFF_S] and ff.RETRY_BACKOFF_S >= 60
+    (line,) = _manifest(raw)
+    assert line['outcome'] == 'written' and line['http_status'] == 200
+
+
+@pytest.mark.parametrize('first', ['timeout', 'connection', 500, 503, 429])
+def test_retry_happens_once_and_only_once(raw_archive, monkeypatch, first):
+    runner, ff, raw = raw_archive
+    calls = []
+
+    def fetch(*args, **kwargs):
+        calls.append(1)
+        if first == 'timeout':
+            raise ff.requests.Timeout('read timed out')
+        if first == 'connection':
+            raise ff.requests.ConnectionError('refused https://nfs.faireconomy.media/x?k=secret')
+        return _response(first, b'nope')
+
+    monkeypatch.setattr(ff.requests, 'get', fetch)
+    assert runner.main() == 1  # both attempts fail: non-zero for the watchdog
+    assert len(calls) == 2  # never a third call
+    assert len(ff.sleeps) == 1
+    (line,) = _manifest(raw)  # one line per run, not per HTTP call
+    assert line['outcome'] == 'failed'
+    assert 'secret' not in line['error'] and 'faireconomy' not in line['error']
+    assert line['http_status'] == (first if isinstance(first, int) else None)
+
+
+def test_non_retryable_status_is_not_retried(raw_archive, monkeypatch):
+    runner, ff, raw = raw_archive
+    calls = []
+    monkeypatch.setattr(ff.requests, 'get', lambda *a, **k: calls.append(1) or _response(403))
+    assert runner.main() == 1
+    assert len(calls) == 1 and ff.sleeps == []
+    assert _manifest(raw)[0]['http_status'] == 403
+
+
+@pytest.mark.parametrize('body', [b'<html>blocked</html>', b'', b'{"a": 1}'])
+def test_unparsable_body_no_retry_and_failed_line(raw_archive, monkeypatch, body):
+    runner, ff, raw = raw_archive
+    calls = []
+    monkeypatch.setattr(ff.requests, 'get',
+                        lambda *a, **k: calls.append(1) or _response(200, body))
+    assert runner.main() == 1
+    assert len(calls) == 1 and ff.sleeps == []
+    (line,) = _manifest(raw)
+    assert line['outcome'] == 'failed' and line['file'] is None
+    assert line['http_status'] == 200
+    assert 'not a JSON list' in line['error']
+    assert line['bytes'] == len(body)
+    assert line['feed_week_start'] is None
+    assert _snapshots(raw) == []
+
+
+def test_at_most_two_http_calls_per_run(raw_archive, monkeypatch):
+    runner, ff, raw = raw_archive
+    calls = []
+    monkeypatch.setattr(ff.requests, 'get', lambda *a, **k: calls.append(1) or _response(429))
+    for _ in range(3):
+        assert runner.main() == 1
+    assert len(calls) == 6  # 2 per run
+    assert len(_manifest(raw)) == 3
+
+
+def test_load_snapshots_orders_by_time_and_falls_back_to_mtime(tmp_path):
+    from market_data_hub.econ_calendar.collect.forexfactory import load_snapshots
+    raw = tmp_path / 'raw'
+    raw.mkdir()
+    for name in ('2026-09-05.json', '2026-09-05.233012.json', '2026-09-04.json',
+                 '2026-09-03.json'):
+        (raw / name).write_text('[]')
+    # Manifest order differs from time order; only 'written' lines count; a torn
+    # line is skipped; 09-03 and 09-04 are not in the manifest -> mtime.
+    lines = [
+        {'captured_at_utc': '2026-09-05T11:00:00Z', 'outcome': 'written',
+         'file': str(raw / '2026-09-05.233012.json')},
+        {'captured_at_utc': '2026-09-05T10:00:00Z', 'outcome': 'unchanged',
+         'file': str(raw / '2026-09-05.json')},
+        {'captured_at_utc': '2026-09-05T09:00:00Z', 'outcome': 'written',
+         'file': str(raw / '2026-09-05.json')},
+        {'captured_at_utc': '2026-09-05T12:00:00Z', 'outcome': 'failed', 'file': None},
+    ]
+    (raw / 'manifest.jsonl').write_text(
+        '\n'.join(json.dumps(x) for x in lines) + '\nnot json{\n', encoding='utf-8')
+    for name, when in (('2026-09-04.json', '2026-09-04T08:00:00'),
+                       ('2026-09-03.json', '2026-09-03T08:00:00')):
+        stamp = datetime.fromisoformat(when).replace(tzinfo=timezone.utc).timestamp()
+        os.utime(raw / name, (stamp, stamp))
+
+    snaps = load_snapshots(raw)
+    assert [(t.isoformat(), p.name) for t, p in snaps] == [
+        ('2026-09-03T08:00:00+00:00', '2026-09-03.json'),
+        ('2026-09-04T08:00:00+00:00', '2026-09-04.json'),
+        ('2026-09-05T09:00:00+00:00', '2026-09-05.json'),
+        ('2026-09-05T11:00:00+00:00', '2026-09-05.233012.json'),
+    ]
+    assert [s.captured_at_source for s in snaps] == ['mtime', 'mtime', 'manifest', 'manifest']
+    # The consumer's rule: last snapshot captured strictly before the release.
+    release = datetime(2026, 9, 5, 11, 0, 0, tzinfo=timezone.utc)
+    assert [p.name for t, p in snaps if t < release][-1] == '2026-09-05.json'
+
+
+def test_load_snapshots_without_manifest_or_directory(tmp_path):
+    from market_data_hub.econ_calendar.collect.forexfactory import load_snapshots
+    assert load_snapshots(tmp_path / 'missing') == []
+    (tmp_path / 'notes.json').write_text('[]')
+    (tmp_path / '2026-09-05.json').write_text('[]')
+    (only,) = load_snapshots(tmp_path)
+    assert only[1].name == '2026-09-05.json' and only.captured_at_source == 'mtime'
 
 
 # ------------------------------------------------------------------ schema --

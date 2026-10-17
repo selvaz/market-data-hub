@@ -9,8 +9,8 @@ Run from this checkout with the approved Python interpreter:
 The default destination is `C:\ProgramData\InvestmentCommittee\econ_calendar\raw`.
 Override it with `--raw-dir <directory>`. No `--db` is needed. Archive mode
 returns before the ingestion path, opens no DB, takes no `market_data` lock,
-and performs exactly one GET of `ff_calendar_thisweek.json` (30-second timeout,
-no retries). It preserves the response body bytes without parsing or formatting.
+and performs one GET of `ff_calendar_thisweek.json` (30-second timeout) and at
+most one retry (see Retry). It preserves the response body bytes without parsing or formatting.
 
 The local fetch date names the first snapshot `YYYY-MM-DD.json`. A changed
 response is written as `YYYY-MM-DD.HHMMSS.json`; subsequent runs compare with
@@ -22,9 +22,54 @@ a concurrent writer.
 
 Writes use a temporary file in the destination directory, flush and fsync it,
 close it, then rename it. A failed write or rename removes the temporary file.
-A fetch failure creates no archive file. Exit codes are `0` written, `3`
-unchanged, and `1` fetch or filesystem failure; callers must preserve them.
+A fetch failure creates no snapshot file.
+
+## Manifest
+
+Every attempt appends one JSON line to `manifest.jsonl` next to the snapshots,
+whether it wrote, found nothing new, or failed. The line is written (append
+mode, one write, flush, fsync) before the process exits, including on failure;
+earlier lines are never rewritten. One line per run, not per HTTP call.
+
+| field | meaning |
+|---|---|
+| `captured_at_utc` | ISO 8601 UTC with `Z`, taken when the final response arrived (when the last attempt ended, for a failure) |
+| `local_date` | local date of that moment (the snapshot's file-name date) |
+| `outcome` | `written`, `unchanged` or `failed` |
+| `file` | snapshot path; for `unchanged`, the identical existing snapshot; `null` for `failed` |
+| `sha256`, `bytes` | of the response body, when a body was received |
+| `http_status` | status of the final attempt; `null` for a connection error or timeout |
+| `error` | `null`, or a short single-line reason (max 200 characters, URLs removed) |
+| `feed_week_start`, `feed_week_end` | min and max event date in the feed (as written in its `date` field), when it parsed |
+
+A manifest write failure after a successful snapshot is itself a failure
+(exit 1); the snapshot stays and `load_snapshots` falls back to its mtime.
+
+## Retry
+
+A connection error, timeout, HTTP 429 or 5xx is retried once after a 60-second
+backoff (`RETRY_BACKOFF_S`). Any other status (403, 404, ...) and a body that
+is not a JSON list are not retried. A run therefore makes at most 2 HTTP calls.
+
+## Exit codes
+
+`0` written, `3` unchanged, `1` any failure (fetch, non-feed body, filesystem).
+Callers, including the job_health watchdog, must preserve them.
+
+## Reading the snapshots back
+
+`load_snapshots(directory)` returns `[(captured_at_utc, path)]`, oldest first,
+with timezone-aware UTC datetimes. Times come from the manifest's `written`
+lines; snapshot files the manifest does not mention (history before the
+manifest existed) fall back to their file mtime, and each entry's
+`captured_at_source` attribute says `"manifest"` or `"mtime"`. To pick the
+snapshot for a release, take the last entry with `captured_at_utc` strictly
+before the release time. mtime times are approximate (a copy or restore changes
+them); do not treat them as proof of capture before release. It reads files
+only and ingests nothing.
 
 Nightly scheduling is an operator responsibility. This change does not
 register or modify any scheduled task. Configure the operator's task to invoke
 the command above directly with this checkout as its working directory.
+
+The scheduled time will move to 14:30 Pacific, so the snapshot precedes the next day's Asia, Europe and US releases; the operator makes that change, not this repo.
