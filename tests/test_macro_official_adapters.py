@@ -76,7 +76,15 @@ def test_every_slice_golden_case(case_id, observations, tmp_path):
     matches = [o for o in observations if o.indicator_id == indicator_id and
                o.period == case["reference_period"] and o.edition == edition]
     assert matches, case_id
-    assert all(o.value * INDICATORS[indicator_id].scale == pytest.approx(case["value"]) for o in matches)
+    indicator = INDICATORS[indicator_id]
+    assert indicator.geography == case["country"]
+    assert indicator.unit == case["unit"]
+    assert indicator.transform == {"mm_level_change": "change"}.get(case["change_basis"], case["change_basis"])
+    if case["seasonal_adjustment"] != "n/a":
+        assert indicator.seasonal_adjustment == case["seasonal_adjustment"]
+    if case_id.startswith(("us_cpi_", "us_nfp_")):
+        assert all(o.series_key.split(":")[0] == case["series_id"] for o in matches)
+    assert all(o.value * indicator.scale == pytest.approx(case["value"]) for o in matches)
     assert all(o.stage == case["vintage"] for o in matches if o.family in ("ea_hicp", "us_gdp"))
     with open_writer(tmp_path / "macro.sqlite") as store:
         persist(store, matches)
@@ -100,6 +108,10 @@ def test_revision_chains_and_unchanged_editions(observations, tmp_path):
         gdp = store.conn.execute("SELECT estimate_stage,value FROM value_vintages "
                                  "WHERE indicator_id='us_gdp_qq_saar' ORDER BY issuer_published_at").fetchall()
         assert [tuple(r) for r in gdp] == [("advance", 1.5), ("second", 1.5), ("third", 2.2)]
+        monthly_hicp = store.conn.execute("SELECT estimate_stage,value FROM value_vintages "
+                                          "WHERE indicator_id='ea_hicp_mm' AND reference_period='2026-09' "
+                                          "ORDER BY issuer_published_at").fetchall()
+        assert [tuple(r) for r in monthly_hicp] == [("flash", .6), ("final", .6)]
         before = store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0]
         persist(store, observations)
         assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == before
