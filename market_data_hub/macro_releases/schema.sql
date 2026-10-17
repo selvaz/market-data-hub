@@ -107,6 +107,7 @@ CREATE TABLE readings (
 );
 CREATE TABLE resolution_versions (
     id INTEGER PRIMARY KEY,
+    idempotency_key TEXT NOT NULL UNIQUE,
     indicator_id TEXT NOT NULL REFERENCES indicators(id),
     reference_period TEXT NOT NULL,
     estimate_stage TEXT NOT NULL CHECK (length(estimate_stage) > 0),
@@ -144,6 +145,7 @@ CREATE TABLE consensus_readings (
 );
 CREATE TABLE claims (
     id INTEGER PRIMARY KEY,
+    idempotency_key TEXT NOT NULL UNIQUE,
     release_event_id TEXT NOT NULL REFERENCES release_events(id),
     claim_type TEXT NOT NULL CHECK (claim_type IN ('release_fact','attributed_interpretation','market_response')),
     text TEXT NOT NULL,
@@ -154,6 +156,7 @@ CREATE TABLE claims (
 );
 CREATE TABLE claim_evidence (
     id INTEGER PRIMARY KEY,
+    idempotency_key TEXT NOT NULL UNIQUE,
     claim_id INTEGER NOT NULL REFERENCES claims(id),
     verbatim_passage TEXT NOT NULL,
     content_hash TEXT NOT NULL,

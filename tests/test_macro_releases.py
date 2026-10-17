@@ -14,11 +14,14 @@ from market_data_hub.macro_releases import open_reader, open_writer
 from market_data_hub.macro_releases.legacy import import_calendar
 from market_data_hub.macro_releases.migrations import migrate
 from market_data_hub.macro_releases.models import (
+    Claim,
+    ClaimEvidence,
     ConsensusReading,
     Discrepancy,
     Indicator,
     Reading,
     ReleaseEvent,
+    ResolutionVersion,
     ScheduleVersion,
     SourceSeries,
     ValueVintage,
@@ -473,6 +476,17 @@ def test_contracts_reject_fake_period_and_naive_time():
         ("0.1% drop", -0.1),
         ("106,2 Mrd €", 106200000000),
         ("1710K", 1710000),
+        ("-$101.5", -101.5),
+        ("-$101.5B", -101500000000),
+        ("$\u200b-101.461\u00a0B", -101461000000),
+        ("-€ 106,2 Mrd", -106200000000),
+        ("-USD 2.5 B", -2500000000),
+        ("2.5 B", 2500000000),
+        ("1.610 T", 1610000000000),
+        ("¥\u200b1.610\u00a0T", 1610000000000),
+        ("1.2tn", 1200000000000),
+        ("1.2 trillion", 1200000000000),
+        ("($2.5B)", -2500000000),
         ("−0,2%", -0.2),
         ("1\u202f234,5", 1234.5),
     ],
@@ -933,3 +947,108 @@ def test_unlinked_sightings_and_late_observations_stay_in_worklist(
         ).fetchone()[0]
         == "complete"
     )
+
+
+def test_history_and_commentary_contracts_have_stable_retry_keys(store):
+    add_measure(store)
+    release = event(store)
+    selected = vintage(store, release)
+    resolution = ResolutionVersion(
+        idempotency_key="resolution-attempt-1",
+        indicator_id="payroll",
+        reference_period="2026-09",
+        estimate_stage="regular",
+        selected_vintage_id=selected,
+        rejected_alternatives_json="[]",
+        rule_version="fixture-v1",
+        reason="verified issuer",
+        decided_at="2026-10-03T02:00:00Z",
+    )
+    assert store.put(resolution) == store.put(resolution)
+    claim = Claim(
+        idempotency_key="claim-attempt-1",
+        release_event_id=release,
+        claim_type="release_fact",
+        text="Payrolls increased.",
+        news_cutoff="2026-10-03T12:30:00Z",
+        created_at="2026-10-03T12:31:00Z",
+    )
+    claim_id = store.put(claim)
+    assert store.put(claim) == claim_id
+    evidence = ClaimEvidence(
+        idempotency_key="evidence-attempt-1",
+        claim_id=claim_id,
+        verbatim_passage="Payrolls increased.",
+        content_hash="fixture-document",
+        url="https://issuer.example/employment",
+        evidence_origin_id="issuer:employment",
+        retrieved_at="2026-10-03T01:00:00Z",
+        news_cutoff="2026-10-03T12:30:00Z",
+    )
+    assert store.put(evidence) == store.put(evidence)
+    for record, field in (
+        (resolution, "reason"),
+        (claim, "text"),
+        (evidence, "verbatim_passage"),
+    ):
+        with pytest.raises(ValueError, match="conflicting"):
+            store.put(
+                record.model_copy(update={field: "a changed payload needs a new key"})
+            )
+    for table in ("resolution_versions", "claims", "claim_evidence"):
+        assert store.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] == 1
+
+
+def test_importer_preserves_currency_signs_and_magnitude_suffixes(
+    store, legacy_calendar
+):
+    prints = {
+        "-$101.5B": -101500000000,
+        "2.5 B": 2500000000,
+        "¥\u200b1.610\u00a0T": 1610000000000,
+    }
+    with sqlite3.connect(legacy_calendar) as conn:
+        insert(
+            conn,
+            "indicators",
+            dict(
+                code="trade",
+                jurisdiction="USA",
+                name="Trade balance",
+                unit_code="currency",
+                transform="level",
+                scale=1,
+                frequency="M",
+                created_at="2026-01-01T00:00:00Z",
+                created_by_run="seed",
+            ),
+        )
+        for index, printed in enumerate(prints, 40):
+            insert(
+                conn,
+                "sightings",
+                dict(
+                    id=index,
+                    run_id="cal_a",
+                    searcher="crawler",
+                    region="americas",
+                    jurisdiction="USA",
+                    raw_name="Trade balance",
+                    raw_period="2026-09",
+                    release_at_utc="2026-10-17T12:30:00Z",
+                    release_date="2026-10-17",
+                    raw_actual=printed,
+                    sources_json="[]",
+                    indicator_code="trade",
+                    resolution="alias",
+                ),
+            )
+    import_calendar(store, legacy_calendar, captured_at="2026-10-18T01:00:00Z")
+    rows = list(
+        store.conn.execute("SELECT * FROM readings WHERE series_key='trade:actual'")
+    )
+    assert len(rows) == 3
+    for row in rows:
+        assert row["value"] == pytest.approx(prints[row["published_as"]])
+        assert row["scale"] == 1
+        assert row["verification_status"] == "unverified"

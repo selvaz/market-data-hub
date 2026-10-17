@@ -47,6 +47,12 @@ Append-only triggers protect publication events, schedules, vintages, readings,
 resolutions, consensus, claims/evidence, and discrepancies from update/delete.
 Catalogue and worklist state are mutable.
 
+`ResolutionVersion`, `Claim`, and `ClaimEvidence` require a caller-supplied
+`idempotency_key`, unique within their table. A retry reuses its original row id;
+reusing a key with a changed payload fails. A new decision or commentary version
+needs a new key. These are storage contracts; M4 does not produce resolutions or
+commentary automatically.
+
 ## Identities and contracts
 
 Pydantic v2 contracts reject unknown fields, non-finite numeric values and naive
@@ -132,7 +138,8 @@ newly learned release times; M4 does not claim an unverified historical forecast
 was captured pre-release.
 
 The numeric helper preserves percentage-point values, signs, decimal commas,
-thousands grouping and explicit magnitude suffixes; the raw print stays stored.
+thousands grouping and explicit magnitude suffixes (including B/bn and T/tn);
+currency symbols before or after a sign do not change its direction, and the raw print stays stored.
 It requires a single numeric cell. Ambiguous commas need an explicit decimal
 separator; it does not infer measures or calculate transformations from levels.
 

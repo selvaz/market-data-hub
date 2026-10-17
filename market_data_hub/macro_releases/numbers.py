@@ -22,6 +22,11 @@ def parse_number(
         .replace("\u00a0", " ")
         .replace("\u202f", " ")
     )
+    text = re.sub(r"[\u200b-\u200d\ufeff]", "", text)
+    # Keep a sign before a currency attached to the numeric token. The input
+    # print remains untouched in the caller's published_as/raw evidence.
+    text = re.sub(r"^([+-])\s*([$€£¥]|[A-Z]{3})\s*(?=\d)", r"\2\1", text)
+    text = re.sub(r"([+-])\s+(?=\d)", r"\1", text)
     matches = list(re.finditer(r"[+-]?\d+(?:[.,\s]\d+)*", text))
     if len(matches) != 1:
         raise ValueError(f"expected exactly one number: {text!r}")
@@ -48,14 +53,15 @@ def parse_number(
     multiplier = Decimal(1)
     for pattern, scale in (
         (r"^(k|thousand)\b", "1000"),
-        (r"^(mrd|bn|billion)\b", "1000000000"),
+        (r"^(mrd|b|bn|billion)\b", "1000000000"),
+        (r"^(t|tn|trillion)\b", "1000000000000"),
         (r"^(m|mn|million)\b", "1000000"),
     ):
         if re.search(pattern, suffix):
             multiplier = Decimal(scale)
             break
-    if re.search(r"\b(drop|decline|decrease|fall)\b", suffix) or re.fullmatch(
-        r"\([\d.,\s]+\)", text
+    if re.search(r"\b(drop|decline|decrease|fall)\b", suffix) or (
+        text.startswith("(") and text.endswith(")")
     ):
         value = -abs(value)
     return float(value * multiplier / Decimal(str(target_scale)))

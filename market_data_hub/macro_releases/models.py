@@ -156,6 +156,7 @@ class Reading(Contract):
 
 
 class ResolutionVersion(Contract):
+    idempotency_key: str = Field(min_length=1)
     indicator_id: str
     reference_period: str
     estimate_stage: str
@@ -198,6 +199,7 @@ class ConsensusReading(Contract):
 
 
 class Claim(Contract):
+    idempotency_key: str = Field(min_length=1)
     release_event_id: str
     claim_type: Literal["release_fact", "attributed_interpretation", "market_response"]
     text: str
@@ -208,6 +210,7 @@ class Claim(Contract):
 
 
 class ClaimEvidence(Contract):
+    idempotency_key: str = Field(min_length=1)
     claim_id: int
     verbatim_passage: str
     content_hash: str
