@@ -247,7 +247,7 @@ def test_idempotency_unchanged_edition_and_changed_value(store):
     assert store.latest_official()[0]["release_event_id"] == next_edition
     assert (
         store.latest_official()[0]["selection_rule_version"]
-        == "placeholder:m4-verified-issuer-v1"
+        == "placeholder:m5-verified-issuer-v2"
     )
     with pytest.raises(sqlite3.IntegrityError, match="append-only"):
         store.conn.execute("UPDATE value_vintages SET value=0")
@@ -1295,7 +1295,7 @@ def test_date_only_cutoff_does_not_claim_same_day_snapshot_is_post_release(
 
 
 def test_v1_migration_preserves_evidence_and_backlog_and_fixes_date_only_flags(
-    tmp_path,
+    tmp_path, monkeypatch,
 ):
     path = tmp_path / "v1.sqlite"
     conn = sqlite3.connect(path, isolation_level=None)
@@ -1304,7 +1304,16 @@ def test_v1_migration_preserves_evidence_and_backlog_and_fixes_date_only_flags(
     with Store(conn, writable=True) as old:
         add_measure(old)
         release = event(old)
-        reading_id = reading(old)
+        # Seed using the v1 contract, before the additive v3 provenance fields.
+        serializer = Reading.model_dump
+        def legacy_dump(record, *args, **kwargs):
+            data = serializer(record, *args, **kwargs)
+            for key in ("composition_id", "issuer_local_time", "issuer_timezone"):
+                data.pop(key)
+            return data
+        with monkeypatch.context() as patch:
+            patch.setattr(Reading, "model_dump", legacy_dump)
+            reading_id = reading(old)
         consensus = ConsensusReading(
             provider="FF forecast",
             indicator_id="payroll",
@@ -1329,7 +1338,7 @@ def test_v1_migration_preserves_evidence_and_backlog_and_fixes_date_only_flags(
             "INSERT INTO import_worklist VALUES ('legacy','sighting:1','payroll','unlinked_sighting','pending','2026-10-17','2026-10-17',NULL)"
         )
     with open_writer(path) as current:
-        assert current.conn.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert current.conn.execute("PRAGMA user_version").fetchone()[0] == 3
         assert (
             current.conn.execute(
                 "SELECT COUNT(*) FROM readings WHERE id=?", (reading_id,)

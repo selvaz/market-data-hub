@@ -1,0 +1,11 @@
+{
+  "note": "Supplement to the unchanged EA20 golden cases. Evolving geo=EA uses EA21 from January 2026. Current final snapshot is the 16 October edition, not a reconstructed June final vintage.",
+  "cases": [
+    {"period": "2026-06", "stage": "flash", "basis": "yy", "value": 2.8},
+    {"period": "2026-06", "stage": "final", "basis": "yy", "value": 2.8},
+    {"period": "2026-09", "stage": "flash", "basis": "yy", "value": 3.8},
+    {"period": "2026-09", "stage": "final", "basis": "yy", "value": 3.8},
+    {"period": "2026-09", "stage": "flash", "basis": "mm", "value": 0.6},
+    {"period": "2026-09", "stage": "final", "basis": "mm", "value": 0.6}
+  ]
+}

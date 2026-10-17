@@ -7,6 +7,7 @@ import re
 from .adapters import Observation
 from .catalogue import BLS_SERIES
 from .http import FetchError, api_key, json_payload
+from .publication_times import new_york_release
 
 ENDPOINT = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 # The API has no publication timestamp/edition field. Reviewed release metadata,
@@ -24,10 +25,12 @@ def shift_month(period, offset):
     return f"{y:04d}-{m + 1:02d}"
 
 
-def revision_start(family, newest, since):
+def revision_start(family, newest, since, edition=None):
     # Annual SA review covers five complete calendar years, plus the current
     # year. A rolling 60-month cutoff would miss the first months of year five.
-    window = shift_month(newest, -2) if family == "us_payrolls" else f"{int(newest[:4]) - 5:04d}-01"
+    benchmark = family == "us_payrolls" and edition is not None and edition[5:7] == "02"
+    window = (shift_month(newest, -2) if family == "us_payrolls" and not benchmark
+              else f"{int(newest[:4]) - 5:04d}-01")
     return min(since, window)
 
 
@@ -70,7 +73,7 @@ class BLSAdapter:
             edition = EDITIONS.get((family, newest))
             if edition is None:
                 raise FetchError(f"BLS publication metadata needs review: {family} {newest}")
-            cutoff = revision_start(family, newest, since)
+            cutoff = revision_start(family, newest, since, edition)
             by_period = {r["year"] + "-" + r["period"][1:]: r for r in rows}
             for row in rows:
                 period = row["year"] + "-" + row["period"][1:]
@@ -84,8 +87,9 @@ class BLSAdapter:
                 observations.append(Observation(
                     indicator, family, period, float(value) if value not in (None, "", "-") else None,
                     value or f"not published: {calc}/{lag}", key + ":" + calc + ":" + lag,
-                    "BLS", document, edition, edition + "T12:30:00Z", precision="exact",
-                    revision="initial" if period == newest else "routine",
+                    "BLS", document, edition, **new_york_release(edition), precision="exact",
+                    revision=("initial" if period == newest else
+                              "benchmark" if family == "us_payrolls" and edition[5:7] == "02" else "routine"),
                 ))
         return observations
 
@@ -114,8 +118,8 @@ class BLSAdapter:
             raise FetchError("BLS archive headline did not match certified format")
         out = [Observation("us_payrolls_change", "us_payrolls", headline_period,
                            float(first[1].replace(",", "")) / 1000, first[1],
-                           "CES0000000001:archive-change", "BLS", document,
-                           edition, edition + "T12:30:00Z", method="html", precision="exact")]
+                           "CES0000000001:archive-text-change", "BLS", document,
+                           edition, **new_york_release(edition), method="archive_text", precision="exact")]
         months = {"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6,
                   "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12}
         for match in re.finditer(r"(?:change in total nonfarm payroll employment for|change for) "
@@ -126,7 +130,7 @@ class BLSAdapter:
             year = int(headline_period[:4]) - (month > int(headline_period[5:]))
             out.append(Observation("us_payrolls_change", "us_payrolls", f"{year:04d}-{month:02d}",
                                    float(match[2].replace(",", "")) / 1000, match[2],
-                                   "CES0000000001:archive-change", "BLS", document,
-                                   edition, edition + "T12:30:00Z", revision="routine",
-                                   method="html", precision="exact"))
+                                   "CES0000000001:archive-text-change", "BLS", document,
+                                   edition, **new_york_release(edition), revision="routine",
+                                   method="archive_text", precision="exact"))
         return out

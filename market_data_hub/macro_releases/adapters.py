@@ -10,7 +10,7 @@ from .catalogue import INDICATORS
 from .http import Document
 from .models import Discrepancy, Reading, ReleaseEvent, SourceSeries, ValueVintage
 
-PARSER_VERSION = "official-adapters:m5-v1"
+PARSER_VERSION = "official-adapters:m5-v2"
 
 
 def document_payload(document):
@@ -41,6 +41,9 @@ class Observation:
     inputs: tuple = ()
     formula: Optional[str] = None
     event_stage: Optional[str] = None
+    composition_id: Optional[str] = None
+    issuer_local_time: Optional[str] = None
+    issuer_timezone: Optional[str] = None
 
 
 class Adapter(Protocol):
@@ -58,6 +61,13 @@ def persist(store, observations):
         indicator = INDICATORS[obs.indicator_id]
         issuer = indicator.issuer_id
         mirror = obs.source != issuer
+        verified = not (mirror or not obs.published or obs.method == "archive_text")
+        revision = obs.revision
+        if revision == "routine" and not store.conn.execute(
+            "SELECT 1 FROM value_vintages WHERE indicator_id=? AND reference_period=? LIMIT 1",
+            (indicator.id, obs.period),
+        ).fetchone():
+            revision = "backfill"
         store.put(indicator)
         event_stage = obs.event_stage or obs.stage
         event_id = ":".join((issuer, obs.family, event_stage, obs.edition))
@@ -80,10 +90,12 @@ def persist(store, observations):
             publication_precision=obs.precision, first_seen_at=obs.document.retrieved_at,
             retrieved_at=obs.document.retrieved_at, content_hash=obs.document.document_hash,
             parser_version=PARSER_VERSION, extraction_method=obs.method,
-            verification_status="unverified" if mirror or not obs.published or obs.value is None else "verified", url=obs.document.url,
+            verification_status="verified" if verified and obs.value is not None else "unverified", url=obs.document.url,
             reading_kind="unavailable" if obs.value is None else ("actual" if obs.published else "derived"),
             raw_payload_json=json.dumps({"provider_vintage": obs.provider_vintage,
                                          "document": document_payload(obs.document)}),
+            composition_id=obs.composition_id, issuer_local_time=obs.issuer_local_time,
+            issuer_timezone=obs.issuer_timezone,
         ))
         if obs.value is None:
             continue  # Keep the issuer's nonnumeric evidence, never invent a vintage.
@@ -91,12 +103,14 @@ def persist(store, observations):
             indicator_id=indicator.id, reference_period=obs.period, release_event_id=event_id,
             source_series_id=series_id, value=obs.value, published_as=obs.printed,
             unit=indicator.unit, scale=indicator.scale, estimate_stage=obs.stage,
-            revision_kind=obs.revision, issuer_published_at=obs.published_at,
+            revision_kind=revision, issuer_published_at=obs.published_at,
             publication_precision=obs.precision, provider_vintage_id=obs.provider_vintage,
             first_seen_at=obs.document.retrieved_at, retrieved_at=obs.document.retrieved_at,
             document_hash=obs.document.document_hash, parser_version=PARSER_VERSION,
-            extraction_method=obs.method, verification_status="unverified" if mirror or not obs.published else "verified",
+            extraction_method=obs.method, verification_status="verified" if verified else "unverified",
             derived_from_json=json.dumps(obs.inputs), formula_version=obs.formula,
+            composition_id=obs.composition_id, issuer_local_time=obs.issuer_local_time,
+            issuer_timezone=obs.issuer_timezone,
         ))
         ids.append(vintage_id)
         # Also reconcile mirrors fetched before the issuer, without mutating them.
@@ -114,7 +128,7 @@ def persist(store, observations):
                 (indicator.id, obs.period, event_id, obs.stage),
             ).fetchall()
             for row in mirrors:
-                if row["unit"] == official["unit"] and row["scale"] == official["scale"]:
+                if row["value"] is not None and row["unit"] == official["unit"] and row["scale"] == official["scale"]:
                     # Official API rates are printed to 0.1 pp; counts to 1 thousand.
                     tolerance = 0.05 if indicator.unit == "%" else 0.5
                     if abs(row["value"] - official["value"]) > tolerance + 1e-10:

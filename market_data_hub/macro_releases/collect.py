@@ -39,7 +39,7 @@ def main(argv=None):
     if any(p.lower() == "programdata" for p in target.parts):
         parser.error("This manual development collector refuses ProgramData paths")
     client = HttpClient()
-    result = {"db": str(target), "families": {}, "failures": {}}
+    result = {"db": str(target), "families": {}, "failures": {}, "family_failures": {}}
     adapters = [(BLSAdapter(client), [f for f in families if f in ("us_cpi", "us_payrolls")]),
                 (BEAAdapter(client), [f for f in families if f == "us_gdp"]),
                 (EurostatAdapter(client), [f for f in families if f == "ea_hicp"]),
@@ -54,18 +54,22 @@ def main(argv=None):
             observations = adapter.fetch(selected, args.since)
             if not observations:
                 raise FetchError("No observations in requested window")
-            # Fetch/parse completely before acquiring the single writer. Each
-            # Store.put is short; no HTTP ever runs inside the writer lifetime.
+            # Fetch/parse completely before the short, atomic provider batch.
             with open_writer(target) as writer:
                 before = writer.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0]
-                ids = persist(writer, observations)
+                with writer.batch():
+                    ids = persist(writer, observations)
                 added = writer.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] - before
             result["families"][name] = {"families": selected, "observations": len(observations),
                                         "new_vintages": added, "reused_vintages": len(ids) - added,
                                         "unavailable": [{"indicator": o.indicator_id, "period": o.period,
                                                          "reason": o.printed} for o in observations if o.value is None]}
-        except (FetchError, ValueError) as exc:
-            result["failures"][name] = str(exc)
+        except Exception as exc:
+            # Unexpected exceptions can contain request URLs/credentials. Report
+            # their type; controlled adapter errors already carry safe messages.
+            result["failures"][name] = str(exc) if isinstance(exc, (FetchError, ValueError)) else type(exc).__name__
+            for family in selected:
+                result["family_failures"].setdefault(family, []).append(name)
     print(json.dumps(result, indent=2))
     return 1 if result["failures"] else 0
 

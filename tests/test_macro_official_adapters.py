@@ -1,5 +1,6 @@
 """Certify M5 against real saved responses. Tests must stay offline."""
 from dataclasses import replace
+import base64
 import hashlib
 import json
 from pathlib import Path
@@ -7,6 +8,7 @@ from types import SimpleNamespace
 
 import pytest
 import requests
+import zlib
 
 from market_data_hub.macro_releases import open_writer
 from market_data_hub.macro_releases.adapters import persist
@@ -36,7 +38,12 @@ def no_network(monkeypatch):
 def document(relative):
     path = FIXTURES / relative
     body = path.read_bytes()
-    meta = json.loads(path.with_suffix(".meta.json").read_text(encoding="utf-8"))
+    if relative.endswith(".response.json"):
+        captured = json.loads(body)
+        body = zlib.decompress(base64.b64decode(captured["body_zlib_base64"]))
+        meta = captured["metadata"]
+    else:
+        meta = json.loads(path.with_suffix(".meta.json").read_text(encoding="utf-8"))
     assert hashlib.sha256(body).hexdigest() == meta["sha256"]
     return Document(body, meta["url"], meta["retrieved_at"], meta["sha256"])
 
@@ -49,10 +56,11 @@ def observations():
     for name in ("advance", "second"):
         out += BEAAdapter.parse_archived_release(document(f"bea/{name}-release.pdf"))
     for name in ("flash", "final"):
-        out += EurostatAdapter.parse(document(f"eurostat/{name}-rates.json"), stage=name, since="2026-06")
+        out += EurostatAdapter.parse(document(f"eurostat/{name}-rates.json"), stage=name, since="2026-06", geography="EA20")
     for name in ("july", "august"):
         out += ONSAdapter.parse_bulletin(document(f"ons/{name}-content.html"), "2026-06")
-    out += ONSAdapter.parse_levels(document("ons/gdp69-csv.csv"), document("ons/gdp69.json").json(), "2026-05")
+    out += ONSAdapter.parse_levels(document("ons/gdp69-csv.csv"), document("ons/gdp69.json").json(), "2026-05",
+                                   publication=document("ons/june-content.response.json"))
     return out
 
 
@@ -88,6 +96,12 @@ def test_every_slice_golden_case(case_id, observations, tmp_path):
     assert all(o.stage == case["vintage"] for o in matches if o.family in ("ea_hicp", "us_gdp"))
     with open_writer(tmp_path / "macro.sqlite") as store:
         persist(store, matches)
+        if all(o.method == "archive_text" for o in matches):
+            assert not store.latest_official(indicator_id)
+            row = store.conn.execute("SELECT * FROM readings").fetchone()
+            assert row["extraction_method"] == "archive_text"
+            assert row["verification_status"] == "unverified"
+            return
         rows = store.latest_official(indicator_id)
         assert rows[0]["value"] * rows[0]["scale"] == pytest.approx(case["value"])
         assert rows[0]["extraction_method"] in ("api", "html", "pdf")
@@ -101,9 +115,9 @@ def test_revision_chains_and_unchanged_editions(observations, tmp_path):
         persist(store, observations)
         first = {(r["indicator_id"], r["reference_period"]): r for r in store.first_release()}
         latest = {(r["indicator_id"], r["reference_period"]): r for r in store.latest_official()}
-        assert first["us_payrolls_change", "2026-08"]["value"] == 162
+        assert ("us_payrolls_change", "2026-08") not in first
         assert latest["us_payrolls_change", "2026-08"]["value"] == 133
-        assert first["uk_gdp_mm", "2026-06"]["value"] == .3
+        assert ("uk_gdp_mm", "2026-06") not in first
         assert latest["uk_gdp_mm", "2026-06"]["value"] == .4
         gdp = store.conn.execute("SELECT estimate_stage,value FROM value_vintages "
                                  "WHERE indicator_id='us_gdp_qq_saar' ORDER BY issuer_published_at").fetchall()
@@ -236,10 +250,10 @@ def test_unknown_bls_edition_fails_closed():
 
 
 def test_eurostat_flash_dimension_and_no_estimate_promoted_to_final():
-    doc = document("eurostat/flash-rates.json")
+    doc = document("eurostat/headline-flash-rates.response.json")
     assert "FLS" in doc.json()["dimension"]["release"]["category"]["index"]
     assert {o.stage for o in EurostatAdapter.parse(doc, stage="flash")} == {"flash"}
-    final = document("eurostat/final-rates.json")
+    final = document("eurostat/headline-final-rates.response.json")
     payload = final.json()
     payload["status"] = {k: "e" for k in payload["value"]}
     with pytest.raises(FetchError, match="no certified final"):
@@ -293,10 +307,17 @@ def test_cli_replay_and_partial_failure(tmp_path, monkeypatch, capsys):
             if provider == "bea":
                 raise FetchError("BEA fixture failure")
             if "gdp-to-four" in url:
+                if url.endswith("/time-series"):
+                    return document("ons/current-edition.response.json")
                 return document("ons/gdp69-csv.csv" if url.endswith(".csv") else "ons/gdp69.json")
             if provider == "ons":
+                if url.endswith("previousreleases"):
+                    return document("ons/current-bulletins.response.json")
+                if url.endswith("june2026"):
+                    return document("ons/june-content.response.json")
                 return document("ons/" + ("july" if url.endswith("july2026") else "august") + "-content.html")
-            return document("eurostat/" + ("flash" if url.endswith("prc_hicp_fpd") else "final") + "-rates.json")
+            assert params["geo"] == "EA"
+            return document("eurostat/headline-" + ("flash" if url.endswith("prc_hicp_fpd") else "final") + "-rates.response.json")
     monkeypatch.setattr("market_data_hub.macro_releases.collect.HttpClient", Replay)
     monkeypatch.setattr("market_data_hub.macro_releases.bls.api_key", lambda _: "not-a-real-key")
     monkeypatch.setattr("market_data_hub.macro_releases.bea.api_key", lambda _: "not-a-real-key")

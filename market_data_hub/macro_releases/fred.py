@@ -39,7 +39,7 @@ class FREDAdapter:
                     start = f"{since[:4]}-{(int(since[5:]) - 1) // 3 * 3 + 1:02d}"
                 else:
                     latest = max(p for (f, p) in BLS_EDITIONS if f == family)
-                    start = revision_start(family, latest, start)
+                    start = revision_start(family, latest, start, edition)
                 doc = self.client.get("fred", ENDPOINT, {
                     "api_key": api_key("FRED_API_KEY"), "file_type": "json", "series_id": series,
                     "units": units, "observation_start": start + "-01",

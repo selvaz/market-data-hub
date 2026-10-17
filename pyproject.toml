@@ -21,6 +21,7 @@ dependencies = [
     "openpyxl",
     "pyyaml",
     "certifi",
+    "tzdata; platform_system == 'Windows'",
     # every truststore release requires Python >=3.10 (verified: none support
     # 3.9); the import in _ssl_bootstrap.py is already exception-guarded for
     # its absence, so 3.9 installs simply skip it rather than fail to install.

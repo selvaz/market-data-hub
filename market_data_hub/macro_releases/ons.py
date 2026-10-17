@@ -22,6 +22,30 @@ CSV_URL = "https://static.ons.gov.uk/datasets/gdp-to-four-decimal-places-time-se
 BULLETIN_BASE = "https://www.ons.gov.uk/economy/grossdomesticproductgdp/bulletins/gdpmonthlyestimateuk/"
 # Reviewed editions, not current-date arithmetic. Each also covers revised months.
 BULLETINS = ("july2026", "august2026")
+EDITION_URL = VERSION_URL.rsplit("/versions/", 1)[0]
+BULLETIN_INDEX_URL = BULLETIN_BASE + "previousreleases"
+LEVEL_BULLETIN = "june2026"
+
+
+def bulletin_date(document):
+    match = re.search(r'dataLayer\[0\]\["releaseDate"\]\s*=\s*"(\d{4}/\d{2}/\d{2})"',
+                      document.body.decode("utf-8"))
+    if not match:
+        raise FetchError("ONS bulletin missing publication date")
+    return match[1].replace("/", "-")
+
+
+def check_freshness(edition, bulletins):
+    if str(json_payload(edition).get("links", {}).get("latest_version", {}).get("id")) != str(VERSION):
+        raise FetchError("ONS latest dataset version needs review")
+    slugs = re.findall(r'/gdpmonthlyestimateuk/([a-z]+\d{4})(?:["?#/])',
+                       bulletins.body.decode("utf-8"))
+    try:
+        latest = max(datetime.strptime(slug, "%B%Y") for slug in slugs)
+    except ValueError as exc:
+        raise FetchError("ONS bulletin index format needs review") from exc
+    if latest != datetime.strptime(BULLETINS[-1], "%B%Y"):
+        raise FetchError("ONS latest bulletin needs review")
 
 
 class Paragraphs(HTMLParser):
@@ -51,25 +75,28 @@ class ONSAdapter:
     def fetch(self, families, since):
         if "uk_gdp" not in families:
             return []
+        check_freshness(self.client.get("ons", EDITION_URL), self.client.get("ons", BULLETIN_INDEX_URL))
         meta = self.client.get("ons", VERSION_URL)
         payload = json_payload(meta)
         if payload.get("version") != VERSION or payload.get("edition") != "time-series":
             raise FetchError("ONS pinned dataset version changed")
         levels = self.client.get("ons", CSV_URL)
-        out = self.parse_levels(levels, payload, since)
+        publication = self.client.get("ons", BULLETIN_BASE + LEVEL_BULLETIN)
+        out = self.parse_levels(levels, payload, since, publication=publication)
         for edition in BULLETINS:
             doc = self.client.get("ons", BULLETIN_BASE + edition)
             out.extend(self.parse_bulletin(doc, since))
         return out
 
     @staticmethod
-    def parse_levels(document, metadata, since="1900-01"):
+    def parse_levels(document, metadata, since="1900-01", *, publication):
         if metadata.get("version") != VERSION or metadata.get("edition") != "time-series":
             raise FetchError("ONS pinned dataset version changed")
         rows = list(csv.DictReader(StringIO(document.body.decode("utf-8-sig"))))
         if not rows:
             raise FetchError("ONS GDP CSV empty")
         # ONS CSV format is checked against the saved v69 response, not guessed.
+        published_at = bulletin_date(publication) + "T00:00:00Z"
         out = []
         for row in rows:
             if row.get("sic-unofficial") != "A--T":
@@ -81,7 +108,7 @@ class ONSAdapter:
                 continue
             out.append(Observation("uk_gdp_index", "uk_gdp", period, float(row["v4_0"]), row["v4_0"],
                                    "gdp-to-four-decimal-places:time-series:69:A--T", "ONS", document,
-                                   "time-series:69", metadata["release_date"], provider_vintage="69"))
+                                   "time-series:69", published_at, provider_vintage="69", revision="backfill"))
         if not out:
             raise FetchError("ONS pinned GDP version has no levels in requested window")
         return out
@@ -89,10 +116,7 @@ class ONSAdapter:
     @staticmethod
     def parse_bulletin(document, since="1900-01"):
         text = document.body.decode("utf-8")
-        match = re.search(r'dataLayer\[0\]\["releaseDate"\]\s*=\s*"(\d{4}/\d{2}/\d{2})"', text)
-        if not match:
-            raise FetchError("ONS bulletin missing publication date")
-        edition = match[1].replace("/", "-")
+        edition = bulletin_date(document)
         paragraphs = Paragraphs()
         paragraphs.feed(text)
         summary = next((p for p in paragraphs.paragraphs if p.startswith("Monthly GDP grew by ")), None)

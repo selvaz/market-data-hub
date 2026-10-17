@@ -1,0 +1,14 @@
+{
+  "name": "ons/csv-original-url",
+  "metadata": {
+    "url": "https://download.ons.gov.uk/downloads/datasets/gdp-to-four-decimal-places/editions/time-series/versions/69.csv",
+    "request": {},
+    "status_code": 301,
+    "location": "https://static.ons.gov.uk/datasets/gdp-to-four-decimal-places-time-series-v69.csv",
+    "retrieved_at": "2026-10-17T18:58:59.788988+00:00",
+    "sha256": "cfbd7939c993ace397c864fdb385c2f3424781b7c1facb8a47865dbd747df495",
+    "response_url": "https://download.ons.gov.uk/downloads/datasets/gdp-to-four-decimal-places/editions/time-series/versions/69.csv",
+    "size": 116
+  },
+  "body_zlib_base64": "eJwNxsEJwzAMAMB/pgj5S/oVWtJsUOgKwlYSU9sylmLo9u29buX57LI/l9O92YPInD0F1Gp46MDrQ5GdTdzoiA1cYderQ5SQCmdomYMYeCoCJj39P253DDaW7aVD4vyWXrhK9fxdiTecph+RYSkd"
+}

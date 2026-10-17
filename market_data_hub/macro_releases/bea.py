@@ -6,6 +6,7 @@ import re
 
 from .adapters import Observation
 from .http import FetchError, api_key, json_payload
+from .publication_times import new_york_release
 
 ENDPOINT = "https://apps.bea.gov/api/data/"
 TABLE = "T10101"
@@ -70,8 +71,8 @@ class BEAAdapter:
             out.append(Observation("us_gdp_qq_saar", "us_gdp", period,
                                    float(printed.replace(",", "")), printed,
                                    TABLE + ":1:A191RL", "BEA", document, edition,
-                                   edition + "T12:30:00Z", stage=stage if period == headline else "regular",
-                                   revision="initial" if stage == "advance" and period == headline else "routine",
+                                   **new_york_release(edition), stage=stage if period == headline else "regular",
+                                   revision="initial" if stage == "advance" and period == headline else "backfill",
                                    precision="exact", provider_vintage=edition, event_stage=stage))
         return out
 
@@ -97,5 +98,5 @@ class BEAAdapter:
         return [Observation("us_gdp_qq_saar", "us_gdp", period,
                             float(value[2]) * (-1 if value[1] == "decreased" else 1), value[2],
                             "GDP:archived-published-rate", "BEA", document, edition,
-                            edition + "T12:30:00Z", stage=stage, precision="exact", method="pdf",
+                            **new_york_release(edition), stage=stage, precision="exact", method="pdf",
                             revision="initial" if stage == "advance" else "routine")]

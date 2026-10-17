@@ -9,6 +9,7 @@ from itertools import product
 import math
 
 from .adapters import Observation
+from .catalogue import hicp_indicator
 from .http import FetchError, json_payload
 
 BASE = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/"
@@ -45,7 +46,7 @@ class EurostatAdapter:
             return []
         out = []
         for stage, dataset in DATASETS.items():
-            params = {"lang": "EN", "geo": "EA20", "coicop18": "TOTAL", "sinceTimePeriod": since}
+            params = {"lang": "EN", "geo": "EA", "coicop18": "TOTAL", "sinceTimePeriod": since}
             if stage == "flash":
                 params["release"] = "FLS"
             doc = self.client.get("eurostat", BASE + dataset, params)
@@ -53,7 +54,7 @@ class EurostatAdapter:
         return out
 
     @staticmethod
-    def parse(document, *, stage, since="1900-01"):
+    def parse(document, *, stage, since="1900-01", geography="EA"):
         payload = json_payload(document)
         if payload.get("source") != "ESTAT" or payload.get("class") != "dataset":
             raise FetchError("Eurostat dataset missing")
@@ -64,7 +65,7 @@ class EurostatAdapter:
         periods = payload["dimension"]["time"]["category"]["index"]
         newest = max(periods) if periods else None
         for dim, value, flag in cells(payload):
-            if dim["geo"] != "EA20" or dim["coicop18"] != "TOTAL" or dim["freq"] != "M":
+            if dim["geo"] != geography or dim["coicop18"] != "TOTAL" or dim["freq"] != "M":
                 raise FetchError("Eurostat unexpected measure/geography")
             if dim["unit"] not in ("RCH_A", "RCH_M") or dim["time"] < since:
                 continue
@@ -79,11 +80,13 @@ class EurostatAdapter:
             if publication is None:
                 raise FetchError(f"Eurostat publication metadata needs review: {period} {stage}")
             basis = "yy" if dim["unit"] == "RCH_A" else "mm"
-            out.append(Observation(f"ea_hicp_{basis}", "ea_hicp", period, value, str(value),
-                                   DATASETS[stage] + ":EA20:TOTAL:" + dim["unit"] + ":" + stage,
+            indicator = hicp_indicator(period, basis, geography)
+            out.append(Observation(indicator.id, "ea_hicp", period, value, str(value),
+                                   DATASETS[stage] + ":" + geography + ":TOTAL:" + dim["unit"] + ":" + stage,
                                    "Eurostat", document, publication, publication + "T00:00:00Z",
                                    stage=stage, provider_vintage=payload.get("updated"),
-                                   revision="initial" if stage == "flash" else "routine"))
+                                   composition_id=indicator.geography,
+                                   revision="initial" if stage == "flash" else "backfill"))
         if not out:
             raise FetchError(f"Eurostat has no certified {stage} observations in requested window")
         return out
