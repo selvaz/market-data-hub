@@ -1,6 +1,6 @@
 """Read-only pull of LazyCommittee evidence. No official-value promotion.
 
-Every run scans the source again, using row-envelope hashes for idempotency.
+Every run scans the source again, using immutable raw-row hashes for idempotency.
 The worklist tracks missing/late evidence rather than a MAX(run_id) watermark.
 """
 
@@ -18,8 +18,25 @@ from .models import Indicator, Reading, utc
 from .numbers import parse_number
 from .store import Store, connect_readonly
 
-PARSER_VERSION = "legacy-calendar-m4-v1"
+PARSER_VERSION = "legacy-calendar-m4-v2"
 _STAGE = re.compile(r"^(.*?)\s*\((flash|final)\)\s*$", re.IGNORECASE)
+# Exactly the raw columns protected by sightings_no_raw_update, plus its id.
+_SIGHTING_RAW = (
+    "id",
+    "run_id",
+    "searcher",
+    "region",
+    "jurisdiction",
+    "raw_name",
+    "raw_period",
+    "release_at_utc",
+    "release_date",
+    "raw_actual",
+    "raw_consensus",
+    "raw_previous",
+    "unit_hint",
+    "sources_json",
+)
 
 
 def _json(value) -> str:
@@ -130,22 +147,250 @@ def _catalogue(rows, source_id):
     return result
 
 
-def _work_item(store, source_id, key, indicator_id, reason, now, next_check):
+def _work_item(
+    store, source_id, key, indicator_id, reason, now, next_check, *, status="pending"
+):
     with store.transaction():
         if reason:
+            if status == "terminal":
+                existing = store.conn.execute(
+                    "SELECT status, reason FROM import_worklist WHERE source_id=? AND occurrence_key=?",
+                    (source_id, key),
+                ).fetchone()
+                if (
+                    existing
+                    and existing["status"] == status
+                    and existing["reason"] == reason
+                ):
+                    return
             store.conn.execute(
                 "INSERT INTO import_worklist VALUES (?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(source_id, occurrence_key) DO UPDATE SET "
-                "reason=excluded.reason, status=excluded.status, "
+                "reason=excluded.reason, status=excluded.status, indicator_id=excluded.indicator_id, "
                 "last_checked_at=excluded.last_checked_at, next_check_at=excluded.next_check_at",
-                (source_id, key, indicator_id, reason, "pending", now, now, next_check),
+                (
+                    source_id,
+                    key,
+                    indicator_id,
+                    reason,
+                    status,
+                    now,
+                    now,
+                    None if status == "terminal" else next_check,
+                ),
             )
         else:
             store.conn.execute(
                 "UPDATE import_worklist SET status='complete', last_checked_at=?, next_check_at=NULL "
+                ", indicator_id=? "
                 "WHERE source_id=? AND occurrence_key=?",
-                (now, source_id, key),
+                (now, indicator_id, source_id, key),
             )
+
+
+def _link_reading(store, reading_id, source_id, table, row, kind, index, mapping, now):
+    indicator_id, stage, _ = mapping
+    if kind == "previous":
+        stage = "unknown"
+    with store.transaction():
+        store.conn.execute(
+            "INSERT INTO legacy_reading_links VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(reading_id) DO UPDATE SET legacy_code=excluded.legacy_code, "
+            "indicator_id=excluded.indicator_id, estimate_stage=excluded.estimate_stage, "
+            "occurrence_key=excluded.occurrence_key, resolution=excluded.resolution, "
+            "unresolved_reason=excluded.unresolved_reason, legacy_run_status=excluded.legacy_run_status, "
+            "updated_at=excluded.updated_at",
+            (
+                reading_id,
+                source_id,
+                table,
+                row["id"],
+                kind,
+                index,
+                row.get("indicator_code"),
+                indicator_id,
+                stage,
+                str(row["occurrence_id"]) if row.get("occurrence_id") else None,
+                row.get("resolution"),
+                row.get("unresolved_reason"),
+                row["legacy_run_status"],
+                now,
+            ),
+        )
+
+
+def _existing_sighting(store, source_id, row_id, kind, index):
+    """Also recognize pre-fix v1 imports without changing append-only evidence."""
+    linked = store.conn.execute(
+        "SELECT reading_id FROM legacy_reading_links WHERE source_id=? AND legacy_table='sightings' "
+        "AND legacy_row_id=? AND reading_kind=? AND source_index=?",
+        (source_id, row_id, kind, index),
+    ).fetchone()
+    if linked:
+        return linked["reading_id"]
+    old = store.conn.execute(
+        "SELECT id FROM readings WHERE source_id=? AND parser_version='legacy-calendar-m4-v1' "
+        "AND reading_kind=? AND json_extract(raw_payload_json, '$.table')='sightings' "
+        "AND json_extract(raw_payload_json, '$.row.id')=? "
+        "AND json_extract(raw_payload_json, '$.source_index')=? ORDER BY first_seen_at, id LIMIT 1",
+        (source_id, kind, row_id, index),
+    ).fetchone()
+    return old["id"] if old else None
+
+
+def _import_evidence(store, source, mappings, source_id, now, next_check):
+    for table in ("sightings", "observations"):
+        raw_columns = tuple(r[1] for r in source.execute(f"PRAGMA table_info({table})"))
+        sql = (
+            "SELECT s.*, r.status AS legacy_run_status, r.started_at AS legacy_first_seen_at "
+            "FROM sightings s JOIN runs r ON r.run_id=s.run_id ORDER BY s.id"
+            if table == "sightings"
+            else "SELECT o.*, oc.indicator_code, oc.period_norm, r.status AS legacy_run_status, "
+            "r.started_at AS legacy_first_seen_at FROM observations o "
+            "JOIN occurrences oc ON oc.id=o.occurrence_id JOIN runs r ON r.run_id=o.run_id ORDER BY o.id"
+        )
+        for raw in source.execute(sql):
+            row = dict(raw)
+            mapping = mappings.get(
+                row.get("indicator_code"), (None, "unknown", "unmapped")
+            )
+            if table == "sightings":
+                reason, status = None, "pending"
+                if row["legacy_run_status"] == "failed":
+                    reason, status = "failed_run", "terminal"
+                elif row["legacy_run_status"] == "running":
+                    reason = "running_run_deferred"
+                elif not row.get("occurrence_id"):
+                    reason = (
+                        "period_unknown"
+                        if _period(row["raw_period"])[0] is None
+                        else "unlinked_sighting"
+                    )
+                _work_item(
+                    store,
+                    source_id,
+                    f"sighting:{row['id']}",
+                    mapping[0],
+                    reason,
+                    now,
+                    next_check,
+                    status=status,
+                )
+            if row["legacy_run_status"] == "running":
+                continue
+            immutable = {
+                key: row[key]
+                for key in (_SIGHTING_RAW if table == "sightings" else raw_columns)
+            }
+            content_hash = _hash(immutable)
+            period_raw = (
+                row.get("raw_period") if table == "sightings" else row["period_norm"]
+            )
+            period, unknown_reason = _period(period_raw)
+            origins = list(_origins(row["sources_json"]))
+            for kind in ("actual", "consensus", "previous"):
+                raw_value = row.get(
+                    f"raw_{kind}" if table == "sightings" else f"{kind}_raw"
+                )
+                value = row.get(f"{kind}_value")
+                scale = row.get("scale")
+                if table == "sightings" and raw_value is not None:
+                    try:
+                        # The legacy currency typography explicitly uses M/T.
+                        currency = bool(
+                            re.search(r"[$€£¥]|\b(?:USD|EUR|GBP|JPY)\b", raw_value)
+                        )
+                        value = parse_number(raw_value, allow_bare_magnitudes=currency)
+                        scale = 1
+                    except (ValueError, ArithmeticError):
+                        value = None
+                if kind != "actual" and raw_value is None and value is None:
+                    continue
+                value_period = None if kind == "previous" else period
+                value_reason = (
+                    (
+                        unknown_reason
+                        or "legacy previous field has no explicit reference period"
+                    )
+                    if kind == "previous"
+                    else unknown_reason
+                )
+                reading_kind = kind if table == "sightings" else f"legacy_merged_{kind}"
+                evidence = (
+                    origins
+                    if table == "sightings"
+                    else [(None, f"legacy_merge:{source_id}:observation:{row['id']}")]
+                )
+                for index, (url, origin) in enumerate(evidence):
+                    envelope = {
+                        "table": table,
+                        "row": immutable,
+                        "kind": kind,
+                        "source_index": index,
+                        "legacy_first_seen_at": row["legacy_first_seen_at"],
+                        "run_status_at_import": row["legacy_run_status"],
+                        "origins": [
+                            {"url": u, "evidence_origin_id": o} for u, o in origins
+                        ],
+                    }
+                    reading_id = (
+                        _existing_sighting(store, source_id, row["id"], kind, index)
+                        if table == "sightings"
+                        else None
+                    )
+                    if reading_id is None:
+                        reading_id = store.put(
+                            Reading(
+                                source_id=source_id,
+                                series_key=(
+                                    f"sighting:{row['id']}:{kind}:source:{index}"
+                                    if table == "sightings"
+                                    else f"observation:{row['id']}:{kind}"
+                                ),
+                                period_key=(
+                                    period or f"unknown:{period_raw or 'missing'}"
+                                )
+                                if table == "sightings"
+                                else f"legacy-occurrence:{row['occurrence_id']}",
+                                reference_period=value_period,
+                                period_unknown_reason=value_reason,
+                                edition=f"legacy-run:{row['run_id']}",
+                                estimate_stage="unknown",
+                                reading_kind=reading_kind,
+                                value=value,
+                                published_as=raw_value,
+                                unit=row.get("unit_hint")
+                                if table == "sightings"
+                                else row.get("unit_code"),
+                                scale=scale,
+                                issuer_id="unknown",
+                                distributor_id="legacy_web_search"
+                                if table == "sightings"
+                                else "LazyCommittee",
+                                evidence_origin_id=origin,
+                                first_seen_at=now,
+                                retrieved_at=now,
+                                content_hash=content_hash,
+                                parser_version=PARSER_VERSION,
+                                extraction_method="web_search"
+                                if table == "sightings"
+                                else "legacy_merge",
+                                verification_status="unverified",
+                                url=url,
+                                raw_payload_json=_json(envelope),
+                            )
+                        )
+                    _link_reading(
+                        store,
+                        reading_id,
+                        source_id,
+                        table,
+                        row,
+                        kind,
+                        index,
+                        mapping,
+                        now,
+                    )
 
 
 def import_calendar(
@@ -173,7 +418,6 @@ def import_calendar(
             dict(row)
             for row in source.execute("SELECT * FROM indicators ORDER BY code")
         ]
-        by_code = {row["code"]: row for row in catalogue}
         mappings = _catalogue(catalogue, source_id)
         # Existing mappings are stable even if the legacy catalogue grows later.
         for saved in store.conn.execute(
@@ -244,111 +488,7 @@ def import_calendar(
                     ),
                 )
 
-        # Release dates and scheduled timestamps are NOT asserted as publication times.
-        for table in ("sightings", "observations"):
-            sql = (
-                (
-                    "SELECT s.*, r.status AS legacy_run_status, r.started_at AS legacy_captured_at "
-                    "FROM sightings s JOIN runs r ON r.run_id=s.run_id ORDER BY s.id"
-                )
-                if table == "sightings"
-                else (
-                    "SELECT o.*, oc.indicator_code, oc.period_norm, r.status AS legacy_run_status "
-                    "FROM observations o JOIN occurrences oc ON oc.id=o.occurrence_id "
-                    "JOIN runs r ON r.run_id=o.run_id ORDER BY o.id"
-                )
-            )
-            for raw in source.execute(sql):
-                row = dict(raw)
-                code = row.get("indicator_code")
-                indicator_id, stage, _ = mappings.get(
-                    code, (None, "unknown", "unmapped")
-                )
-                period_raw = (
-                    row.get("raw_period")
-                    if table == "sightings"
-                    else row["period_norm"]
-                )
-                period, unknown_reason = _period(period_raw)
-                issuer = by_code.get(code, {}).get("agency") or "unknown"
-                if table == "sightings":
-                    reason = None
-                    if not row.get("occurrence_id"):
-                        reason = (
-                            "period_unknown" if period is None else "unlinked_sighting"
-                        )
-                    _work_item(
-                        store,
-                        source_id,
-                        f"sighting:{row['id']}",
-                        indicator_id,
-                        reason,
-                        now,
-                        next_check,
-                    )
-                for kind in ("actual", "consensus", "previous"):
-                    raw_value = row.get(
-                        f"raw_{kind}" if table == "sightings" else f"{kind}_raw"
-                    )
-                    value = row.get(f"{kind}_value")
-                    scale = row.get("scale")
-                    if table == "sightings" and raw_value is not None:
-                        try:
-                            value = parse_number(raw_value)
-                            scale = 1
-                        except (ValueError, ArithmeticError):
-                            value = None
-                    # Even an empty actual is evidence of an incomplete release.
-                    if kind != "actual" and raw_value is None and value is None:
-                        continue
-                    value_period = period
-                    value_reason = unknown_reason
-                    value_stage = stage
-                    if kind == "previous":
-                        value_period = None
-                        value_reason = (
-                            unknown_reason
-                            or "legacy previous field has no explicit reference period"
-                        )
-                        value_stage = "unknown"
-                    for index, (url, origin) in enumerate(
-                        _origins(row["sources_json"])
-                    ):
-                        envelope = {
-                            "table": table,
-                            "row": row,
-                            "kind": kind,
-                            "source_index": index,
-                        }
-                        store.put(
-                            Reading(
-                                indicator_id=indicator_id,
-                                source_id=source_id,
-                                series_key=f"{code or row.get('raw_name', 'unmapped')}:{kind}",
-                                period_key=period
-                                or f"unknown:{period_raw or 'missing'}",
-                                reference_period=value_period,
-                                period_unknown_reason=value_reason,
-                                edition=f"legacy-run:{row['run_id']}",
-                                estimate_stage=value_stage,
-                                reading_kind=kind,
-                                value=value,
-                                published_as=raw_value,
-                                unit=row.get("unit_code") or row.get("unit_hint"),
-                                scale=scale,
-                                issuer_id=issuer,
-                                distributor_id="legacy_web_search",
-                                evidence_origin_id=origin,
-                                first_seen_at=now,
-                                retrieved_at=now,
-                                content_hash=_hash(envelope),
-                                parser_version=PARSER_VERSION,
-                                extraction_method="web_search",
-                                verification_status="unverified",
-                                url=url,
-                                raw_payload_json=_json(envelope),
-                            )
-                        )
+        _import_evidence(store, source, mappings, source_id, now, next_check)
         # No high-water mark: inspect ALL occurrences and their latest evidence.
         sql = """SELECT oc.*, o.actual_value, o.status, o.observed_at,
                         r.status AS run_status

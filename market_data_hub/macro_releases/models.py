@@ -169,6 +169,15 @@ class ResolutionVersion(Contract):
 
 
 class ConsensusReading(Contract):
+    """A date-only cutoff is the START of the issuer-local release date in UTC.
+
+    Captures before that lower bound are pre-release. Same-day captures have
+    uncertain ordering: neither eligible nor post_release. Date-only precision
+    never proves post-release here; M6 can reconcile a subsequently known time.
+    If 08:30 is known, use precision='exact' and the full offset-aware 08:30
+    timestamp, not date_only with midnight (e.g. 08:30-04:00 = 12:30Z).
+    """
+
     provider: str
     survey_identity: Optional[str] = None
     indicator_id: str

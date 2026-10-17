@@ -10,7 +10,7 @@ from filelock import Timeout
 import pytest
 from pydantic import ValidationError
 
-from market_data_hub.macro_releases import open_reader, open_writer
+from market_data_hub.macro_releases import Store, open_reader, open_writer
 from market_data_hub.macro_releases.legacy import import_calendar
 from market_data_hub.macro_releases.migrations import migrate
 from market_data_hub.macro_releases.models import (
@@ -482,11 +482,19 @@ def test_contracts_reject_fake_period_and_naive_time():
         ("-€ 106,2 Mrd", -106200000000),
         ("-USD 2.5 B", -2500000000),
         ("2.5 B", 2500000000),
-        ("1.610 T", 1610000000000),
-        ("¥\u200b1.610\u00a0T", 1610000000000),
         ("1.2tn", 1200000000000),
         ("1.2 trillion", 1200000000000),
         ("($2.5B)", -2500000000),
+        ("0.3 m/m", 0.3),
+        ("-0.2 m/m sa", -0.2),
+        ("1.1 t/t", 1.1),
+        ("1.1 q/q", 1.1),
+        ("1.1 y/y", 1.1),
+        ("1.1 k/k", 1.1),
+        ("0.3% m/m", 0.3),
+        ("2.5 bn", 2500000000),
+        ("2.5 mrd", 2500000000),
+        ("1,710K", 1710000),
         ("−0,2%", -0.2),
         ("1\u202f234,5", 1234.5),
     ],
@@ -621,8 +629,10 @@ def test_all_golden_formats_and_vintages(store, golden):
             assert first["value"] != latest["value"]
 
 
-def test_golden_flash_final_and_as_known(store, golden):
+def test_golden_fixture_consistency_and_publication_views(store, golden):
     flash, final = "ea_hicp_yy_flash_2026-09", "ea_hicp_yy_final_2026-09"
+    # Fixture-consistency check: the loader deliberately shares this identity.
+    # The behavioral assertions are the first/latest views and history below.
     assert golden.indicators[flash] == golden.indicators[final]
     indicator = golden.indicators[flash]
     assert store.first_release(indicator)[0]["estimate_stage"] == "flash"
@@ -753,7 +763,13 @@ def legacy_calendar(tmp_path):
 
 
 def add_legacy_observation(
-    conn, occurrence, run, status, value, observed_at="2026-10-17T23:00:00Z"
+    conn,
+    occurrence,
+    run,
+    status,
+    value,
+    observed_at="2026-10-17T23:00:00Z",
+    sources_json='[{"url":"https://wire.example/story","wire_id":"same-wire-story"}]',
 ):
     insert(
         conn,
@@ -763,7 +779,7 @@ def add_legacy_observation(
             run_id=run,
             observed_at=observed_at,
             release_date="2026-10-17",
-            actual_raw="3.8%" if value else None,
+            actual_raw=f"{value}%" if value is not None else None,
             actual_value=value,
             consensus_raw="3.6%",
             consensus_value=3.6,
@@ -775,7 +791,7 @@ def add_legacy_observation(
             n_searchers=3,
             n_domains=1,
             official_source=1,
-            sources_json='[{"url":"https://wire.example/story","wire_id":"same-wire-story"}]',
+            sources_json=sources_json,
         ),
     )
 
@@ -815,22 +831,23 @@ def test_legacy_candidates_stages_raw_evidence_idempotency_and_readonly(
         for r in store.conn.execute(
             "SELECT DISTINCT extraction_method, verification_status FROM readings"
         )
-    } == {("web_search", "unverified")}
+    } == {("web_search", "unverified"), ("legacy_merge", "unverified")}
     assert (
         store.conn.execute(
-            "SELECT COUNT(DISTINCT evidence_origin_id) FROM readings"
+            "SELECT COUNT(DISTINCT evidence_origin_id) FROM readings WHERE extraction_method='web_search'"
         ).fetchone()[0]
         == 1
     )
     unknown = store.conn.execute(
-        "SELECT * FROM readings WHERE period_key LIKE 'unknown:%'"
+        "SELECT * FROM readings WHERE period_unknown_reason LIKE '%release date%'"
     ).fetchall()
     assert len(unknown) == 3
     assert all("release date" in r["period_unknown_reason"] for r in unknown)
     assert all(r["first_seen_at"].startswith("2026-10-18") for r in unknown)
     previous = store.conn.execute(
-        "SELECT * FROM readings WHERE reading_kind='previous'"
+        "SELECT * FROM readings WHERE reading_kind IN ('previous', 'legacy_merged_previous')"
     ).fetchall()
+    assert len(previous) == 2
     assert all(
         r["reference_period"] is None and r["estimate_stage"] == "unknown"
         for r in previous
@@ -1045,10 +1062,354 @@ def test_importer_preserves_currency_signs_and_magnitude_suffixes(
             )
     import_calendar(store, legacy_calendar, captured_at="2026-10-18T01:00:00Z")
     rows = list(
-        store.conn.execute("SELECT * FROM readings WHERE series_key='trade:actual'")
+        store.conn.execute(
+            "SELECT r.* FROM readings r JOIN legacy_reading_links l ON l.reading_id=r.id "
+            "WHERE l.legacy_code='trade' AND r.reading_kind='actual'"
+        )
     )
     assert len(rows) == 3
     for row in rows:
         assert row["value"] == pytest.approx(prints[row["published_as"]])
         assert row["scale"] == 1
         assert row["verification_status"] == "unverified"
+
+
+@pytest.mark.parametrize(
+    "printed,value", [("1.610 T", 1.610e12), ("1.2 m", 1.2e6), ("¥1.610 T", 1.610e12)]
+)
+def test_bare_magnitude_requires_caller_opt_in(printed, value):
+    with pytest.raises(ValueError, match="requires allow_bare_magnitudes"):
+        parse_number(printed)
+    assert parse_number(printed, allow_bare_magnitudes=True) == pytest.approx(value)
+
+
+@pytest.mark.parametrize("document_hash", ["same", "new-bytes"])
+@pytest.mark.parametrize(
+    "change", [{"verification_status": "verified"}, {"extraction_method": "structured"}]
+)
+def test_vintage_reread_rejects_changed_verification_or_extraction(
+    store, document_hash, change
+):
+    add_measure(store)
+    release = event(store)
+    vintage(
+        store,
+        release,
+        document_hash="same",
+        verification_status="unverified",
+        extraction_method="web_search",
+    )
+    with pytest.raises(
+        ValueError, match="conflicting verification/extraction provenance"
+    ):
+        vintage(
+            store,
+            release,
+            document_hash=document_hash,
+            **(
+                {"verification_status": "unverified", "extraction_method": "web_search"}
+                | change
+            ),
+        )
+    assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 1
+    assert store.latest_official() == []
+
+
+def test_sighting_identity_survives_resolution_and_run_transitions(
+    store, legacy_calendar
+):
+    with sqlite3.connect(legacy_calendar) as conn:
+        conn.execute("UPDATE runs SET status='running' WHERE run_id='cal_z'")
+        conn.execute(
+            "UPDATE sightings SET indicator_code=NULL, resolution='unresolved', occurrence_id=NULL, unresolved_reason='missing_mapping'"
+        )
+    assert (
+        import_calendar(store, legacy_calendar, captured_at="2026-10-18T01:00:00Z")[
+            "new_readings"
+        ]
+        == 0
+    )
+    with sqlite3.connect(legacy_calendar) as conn:
+        conn.execute("UPDATE runs SET status='published' WHERE run_id='cal_z'")
+    assert (
+        import_calendar(store, legacy_calendar, captured_at="2026-10-19T01:00:00Z")[
+            "new_readings"
+        ]
+        == 9
+    )
+    original = [
+        dict(r) for r in store.conn.execute("SELECT * FROM readings ORDER BY id")
+    ]
+    with sqlite3.connect(legacy_calendar) as conn:
+        conn.execute(
+            "UPDATE sightings SET indicator_code='final', resolution='alias', occurrence_id=1, unresolved_reason=NULL"
+        )
+        conn.execute("UPDATE runs SET status='failed' WHERE run_id='cal_z'")
+    assert (
+        import_calendar(store, legacy_calendar, captured_at="2026-10-20T01:00:00Z")[
+            "new_readings"
+        ]
+        == 0
+    )
+    with sqlite3.connect(legacy_calendar) as conn:
+        conn.execute("UPDATE runs SET status='published' WHERE run_id='cal_z'")
+    assert (
+        import_calendar(store, legacy_calendar, captured_at="2026-10-21T01:00:00Z")[
+            "new_readings"
+        ]
+        == 0
+    )
+    assert [
+        dict(r) for r in store.conn.execute("SELECT * FROM readings ORDER BY id")
+    ] == original
+    links = list(
+        store.conn.execute(
+            "SELECT * FROM legacy_reading_links WHERE legacy_table='sightings'"
+        )
+    )
+    assert len(links) == 3
+    assert all(
+        r["indicator_id"] is not None
+        and r["estimate_stage"] == "final"
+        and r["legacy_run_status"] == "published"
+        for r in links
+    )
+    assert all(r["indicator_id"] is None for r in original)
+
+
+def test_failed_sightings_are_terminal_and_keep_original_run_time(
+    store, legacy_calendar
+):
+    with sqlite3.connect(legacy_calendar) as conn:
+        conn.execute("UPDATE runs SET status='failed' WHERE run_id='cal_z'")
+        conn.execute(
+            "UPDATE sightings SET indicator_code=NULL, occurrence_id=NULL, resolution='unresolved'"
+        )
+    import_calendar(store, legacy_calendar, captured_at="2026-10-18T01:00:00Z")
+    work = [
+        dict(r)
+        for r in store.conn.execute(
+            "SELECT * FROM import_worklist WHERE occurrence_key LIKE 'sighting:%' ORDER BY occurrence_key"
+        )
+    ]
+    assert len(work) == 3
+    assert all(r["status"] == "terminal" and r["next_check_at"] is None for r in work)
+    for reading_row in store.conn.execute("SELECT * FROM readings"):
+        payload = json.loads(reading_row["raw_payload_json"])
+        assert payload["legacy_first_seen_at"] == "2026-10-17T23:00:00Z"
+        assert reading_row["first_seen_at"].startswith("2026-10-18")
+    assert (
+        import_calendar(store, legacy_calendar, captured_at="2026-10-19T01:00:00Z")[
+            "new_readings"
+        ]
+        == 0
+    )
+    assert [
+        dict(r)
+        for r in store.conn.execute(
+            "SELECT * FROM import_worklist WHERE occurrence_key LIKE 'sighting:%' ORDER BY occurrence_key"
+        )
+    ] == work
+
+
+def test_merged_observation_is_not_attributed_to_each_cited_url(store, legacy_calendar):
+    sources = [
+        {"url": "https://source-a.example/story"},
+        {"url": "https://source-b.example/story"},
+    ]
+    with sqlite3.connect(legacy_calendar) as conn:
+        add_legacy_observation(
+            conn,
+            1,
+            "cal_a",
+            status="released",
+            value=3.85,
+            sources_json=json.dumps(sources),
+        )
+    import_calendar(store, legacy_calendar, captured_at="2026-10-18T01:00:00Z")
+    rows = list(
+        store.conn.execute(
+            "SELECT * FROM readings WHERE json_extract(raw_payload_json, '$.table')='observations' "
+            "AND json_extract(raw_payload_json, '$.row.run_id')='cal_a'"
+        )
+    )
+    assert len(rows) == 3  # one per aggregate value role, irrespective of URL count
+    assert {r["reading_kind"] for r in rows} == {
+        "legacy_merged_actual",
+        "legacy_merged_consensus",
+        "legacy_merged_previous",
+    }
+    for row in rows:
+        assert row["extraction_method"] == "legacy_merge" and row["url"] is None
+        assert (
+            row["distributor_id"] == "LazyCommittee"
+            and row["verification_status"] == "unverified"
+        )
+        assert len(json.loads(row["raw_payload_json"])["origins"]) == 2
+        assert row["evidence_origin_id"].startswith("legacy_merge:")
+    assert (
+        next(r["value"] for r in rows if r["reading_kind"] == "legacy_merged_actual")
+        == 3.85
+    )
+    assert (
+        store.conn.execute(
+            "SELECT COUNT(*) FROM readings WHERE extraction_method='web_search'"
+        ).fetchone()[0]
+        == 3
+    )
+
+
+@pytest.mark.parametrize(
+    "precision,cutoff,capture,eligible,post",
+    [
+        ("date_only", "2026-10-17T00:00:00-04:00", "2026-10-16T23:00:00-04:00", 1, 0),
+        ("date_only", "2026-10-17T00:00:00-04:00", "2026-10-17T07:00:00-04:00", 0, 0),
+        ("date_only", "2026-10-17T00:00:00-04:00", "2026-10-17T09:00:00-04:00", 0, 0),
+        ("exact", "2026-10-17T08:30:00-04:00", "2026-10-17T07:00:00-04:00", 1, 0),
+        ("exact", "2026-10-17T08:30:00-04:00", "2026-10-17T09:00:00-04:00", 0, 1),
+    ],
+)
+def test_date_only_cutoff_does_not_claim_same_day_snapshot_is_post_release(
+    store, precision, cutoff, capture, eligible, post
+):
+    add_measure(store)
+    store.put(
+        ConsensusReading(
+            provider="FF forecast",
+            indicator_id="payroll",
+            release_event_id=event(store),
+            measure="payroll",
+            reference_period="2026-09",
+            estimate_stage="regular",
+            value=1,
+            unit="persons",
+            captured_at=capture,
+            release_cutoff_at=cutoff,
+            cutoff_precision=precision,
+            cutoff_basis="scheduled",
+            content_hash="fixture",
+        )
+    )
+    row = store.conn.execute("SELECT * FROM consensus_readings").fetchone()
+    assert (row["pre_release_eligible"], row["post_release"]) == (eligible, post)
+
+
+def test_v1_migration_preserves_evidence_and_backlog_and_fixes_date_only_flags(
+    tmp_path,
+):
+    path = tmp_path / "v1.sqlite"
+    conn = sqlite3.connect(path, isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    conn.executescript((FIXTURES / "macro_releases_v1.sql").read_text(encoding="utf-8"))
+    with Store(conn, writable=True) as old:
+        add_measure(old)
+        release = event(old)
+        reading_id = reading(old)
+        consensus = ConsensusReading(
+            provider="FF forecast",
+            indicator_id="payroll",
+            release_event_id=release,
+            measure="payroll",
+            reference_period="2026-09",
+            estimate_stage="regular",
+            value=1,
+            unit="persons",
+            captured_at="2026-10-17T07:00:00-04:00",
+            release_cutoff_at="2026-10-17T00:00:00-04:00",
+            cutoff_precision="date_only",
+            cutoff_basis="scheduled",
+            content_hash="fixture",
+        ).model_dump()
+        insert(
+            conn,
+            "consensus_readings",
+            dict(consensus, pre_release_eligible=0, post_release=1),
+        )
+        conn.execute(
+            "INSERT INTO import_worklist VALUES ('legacy','sighting:1','payroll','unlinked_sighting','pending','2026-10-17','2026-10-17',NULL)"
+        )
+    with open_writer(path) as current:
+        assert current.conn.execute("PRAGMA user_version").fetchone()[0] == 2
+        assert (
+            current.conn.execute(
+                "SELECT COUNT(*) FROM readings WHERE id=?", (reading_id,)
+            ).fetchone()[0]
+            == 1
+        )
+        assert (
+            current.conn.execute("SELECT status FROM import_worklist").fetchone()[0]
+            == "pending"
+        )
+        assert (
+            current.conn.execute(
+                "SELECT post_release FROM consensus_readings"
+            ).fetchone()[0]
+            == 0
+        )
+        assert current.conn.execute("PRAGMA foreign_key_check").fetchall() == []
+        with pytest.raises(sqlite3.IntegrityError, match="append-only"):
+            current.conn.execute("UPDATE readings SET value=0")
+        with pytest.raises(sqlite3.IntegrityError, match="append-only"):
+            current.conn.execute("UPDATE consensus_readings SET value=0")
+
+
+def test_pre_fix_v1_sighting_is_linked_without_creating_duplicate(
+    store, legacy_calendar
+):
+    with sqlite3.connect(legacy_calendar) as conn:
+        conn.row_factory = sqlite3.Row
+        raw_row = dict(conn.execute("SELECT * FROM sightings WHERE id=1").fetchone())
+    envelope = {
+        "table": "sightings",
+        "row": raw_row,
+        "kind": "actual",
+        "source_index": 0,
+    }
+    old_id = reading(
+        store,
+        indicator_id=None,
+        source_id="lazycommittee_calendar",
+        value=3.8,
+        series_key="final:actual",
+        edition="legacy-run:cal_z",
+        unit="percent",
+        issuer_id="Eurostat",
+        distributor_id="legacy_web_search",
+        content_hash=digest(envelope),
+        parser_version="legacy-calendar-m4-v1",
+        raw_payload_json=json.dumps(envelope),
+    )
+    original = dict(
+        store.conn.execute("SELECT * FROM readings WHERE id=?", (old_id,)).fetchone()
+    )
+    with sqlite3.connect(legacy_calendar) as conn:
+        conn.execute(
+            "UPDATE sightings SET resolution='cataloguer', unresolved_reason='changed_resolution' WHERE id=1"
+        )
+    assert (
+        import_calendar(store, legacy_calendar, captured_at="2026-10-19T01:00:00Z")[
+            "new_readings"
+        ]
+        == 8
+    )
+    assert (
+        import_calendar(store, legacy_calendar, captured_at="2026-10-20T01:00:00Z")[
+            "new_readings"
+        ]
+        == 0
+    )
+    assert store.conn.execute("SELECT COUNT(*) FROM readings").fetchone()[0] == 9
+    assert (
+        dict(
+            store.conn.execute(
+                "SELECT * FROM readings WHERE id=?", (old_id,)
+            ).fetchone()
+        )
+        == original
+    )
+    assert (
+        store.conn.execute(
+            "SELECT resolution FROM legacy_reading_links WHERE reading_id=?", (old_id,)
+        ).fetchone()[0]
+        == "cataloguer"
+    )

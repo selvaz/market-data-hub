@@ -46,6 +46,10 @@ DDL and version changes in one transaction. `schema.sql` is included in wheels.
 Append-only triggers protect publication events, schedules, vintages, readings,
 resolutions, consensus, claims/evidence, and discrepancies from update/delete.
 Catalogue and worklist state are mutable.
+Schema v2 migrates existing v1 stores transactionally, preserving raw evidence
+and pending work while adding mutable legacy links and terminal worklist state.
+It also corrects the derived `post_release` flag on old date-only consensus rows;
+their original cutoff, precision, provider and capture timestamps remain intact.
 
 `ResolutionVersion`, `Claim`, and `ClaimEvidence` require a caller-supplied
 `idempotency_key`, unique within their table. A retry reuses its original row id;
@@ -60,8 +64,14 @@ timestamps. Times are normalized to UTC ISO strings with fixed microsecond
 precision. A date-only publication/schedule uses the start of the stated date in
 UTC together with `date_only` precision; it does not assert an exact release
 instant. When using an issuer-local date as a consensus cutoff, the caller must
-convert the start of that local date to UTC and retain the precision. A capture
-on that date is conservatively ineligible until an exact time is known.
+convert the start of that local date to UTC and retain `date_only` precision.
+Before that lower bound a capture is pre-release; on the release date its order
+is uncertain, so both eligibility and `post_release` are false. Date-only
+precision never sets `post_release` in M4, even for a later capture; M6 can
+reconcile a subsequently known exact release time. If an 08:30 release time is
+known, use `exact` and the full 08:30 timestamp with its issuer-local offset
+(e.g. `08:30-04:00`, normalized to `12:30Z`). A 07:00 local snapshot is then
+eligible. Do not substitute midnight for a known 08:30 time.
 
 | Table | Identity and role |
 | --- | --- |
@@ -76,7 +86,8 @@ on that date is conservatively ineligible until an exact time is known.
 | `claims`, `claim_evidence` | Schema for release facts, attributed interpretations and market response. Evidence stores the verbatim passage, hash, URL, page id, origin, publication/retrieval times and news cutoff. New versions can supersede a claim. No commentary is generated in M4. |
 | `discrepancies` | Reading linked to the selected official vintage, reason and recorded time. Adding a discrepancy cannot suppress an official value. |
 | `legacy_candidates`, `indicator_aliases` | Every original code, raw catalogue metadata, aliases and conservative stage mapping; all remain candidates pending review. |
-| `import_worklist` | Per-source occurrence backlog with reason, pending/complete status, first/last check and next check. No run watermark. |
+| `import_worklist` | Per-source occurrence backlog with reason, pending/complete/terminal status, first/last check and next check. No run watermark. |
+| `legacy_reading_links` | Mutable links from raw legacy rows to the latest indicator, stage, occurrence, resolution metadata and run status. They never change a raw reading or its identity. |
 
 An indicator's stage belongs to each observation/publication, not its measure
 identity. For example HICP flash and final are one indicator. `revision_kind`
@@ -110,6 +121,10 @@ publication edition creates one even when the value is unchanged. Parser fixes
 or a change of verification alone must not be presented as publisher revisions;
 M6 will record verification/resolution evidence separately. Vintages are never
 updated or deleted.
+Re-reading an unchanged value with a different `verification_status` or
+`extraction_method` raises an explicit conflict, for both same-document and
+changed-byte retries. It cannot silently discard new verification evidence or
+pretend that verification created a publisher revision.
 
 The SQL views `first_release` and `latest_official`, and Python
 `Store.as_known_at(t)`, are **M4 deterministic placeholders**, not the M6 resolver.
@@ -130,7 +145,9 @@ with coverage/failure/unresolved reasons arrives in M6.
 
 Consensus is never averaged across providers. `Store.put(ConsensusReading(...))`
 computes eligibility strictly as `captured_at < release_cutoff_at`; equality and
-later captures are `post_release`. Unknown cutoffs set both flags false. The
+later captures are `post_release` only for an exact cutoff. Date-only cutoffs
+are lower bounds with uncertain within-day order as described above. Unknown
+cutoffs set both flags false. The
 cutoff and its actual/scheduled basis and precision are preserved, rather than
 recomputed from a later schedule version. Actual time should be supplied when
 known. M6 will add provider-specific frozen pre-release selection and reconcile
@@ -142,6 +159,11 @@ thousands grouping and explicit magnitude suffixes (including B/bn and T/tn);
 currency symbols before or after a sign do not change its direction, and the raw print stays stored.
 It requires a single numeric cell. Ambiguous commas need an explicit decimal
 separator; it does not infer measures or calculate transformations from levels.
+Period bases such as m/m, t/t, q/q, y/y and k/k are never magnitude suffixes.
+A magnitude must end the suffix or be followed by whitespace; a slash cannot
+terminate one. Bare m/t require `allow_bare_magnitudes=True`. The legacy importer
+opts in only when the immutable raw print itself explicitly identifies currency;
+otherwise an ambiguous bare m/t remains raw evidence without a numeric companion.
 
 ## Legacy pull and backlog
 
@@ -159,19 +181,35 @@ ambiguous pairs and unresolved sightings stay candidates; no fuzzy resolver is
 introduced. Saved code mappings remain stable if the source catalogue later grows;
 reviewing a later proposed merge belongs to catalogue maintenance.
 
-Sightings and observations, including the legacy actual/consensus/previous
-fields and source links, become separate `readings`. The original row is stored
-verbatim as JSON inside an envelope. `official_source=1` stays raw metadata;
-every imported reading is `web_search` / `unverified`. The original aggregate
-numeric value is retained as unverified, and never becomes an official vintage.
+Raw per-searcher sightings become `web_search` / `unverified` readings, retaining
+the actual/consensus/previous fields and cited sources. Their content hash covers
+only the sighting id and the raw columns protected by the legacy trigger. Their
+series key is based on sighting id, value role and source index. Mutable
+`indicator_code`, `resolution`, `occurrence_id`, `unresolved_reason` and run status
+never enter the hash or key. Those mappings live in `legacy_reading_links`, and
+new raw sighting readings keep their indicator/stage unknown. Updating a legacy
+resolution updates the link, without adding or rewriting raw evidence. Pre-fix
+v1 sighting imports are recognized by their original raw row id and source index
+and linked without adding another reading.
+
+LazyCommittee observations are merged outputs: their actual can be a median,
+and their consensus is a vote. Each value role is imported once as
+`legacy_merged_actual`, `legacy_merged_consensus` or `legacy_merged_previous`, with
+`extraction_method="legacy_merge"`, distributor LazyCommittee and verification
+unverified. The complete cited-origin list remains in the payload; the aggregate
+is never fanned out or attributed to each URL. Its identity hashes only the
+append-only observation columns and uses its row id. `official_source=1` stays
+raw metadata and never verifies either kind of evidence. No aggregate becomes
+an official vintage or a provider-specific consensus reading.
 The importer does not invent issuer events or publication timestamps from
 scheduled/release dates. Legacy forecasts remain readings, since their original
 provider/capture/cutoff eligibility is not reliably certified.
 The legacy `previous` field has no explicit period or stage of its own: those
 remain unknown, with a reason, rather than assigning the current period to it.
 
-`first_seen_at` is when the new store imports the evidence. Original legacy
-observation/run times remain in the payload, without backdating our knowledge.
+`first_seen_at` is when the new store imports the evidence. The run's original
+`started_at` is stored explicitly as `legacy_first_seen_at` in the payload for
+both sightings and merged observations, without backdating our knowledge.
 `d:YYYY-MM-DD`, missing periods and unrecognised text have null reference period
 and a stored reason. No release date is converted into a fake reference month.
 
@@ -185,9 +223,13 @@ Each pull rescans source rows idempotently, so a late observation in an older ru
 is found. The worklist tracks unlinked sightings, unknown periods, incomplete/overdue releases and
 values first observed after release day. Completed occurrences close existing
 backlog entries; late values remain pending review. It uses latest published-run
-observation per occurrence to assess completeness. Failed/in-progress sightings
-remain evidence with their run status, without certifying release completeness.
-The next check is proposed one day later; M4 does not schedule it.
+observation per occurrence to assess completeness. Running runs are deferred:
+their sightings and observations do not enter `readings` until the run finishes.
+Failed-run sightings remain unverified evidence, but their sighting work items
+are terminal with no next check; repeated pulls do not requeue or advance that
+terminal check time. A subsequent source transition to published can reopen or
+complete the work item. The next pending check is proposed one day later; M4
+does not schedule it.
 
 ## Fixtures and later steps
 
@@ -195,7 +237,10 @@ The next check is proposed one day later; M4 does not schedule it.
 folder's 32 cases; the original is preserved. Tests load these into temporary
 databases with synthetic fixture hashes/times and check revisions, unchanged
 editions, shared flash/final indicators, SA/NSA separation, knowledge cutoffs,
-and numeric transcription. The fixture's confidence/verification notes are kept
+and numeric transcription. The shared flash/final indicator-id assertion is a
+fixture-consistency check; behavior is tested by `first_release` and
+`latest_official`, alongside the independent legacy stage-mapping fixture.
+The fixture's confidence/verification notes are kept
 unchanged: some primary URLs/dates were not independently re-fetched in the
 research pass. Loading test vintages does not certify those publications for
 production. This task did not revalidate external issuer values.

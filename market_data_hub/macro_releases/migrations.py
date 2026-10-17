@@ -3,7 +3,7 @@
 from pathlib import Path
 import sqlite3
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 APPEND_ONLY = (
     "value_vintages",
     "readings",
@@ -29,7 +29,7 @@ def migrate(conn: sqlite3.Connection) -> None:
         statement = ""
         for line in (
             Path(__file__)
-            .with_name("schema.sql")
+            .with_name("schema.sql" if current == 0 else "migration_002.sql")
             .read_text(encoding="utf-8")
             .splitlines(True)
         ):
@@ -37,7 +37,7 @@ def migrate(conn: sqlite3.Connection) -> None:
             if sqlite3.complete_statement(statement):
                 conn.execute(statement)
                 statement = ""
-        for table in APPEND_ONLY:
+        for table in APPEND_ONLY if current == 0 else ("consensus_readings",):
             for operation in ("UPDATE", "DELETE"):
                 conn.execute(
                     f"CREATE TRIGGER {table}_no_{operation.lower()} BEFORE {operation} ON {table} "

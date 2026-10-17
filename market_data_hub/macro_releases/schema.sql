@@ -140,7 +140,7 @@ CREATE TABLE consensus_readings (
     post_release INTEGER NOT NULL CHECK (post_release IN (0,1)),
     content_hash TEXT NOT NULL,
     CHECK (pre_release_eligible = CASE WHEN release_cutoff_at IS NOT NULL AND captured_at < release_cutoff_at THEN 1 ELSE 0 END),
-    CHECK (post_release = CASE WHEN release_cutoff_at IS NOT NULL AND captured_at >= release_cutoff_at THEN 1 ELSE 0 END),
+    CHECK (post_release = CASE WHEN cutoff_precision = 'exact' AND release_cutoff_at IS NOT NULL AND captured_at >= release_cutoff_at THEN 1 ELSE 0 END),
     UNIQUE (provider, indicator_id, reference_period, estimate_stage, release_event_id, captured_at, content_hash)
 );
 CREATE TABLE claims (
@@ -200,12 +200,31 @@ CREATE TABLE import_worklist (
     occurrence_key TEXT NOT NULL,
     indicator_id TEXT REFERENCES indicators(id),
     reason TEXT NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('pending','complete')),
+    status TEXT NOT NULL CHECK (status IN ('pending','complete','terminal')),
     first_seen_at TEXT NOT NULL,
     last_checked_at TEXT NOT NULL,
     next_check_at TEXT,
     PRIMARY KEY (source_id, occurrence_key)
 );
+-- Mutable catalogue/resolution metadata never changes the raw reading identity.
+CREATE TABLE legacy_reading_links (
+    reading_id INTEGER PRIMARY KEY REFERENCES readings(id),
+    source_id TEXT NOT NULL,
+    legacy_table TEXT NOT NULL CHECK (legacy_table IN ('sightings','observations')),
+    legacy_row_id INTEGER NOT NULL,
+    reading_kind TEXT NOT NULL,
+    source_index INTEGER NOT NULL,
+    legacy_code TEXT,
+    indicator_id TEXT REFERENCES indicators(id),
+    estimate_stage TEXT NOT NULL,
+    occurrence_key TEXT,
+    resolution TEXT,
+    unresolved_reason TEXT,
+    legacy_run_status TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    UNIQUE (source_id, legacy_table, legacy_row_id, reading_kind, source_index)
+);
+CREATE INDEX legacy_links_indicator ON legacy_reading_links(indicator_id);
 CREATE INDEX vintages_knowledge ON value_vintages(first_seen_at);
 CREATE INDEX vintages_measure ON value_vintages(indicator_id, reference_period, issuer_published_at);
 CREATE INDEX readings_origin ON readings(evidence_origin_id);

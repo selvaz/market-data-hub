@@ -6,13 +6,18 @@ from typing import Optional
 
 
 def parse_number(
-    text: str, *, decimal_separator: Optional[str] = None, target_scale: float = 1
+    text: str,
+    *,
+    decimal_separator: Optional[str] = None,
+    target_scale: float = 1,
+    allow_bare_magnitudes: bool = False,
 ) -> float:
     """Return a number in the requested scale; percent stays percentage points.
 
     A single comma followed by three digits defaults to grouping (162,000).
     Callers must specify decimal_separator=',' for ambiguous decimal prints.
     Reject prose with multiple numbers; a collector must identify the cell first.
+    Bare m/t magnitudes require explicit opt-in; m/m and t/t are period bases.
     """
     if target_scale <= 0:
         raise ValueError("target_scale must be positive")
@@ -50,12 +55,19 @@ def parse_number(
     token = token.replace(grouping, "").replace(separator, ".")
     value = Decimal(token)
     suffix = text[matches[0].end() :].strip().lower()
+    if text.startswith("(") and text.endswith(")"):
+        suffix = suffix.removesuffix(")").rstrip()
+    # A slash belongs to the period basis, never to a magnitude (including k/k).
+    suffix = re.sub(r"^(?:%\s*)?[mtyqk]\s*/\s*[mtyqk](?=\s|$)", "", suffix).strip()
+    magnitude = re.match(r"^([a-z]+)(?=\s|$)", suffix)
+    if magnitude and magnitude[1] in {"m", "t"} and not allow_bare_magnitudes:
+        raise ValueError("bare m/t magnitude requires allow_bare_magnitudes=True")
     multiplier = Decimal(1)
     for pattern, scale in (
-        (r"^(k|thousand)\b", "1000"),
-        (r"^(mrd|b|bn|billion)\b", "1000000000"),
-        (r"^(t|tn|trillion)\b", "1000000000000"),
-        (r"^(m|mn|million)\b", "1000000"),
+        (r"^(k|thousand)(?=\s|$)", "1000"),
+        (r"^(mrd|b|bn|billion)(?=\s|$)", "1000000000"),
+        (r"^(t|tn|trillion)(?=\s|$)", "1000000000000"),
+        (r"^(m|mn|million)(?=\s|$)", "1000000"),
     ):
         if re.search(pattern, suffix):
             multiplier = Decimal(scale)

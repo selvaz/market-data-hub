@@ -98,10 +98,15 @@ class Store:
         if isinstance(record, m.ConsensusReading):
             cutoff = record.release_cutoff_at
             data["pre_release_eligible"] = bool(cutoff and record.captured_at < cutoff)
-            data["post_release"] = bool(cutoff and record.captured_at >= cutoff)
+            data["post_release"] = bool(
+                cutoff
+                and record.cutoff_precision == "exact"
+                and record.captured_at >= cutoff
+            )
         with self.transaction():
             if isinstance(record, m.ValueVintage):
                 semantics = ("indicator_id", "value", "unit", "scale", "estimate_stage")
+                provenance = ("verification_status", "extraction_method")
                 same_document = self.conn.execute(
                     "SELECT * FROM value_vintages WHERE source_series_id=? AND reference_period=? "
                     "AND release_event_id=? AND document_hash=?",
@@ -117,6 +122,10 @@ class Store:
                         raise ValueError(
                             "same publication hash has conflicting value semantics"
                         )
+                    if any(same_document[key] != data[key] for key in provenance):
+                        raise ValueError(
+                            "publication re-read has conflicting verification/extraction provenance"
+                        )
                     return same_document["id"]
                 previous = self.conn.execute(
                     "SELECT * FROM value_vintages WHERE source_series_id=? AND reference_period=? "
@@ -128,6 +137,10 @@ class Store:
                     ),
                 ).fetchone()
                 if previous and all(previous[key] == data[key] for key in semantics):
+                    if any(previous[key] != data[key] for key in provenance):
+                        raise ValueError(
+                            "publication re-read has conflicting verification/extraction provenance"
+                        )
                     return previous["id"]
             columns = ", ".join(data)
             placeholders = ", ".join("?" for _ in data)
