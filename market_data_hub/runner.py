@@ -613,9 +613,21 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
                 if result == 3 and len(active) > 1:
                     result = 0
             if "sovereign_layers" in active or "sovereign_yields" in active:
-                from market_data_hub.sovereign_refresh import refresh
-                layers_result = refresh(con, cfg, run_id, start_override=start_override, end=end,
-                                        backfill=mode == "backfill")
+                try:
+                    from market_data_hub.sovereign_refresh import refresh
+                    layers_result = refresh(con, cfg, run_id, start_override=start_override, end=end,
+                                            backfill=mode == "backfill")
+                except Exception as exc:
+                    # This optional source must not prevent the remaining jobs.
+                    layers_result = 2
+                    error = f"unexpected sovereign layer failure ({type(exc).__name__})"
+                    _log(error)
+                    try:
+                        log_run(con, run_id=run_id, started_at=datetime.now(timezone.utc),
+                                source="sovereign_layers", symbol="*", rows_added=0, rows_updated=0,
+                                status="error", error_msg=error, duration_sec=0)
+                    except Exception:
+                        _log("sovereign layer failure could not be persisted in download_log")
                 result = (1 if 1 in (result, layers_result) else
                           2 if 2 in (result, layers_result) else
                           3 if result == layers_result == 3 else 0)

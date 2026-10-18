@@ -24,6 +24,7 @@ import requests
 
 COLUMNS = ["date", "series_id", "value", "series_name", "unit",
            "frequency", "source", "country"]
+USER_AGENT = "market-data-hub/0.1"
 PROVIDERS = {"mot", "finanzagentur", "ecb", "bundesbank", "webstat", "webstat_csv", "bdi", "bde", "nbb", "boe", "mof",
              "snb", "riksbank", "ecos", "chinabond", "sarb", "tesouro", "unavailable"}
 _GENERIC = "http://www.sdmx.org/resources/sdmxml/schemas/v2_1/data/generic"
@@ -44,7 +45,7 @@ def _request(url: str, *, params: Optional[dict] = None,
         try:
             with requests.Session() as session:
                 response = session.get(url, params=params, timeout=timeout, headers={
-                    "User-Agent": "market-data-hub/0.1", "Connection": "close",
+                    "User-Agent": USER_AGENT, "Connection": "close",
                     **(headers or {})})
             if response.status_code >= 400:
                 if response.status_code != 429 and response.status_code < 500:

@@ -41,7 +41,9 @@ def cross_check(con, config: dict, run_id: str, *, start: str, end: str) -> int:
                 or official['convention'] not in allowed
                 or market['convention'] != 'benchmark bond YTM (vendor methodology not specified)'):
             raise ValueError('cross-check conventions/tenors are not comparable')
-        tolerance = float(pair.get('tolerance_bp', config.get('tolerance_bp', 10)))
+        tenor_tolerance = config.get('tolerance_bp_by_tenor', {}).get(official['tenor'],
+                                                                    config.get('tolerance_bp', 10))
+        tolerance = float(pair.get('tolerance_bp', tenor_tolerance))
         if not math.isfinite(tolerance) or tolerance < 0:
             raise ValueError('negative sovereign tolerance')
         rows = con.execute(
@@ -62,6 +64,17 @@ def cross_check(con, config: dict, run_id: str, *, start: str, end: str) -> int:
     return flags
 
 
+def _record_failure(con, run_id: str, sid: str, exc: Exception,
+                    source: str = 'sovereign_layers') -> None:
+    """A broken logging write must not break the source-isolation boundary."""
+    status = 'unavailable' if isinstance(exc, SourceUnavailable) else 'error'
+    error = str(exc) if isinstance(exc, SourceUnavailable) else f'{type(exc).__name__}: sovereign collector fault'
+    try:
+        _log(con, run_id, sid, status, error, source=source)
+    except Exception:
+        print(f'SOVEREIGN {sid}: {status} ({error}; download_log unavailable)', flush=True)
+
+
 def refresh(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None,
             end: Optional[str] = None, backfill: bool = False) -> int:
     config = catalogue()
@@ -69,19 +82,23 @@ def refresh(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None
     end = end or now.date().isoformat()
     cache = {}
     degraded = False
-    entries = config['series']
-    for meta in entries:
+    entries = [e for e in config['series'] if e.get('enabled', True)]
+
+    def register(meta):
         con.execute('INSERT OR REPLACE INTO sovereign_series_metadata VALUES (?, ?)',
                     [meta['symbol'], json.dumps(meta, sort_keys=True)])
+
     for meta in [e for e in entries if e['source_class'] == 'official']:
         sid = meta['symbol']
-        last = con.execute('SELECT max(date) FROM macro_series WHERE series_id=?', [sid]).fetchone()[0]
-        earliest = meta.get('backfill_start', meta['history_start'])
-        start = start_override or (max(earliest, (last-timedelta(days=7)).isoformat())
-                                   if last and not backfill else earliest)
-        if start > end:
-            continue
         try:
+            register(meta)
+            last = con.execute('SELECT max(date) FROM macro_series WHERE series_id=?', [sid]).fetchone()[0]
+            earliest = max(meta['history_start'], meta.get('backfill_start', meta['history_start']))
+            start = max(earliest, start_override or
+                        ((last-timedelta(days=7)).isoformat() if last and not backfill else earliest))
+            if start > end:
+                _log(con, run_id, sid, 'noop', 'requested range precedes series start')
+                continue
             http = cfg.get('http', {})
             frame = feeds.fetch_official(meta, start, end, cache=cache,
                                          timeout=http.get('timeout', 30),
@@ -105,65 +122,89 @@ def refresh(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None
             degraded |= stale
             _log(con, run_id, sid, 'stalled' if stale else 'ok' if not frame.empty else 'empty',
                  'official observations exceed three business days' if stale else None, rows=added)
-        except SourceUnavailable as exc:
+        except Exception as exc:
             degraded = True
-            _log(con, run_id, sid, 'unavailable', str(exc))
+            _record_failure(con, run_id, sid, exc)
 
-    # This log is persistent across processes. The runner's existing DB write
-    # lock serializes this claim and snapshot writes. Even failures get one
-    # attempt per eligible symbol per local capture day.
+    # Match the existing 09:00 / 13:15 Pacific invocations year-round. The early
+    # run logs a deferral without spending the daily request budget. All markets
+    # use one Pacific capture day; their national date may already be tomorrow.
+    capture_at = feeds.utc_now()
+    capture_now = pd.Timestamp(capture_at).tz_convert(config.get('capture_timezone', 'America/Los_Angeles'))
+    capture_day = capture_now.date()
+    capture_after = config.get('capture_after', '13:15')
     eligible = []
     for meta in [e for e in entries if e['source_class'] == 'market:tradingview']:
-        local = pd.Timestamp(now).tz_convert(meta['timezone'])
-        if end < local.date().isoformat():
-            continue  # A historical --end cannot fetch a historical snapshot.
-        if local.weekday() < 5 and local.strftime('%H:%M') < meta['close_after']:
-            continue
-        captured = con.execute('SELECT status FROM sovereign_snapshot_attempts WHERE series_id=? AND capture_date=?',
-                               [meta['symbol'], local.date()]).fetchone()
-        if captured and captured[0] in {'unavailable', 'stalled', 'attempted'}:
+        sid = meta['symbol']
+        try:
+            register(meta)
+            if end < capture_day.isoformat():
+                _log(con, run_id, sid, 'noop', 'historical end cannot fetch a current snapshot')
+                continue
+            if capture_now.strftime('%H:%M') < capture_after:
+                _log(con, run_id, sid, 'deferred',
+                     f"daily snapshot at {capture_after} {config.get('capture_timezone', 'America/Los_Angeles')}")
+                continue
+            captured = con.execute(
+                'SELECT status FROM sovereign_snapshot_attempts WHERE series_id=? AND capture_date=?',
+                [sid, capture_day]).fetchone()
+            if captured and captured[0] in {'unavailable', 'error', 'stalled', 'attempted'}:
+                degraded = True
+            if not captured:
+                con.execute('INSERT INTO sovereign_snapshot_attempts VALUES (?, ?, ?, ?)',
+                            [sid, capture_day, capture_at, 'attempted'])
+                eligible.append(meta)
+        except Exception as exc:
             degraded = True
-        if not captured:
-            eligible.append(meta)
-            con.execute('INSERT INTO sovereign_snapshot_attempts VALUES (?, ?, ?, ?)',
-                        [meta['symbol'], local.date(), now, 'attempted'])
+            _record_failure(con, run_id, sid, exc)
     if eligible:
+        scan_error = None
         try:
             payload = feeds.scan([m['provider_code'] for m in eligible],
                                  timeout=cfg.get('http', {}).get('timeout', 30),
                                  min_interval=config.get('min_interval_seconds', 1))
+            scanned_at = feeds.utc_now()
             rows = {r['s']: r for r in payload['data']}
             if len(rows) != len(payload['data']):
                 raise SourceUnavailable('duplicate TradingView tickers')
-        except (SourceUnavailable, KeyError, TypeError):
+        except Exception as exc:
+            scan_error = exc
             rows = {}
         for meta in eligible:
+            sid = meta['symbol']
+            added = 0
             try:
-                frame = feeds.parse_snapshot(meta, rows.get(meta['provider_code'], {}), now)
-                # A snapshot is immutable for a trading date; reruns on Sunday
-                # cannot rewrite Friday or create Sunday observations.
+                if scan_error is not None:
+                    raise scan_error
+                frame = feeds.parse_snapshot(meta, rows.get(meta['provider_code'], {}), scanned_at)
                 if not frame.empty:
                     day = frame.date.iloc[0]
                     exists = con.execute('SELECT 1 FROM macro_series WHERE series_id=? AND date=?',
-                                         [meta['symbol'], day]).fetchone()
+                                         [sid, day]).fetchone()
                     if not exists:
-                        upsert(con, 'macro_series', frame)
+                        added, _ = upsert(con, 'macro_series', frame)
                         record_vintage(con, 'macro_series', frame, now.date().isoformat(), run_id=run_id)
                 status, error = 'ok' if not frame.empty else 'deferred', None
-            except SourceUnavailable as exc:
+                latest = con.execute('SELECT max(date) FROM macro_series WHERE series_id=?', [sid]).fetchone()[0]
+                if status == 'ok' and is_stalled(latest, 'D', as_of=pd.Timestamp(end).date(),
+                                                 max_lag_days=3, lag_calendar='business'):
+                    status, error = 'stalled', 'TradingView bar exceeds three business days'
+                    degraded = True
+            except Exception as exc:
                 degraded = True
-                status, error = 'unavailable', str(exc)
-            con.execute('UPDATE sovereign_snapshot_attempts SET status=? WHERE series_id=? AND capture_date=?',
-                        [status, meta['symbol'], pd.Timestamp(now).tz_convert(meta['timezone']).date()])
-            latest = con.execute('SELECT max(date) FROM macro_series WHERE series_id=?',
-                                 [meta['symbol']]).fetchone()[0]
-            if status == 'ok' and is_stalled(latest, 'D', as_of=pd.Timestamp(end).date(),
-                                             max_lag_days=3, lag_calendar='business'):
-                status, error = 'stalled', 'TradingView bar exceeds three business days'
-                degraded = True
+                status = 'unavailable' if isinstance(exc, SourceUnavailable) else 'error'
+                error = str(exc) if isinstance(exc, SourceUnavailable) else f'{type(exc).__name__}: sovereign collector fault'
+            try:
                 con.execute('UPDATE sovereign_snapshot_attempts SET status=? WHERE series_id=? AND capture_date=?',
-                            [status, meta['symbol'], pd.Timestamp(now).tz_convert(meta['timezone']).date()])
-            _log(con, run_id, meta['symbol'], status, error)
-    cross_check(con, config, run_id, start=start_override or (pd.Timestamp(end)-pd.Timedelta(days=40)).date().isoformat(),
-                end=end)
+                            [status, sid, capture_day])
+                _log(con, run_id, sid, status, error, rows=added)
+            except Exception as exc:
+                degraded = True
+                _record_failure(con, run_id, sid, exc)
+    try:
+        cross_check(con, config, run_id,
+                    start=start_override or (pd.Timestamp(end)-pd.Timedelta(days=40)).date().isoformat(), end=end)
+    except Exception as exc:
+        degraded = True
+        _record_failure(con, run_id, '*', exc, source='sovereign_cross_check')
     return 2 if degraded else 0

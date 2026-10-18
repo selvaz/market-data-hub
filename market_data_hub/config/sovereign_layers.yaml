@@ -551,11 +551,11 @@
       "unit": "%",
       "frequency": "D",
       "name": "Bank of England 5Y par yield",
-      "history_start": "unverified (HTTP 403)",
+      "history_start": "1993-12-01",
       "publication_lag": "1-2 business days",
       "lag_calendar": "business",
       "endpoint": "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp",
-      "backfill_start": "1900-01-01"
+      "backfill_start": "1993-12-01"
     },
     {
       "symbol": "BOE_GILT_PAR_10Y",
@@ -569,11 +569,11 @@
       "unit": "%",
       "frequency": "D",
       "name": "Bank of England 10Y par yield",
-      "history_start": "unverified (HTTP 403)",
+      "history_start": "1993-11-01",
       "publication_lag": "1-2 business days",
       "lag_calendar": "business",
       "endpoint": "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp",
-      "backfill_start": "1900-01-01"
+      "backfill_start": "1993-11-01"
     },
     {
       "symbol": "BOE_GILT_PAR_20Y",
@@ -587,11 +587,11 @@
       "unit": "%",
       "frequency": "D",
       "name": "Bank of England 20Y par yield",
-      "history_start": "unverified (HTTP 403)",
+      "history_start": "2000-01-04",
       "publication_lag": "1-2 business days",
       "lag_calendar": "business",
       "endpoint": "https://www.bankofengland.co.uk/boeapps/database/_iadb-fromshowcolumns.asp",
-      "backfill_start": "1900-01-01"
+      "backfill_start": "2000-01-04"
     },
     {
       "symbol": "BOC_2Y",
@@ -677,11 +677,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView US 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/New_York",
-      "close_after": "16:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -696,11 +695,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView US 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/New_York",
-      "close_after": "16:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -715,11 +713,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView US 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/New_York",
-      "close_after": "16:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -734,11 +731,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView US 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/New_York",
-      "close_after": "16:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -753,11 +749,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView DE 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Berlin",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Berlin"
     },
     {
@@ -772,11 +767,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView DE 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Berlin",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Berlin"
     },
     {
@@ -791,11 +785,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView DE 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Berlin",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Berlin"
     },
     {
@@ -810,11 +803,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView DE 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Berlin",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Berlin"
     },
     {
@@ -829,11 +821,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IT 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Rome",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Rome"
     },
     {
@@ -848,11 +839,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IT 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Rome",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Rome"
     },
     {
@@ -867,11 +857,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IT 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Rome",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Rome"
     },
     {
@@ -886,11 +875,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IT 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Rome",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Rome"
     },
     {
@@ -905,11 +893,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView FR 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Paris",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Paris"
     },
     {
@@ -924,11 +911,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView FR 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Paris",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Paris"
     },
     {
@@ -943,11 +929,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView FR 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Paris",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Paris"
     },
     {
@@ -962,11 +947,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView FR 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Paris",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Paris"
     },
     {
@@ -981,11 +965,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView ES 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Madrid",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Madrid"
     },
     {
@@ -1000,11 +983,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView ES 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Madrid",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Madrid"
     },
     {
@@ -1019,11 +1001,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView ES 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Madrid",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Madrid"
     },
     {
@@ -1038,11 +1019,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView ES 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Madrid",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Madrid"
     },
     {
@@ -1057,11 +1037,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView GB 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/London",
-      "close_after": "17:00",
       "timestamp_timezone": "Europe/London"
     },
     {
@@ -1076,11 +1055,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView GB 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/London",
-      "close_after": "17:00",
       "timestamp_timezone": "Europe/London"
     },
     {
@@ -1095,11 +1073,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView GB 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/London",
-      "close_after": "17:00",
       "timestamp_timezone": "Europe/London"
     },
     {
@@ -1114,11 +1091,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView GB 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/London",
-      "close_after": "17:00",
       "timestamp_timezone": "Europe/London"
     },
     {
@@ -1133,11 +1109,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView JP 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Tokyo",
-      "close_after": "16:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1152,11 +1127,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView JP 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Tokyo",
-      "close_after": "16:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1171,11 +1145,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView JP 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Tokyo",
-      "close_after": "16:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1190,11 +1163,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView JP 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Tokyo",
-      "close_after": "16:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1209,11 +1181,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CH 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Zurich",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Zurich"
     },
     {
@@ -1228,11 +1199,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CH 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Zurich",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Zurich"
     },
     {
@@ -1247,11 +1217,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CH 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Zurich",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Zurich"
     },
     {
@@ -1266,11 +1235,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CH 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Zurich",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Zurich"
     },
     {
@@ -1285,11 +1253,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CA 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Toronto",
-      "close_after": "17:00",
       "timestamp_timezone": "America/Toronto"
     },
     {
@@ -1304,11 +1271,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CA 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Toronto",
-      "close_after": "17:00",
       "timestamp_timezone": "America/Toronto"
     },
     {
@@ -1323,11 +1289,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CA 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Toronto",
-      "close_after": "17:00",
       "timestamp_timezone": "America/Toronto"
     },
     {
@@ -1342,11 +1307,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CA 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Toronto",
-      "close_after": "17:00",
       "timestamp_timezone": "America/Toronto"
     },
     {
@@ -1361,11 +1325,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView AU 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Australia/Sydney",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1380,11 +1343,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView AU 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Australia/Sydney",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1399,11 +1361,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView AU 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Australia/Sydney",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1418,11 +1379,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView AU 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Australia/Sydney",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1437,11 +1397,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView BE 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Brussels",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Brussels"
     },
     {
@@ -1456,11 +1415,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView BE 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Brussels",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Brussels"
     },
     {
@@ -1475,11 +1433,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView BE 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Brussels",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Brussels"
     },
     {
@@ -1494,11 +1451,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView BE 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Brussels",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Brussels"
     },
     {
@@ -1513,11 +1469,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView PT 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Lisbon",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Lisbon"
     },
     {
@@ -1532,11 +1487,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView PT 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Lisbon",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Lisbon"
     },
     {
@@ -1551,11 +1505,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView PT 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Lisbon",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Lisbon"
     },
     {
@@ -1570,11 +1523,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView PT 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Lisbon",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Lisbon"
     },
     {
@@ -1589,11 +1541,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView GR 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Athens",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Athens"
     },
     {
@@ -1608,11 +1559,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView GR 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Athens",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Athens"
     },
     {
@@ -1627,11 +1577,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView GR 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Athens",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Athens"
     },
     {
@@ -1646,11 +1595,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView GR 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Athens",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Athens"
     },
     {
@@ -1665,11 +1613,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView NL 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Amsterdam",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Amsterdam"
     },
     {
@@ -1684,11 +1631,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView NL 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Amsterdam",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Amsterdam"
     },
     {
@@ -1703,11 +1649,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView NL 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Amsterdam",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Amsterdam"
     },
     {
@@ -1722,11 +1667,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView NL 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Amsterdam",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Amsterdam"
     },
     {
@@ -1741,11 +1685,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView AT 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Vienna",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Vienna"
     },
     {
@@ -1760,11 +1703,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView AT 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Vienna",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Vienna"
     },
     {
@@ -1779,11 +1721,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView AT 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Vienna",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Vienna"
     },
     {
@@ -1798,11 +1739,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView AT 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Vienna",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Vienna"
     },
     {
@@ -1817,11 +1757,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IE 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Dublin",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Dublin"
     },
     {
@@ -1836,11 +1775,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IE 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Dublin",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Dublin"
     },
     {
@@ -1855,11 +1793,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IE 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Dublin",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Dublin"
     },
     {
@@ -1874,11 +1811,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IE 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Dublin",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Dublin"
     },
     {
@@ -1893,11 +1829,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView SE 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Stockholm",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1912,11 +1847,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView SE 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Stockholm",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1931,11 +1865,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView SE 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Stockholm",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -1950,11 +1883,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView MX 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Mexico_City",
-      "close_after": "17:00",
       "timestamp_timezone": "America/Mexico_City"
     },
     {
@@ -1969,11 +1901,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView MX 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Mexico_City",
-      "close_after": "17:00",
       "timestamp_timezone": "America/Mexico_City"
     },
     {
@@ -1988,11 +1919,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView MX 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Mexico_City",
-      "close_after": "17:00",
       "timestamp_timezone": "America/Mexico_City"
     },
     {
@@ -2007,11 +1937,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView BR 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Sao_Paulo",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2026,11 +1955,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView BR 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Sao_Paulo",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2045,11 +1973,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView BR 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Sao_Paulo",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2064,11 +1991,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CN 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Shanghai",
-      "close_after": "17:00",
       "timestamp_timezone": "Asia/Shanghai"
     },
     {
@@ -2083,11 +2009,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CN 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Shanghai",
-      "close_after": "17:00",
       "timestamp_timezone": "Asia/Shanghai"
     },
     {
@@ -2102,11 +2027,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CN 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Shanghai",
-      "close_after": "17:00",
       "timestamp_timezone": "Asia/Shanghai"
     },
     {
@@ -2121,11 +2045,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CN 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Shanghai",
-      "close_after": "17:00",
       "timestamp_timezone": "Asia/Shanghai"
     },
     {
@@ -2140,11 +2063,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IN 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Kolkata",
-      "close_after": "18:00",
       "timestamp_timezone": "Asia/Kolkata"
     },
     {
@@ -2159,11 +2081,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IN 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Kolkata",
-      "close_after": "18:00",
       "timestamp_timezone": "Asia/Kolkata"
     },
     {
@@ -2178,11 +2099,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IN 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Kolkata",
-      "close_after": "18:00",
       "timestamp_timezone": "Asia/Kolkata"
     },
     {
@@ -2197,11 +2117,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView IN 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Kolkata",
-      "close_after": "18:00",
       "timestamp_timezone": "Asia/Kolkata"
     },
     {
@@ -2216,11 +2135,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView ID 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Jakarta",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2235,11 +2153,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView ID 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Jakarta",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2254,11 +2171,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView ID 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Jakarta",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2273,11 +2189,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView ZA 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Africa/Johannesburg",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2292,11 +2207,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView ZA 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Africa/Johannesburg",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2311,11 +2225,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView ZA 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Africa/Johannesburg",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2330,11 +2243,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView TR 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Istanbul",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2349,11 +2261,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView TR 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Istanbul",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2368,11 +2279,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView TR 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Istanbul",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2387,11 +2297,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView PL 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Warsaw",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Warsaw"
     },
     {
@@ -2406,11 +2315,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView PL 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Warsaw",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Warsaw"
     },
     {
@@ -2425,11 +2333,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView PL 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Europe/Warsaw",
-      "close_after": "18:00",
       "timestamp_timezone": "Europe/Warsaw"
     },
     {
@@ -2444,11 +2351,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView KR 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Seoul",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2463,11 +2369,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView KR 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Seoul",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2482,11 +2387,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView KR 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Seoul",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2501,11 +2405,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView KR 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "Asia/Seoul",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2520,11 +2423,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CO 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Bogota",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2539,11 +2441,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CO 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Bogota",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2558,11 +2459,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CL 2Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Santiago",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2577,11 +2477,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CL 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Santiago",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2596,11 +2495,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CL 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Santiago",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2615,11 +2513,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView CL 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Santiago",
-      "close_after": "18:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2634,11 +2531,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView PE 5Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Lima",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2653,11 +2549,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView PE 10Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Lima",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     },
     {
@@ -2672,11 +2567,10 @@
       "unit": "%",
       "frequency": "D",
       "name": "TradingView PE 30Y sovereign yield",
-      "publication_lag": "snapshot after local close; no historical API",
+      "publication_lag": "daily snapshot at/after 13:15 Pacific; not a local closing fixing",
       "lag_calendar": "business",
       "history_start": "first successful capture",
       "timezone": "America/Lima",
-      "close_after": "17:00",
       "timestamp_timezone": "America/New_York"
     }
   ],
@@ -2716,5 +2610,13 @@
       "market": "TV_JP_30Y",
       "comparability_note": "Nominal JGB YTM at same tenor: MoF constant-maturity interpolation versus vendor benchmark bond; curve/benchmark and fixing-time basis can remain."
     }
-  ]
+  ],
+  "capture_timezone": "America/Los_Angeles",
+  "capture_after": "13:15",
+  "tolerance_bp_by_tenor": {
+    "2Y": 5,
+    "5Y": 7.5,
+    "10Y": 10,
+    "30Y": 15
+  }
 }

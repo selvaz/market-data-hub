@@ -15,23 +15,23 @@ from market_data_hub.sources import sovereign_layers as feeds
 from market_data_hub.sources.sovereign_yields import SourceUnavailable
 
 FIX = Path(__file__).parent / 'fixtures' / 'sovereign_layers'
-NOW = datetime(2026, 10, 18, 20, tzinfo=timezone.utc)
+NOW = datetime(2026, 10, 18, 21, tzinfo=timezone.utc)
 
 
 def spec(sid):
     return next(e for e in job.catalogue()['series'] if e['symbol'] == sid)
 
 
-@pytest.mark.parametrize('sid,file', [
-    ('UST_PAR_10Y', 'ust_2026.csv'), ('MOF_JGB_10Y', 'mof_current.csv'),
-    ('BOE_GILT_PAR_10Y', 'boe_synthetic.csv'), ('BOC_10Y', 'boc_10YR.json'),
+@pytest.mark.parametrize('sid,file,last', [
+    ('UST_PAR_10Y', 'ust_2026.csv', '2026-10-16'), ('MOF_JGB_10Y', 'mof_current.csv', '2026-10-15'),
+    ('BOE_GILT_PAR_10Y', 'boe_10Y_live.csv', '2026-10-14'), ('BOC_10Y', 'boc_10YR.json', '2026-10-15'),
 ])
-def test_official_fixtures(sid, file):
+def test_official_fixtures(sid, file, last):
     frame = feeds.parse_official(spec(sid), (FIX / file).read_bytes())
     assert not frame.empty
     assert frame.unit.unique().tolist() == ['%']
     assert frame.series_id.unique().tolist() == [sid]
-    assert frame.date.max() >= pd.Timestamp('2026-10-15')
+    assert frame.date.max() == pd.Timestamp(last)
     assert not frame.date.duplicated().any()
 
 
@@ -67,9 +67,9 @@ def test_tv_invalid_fields_rejected(values):
         feeds.parse_snapshot(spec('TV_US_10Y'), {'s':'TVC:US10Y', 'd':values}, NOW)
 
 
-def test_preclose_is_deferred():
-    now = datetime(2026, 10, 16, 18, tzinfo=timezone.utc)  # 14:00 New York
-    row = {'s':'TVC:US10Y', 'd':[5, pd.Timestamp('2026-10-16T13:00Z').timestamp(), 'America/New_York']}
+def test_sunday_reopened_bar_is_deferred():
+    now = datetime(2026, 10, 19, 0, tzinfo=timezone.utc)  # Sunday 20:00 New York
+    row = {'s':'TVC:US10Y', 'd':[5, pd.Timestamp('2026-10-18T23:30Z').timestamp(), 'America/New_York']}
     assert feeds.parse_snapshot(spec('TV_US_10Y'), row, now).empty
 
 
@@ -83,6 +83,7 @@ def test_scan_rate_limit_and_no_retry(monkeypatch):
     monkeypatch.setattr(feeds.time, 'sleep', sleep)
     monkeypatch.setattr(feeds, '_last_request', 100.)
     feeds.scan(['TVC:US10Y'])
+    assert post.call_args.kwargs['headers']['User-Agent'] == feeds.USER_AGENT
     sleep.assert_called_once_with(1.)
     post.side_effect = requests.ConnectionError('test')
     with pytest.raises(SourceUnavailable):
@@ -178,7 +179,7 @@ def test_divergence_exact_date_threshold_and_report(tmp_db, monkeypatch):
         with monkeypatch.context() as patch:
             patch.setattr(pd.DataFrame, 'to_markdown', Mock(side_effect=ImportError('no tabulate')))
             assert 'MOF_JGB_10Y' in render_md(d)
-        config['tolerance_bp'] = 11
+        config['tolerance_bp_by_tenor']['10Y'] = 11
         assert job.cross_check(con, config, 'repeat', start='2026-10-01', end='2026-10-18') == 0
         assert not con.execute('SELECT flagged FROM sovereign_cross_checks').fetchone()[0]
 
@@ -206,12 +207,20 @@ def test_reject_noncomparable_cross_check(tmp_db, sid):
         job.cross_check(con, config, 'test', start='2026-10-01', end='2026-10-18')
 
 
-def test_boe_backfill_range_and_real_denial(monkeypatch):
-    request = Mock(return_value=Mock(content=(FIX/'boe_synthetic.csv').read_bytes()))
+@pytest.mark.parametrize('tenor,first,count', [
+    ('5Y', '1993-12-01', 8305), ('10Y', '1993-11-01', 8327), ('20Y', '2000-01-04', 6768),
+])
+def test_boe_backfill_range_and_real_denial(monkeypatch, tenor, first, count):
+    meta = spec('BOE_GILT_PAR_' + tenor)
+    assert meta['history_start'] == meta['backfill_start'] == first
+    request = Mock(return_value=Mock(content=(FIX/f'boe_{tenor}_live.csv').read_bytes()))
     monkeypatch.setattr(feeds, '_request', request)
-    frame = feeds.fetch_official(spec('BOE_GILT_PAR_10Y'), '1900-01-01', '2026-10-16')
-    assert len(frame) == 2
-    assert request.call_args.kwargs['params']['Datefrom'] == '01/Jan/1900'
+    frame = feeds.fetch_official(meta, '1900-01-01', '2026-10-18')
+    assert len(frame) == count and frame.date.min() == pd.Timestamp(first)
+    assert frame.date.max() == pd.Timestamp('2026-10-14')
+    assert request.call_args.kwargs['params']['Datefrom'] == pd.Timestamp(first).strftime('%d/%b/%Y')
+    assert feeds.fetch_official(meta, '1900-01-01', '1970-01-01').empty
+    assert request.call_count == 1
     with pytest.raises(SourceUnavailable):
         feeds.parse_official(spec('BOE_GILT_PAR_10Y'), (FIX/'boe_10Y.csv').read_bytes())
 

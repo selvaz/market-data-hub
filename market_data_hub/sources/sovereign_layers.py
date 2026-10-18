@@ -13,7 +13,7 @@ from typing import Optional
 import pandas as pd
 import requests
 
-from .sovereign_yields import SourceUnavailable, _normalize, _request, parse_response
+from .sovereign_yields import USER_AGENT, SourceUnavailable, _normalize, _request, parse_response
 
 TREASURY = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates'
 SCANNER = 'https://scanner.tradingview.com/global/scan'
@@ -67,6 +67,10 @@ def fetch_official(meta: dict, start: str, end: str, *, cache: Optional[dict] = 
     Shared response cache downloads each curve once, even with many tenors.
     A failed chunk raises before returning any rows for this series.
     """
+    # Even an explicit --start cannot precede the publisher's series floor.
+    start = max(pd.Timestamp(start), pd.Timestamp(meta['history_start'])).date().isoformat()
+    if pd.Timestamp(start) > pd.Timestamp(end):
+        return _normalize(meta, [])
     cache = {} if cache is None else cache
 
     def get(url, params=None):
@@ -121,7 +125,7 @@ def scan(tickers: list[str], *, timeout: int = 30, min_interval: float = 1) -> d
         try:
             r = requests.post(SCANNER, json={'symbols': {'tickers': tickers},
                               'columns': ['close', 'time|1', 'timezone']}, timeout=timeout,
-                              headers={'User-Agent': 'market-data-hub/sovereign-yields'})
+                              headers={'User-Agent': USER_AGENT})
             r.raise_for_status()
             data: dict = r.json()
             if not isinstance(data.get('data'), list):
@@ -137,7 +141,7 @@ def parse_snapshot(meta: dict, row: dict, now: datetime) -> pd.DataFrame:
     Use the latest minute bar (time|1): the daily bar's time is its OPEN,
     which can be the preceding evening for US instruments.
     The scanner's timezone defines its session date (even for overseas bonds).
-    The national timezone separately controls the after-close capture gate.
+    Capture timing is a shared Pacific schedule, separate from the quote date.
     No timestamp means no write; never guess Friday by subtracting weekdays.
     """
     try:
@@ -148,13 +152,14 @@ def parse_snapshot(meta: dict, row: dict, now: datetime) -> pd.DataFrame:
             raise ValueError('invalid close')
         if isinstance(stamp, bool) or not isinstance(stamp, (int, float)) or not math.isfinite(stamp):
             raise ValueError('missing bar timestamp')
-        local_now = pd.Timestamp(now).tz_convert(meta['timezone'])
         if quote_zone != meta['timestamp_timezone']:
             raise ValueError('provider session timezone changed')
         bar = pd.Timestamp(stamp, unit='s', tz='UTC').tz_convert(quote_zone)
-        if bar > pd.Timestamp(now) or bar.weekday() >= 5:
+        if bar > pd.Timestamp(now):
             raise ValueError('invalid trading date')
-        if bar.date() == local_now.date() and local_now.strftime('%H:%M') < meta['close_after']:
+        if bar.weekday() >= 5:
+            # A Sunday-evening reopened session is not a completed daily point.
+            # Skip it normally rather than degrading every weekend refresh.
             return _normalize(meta, [])
         return _normalize(meta, [(bar.date().isoformat(), value)])
     except (ValueError, TypeError, KeyError, OverflowError):
