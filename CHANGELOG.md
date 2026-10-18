@@ -21,8 +21,10 @@ dependency.
   MoF Japan, BoE par curve, BoC) and a dated TradingView `TVC:` market snapshot, with
   separate market ids, explicit convention metadata, snapshot budgets and divergence
   reports (`market_data_hub.sovereign_refresh`, `config/sovereign_layers.yaml`). Wired
-  into the existing daily and backfill jobs and exposed in discovery. BoE HTTP 403 and
-  the unverified 2y/30y par codes are recorded as gaps, with no substitutes.
+  into the existing daily and backfill jobs and exposed in discovery. BoE ships verified
+  5y, 10y and 20y par histories (the earlier HTTP 403 came from the default User-Agent
+  and is kept only as a negative test fixture); the unverified BoE 2y/30y par codes are
+  the remaining gaps, with no substitutes.
 
 ### Fixed
 - Macro read API: legacy naive `event_time` values are normalised at the read boundary
