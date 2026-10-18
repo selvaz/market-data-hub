@@ -15,25 +15,27 @@ from .adapters import persist
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
 from .catalogue import FAMILIES
-from .eurostat import EurostatAdapter, PUBLICATIONS
+from .eurostat import EurostatAdapter
+from .discovery import FamilyFetch, fetch_daily
 from .http import FetchError, HttpClient
 from .lease import LeaseBusy, LeaseLost, RunLease
 from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
 from .store import Store, open_writer
+from .verification import configured_bands, persist_review, verify
 
-DEFAULT_LOOKBACK_MONTHS = 72
+DEFAULT_LOOKBACK_MONTHS = 24
 ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapter,
             "ea_hicp": EurostatAdapter, "uk_gdp": ONSAdapter}
+DISCOVERY_ADAPTERS = dict(ADAPTERS)
 
 
 def fetch_windows(families, lookback, today):
     since = shift_month(today.strftime("%Y-%m"), -lookback)
-    # Historical flash publications and area composition require certification.
-    # Do not request unreviewed history merely because payroll needs six years.
-    hicp_start = min(period for period, stage in PUBLICATIONS if stage == "flash")
-    return since, {family: {"fetch_since": max(since, hicp_start) if family == "ea_hicp" else since,
+    # Revision/benchmark widening belongs to the provider; persist routine
+    # history within this window and discover its publication evidence.
+    return since, {family: {"fetch_since": since,
                             "fetch_until": today.isoformat()} for family in families}
 
 
@@ -116,22 +118,23 @@ def persist_counts(store, observations):
             "readings_skipped": len(observations) - added["readings"]}
 
 
-def execute(target, families, lookback, dry_run):
+def execute(target, families, lookback, dry_run, *, bands=None):
     today = datetime.now(timezone.utc).date()
     since, windows = fetch_windows(families, lookback, today)
     run_id = uuid4().hex
     summary = {"run_id": run_id, "db": str(target), "dry_run": dry_run,
                "requested_since": since, "families": {}}
-    parameters = {"lookback_months": lookback, "fetch_windows": windows}
+    parameters = {"lookback_months": lookback, "fetch_windows": windows, "sanity_bands": bands or configured_bands()}
     if dry_run:
-        client = HttpClient(persistent_rates=False)
+        client = HttpClient()
         with preview_store(target) as store:
             for family in families:
                 summary["families"].update(collect_family(
-                    lambda: nullcontext(store), client, run_id, family, windows, dry_run=True))
+                    lambda: nullcontext(store), client, run_id, family, windows, dry_run=True, bands=bands))
     else:
         with RunLease(target) as lease:
             client = HttpClient(before_request=lease.renew)
+            parameters["lease_events"] = lease.events
             with open_writer(target) as store:
                 lease.validate()
                 run_log.recover(store)
@@ -139,34 +142,40 @@ def execute(target, families, lookback, dry_run):
             # Keep the writer lock/transaction out of all network and parsing work.
             for family in families:
                 summary["families"].update(collect_family(
-                    lambda: open_writer(target), client, run_id, family, windows, lease=lease))
+                    lambda: open_writer(target), client, run_id, family, windows, lease=lease, bands=bands))
             with open_writer(target) as store:
                 lease.validate()
                 run_log.finish(store, run_id, outcome(summary["families"]))
     summary["status"] = outcome(summary["families"])
-    # A preview wrote no data: 3 is used for every successful dry run; proposed
-    # changes are still reported with the exact same counts as real persistence.
-    summary["exit_code"] = 1 if summary["status"] == "failed" else 3 if dry_run or summary["status"] == "no_change" else 0
+    summary["exit_code"] = 1 if summary["status"] == "failed" else 0 if any(
+        r["vintages_added"] for r in summary["families"].values()) else 3
     return summary
 
 
-def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_run=False):
+def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_run=False, bands=None):
     """Fetch outside the writer lock, then atomically commit data and outcome."""
     result = dict(windows[family], vintages_added=0, readings_added=0, readings_skipped=0)
     try:
         if lease:
             lease.renew()
-        observations = list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))
-        if not observations:
+        batch = (fetch_daily(client, family, result["fetch_since"]) if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
+                 else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
+        observations = batch.observations
+        if not observations and not batch.issues:
             raise FetchError("No observations in requested window")
         if any(o.family != family for o in observations):
             raise ValueError("Adapter returned another family")
         with writer() as store:
             if lease:
                 lease.validate()
+            batch = verify(store, batch, bands or configured_bands())
+            observations = batch.observations
             with store.batch():
+                persist_review(store, batch, family, None if dry_run else run_id)
                 result.update(persist_counts(store, observations))
-                result["status"] = "ok" if result["vintages_added"] or result["readings_added"] else "no_change"
+                result["status"] = "needs_review" if batch.issues else "ok" if result["vintages_added"] else "no_change"
+                if batch.issues:
+                    result["review_reasons"] = batch.issues
                 if not dry_run:
                     run_log.family_result(store, run_id, family, result)
     except Exception as exc:
@@ -182,7 +191,7 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
 
 def outcome(results):
     statuses = {r["status"] for r in results.values()}
-    return "failed" if "failed" in statuses else "ok" if "ok" in statuses else "no_change"
+    return "failed" if "failed" in statuses else "ok" if "ok" in statuses else "needs_review" if "needs_review" in statuses else "no_change"
 
 
 def main(argv=None):
@@ -191,6 +200,7 @@ def main(argv=None):
     parser.add_argument("--families", nargs="+", default=list(FAMILIES), help="Names separated by spaces or commas")
     parser.add_argument("--lookback-months", type=int, default=DEFAULT_LOOKBACK_MONTHS)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--sanity-bands", type=Path, help="JSON per-indicator max absolute changes")
     args = parser.parse_args(argv)
     families = list(dict.fromkeys(f for group in args.families for f in group.split(",")))
     if not families or any(f not in FAMILIES for f in families):
@@ -198,7 +208,11 @@ def main(argv=None):
     if not 1 <= args.lookback_months <= 180:
         parser.error("--lookback-months must be between 1 and 180")
     try:
-        summary = execute(args.db.resolve(), families, args.lookback_months, args.dry_run)
+        bands = configured_bands(json.loads(args.sanity_bands.read_text()) if args.sanity_bands else None)
+    except (ValueError, OSError):
+        parser.error("--sanity-bands must be a JSON object of positive per-indicator changes")
+    try:
+        summary = execute(args.db.resolve(), families, args.lookback_months, args.dry_run, bands=bands)
     except Exception as exc:
         summary = {"status": "failed", "exit_code": 1, "dry_run": args.dry_run, **safe_error(exc)}
     print(json.dumps(summary, indent=2))

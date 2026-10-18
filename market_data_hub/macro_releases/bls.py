@@ -55,7 +55,7 @@ class BLSAdapter:
         })
         return self.parse(document, families, since)
 
-    def parse(self, document, families, since):
+    def parse(self, document, families, since, *, editions=None):
         payload = json_payload(document)
         if payload.get("status") != "REQUEST_SUCCEEDED":
             raise FetchError("BLS rejected request")
@@ -70,7 +70,7 @@ class BLSAdapter:
             if not rows:
                 raise FetchError(f"BLS series empty or absent: {key}")
             newest = max(r["year"] + "-" + r["period"][1:] for r in rows)
-            edition = EDITIONS.get((family, newest))
+            edition = (editions or EDITIONS).get((family, newest))
             if edition is None:
                 raise FetchError(f"BLS publication metadata needs review: {family} {newest}")
             cutoff = revision_start(family, newest, since, edition)

@@ -1,0 +1,93 @@
+"""Deterministic structural/sanity gate and append-only review queue."""
+from dataclasses import replace
+import hashlib
+import json
+import math
+
+from .documents import put_document
+from .run_log import now
+from .models import utc
+
+
+def reviewed_anchor(obs):
+    from . import bea, bls, eurostat, ons
+    if obs.family in ("us_cpi", "us_payrolls"):
+        return obs.edition in {d for (family, _), d in bls.EDITIONS.items() if family == obs.family}
+    if obs.family == "us_gdp":
+        return obs.edition in bea.EDITIONS
+    if obs.family == "ea_hicp":
+        return (obs.edition == eurostat.PUBLICATIONS.get((obs.period, obs.stage)) or
+                obs.stage == "final" and obs.edition in {d for (_, stage), d in eurostat.PUBLICATIONS.items() if stage == "final"})
+    if obs.family == "uk_gdp":
+        return (obs.edition == "time-series:" + str(ons.VERSION) or obs.provider_vintage in ons.BULLETINS)
+    return False
+
+# Changes are in the indicator's declared printed units (payroll: thousands).
+SANITY_BANDS = {
+    "us_cpi_headline_mm": 3, "us_cpi_core_mm": 3,
+    "us_cpi_headline_yy": 5, "us_cpi_core_yy": 5,
+    "us_payrolls_change": 1500, "us_gdp_qq_saar": 15,
+    "ea_hicp_yy": 5, "ea_hicp_mm": 3, "ea21_hicp_yy": 5, "ea21_hicp_mm": 3,
+    "ea_future_hicp_yy": 5, "ea_future_hicp_mm": 3,
+    "uk_gdp_mm": 5, "uk_gdp_index": 20,
+}
+
+
+def configured_bands(overrides=None):
+    values = dict(SANITY_BANDS)
+    if overrides is not None and not isinstance(overrides, dict):
+        raise ValueError("Sanity bands must be an object")
+    for indicator, value in (overrides or {}).items():
+        if indicator not in values or isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+            raise ValueError("Sanity overrides must name known indicators and finite positive absolute changes")
+        values[indicator] = value
+    return values
+
+
+def verify(store, batch, bands):
+    # A known-good edition may bootstrap its own backfill/current final values.
+    # Other editions can use that reviewed anchor as their initial comparison;
+    # subsequent runs use the already committed verified vintage instead.
+    anchors = [o for o in batch.observations if reviewed_anchor(o) and o.value is not None and not o.needs_review]
+    for obs in batch.observations:
+        if obs.value is None:
+            continue
+        if not math.isfinite(obs.value):
+            batch.issue("non_finite_value")
+            continue
+        if obs.published_at and utc(obs.published_at) > utc(obs.document.retrieved_at):
+            batch.issue("publication_after_capture")
+        baseline = store.conn.execute(
+            "SELECT v.value FROM value_vintages v JOIN source_series s ON s.id=v.source_series_id "
+            "WHERE v.indicator_id=? AND v.verification_status='verified' AND s.evidence_role='issuer' "
+            "AND s.is_published=1 "
+            "ORDER BY (v.reference_period=?) DESC,v.issuer_published_at DESC,v.reference_period DESC,v.id DESC LIMIT 1",
+            (obs.indicator_id, obs.period)).fetchone()
+        if not baseline and not reviewed_anchor(obs):
+            candidates = [o for o in anchors if o.indicator_id == obs.indicator_id]
+            if candidates:
+                anchor = max(candidates, key=lambda o: (o.period == obs.period, o.published_at or "", o.period))
+                baseline = (anchor.value,)
+        if baseline and abs(obs.value - baseline[0]) > bands[obs.indicator_id]:
+            batch.issue("sanity_band_exceeded:" + obs.indicator_id)
+        elif not baseline and not batch.anchors and not reviewed_anchor(obs):
+            batch.issue("verified_baseline_missing:" + obs.indicator_id)
+        # First bootstrap anchors still reject obviously invalid numeric payloads.
+        cap = 25000 if obs.indicator_id == "us_payrolls_change" else 500 if obs.indicator_id == "uk_gdp_index" else 100
+        if abs(obs.value) > cap:
+            batch.issue("absolute_sanity_bound_exceeded:" + obs.indicator_id)
+    if batch.issues:
+        batch.observations = [replace(o, needs_review=True) for o in batch.observations
+                              if o.value is None or math.isfinite(o.value)]
+    return batch
+
+
+def persist_review(store, batch, family, run_id):
+    hashes = {put_document(store, doc) for doc in batch.documents}
+    if not batch.issues:
+        return
+    reasons = json.dumps(sorted(batch.issues))
+    for digest in hashes:
+        identity = hashlib.sha256((family + digest + reasons).encode()).hexdigest()
+        store.conn.execute("INSERT INTO review_queue VALUES (?,?,?,?,?,?,'pending') ON CONFLICT DO NOTHING",
+                           (identity, family, run_id, digest, reasons, now()))

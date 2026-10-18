@@ -89,8 +89,8 @@ class ONSAdapter:
         return out
 
     @staticmethod
-    def parse_levels(document, metadata, since="1900-01", *, publication):
-        if metadata.get("version") != VERSION or metadata.get("edition") != "time-series":
+    def parse_levels(document, metadata, since="1900-01", *, publication, version=VERSION):
+        if metadata.get("version") != version or metadata.get("edition") != "time-series":
             raise FetchError("ONS pinned dataset version changed")
         rows = list(csv.DictReader(StringIO(document.body.decode("utf-8-sig"))))
         if not rows:
@@ -107,8 +107,8 @@ class ONSAdapter:
             if period < since:
                 continue
             out.append(Observation("uk_gdp_index", "uk_gdp", period, float(row["v4_0"]), row["v4_0"],
-                                   "gdp-to-four-decimal-places:time-series:69:A--T", "ONS", document,
-                                   "time-series:69", published_at, provider_vintage="69", revision="routine"))
+                                   f"gdp-to-four-decimal-places:time-series:{version}:A--T", "ONS", document,
+                                   f"time-series:{version}", published_at, provider_vintage=str(version), revision="routine"))
         if not out:
             raise FetchError("ONS pinned GDP version has no levels in requested window")
         return out
@@ -119,20 +119,26 @@ class ONSAdapter:
         edition = bulletin_date(document)
         paragraphs = Paragraphs()
         paragraphs.feed(text)
-        summary = next((p for p in paragraphs.paragraphs if p.startswith("Monthly GDP grew by ")), None)
+        summary = next((p for p in paragraphs.paragraphs if re.match(
+            r"Monthly (?:real gross domestic product \(GDP\)|GDP) (?:grew|fell|showed|was|is estimated to have)", p)), None)
         if summary is None:
             raise FetchError("ONS published monthly GDP paragraph changed")
         # Bound the parser to the monthly-GDP summary, excluding quarterly rates,
         # component growth, and the 'previous publication' figure in parentheses.
         summary = re.sub(r"\([^)]*\)", "", summary)
-        values = re.findall(r"(?:grew by|growth of) (-?[\d.]+)% in (\w+ \d{4})", summary)
+        values = [(m.start(), m[1], m[2], m[3]) for m in re.finditer(
+            r"(grew by|grown by|growth of|fell by|fallen by|fall of) (-?[\d.]+)% in (\w+ \d{4})", summary)]
+        values.extend((m.start(), "growth of", "0", m[1]) for m in re.finditer(
+            r"(?:no growth|flat) in (\w+ \d{4})", summary))
+        values.sort()
         if len(values) < 2:
             raise FetchError("ONS monthly GDP revision window absent")
         out = []
-        for index, (printed, month) in enumerate(values):
+        for index, (_, direction, printed, month) in enumerate(values):
             period = datetime.strptime(month, "%B %Y").strftime("%Y-%m")
             if period >= since:
-                out.append(Observation("uk_gdp_mm", "uk_gdp", period, float(printed), printed,
+                numeric = -abs(float(printed)) if direction in ("fell by", "fallen by", "fall of") else float(printed)
+                out.append(Observation("uk_gdp_mm", "uk_gdp", period, numeric, str(numeric),
                                        "gdpmonthlyestimateuk:published-mm", "ONS", document,
                                        edition, edition + "T00:00:00Z", method="html",
                                        provider_vintage=document.url.rsplit("/", 1)[-1],

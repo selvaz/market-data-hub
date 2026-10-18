@@ -21,6 +21,8 @@ INDICATORS = {
         measure("ea_hicp_mm", "Eurostat", "EA20", "mm", "NSA"),
         measure("ea21_hicp_yy", "Eurostat", "EA21", "yy", "NSA"),
         measure("ea21_hicp_mm", "Eurostat", "EA21", "mm", "NSA"),
+        measure("ea_future_hicp_yy", "Eurostat", "EA_PENDING", "yy", "NSA"),
+        measure("ea_future_hicp_mm", "Eurostat", "EA_PENDING", "mm", "NSA"),
         measure("uk_gdp_mm", "ONS", "GBR", "mm", "SA"),
         measure("uk_gdp_index", "ONS", "GBR", "level", "SA", "index"),
     ]
@@ -42,11 +44,11 @@ def hicp_indicator(period, basis, geography="EA"):
     if geography == "EA":
         if "2023-01" <= period <= "2025-12":
             geography = "EA20"
-        elif "2026-01" <= period <= "2026-12":
+        elif period >= "2026-01":
             geography = "EA21"
         else:
-            raise ValueError(f"Euro area composition needs review: {period}")
+            geography = "EA_PENDING"
     if geography not in ("EA20", "EA21"):
-        raise ValueError("Unsupported euro area composition")
+        return INDICATORS[f"ea_future_hicp_{basis}"]
     prefix = "ea" if geography == "EA20" else "ea21"
     return INDICATORS[f"{prefix}_hicp_{basis}"]

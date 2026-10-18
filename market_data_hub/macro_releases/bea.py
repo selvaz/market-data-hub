@@ -38,7 +38,7 @@ class BEAAdapter:
         return out
 
     @staticmethod
-    def parse(document, *, since="1900-01", line="1"):
+    def parse(document, *, since="1900-01", line="1", editions=None):
         payload = json_payload(document).get("BEAAPI", {})
         result = payload.get("Results", {})
         if "Error" in result or "Error" in payload:
@@ -56,9 +56,10 @@ class BEAAdapter:
         if not match:
             raise FetchError("BEA table lacks issuer revision date")
         edition = datetime.strptime(match[1], "%B %d, %Y").date().isoformat()
-        if edition not in EDITIONS:
+        registry = editions or EDITIONS
+        if edition not in registry:
             raise FetchError(f"BEA edition/stage metadata needs review: {edition}")
-        headline, stage = EDITIONS[edition]
+        headline, stage = registry[edition]
         out = []
         for row in rows:
             if not re.fullmatch(r"\d{4}Q[1-4]", row["TimePeriod"]):

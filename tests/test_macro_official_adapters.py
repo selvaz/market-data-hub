@@ -260,7 +260,7 @@ def test_eurostat_flash_dimension_and_no_estimate_promoted_to_final():
         EurostatAdapter.parse(replace(final, body=json.dumps(payload).encode()), stage="final")
 
 
-@pytest.mark.parametrize("statuses", [[429, 200], [503, 503], [403]])
+@pytest.mark.parametrize("statuses", [[429, 200], [503, 503, 503], [403]])
 def test_http_bounded_retry_secrets_redacted(tmp_path, monkeypatch, statuses):
     calls = []
     def request(*args, **kwargs):

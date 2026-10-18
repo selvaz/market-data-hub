@@ -4,9 +4,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from contextlib import nullcontext
 from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 import hashlib
 import json
+import math
 import os
+import re
 from pathlib import Path
 import tempfile
 import time
@@ -46,6 +49,37 @@ class Document:
     def json(self):
         return json.loads(self.body)
 
+    @property
+    def identity_hash(self):
+        normalized = normalize_body(self.body)
+        return hashlib.sha256(normalized).hexdigest() if normalized != self.body and hashlib.sha256(self.body).hexdigest() == self.document_hash else self.document_hash
+
+
+def normalize_body(body):
+    """Remove narrowly identified transport tokens, never dates/values/content."""
+    body = re.sub(rb"(window\.__CF\$cv\$params=)\{[^}]*\}", rb"\1{}", body)
+    body = re.sub(rb"(?i)((?:cf-ray|ray[_-]?id)[\"']?\s*[:=]\s*[\"'])[a-z0-9-]+", rb"\1VOLATILE", body)
+    # BLS reports elapsed request time in an otherwise identical JSON response.
+    body = re.sub(rb'("responseTime"\s*:\s*)(?:"[^"]*"|\d+(?:\.\d+)?)', rb'\g<1>0', body)
+    return body
+
+
+def retry_delay(response, attempt, *, clock=None):
+    clock = clock or time.time
+    delay = 2 ** attempt
+    header = getattr(response, "headers", {}).get("Retry-After") if response is not None else None
+    if header:
+        try:
+            value = float(header)
+            if math.isfinite(value):
+                delay = max(delay, value)
+        except ValueError:
+            try:
+                delay = max(delay, parsedate_to_datetime(header).timestamp() - clock())
+            except (ValueError, TypeError, OverflowError):
+                pass
+    return max(0, delay)
+
 
 class RateLimiter:
     """One named ledger per provider, shared even when databases differ."""
@@ -80,9 +114,11 @@ class RateLimiter:
 
 
 class HttpClient:
-    def __init__(self, *, rate_directory=None, session=None, before_request=None, persistent_rates=True):
+    def __init__(self, *, rate_directory=None, session=None, before_request=None, persistent_rates=True,
+                 max_attempts=3):
         self.session = session or requests.Session()
         self.before_request = before_request
+        self.max_attempts = max_attempts
         # Use certifi explicitly: the Windows system store is broken here.
         self.session.trust_env = False
         self.limiters = {p: RateLimiter(p, rate_directory, daily_limit=500 if p == "bls" else None,
@@ -93,8 +129,7 @@ class HttpClient:
         safe_url = urlsplit(url)
         if safe_url.scheme != "https" or safe_url.query or safe_url.fragment:
             raise ValueError("HTTPS endpoint without query required; use params")
-        # Exactly two possible attempts, including timeouts. No requests adapter retries.
-        for attempt in range(2):
+        for attempt in range(self.max_attempts):
             if self.before_request:
                 self.before_request()
             self.limiters[provider].acquire()
@@ -107,14 +142,14 @@ class HttpClient:
             except requests.exceptions.SSLError:
                 raise FetchError(f"{provider}: TLS verification failed") from None
             except (requests.Timeout, requests.ConnectionError):
-                if attempt == 0:
-                    time.sleep(1)
+                if attempt + 1 < self.max_attempts:
+                    self._backoff(retry_delay(None, attempt))
                     continue
-                raise FetchError(f"{provider}: transport failed after two attempts") from None
+                raise FetchError(f"{provider}: transport failed after bounded attempts") from None
             except requests.RequestException:
                 raise FetchError(f"{provider}: non-transient request failure") from None
-            if response.status_code in (429, 500, 502, 503, 504) and attempt == 0:
-                time.sleep(1)
+            if response.status_code in (429, 500, 502, 503, 504) and attempt + 1 < self.max_attempts:
+                self._backoff(retry_delay(response, attempt))
                 continue
             if response.status_code != 200:
                 raise FetchError(f"{provider}: HTTP {response.status_code}")
@@ -126,6 +161,15 @@ class HttpClient:
                     raw = raw.replace(str(value).encode(), b"REDACTED")
             return Document(raw, url, datetime.now(timezone.utc).isoformat(), digest)
         raise AssertionError("unreachable")
+
+    def _backoff(self, seconds):
+        # Honor long Retry-After values while keeping lease ownership alive.
+        while seconds > 0:
+            interval = min(seconds, 30)
+            time.sleep(interval)
+            seconds -= interval
+            if self.before_request:
+                self.before_request()
 
     def get(self, provider, url, params=None):
         return self.request(provider, url, params=params)

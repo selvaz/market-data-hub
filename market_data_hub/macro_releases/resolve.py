@@ -152,10 +152,11 @@ class Snapshot:
             links = {r["reading_id"]: dict(r) for r in conn.execute("SELECT * FROM legacy_reading_links WHERE updated_at<=?", (cutoff,))}
             schedules = [dict(r) for r in conn.execute("SELECT * FROM schedule_versions WHERE recorded_at<=? ORDER BY recorded_at,id", (cutoff,))]
             consensus = [dict(r) for r in conn.execute("SELECT * FROM consensus_readings WHERE captured_at<=?", (cutoff,))]
-            collect_families = [dict(r) for r in conn.execute(
+            tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            collect_families = [] if "collect_run_families" not in tables else [dict(r) for r in conn.execute(
                 "SELECT f.*,r.started_at FROM collect_run_families f JOIN collect_runs r "
                 "ON r.run_id=f.run_id AND r.status='running' WHERE f.finished_at<=? "
-                "ORDER BY f.finished_at DESC,f.run_id DESC", (cutoff,))]
+                "ORDER BY f.finished_at DESC,f.rowid DESC", (cutoff,))]
         finally:
             if owns_transaction:
                 conn.execute("ROLLBACK")  # finish read transaction; never mutate

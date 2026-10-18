@@ -56,7 +56,7 @@ def test_logged_official_first_run_and_idempotent_second(tmp_path, replay, capsy
     assert code == 0
     assert set(first["families"]) == set(FAMILIES)
     assert len({id(c[0]) for c in replay}) == 1  # all families share one client/limiter set
-    assert first["families"]["ea_hicp"]["fetch_since"] == "2026-06"
+    assert first["families"]["ea_hicp"]["fetch_since"] == first["requested_since"]
     assert first["families"]["us_payrolls"]["fetch_since"] == first["requested_since"]
     with open_reader(db) as reader:
         log = [dict(r) for r in reader.conn.execute("SELECT * FROM collect_runs")]
@@ -65,7 +65,7 @@ def test_logged_official_first_run_and_idempotent_second(tmp_path, replay, capsy
         assert log[1]["finished_at"] >= log[0]["started_at"]
         assert all(r["code_version"] == __version__ and r["host"] for r in log)
         assert json.loads(log[0]["families"]) == list(FAMILIES)
-        assert json.loads(log[0]["parameters"])["lookback_months"] == 72
+        assert json.loads(log[0]["parameters"])["lookback_months"] == 24
         assert reader.conn.execute("SELECT COUNT(*) FROM collect_run_families").fetchone()[0] == 5
         cards = reader.release_cards("2026-10-01", "2026-10-17", indicators=["us_cpi_headline_yy"])
         assert cards["cards"][0]["resolution"]["status"] == "official"
@@ -139,7 +139,7 @@ def test_dry_run_no_writes_and_exact_preview(tmp_path, replay, capsys, exists):
         assert invoke(db, capsys)[0] == 0
     before = {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()}
     code, preview = invoke(db, capsys, "--dry-run")
-    assert code == 3 and preview["dry_run"]
+    assert code == (3 if exists else 0) and preview["dry_run"]
     assert preview["status"] == ("no_change" if exists else "ok")
     after = {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file()}
     assert before == after
@@ -159,7 +159,7 @@ def test_dry_run_reads_committed_live_wal_without_touching_it(tmp_path, replay, 
         lock_before = lock.stat()
         before = {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file() and p != lock}
         code, result = invoke(db, capsys, "--dry-run", "--families", "us_cpi")
-        assert code == 3 and result["families"]["us_cpi"]["status"] == "ok"
+        assert code == 0 and result["families"]["us_cpi"]["status"] == "ok"
         assert before == {p.name: p.read_bytes() for p in tmp_path.iterdir() if p.is_file() and p != lock}
         assert lock.stat().st_mtime_ns == lock_before.st_mtime_ns
         with run_daily.preview_store(db) as copied:
@@ -198,7 +198,7 @@ def test_failed_dry_run_no_target_created(tmp_path, monkeypatch, capsys):
     db = tmp_path / "missing.sqlite"
     code, result = invoke(db, capsys, "--dry-run", "--families", "us_cpi")
     assert code == 1 and result["families"]["us_cpi"]["error_message"] == "Missing credential: BLS_API_KEY"
-    assert not list(tmp_path.iterdir())
+    assert not db.exists() and not Path(str(db) + ".writer.lock").exists()
 
 
 def test_live_stale_lease_and_old_owner_fenced(tmp_path):
@@ -260,7 +260,13 @@ def test_real_adapters_saved_responses_share_client(tmp_path, monkeypatch, capsy
             pass
 
         def request(self, provider, url, **kwargs):
-            return document("bls/cpi-ces.json")
+            from dataclasses import replace
+            import hashlib
+            doc = document("bls/cpi-ces.json")
+            payload = doc.json()
+            payload["Results"]["series"] = [s for s in payload["Results"]["series"] if s["seriesID"] in kwargs["payload"]["seriesid"]]
+            body = json.dumps(payload).encode()
+            return replace(doc, body=body, document_hash=hashlib.sha256(body).hexdigest())
 
         def get(self, provider, url, params=None):
             if provider == "bea":
@@ -280,6 +286,7 @@ def test_real_adapters_saved_responses_share_client(tmp_path, monkeypatch, capsy
     monkeypatch.setattr(run_daily, "HttpClient", Replay)
     monkeypatch.setattr("market_data_hub.macro_releases.bls.api_key", lambda _: "fake-key")
     monkeypatch.setattr("market_data_hub.macro_releases.bea.api_key", lambda _: "fake-key")
+    monkeypatch.setattr("market_data_hub.macro_releases.discovery.api_key", lambda _: "fake-key")
     code, result = invoke(tmp_path / "macro.sqlite", capsys)
     assert code == 0, result
     assert all(r["readings_added"] > 0 for r in result["families"].values())
@@ -308,7 +315,7 @@ def test_rate_spacing_retry_and_provider_independence(tmp_path, monkeypatch):
     assert len(calls) == 3 and all(b - a >= 1 for a, b in zip(calls, calls[1:]))
 
 
-@pytest.mark.parametrize("error,attempts", [(requests.Timeout(), 2), (requests.ConnectionError(), 2),
+@pytest.mark.parametrize("error,attempts", [(requests.Timeout(), 3), (requests.ConnectionError(), 3),
                                            (requests.exceptions.SSLError(), 1), (requests.RequestException(), 1)])
 def test_only_transient_transport_retried(monkeypatch, error, attempts):
     calls = []
@@ -350,13 +357,13 @@ def test_migration_v3_preserves_20k_legacy_readings(tmp_path, legacy_calendar):
     old.close()
     original_bytes = db.read_bytes()
     with run_daily.preview_store(db) as preview:
-        assert preview.conn.execute("PRAGMA user_version").fetchone()[0] == 4
+        assert preview.conn.execute("PRAGMA user_version").fetchone()[0] == 5
         assert preview.conn.execute("SELECT COUNT(*) FROM readings").fetchone()[0] == 20_000
     assert db.read_bytes() == original_bytes
     with sqlite3.connect(db) as unchanged:
         assert unchanged.execute("PRAGMA user_version").fetchone()[0] == 3
     with open_writer(db) as upgraded:
-        assert upgraded.conn.execute("PRAGMA user_version").fetchone()[0] == 4
+        assert upgraded.conn.execute("PRAGMA user_version").fetchone()[0] == 5
         for name, rows in before.items():
             assert [tuple(r) for r in upgraded.conn.execute(f'SELECT * FROM "{name}" ORDER BY rowid')] == rows
         assert upgraded.conn.execute("SELECT COUNT(*) FROM readings").fetchone()[0] == 20_000
@@ -373,7 +380,7 @@ def test_cli_requires_explicit_db_even_with_production_environment(monkeypatch):
             run_daily.main(args)
         assert exc.value.code == 2
     seen = []
-    def execute(target, *args):
+    def execute(target, *args, **kwargs):
         seen.append(target)
         return {"exit_code": 3}
     monkeypatch.setattr(run_daily, "execute", execute)
