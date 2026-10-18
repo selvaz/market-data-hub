@@ -100,7 +100,7 @@ _COLUMNS = {
         "source", "updated_at", "report_variant",
     ],
     "alfred_vintage_observations": [
-        "series_id", "date", "as_of", "value", "source", "updated_at",
+        "series_id", "date", "as_of", "value", "source", "updated_at", "realtime_end",
     ],
 }
 

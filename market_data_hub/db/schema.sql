@@ -381,12 +381,36 @@ CREATE TABLE IF NOT EXISTS alfred_vintage_observations (
     series_id  VARCHAR NOT NULL,
     date       DATE    NOT NULL,
     as_of      DATE    NOT NULL,
+    realtime_end DATE,
     value      DOUBLE,
     source     VARCHAR,
     updated_at TIMESTAMP,
     PRIMARY KEY (series_id, date, as_of)
 );
 CREATE INDEX IF NOT EXISTS idx_alfred_series_date ON alfred_vintage_observations (series_id, date);
+
+-- Checkpoints are scoped by requested history floor, so a limited backfill
+-- cannot cause a later full-history run to skip older vintages.
+CREATE TABLE IF NOT EXISTS alfred_backfill_progress (
+    series_id VARCHAR NOT NULL,
+    since_vintage DATE NOT NULL,
+    last_vintage DATE NOT NULL,
+    updated_at TIMESTAMP DEFAULT current_timestamp,
+    PRIMARY KEY (series_id, since_vintage)
+);
+
+-- Partial pages resume at the first uncommitted row of a frozen query.
+CREATE TABLE IF NOT EXISTS alfred_backfill_pending (
+    series_id VARCHAR NOT NULL,
+    since_vintage DATE NOT NULL,
+    range_start DATE NOT NULL,
+    range_end DATE NOT NULL,
+    last_vintage DATE NOT NULL,
+    vintage_count INTEGER NOT NULL,
+    next_offset BIGINT NOT NULL,
+    open_end BOOLEAN NOT NULL,
+    PRIMARY KEY (series_id, since_vintage)
+);
 
 CREATE TABLE IF NOT EXISTS macro_panel_vintage (
     date          DATE    NOT NULL,
