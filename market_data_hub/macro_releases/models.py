@@ -102,6 +102,9 @@ class ValueVintage(Contract):
     verification_status: Verification
     derived_from_json: str = "[]"
     formula_version: Optional[str] = None
+    composition_id: Optional[str] = None
+    issuer_local_time: Optional[str] = None
+    issuer_timezone: Optional[str] = None
 
     @field_validator("reference_period")
     @classmethod
@@ -139,6 +142,9 @@ class Reading(Contract):
     verification_status: Verification
     url: Optional[str] = None
     raw_payload_json: str
+    composition_id: Optional[str] = None
+    issuer_local_time: Optional[str] = None
+    issuer_timezone: Optional[str] = None
 
     @model_validator(mode="after")
     def period_is_honest(self):

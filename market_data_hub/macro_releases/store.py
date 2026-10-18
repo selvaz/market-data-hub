@@ -57,6 +57,7 @@ class Store:
         self.conn = conn
         self.writable = writable
         self._lock = lock
+        self._batch = False
 
     def __enter__(self):
         return self
@@ -77,6 +78,9 @@ class Store:
         if not self.writable:
             raise PermissionError("read-only macro releases handle")
         if self.conn.in_transaction:
+            if self._batch:
+                yield
+                return
             raise RuntimeError("nested or long-lived transactions are not supported")
         self.conn.execute("BEGIN IMMEDIATE")
         try:
@@ -85,6 +89,18 @@ class Store:
         except BaseException:
             self.conn.execute("ROLLBACK")
             raise
+
+    @contextmanager
+    def batch(self):
+        """Atomically persist a fully fetched family; never perform I/O here."""
+        if self._batch:
+            raise RuntimeError("nested batches are not supported")
+        with self.transaction():
+            self._batch = True
+            try:
+                yield
+            finally:
+                self._batch = False
 
     def put(self, record: m.Contract) -> Union[int, str]:
         """Idempotent typed insert. Readings retain distinct raw-observation hashes.

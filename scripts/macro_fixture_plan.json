@@ -1,0 +1,22 @@
+[
+  {"name":"bls/cpi-ces","url":"https://api.bls.gov/publicAPI/v2/timeseries/data/","provider":"bls","params":{"seriesid":["CUSR0000SA0","CUUR0000SA0","CUSR0000SA0L1E","CUUR0000SA0L1E","CES0000000001"],"startyear":"2025","endyear":"2026","calculations":true,"catalog":true}},
+  {"name":"bea/nipa","url":"https://apps.bea.gov/api/data/","provider":"bea","params":{"method":"GetData","datasetname":"NIPA","TableName":"T10101","Frequency":"Q","Year":"2026","ResultFormat":"JSON"}},
+  {"name":"bea/advance-release","url":"https://www.bea.gov/sites/default/files/2026-07/gdp2q26-adv.pdf","provider":"bea","authenticate":false},
+  {"name":"bea/second-release","url":"https://www.bea.gov/sites/default/files/2026-08/gdp2q26-2nd.pdf","provider":"bea","authenticate":false},
+  {"name":"eurostat/flash-rates","url":"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_fpd","params":{"lang":"EN","geo":"EA20","coicop18":"TOTAL","release":"FLS","sinceTimePeriod":"2026-06"}},
+  {"name":"eurostat/final-rates","url":"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr","params":{"lang":"EN","geo":"EA20","coicop18":"TOTAL","sinceTimePeriod":"2026-06"}},
+  {"name":"eurostat/headline-flash-rates","url":"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_fpd","params":{"lang":"EN","geo":"EA","coicop18":"TOTAL","release":"FLS","sinceTimePeriod":"2026-06"}},
+  {"name":"eurostat/headline-final-rates","url":"https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr","params":{"lang":"EN","geo":"EA","coicop18":"TOTAL","sinceTimePeriod":"2026-06"}},
+  {"name":"eurostat/final-publication","url":"https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-16102026-ap"},
+  {"name":"ons/gdp69","url":"https://api.beta.ons.gov.uk/v1/datasets/gdp-to-four-decimal-places/editions/time-series/versions/69"},
+  {"name":"ons/gdp69-csv","url":"https://static.ons.gov.uk/datasets/gdp-to-four-decimal-places-time-series-v69.csv"},
+  {"name":"ons/current-edition","url":"https://api.beta.ons.gov.uk/v1/datasets/gdp-to-four-decimal-places/editions/time-series"},
+  {"name":"ons/current-bulletins","url":"https://www.ons.gov.uk/economy/grossdomesticproductgdp/bulletins/gdpmonthlyestimateuk/previousreleases"},
+  {"name":"ons/june-content","url":"https://www.ons.gov.uk/economy/grossdomesticproductgdp/bulletins/gdpmonthlyestimateuk/june2026"},
+  {"name":"ons/july-content","url":"https://www.ons.gov.uk/economy/grossdomesticproductgdp/bulletins/gdpmonthlyestimateuk/july2026"},
+  {"name":"ons/august-content","url":"https://www.ons.gov.uk/economy/grossdomesticproductgdp/bulletins/gdpmonthlyestimateuk/august2026"},
+  {"name":"fred/gdp-vintages","url":"https://api.stlouisfed.org/fred/series/observations","provider":"fred","params":{"series_id":"A191RL1Q225SBEA","file_type":"json","observation_start":"2026-04-01","observation_end":"2026-04-01","realtime_start":"2026-07-01","realtime_end":"2026-10-17","output_type":1}},
+  {"name":"fred/gdp-second","url":"https://api.stlouisfed.org/fred/series/observations","provider":"fred","params":{"series_id":"A191RL1Q225SBEA","file_type":"json","observation_start":"2026-04-01","observation_end":"2026-04-01","realtime_start":"2026-08-26","realtime_end":"2026-08-26"}},
+  {"name":"fred/payroll-august","url":"https://api.stlouisfed.org/fred/series/observations","provider":"fred","params":{"series_id":"PAYEMS","file_type":"json","observation_start":"2026-06-01","observation_end":"2026-08-01","realtime_start":"2026-09-04","realtime_end":"2026-09-04","units":"chg"}},
+  {"name":"fred/cpi","url":"https://api.stlouisfed.org/fred/series/observations","provider":"fred","params":{"series_id":"CPIAUCSL","file_type":"json","observation_start":"2026-09-01","observation_end":"2026-09-01","realtime_start":"2026-10-14","realtime_end":"2026-10-14","units":"pch"}}
+]

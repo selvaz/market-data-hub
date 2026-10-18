@@ -30,8 +30,8 @@ with open_reader("scratch/macro_releases.sqlite") as reader:
 
 The writer configures WAL, `foreign_keys=ON`, and `busy_timeout=60000` ms.
 A process-safe file lock permits one cooperating writer per database. The writer
-holds the lock for its lifetime; SQLite transactions cover only an individual
-insert or worklist update. Close it promptly. Never perform network/model calls
+holds the lock for its lifetime; SQLite transactions cover an individual
+insert/worklist update or an explicit, fully fetched `Store.batch()`. Close it promptly. Never perform network/model calls
 inside a transaction. The lock is released after a process crash by the OS.
 This is the M4 local lock; a scheduled runner's lease and provider-wide rate
 limiting belong to later work.
@@ -50,6 +50,10 @@ Schema v2 migrates existing v1 stores transactionally, preserving raw evidence
 and pending work while adding mutable legacy links and terminal worklist state.
 It also corrects the derived `post_release` flag on old date-only consensus rows;
 their original cutoff, precision, provider and capture timestamps remain intact.
+Schema v3 adds `composition_id`, `issuer_local_time`, and `issuer_timezone` to
+readings/vintages and tightens the placeholder views. Existing evidence remains
+append-only; the known v2 tool-rendered BLS archive source is excluded from
+official candidates without rewriting its rows.
 
 `ResolutionVersion`, `Claim`, and `ClaimEvidence` require a caller-supplied
 `idempotency_key`, unique within their table. A retry reuses its original row id;
@@ -130,9 +134,12 @@ The SQL views `first_release` and `latest_official`, and Python
 `Store.as_known_at(t)`, are **M4 deterministic placeholders**, not the M6 resolver.
 They consider verified, published issuer vintages whose issuer agrees with the
 indicator and event. Results carry `selection_rule_version` with the explicit
-`placeholder:m4-verified-issuer-v1` identifier. They order by issuer publication time, then first seen time
+`placeholder:m5-verified-issuer-v2` identifier. They order by issuer publication time, then first seen time
 and row id for reproducibility. They do not infer authority from extraction
-method. `first_release` selects the earliest publication per indicator/period;
+method. `first_release` selects the earliest proven `revision_kind='initial'`
+publication per indicator/period; historical snapshots marked `backfill`, routine
+revisions and benchmarks cannot masquerade as first prints. An absent initial
+print yields no `first_release` row even when `latest_official` is available;
 `latest_official` selects the latest across stages. All stages remain stored.
 `as_known_at` filters `first_seen_at <= t` **before** selecting the latest
 publication. Downloading an old publication later cannot leak into an earlier
@@ -252,10 +259,10 @@ snapshot, with no dependency on a sibling checkout or live database in CI.
 Refresh the snapshot from source when explicitly adding support for a new
 legacy schema version; unsupported versions fail rather than silently drifting.
 
-M5 adds certified collectors and schedule/source mappings against saved issuer
-publications: CPI SA/NSA, payroll revision windows, GDP estimates, HICP stages,
-and an ONS family. It must use the issuer's published transformations, maintain
-short writes, and keep failed/overdue releases in the daily backlog.
+M5 adds the manual official-source adapters described below. M6 and the future
+daily runner still own scheduling, persistent fetch-failure/backlog work and
+consumer resolution. A CLI failure is reported with a nonzero exit status;
+it is not a statement that no release occurred.
 
 M6 replaces placeholder selection with the single versioned deterministic
 resolver and consumer read API: semantic/edition compatibility, explicit unit
@@ -264,3 +271,167 @@ equally authoritative conflicts, frozen provider forecasts, freshness/coverage,
 and explicit empty-result reasons. Later work adds D+1 evidence-backed claims,
 briefs, and consumer migration. No z-scores, cross-measure surprise ranking,
 provider averaging, or LLM selection of official numbers belongs in this layer.
+
+## Official-source collection (M5)
+
+Run explicitly against a development database:
+
+```console
+python -m market_data_hub.macro_releases.collect --db scratch/macro.sqlite --families us_cpi,us_payrolls,us_gdp,ea_hicp,uk_gdp --since 2026-06
+```
+
+`--db` and `--families` are mandatory; there is no environment/production path
+fallback. The CLI also refuses paths containing `ProgramData`. `--since` is a
+reference-month cutoff (inclusive of a quarter ending in that month). Without
+it the cutoff is four months before the current month. It is a finite manual
+run: no scheduled task, timer, intraday polling or production deployment. The
+owner's cadence remains one daily run after the US close, plus weekly review.
+
+`Adapter.fetch(families, since)` returns typed `Observation` objects carrying a
+`Document`, source identity, exact mapping, publication edition/stage, revision
+kind, publication precision and provider vintage. `persist` uses only M4's typed
+`Store.put` contracts. HTTP and parsing complete before opening the writer; no
+network call holds its lock or a database transaction. Each provider batch is
+atomic: an unexpected fetch/parse/write exception records the affected families,
+rolls back its entire batch and allows independent providers to complete. Output reports failures,
+new/reused vintages, and explicitly unavailable observations.
+
+| Family | Mapping and published transformation | Revision/history behavior |
+| --- | --- | --- |
+| `us_cpi` | BLS v2 `CUSR0000SA0`, `CUSR0000SA0L1E`: issuer `pct_changes[1]` for SA m/m. `CUUR0000SA0`, `CUUR0000SA0L1E`: issuer `pct_changes[12]` for NSA y/y. | Fetch five complete calendar years plus the current year, with calculation inputs, in one batch. Never synthesize a missing BLS calculation. Nonpublished October 2025 levels and the affected November m/m changes remain nonnumeric readings. |
+| `us_payrolls` | BLS CES `CES0000000001`, issuer `net_changes[1]`; unit `persons`, scale 1000. | Inspect at least the newest month and two prior months, even with a newer `--since`. February editions inspect five complete calendar years plus the current year and mark historical changes `benchmark`. All belong to one publication event. The current API does not recover old initial editions. |
+| `us_gdp` | BEA NIPA `T10101`, line 1, `A191RL`, percent change at annual rate. No calculation from GDPC1 levels. | Current API plus issuer PDF archives of the advance/second estimates. An absent line raises `FetchError`; it can never return the remaining table. Older revised quarters share the headline publication event while retaining their own value stage. |
+| `ea_hicp` | Eurostat ECOICOP v2 `prc_hicp_fpd`, **`release=FLS`**, for flash; `prc_hicp_minr` for current final. `coicop18=TOTAL`, evolving **`geo=EA`**, `RCH_A`/`RCH_M`. | Resolve membership by reference period: EA20 in 2023–2025, EA21 in 2026; unreviewed periods fail explicitly. `ea_hicp_*` remains the fixed EA20 golden identity; `ea21_hicp_*` is EA21. Each composition shares flash/final indicator ids and records `composition_id` in readings/vintages. Historical flash is preserved; `minr` supplies current-edition history, classified against stored issuer vintages. Estimated cells are never labelled final. |
+| `uk_gdp` | ONS `gdp-to-four-decimal-places`, edition `time-series`, **version 69**, SIC `A--T`, UK. | Check the current edition and bulletin index before reading the pin; newer versions/bulletins fail for review. Index levels end in June 2026 and use the June bulletin's **13 August** publication date, not the 24 August upload date; first-load history is backfill. July/August bulletins provide published growth/revisions via a narrow HTML parser. |
+
+All issuer API/CSV values have `extraction_method="api"` and verified status.
+Archived BEA PDFs use `pdf`; ONS bulletin growth uses `html`. BLS tool-rendered
+archives use `archive_text` and remain **unverified**, excluded from official
+selection. They certify numeric transcription only, not issuer transport.
+These extraction methods are explicit, not disguised API reads.
+The adapter catalogue is hand-reviewed code, with separate SA/NSA indicators.
+
+The BLS API does not expose publication dates or editions. JSON-stat's Eurostat
+`updated` applies to the dataset, not each observation. BEA's `LastRevised` does
+not name an estimate stage. Consequently publication/stage metadata is pinned
+to reviewed editions in `bls.EDITIONS`, `bea.EDITIONS`, `eurostat.PUBLICATIONS`
+and `ons.BULLETINS`. Unknown editions fail explicitly instead of inventing a
+release time/stage from the retrieval date. **This is the certified 2026 slice;
+review and extend those registries before collecting later publications.**
+The ONS version pin also requires deliberate review before being advanced.
+BLS and BEA retain 08:30 issuer-local time and `America/New_York`, converting
+with `zoneinfo`: winter releases are 13:30Z and summer releases 12:30Z.
+Historical snapshots cannot supply first-print history. Re-fetching unchanged
+values in the same edition reuses vintages even when retrieval time/hash changes;
+a changed value or new edition appends a vintage.
+`adapters.revision_kind` classifies ordinary editions centrally. A historical
+snapshot with no earlier published issuer vintage for that measure/period is
+`backfill`; with issuer history it is `routine`. The lookup spans value stages,
+so flash to final and advance to second to third are routine revisions of the
+same measure/period family, including unchanged estimates. It compares issuer
+publication times, so a newer edition loaded first cannot revise an older
+archive. Mirror and nonpublished source series do not supply issuer history.
+Explicit initial publications and benchmark revisions retain their meaning.
+
+Add `--with-redistributors` for FRED/ALFRED evidence. CPI uses the corresponding
+SA/NSA levels and FRED's `pch`/`pc1` transformations; payrolls use `PAYEMS/chg`;
+GDP uses the published-rate series `A191RL1Q225SBEA/lin`. Every observation keeps
+the actual issuer and `distributor_id="FRED"`, with `evidence_role="mirror"`
+and unverified status. It cannot enter M4's official view. Numeric differences
+in an exactly matching indicator/period/stage/edition create a discrepancy
+against the verified issuer vintage, including when the mirror arrived first.
+There is no cross-edition comparison or majority/average selection here.
+
+ALFRED's change-only history omits an unchanged second GDP estimate. The adapter
+makes explicit as-of requests for all three reviewed publication dates instead;
+their provider vintage stays distinct from issuer publication time and our
+retrieval/first-availability time. Historical BLS API editions remain unavailable;
+the saved tool-rendered archive supports August's initial numeric transcription
+but remains unverified evidence, so August has no certified first-print row.
+
+`derived.percent_change` is opt-in. It reads two stored level vintage ids,
+checks measure/adjustment/geography and the exact m/m or y/y lag, and writes a
+separate nonpublished source-series record with both input ids and
+`formula_version="percent-change:v1"`. Calculated values have method
+`calculation` and unverified status; they cannot displace a published rate.
+
+HTTP uses `requests` with certifi, a named per-provider limiter with a shared
+file-lock ledger under the user temporary directory (`mdh-macro-rates`), one
+second spacing and a BLS ceiling of 500 calls per UTC day. Different databases
+share the same provider ledger. Each request has a connect/read timeout and
+at most **one** retry with one-second backoff on transport/429/transient-5xx
+failures. Authentication/403/schema errors do not retry. There is no pagination
+or retry-until-success loop; truncated FRED results fail explicitly. Redirects
+fail, and the ONS CSV is pinned to its verified canonical `static.ons.gov.uk`
+URL. API keys come from process variables or Windows user environment variables;
+errors never include credential-bearing URLs, bodies or tracebacks.
+
+## M5 certification and source evidence
+
+`tests/test_macro_official_adapters.py` forbids HTTP and replays saved issuer
+responses from `tests/fixtures/macro_releases/`. Every saved document has a
+SHA-256 and retrieval metadata. `.gitattributes` preserves captured bytes across
+Windows/Linux checkouts, including issuer line endings and whitespace.
+BEA echoes its key in the response; that one
+field is redacted in the fixture, whose hash explicitly covers the redacted
+bytes. Runtime HTTP hashes the original bytes before redacting storage payloads.
+The two BLS archive snapshots are JSON-encoded `web.run` issuer-page responses,
+labelled as such in metadata: direct local BLS website requests returned 403.
+They are independent archive oracles, not manufactured BLS v2 responses.
+Review-round captures use lossless zlib/base64 `.response.json` envelopes with
+the raw-body SHA-256, request URL/parameters, response status/location and
+retrieval time. The replay helper decodes and checks the body hash offline.
+
+| Golden family | Numeric cases passed | Failed |
+| --- | ---: | ---: |
+| US headline/core CPI, SA m/m and NSA y/y | 4 | 0 |
+| US payroll initial/revised | 2 | 0 |
+| US GDP advance/second/third | 3 | 0 |
+| EA20 HICP flash/final, original golden | 2 | 0 |
+| UK monthly GDP including June revision | 3 | 0 |
+| Total within the M5 slice | 14 | 0 |
+
+The other 18 golden cases are outside the requested families; the M4 suite
+continues to exercise all 32 contracts. **One golden metadata exception remains:**
+`ea_hicp_yy_final_2026-09` says 17 October. The saved issuer publication
+`eurostat/final-publication.html` explicitly says **16 October 2026**, with the
+same 3.8% y/y and 0.6% m/m. M5 preserves the original golden file and uses the
+issuer date; this is numeric certification with an explicit date correction,
+not a claim that all original golden metadata passed unchanged.
+The golden file also specifies fixed **EA20**, which is preserved. It does not
+describe the 2026 headline area. `eurostat/headline-cases.json` adds six EA21
+checks: June y/y 2.8% flash/current-final and September 3.8% y/y, 0.6% m/m in
+both stages. Live `geo=EA` captures explicitly label EA21 from 2026; the June
+EA20 current-final value is 2.7%, stored separately with its own composition.
+The original payroll initial numeric case passes transcription but remains
+unverified, as its saved archive was tool-rendered.
+
+Additional assertions cover one payroll event carrying the new month and both
+revisions; unchanged GDP editions; first/latest/as-known-at views; reread
+idempotency even when transport bytes change; flash/final identity; unavailable
+BLS observations; explicit derived inputs/formula; mirror discrepancies in
+both arrival orders; the missing-BEA-line regression; bounded retries and
+shared quotas; required CLI path and partial-provider failure reporting.
+
+Live-verified endpoints (17 October 2026):
+
+- BLS POST `https://api.bls.gov/publicAPI/v2/timeseries/data/` with `calculations=true`.
+- BEA GET `https://apps.bea.gov/api/data/`, NIPA `T10101`, and the issuer's `gdp2q26-adv.pdf` / `gdp2q26-2nd.pdf` archives.
+- Eurostat GET `https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_fpd?release=FLS` and `.../prc_hicp_minr` with the dimensions above. `prc_hicp_flash` is 404; old `prc_hicp_manr` is archived at 2025.
+- ONS GET `https://api.beta.ons.gov.uk/v1/datasets/gdp-to-four-decimal-places/editions/time-series/versions/69`; CSV `https://static.ons.gov.uk/datasets/gdp-to-four-decimal-places-time-series-v69.csv`; issuer July/August 2026 monthly GDP bulletins.
+- FRED/ALFRED GET `https://api.stlouisfed.org/fred/series/observations`, including exact GDP as-of requests for 30 July, 26 August and 30 September.
+
+Review-round verification (17 October): both Eurostat datasets return HTTP 200
+with `geo=EA`, including the composition label and June/September values above.
+The ONS `download.ons.gov.uk/.../69.csv` URL returns 301; its canonical
+`static.ons.gov.uk` target returns **200 without a redirect** and exactly matches
+the saved CSV hash. The current edition endpoint still reports version 69; the
+`.../gdpmonthlyestimateuk/previousreleases` index names August 2026 as latest.
+The June bulletin was also captured to establish its publication date. Only
+fixture captures used live HTTP in this review round; all tests run offline.
+
+For an intentional fixture refresh, run
+`python scripts/capture_macro_fixtures.py --plan scripts/macro_fixture_plan.json`
+outside tests. Existing captures are skipped; the script uses the same limiter,
+bounded HTTP and secret redaction. Review any deliberate replacement separately.
+Tests never run that script and never read user API keys.

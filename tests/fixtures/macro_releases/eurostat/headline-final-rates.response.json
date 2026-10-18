@@ -1,0 +1,19 @@
+{
+  "name": "eurostat/headline-final-rates",
+  "metadata": {
+    "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr",
+    "request": {
+      "lang": "EN",
+      "geo": "EA",
+      "coicop18": "TOTAL",
+      "sinceTimePeriod": "2026-06"
+    },
+    "status_code": 200,
+    "location": null,
+    "retrieved_at": "2026-10-17T18:59:57.539392+00:00",
+    "sha256": "b63e79f411e2e0ad7c6198d56d667c934b96c6537fc35fd5aba24641a3013574",
+    "response_url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_minr?lang=EN&geo=EA&coicop18=TOTAL&sinceTimePeriod=2026-06",
+    "size": 5019
+  },
+  "body_zlib_base64": "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"
+}

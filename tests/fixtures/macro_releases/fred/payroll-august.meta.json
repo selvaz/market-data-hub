@@ -1,0 +1,15 @@
+{
+  "url": "https://api.stlouisfed.org/fred/series/observations",
+  "request": {
+    "series_id": "PAYEMS",
+    "file_type": "json",
+    "observation_start": "2026-06-01",
+    "observation_end": "2026-08-01",
+    "realtime_start": "2026-09-04",
+    "realtime_end": "2026-09-04",
+    "units": "chg"
+  },
+  "retrieved_at": "2026-10-17T17:37:19.681031+00:00",
+  "sha256": "e74e9c06bde5731a32afc0bbd2c9faff226189cb3b186a91c517b7b6415e3033",
+  "credential_redacted": false
+}

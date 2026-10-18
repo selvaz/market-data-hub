@@ -1,0 +1,13 @@
+{
+  "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/prc_hicp_fpd",
+  "request": {
+    "lang": "EN",
+    "geo": "EA20",
+    "coicop18": "TOTAL",
+    "release": "FLS",
+    "sinceTimePeriod": "2026-06"
+  },
+  "retrieved_at": "2026-10-17T17:36:16.885685+00:00",
+  "sha256": "91563ee171073d56347700d847db40ec15bb14bdb4166411a05456174b4b30c8",
+  "credential_redacted": false
+}

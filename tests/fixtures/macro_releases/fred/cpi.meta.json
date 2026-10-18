@@ -1,0 +1,15 @@
+{
+  "url": "https://api.stlouisfed.org/fred/series/observations",
+  "request": {
+    "series_id": "CPIAUCSL",
+    "file_type": "json",
+    "observation_start": "2026-09-01",
+    "observation_end": "2026-09-01",
+    "realtime_start": "2026-10-14",
+    "realtime_end": "2026-10-14",
+    "units": "pch"
+  },
+  "retrieved_at": "2026-10-17T17:37:21.018175+00:00",
+  "sha256": "7d2a943a545c7ef588f75e372ae9e32a1aca79312df8fe432f09f8fdcfd7350d",
+  "credential_redacted": false
+}

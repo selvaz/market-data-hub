@@ -1,0 +1,9 @@
+{
+  "url": "https://static.ons.gov.uk/datasets/gdp-to-four-decimal-places-time-series-v69.csv",
+  "request": {},
+  "retrieved_at": "2026-10-17T18:59:00.886257+00:00",
+  "status_code": 200,
+  "location": null,
+  "sha256": "48a3b1947ec1774425e24b45c73cfed19b2573de56995d72fe44bc5697ef8975",
+  "credential_redacted": false
+}

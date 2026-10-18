@@ -1,0 +1,14 @@
+{
+  "name": "ons/current-edition",
+  "metadata": {
+    "url": "https://api.beta.ons.gov.uk/v1/datasets/gdp-to-four-decimal-places/editions/time-series",
+    "request": {},
+    "status_code": 200,
+    "location": null,
+    "retrieved_at": "2026-10-17T18:58:57.564420+00:00",
+    "sha256": "2639babec58832382a9a6b7ac787cb93bc18ea374ef77497478717c620b0d372",
+    "response_url": "https://api.beta.ons.gov.uk/v1/datasets/gdp-to-four-decimal-places/editions/time-series",
+    "size": 584
+  },
+  "body_zlib_base64": "eJy9kMGOwjAMRP/FZ1IXAUvbn0Fu49CI0ES12wvqv5Oiot3Tnti9jSzb82YewNarjwM0oP7ORnj0LLADb/OIzifrbH02XB2tOR7K0tT7zhmisq0PJ1dxWeXd4IebQPMAS0rCusp+ZJc/9KpJGkRKvmhZqYiDFNc4F9MN5z1uB4JXm4xG4+I0Gsudv1MwKVD3zfLLxpIRSFn0MvMorzQfBMCtIsEfDeHmJPhVvwmzyiTCwf29/+r0RvjHtLCsCTWXnc3S1AYvPVtYnt/Ty+w="
+}
