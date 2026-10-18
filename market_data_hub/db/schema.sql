@@ -93,6 +93,30 @@ CREATE TABLE IF NOT EXISTS macro_series (
 );
 CREATE INDEX IF NOT EXISTS idx_macro_series ON macro_series (series_id);
 
+-- Reviewed source/convention/lag catalogue; never an instruction to splice.
+CREATE TABLE IF NOT EXISTS sovereign_series_metadata (
+    series_id VARCHAR PRIMARY KEY,
+    metadata_json VARCHAR NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sovereign_snapshot_attempts (
+    series_id VARCHAR NOT NULL,
+    capture_date DATE NOT NULL,
+    captured_at TIMESTAMP NOT NULL,
+    status VARCHAR NOT NULL,
+    PRIMARY KEY (series_id, capture_date)
+);
+CREATE TABLE IF NOT EXISTS sovereign_cross_checks (
+    date DATE NOT NULL,
+    official_id VARCHAR NOT NULL,
+    market_id VARCHAR NOT NULL,
+    difference_bp DOUBLE NOT NULL,
+    tolerance_bp DOUBLE NOT NULL,
+    flagged BOOLEAN NOT NULL,
+    convention_note VARCHAR NOT NULL,
+    run_id VARCHAR NOT NULL,
+    PRIMARY KEY (date, official_id, market_id)
+);
+
 -- CFTC Commitments of Traders: weekly positioning by report date and contract.
 CREATE TABLE IF NOT EXISTS cftc_tff_positioning (
     report_date DATE NOT NULL,

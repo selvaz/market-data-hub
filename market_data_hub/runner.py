@@ -564,7 +564,7 @@ def run_live(con, cfg: dict, run_id: str) -> None:
 
 # --------------------------------------------------------------- ENTRY
 # Default source set for a full run.
-_DEFAULT_SOURCES = ["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors", "sovereign_yields"]
+_DEFAULT_SOURCES = ["yahoo", "fred", "nyfed_acm", "binance", "macro_panel", "factors", "sovereign_yields", "sovereign_layers"]
 
 
 def run(mode: str = "full", sources: Optional[List[str]] = None,
@@ -612,6 +612,13 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
                                              start_override=_start("sovereign_yields"), end=end)
                 if result == 3 and len(active) > 1:
                     result = 0
+            if "sovereign_layers" in active or "sovereign_yields" in active:
+                from market_data_hub.sovereign_refresh import refresh
+                layers_result = refresh(con, cfg, run_id, start_override=start_override, end=end,
+                                        backfill=mode == "backfill")
+                result = (1 if 1 in (result, layers_result) else
+                          2 if 2 in (result, layers_result) else
+                          3 if result == layers_result == 3 else 0)
             if "binance" in active:
                 run_binance(con, cfg, run_id, start_override=_start("binance"), end=end)
             if "macro_panel" in active:

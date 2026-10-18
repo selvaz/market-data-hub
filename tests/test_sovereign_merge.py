@@ -8,6 +8,7 @@ import run_backfill
 import run_daily
 import validate_config
 from market_data_hub import catalog, config_loader, runner
+from market_data_hub import sovereign_refresh
 from market_data_hub.coverage import report
 from market_data_hub.db.connection import get_conn
 
@@ -17,11 +18,12 @@ def test_combined_catalog_retains_every_declared_series(tmp_db):
     acm = config_loader.get_nyfed_acm_series()
     sovereign = config_loader.get_sovereign_yields()
     assert config_loader.get_macro_series() == fred + acm
-    declared = {e['symbol'] for e in fred + acm + sovereign}
+    layers = config_loader.get_sovereign_layer_series()
+    declared = {e['symbol'] for e in fred + acm + sovereign + layers}
     entries = catalog.list_macro_series(with_coverage=False)
     assert set(entries.series_id) == declared and entries.series_id.is_unique
     dataset = next(d for d in catalog.list_datasets() if d['domain'] == 'macro')
-    assert dataset['n_series'] == len(declared) == 149
+    assert dataset['n_series'] == len(declared) == 291
     assert dataset['frequency'] == 'D/W/M/Q/A'
     assert all(name in dataset['description'] for name in ('FRED', 'NY Fed ACM', 'sovereign'))
     for sid in ('NYFED_ACM_TP10_MONTHLY', 'CB_ES_10Y', 'ITA_BTP10_MOT', 'DEU_BUND10_FA'):
@@ -57,6 +59,9 @@ def test_runner_dispatches_both_collectors_without_changing_exit_aggregation(tmp
         return status
     monkeypatch.setattr(runner, 'run_nyfed_acm', acm)
     monkeypatch.setattr(runner, 'run_sovereign_yields', sovereign)
+    # The sovereign selection now also dispatches the two-layer collector.
+    # Keep this orchestration contract entirely offline.
+    monkeypatch.setattr(sovereign_refresh, 'refresh', lambda *a, **k: 3)
     monkeypatch.setattr(runner, 'rebuild_coverage', lambda *args: 0)
     monkeypatch.setattr(runner, 'rebuild_macro_panel_coverage', lambda *args: 0)
     assert {'nyfed_acm', 'sovereign_yields'} <= set(runner._DEFAULT_SOURCES)

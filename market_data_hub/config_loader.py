@@ -65,6 +65,13 @@ def get_sovereign_yields() -> List[Dict[str, Any]]:
 
 
 @lru_cache(maxsize=1)
+def get_sovereign_layer_series() -> List[Dict[str, Any]]:
+    """Issuer/market IDs remain distinct across discovery and coverage."""
+    return [{"enabled": True, "asset_class": "MACRO", "priority": 1, "max_lag_days": 3, **e}
+            for e in _load_yaml("sovereign_layers.yaml").get("series", [])]
+
+
+@lru_cache(maxsize=1)
 def get_nyfed_acm_series() -> List[Dict[str, Any]]:
     series: List[Dict[str, Any]] = _load_yaml("macro_series.yaml").get("nyfed_acm", [])
     return series

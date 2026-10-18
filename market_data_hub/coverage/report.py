@@ -15,6 +15,7 @@ import duckdb
 import pandas as pd
 
 from market_data_hub.config_loader import get_yahoo_tickers, get_macro_series, get_sovereign_yields
+from market_data_hub.config_loader import get_sovereign_layer_series
 from market_data_hub.coverage.freq_detector import detect_frequency
 from market_data_hub.coverage.stalled_detector import lag_days, is_stalled
 from market_data_hub.coverage.gap_detector import missing_pct, gap_count, date_span
@@ -34,7 +35,7 @@ def _meta_lookup() -> Dict[str, dict]:
         m[e["symbol"]] = {"asset_class": e.get("asset_class", "MACRO"),
                           "priority": e.get("priority", 2),
                           "max_lag_days": e.get("max_lag_days")}
-    for e in get_sovereign_yields():
+    for e in get_sovereign_yields() + get_sovereign_layer_series():
         if e.get("enabled", True):
             m[e["symbol"]] = {"asset_class": "MACRO", "priority": e.get("priority", 1),
                               "max_lag_days": e["max_lag_days"],
@@ -128,6 +129,16 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
             row = _row_for(sid, entry["source"], pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]")}),
                            "date", meta[sid], run_id)
             row.update(status="unavailable", error_msg=entry.get("unavailable_reason", "no official observations ingested"))
+            rows.append(row)
+
+    layer_attempted = bool(con.execute(
+        "SELECT count(*) FROM download_log WHERE source='sovereign_layers'").fetchone()[0])
+    for entry in get_sovereign_layer_series():
+        sid = entry['symbol']
+        if layer_attempted and sid not in present:
+            row = _row_for(sid, entry['source'], pd.DataFrame({'date': pd.Series(dtype='datetime64[ns]')}),
+                           'date', meta[sid], run_id)
+            row.update(status='unavailable', error_msg='no observations ingested for this layer')
             rows.append(row)
 
     # --- crypto_ohlcv (binance) — key symbol:timeframe ---

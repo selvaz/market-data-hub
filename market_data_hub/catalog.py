@@ -36,6 +36,7 @@ from market_data_hub.config_loader import (
     get_macro_panel_specs,
     get_settings,
     get_sovereign_yields,
+    get_sovereign_layer_series,
     get_yahoo_tickers,
 )
 
@@ -154,7 +155,7 @@ def _macro_entries() -> List[Dict[str, Any]]:
     """
     entries = {e["symbol"]: dict(e, source=e.get("source", "FRED"))
                for e in get_macro_series()}
-    for entry in get_sovereign_yields():
+    for entry in get_sovereign_yields() + get_sovereign_layer_series():
         entries[entry["symbol"]] = dict(entry)
     return list(entries.values())
 
@@ -285,14 +286,15 @@ def list_macro_series(frequency: Optional[str] = None, category: Optional[str] =
     otherwise the configured frequency. Publisher/unit/availability stay visible.
     """
     rows = []
-    sovereign_ids = {e["symbol"] for e in get_sovereign_yields()}
+    sovereign_ids = {e["symbol"] for e in get_sovereign_yields() + get_sovereign_layer_series()}
     for e in _macro_entries():
         c = _classify(e)
         c["series_id"] = c.pop("symbol")
         c["country"] = e.get("country")
         for field in ("source", "unit", "frequency", "enabled", "provider", "provider_code",
                       "max_lag_days", "lag_calendar", "unavailable_reason", "disabled_reason",
-                      "history_reason", "history_mode", "selection_rule"):
+                      "history_reason", "history_mode", "selection_rule", "source_class",
+                      "convention", "publication_lag", "history_start", "tenor"):
             c[field] = e.get(field)
         if e["symbol"] in sovereign_ids:
             c["role"] = e.get("role", "current")
