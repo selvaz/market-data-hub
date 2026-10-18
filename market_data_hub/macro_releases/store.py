@@ -1,7 +1,7 @@
 """Small explicit SQLite API; every call completes its short transaction.
 
-The read views and as_known_at use M4 placeholder selection only. M6 owns
-authority comparisons, dispute handling, and persisted resolution decisions.
+The old read views and as_known_at retain M4 placeholder selection. The M6
+consumer methods delegate to the pure resolver/read API, without writing decisions.
 """
 
 from __future__ import annotations
@@ -197,6 +197,18 @@ class Store:
 
     def first_release(self, indicator_id: Optional[str] = None) -> list[dict]:
         return self._view("first_release", indicator_id)
+
+    def release_cards(self, since, until, indicators=None, geography=None, as_known_at=None):
+        from .read_api import ReadAPI
+        return ReadAPI(self).release_cards(since, until, indicators, geography, as_known_at)
+
+    def explain_empty(self, indicator, period_or_window, *, as_known_at=None):
+        from .read_api import ReadAPI
+        return ReadAPI(self).explain_empty(indicator, period_or_window, as_known_at=as_known_at)
+
+    def coverage(self, since, until, *, as_known_at=None):
+        from .read_api import ReadAPI
+        return ReadAPI(self).coverage(since, until, as_known_at=as_known_at)
 
     def latest_official(self, indicator_id: Optional[str] = None) -> list[dict]:
         return self._view("latest_official", indicator_id)

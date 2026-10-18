@@ -2,8 +2,8 @@
 
 `market_data_hub.macro_releases` owns a separate SQLite publication and evidence
 store. M4 supplies contracts, migrations, a small data-access API, and a read-only
-legacy importer. It has no collectors, scheduled runner, consumer integration,
-or production resolver.
+legacy importer. M5 adds manual collectors; M6 adds the resolver and read API in
+shadow mode. No production consumer, including the ECO recap, uses this API yet.
 
 ## Database and access
 
@@ -145,10 +145,10 @@ print yields no `first_release` row even when `latest_official` is available;
 publication. Downloading an old publication later cannot leak into an earlier
 knowledge snapshot or replace a newer publication.
 
-These placeholders do not resolve equally authoritative conflicts, perform
-precision-based numeric comparisons, or append `resolution_versions` implicitly.
-An empty list only means no qualifying vintage in this M4 store; the consumer API
-with coverage/failure/unresolved reasons arrives in M6.
+These compatibility views do not resolve equally authoritative conflicts or
+append `resolution_versions` implicitly. An empty list only means no qualifying
+vintage in this M4 view. New consumers should use the M6 read API below, which
+attaches coverage/failure/unresolved reasons.
 
 Consensus is never averaged across providers. `Store.put(ConsensusReading(...))`
 computes eligibility strictly as `captured_at < release_cutoff_at`; equality and
@@ -435,3 +435,132 @@ For an intentional fixture refresh, run
 outside tests. Existing captures are skipped; the script uses the same limiter,
 bounded HTTP and secret redaction. Review any deliberate replacement separately.
 Tests never run that script and never read user API keys.
+
+## Resolver and read API
+
+M6 is a **read-only shadow API**. `resolve.py` computes decisions without storing
+`resolution_versions`; existing SQL views remain compatibility placeholders.
+There is no consumer wiring, scheduler, production path default, or ECO recap
+migration. Open an explicit database with `open_reader`:
+
+```python
+from market_data_hub.macro_releases import open_reader, resolve
+
+with open_reader(".tmp/macro_releases.sqlite") as reader:
+    result = reader.release_cards(
+        "2026-10-10", "2026-10-17",
+        indicators=["us_cpi_headline_yy", "ea_hicp_yy"],
+        as_known_at="2026-10-18T23:00:00Z",
+    )
+    coverage = reader.coverage("2026-10-10", "2026-10-17")
+    why = reader.explain_empty("us_cpi_headline_yy", "2026-09")
+    decision = resolve(reader, "us_cpi_headline_yy", "2026-09", "regular")
+```
+
+`ReadAPI(reader)` exposes the same three consumer methods. `release_cards`
+returns an envelope with `cards`, `empty`, normalized bounds, the knowledge
+cutoff and limitations. Every explicitly requested indicator without a card
+has an entry in `empty`. Omitting indicators requests both the adapter catalogue
+and stored indicators. A geography filter uses exact catalogue geography
+(EA20 and EA21 are separate). Timestamp windows are half-open `[since, until)`;
+date-only bounds include the whole final UTC date. Publication precision remains
+explicit. The read API defaults its knowledge cutoff to now; the pure resolver
+defaults to all stored knowledge. Neither downloads anything.
+
+Each card represents **one event × indicator**, with the event id shared by
+measures from one publication. The largest known reference period is the
+headline; earlier periods in that event are revision evidence. An unavailable
+headline never causes an older revision to masquerade as the headline.
+The card includes indicator name/id, geography, period, stage, release-window
+time/basis, resolution, previous, revisions, stage change, consensus, surprise
+and provenance (including every period carried by the release).
+
+| Resolution status | Meaning |
+| --- | --- |
+| `official` | A verified, published copy of the exact issuer edition. A verified issuer publication served by a distributor also qualifies. |
+| `provisional` | Only unverified issuer, mirror, web, or legacy evidence is available. |
+| `disputed` | Compatible values in the same edition disagree between verified issuers, or an unverified issuer HTML/LLM extraction disagrees with structured evidence. |
+| `issuer_pending` | A mirror has a strictly newer publication edition than the captured issuer edition: issuer not yet captured. The displayed value/edition is the mirror's, with the older issuer figure retained as a discrepancy. |
+
+Rules are versioned as `macro-resolver:m6-v1` and documented in `resolve.py`.
+Filter `first_seen_at <= t` before ranking, and never admit a publication dated
+after t. Match exact indicator/period/stage and explicit composition; incompatible
+units and derived/rejected values cannot win. Choose the latest issuer edition,
+then its verified publication. Without issuer evidence, prefer structured mirror
+evidence, then other mirror/web/legacy evidence. A new unverified issuer edition
+does not inherit verification from an older edition. An older or same-edition
+mirror discrepancy cannot override a verified issuer. Opaque edition names do
+not establish which edition is newer. Values from different editions never
+constitute a dispute.
+
+Latest vintages within a source series/edition supersede that stream's earlier
+corrections; raw rereads cannot supersede its vintage. Remaining selection ties
+use ascending edition, source id, series key, content hash, vintage before
+reading, then row id. This chooses a stable display figure, with all provenance
+and conflicting values still visible. No number of searchers forms an authority
+vote. Explicit scale conversion and `%`/`percent`/`percentage`/`pct` aliases are
+supported. Transforms, seasonal adjustment and euro-area membership are never
+inferred; no rounding is used to hide disagreement (only floating-point noise
+is ignored). Resolution values use the indicator's unit/scale/transform.
+
+`previous` is the immediately prior calendar period's latest edition/stage
+**known to us at release time**, before that event's changes. A missing prior
+period stays null with a reason; the API never skips a gap or backdates an archive
+capture. `revisions` compare prior periods in the event with older publication
+history available at the query cutoff; each includes full `old`/`new` resolutions
+and its comparison basis. An archive captured later can establish that history
+without changing the historical `previous`. `stage_change` shows the same
+period's flash → final (or GDP advance → second → third) relationship, including
+unchanged values; it is separate from prior-period revisions. Rereading a
+publication does not create a revision.
+
+`consensus` contains one frozen row per provider: the latest compatible snapshot
+strictly before release, captured by the knowledge cutoff. Providers are never
+averaged. A known exact publication time reconciles earlier scheduled/date-only
+eligibility; date-only releases use a conservative lower bound, excluding
+uncertain same-day captures. Measure, event, period, stage, unit and scale must
+match. Forex Factory is labelled `ff_forecast`. `surprise` is actual minus each
+provider value in the indicator's scale (percentage-point differences for
+percentages). With no eligible consensus it is **null**. Raw legacy forecasts
+appear separately in `legacy_consensus_evidence`; their uncertified provider or
+capture cannot produce surprise.
+
+| Empty reason | Meaning |
+| --- | --- |
+| `not_covered` | Indicator is absent from both stored and adapter catalogues. |
+| `no_release_scheduled` | No matching stored schedule/publication; this does not assert a complete calendar. A geography exclusion is also explained explicitly. |
+| `not_yet_released` | The known schedule or requested future window/period is after the knowledge cutoff. |
+| `published_not_resolved` | Publication/unavailable/undated evidence cannot produce an eligible card, or a stored scheduled release is due without confirmed capture. |
+| `source_failed` | Imported legacy run metadata explicitly records a failed run; the family and original run-start time are returned, with the time basis labelled. |
+
+**Failure/coverage limitations:** M5 prints collect summaries but stores no run
+log or summary. The API cannot establish an M5 source failure from missing
+values and returns that limitation with empty results and coverage. A failed
+imported legacy run is diagnosable, but its exact failure instant is unavailable;
+the retained start time is labelled, never presented as a finish time. Schedule
+rows have no reference-period or indicator membership: matching uses reviewed
+family mappings, and a family schedule is not assigned to an arbitrary period.
+Legacy mapping links have only their latest version; a link updated after a
+historical cutoff is conservatively unavailable rather than leaked backwards.
+
+`coverage` counts distinct events per family. `expected` is the union of stored
+schedules and captured events; `captured` means at least one numeric card for the
+event. Captured status buckets are mutually exclusive, using the worst card
+status (`disputed`, `issuer_pending`, `provisional`, `official`). Missing events
+include reasons. Latest publication and knowledge timestamps expose freshness.
+This is event-level coverage, not certification that every measure in a family
+is captured. Unknown schedules prevent a completeness guarantee; zero expected
+does not prove that no release was due.
+
+```powershell
+python -m market_data_hub.macro_releases cards --since 2026-10-10 --until 2026-10-17 --indicator us_cpi_headline_yy --indicator ea_hicp_yy --as-known-at 2026-10-18T23:00:00Z --db .tmp/macro_releases.sqlite --json
+python -m market_data_hub.macro_releases coverage --since 2026-10-10 --until 2026-10-17 --db .tmp/macro_releases.sqlite --json
+```
+
+Both commands open SQLite with `mode=ro` and `query_only=ON`, perform no migrations
+and fail on a missing DB. The CLI emits JSON by default (`--json` is explicit).
+Offline certification in `tests/test_macro_read_api.py` covers all 32 synthetic
+golden contracts and the 14 saved issuer-adapter cases. The known tool-rendered
+payroll initial remains provisional; the issuer HICP date correction stays
+explicit. [The fixture shadow parity report](macro-releases-shadow-parity.md)
+covers the legacy-imported 10–17 October week without accessing a live file.
