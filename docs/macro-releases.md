@@ -472,6 +472,28 @@ date-only bounds include the whole final UTC date. Publication precision remains
 explicit. The read API defaults its knowledge cutoff to now; the pure resolver
 defaults to all stored knowledge. Neither downloads anything.
 
+Stored timestamps are normalized before knowledge filtering or ordering. The
+LazyCommittee calendar contract (`calendar/prompts.toml` and
+`docs/calendar-collector-contract.md` in LazyCommittee) defines
+`release_at_utc` as UTC `YYYY-MM-DDTHH:MM` or a bare date; its merge copies that
+value to `scheduled_at_utc`. Naive timed values from those fields retain their
+UTC time with read-side precision `assumed_tz`. Calendar `observed_at` and run
+start timestamps use the calendar store's UTC clock and follow the same rule.
+Bare dates retain `date_only`. Other naive values with no documented timezone
+retain only their date, represented by a UTC midnight date bucket, never an
+exact release instant. Date-only knowledge timestamps become available only
+at the end of that day. Offset-aware timestamps are converted to UTC.
+
+Evidence provenance includes `timestamp_precisions` for the normalized fields;
+the imported raw payload is preserved. An invalid timestamp or legacy envelope
+skips that item and adds a row identifier and diagnostic to response
+`limitations`, including `explain_empty` and coverage responses. Write contracts
+still reject naive timestamps. The local integration test
+`tests/test_macro_legacy_time.py::test_production_copy_last_eight_weeks` reads
+only `.tmp/prod-copy.sqlite`, checks the 14 October 2026 official CPI cards, and
+skips when that copy is absent. Create the copy with SQLite's backup API from
+a `mode=ro`, `query_only` source connection; never point the test at a live DB.
+
 Each card represents **one event × indicator**, with the event id shared by
 measures from one publication. The largest known reference period is the
 headline; earlier periods in that event are revision evidence. An unavailable
@@ -545,6 +567,15 @@ An exact stored schedule supplies the boundary for a mirror-only event.
 Date-only releases retain the saved conservative issuer-local midnight cutoff,
 even when its UTC value is later than the source's midnight date placeholder.
 This includes captures at 02:00Z and 03:59Z before a saved 04:00Z lower bound.
+Date-only consensus `captured_at` or `published_at` values (including naive
+timestamps reduced to dates at the read boundary) are eligible only when their
+calendar date strictly precedes the release date in the stored issuer timezone.
+Same-day or later dates are excluded with
+`date_only_consensus_not_pre_release` in `consensus_diagnostics`; an unavailable
+or invalid issuer timezone excludes date-only rows with `unknown_issuer_timezone`.
+The midnight placeholder for a consensus date is never converted to an issuer
+instant. Exact timestamp eligibility and saved issuer-local release cutoffs
+retain their existing behavior.
 When no date-only cutoff is stored, a date-only release retains its conservative
 date boundary and excludes
 uncertain same-day captures. Measure, event, period, stage, unit and scale must

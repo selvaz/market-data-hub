@@ -46,6 +46,7 @@ build/
 .coverage.*
 htmlcov/
 tests/.tmp/
+.tmp/
 
 # mkdocs build output
 site/

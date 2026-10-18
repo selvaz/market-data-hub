@@ -5,6 +5,7 @@ from calendar import monthrange
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 import re
+from zoneinfo import ZoneInfo
 
 from .catalogue import FAMILIES, INDICATORS
 from .models import utc
@@ -69,8 +70,7 @@ def family_for(snapshot, indicator):
     for family, members in FAMILY_INDICATORS.items():
         if indicator in members:
             return family
-    families = sorted({snapshot.events[e.event_id]["family"] for e in snapshot.evidence
-                       if e.indicator_id == indicator and e.event_id in snapshot.events})
+    families = sorted(snapshot.families_by_indicator.get(indicator, ()))
     if len(families) == 1:
         return families[0]
     info = snapshot.indicators[indicator]
@@ -86,14 +86,14 @@ def collection_failure(snapshot, family, start, end):
     for row in snapshot.collect_families:
         if row["family"] != family:
             continue
-        fetch_start = row["fetch_since"] + "-01T00:00:00.000000+00:00"
-        fetch_end = utc(row["fetch_until"] + "T23:59:59.999999Z")
+        fetch_start, fetch_end = row["fetch_start"], row["fetch_end"]
         if start > row["finished_at"] or end <= fetch_start or start > fetch_end:
             continue
         if row["status"] != "failed":
             return None
         return {"reason": "source_failed", "family": family, "run_id": row["run_id"],
                 "time": row["finished_at"], "time_basis": "collect_family_finished_at",
+                "time_precision": row["timestamp_precisions"]["finished_at"],
                 "started_at": row["started_at"], "error_type": row["error_type"],
                 "detail": row["error_message"], "fetch_since": row["fetch_since"],
                 "fetch_until": row["fetch_until"]}
@@ -112,7 +112,7 @@ def event_timing(snapshot, event_id, selected=None):
     Date-only issuer dates remain date-only; consensus retains its saved local
     midnight lower bound. No retrieval time is promoted to a release instant.
     """
-    rows = [e for e in snapshot.evidence if event_id is not None and e.event_id == event_id]
+    rows = snapshot.evidence_by_event.get(event_id, []) if event_id is not None else []
     issuers = [e for e in rows if e.role == "issuer" and e.published_at]
     if issuers:
         exact = [e for e in issuers if e.precision == "exact"]
@@ -130,6 +130,25 @@ def event_timing(snapshot, event_id, selected=None):
 
 def event_order(snapshot, evidence):
     return event_timing(snapshot, evidence.event_id, evidence)[0] or publication_order(evidence)
+
+
+def event_timezone(snapshot, event_id, selected, time_basis):
+    """Use stored issuer/schedule zones; an unknown zone cannot certify a date."""
+    schedule = latest_schedule(snapshot).get(event_id)
+    zones = {e.issuer_timezone for e in snapshot.evidence_by_event.get(event_id, [])
+             if e.role == "issuer" and e.issuer_timezone}
+    if time_basis == "schedule" and schedule:
+        name = schedule["issuer_timezone"]
+    elif len(zones) == 1:
+        name = next(iter(zones))
+    elif zones:
+        name = None
+    else:
+        name = schedule["issuer_timezone"] if schedule else selected.issuer_timezone
+    try:
+        return ZoneInfo(name) if name else None
+    except (KeyError, ValueError, TypeError):
+        return None
 
 
 def latest_period(snapshot, indicator, period):
@@ -170,6 +189,9 @@ class ReadAPI:
     def _cards(self, snapshot, start, end, indicators=None, geography=None):
         requested = ([indicators] if isinstance(indicators, str) else list(dict.fromkeys(indicators))
                      if indicators is not None else sorted(set(INDICATORS) | set(snapshot.indicators)))
+        # The snapshot is immutable during a query. Reuse chronology across
+        # cards instead of resolving every historical event for every card.
+        event_orders = {e.id: event_order(snapshot, e) for e in snapshot.evidence}
         groups = {}
         for e in snapshot.evidence:
             if e.indicator_id not in requested or not e.event_id:
@@ -215,7 +237,7 @@ class ReadAPI:
             # Archive captures after release can establish publication history,
             # but cannot backdate the previous-as-known-at-release field above.
             history = subset(snapshot, (e for e in snapshot.evidence if e.event_id != event_id and
-                                       event_order(snapshot, e) and event_order(snapshot, e) < released_at))
+                                       event_orders[e.id] and event_orders[e.id] < released_at))
             revisions = []
             for changed_period in sorted({e.reference_period for e in evidence if e.reference_period < period}):
                 old = latest_period(history, indicator, changed_period)
@@ -258,13 +280,14 @@ class ReadAPI:
             empty.append({"indicator_id": None, "query": (start, end),
                           "reason": "filtered_out", "detail": "empty indicator selection"})
         return {"since": start, "until": end, "as_known_at": snapshot.cutoff,
-                "cards": cards, "empty": empty, "limitations": [COLLECT_LOG_LIMITATION]}
+                "cards": cards, "empty": empty, "limitations": [COLLECT_LOG_LIMITATION, *snapshot.limitations]}
 
     @staticmethod
     def _consensus(snapshot, resolution, event_id, released_at, precision, time_basis):
         info = snapshot.indicators[resolution.indicator_id]
         per_provider = {}
         diagnostics = []
+        selected = next(e for e in snapshot.evidence if e.id == resolution.source["selected_evidence_id"])
         for row in snapshot.consensus:
             if (row["indicator_id"] != resolution.indicator_id or row["release_event_id"] != event_id or
                     row["reference_period"] != resolution.reference_period or row["estimate_stage"] != resolution.stage or
@@ -284,6 +307,30 @@ class ReadAPI:
                 diagnostics.append({"consensus_id": row["id"], "provider": row["provider"],
                                     "reason": "unknown_release_cutoff"})
                 continue
+            date_fields = [field for field in ("captured_at", "published_at")
+                           if row["timestamp_precisions"].get(field) == "date_only"]
+            if date_fields:
+                zone = event_timezone(snapshot, event_id, selected, time_basis)
+                if zone is None:
+                    diagnostics.append({"consensus_id": row["id"], "provider": row["provider"],
+                                        "reason": "unknown_issuer_timezone", "fields": date_fields})
+                    continue
+                # A normalized date is a calendar label, not a UTC instant.
+                # For date-only releases preserve #103's saved local-midnight
+                # bound; without one, released_at itself is a date bucket.
+                if precision == "date_only":
+                    release_date = (datetime.fromisoformat(cutoff).astimezone(zone).date()
+                                    if row["cutoff_precision"] == "date_only" else
+                                    date.fromisoformat(released_at[:10]))
+                else:
+                    release_date = datetime.fromisoformat(released_at).astimezone(zone).date()
+                uncertain = [field for field in date_fields
+                             if date.fromisoformat(row[field][:10]) >= release_date]
+                if uncertain:
+                    diagnostics.append({"consensus_id": row["id"], "provider": row["provider"],
+                                        "reason": "date_only_consensus_not_pre_release", "fields": uncertain,
+                                        "release_date": release_date.isoformat(), "issuer_timezone": str(zone)})
+                    continue
             if row["captured_at"] >= cutoff or (row["published_at"] and row["published_at"] >= cutoff):
                 continue
             key = row["provider"]
@@ -291,7 +338,6 @@ class ReadAPI:
                     per_provider[key]["captured_at"], per_provider[key]["content_hash"], per_provider[key]["id"]):
                 per_provider[key] = dict(row, eligibility_cutoff_at=cutoff)
         out = []
-        selected = next(e for e in snapshot.evidence if e.id == resolution.source["selected_evidence_id"])
         actual = Decimal(str(selected.value)) * Decimal(str(selected.scale)) / Decimal(str(info["scale"]))
         for provider, row in sorted(per_provider.items()):
             forecast = convert(row["value"], row["unit"], row["scale"], info)
@@ -322,7 +368,7 @@ class ReadAPI:
     def _explain(snapshot, indicator, period_or_window, *, geography=None):
         info = snapshot.indicators.get(indicator)
         base = {"indicator_id": indicator, "query": period_or_window,
-                "limitations": [COLLECT_LOG_LIMITATION]}
+                "limitations": [COLLECT_LOG_LIMITATION, *snapshot.limitations]}
         if info is None and indicator not in INDICATORS:
             return dict(base, reason="not_covered", detail="indicator is not in the stored or adapter catalogue")
         if info is None:
@@ -372,7 +418,8 @@ class ReadAPI:
         if failures:
             failure = max(failures, key=lambda e: e.first_seen_at)
             return dict(base, reason="source_failed", family=family,
-                        time=failure.legacy["legacy_first_seen_at"], time_basis="legacy_run_started_at",
+                        time=failure.legacy["normalized_run_started_at"], time_basis="legacy_run_started_at",
+                        time_precision=failure.timestamp_precisions["legacy_run_started_at"],
                         detail="stored imported run failed; exact failure instant was not retained")
         released = [e for e in family_rows if event_order(snapshot, e) and event_order(snapshot, e) <= snapshot.cutoff]
         if released:
@@ -452,4 +499,5 @@ class ReadAPI:
                         missing.update(event_failure)
         return {"since": start, "until": end, "as_known_at": cutoff, "families": families,
                 "count_basis": "distinct release events per family; expected is the union of stored schedules and captured events",
-                "limitations": [COLLECT_LOG_LIMITATION, "No complete release calendar is stored; zero expected does not prove no release was due."]}
+                "limitations": [COLLECT_LOG_LIMITATION, *snapshot.limitations,
+                                "No complete release calendar is stored; zero expected does not prove no release was due."]}
