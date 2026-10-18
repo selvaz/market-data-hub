@@ -3,7 +3,7 @@
 Indicator cards provide the same owner-approved context to domain recaps and
 LazyCommittee. They describe a concept, theme, nature, timing reference, evidence,
 revision behaviour and caveats. They contain no market views or conclusions.
-The 269 concept rows and their timing evidence ship as versioned package data;
+The 270 concept rows and their timing evidence ship as versioned package data;
 reading cards requires no database or network access.
 
 ```python
@@ -82,7 +82,7 @@ limitations; an empty flag list does not establish absence of failure modes.
 
 Package resources live under `market_data_hub/indicator_cards/`:
 
-- `master_table_v2.psv`: the unchanged owner-approved table (269 rows).
+- `master_table_v2.psv`: the owner-approved table (270 rows: v2.1 plus the UK monthly GDP row).
 - `timing_v2.1.json`: verbatim columns (a)/(b) from section 3 of the approved
   `04-classification-v2.md`, with its source-guide SHA-256. The PSV supplies
   relationship keys but does not contain the numeric horizons or peak estimates.
