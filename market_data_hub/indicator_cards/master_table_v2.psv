@@ -131,6 +131,7 @@ sk_10y|SVK|Slovakia 10y (OECD monthly)|ms:IRLTLT01SKM156N|OECD MEI|M|Monetary po
 si_10y|SVN|Slovenia 10y (OECD monthly)|ms:IRLTLT01SIM156N|OECD MEI|M|Monetary policy & rates||none named|CTX|—|||MARKET|M|n.a.|none||Monthly average.
 uk_cpi|GBR|CPI headline|cal:uk_cpi_mm,uk_cpi_yy; cat:uk_cpi_yy|ONS|M|Inflation||itself (BoE target measure)|COIN|DEFINITION|||HARD|H|n.a.|n.a.|never captured|2% target measure (BoE).
 uk_cpi_core|GBR|Core CPI|cal:uk_core_cpi; cat:uk_core_cpi_yy|ONS|M|Inflation||headline CPI|COIN|DEFINITION|||HARD|H|n.a.|none|never captured|Diagnostic, not the target; services CPI not held.
+uk_gdp_monthly|GBR|Real GDP (monthly estimate)|cat:uk_gdp_mm,uk_gdp_index; cal:uk_gdp_mm|ONS|M|Growth / activity||itself (UK output reference)|COIN|DEFINITION|||HARD|H|n.a.|n.a.||Monthly GDP index (ONS); output reference for the UK. Revised in later bulletins and at Blue Book benchmarks (ONS).
 uk_awe_total|GBR|Average weekly earnings, total pay|cal:uk_earnings; cat:uk_average_weekly_earnings_yy|ONS|M|Labour|Inflation|slack|UNKNOWN|HYPOTHESIS|||HARD|M|mixed|none|never captured|LFS-linked quality caveats.
 uk_awe_regular|GBR|Average weekly earnings, regular pay (ex bonus)|cal:uk_earnings_ex_bonus|ONS|M|Labour|Inflation|slack|UNKNOWN|HYPOTHESIS|||HARD|M|mixed|none|never captured|Separate concept from total pay.
 uk_lfs_employment|GBR|LFS employment change|cal:uk_employment_change|ONS LFS|M|Labour||UK output|UNKNOWN|—|||HARD|L|mixed|none|never captured|LFS response problem since 2023, issuer advises caution (ONS).

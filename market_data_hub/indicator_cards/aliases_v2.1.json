@@ -13,8 +13,5 @@
     {"id": "cat:ea_future_hicp_yy", "key": "ea_hicp", "basis": "EA headline HICP context only for the catalogue's unresolved membership placeholder. Geography remains unresolved; no series equivalence is asserted."},
     {"id": "cat:ea_future_hicp_mm", "key": "ea_hicp", "basis": "EA headline HICP context only for the catalogue's unresolved membership placeholder. Geography remains unresolved; no series equivalence is asserted."}
   ],
-  "certified_gaps": {
-    "uk_gdp_mm": "No GBR GDP concept in the approved table. PANEL GDP and EA/US GDP rows do not imply UK monthly GDP timing or evidence.",
-    "uk_gdp_index": "No GBR GDP concept in the approved table. Requires an owner-approved row before coverage can be complete."
-  }
+  "certified_gaps": {}
 }

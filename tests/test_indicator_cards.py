@@ -32,7 +32,7 @@ def test_generated_json_freshness_and_provenance():
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 269
+    assert len(rows) == len(dataset().cards) == 270
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -215,14 +215,12 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     report = coverage_report()
     print(json.dumps(report, indent=2))
     assert set(report["certified_families"]) == set(FAMILIES)
-    for family in set(FAMILIES) - {"uk_gdp"}:
+    # Every certified family is covered since the owner-approved UK GDP row
+    # (18/10/2026); no documented gap remains.
+    for family in FAMILIES:
         assert report["certified_families"][family]["unmapped"] == []
-    # The brief explicitly says to report gaps rather than invent rows. These
-    # are visible coverage exceptions, not cards or inferred UK classifications.
-    missing = set(report["macro_releases"]["unmapped"])
-    gaps = {f"cat:{i}" for i in report["documented_certified_gaps"]}
-    assert missing == gaps == {"cat:uk_gdp_mm", "cat:uk_gdp_index"}
-    assert report["macro_releases"] == {"mapped": 12, "total": len(INDICATORS), "unmapped": sorted(gaps)}
+    assert report["documented_certified_gaps"] == {}
+    assert report["macro_releases"] == {"mapped": 14, "total": len(INDICATORS), "unmapped": []}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out

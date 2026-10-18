@@ -125,13 +125,12 @@ configured-id context coverage, not live ingestion or historical completeness.
 | US payrolls | 1 / 1 |
 | US GDP | 1 / 1 |
 | EA HICP | 6 / 6 |
-| UK GDP | **0 / 2 — source gap** |
+| UK GDP | 2 / 2 |
 
-UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) has no GBR concept row in the
-approved table. The PANEL, EA and US GDP rows do not establish its timing or
-evidence. Complete coverage of all five certified families therefore requires
-an owner-approved UK GDP row. Tests assert full coverage of the four represented
-families and the exact, documented UK gap; they do not silently waive new gaps.
+UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) is covered by the owner-approved
+row `uk_gdp_monthly` (added 18/10/2026, mirroring the US GDP row: COIN by
+definition, HARD, ONS). All five certified families are fully covered; tests
+assert that no documented gap remains.
 
 Catalogue aliases attach **concept context**, never numerical equivalence:
 levels, changes, seasonal adjustments and stages retain their original ids.

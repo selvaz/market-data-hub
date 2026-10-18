@@ -721,6 +721,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "uk_gdp_monthly": {
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
+    },
     "uk_gilt_10y": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1079,6 +1083,6 @@
     }
   },
   "source": "04-classification-v2.md, section 3, columns (a) and (b)",
-  "source_guide_sha256": "3a0b9fd2a33dc17a832dfa4ae964dce57d61688cbaa1e7c03deaf1825ae39438",
-  "source_table_sha256": "8f556d2827bd9988767abc0e7e426d228853bff2305218481f62b269764b2177"
+  "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
+  "source_table_sha256": "25f14e12729e0053b0d5ff656622bc925a9ee68974f88fd3eeaa1cd41cb7b550"
 }

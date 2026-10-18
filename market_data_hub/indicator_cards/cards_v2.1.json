@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "efd4436c0be4c1cedad22dcc8fecdfffb6fbe0b7db482c756a423c302eae1503",
+  "aliases_sha256": "796897dc45edeb2e3e8981f901c4fdede3570cc71b214eddd29f0a1df84a46cb",
   "cards": [
     {
       "concept": "Real GDP",
@@ -6752,6 +6752,52 @@
       }
     },
     {
+      "concept": "Real GDP (monthly estimate)",
+      "country": "GBR",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "uk_gdp_mm"
+        ],
+        "cat": [
+          "uk_gdp_mm",
+          "uk_gdp_index"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "uk_gdp_monthly",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "Monthly GDP index (ONS); output reference for the UK. Revised in later bulletins and at Blue Book benchmarks (ONS).",
+      "raw_ids": "cat:uk_gdp_mm,uk_gdp_index; cal:uk_gdp_mm",
+      "revision_behaviour": "Revised in later bulletins and at Blue Book benchmarks (ONS).",
+      "secondary": [],
+      "source": "ONS",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "itself (UK output reference)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
       "concept": "Average weekly earnings, total pay",
       "country": "GBR",
       "evidence": {
@@ -13012,6 +13058,6 @@
   ],
   "classification_version": "v2.1",
   "schema_version": 1,
-  "source_table_sha256": "8f556d2827bd9988767abc0e7e426d228853bff2305218481f62b269764b2177",
-  "timing_extract_sha256": "7454b4ea1e29f953b2ec285eca3c0613ddd0782732d4abc5eee1216b2c6bf718"
+  "source_table_sha256": "25f14e12729e0053b0d5ff656622bc925a9ee68974f88fd3eeaa1cd41cb7b550",
+  "timing_extract_sha256": "02a475da389e7592313d3fffe675af53ffe39433fd19fcd1d830b31e72df0cda"
 }
