@@ -54,6 +54,7 @@ nav:
   - Extraction & agent tools: EXTRACTION.md
   - lazydatacore contract: LAZYDATACORE.md
   - Macro release contracts: macro-releases.md
+  - Indicator cards: indicator-cards.md
   - ALFRED vintage backfill: alfred-backfill.md
   - Design notes:
       - Ecosystem rationalization (IT): ECOSYSTEM_RATIONALIZATION.md

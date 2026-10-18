@@ -3,3 +3,7 @@
 tests/fixtures/macro_releases/** -text -whitespace
 tests/fixtures/macro_releases/**/*.html -diff
 tests/fixtures/macro_releases/**/*.csv -diff
+
+# The approved classification and timing extract have byte-level provenance.
+market_data_hub/indicator_cards/*.psv -text
+market_data_hub/indicator_cards/*.json -text

@@ -1,0 +1,20 @@
+{
+  "classification_version": "v2.1",
+  "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages.",
+  "aliases": [
+    {"id": "cat:us_cpi_headline_yy", "key": "us_cpi_headline", "basis": "Explicit headline CPI-U concept; approved cat:us_cpi_yy and cal:us_cpi_yy."},
+    {"id": "cat:us_cpi_headline_mm", "key": "us_cpi_headline", "basis": "Explicit headline CPI-U concept; approved cat:us_cpi_mm and cal:us_cpi_mm."},
+    {"id": "cat:us_cpi_core_yy", "key": "us_cpi_core", "basis": "Explicit CPI ex food and energy concept; approved cal:us_core_cpi_yy."},
+    {"id": "cat:us_cpi_core_mm", "key": "us_cpi_core", "basis": "Explicit CPI ex food and energy concept; approved cal:us_core_cpi_mm."},
+    {"id": "cat:us_payrolls_change", "key": "us_payrolls", "basis": "Explicit nonfarm payrolls concept; approved cat:us_nfp and cal:us_nfp."},
+    {"id": "cat:ea_hicp_mm", "key": "ea_hicp", "basis": "Explicit EA headline HICP concept; approved cal:ez_hicp_mm_flash and cal:ez_hicp_mm_final."},
+    {"id": "cat:ea21_hicp_yy", "key": "ea_hicp", "basis": "Explicit EA headline HICP concept. Approved rationale explicitly requires geography-version checks against EA21; this is context, not an EA19/EA21 series splice."},
+    {"id": "cat:ea21_hicp_mm", "key": "ea_hicp", "basis": "Explicit EA headline HICP concept and mm calendar ids, with the approved EA21 geography-version caveat."},
+    {"id": "cat:ea_future_hicp_yy", "key": "ea_hicp", "basis": "EA headline HICP context only for the catalogue's unresolved membership placeholder. Geography remains unresolved; no series equivalence is asserted."},
+    {"id": "cat:ea_future_hicp_mm", "key": "ea_hicp", "basis": "EA headline HICP context only for the catalogue's unresolved membership placeholder. Geography remains unresolved; no series equivalence is asserted."}
+  ],
+  "certified_gaps": {
+    "uk_gdp_mm": "No GBR GDP concept in the approved table. PANEL GDP and EA/US GDP rows do not imply UK monthly GDP timing or evidence.",
+    "uk_gdp_index": "No GBR GDP concept in the approved table. Requires an owner-approved row before coverage can be complete."
+  }
+}

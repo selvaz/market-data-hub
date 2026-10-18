@@ -92,6 +92,9 @@ jobs:
           import market_data_hub, market_data_hub.reader, market_data_hub.catalog, market_data_hub.extract
           import market_data_hub.agent_tools
           import market_data_hub.coverage.report, market_data_hub.lazydatacore.identity
+          from market_data_hub.indicator_cards import indicator_card, render_card
+          assert 'not a validated lead' in render_card(indicator_card('cal:us_claims'))
+          assert indicator_card('cat:ea21_hicp_yy').key == 'ea_hicp'
           print('package installs and imports cleanly')
           "
 
