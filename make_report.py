@@ -85,6 +85,16 @@ def collect(con) -> dict:
         d["by_source"] = pd.DataFrame()
         d["errors"] = pd.DataFrame()
 
+    # Standalone reports open existing databases read-only, before a writer may
+    # have applied v27. The optional sovereign section must not require migration.
+    has_sovereign_checks = con.execute(
+        "SELECT 1 FROM information_schema.tables "
+        "WHERE table_schema='main' AND table_name='sovereign_cross_checks'").fetchone()
+    d['sovereign_divergences'] = (con.execute(
+        'SELECT date, official_id, market_id, difference_bp, tolerance_bp, convention_note '
+        'FROM sovereign_cross_checks WHERE flagged ORDER BY date DESC LIMIT 100').fetch_df()
+        if has_sovereign_checks else pd.DataFrame())
+
     # coverage
     cov = con.execute("SELECT * FROM coverage_report").fetch_df()
     d["coverage_n"] = len(cov)
@@ -196,6 +206,9 @@ def render_html(d: dict) -> str:
 <h2>Last run errors</h2>
 {_df_html(d['errors'])}
 
+<h2>Sovereign yield divergence (basis points)</h2>
+{_df_html(d.get('sovereign_divergences', pd.DataFrame()))}
+
 <p style="color:#888;font-size:11px;margin-top:30px">market_data_hub &middot; automatic report</p>
 </body></html>"""
 
@@ -221,6 +234,15 @@ def render_md(d: dict) -> str:
             lines.append(d["by_source"].to_markdown(index=False))
         except Exception:
             lines.append(d["by_source"].to_string(index=False))
+    divergences = d.get('sovereign_divergences', pd.DataFrame())
+    lines += ['', '## Sovereign yield divergence (basis points)', '']
+    if divergences.empty:
+        lines.append('No flagged comparable pairs.')
+    else:
+        try:
+            lines.append(divergences.to_markdown(index=False))
+        except ImportError:
+            lines.append(divergences.to_string(index=False))
     return "\n".join(lines)
 
 

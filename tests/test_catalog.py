@@ -47,8 +47,8 @@ def test_list_sectors_groups_symbols():
     assert "XLF" in row["symbols"]
 
 
-def test_list_macro_indicators_by_pillar():
-    growth = catalog.list_macro_indicators(pillar="growth")
+def test_list_macro_indicators_by_pillar(tmp_db):
+    growth = catalog.list_macro_indicators(pillar="growth", db_path=tmp_db)
     assert "real_gdp_growth" in set(growth["indicator_id"])
     assert all(growth["pillar"] == "growth")
 
@@ -73,7 +73,7 @@ def test_coverage_attached_when_db_populated(tmp_db):
     assert spy["freq_detected"] == "D"
 
 
-def test_describe_series_resolves_domain():
-    card = catalog.describe_series("DGS10")
+def test_describe_series_resolves_domain(tmp_db):
+    card = catalog.describe_series("DGS10", db_path=tmp_db)
     assert card["domain"] == "macro"
     assert card["series_id"] == "DGS10"
