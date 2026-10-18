@@ -201,6 +201,8 @@ class Snapshot:
             # An inconsistent event link is evidence, not permission to rewrite
             # the observation's edition or assert issuer authority for that event.
             edition, event_id, role = row["edition"], None, "web"
+        if role != "issuer":
+            time_basis = "source_publication"
         precision = row["publication_precision"]
         if legacy:
             raw, link = legacy["row"], legacy["link"]

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from calendar import monthrange
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 import re
 
 from .catalogue import FAMILIES, INDICATORS
@@ -47,16 +48,21 @@ def prior_period(period):
 
 
 def period_end(period):
+    if not isinstance(period, str):
+        raise ValueError("period must be a string or a two-bound window")
     if re.fullmatch(r"\d{4}-\d{2}", period):
         year, month = map(int, period.split("-"))
-        return f"{period}-{monthrange(year, month)[1]}T23:59:59.999999+00:00"
+        last = date(year, month, monthrange(year, month)[1])
+        return last.isoformat() + "T23:59:59.999999+00:00"
     match = re.fullmatch(r"(\d{4})-Q([1-4])", period)
     if match:
         year, quarter = map(int, match.groups())
         return period_end(f"{year}-{quarter * 3:02}")
     if re.fullmatch(r"\d{4}", period):
-        return f"{period}-12-31T23:59:59.999999+00:00"
-    return window(period, period)[1]
+        return date(int(period), 12, 31).isoformat() + "T23:59:59.999999+00:00"
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", period):
+        return window(period, period)[1]
+    raise ValueError("period must be YYYY, YYYY-MM, YYYY-Q1..Q4, or YYYY-MM-DD")
 
 
 def family_for(snapshot, indicator):
@@ -75,6 +81,34 @@ def latest_schedule(snapshot):
     return {r["release_event_id"]: r for r in snapshot.schedules}
 
 
+def event_timing(snapshot, event_id, selected=None):
+    """Keep the event clock separate from the selected correction's timestamp.
+
+    First exact issuer publication wins across the entire event/edition. With
+    no issuer publication, use the saved schedule before mirror/web timestamps.
+    Date-only issuer dates remain date-only; consensus retains its saved local
+    midnight lower bound. No retrieval time is promoted to a release instant.
+    """
+    rows = [e for e in snapshot.evidence if event_id is not None and e.event_id == event_id]
+    issuers = [e for e in rows if e.role == "issuer" and e.published_at]
+    if issuers:
+        exact = [e for e in issuers if e.precision == "exact"]
+        first = min(exact or issuers, key=lambda e: (e.published_at, e.id))
+        return first.published_at, first.precision, "issuer_publication"
+    schedule = latest_schedule(snapshot).get(event_id)
+    if schedule:
+        return schedule["expected_at"], schedule["precision"], "schedule"
+    if selected is None and rows:
+        selected = min(rows, key=lambda e: (publication_order(e), e.id))
+    if selected:
+        return selected.event_time, selected.precision, selected.time_basis
+    return None, None, None
+
+
+def event_order(snapshot, evidence):
+    return event_timing(snapshot, evidence.event_id, evidence)[0] or publication_order(evidence)
+
+
 def latest_period(snapshot, indicator, period):
     """Resolve each stage separately, then choose the latest publication stage."""
     candidates = [e for e in snapshot.evidence if e.indicator_id == indicator and e.reference_period == period]
@@ -83,7 +117,14 @@ def latest_period(snapshot, indicator, period):
     resolved = [r for r in resolved if r is not None]
     if not resolved:
         return None
-    return max(resolved, key=lambda r: (r.published_at or "", r.first_seen_at, r.stage)).to_dict()
+    by_id = {e.id: e for e in candidates}
+
+    def order(resolution):
+        selected = by_id[resolution.source["selected_evidence_id"]]
+        return (event_order(snapshot, selected), publication_order(selected),
+                resolution.first_seen_at, resolution.stage)
+
+    return max(resolved, key=order).to_dict()
 
 
 class ReadAPI:
@@ -106,7 +147,6 @@ class ReadAPI:
     def _cards(self, snapshot, start, end, indicators=None, geography=None):
         requested = ([indicators] if isinstance(indicators, str) else list(dict.fromkeys(indicators))
                      if indicators is not None else sorted(set(INDICATORS) | set(snapshot.indicators)))
-        schedules = latest_schedule(snapshot)
         groups = {}
         for e in snapshot.evidence:
             if e.indicator_id not in requested or not e.event_id:
@@ -133,21 +173,26 @@ class ReadAPI:
                 contextual = resolve_evidence(context, indicator, period, stage)
                 if contextual and contextual.source["selected_evidence_id"] == selected.id:
                     resolution = contextual
-            schedule = schedules.get(event_id)
-            released_at = selected.event_time or (schedule["expected_at"] if schedule else None)
+            released_at, precision, time_basis = event_timing(snapshot, event_id, selected)
             if released_at is None or not start <= released_at < end or released_at > snapshot.cutoff:
                 continue
             prior = prior_period(period)
             # The previous figure is strictly what we knew by release time.
             before = subset(snapshot, (e for e in snapshot.evidence if e.event_id != event_id and
-                                      e.first_seen_at <= released_at and
+                                      e.first_seen_at < released_at and
                                       (e.published_at is None or e.published_at < released_at)))
             previous = latest_period(before, indicator, prior) if prior else None
+            revised_previous = latest_period(subset(snapshot, evidence), indicator, prior) if prior else None
+            if (previous and revised_previous and not differs(previous["value"], revised_previous["value"]) and
+                    previous["stage"] == revised_previous["stage"] and previous["status"] == revised_previous["status"]):
+                revised_previous = previous
+            if revised_previous is None:
+                revised_previous = previous
             # Revisions reconstruct editions available at the query's cutoff.
             # Archive captures after release can establish publication history,
             # but cannot backdate the previous-as-known-at-release field above.
             history = subset(snapshot, (e for e in snapshot.evidence if e.event_id != event_id and
-                                       publication_order(e) and publication_order(e) < publication_order(selected)))
+                                       event_order(snapshot, e) and event_order(snapshot, e) < released_at))
             revisions = []
             for changed_period in sorted({e.reference_period for e in evidence if e.reference_period < period}):
                 old = latest_period(history, indicator, changed_period)
@@ -160,24 +205,26 @@ class ReadAPI:
             if old_stage and old_stage["stage"] != stage:
                 stage_change = {"old": old_stage, "new": resolution.to_dict(),
                                 "changed": differs(old_stage["value"], resolution.value)}
-            consensus = self._consensus(snapshot, resolution, event_id, released_at, selected.precision)
+            consensus, diagnostics = self._consensus(snapshot, resolution, event_id, released_at, precision, time_basis)
             legacy_forecasts = [dict(e.provenance(), eligibility="unverified_provider_or_pre_release_capture")
                                 for e in snapshot.evidence if e.event_id == event_id and
                                 e.indicator_id == indicator and e.reference_period == period and
                                 e.reading_kind in {"consensus", "legacy_merged_consensus"}]
             surprise = ([{"provider": c["provider"], "kind": c["kind"], "value": c["surprise"],
-                          "unit": c["surprise_unit"], "scale": resolution.scale} for c in consensus]
-                        if consensus else None)
+                          "unit": c["surprise_unit"], "scale": resolution.scale,
+                          "resolution_status": resolution.status,
+                          "issuer_pending": resolution.status == "issuer_pending"} for c in consensus]
+                        if consensus and resolution.status != "disputed" else None)
             cards.append({"release_event_id": event_id, "family": snapshot.events.get(event_id, {}).get("family", family_for(snapshot, indicator)),
                           "indicator_id": indicator, "indicator_name": snapshot.indicators[indicator]["measure"],
                           "geography": snapshot.indicators[indicator]["geography"],
                           "reference_period": period, "stage": stage, "released_at": released_at,
-                          "time_basis": selected.time_basis if selected.event_time else "schedule",
-                          "publication_precision": selected.precision or (schedule["precision"] if schedule else None),
+                          "time_basis": time_basis, "publication_precision": precision,
                           "resolution": resolution.to_dict(), "previous": previous,
+                          "previous_before_release": previous, "previous_revised": revised_previous,
                           "previous_period": prior, "previous_missing_reason": None if previous else "prior period not known at release time",
                           "revisions": revisions, "stage_change": stage_change,
-                          "consensus": consensus, "surprise": surprise,
+                          "consensus": consensus, "consensus_diagnostics": diagnostics, "surprise": surprise,
                           "legacy_consensus_evidence": legacy_forecasts,
                           "provenance": list({e["id"]: e for e in
                                               [*(e.provenance() for e in evidence), *resolution.provenance]}.values())})
@@ -186,14 +233,15 @@ class ReadAPI:
                  if not any(c["indicator_id"] == i for c in cards)]
         if not requested:
             empty.append({"indicator_id": None, "query": (start, end),
-                          "reason": "no_release_scheduled", "detail": "empty indicator selection"})
+                          "reason": "filtered_out", "detail": "empty indicator selection"})
         return {"since": start, "until": end, "as_known_at": snapshot.cutoff,
                 "cards": cards, "empty": empty, "limitations": [COLLECT_LOG_LIMITATION]}
 
     @staticmethod
-    def _consensus(snapshot, resolution, event_id, released_at, precision):
+    def _consensus(snapshot, resolution, event_id, released_at, precision, time_basis):
         info = snapshot.indicators[resolution.indicator_id]
         per_provider = {}
+        diagnostics = []
         for row in snapshot.consensus:
             if (row["indicator_id"] != resolution.indicator_id or row["release_event_id"] != event_id or
                     row["reference_period"] != resolution.reference_period or row["estimate_stage"] != resolution.stage or
@@ -201,26 +249,47 @@ class ReadAPI:
                 continue
             # The actual time reconciles old date-only/scheduled eligibility.
             # With a date-only publication retain the saved conservative cutoff.
-            cutoff = released_at if precision == "exact" else min(
-                released_at, row["release_cutoff_at"] or released_at)
-            if row["captured_at"] >= cutoff or (row["published_at"] and row["published_at"] >= cutoff):
+            if precision == "exact" and time_basis in {"issuer_publication", "schedule"}:
+                cutoff = released_at
+            elif row["cutoff_precision"] == "date_only":
+                cutoff = row["release_cutoff_at"]
+            elif precision == "date_only":
+                cutoff = released_at
+            else:
+                cutoff = row["release_cutoff_at"]
+            if cutoff is None:
+                diagnostics.append({"consensus_id": row["id"], "provider": row["provider"],
+                                    "reason": "unknown_release_cutoff"})
                 continue
-            value = convert(row["value"], row["unit"], row["scale"], info)
-            if value is None:
+            if row["captured_at"] >= cutoff or (row["published_at"] and row["published_at"] >= cutoff):
                 continue
             key = row["provider"]
             if key not in per_provider or (row["captured_at"], row["content_hash"], row["id"]) > (
                     per_provider[key]["captured_at"], per_provider[key]["content_hash"], per_provider[key]["id"]):
-                per_provider[key] = row
+                per_provider[key] = dict(row, eligibility_cutoff_at=cutoff)
         out = []
+        selected = next(e for e in snapshot.evidence if e.id == resolution.source["selected_evidence_id"])
+        actual = Decimal(str(selected.value)) * Decimal(str(selected.scale)) / Decimal(str(info["scale"]))
         for provider, row in sorted(per_provider.items()):
             forecast = convert(row["value"], row["unit"], row["scale"], info)
+            if forecast is None:
+                diagnostics.append({"consensus_id": row["id"], "provider": provider,
+                                    "survey_identity": row["survey_identity"], "unit": row["unit"],
+                                    "scale": row["scale"], "value": row["value"],
+                                    "captured_at": row["captured_at"],
+                                    "eligibility_cutoff_at": row["eligibility_cutoff_at"],
+                                    "expected_unit": info["unit"], "reason": "unit_not_convertible"})
+                continue
+            expected = Decimal(str(row["value"])) * Decimal(str(row["scale"])) / Decimal(str(info["scale"]))
+            # Subtract decimal inputs at their explicit scale, avoiding binary
+            # artifacts such as 3.7 - 3.6 == 0.10000000000000009.
+            difference = float(actual - expected) if resolution.status != "disputed" else None
             kind = "ff_forecast" if provider.lower().replace(" ", "_") in {"ff", "forex_factory", "forexfactory", "ff_forecast"} else "survey_consensus"
             out.append(dict(row, kind=kind, normalized_value=forecast,
-                            surprise=resolution.value - forecast,
-                            surprise_unit="percentage_points" if info["unit"] in {"%", "percent"} else info["unit"],
-                            eligibility_cutoff_at=released_at if precision == "exact" else min(released_at, row["release_cutoff_at"] or released_at)))
-        return out
+                            surprise=difference, resolution_status=resolution.status,
+                            issuer_pending=resolution.status == "issuer_pending",
+                            surprise_unit="percentage_points" if info["unit"] in {"%", "percent"} else info["unit"]))
+        return out, diagnostics
 
     def explain_empty(self, indicator, period_or_window, *, as_known_at=None):
         cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
@@ -236,20 +305,33 @@ class ReadAPI:
         if info is None:
             info = INDICATORS[indicator].model_dump()
         if geography and geography != info["geography"]:
-            return dict(base, reason="no_release_scheduled", detail="indicator excluded by geography filter")
+            return dict(base, reason="filtered_out", detail="indicator excluded by geography filter")
         rows = [e for e in snapshot.evidence if e.indicator_id == indicator]
         is_window = isinstance(period_or_window, (tuple, list))
-        if is_window:
-            start, end = window(*period_or_window)
-            relevant = [e for e in rows if e.event_time and start <= e.event_time < end]
-        else:
-            relevant = [e for e in rows if e.reference_period == period_or_window]
-            start, end = None, period_end(period_or_window)
+        try:
+            if is_window:
+                if len(period_or_window) != 2:
+                    raise ValueError("a window requires exactly two bounds")
+                start, end = window(*period_or_window)
+            else:
+                start, end = None, period_end(period_or_window)
+        except (ValueError, TypeError, OverflowError) as exc:
+            return dict(base, reason="invalid_query", detail=str(exc))
+
+        def matches(e):
+            if not is_window:
+                return e.reference_period == period_or_window
+            instant = event_order(snapshot, e)
+            return bool(instant and start <= instant < end)
+
+        relevant = [e for e in rows if matches(e)]
         family = family_for(snapshot, indicator) if indicator in snapshot.indicators else next(
             f for f, members in FAMILY_INDICATORS.items() if indicator in members)
-        schedules = [s for event, s in latest_schedule(snapshot).items()
-                     if snapshot.events[event]["family"] == family and
-                     (not is_window or start <= s["expected_at"] < end)]
+        family_schedules = [s for event, s in latest_schedule(snapshot).items()
+                            if snapshot.events[event]["family"] == family]
+        schedules = [s for s in family_schedules if not is_window or
+                     start <= event_timing(snapshot, s["release_event_id"])[0] < end]
+        family_rows = [e for e in snapshot.evidence if family_for(snapshot, e.indicator_id) == family and matches(e)]
         # Schedules lack reference periods: a family schedule cannot be assigned
         # to an arbitrary period when no evidence links that period to the event.
         if not is_window:
@@ -261,22 +343,29 @@ class ReadAPI:
             return dict(base, reason="source_failed", family=family,
                         time=failure.legacy["legacy_first_seen_at"], time_basis="legacy_run_started_at",
                         detail="stored imported run failed; exact failure instant was not retained")
-        released = [e for e in relevant if (e.published_at and e.published_at <= snapshot.cutoff) or
-                    (e.event_time and e.event_time <= snapshot.cutoff)]
+        released = [e for e in family_rows if event_order(snapshot, e) and event_order(snapshot, e) <= snapshot.cutoff]
         if released:
             return dict(base, reason="published_not_resolved", family=family,
-                        detail="publication evidence exists; no eligible card (check numeric value, period, unit, stage and event/time linkage)")
+                        detail="same-family release evidence exists; requested indicator has no eligible card (check numeric value, period, unit, stage and event/time linkage)")
         if schedules and any(s["expected_at"] <= snapshot.cutoff for s in schedules):
-            return dict(base, reason="published_not_resolved", family=family,
+            return dict(base, reason="scheduled_not_captured", family=family,
                         detail="scheduled release is due; publication/value capture is not confirmed")
-        if schedules or any(e.event_time and e.event_time > snapshot.cutoff for e in relevant) or (is_window and start > snapshot.cutoff) or (not is_window and end > snapshot.cutoff):
+        if schedules or family_rows or (is_window and start > snapshot.cutoff) or (not is_window and end > snapshot.cutoff):
             return dict(base, reason="not_yet_released", family=family,
                         detail="release/period is in the future as known at the query cutoff")
         if is_window and any(e.event_time is None for e in rows):
             return dict(base, reason="published_not_resolved", family=family,
                         detail="undated evidence cannot be assigned to the requested release window")
-        return dict(base, reason="no_release_scheduled", family=family,
-                    detail="no matching schedule or publication evidence is stored; schedule coverage is incomplete")
+        moved = ([s["release_event_id"] for s in family_schedules
+                  if not start <= s["expected_at"] < end and
+                  any(old["release_event_id"] == s["release_event_id"] and start <= old["expected_at"] < end
+                      for old in snapshot.schedules)] if is_window else [])
+        if moved:
+            return dict(base, reason="no_release_scheduled", family=family,
+                        release_event_ids=sorted(moved),
+                        detail="stored schedule revisions moved these events outside this window; this is not a complete-calendar guarantee")
+        return dict(base, reason="schedule_unknown", family=family,
+                    detail="no matching release evidence or period-linked schedule is stored; a release calendar is unavailable")
 
     def coverage(self, since, until, *, as_known_at=None):
         start, end = window(since, until)
@@ -289,17 +378,16 @@ class ReadAPI:
         events = {}
         for card in result["cards"]:
             events.setdefault((card["family"], card["release_event_id"]), []).append(card)
-        for event, schedule in latest_schedule(snapshot).items():
-            if start <= schedule["expected_at"] < end:
-                key = (snapshot.events[event]["family"], event)
-                # Actual publication wins over a superseded planned window.
-                known = [e.event_time for e in snapshot.evidence if e.event_id == event and e.event_time]
-                if not known or any(start <= t < end for t in known):
-                    events.setdefault(key, [])
+        event_rows = {}
         for e in snapshot.evidence:
-            if e.event_id and e.event_time and start <= e.event_time < end and e.reading_kind in {"actual", "unavailable", "legacy_merged_actual"}:
-                family = snapshot.events.get(e.event_id, {}).get("family", family_for(snapshot, e.indicator_id))
-                events.setdefault((family, e.event_id), [])
+            if e.event_id and e.reading_kind in {"actual", "unavailable", "legacy_merged_actual"}:
+                event_rows.setdefault(e.event_id, []).append(e)
+        for event in set(latest_schedule(snapshot)) | set(event_rows):
+            instant, _, _ = event_timing(snapshot, event)
+            if instant and start <= instant < end:
+                family = (snapshot.events[event]["family"] if event in snapshot.events else
+                          family_for(snapshot, event_rows[event][0].indicator_id))
+                events.setdefault((family, event), [])
         priorities = {"official": 0, "provisional": 1, "issuer_pending": 2, "disputed": 3}
         for (family, event), cards in sorted(events.items()):
             counts = families.setdefault(family, {"expected": 0, "captured": 0, "official": 0, "provisional": 0,
@@ -317,8 +405,9 @@ class ReadAPI:
                 schedule = latest_schedule(snapshot).get(event)
                 failures = [e for e in snapshot.evidence if e.event_id == event and e.legacy and
                             e.legacy["link"]["legacy_run_status"] == "failed"]
-                reason = ("source_failed" if failures else "not_yet_released" if schedule and
-                          schedule["expected_at"] > cutoff else "published_not_resolved")
+                instant, _, _ = event_timing(snapshot, event)
+                reason = ("source_failed" if failures else "not_yet_released" if instant and instant > cutoff else
+                          "scheduled_not_captured" if schedule and not event_rows.get(event) else "published_not_resolved")
                 counts["missing_reasons"].append({"release_event_id": event, "reason": reason,
                                                   "detail": "event has no resolved numeric card"})
         return {"since": start, "until": end, "as_known_at": cutoff, "families": families,

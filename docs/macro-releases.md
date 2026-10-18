@@ -472,7 +472,7 @@ measures from one publication. The largest known reference period is the
 headline; earlier periods in that event are revision evidence. An unavailable
 headline never causes an older revision to masquerade as the headline.
 The card includes indicator name/id, geography, period, stage, release-window
-time/basis, resolution, previous, revisions, stage change, consensus, surprise
+time/basis, resolution, both previous values, revisions, stage change, consensus, surprise
 and provenance (including every period carried by the release).
 
 | Resolution status | Meaning |
@@ -503,35 +503,74 @@ supported. Transforms, seasonal adjustment and euro-area membership are never
 inferred; no rounding is used to hide disagreement (only floating-point noise
 is ignored). Resolution values use the indicator's unit/scale/transform.
 
-`previous` is the immediately prior calendar period's latest edition/stage
-**known to us at release time**, before that event's changes. A missing prior
-period stays null with a reason; the API never skips a gap or backdates an archive
-capture. `revisions` compare prior periods in the event with older publication
+The owner decision is to expose **both** prior-period values:
+
+- `previous_before_release` is the immediately prior calendar period's latest
+  edition/stage known to us strictly before this event.
+- `previous_revised` applies this event's revision of that prior period. It
+  equals `previous_before_release` when this release makes no revision; a later
+  release's revision cannot leak into it. If the old figure was unknown, it
+  remains null before release even when this event supplies the prior figure.
+- `previous` remains a compatibility alias for `previous_before_release`.
+
+A missing prior period stays null with a reason; the API never skips a gap or
+backdates an archive capture. `revisions` compare prior periods in the event with older publication
 history available at the query cutoff; each includes full `old`/`new` resolutions
 and its comparison basis. An archive captured later can establish that history
-without changing the historical `previous`. `stage_change` shows the same
+without changing the historical `previous_before_release`. `stage_change` shows the same
 period's flash → final (or GDP advance → second → third) relationship, including
 unchanged values; it is separate from prior-period revisions. Rereading a
 publication does not create a revision.
 
+Card windows, coverage and stage ordering share an event clock. The first known
+exact issuer publication for the event/edition is the release instant, including
+when the selected figure is a later correction. Non-issuer evidence uses the
+stored schedule and its precision when available; a mirror timestamp never
+overrides that schedule. Its original timestamp remains in the resolution and
+provenance. Without an issuer or schedule, source/legacy calendar times remain
+explicitly labelled. Stages rank by event chronology with `publication_order()`
+as a secondary ordering key, so a later legacy final can beat an earlier flash,
+including a dated flash. Retrieval time is not a publication instant.
+
 `consensus` contains one frozen row per provider: the latest compatible snapshot
 strictly before release, captured by the knowledge cutoff. Providers are never
-averaged. A known exact publication time reconciles earlier scheduled/date-only
-eligibility; date-only releases use a conservative lower bound, excluding
+averaged. The event's **first** exact issuer publication time reconciles earlier
+scheduled/date-only eligibility; a correction cannot move the boundary later.
+An exact stored schedule supplies the boundary for a mirror-only event.
+Date-only releases retain the saved conservative issuer-local midnight cutoff,
+even when its UTC value is later than the source's midnight date placeholder.
+This includes captures at 02:00Z and 03:59Z before a saved 04:00Z lower bound.
+When no date-only cutoff is stored, a date-only release retains its conservative
+date boundary and excludes
 uncertain same-day captures. Measure, event, period, stage, unit and scale must
 match. Forex Factory is labelled `ff_forecast`. `surprise` is actual minus each
 provider value in the indicator's scale (percentage-point differences for
-percentages). With no eligible consensus it is **null**. Raw legacy forecasts
+percentages). Decimal arithmetic preserves input precision without binary
+subtraction artifacts. Every surprise entry includes `resolution_status` and an
+explicit `issuer_pending` flag. For `disputed`, both the card's surprise and
+each consensus row's surprise are **null**; the arbitrary display actual is not
+used for a directional comparison. With no eligible consensus surprise is also
+null. The latest pre-release snapshot is selected per provider, retaining its
+`survey_identity`; multiple surveys from a provider are never averaged. An
+unconvertible latest unit produces `consensus_diagnostics` with the provider,
+survey, capture time, unit and reason instead of silently disappearing or
+reviving an older snapshot. Raw legacy forecasts
 appear separately in `legacy_consensus_evidence`; their uncertified provider or
-capture cannot produce surprise.
+capture cannot produce surprise. **Owner decision:** a legacy observation
+captured after release stays evidence, never pre-release consensus, and its
+surprise stays null. This is the accepted behavior of the shadow parity report.
 
 | Empty reason | Meaning |
 | --- | --- |
 | `not_covered` | Indicator is absent from both stored and adapter catalogues. |
-| `no_release_scheduled` | No matching stored schedule/publication; this does not assert a complete calendar. A geography exclusion is also explained explicitly. |
+| `schedule_unknown` | No matching release evidence or period-linked schedule is stored. A missing calendar cannot establish that no release was scheduled. |
+| `no_release_scheduled` | Stored schedule revisions explicitly moved the known events outside the requested window; event ids are returned. This is scoped evidence, not a complete-calendar guarantee. |
+| `scheduled_not_captured` | A stored release is past due but has no captured publication evidence. It does not claim a source failure. |
 | `not_yet_released` | The known schedule or requested future window/period is after the knowledge cutoff. |
-| `published_not_resolved` | Publication/unavailable/undated evidence cannot produce an eligible card, or a stored scheduled release is due without confirmed capture. |
+| `published_not_resolved` | Publication/unavailable/undated evidence cannot produce an eligible card. Same-family publication evidence in the window also yields this reason for a missing indicator, such as core CPI missing from a captured CPI release. |
 | `source_failed` | Imported legacy run metadata explicitly records a failed run; the family and original run-start time are returned, with the time basis labelled. |
+| `filtered_out` | The geography filter excluded the indicator, or the requested indicator selection was empty. |
+| `invalid_query` | A malformed reference period/window was passed to `explain_empty`; the diagnostic is returned instead of raising a raw date error. |
 
 **Failure/coverage limitations:** M5 prints collect summaries but stores no run
 log or summary. The API cannot establish an M5 source failure from missing
@@ -542,6 +581,12 @@ rows have no reference-period or indicator membership: matching uses reviewed
 family mappings, and a family schedule is not assigned to an arbitrary period.
 Legacy mapping links have only their latest version; a link updated after a
 historical cutoff is conservatively unavailable rather than leaked backwards.
+As accepted in review (P3), `indicators` metadata and
+`source_series.is_published` are read as of today; they are not a versioned
+historical catalogue. First-seen filters do not imply historical reconstruction
+of those mutable tables. As accepted for F7, a disputed resolution's display
+value follows the deterministic tie-break and is not a verified truth choice.
+The documented F10 golden-date exception remains unchanged.
 
 `coverage` counts distinct events per family. `expected` is the union of stored
 schedules and captured events; `captured` means at least one numeric card for the

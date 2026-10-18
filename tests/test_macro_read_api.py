@@ -18,6 +18,7 @@ from market_data_hub.macro_releases.models import (
     ConsensusReading, ReleaseEvent, ScheduleVersion, SourceSeries, ValueVintage,
 )
 from market_data_hub.macro_releases.resolve import Snapshot
+from market_data_hub.macro_releases.read_api import latest_period
 from test_macro_official_adapters import (
     GOLDEN, SLICE_IDS, golden_indicator, observations as observations,
 )
@@ -134,6 +135,8 @@ def test_payroll_card_new_month_two_revisions_and_previous(store):
     assert card["resolution"]["scale"] == 1000
     assert card["previous"]["reference_period"] == "2026-08"
     assert card["previous"]["value"] == 162
+    assert card["previous_before_release"]["value"] == 162
+    assert card["previous_revised"]["value"] == 133
     assert [(r["reference_period"], r["old"]["value"], r["new"]["value"]) for r in card["revisions"]] == [
         ("2026-07", 30, -10), ("2026-08", 162, 133)]
     assert card["surprise"] is None
@@ -337,7 +340,7 @@ def test_each_empty_reason_and_requested_indicator_attachment(store, legacy_cale
     api = ReadAPI(store)
     query = ("2026-10-10", "2026-10-17")
     assert api.explain_empty("not-in-catalogue", query, as_known_at=NOW)["reason"] == "not_covered"
-    assert api.explain_empty("us_cpi_headline_yy", query, as_known_at=NOW)["reason"] == "no_release_scheduled"
+    assert api.explain_empty("us_cpi_headline_yy", query, as_known_at=NOW)["reason"] == "schedule_unknown"
     schedule(store, "2026-11-14", "2026-11-14T13:30:00Z")
     assert api.explain_empty("us_cpi_headline_yy", ("2026-11-01", "2026-11-30"), as_known_at=NOW)["reason"] == "not_yet_released"
     assert api.explain_empty("us_cpi_headline_yy", "2026-11", as_known_at=NOW)["reason"] == "not_yet_released"
@@ -364,7 +367,7 @@ def test_coverage_counts_events_missing_reasons_and_freshness(store):
     result = store.coverage("2026-10-10", "2026-10-17", as_known_at=NOW)
     counts = result["families"]["us_cpi"]
     assert (counts["expected"], counts["captured"], counts["official"], counts["missing"]) == (3, 1, 1, 2)
-    assert {r["reason"] for r in counts["missing_reasons"]} == {"published_not_resolved"}
+    assert {r["reason"] for r in counts["missing_reasons"]} == {"published_not_resolved", "scheduled_not_captured"}
     assert counts["latest_first_seen_at"].startswith("2026-10-14")
     assert counts["latest_published_at"].startswith("2026-10-14")
 
@@ -416,3 +419,182 @@ def test_shadow_legacy_week_parity_report(store, legacy_calendar, tmp_path):
     (tmp_path / "shadow-parity.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     # Frozen mappings learned after the cutoff must not leak backwards.
     assert not cards(store, as_known_at="2026-10-17T23:59:59Z")["cards"]
+
+
+def test_mirror_schedule_drives_window_precision_consensus_and_coverage(store):
+    mirror = replace(observation(source="FRED"), published_at="2026-10-14T00:00:00Z", precision="date_only")
+    persist(store, [mirror])
+    event = schedule(store)
+    consensus(store, event, "Reuters", 3.6)
+    consensus(store, event, "Late", 99, captured="2026-10-14T12:31:00Z")
+    result = cards(store, "2026-10-14T12:00:00Z", "2026-10-14T13:00:00Z", indicators=["us_cpi_headline_yy"])
+    card = result["cards"][0]
+    assert card["released_at"].startswith("2026-10-14T12:30:00")
+    assert card["publication_precision"] == "exact" and card["time_basis"] == "schedule"
+    assert card["resolution"]["published_at"].startswith("2026-10-14T00:00:00")
+    assert [c["provider"] for c in card["consensus"]] == ["Reuters"]
+    assert card["consensus"][0]["eligibility_cutoff_at"] == card["released_at"]
+    assert card["surprise"][0]["value"] == .1
+    assert card["surprise"][0]["resolution_status"] == "provisional"
+    assert card["surprise"][0]["issuer_pending"] is False
+    coverage = store.coverage("2026-10-14T12:00:00Z", "2026-10-14T13:00:00Z", as_known_at=NOW)["families"]["us_cpi"]
+    assert coverage["expected"] == coverage["captured"] == 1 and coverage["missing"] == 0
+    assert not cards(store, "2026-10-14T00:00:00Z", "2026-10-14T01:00:00Z")["cards"]
+
+
+def test_date_only_consensus_preserves_issuer_local_midnight(store):
+    persist(store, [replace(observation(), published_at="2026-10-14T00:00:00Z", precision="date_only")])
+    event = "BLS:us_cpi:regular:2026-10-14"
+    for provider, captured in [("Earlier", "02:00"), ("Last prior-day minute", "03:59"),
+                               ("At midnight", "04:00"), ("After midnight", "04:01")]:
+        consensus(store, event, provider, 3.6, captured=f"2026-10-14T{captured}:00Z",
+                  release_cutoff_at="2026-10-14T04:00:00Z", cutoff_precision="date_only", cutoff_basis="scheduled")
+    card = cards(store)["cards"][0]
+    assert {c["provider"] for c in card["consensus"]} == {"Earlier", "Last prior-day minute"}
+    assert all(c["eligibility_cutoff_at"].startswith("2026-10-14T04:00:00") for c in card["consensus"])
+
+
+@pytest.mark.parametrize("dated_flash", [False, True])
+def test_legacy_stage_chronology_final_beats_flash_and_dated_stage(store, legacy_calendar, dated_flash):
+    with sqlite3.connect(legacy_calendar) as legacy:
+        insert(legacy, "occurrences", dict(id=3, indicator_code="flash", period_norm="2026-09",
+               release_date="2026-09-30", scheduled_at_utc="2026-09-30T09:00:00Z", created_by_run="cal_z"))
+        legacy.row_factory = sqlite3.Row
+        raw = dict(legacy.execute("SELECT * FROM observations WHERE occurrence_id=1").fetchone())
+        raw.pop("id")
+        insert(legacy, "observations", dict(raw, occurrence_id=3, release_date="2026-09-30",
+               scheduled_at_utc="2026-09-30T09:00:00Z"))
+        add_legacy_observation(legacy, 1, "cal_a", status="released", value=3.9)
+    import_calendar(store, legacy_calendar, captured_at="2026-10-18T01:00:00Z")
+    indicator = store.conn.execute("SELECT indicator_id FROM legacy_candidates WHERE legacy_code='final'").fetchone()[0]
+    snapshot = Snapshot.load(store, NOW)
+    if dated_flash:
+        snapshot = replace(snapshot, evidence=[replace(e, published_at="2026-09-30T09:00:00.000000+00:00")
+                           if e.stage == "flash" else e for e in snapshot.evidence])
+    result = latest_period(snapshot, indicator, "2026-09")
+    assert result["stage"] == "final" and result["value"] == 3.9
+    api_result = ReadAPI(store)._cards(snapshot, "2026-09-30T00:00:00.000000+00:00", "2026-10-18T00:00:00.000000+00:00", [indicator])
+    final = next(c for c in api_result["cards"] if c["stage"] == "final")
+    assert final["stage_change"]["old"]["stage"] == "flash"
+    assert final["stage_change"]["new"]["value"] == 3.9
+
+
+def test_disputed_card_never_computes_surprise(store):
+    event, _ = evidence(store, source="A", value=3.7)
+    evidence(store, source="B", value=3.9)
+    consensus(store, event, "Reuters", 3.5)
+    card = cards(store)["cards"][0]
+    assert card["resolution"]["status"] == "disputed"
+    assert card["surprise"] is None
+    assert card["consensus"][0]["surprise"] is None
+    assert card["consensus"][0]["resolution_status"] == "disputed"
+
+
+def test_issuer_pending_surprise_is_explicitly_flagged(store):
+    persist(store, [observation(edition="2026-10-13", value=3.6), observation(source="FRED", value=3.7)])
+    event = schedule(store)
+    consensus(store, event, "Reuters", 3.5)
+    card = cards(store, "2026-10-14", "2026-10-14")["cards"][0]
+    assert card["resolution"]["status"] == "issuer_pending"
+    assert card["surprise"][0]["value"] == .2
+    assert card["surprise"][0]["resolution_status"] == "issuer_pending"
+    assert card["surprise"][0]["issuer_pending"] is True
+    assert card["consensus"][0]["issuer_pending"] is True
+
+
+def test_correction_cannot_move_event_clock_or_admit_post_release_poll_probe_k(store):
+    event, _ = evidence(store, value=3.7)
+    evidence(store, value=3.9, published="2026-10-14T16:00:00Z", seen="2026-10-14T16:01:00Z")
+    consensus(store, event, "Reuters", 3.6)
+    consensus(store, event, "Reuters", 10, captured="2026-10-14T15:00:00Z")
+    card = cards(store, "2026-10-14T12:00:00Z", "2026-10-14T13:00:00Z")["cards"][0]
+    assert card["released_at"].startswith("2026-10-14T12:30:00")
+    assert card["resolution"]["published_at"].startswith("2026-10-14T16:00:00")
+    assert card["resolution"]["value"] == 3.9
+    assert card["consensus"][0]["value"] == 3.6
+    assert card["consensus"][0]["eligibility_cutoff_at"] == card["released_at"]
+    assert card["surprise"][0]["value"] == .3
+    assert not cards(store, "2026-10-14T15:00:00Z", "2026-10-14T17:00:00Z")["cards"]
+    assert cards(store, as_known_at="2026-10-14T14:00:00Z")["cards"][0]["resolution"]["value"] == 3.7
+
+
+def test_missing_measure_from_captured_family_is_unresolved_not_unscheduled(store):
+    persist(store, [observation()])
+    result = cards(store, indicators=["us_cpi_headline_yy", "us_cpi_core_yy"])
+    assert len(result["cards"]) == 1
+    assert result["empty"][0]["reason"] == "published_not_resolved"
+    assert store.explain_empty("us_cpi_core_yy", "2026-09", as_known_at=NOW)["reason"] == "published_not_resolved"
+
+
+def test_empty_reasons_distinguish_unknown_schedule_and_uncaptured_release(store):
+    query = ("2026-10-10", "2026-10-17")
+    assert store.explain_empty("us_cpi_headline_yy", query, as_known_at=NOW)["reason"] == "schedule_unknown"
+    schedule(store)
+    assert store.explain_empty("us_cpi_headline_yy", query, as_known_at=NOW)["reason"] == "scheduled_not_captured"
+    assert cards(store, indicators=["us_cpi_headline_yy"])["empty"][0]["reason"] == "scheduled_not_captured"
+    missing = store.coverage(*query, as_known_at=NOW)["families"]["us_cpi"]["missing_reasons"]
+    assert missing[0]["reason"] == "scheduled_not_captured"
+    assert store.explain_empty("us_cpi_headline_yy", ("2026-10-01", "2026-10-05"), as_known_at=NOW)["reason"] == "schedule_unknown"
+    persist(store, [observation(value=None)])
+    assert store.explain_empty("us_cpi_headline_yy", query, as_known_at=NOW)["reason"] == "published_not_resolved"
+
+
+def test_no_release_scheduled_requires_explicit_schedule_moving_event_outside_window(store):
+    schedule(store)
+    schedule(store, expected="2026-10-20T12:30:00Z", recorded="2026-10-15T00:00:00Z")
+    result = store.explain_empty("us_cpi_headline_yy", ("2026-10-10", "2026-10-17"), as_known_at=NOW)
+    assert result["reason"] == "no_release_scheduled" and result["release_event_ids"]
+    assert "moved" in result["detail"]
+
+
+@pytest.mark.parametrize("query", ["bad", "2026-W40", "2026-13", "2026-02-30", "0000", None,
+                                   ("bad", "2026-10-17"), ("2026-10-10",)])
+def test_malformed_period_or_window_returns_reason(store, query):
+    reason = store.explain_empty("us_cpi_headline_yy", query, as_known_at=NOW)
+    assert reason["reason"] == "invalid_query" and reason["detail"]
+
+
+def test_unknown_consensus_unit_diagnostic_does_not_revive_older_survey(store):
+    persist(store, [observation()])
+    event = "BLS:us_cpi:regular:2026-10-14"
+    consensus(store, event, "Reuters", 3.5, captured="2026-10-14T11:00:00Z", survey_identity="earlier")
+    consensus(store, event, "Reuters", 3.6, unit="ratio", survey_identity="latest")
+    card = cards(store)["cards"][0]
+    assert card["consensus"] == [] and card["surprise"] is None
+    diagnostic = card["consensus_diagnostics"][0]
+    assert diagnostic["provider"] == "Reuters" and diagnostic["survey_identity"] == "latest"
+    assert diagnostic["reason"] == "unit_not_convertible" and diagnostic["unit"] == "ratio"
+
+
+@pytest.mark.parametrize("actual,forecast,delta", [(3.7, 3.6, .1), (3.7, 3.4, .3), (3.6, 3.7, -.1), (3.7, 3.65, .05)])
+def test_surprise_uses_input_decimal_precision_and_carries_status(store, actual, forecast, delta):
+    persist(store, [observation(value=actual)])
+    consensus(store, "BLS:us_cpi:regular:2026-10-14", "Reuters", forecast)
+    card = cards(store)["cards"][0]
+    assert card["surprise"][0]["value"] == delta
+    assert card["consensus"][0]["surprise"] == delta
+    assert card["surprise"][0]["resolution_status"] == "official"
+    assert card["surprise"][0]["issuer_pending"] is False
+
+
+@pytest.mark.parametrize("disputed_prior", [False, True])
+def test_previous_fields_equal_without_revision_and_exclude_future_revision(store, disputed_prior):
+    persist(store, [observation(period="2026-08", value=3.6, edition="2026-09-14", seen="2026-09-14T12:31:00Z"),
+                    observation(period="2026-08", value=3.6),
+                    observation(),
+                    observation(period="2026-08", value=3.5, edition="2026-10-16", seen="2026-10-16T12:31:00Z")])
+    if disputed_prior:
+        info = INDICATORS["us_cpi_headline_yy"]
+        store.put(SourceSeries(id="copy", indicator_id=info.id, source_id="copy", issuer_id="BLS",
+                  distributor_id="copy", source_key="copy", evidence_role="issuer"))
+        row = dict(store.conn.execute("SELECT * FROM value_vintages WHERE reference_period='2026-08' "
+                   "AND release_event_id='BLS:us_cpi:regular:2026-10-14'").fetchone())
+        row.pop("id")
+        store.put(ValueVintage(**dict(row, source_series_id="copy", value=3.8, published_as="3.8", document_hash="copy")))
+    card = cards(store, "2026-10-14", "2026-10-14")["cards"][0]
+    assert card["previous_before_release"]["value"] == 3.6
+    assert card["previous_before_release"]["status"] == "official"
+    if disputed_prior:
+        assert card["previous_revised"]["status"] == "disputed"
+    else:
+        assert card["previous_revised"] == card["previous_before_release"]
