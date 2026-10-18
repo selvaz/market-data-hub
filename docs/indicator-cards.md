@@ -3,7 +3,7 @@
 Indicator cards provide the same owner-approved context to domain recaps and
 LazyCommittee. They describe a concept, theme, nature, timing reference, evidence,
 revision behaviour and caveats. They contain no market views or conclusions.
-The 269 concept rows and their timing evidence ship as versioned package data;
+The 270 concept rows and their timing evidence ship as versioned package data;
 reading cards requires no database or network access.
 
 ```python
@@ -82,7 +82,7 @@ limitations; an empty flag list does not establish absence of failure modes.
 
 Package resources live under `market_data_hub/indicator_cards/`:
 
-- `master_table_v2.psv`: the unchanged owner-approved table (269 rows).
+- `master_table_v2.psv`: the owner-approved table (270 rows: v2.1 plus the UK monthly GDP row).
 - `timing_v2.1.json`: verbatim columns (a)/(b) from section 3 of the approved
   `04-classification-v2.md`, with its source-guide SHA-256. The PSV supplies
   relationship keys but does not contain the numeric horizons or peak estimates.
@@ -125,13 +125,12 @@ configured-id context coverage, not live ingestion or historical completeness.
 | US payrolls | 1 / 1 |
 | US GDP | 1 / 1 |
 | EA HICP | 6 / 6 |
-| UK GDP | **0 / 2 — source gap** |
+| UK GDP | 2 / 2 |
 
-UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) has no GBR concept row in the
-approved table. The PANEL, EA and US GDP rows do not establish its timing or
-evidence. Complete coverage of all five certified families therefore requires
-an owner-approved UK GDP row. Tests assert full coverage of the four represented
-families and the exact, documented UK gap; they do not silently waive new gaps.
+UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) is covered by the owner-approved
+row `uk_gdp_monthly` (added 18/10/2026, mirroring the US GDP row: COIN by
+definition, HARD, ONS). All five certified families are fully covered; tests
+assert that no documented gap remains.
 
 Catalogue aliases attach **concept context**, never numerical equivalence:
 levels, changes, seasonal adjustments and stages retain their original ids.
