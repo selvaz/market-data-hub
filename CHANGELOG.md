@@ -5,6 +5,35 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions are released as `vX.Y.Z` tags; the supported combination with the other
 ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
+## [0.3.2] — 2026-10-18
+
+Release train `ecosystem-2026.10.5`. Ships the indicator cards, the two-layer sovereign
+yields and the macro read-API fixes that the processo-macro recaps read. No new runtime
+dependency.
+
+### Added
+- **Indicator cards v2.1** (#108, #111), `market_data_hub.indicator_cards`: the
+  owner-approved classification (270 concept rows, including the UK monthly GDP row)
+  shipped as package data with a hashed timing extract, explicit catalogue aliases,
+  strict models, id resolution, deterministic compact rendering and an offline coverage
+  report. No certified gaps remain.
+- **Sovereign yields, two layers** (#109): official issuer histories (US Treasury,
+  MoF Japan, BoE par curve, BoC) and a dated TradingView `TVC:` market snapshot, with
+  separate market ids, explicit convention metadata, snapshot budgets and divergence
+  reports (`market_data_hub.sovereign_refresh`, `config/sovereign_layers.yaml`). Wired
+  into the existing daily and backfill jobs and exposed in discovery. BoE HTTP 403 and
+  the unverified 2y/30y par codes are recorded as gaps, with no substitutes.
+
+### Fixed
+- Macro read API: legacy naive `event_time` values are normalised at the read boundary
+  instead of crashing (#110); date-only consensus forecasts no longer count as
+  pre-release snapshots for release-day results.
+
+### Changed — schema migration (additive)
+- **Hub DuckDB schema v26 → v27**: new tables `sovereign_series_metadata`,
+  `sovereign_snapshot_attempts` and `sovereign_cross_checks`. Existing tables are
+  unchanged. `macro_releases` SQLite stays at v5.
+
 ## [0.3.1] — 2026-10-18
 
 Release train `ecosystem-2026.10.4`. Ships the production daily macro runner and the
