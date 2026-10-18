@@ -5,6 +5,7 @@ from calendar import monthrange
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 import re
+from zoneinfo import ZoneInfo
 
 from .catalogue import FAMILIES, INDICATORS
 from .models import utc
@@ -129,6 +130,25 @@ def event_timing(snapshot, event_id, selected=None):
 
 def event_order(snapshot, evidence):
     return event_timing(snapshot, evidence.event_id, evidence)[0] or publication_order(evidence)
+
+
+def event_timezone(snapshot, event_id, selected, time_basis):
+    """Use stored issuer/schedule zones; an unknown zone cannot certify a date."""
+    schedule = latest_schedule(snapshot).get(event_id)
+    zones = {e.issuer_timezone for e in snapshot.evidence_by_event.get(event_id, [])
+             if e.role == "issuer" and e.issuer_timezone}
+    if time_basis == "schedule" and schedule:
+        name = schedule["issuer_timezone"]
+    elif len(zones) == 1:
+        name = next(iter(zones))
+    elif zones:
+        name = None
+    else:
+        name = schedule["issuer_timezone"] if schedule else selected.issuer_timezone
+    try:
+        return ZoneInfo(name) if name else None
+    except (KeyError, ValueError, TypeError):
+        return None
 
 
 def latest_period(snapshot, indicator, period):
@@ -267,6 +287,7 @@ class ReadAPI:
         info = snapshot.indicators[resolution.indicator_id]
         per_provider = {}
         diagnostics = []
+        selected = next(e for e in snapshot.evidence if e.id == resolution.source["selected_evidence_id"])
         for row in snapshot.consensus:
             if (row["indicator_id"] != resolution.indicator_id or row["release_event_id"] != event_id or
                     row["reference_period"] != resolution.reference_period or row["estimate_stage"] != resolution.stage or
@@ -286,6 +307,30 @@ class ReadAPI:
                 diagnostics.append({"consensus_id": row["id"], "provider": row["provider"],
                                     "reason": "unknown_release_cutoff"})
                 continue
+            date_fields = [field for field in ("captured_at", "published_at")
+                           if row["timestamp_precisions"].get(field) == "date_only"]
+            if date_fields:
+                zone = event_timezone(snapshot, event_id, selected, time_basis)
+                if zone is None:
+                    diagnostics.append({"consensus_id": row["id"], "provider": row["provider"],
+                                        "reason": "unknown_issuer_timezone", "fields": date_fields})
+                    continue
+                # A normalized date is a calendar label, not a UTC instant.
+                # For date-only releases preserve #103's saved local-midnight
+                # bound; without one, released_at itself is a date bucket.
+                if precision == "date_only":
+                    release_date = (datetime.fromisoformat(cutoff).astimezone(zone).date()
+                                    if row["cutoff_precision"] == "date_only" else
+                                    date.fromisoformat(released_at[:10]))
+                else:
+                    release_date = datetime.fromisoformat(released_at).astimezone(zone).date()
+                uncertain = [field for field in date_fields
+                             if date.fromisoformat(row[field][:10]) >= release_date]
+                if uncertain:
+                    diagnostics.append({"consensus_id": row["id"], "provider": row["provider"],
+                                        "reason": "date_only_consensus_not_pre_release", "fields": uncertain,
+                                        "release_date": release_date.isoformat(), "issuer_timezone": str(zone)})
+                    continue
             if row["captured_at"] >= cutoff or (row["published_at"] and row["published_at"] >= cutoff):
                 continue
             key = row["provider"]
@@ -293,7 +338,6 @@ class ReadAPI:
                     per_provider[key]["captured_at"], per_provider[key]["content_hash"], per_provider[key]["id"]):
                 per_provider[key] = dict(row, eligibility_cutoff_at=cutoff)
         out = []
-        selected = next(e for e in snapshot.evidence if e.id == resolution.source["selected_evidence_id"])
         actual = Decimal(str(selected.value)) * Decimal(str(selected.scale)) / Decimal(str(info["scale"]))
         for provider, row in sorted(per_provider.items()):
             forecast = convert(row["value"], row["unit"], row["scale"], info)

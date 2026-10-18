@@ -92,6 +92,7 @@ class Evidence:
     legacy: Optional[dict] = None
     ordering_at: Optional[str] = None
     timestamp_precisions: dict = field(default_factory=dict)
+    issuer_timezone: Optional[str] = None
 
     @property
     def official(self):
@@ -294,6 +295,7 @@ class Snapshot:
             url=None if vintage else row["url"], event_time=event_time, time_basis=time_basis,
             revision_kind=row.get("revision_kind"), reading_kind=row.get("reading_kind", "actual"), legacy=legacy,
             ordering_at=ordering_at, timestamp_precisions=precisions,
+            issuer_timezone=row.get("issuer_timezone"),
         )
 
 

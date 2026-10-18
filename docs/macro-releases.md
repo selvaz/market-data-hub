@@ -567,6 +567,15 @@ An exact stored schedule supplies the boundary for a mirror-only event.
 Date-only releases retain the saved conservative issuer-local midnight cutoff,
 even when its UTC value is later than the source's midnight date placeholder.
 This includes captures at 02:00Z and 03:59Z before a saved 04:00Z lower bound.
+Date-only consensus `captured_at` or `published_at` values (including naive
+timestamps reduced to dates at the read boundary) are eligible only when their
+calendar date strictly precedes the release date in the stored issuer timezone.
+Same-day or later dates are excluded with
+`date_only_consensus_not_pre_release` in `consensus_diagnostics`; an unavailable
+or invalid issuer timezone excludes date-only rows with `unknown_issuer_timezone`.
+The midnight placeholder for a consensus date is never converted to an issuer
+instant. Exact timestamp eligibility and saved issuer-local release cutoffs
+retain their existing behavior.
 When no date-only cutoff is stored, a date-only release retains its conservative
 date boundary and excludes
 uncertain same-day captures. Measure, event, period, stage, unit and scale must
