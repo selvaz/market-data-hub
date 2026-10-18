@@ -23,7 +23,7 @@ from market_data_hub.sources.alfred import (
 CONFIG = Path(__file__).parent / "config" / "alfred_backfill.yaml"
 EARLIEST = "1776-07-04"
 LATEST = "9999-12-31"
-VINTAGE_BATCH = 10000
+VINTAGE_BATCH = 1000  # FRED caps JSON vintage_dates at 2,000 per query; stay well below (review P3-1)
 PAGE_SIZE = 100000
 WRITE_BATCH = 5000
 
