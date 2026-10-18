@@ -8,6 +8,7 @@ from typing import Optional, Protocol
 
 from .catalogue import INDICATORS
 from .http import Document
+from .documents import put_document
 from .models import Discrepancy, Reading, ReleaseEvent, SourceSeries, ValueVintage, utc
 
 PARSER_VERSION = "official-adapters:m5-v2"
@@ -31,7 +32,7 @@ class Observation:
     source: str
     document: Document
     edition: str
-    published_at: str
+    published_at: Optional[str]
     stage: str = "regular"
     revision: str = "initial"
     precision: str = "date_only"
@@ -44,6 +45,8 @@ class Observation:
     composition_id: Optional[str] = None
     issuer_local_time: Optional[str] = None
     issuer_timezone: Optional[str] = None
+    needs_review: bool = False
+    unit: Optional[str] = None
 
 
 class Adapter(Protocol):
@@ -60,7 +63,7 @@ def revision_kind(store, obs, issuer):
     Later publications loaded first must not revise an older archived edition.
     Keep explicit initial, benchmark and provider-history kinds intact.
     """
-    if obs.revision not in ("routine", "backfill"):
+    if obs.revision not in ("routine", "backfill") or obs.published_at is None:
         return obs.revision
     prior = store.conn.execute(
         "SELECT 1 FROM value_vintages v JOIN source_series s ON s.id=v.source_series_id "
@@ -85,7 +88,8 @@ def persist(store, observations):
         indicator = INDICATORS[obs.indicator_id]
         issuer = indicator.issuer_id
         mirror = obs.source != issuer
-        verified = not (mirror or not obs.published or obs.method == "archive_text")
+        verified = not (mirror or not obs.published or obs.method == "archive_text" or obs.needs_review
+                        or indicator.geography == "EA_PENDING")
         revision = revision_kind(store, obs, issuer)
         store.put(indicator)
         event_stage = obs.event_stage or obs.stage
@@ -99,24 +103,26 @@ def persist(store, observations):
                                distributor_id=obs.source, source_key=obs.series_key,
                                is_published=obs.published,
                                evidence_role="mirror" if mirror else "issuer"))
+        with store.transaction():
+            identity = put_document(store, obs.document)
         store.put(Reading(
             indicator_id=indicator.id, release_event_id=event_id, source_id=obs.source,
             series_key=obs.series_key, period_key=obs.period, reference_period=obs.period,
             edition=obs.edition, estimate_stage=obs.stage, value=obs.value,
-            published_as=obs.printed, unit=indicator.unit, scale=indicator.scale,
+            published_as=obs.printed, unit=obs.unit or indicator.unit, scale=indicator.scale,
             issuer_id=issuer, distributor_id=obs.source,
             evidence_origin_id=f"{obs.source}:{obs.series_key}", published_at=obs.published_at,
             publication_precision=obs.precision, first_seen_at=obs.document.retrieved_at,
-            retrieved_at=obs.document.retrieved_at, content_hash=obs.document.document_hash,
+            retrieved_at=obs.document.retrieved_at, content_hash=identity,
             parser_version=PARSER_VERSION, extraction_method=obs.method,
             verification_status="verified" if verified and obs.value is not None else "unverified", url=obs.document.url,
             reading_kind="unavailable" if obs.value is None else ("actual" if obs.published else "derived"),
             raw_payload_json=json.dumps({"provider_vintage": obs.provider_vintage,
-                                         "document": document_payload(obs.document)}),
+                                         "document_hash": identity}),
             composition_id=obs.composition_id, issuer_local_time=obs.issuer_local_time,
             issuer_timezone=obs.issuer_timezone,
         ))
-        if obs.value is None:
+        if obs.value is None or obs.needs_review or obs.published_at is None:
             continue  # Keep the issuer's nonnumeric evidence, never invent a vintage.
         vintage_id = store.put(ValueVintage(
             indicator_id=indicator.id, reference_period=obs.period, release_event_id=event_id,
@@ -125,7 +131,7 @@ def persist(store, observations):
             revision_kind=revision, issuer_published_at=obs.published_at,
             publication_precision=obs.precision, provider_vintage_id=obs.provider_vintage,
             first_seen_at=obs.document.retrieved_at, retrieved_at=obs.document.retrieved_at,
-            document_hash=obs.document.document_hash, parser_version=PARSER_VERSION,
+            document_hash=identity, parser_version=PARSER_VERSION,
             extraction_method=obs.method, verification_status="verified" if verified else "unverified",
             derived_from_json=json.dumps(obs.inputs), formula_version=obs.formula,
             composition_id=obs.composition_id, issuer_local_time=obs.issuer_local_time,

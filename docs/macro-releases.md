@@ -3,11 +3,12 @@
 `market_data_hub.macro_releases` owns a separate SQLite publication and evidence
 store. M4 supplies contracts, migrations, a small data-access API, and a read-only
 legacy importer. M5 adds manual collectors; M6 adds the resolver and read API in
-shadow mode. No production consumer, including the ECO recap, uses this API yet.
+shadow mode; M7a adds an explicit-path production daily CLI. No production
+consumer, including the ECO recap, uses this API yet.
 
 ## Database and access
 
-Proposed deployment path:
+Deployment path (always supplied explicitly):
 `C:\ProgramData\InvestmentCommittee\live\db\macro_releases.sqlite`.
 The orchestrator will declare `MACRO_RELEASES_DB` in investmentcommittee's
 `config/databases.toml`. This change does not declare it, create a live database,
@@ -33,8 +34,8 @@ A process-safe file lock permits one cooperating writer per database. The writer
 holds the lock for its lifetime; SQLite transactions cover an individual
 insert/worklist update or an explicit, fully fetched `Store.batch()`. Close it promptly. Never perform network/model calls
 inside a transaction. The lock is released after a process crash by the OS.
-This is the M4 local lock; a scheduled runner's lease and provider-wide rate
-limiting belong to later work.
+The M7a daily runner adds an expiring run lease around these short writer
+sessions; HTTP uses the provider-wide limiter described below.
 
 Readers use SQLite URI `mode=ro`, plus `query_only=ON`; they neither migrate nor
 create files. They read the live WAL normally (`immutable=1` is deliberately not
@@ -54,6 +55,10 @@ Schema v3 adds `composition_id`, `issuer_local_time`, and `issuer_timezone` to
 readings/vintages and tightens the placeholder views. Existing evidence remains
 append-only; the known v2 tool-rendered BLS archive source is excluded from
 official candidates without rewriting its rows.
+Schema v4 adds the append-only daily run lifecycle and per-family outcomes;
+it does not rewrite legacy readings, vintages, mapping links or worklists.
+Schema v5 adds shared raw documents, the review queue and `needs_review` run
+outcomes. Its migration preserves v4 run-log rows and all v3 evidence.
 
 `ResolutionVersion`, `Claim`, and `ClaimEvidence` require a caller-supplied
 `idempotency_key`, unique within their table. A retry reuses its original row id;
@@ -259,9 +264,9 @@ snapshot, with no dependency on a sibling checkout or live database in CI.
 Refresh the snapshot from source when explicitly adding support for a new
 legacy schema version; unsupported versions fail rather than silently drifting.
 
-M5 adds the manual official-source adapters described below. M6 and the future
-daily runner still own scheduling, persistent fetch-failure/backlog work and
-consumer resolution. A CLI failure is reported with a nonzero exit status;
+M5 adds the manual official-source adapters described below. M6 owns consumer
+resolution; M7a persists daily fetch failures. Scheduling and persistent backlog
+orchestration remain separate deployment work. A CLI failure has a nonzero exit status;
 it is not a statement that no release occurred.
 
 M6 replaces placeholder selection with the single versioned deterministic
@@ -285,7 +290,7 @@ fallback. The CLI also refuses paths containing `ProgramData`. `--since` is a
 reference-month cutoff (inclusive of a quarter ending in that month). Without
 it the cutoff is four months before the current month. It is a finite manual
 run: no scheduled task, timer, intraday polling or production deployment. The
-owner's cadence remains one daily run after the US close, plus weekly review.
+production cadence is described below; source certification still needs review.
 
 `Adapter.fetch(families, since)` returns typed `Observation` objects carrying a
 `Document`, source identity, exact mapping, publication edition/stage, revision
@@ -568,14 +573,21 @@ surprise stays null. This is the accepted behavior of the shadow parity report.
 | `scheduled_not_captured` | A stored release is past due but has no captured publication evidence. It does not claim a source failure. |
 | `not_yet_released` | The known schedule or requested future window/period is after the knowledge cutoff. |
 | `published_not_resolved` | Publication/unavailable/undated evidence cannot produce an eligible card. Same-family publication evidence in the window also yields this reason for a missing indicator, such as core CPI missing from a captured CPI release. |
-| `source_failed` | Imported legacy run metadata explicitly records a failed run; the family and original run-start time are returned, with the time basis labelled. |
+| `source_failed` | The latest covering daily family attempt failed, or imported legacy metadata records a failed run. Daily failures include family, run id, error category, fetch window and family completion time (`collect_family_finished_at`). Legacy failures retain their original run-start time and labelled basis. |
 | `filtered_out` | The geography filter excluded the indicator, or the requested indicator selection was empty. |
 | `invalid_query` | A malformed reference period/window was passed to `explain_empty`; the diagnostic is returned instead of raising a raw date error. |
 
-**Failure/coverage limitations:** M5 prints collect summaries but stores no run
-log or summary. The API cannot establish an M5 source failure from missing
-values and returns that limitation with empty results and coverage. A failed
-imported legacy run is diagnosable, but its exact failure instant is unavailable;
+**Failure/coverage limitations:** Schema v4 persists daily collector outcomes.
+`explain_empty` uses the latest overlapping family fetch window known at the query
+cutoff; a subsequent successful or unchanged attempt clears an older failure.
+Reference-period queries are matched to the recorded reference-month fetch span;
+release-window queries match an overlapping span and cannot precede the failed
+attempt's window. This diagnoses a fetch attempt, not proof that an issuer
+publication was due or absent. `coverage` exposes `collection_failures` per family,
+even when no event/schedule was captured, and includes family/time diagnostics on
+missing events. Failures never inflate expected/missing event counts.
+Manual M5 failures before/after migration remain unlogged; absence of values alone
+never establishes failure. A failed imported legacy run is diagnosable, but its exact failure instant is unavailable;
 the retained start time is labelled, never presented as a finish time. Schedule
 rows have no reference-period or indicator membership: matching uses reviewed
 family mappings, and a family schedule is not assigned to an arbitrary period.
@@ -609,3 +621,199 @@ golden contracts and the 14 saved issuer-adapter cases. The known tool-rendered
 payroll initial remains provisional; the issuer HICP date correction stays
 explicit. [The fixture shadow parity report](macro-releases-shadow-parity.md)
 covers the legacy-imported 10–17 October week without accessing a live file.
+
+## Production daily run
+
+The production collection entry point requires an explicit `--db`. There is no
+environment-variable or default path fallback. It accepts ProgramData paths;
+the development `collect` CLI retains its ProgramData refusal. This change neither
+opens a live database nor installs a scheduled task. Deployment through
+investmentcommittee's job TOML and Windows Task Scheduler is a separate step.
+
+```powershell
+& 'C:\ProgramData\InvestmentCommittee\envs\marketdata\Scripts\python.exe' -m market_data_hub.macro_releases.run_daily --db 'C:\ProgramData\InvestmentCommittee\live\db\macro_releases.sqlite' --lookback-months 24
+```
+
+Omitting `--families` collects all five certified families:
+`us_cpi,us_payrolls,us_gdp,ea_hicp,uk_gdp`. A subset accepts comma-separated or
+space-separated names, for example `--families us_cpi,us_payrolls`. The runner
+collects issuer evidence only; FRED remains an optional manual redistributor
+adapter and is not required for official cards. Keys are read by the adapters
+from `BLS_API_KEY` and `BEA_API_KEY` in the job environment (the existing Windows
+user-environment fallback remains supported). `FRED_API_KEY` is used only by the
+manual FRED adapter. Census is outside the certified set.
+
+Recommend one daily trigger at **06:30 America/Los_Angeles / 09:30 America/New_York**,
+including weekends for recovery. This allows an hour after the usual US 08:30 ET
+releases and is after euro-area 11:00 CET/CEST and UK 07:00 local publications,
+including the weeks when Europe and the US change clocks on different dates.
+Use a named time zone/DST-aware local task trigger, rather than a fixed UTC time.
+The marketdata environment must contain the released package with schema v5;
+this PR does not install it or move a runtime pin.
+
+| Exit | Meaning |
+| --- | --- |
+| `0` | At least one new vintage was committed, with no family failures. A dry run would add at least one vintage. |
+| `3` | No new vintage, including a run where every family needs review. New readings, documents, queue items and log rows alone do not count as new data. |
+| `1` | A family or runner failed, including a live lease blocking the attempt. Other families may already have committed successfully. |
+| `2` | Invalid/missing CLI arguments. |
+
+Standard output is one JSON summary with run id, database, dry-run flag,
+requested cutoff, effective family fetch windows, status and exit code. Each
+family includes vintages/readings added, readings skipped by deduplication and,
+on failure, a short safe error category/message. Arbitrary exception text,
+credential-bearing URLs, response bodies and tracebacks are never printed or
+stored in the log. Non-numeric issuer observations still count as readings.
+
+The **24-month default lookback** covers routine revisions while limiting initial
+history/storage volume. Payroll benchmark coverage is independent: BLS widens
+February payroll and CPI collection to five complete prior calendar years plus
+the current year and includes calculation inputs. The JSON and
+log retain the actual requested reference-month window, with the fetch date as
+its inclusive upper bound; a provider may return a narrower available history.
+Eurostat now discovers historical/publication dates through the issuer calendar;
+it is not clipped to the original four reviewed months. Unconfirmed dates enter
+review. `--lookback-months` accepts 1–180 months.
+
+Daily collection discovers new editions automatically; the original reviewed
+editions remain known-good bootstrap anchors. The manual development collector
+retains its reviewed-edition behavior. Daily discovery uses these issuer sources:
+
+| Family | Edition and publication evidence |
+| --- | --- |
+| `us_cpi` | BLS v2 series/calculation metadata plus `https://www.bls.gov/feed/cpi.rss`; RSS title/reference month and publication date must match the API headline. |
+| `us_payrolls` | BLS v2 CES data plus `https://www.bls.gov/feed/empsit.rss`, with the same period/date binding. |
+| `us_gdp` | NIPA `T10101`/`A191RL` identity and `LastRevised`, checked against `https://www.bea.gov/news/current-releases` for quarter, estimate stage and date. |
+| `ea_hicp` | JSON-stat dataset/dimensions, checked against the issuer release-calendar feed `https://ec.europa.eu/eurostat/o/calendars/eventsJson` for each reference month and flash/final stage. The dataset `updated` timestamp is not a publication date. |
+| `uk_gdp` | ONS current-edition `latest_version` and version metadata, plus the GDP bulletin `previousreleases` index and each bulletin's publication date. CSV levels bind to their reference month's bulletin, not their later upload timestamp. |
+
+New editions need the same dataset/series identity, expected structure, units and
+headline periods, a verified prior baseline within the sanity band, and consistent
+issuer publication metadata. No retrieval date substitutes for publication time.
+BLS's two metadata endpoints returned HTTP errors during fixture capture in this
+environment: new API values with unavailable publication evidence enter review;
+known-good anchors remain usable. An unavailable source never grants verification.
+The captured BEA listing and Eurostat calendar are replayed offline in tests.
+
+Verification failures append `review_queue` entries with controlled reasons and
+store safely mapped values as unverified readings (`provisional` when resolvable).
+Unparseable or incompatible measures retain their raw document in the queue;
+the runner does not invent mappings or values. Review candidates create no
+vintages. A family is `needs_review`, with reasons in its JSON summary, rather
+than `failed`; HTTP/transport and database/infrastructure failures remain failed.
+The queue is content-addressed/idempotent and can be listed without writing:
+
+```powershell
+python -m market_data_hub.macro_releases review-queue --db .tmp/macro.sqlite --family us_cpi
+```
+
+Sanity bands are maximum absolute changes against a previously stored verified
+issuer vintage, preferring the same period, otherwise the latest stored period.
+During first collection, reviewed editions can bootstrap their own backfill and
+supply the initial comparison for another edition of the same indicator. Without
+either baseline a new edition enters review. These comparisons use evidence at
+collection time; they do not backdate availability or alter historical resolution.
+
+| Indicator group | Default maximum absolute change |
+| --- | --- |
+| CPI and HICP m/m | 3 percentage points |
+| CPI and HICP y/y | 5 percentage points |
+| US payroll monthly change | 1,500 thousand persons |
+| US GDP q/q SAAR | 15 percentage points |
+| UK GDP m/m | 5 percentage points |
+| UK GDP index | 20 index points |
+
+Override individual bands with `--sanity-bands <JSON file>`, for example
+`{"us_payrolls_change": 2000, "us_gdp_qq_saar": 20}`. Unknown indicators,
+non-positive and non-finite overrides are usage errors. Absolute bootstrap guards
+also reject magnitudes above 25,000 thousand payrolls, 500 index points, or 100
+percentage points. These thresholds are review gates, not statistical forecasts.
+
+The euro-area rule retains EA20 before 2026 and EA21 from 2026 onward, with the
+issuer's membership timeline checked against each period. A later/new membership
+or missing composition evidence uses the explicit `EA_PENDING` / `ea_future_hicp_*`
+placeholder and enters review. Unknown future composition never becomes official.
+
+ONS Cloudflare ray/timestamp tokens and BLS elapsed response times are excluded
+from document identity hashes; release dates, periods, values and units remain.
+`documents` stores the first raw/redacted body once per normalized document hash,
+with a raw-body hash, URL, retrieval time and normalization version. New readings
+carry a `document_hash` reference instead of a repeated full body. Existing raw
+reading envelopes remain append-only and are not rewritten by migration.
+
+One HTTP client and one limiter per provider are shared across all families in
+the run, including the separate CPI and payroll fetches. Each provider has
+one-second request spacing; BLS has a 500-call UTC-day ceiling. Normal runs reuse
+the existing process-safe provider ledger under the user temporary directory,
+even across different databases. Each request has 10-second connect and
+45-second read timeouts. Transient connection/timeouts, HTTP 429 and
+500/502/503/504 receive at most two retries (three total attempts), with
+exponential backoff of one then two seconds. `Retry-After` delta seconds and
+HTTP dates override shorter backoff. Long waits renew the lease every 30 seconds.
+TLS verification failures, other request failures, authentication/403, parsing
+and schema/certification errors are not retried. Every attempt uses its limiter.
+
+The `<db>.daily.lease.json` lease expires after **30 minutes** and is renewed
+before each bounded HTTP attempt and family persistence. Acquiring, renewing,
+releasing and reclaiming it use the existing `<db>.writer.lock`. Network and
+parsing hold neither that writer lock nor a SQLite transaction. Before writing,
+the owner validates its unexpired random token under the writer lock, fencing
+off an older process after takeover. A live lease returns failure without fetching;
+an expired lease is reclaimed. Empty, truncated or otherwise invalid metadata
+uses the file mtime plus the same 30-minute timeout; a fresh file receives that
+grace period and cannot block future days. Reclamation is recorded in the run's
+`parameters.lease_events`. Lease writes flush and fsync before atomic rename.
+Writer-lock acquisition waits in short five-second intervals so contention does
+not itself kill a live run. A process crash releases the OS file lock.
+
+Migrations v4/v5 run automatically under `open_writer`, in one transaction, on
+the first real run. Schema v3 evidence remains intact; a pre-existing v4 log is
+copied unchanged while extending its status enum. Readers never migrate and now
+declare a compatibility floor **3** and ceiling **5**. They accept the additive
+v4/v5 schema and read older v3 stores, treating absent logs/queues as unavailable.
+The v5 database also declares its reader compatibility range. Outside-range or
+non-additive versions fail explicitly; writers still reject newer schemas.
+
+**Deployment constraint:** an already-installed, unmodified v0.3.0 reader has a
+hard-coded `user_version == 3` check. This PR cannot retroactively change that
+binary. Deploy/backport the `open_reader` range check before migrating a database
+used by that binary. The v3 read contract itself is unchanged and supports v4/v5
+once that check is patched; no production deployment is performed here.
+`collect_runs` contains immutable lifecycle records: one `running` record
+(`finished_at=NULL`) and one terminal `ok` / `no_change` / `needs_review` / `failed` record for a
+logical `run_id`, with identical start time, families, parameters, package version
+and host. Use `WHERE status != 'running'` for terminal summaries. A missing terminal
+record identifies an interrupted run. The next lease owner appends a failed
+completion and `InterruptedRun` outcomes for unfinished families, retaining
+already committed family successes.
+
+`collect_run_families` has one immutable outcome per run/family, with the fetch
+window, completion time, safe error type/message and counts. A fully fetched
+family's data and success outcome commit together; a persistence error rolls
+back that whole family, then appends its failure outcome in a separate short
+transaction. Other families continue, including another family from the same
+provider. The final run status is failed if any family failed, otherwise ok if
+any vintage was added, otherwise needs_review if any family needs review,
+otherwise no_change. Additional raw readings alone never produce `ok`.
+
+Add `--dry-run` to fetch and parse normally, then run the identical persistence
+and deduplication logic on an in-memory snapshot of the target. Snapshotting
+requires two identical reads of the database/WAL bytes (up to three tries),
+opens only a private temporary copy, checks its integrity, then backs it up to
+memory and removes the copy. A continuously changing target fails the preview;
+opening SQLite directly with `mode=ro` could create live WAL/SHM sidecars.
+An absent target
+uses a fresh in-memory store; a v3 target migrates only in memory. No target DB,
+run-log, queue, document, lease or writer-lock files are written to the target.
+Preview HTTP reserves the same shared provider rate/quota ledger as a real run,
+so concurrent previews cannot double the request rate. Proposed counts have the
+same names as real counts, with `dry_run=true`; exit status mirrors a real run:
+0 for new vintages, 3 for no new vintages/review-only, 1 for infrastructure failure.
+
+Offline certification in `tests/test_macro_daily_runner.py` and
+`tests/test_macro_daily_review.py` replays saved M5/discovery
+responses and fakes. It covers logged failures, official cards, idempotency,
+partial-provider failure, rollback, lease fencing/recovery, fake-clock rate
+spacing, bounded transient retries, dry-run immutability and migration of a
+schema v3 fixture with 20,000 legacy readings. No test opens a live database or
+makes a live network request.

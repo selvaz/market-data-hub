@@ -47,8 +47,8 @@ def test_headline_ea21_june_and_september(case, tmp_path):
 def test_evolving_composition_and_fixed_golden_identity(tmp_path):
     assert hicp_indicator("2025-12", "yy").geography == "EA20"
     assert hicp_indicator("2026-01", "yy").geography == "EA21"
-    with pytest.raises(ValueError, match="composition needs review"):
-        hicp_indicator("2027-01", "yy")
+    assert hicp_indicator("2027-01", "yy").geography == "EA21"
+    assert hicp_indicator("2027-01", "yy", "EA22").geography == "EA_PENDING"
     rows = []
     for stage in ("flash", "final"):
         rows += EurostatAdapter.parse(document(f"eurostat/{stage}-rates.json"), stage=stage, geography="EA20")
@@ -302,7 +302,7 @@ def test_v2_migration_adds_provenance_and_filters_legacy_archive(tmp_path):
     conn.executescript(Path(migrations.__file__).with_name("schema.sql").read_text())
     conn.execute("PRAGMA user_version=2")
     migrate(conn)
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 5
     assert {"composition_id", "issuer_local_time", "issuer_timezone"}.issubset(
         {r[1] for r in conn.execute("PRAGMA table_info(value_vintages)")})
     conn.close()

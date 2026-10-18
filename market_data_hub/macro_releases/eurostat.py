@@ -54,7 +54,7 @@ class EurostatAdapter:
         return out
 
     @staticmethod
-    def parse(document, *, stage, since="1900-01", geography="EA"):
+    def parse(document, *, stage, since="1900-01", geography="EA", publications=None):
         payload = json_payload(document)
         if payload.get("source") != "ESTAT" or payload.get("class") != "dataset":
             raise FetchError("Eurostat dataset missing")
@@ -62,7 +62,11 @@ class EurostatAdapter:
         if not required.issubset(payload.get("id", [])) or (stage == "flash" and "release" not in payload["id"]):
             raise FetchError("Eurostat dimensions changed")
         out = []
-        periods = payload["dimension"]["time"]["category"]["index"]
+        # The monthly dataset can already contain an estimated next month.
+        # Its presence cannot move the previous published final edition forward.
+        periods = [dim["time"] for dim, _, flag in cells(payload)
+                   if dim.get("unit") in ("RCH_A", "RCH_M") and
+                   (stage == "flash" or "e" not in flag)]
         newest = max(periods) if periods else None
         for dim, value, flag in cells(payload):
             if dim["geo"] != geography or dim["coicop18"] != "TOTAL" or dim["freq"] != "M":
@@ -76,7 +80,7 @@ class EurostatAdapter:
             period = dim["time"]
             # minr is the current edition, including earlier revised periods.
             # fpd/FLS actually preserves each historical flash publication.
-            publication = PUBLICATIONS.get((newest if stage == "final" else period, stage))
+            publication = (publications or PUBLICATIONS).get((newest if stage == "final" else period, stage))
             if publication is None:
                 raise FetchError(f"Eurostat publication metadata needs review: {period} {stage}")
             basis = "yy" if dim["unit"] == "RCH_A" else "mm"

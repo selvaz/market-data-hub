@@ -23,9 +23,21 @@ def main(argv=None):
         if name == "cards":
             command.add_argument("--indicator", action="append", dest="indicators")
             command.add_argument("--geography")
+    review = commands.add_parser("review-queue", help="List provisional issuer releases needing review")
+    review.add_argument("--db", required=True, type=Path)
+    review.add_argument("--family")
     args = parser.parse_args(argv)
     try:
         with open_reader(args.db) as store:
+            if args.command == "review-queue":
+                tables = {r[0] for r in store.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+                rows = [] if "review_queue" not in tables else [dict(r) for r in store.conn.execute(
+                    "SELECT * FROM review_queue" + (" WHERE family=?" if args.family else "") +
+                    " ORDER BY recorded_at,id", (args.family,) if args.family else ())]
+                for row in rows:
+                    row["reasons"] = json.loads(row["reasons"])
+                print(json.dumps({"review_queue": rows}, indent=2))
+                return 0
             api = ReadAPI(store)
             kwargs = {"as_known_at": args.as_known_at}
             if args.command == "cards":

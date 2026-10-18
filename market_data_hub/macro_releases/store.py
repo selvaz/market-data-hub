@@ -14,7 +14,7 @@ from typing import Optional, Union
 from filelock import FileLock
 
 from . import models as m
-from .migrations import SCHEMA_VERSION, migrate
+from .migrations import READER_CEILING, READER_FLOOR, migrate
 
 TABLES = {
     m.Indicator: "indicators",
@@ -252,9 +252,15 @@ class Store:
 
 def open_reader(path: Union[str, Path]) -> Store:
     conn = connect_readonly(path)
-    if conn.execute("PRAGMA user_version").fetchone()[0] != SCHEMA_VERSION:
+    version = conn.execute("PRAGMA user_version").fetchone()[0]
+    if not READER_FLOOR <= version <= READER_CEILING:
         conn.close()
-        raise RuntimeError("macro releases schema needs the writer migration runner")
+        raise RuntimeError("macro releases schema is outside the declared reader compatibility range")
+    if conn.execute("SELECT 1 FROM sqlite_master WHERE name='schema_compatibility'").fetchone():
+        compatibility = conn.execute("SELECT reader_floor,reader_ceiling FROM schema_compatibility WHERE schema_version=?", (version,)).fetchone()
+        if compatibility is None or not compatibility[0] <= READER_FLOOR <= compatibility[1]:
+            conn.close()
+            raise RuntimeError("database changes are not additive for this reader contract")
     return Store(conn)
 
 
