@@ -19,9 +19,9 @@ def catalogue() -> dict:
     return _load_yaml('sovereign_layers.yaml')
 
 
-def _log(con, run_id, sid, status, error=None, rows=0, source='sovereign_layers'):
+def _log(con, run_id, sid, status, error=None, rows=0, source='sovereign_layers', updated=0):
     log_run(con, run_id=run_id, started_at=feeds.utc_now(), source=source,
-            symbol=sid, rows_added=rows, rows_updated=0, status=status,
+            symbol=sid, rows_added=rows, rows_updated=updated, status=status,
             error_msg=error, duration_sec=0)
     print(f'SOVEREIGN {sid}: {status}' + (f' ({error})' if error else ''), flush=True)
 
@@ -107,21 +107,22 @@ def refresh(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None
             if not frame.empty:
                 con.execute('BEGIN TRANSACTION')
                 try:
-                    added, _ = upsert(con, 'macro_series', frame, outer_txn=True)
+                    added, updated = upsert(con, 'macro_series', frame, outer_txn=True)
                     record_vintage(con, 'macro_series', frame, now.date().isoformat(), run_id=run_id)
                     con.execute('COMMIT')
                 except Exception:
                     con.execute('ROLLBACK')
                     raise
             else:
-                added = 0
+                added = updated = 0
             latest = max([d for d in [last, frame.date.max().date() if not frame.empty else None]
                           if d is not None], default=None)
             stale = is_stalled(latest, 'D', as_of=pd.Timestamp(end).date(),
                                max_lag_days=3, lag_calendar='business')
             degraded |= stale
             _log(con, run_id, sid, 'stalled' if stale else 'ok' if not frame.empty else 'empty',
-                 'official observations exceed three business days' if stale else None, rows=added)
+                 'official observations exceed three business days' if stale else None,
+                 rows=added, updated=updated)
         except Exception as exc:
             degraded = True
             _record_failure(con, run_id, sid, exc)
@@ -172,7 +173,7 @@ def refresh(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None
             rows = {}
         for meta in eligible:
             sid = meta['symbol']
-            added = 0
+            added = updated = 0
             try:
                 if scan_error is not None:
                     raise scan_error
@@ -182,7 +183,7 @@ def refresh(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None
                     exists = con.execute('SELECT 1 FROM macro_series WHERE series_id=? AND date=?',
                                          [sid, day]).fetchone()
                     if not exists:
-                        added, _ = upsert(con, 'macro_series', frame)
+                        added, updated = upsert(con, 'macro_series', frame)
                         record_vintage(con, 'macro_series', frame, now.date().isoformat(), run_id=run_id)
                 status, error = 'ok' if not frame.empty else 'deferred', None
                 latest = con.execute('SELECT max(date) FROM macro_series WHERE series_id=?', [sid]).fetchone()[0]
@@ -197,7 +198,7 @@ def refresh(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None
             try:
                 con.execute('UPDATE sovereign_snapshot_attempts SET status=? WHERE series_id=? AND capture_date=?',
                             [status, sid, capture_day])
-                _log(con, run_id, sid, status, error, rows=added)
+                _log(con, run_id, sid, status, error, rows=added, updated=updated)
             except Exception as exc:
                 degraded = True
                 _record_failure(con, run_id, sid, exc)

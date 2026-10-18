@@ -85,9 +85,15 @@ def collect(con) -> dict:
         d["by_source"] = pd.DataFrame()
         d["errors"] = pd.DataFrame()
 
-    d['sovereign_divergences'] = con.execute(
+    # Standalone reports open existing databases read-only, before a writer may
+    # have applied v27. The optional sovereign section must not require migration.
+    has_sovereign_checks = con.execute(
+        "SELECT 1 FROM information_schema.tables "
+        "WHERE table_schema='main' AND table_name='sovereign_cross_checks'").fetchone()
+    d['sovereign_divergences'] = (con.execute(
         'SELECT date, official_id, market_id, difference_bp, tolerance_bp, convention_note '
         'FROM sovereign_cross_checks WHERE flagged ORDER BY date DESC LIMIT 100').fetch_df()
+        if has_sovereign_checks else pd.DataFrame())
 
     # coverage
     cov = con.execute("SELECT * FROM coverage_report").fetch_df()
