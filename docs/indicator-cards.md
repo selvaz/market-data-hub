@@ -1,0 +1,140 @@
+# Indicator cards (classification v2.1)
+
+Indicator cards provide the same owner-approved context to domain recaps and
+LazyCommittee. They describe a concept, theme, nature, timing reference, evidence,
+revision behaviour and caveats. They contain no market views or conclusions.
+The 269 concept rows and their timing evidence ship as versioned package data;
+reading cards requires no database or network access.
+
+```python
+from market_data_hub.indicator_cards import (
+    cards_for, dataset, indicator_card, render_card, unmapped,
+)
+
+card = indicator_card("cat:us_payrolls_change")  # also "us_payrolls", "ms:PAYEMS"
+if card is not None:
+    context = render_card(card)                 # deterministic, <=600 characters
+    structured = card.model_dump(mode="json", by_alias=True)
+
+cards = cards_for(["cal:us_nfp", "es:nonfarm_payrolls", "cal:us_claims"])
+assert [c.key for c in cards] == ["us_payrolls", "us_claims_initial"]
+assert unmapped(["cat:unknown"]) == ["cat:unknown"]
+assert dataset().classification_version == "v2.1"
+```
+
+Models are strict, immutable Pydantic models; unknown fields and type coercion
+are rejected. `indicator_card` accepts a concept key, a prefixed store id
+(`cat:`, `cal:`, `ms:`, `es:`; also `pan:` and `hub:`), or a bare id.
+It returns `None` for unmapped ids. `cards_for` drops unmapped inputs and
+de-duplicates by card key in first-input order. `unmapped` retains input order
+and duplicates. Id matching is case sensitive and trims surrounding whitespace.
+
+Exact mappings take precedence over the explicit wildcard patterns in the
+approved table. A shared id first resolves to the row whose own id list is
+exactly that id with the same prefix; otherwise competing matches sort
+lexicographically by `(country, concept, key)`, independently of source-row
+order. Prefer prefixed ids. The table's shared `pan:bis_policy_rate` (and bare
+`bis_policy_rate`) resolves to its own row `pan_policy_rate_bis`, not to the
+ECB, BoE or EFFR rows that merely also carry it; `pan:imf_policy_rate` resolves
+to `pan_policy_rate_imf`. The coverage CLI lists candidates and winners.
+`indicator_card(None)` returns `None`; `unmapped` and `cards_for` raise
+`TypeError` for a bare string rather than iterating its characters.
+These panel aliases are contextual and do not select a country inside a panel.
+`derived ms:DGS10,DGS3MO` describes spread ingredients, not aliases: `ms:DGS10`
+keeps its own yield card. Missing-store annotations never become fabricated ids.
+
+## Timing and evidence semantics
+
+`timing.class` and `timing.basis` describe a band relative to the row's named
+reference. The independent `predictive_screen` records retain each relationship's
+direction and transforms in `pair`, result, `pass_horizons`, and any partial
+horizons. A relationship can concern the indicator as a reference rather than
+as a predictor: Q18 is **IP → payrolls**, not payrolls → IP.
+
+- `PRED-PASS` supports quoting predictive content **only at its pass horizons**.
+  The screen uses revised data and point estimates; it does not establish
+  real-time availability, significant out-of-sample improvement, causation,
+  or a turning-point lead.
+- A descriptive peak is **not a validated lead**, even when a forward screen
+  passes. Peak text retains its sign, interval, edge warnings and relationship
+  ids verbatim. Positive k means the pair's X precedes Y; it is not necessarily
+  the current card's lead. Event-timing descriptions use the same guardrail.
+- `HYPOTHESIS` is explicitly unvalidated; `DEFINITION` describes a measurement
+  identity. `UNKNOWN` renders as **timing not classified**. `CTX` is a chosen
+  contextual use with no timing claim. UNKNOWN and CTX remain distinct.
+- Measurement, mechanism and local timing evidence are separate labels.
+  Matched turning-point leads remain **not estimated**.
+
+The compact renderer preserves the timing guardrails and every passing horizon.
+Every screen names its relationship: the full pair for one or two screens, and
+a short direction such as `Q17 IP->unrate` or `Q20 unrate->wages` for longer
+sets (transforms are in the full card). A pass therefore always belongs to the
+named pair, never to the card's indicator by default. HYPOTHESIS cards say
+"hypothesis" in words. The caveat is never clipped: the theme, revisions and
+source are shortened or dropped first. Use the structured card for complete
+rationale, flags and peak estimates. Revision wording is copied only from explicit revision clauses in
+the approved rationale. Otherwise it says **Not specified in approved row**;
+no default revision policy is inferred from HARD or MARKET nature. Flags are
+preserved in `known_failure_modes`, and the full rationale carries further
+limitations; an empty flag list does not establish absence of failure modes.
+
+## Data and regeneration
+
+Package resources live under `market_data_hub/indicator_cards/`:
+
+- `master_table_v2.psv`: the unchanged owner-approved table (269 rows).
+- `timing_v2.1.json`: verbatim columns (a)/(b) from section 3 of the approved
+  `04-classification-v2.md`, with its source-guide SHA-256. The PSV supplies
+  relationship keys but does not contain the numeric horizons or peak estimates.
+- `aliases_v2.1.json`: explicit, explained aliases from current catalogue ids
+  to concepts already present in the table, plus documented coverage gaps.
+- `cards_v2.1.json`: generated strict cards, classification/schema versions,
+  and SHA-256 hashes of the table, timing extract and aliases.
+
+Regenerate or check deterministically from the shipped sources:
+
+```console
+python -m market_data_hub.indicator_cards.build
+python -m market_data_hub.indicator_cards.build --check
+python -m market_data_hub.indicator_cards.coverage
+```
+
+When an approved guide/table changes, refresh the extract before rebuilding:
+
+```console
+python -m market_data_hub.indicator_cards.build --import-guide .tmp/cards-src/04-classification-v2.md
+```
+
+`--import-guide ... --check` verifies the extract without writing. The importer
+requires a matching concept and store-id row for every PSV key. Freshness tests
+rebuild the JSON and compare it byte for byte. Git preserves source data bytes
+across operating systems so the provenance hashes remain stable.
+
+## Coverage and outstanding source gap
+
+The offline report uses `macro_releases.catalogue.INDICATORS`, active T1 entries
+in `econ_calendar.yaml`, and enabled entries in `macro_series.yaml`. It measures
+configured-id context coverage, not live ingestion or historical completeness.
+
+| Universe / certified family | Cards available |
+|---|---:|
+| Release catalogue | 12 / 14 |
+| Active tier-1 calendar | 65 / 65 |
+| Enabled hub macro series | 107 / 107 |
+| US CPI | 4 / 4 |
+| US payrolls | 1 / 1 |
+| US GDP | 1 / 1 |
+| EA HICP | 6 / 6 |
+| UK GDP | **0 / 2 — source gap** |
+
+UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) has no GBR concept row in the
+approved table. The PANEL, EA and US GDP rows do not establish its timing or
+evidence. Complete coverage of all five certified families therefore requires
+an owner-approved UK GDP row. Tests assert full coverage of the four represented
+families and the exact, documented UK gap; they do not silently waive new gaps.
+
+Catalogue aliases attach **concept context**, never numerical equivalence:
+levels, changes, seasonal adjustments and stages retain their original ids.
+EA20, EA21 and unresolved membership HICP ids share headline HICP context;
+the approved EA19-versus-EA21 geography warning remains in the card. No histories
+are spliced and no membership version is inferred for unresolved placeholders.
