@@ -8,7 +8,7 @@ from typing import Optional, Protocol
 
 from .catalogue import INDICATORS
 from .http import Document
-from .models import Discrepancy, Reading, ReleaseEvent, SourceSeries, ValueVintage
+from .models import Discrepancy, Reading, ReleaseEvent, SourceSeries, ValueVintage, utc
 
 PARSER_VERSION = "official-adapters:m5-v2"
 
@@ -50,6 +50,30 @@ class Adapter(Protocol):
     def fetch(self, families: list[str], since: str) -> list[Observation]: ...
 
 
+def revision_kind(store, obs, issuer):
+    """Classify ordinary editions against earlier published issuer history.
+
+    Adapters distinguish a first publication from a historical/current snapshot.
+    Only the writer knows whether that snapshot is a backfill or a routine
+    revision. Stages share a measure/period family: flash -> final and advance
+    -> second -> third are routine revisions even across different source keys.
+    Later publications loaded first must not revise an older archived edition.
+    Keep explicit initial, benchmark and provider-history kinds intact.
+    """
+    if obs.revision not in ("routine", "backfill"):
+        return obs.revision
+    prior = store.conn.execute(
+        "SELECT 1 FROM value_vintages v JOIN source_series s ON s.id=v.source_series_id "
+        "WHERE v.indicator_id=? AND v.reference_period=? AND v.issuer_published_at<=? "
+        "AND s.issuer_id=? AND s.source_id=? AND s.evidence_role='issuer' "
+        "AND s.is_published=1 LIMIT 1",
+        (obs.indicator_id, obs.period, utc(obs.published_at), issuer, issuer),
+    ).fetchone()
+    if prior:
+        return "routine"
+    return "backfill"
+
+
 def persist(store, observations):
     """Mirror differences attach to the exact official edition, never replace it.
 
@@ -62,12 +86,7 @@ def persist(store, observations):
         issuer = indicator.issuer_id
         mirror = obs.source != issuer
         verified = not (mirror or not obs.published or obs.method == "archive_text")
-        revision = obs.revision
-        if revision == "routine" and not store.conn.execute(
-            "SELECT 1 FROM value_vintages WHERE indicator_id=? AND reference_period=? LIMIT 1",
-            (indicator.id, obs.period),
-        ).fetchone():
-            revision = "backfill"
+        revision = revision_kind(store, obs, issuer)
         store.put(indicator)
         event_stage = obs.event_stage or obs.stage
         event_id = ":".join((issuer, obs.family, event_stage, obs.edition))

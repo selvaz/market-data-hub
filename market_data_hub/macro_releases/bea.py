@@ -72,7 +72,7 @@ class BEAAdapter:
                                    float(printed.replace(",", "")), printed,
                                    TABLE + ":1:A191RL", "BEA", document, edition,
                                    **new_york_release(edition), stage=stage if period == headline else "regular",
-                                   revision="initial" if stage == "advance" and period == headline else "backfill",
+                                   revision="initial" if stage == "advance" and period == headline else "routine",
                                    precision="exact", provider_vintage=edition, event_stage=stage))
         return out
 

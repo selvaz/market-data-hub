@@ -301,8 +301,8 @@ new/reused vintages, and explicitly unavailable observations.
 | `us_cpi` | BLS v2 `CUSR0000SA0`, `CUSR0000SA0L1E`: issuer `pct_changes[1]` for SA m/m. `CUUR0000SA0`, `CUUR0000SA0L1E`: issuer `pct_changes[12]` for NSA y/y. | Fetch five complete calendar years plus the current year, with calculation inputs, in one batch. Never synthesize a missing BLS calculation. Nonpublished October 2025 levels and the affected November m/m changes remain nonnumeric readings. |
 | `us_payrolls` | BLS CES `CES0000000001`, issuer `net_changes[1]`; unit `persons`, scale 1000. | Inspect at least the newest month and two prior months, even with a newer `--since`. February editions inspect five complete calendar years plus the current year and mark historical changes `benchmark`. All belong to one publication event. The current API does not recover old initial editions. |
 | `us_gdp` | BEA NIPA `T10101`, line 1, `A191RL`, percent change at annual rate. No calculation from GDPC1 levels. | Current API plus issuer PDF archives of the advance/second estimates. An absent line raises `FetchError`; it can never return the remaining table. Older revised quarters share the headline publication event while retaining their own value stage. |
-| `ea_hicp` | Eurostat ECOICOP v2 `prc_hicp_fpd`, **`release=FLS`**, for flash; `prc_hicp_minr` for current final. `coicop18=TOTAL`, evolving **`geo=EA`**, `RCH_A`/`RCH_M`. | Resolve membership by reference period: EA20 in 2023–2025, EA21 in 2026; unreviewed periods fail explicitly. `ea_hicp_*` remains the fixed EA20 golden identity; `ea21_hicp_*` is EA21. Each composition shares flash/final indicator ids and records `composition_id` in readings/vintages. Historical flash is preserved; `minr` is a current-edition backfill. Estimated cells are never labelled final. |
-| `uk_gdp` | ONS `gdp-to-four-decimal-places`, edition `time-series`, **version 69**, SIC `A--T`, UK. | Check the current edition and bulletin index before reading the pin; newer versions/bulletins fail for review. Index levels end in June 2026 and use the June bulletin's **13 August** publication date, not the 24 August upload date; they are backfill. July/August bulletins provide published growth/revisions via a narrow HTML parser. |
+| `ea_hicp` | Eurostat ECOICOP v2 `prc_hicp_fpd`, **`release=FLS`**, for flash; `prc_hicp_minr` for current final. `coicop18=TOTAL`, evolving **`geo=EA`**, `RCH_A`/`RCH_M`. | Resolve membership by reference period: EA20 in 2023–2025, EA21 in 2026; unreviewed periods fail explicitly. `ea_hicp_*` remains the fixed EA20 golden identity; `ea21_hicp_*` is EA21. Each composition shares flash/final indicator ids and records `composition_id` in readings/vintages. Historical flash is preserved; `minr` supplies current-edition history, classified against stored issuer vintages. Estimated cells are never labelled final. |
+| `uk_gdp` | ONS `gdp-to-four-decimal-places`, edition `time-series`, **version 69**, SIC `A--T`, UK. | Check the current edition and bulletin index before reading the pin; newer versions/bulletins fail for review. Index levels end in June 2026 and use the June bulletin's **13 August** publication date, not the 24 August upload date; first-load history is backfill. July/August bulletins provide published growth/revisions via a narrow HTML parser. |
 
 All issuer API/CSV values have `extraction_method="api"` and verified status.
 Archived BEA PDFs use `pdf`; ONS bulletin growth uses `html`. BLS tool-rendered
@@ -324,6 +324,14 @@ with `zoneinfo`: winter releases are 13:30Z and summer releases 12:30Z.
 Historical snapshots cannot supply first-print history. Re-fetching unchanged
 values in the same edition reuses vintages even when retrieval time/hash changes;
 a changed value or new edition appends a vintage.
+`adapters.revision_kind` classifies ordinary editions centrally. A historical
+snapshot with no earlier published issuer vintage for that measure/period is
+`backfill`; with issuer history it is `routine`. The lookup spans value stages,
+so flash to final and advance to second to third are routine revisions of the
+same measure/period family, including unchanged estimates. It compares issuer
+publication times, so a newer edition loaded first cannot revise an older
+archive. Mirror and nonpublished source series do not supply issuer history.
+Explicit initial publications and benchmark revisions retain their meaning.
 
 Add `--with-redistributors` for FRED/ALFRED evidence. CPI uses the corresponding
 SA/NSA levels and FRED's `pch`/`pc1` transformations; payrolls use `PAYEMS/chg`;

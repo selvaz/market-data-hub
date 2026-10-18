@@ -108,7 +108,7 @@ class ONSAdapter:
                 continue
             out.append(Observation("uk_gdp_index", "uk_gdp", period, float(row["v4_0"]), row["v4_0"],
                                    "gdp-to-four-decimal-places:time-series:69:A--T", "ONS", document,
-                                   "time-series:69", published_at, provider_vintage="69", revision="backfill"))
+                                   "time-series:69", published_at, provider_vintage="69", revision="routine"))
         if not out:
             raise FetchError("ONS pinned GDP version has no levels in requested window")
         return out

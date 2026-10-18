@@ -86,7 +86,7 @@ class EurostatAdapter:
                                    "Eurostat", document, publication, publication + "T00:00:00Z",
                                    stage=stage, provider_vintage=payload.get("updated"),
                                    composition_id=indicator.geography,
-                                   revision="initial" if stage == "flash" else "backfill"))
+                                   revision="initial" if stage == "flash" else "routine"))
         if not out:
             raise FetchError(f"Eurostat has no certified {stage} observations in requested window")
         return out

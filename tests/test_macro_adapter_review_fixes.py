@@ -143,6 +143,88 @@ def test_backfill_not_first_print_and_changed_value_or_edition_only(tmp_path):
         assert not [r for r in store.first_release() if r["reference_period"] == "2026-08"]
 
 
+def test_hicp_flash_then_final_is_routine_revision(tmp_path):
+    rows = []
+    for stage in ("flash", "final"):
+        rows += [o for o in EurostatAdapter.parse(
+            document(f"eurostat/headline-{stage}-rates.response.json"), stage=stage)
+            if o.period == "2026-08" and o.indicator_id == "ea21_hicp_yy"]
+    assert [(o.stage, o.value) for o in rows] == [("flash", 3.3), ("final", 3.2)]
+    with open_writer(tmp_path / "hicp-revision.sqlite") as store:
+        persist(store, rows[:1])
+        persist(store, rows[1:])
+        final = store.latest_official("ea21_hicp_yy")[0]
+        assert final["estimate_stage"] == "final" and final["value"] == 3.2
+        assert final["revision_kind"] == "routine"
+        assert store.first_release("ea21_hicp_yy")[0]["estimate_stage"] == "flash"
+
+
+@pytest.mark.parametrize("path", ["api", "pdf"])
+def test_bea_stage_revisions_have_same_kind_on_api_and_pdf(path, tmp_path):
+    advance = bea.BEAAdapter.parse_archived_release(document("bea/advance-release.pdf"))
+    if path == "pdf":
+        second = bea.BEAAdapter.parse_archived_release(document("bea/second-release.pdf"))
+    else:
+        # Exercise the API parser for the certified second edition with synthetic
+        # metadata/value edits to the saved current response, not a live API call.
+        doc = document("bea/nipa.json")
+        payload = doc.json()
+        for note in payload["BEAAPI"]["Results"]["Notes"]:
+            if note.get("NoteRef") == bea.TABLE:
+                note["NoteText"] = "LastRevised: August 26, 2026"
+        for row in payload["BEAAPI"]["Results"]["Data"]:
+            if row["LineNumber"] == "1" and row["TimePeriod"] == "2026Q2":
+                row["DataValue"] = "1.5"
+        second = bea.BEAAdapter.parse(replace(doc, body=json.dumps(payload).encode()), since="2026-06")
+    third = bea.BEAAdapter.parse(document("bea/nipa.json"), since="2026-06")
+    with open_writer(tmp_path / "bea-stages.sqlite") as store:
+        for rows in (advance, second, third):
+            persist(store, rows)
+        vintages = store.conn.execute(
+            "SELECT estimate_stage,value,revision_kind FROM value_vintages ORDER BY issuer_published_at").fetchall()
+        assert [tuple(r) for r in vintages] == [
+            ("advance", 1.5, "initial"), ("second", 1.5, "routine"), ("third", 2.2, "routine")]
+        assert store.first_release()[0]["estimate_stage"] == "advance"
+
+
+@pytest.mark.parametrize("source", ["hicp", "bea_api", "bea_pdf", "ons"])
+@pytest.mark.parametrize("mirror_first", [False, True])
+def test_first_issuer_history_load_is_backfill_even_after_fred(source, mirror_first, tmp_path):
+    if source == "hicp":
+        rows = EurostatAdapter.parse(document("eurostat/headline-final-rates.response.json"), stage="final")
+    elif source == "bea_api":
+        rows = bea.BEAAdapter.parse(document("bea/nipa.json"), since="2026-06")
+    elif source == "bea_pdf":
+        rows = bea.BEAAdapter.parse_archived_release(document("bea/second-release.pdf"))
+    else:
+        rows = ons.ONSAdapter.parse_levels(document("ons/gdp69-csv.csv"), document("ons/gdp69.json").json(),
+                                           "2026-06", publication=document("ons/june-content.response.json"))
+    with open_writer(tmp_path / "first-load.sqlite") as store:
+        if mirror_first:
+            # Synthetic prior mirror for the exact measure/period/stage. It must
+            # not supply issuer history, even though its issuer_id is the issuer.
+            persist(store, [replace(o, source="FRED", series_key="synthetic-mirror:" + o.series_key,
+                                    edition="2026-07-01", published_at="2026-07-01T00:00:00Z",
+                                    revision="provider_history") for o in rows])
+        ids = persist(store, rows)
+        assert ids
+        assert {r[0] for r in store.conn.execute(
+            "SELECT v.revision_kind FROM value_vintages v JOIN source_series s ON s.id=v.source_series_id "
+            "WHERE s.evidence_role='issuer'")} == {"backfill"}
+        assert store.latest_official() and not store.first_release()
+
+
+def test_later_publication_does_not_revise_an_older_archive(tmp_path):
+    third = bea.BEAAdapter.parse(document("bea/nipa.json"), since="2026-06")
+    advance = bea.BEAAdapter.parse_archived_release(document("bea/advance-release.pdf"))
+    with open_writer(tmp_path / "reverse-editions.sqlite") as store:
+        persist(store, third)
+        persist(store, advance)
+        assert store.latest_official()[0]["revision_kind"] == "backfill"
+        assert store.first_release()[0]["revision_kind"] == "initial"
+        assert store.first_release()[0]["estimate_stage"] == "advance"
+
+
 @pytest.mark.parametrize("changed", ["version", "bulletin", "empty"])
 def test_ons_new_publications_fail_before_values(changed):
     calls = []
