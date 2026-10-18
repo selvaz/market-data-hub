@@ -77,6 +77,29 @@ def family_for(snapshot, indicator):
     return f"{info['issuer_id']}:{info['measure']}"
 
 
+def collection_failure(snapshot, family, start, end):
+    """Latest covering outcome wins; successful later fetches clear old failures.
+
+    Fetch windows describe reference months, not a complete publication calendar.
+    Report the attempted fetch time explicitly, never as a publication time.
+    """
+    for row in snapshot.collect_families:
+        if row["family"] != family:
+            continue
+        fetch_start = row["fetch_since"] + "-01T00:00:00.000000+00:00"
+        fetch_end = utc(row["fetch_until"] + "T23:59:59.999999Z")
+        if start > row["finished_at"] or end <= fetch_start or start > fetch_end:
+            continue
+        if row["status"] != "failed":
+            return None
+        return {"reason": "source_failed", "family": family, "run_id": row["run_id"],
+                "time": row["finished_at"], "time_basis": "collect_family_finished_at",
+                "started_at": row["started_at"], "error_type": row["error_type"],
+                "detail": row["error_message"], "fetch_since": row["fetch_since"],
+                "fetch_until": row["fetch_until"]}
+    return None
+
+
 def latest_schedule(snapshot):
     return {r["release_event_id"]: r for r in snapshot.schedules}
 
@@ -337,6 +360,14 @@ class ReadAPI:
         if not is_window:
             linked = {e.event_id for e in relevant}
             schedules = [s for s in schedules if s["release_event_id"] in linked]
+        query_start = start if is_window else utc(
+            (period_or_window[:4] + "-01-01" if len(period_or_window) == 4 else
+             period_or_window[:4] + f"-{(int(period_or_window[-1]) - 1) * 3 + 1:02d}-01"
+             if "-Q" in period_or_window else
+             period_or_window + "-01" if len(period_or_window) == 7 else period_or_window) + "T00:00:00Z")
+        failure = collection_failure(snapshot, family, query_start, end)
+        if failure:
+            return dict(base, **failure)
         failures = [e for e in relevant if e.legacy and e.legacy["link"]["legacy_run_status"] == "failed"]
         if failures:
             failure = max(failures, key=lambda e: e.first_seen_at)
@@ -410,6 +441,15 @@ class ReadAPI:
                           "scheduled_not_captured" if schedule and not event_rows.get(event) else "published_not_resolved")
                 counts["missing_reasons"].append({"release_event_id": event, "reason": reason,
                                                   "detail": "event has no resolved numeric card"})
+        for family, counts in families.items():
+            failure = collection_failure(snapshot, family, start, end)
+            counts["collection_failures"] = [failure] if failure else []
+            if failure:
+                for missing in counts["missing_reasons"]:
+                    instant, _, _ = event_timing(snapshot, missing["release_event_id"])
+                    event_failure = collection_failure(snapshot, family, instant, instant) if instant else None
+                    if event_failure:
+                        missing.update(event_failure)
         return {"since": start, "until": end, "as_known_at": cutoff, "families": families,
                 "count_basis": "distinct release events per family; expected is the union of stored schedules and captured events",
                 "limitations": [COLLECT_LOG_LIMITATION, "No complete release calendar is stored; zero expected does not prove no release was due."]}

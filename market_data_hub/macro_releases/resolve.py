@@ -23,7 +23,7 @@ No decisions are persisted and no wall clock or network is used here.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, replace
+from dataclasses import asdict, dataclass, field, replace
 import json
 import math
 from typing import Optional
@@ -33,9 +33,10 @@ from .models import utc
 RULE_VERSION = "macro-resolver:m6-v1"
 END_OF_TIME = "9999-12-31T23:59:59.999999+00:00"
 COLLECT_LOG_LIMITATION = (
-    "M5 collect summaries/run failures are not persisted in this schema; absence "
-    "of evidence cannot establish a collector failure. Imported failed legacy "
-    "runs can be identified, but their exact failure time is unavailable."
+    "Daily collector family outcomes are persisted from schema v4; older/manual "
+    "M5 run failures are not persisted. A logged failure establishes an attempted "
+    "fetch failure, not that a release was due. Imported failed legacy runs retain "
+    "only their original start time."
 )
 
 
@@ -128,6 +129,7 @@ class Snapshot:
     evidence: list[Evidence]
     consensus: list
     cutoff: str
+    collect_families: list = field(default_factory=list)
 
     @classmethod
     def load(cls, store, as_known_at=None):
@@ -150,6 +152,10 @@ class Snapshot:
             links = {r["reading_id"]: dict(r) for r in conn.execute("SELECT * FROM legacy_reading_links WHERE updated_at<=?", (cutoff,))}
             schedules = [dict(r) for r in conn.execute("SELECT * FROM schedule_versions WHERE recorded_at<=? ORDER BY recorded_at,id", (cutoff,))]
             consensus = [dict(r) for r in conn.execute("SELECT * FROM consensus_readings WHERE captured_at<=?", (cutoff,))]
+            collect_families = [dict(r) for r in conn.execute(
+                "SELECT f.*,r.started_at FROM collect_run_families f JOIN collect_runs r "
+                "ON r.run_id=f.run_id AND r.status='running' WHERE f.finished_at<=? "
+                "ORDER BY f.finished_at DESC,f.run_id DESC", (cutoff,))]
         finally:
             if owns_transaction:
                 conn.execute("ROLLBACK")  # finish read transaction; never mutate
@@ -179,7 +185,7 @@ class Snapshot:
             evidence.append(cls._evidence(row, source, indicators, events, legacy=legacy))
         evidence = [e for e in evidence if e is not None and
                     (e.published_at is None or e.published_at <= cutoff)]
-        return cls(indicators, events, schedules, evidence, consensus, cutoff)
+        return cls(indicators, events, schedules, evidence, consensus, cutoff, collect_families)
 
     @staticmethod
     def _evidence(row, source, indicators, events, *, vintage=False, legacy=None):
