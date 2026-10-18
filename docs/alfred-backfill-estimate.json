@@ -1,0 +1,592 @@
+{
+  "as_of": "2026-10-18",
+  "method": "Paginated vintage-date lists plus observations output_type=1 limit=1 count probes; no full history downloaded. Counts matched production query bounds.",
+  "page_size": 100000,
+  "vintage_batch_size": 10000,
+  "series_count": 42,
+  "source_counts": {
+    "pilot": 20,
+    "v2": 24,
+    "hub": 23,
+    "probit": 1
+  },
+  "estimated_requests": 96,
+  "rows": 1541823,
+  "minimum_pacing_seconds": 63.333333333333336,
+  "metadata_requests": 84,
+  "fixture_requests": 2,
+  "series": [
+    {
+      "series_id": "PAYEMS",
+      "sources": [
+        "pilot",
+        "v2",
+        "hub"
+      ],
+      "vintages": 860,
+      "first_vintage": "1955-05-06",
+      "last_vintage": "2026-10-02",
+      "rows": 13691,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.25
+    },
+    {
+      "series_id": "UNRATE",
+      "sources": [
+        "pilot",
+        "v2",
+        "hub"
+      ],
+      "vintages": 800,
+      "first_vintage": "1960-03-15",
+      "last_vintage": "2026-10-02",
+      "rows": 2199,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.141
+    },
+    {
+      "series_id": "AWHMAN",
+      "sources": [
+        "pilot",
+        "v2"
+      ],
+      "vintages": 779,
+      "first_vintage": "1961-11-03",
+      "last_vintage": "2026-10-02",
+      "rows": 4102,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.39
+    },
+    {
+      "series_id": "ICSA",
+      "sources": [
+        "pilot",
+        "v2"
+      ],
+      "vintages": 902,
+      "first_vintage": "2009-05-28",
+      "last_vintage": "2026-10-15",
+      "rows": 7801,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.313
+    },
+    {
+      "series_id": "JTSJOL",
+      "sources": [
+        "pilot"
+      ],
+      "vintages": 194,
+      "first_vintage": "2010-08-11",
+      "last_vintage": "2026-09-29",
+      "rows": 2150,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.344
+    },
+    {
+      "series_id": "INDPRO",
+      "sources": [
+        "pilot",
+        "v2",
+        "hub"
+      ],
+      "vintages": 1224,
+      "first_vintage": "1927-01-26",
+      "last_vintage": "2026-10-16",
+      "rows": 39368,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 2.156
+    },
+    {
+      "series_id": "RSAFS",
+      "sources": [
+        "pilot",
+        "v2",
+        "hub"
+      ],
+      "vintages": 326,
+      "first_vintage": "2001-06-13",
+      "last_vintage": "2026-10-15",
+      "rows": 5566,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.375
+    },
+    {
+      "series_id": "CMRMTSPL",
+      "sources": [
+        "pilot"
+      ],
+      "vintages": 158,
+      "first_vintage": "2013-06-14",
+      "last_vintage": "2026-09-30",
+      "rows": 4080,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.016
+    },
+    {
+      "series_id": "W875RX1",
+      "sources": [
+        "pilot"
+      ],
+      "vintages": 196,
+      "first_vintage": "2010-05-28",
+      "last_vintage": "2026-09-30",
+      "rows": 6282,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.296
+    },
+    {
+      "series_id": "NEWORDER",
+      "sources": [
+        "pilot",
+        "v2"
+      ],
+      "vintages": 718,
+      "first_vintage": "1997-03-06",
+      "last_vintage": "2026-10-02",
+      "rows": 7027,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.422
+    },
+    {
+      "series_id": "HOUST",
+      "sources": [
+        "pilot",
+        "v2",
+        "hub"
+      ],
+      "vintages": 790,
+      "first_vintage": "1960-07-21",
+      "last_vintage": "2026-09-17",
+      "rows": 4602,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.313
+    },
+    {
+      "series_id": "PERMIT",
+      "sources": [
+        "pilot",
+        "v2"
+      ],
+      "vintages": 623,
+      "first_vintage": "1999-08-17",
+      "last_vintage": "2026-09-24",
+      "rows": 2372,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.469
+    },
+    {
+      "series_id": "UMCSENT",
+      "sources": [
+        "pilot"
+      ],
+      "vintages": 337,
+      "first_vintage": "1998-07-31",
+      "last_vintage": "2026-08-28",
+      "rows": 1083,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.125
+    },
+    {
+      "series_id": "GACDFSA066MSFRBPHI",
+      "sources": [
+        "pilot"
+      ],
+      "vintages": 147,
+      "first_vintage": "2015-04-16",
+      "last_vintage": "2026-10-15",
+      "rows": 2317,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.515
+    },
+    {
+      "series_id": "CPIAUCSL",
+      "sources": [
+        "pilot",
+        "v2",
+        "hub"
+      ],
+      "vintages": 670,
+      "first_vintage": "1972-07-21",
+      "last_vintage": "2026-10-14",
+      "rows": 3363,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.25
+    },
+    {
+      "series_id": "PCEPI",
+      "sources": [
+        "pilot",
+        "hub"
+      ],
+      "vintages": 316,
+      "first_vintage": "2000-08-01",
+      "last_vintage": "2026-09-30",
+      "rows": 9127,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.25
+    },
+    {
+      "series_id": "NFCI",
+      "sources": [
+        "pilot",
+        "v2",
+        "hub"
+      ],
+      "vintages": 800,
+      "first_vintage": "2011-05-25",
+      "last_vintage": "2026-10-15",
+      "rows": 928896,
+      "observation_requests": 10,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 15.453
+    },
+    {
+      "series_id": "GDPC1",
+      "sources": [
+        "pilot",
+        "hub"
+      ],
+      "vintages": 419,
+      "first_vintage": "1991-12-04",
+      "last_vintage": "2026-09-30",
+      "rows": 4425,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.187
+    },
+    {
+      "series_id": "GDP",
+      "sources": [
+        "hub"
+      ],
+      "vintages": 415,
+      "first_vintage": "1991-12-04",
+      "last_vintage": "2026-09-30",
+      "rows": 3263,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.11
+    },
+    {
+      "series_id": "GDPNOW",
+      "sources": [
+        "pilot"
+      ],
+      "vintages": 817,
+      "first_vintage": "2016-05-17",
+      "last_vintage": "2026-10-15",
+      "rows": 838,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.329
+    },
+    {
+      "series_id": "STLENI",
+      "sources": [
+        "pilot"
+      ],
+      "vintages": 425,
+      "first_vintage": "2017-02-10",
+      "last_vintage": "2026-10-16",
+      "rows": 440,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.515
+    },
+    {
+      "series_id": "USREC",
+      "sources": [
+        "v2",
+        "probit"
+      ],
+      "vintages": 120,
+      "first_vintage": "2014-09-18",
+      "last_vintage": "2026-10-01",
+      "rows": 2079,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.235
+    },
+    {
+      "series_id": "SAHMREALTIME",
+      "sources": [
+        "v2"
+      ],
+      "vintages": 85,
+      "first_vintage": "2019-09-06",
+      "last_vintage": "2026-10-02",
+      "rows": 802,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.39
+    },
+    {
+      "series_id": "SAHMCURRENT",
+      "sources": [
+        "v2"
+      ],
+      "vintages": 85,
+      "first_vintage": "2019-09-06",
+      "last_vintage": "2026-10-02",
+      "rows": 1076,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.203
+    },
+    {
+      "series_id": "BUSLOANS",
+      "sources": [
+        "v2"
+      ],
+      "vintages": 1498,
+      "first_vintage": "1996-12-13",
+      "last_vintage": "2026-10-16",
+      "rows": 38355,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 2.078
+    },
+    {
+      "series_id": "DRTSCILM",
+      "sources": [
+        "v2"
+      ],
+      "vintages": 66,
+      "first_vintage": "2010-04-20",
+      "last_vintage": "2026-08-03",
+      "rows": 184,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.094
+    },
+    {
+      "series_id": "CCSA",
+      "sources": [
+        "v2"
+      ],
+      "vintages": 883,
+      "first_vintage": "2009-09-10",
+      "last_vintage": "2026-10-15",
+      "rows": 8377,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.344
+    },
+    {
+      "series_id": "PPIFIS",
+      "sources": [
+        "v2"
+      ],
+      "vintages": 158,
+      "first_vintage": "2014-02-19",
+      "last_vintage": "2026-10-15",
+      "rows": 807,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.171
+    },
+    {
+      "series_id": "WPSFD49207",
+      "sources": [
+        "v2"
+      ],
+      "vintages": 145,
+      "first_vintage": "2015-03-13",
+      "last_vintage": "2026-10-15",
+      "rows": 1794,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.328
+    },
+    {
+      "series_id": "CPILFESL",
+      "sources": [
+        "v2",
+        "hub"
+      ],
+      "vintages": 377,
+      "first_vintage": "1996-12-12",
+      "last_vintage": "2026-10-14",
+      "rows": 2261,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.344
+    },
+    {
+      "series_id": "PCEPILFE",
+      "sources": [
+        "v2",
+        "hub"
+      ],
+      "vintages": 316,
+      "first_vintage": "2000-08-01",
+      "last_vintage": "2026-09-30",
+      "rows": 9167,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.453
+    },
+    {
+      "series_id": "CES0500000003",
+      "sources": [
+        "v2",
+        "hub"
+      ],
+      "vintages": 187,
+      "first_vintage": "2011-03-04",
+      "last_vintage": "2026-10-02",
+      "rows": 1587,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.328
+    },
+    {
+      "series_id": "M2SL",
+      "sources": [
+        "v2",
+        "hub"
+      ],
+      "vintages": 1931,
+      "first_vintage": "1980-02-08",
+      "last_vintage": "2026-09-22",
+      "rows": 28591,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 2.016
+    },
+    {
+      "series_id": "CP0000EZ19M086NEST",
+      "sources": [
+        "hub"
+      ],
+      "vintages": 136,
+      "first_vintage": "2015-02-24",
+      "last_vintage": "2026-10-16",
+      "rows": 1390,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.031
+    },
+    {
+      "series_id": "CLVMEURSCAB1GQEA19",
+      "sources": [
+        "hub"
+      ],
+      "vintages": 130,
+      "first_vintage": "2016-04-04",
+      "last_vintage": "2026-09-07",
+      "rows": 8176,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.406
+    },
+    {
+      "series_id": "EUNNGDP",
+      "sources": [
+        "hub"
+      ],
+      "vintages": 86,
+      "first_vintage": "2015-02-19",
+      "last_vintage": "2026-09-07",
+      "rows": 8756,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.235
+    },
+    {
+      "series_id": "LRHUTTTTEZM156S",
+      "sources": [
+        "hub"
+      ],
+      "vintages": 70,
+      "first_vintage": "2013-06-03",
+      "last_vintage": "2023-03-09",
+      "rows": 1690,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.328
+    },
+    {
+      "series_id": "WALCL",
+      "sources": [
+        "hub"
+      ],
+      "vintages": 797,
+      "first_vintage": "2011-07-07",
+      "last_vintage": "2026-10-15",
+      "rows": 1783,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.344
+    },
+    {
+      "series_id": "WTREGEN",
+      "sources": [
+        "hub"
+      ],
+      "vintages": 928,
+      "first_vintage": "2008-12-18",
+      "last_vintage": "2026-10-15",
+      "rows": 4270,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.375
+    },
+    {
+      "series_id": "STLFSI4",
+      "sources": [
+        "hub"
+      ],
+      "vintages": 206,
+      "first_vintage": "2022-11-10",
+      "last_vintage": "2026-10-14",
+      "rows": 315107,
+      "observation_requests": 4,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 2.312
+    },
+    {
+      "series_id": "THREEFYTP10",
+      "sources": [
+        "hub"
+      ],
+      "vintages": 362,
+      "first_vintage": "2016-05-27",
+      "last_vintage": "2026-10-13",
+      "rows": 30482,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.094
+    },
+    {
+      "series_id": "DTWEXBGS",
+      "sources": [
+        "v2",
+        "hub"
+      ],
+      "vintages": 402,
+      "first_vintage": "2019-02-04",
+      "last_vintage": "2026-10-13",
+      "rows": 22097,
+      "observation_requests": 1,
+      "vintage_requests": 1,
+      "metadata_elapsed_seconds": 1.281
+    }
+  ]
+}

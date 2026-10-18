@@ -296,6 +296,32 @@ def read_alfred_vintage(series_id: str, date: Optional[str] = None,
 
 
 
+def alfred_as_known_at(series_id: str, as_of: str, *, db_path=None) -> pd.DataFrame:
+    """ALFRED values available on a calendar date, including vintage provenance.
+
+    Select the latest stored revision per observation before checking its
+    validity end or missing value: a withdrawal must not resurrect an old value.
+    Dates are day precision, not release instants. Legacy snapshot rows without
+    realtime_end remain valid until superseded. History must be backfilled first.
+    """
+    con = _con(db_path)
+    try:
+        # Older, read-only databases may predate the additive v26 migration.
+        columns = {r[1] for r in con.execute(
+            "PRAGMA table_info('alfred_vintage_observations')").fetchall()}
+        validity = "realtime_end" if "realtime_end" in columns else "NULL::DATE"
+        return con.execute(
+            "SELECT * EXCLUDE (rn) FROM ("
+            f"SELECT *, {validity} AS valid_until, row_number() OVER "
+            "(PARTITION BY date ORDER BY as_of DESC) AS rn "
+            "FROM alfred_vintage_observations WHERE series_id = ? AND as_of <= ?) "
+            "WHERE rn = 1 AND value IS NOT NULL "
+            "AND (valid_until IS NULL OR valid_until >= ?) ORDER BY date",
+            [series_id, as_of, as_of]).fetch_df().drop(columns="valid_until")
+    finally:
+        con.close()
+
+
 def read_custom(series_ids: Union[str, List[str]], start: Optional[str] = None,
                 end: Optional[str] = None, wide: bool = True,
                 db_path: Optional[str] = None) -> pd.DataFrame:

@@ -22,7 +22,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 25
+SCHEMA_VERSION = 26
 
 
 class DatabaseNotConfigured(RuntimeError):
@@ -449,6 +449,11 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # v24 -> v25: additive sovereign_bond_metadata table is created by
         # apply_schema above; macro history and its vintage rows are unchanged.
         current = 25
+    if current < 26:
+        # v26: bounded ALFRED validity intervals and resumable backfill ledger.
+        con.execute("ALTER TABLE alfred_vintage_observations "
+                    "ADD COLUMN IF NOT EXISTS realtime_end DATE")
+        current = 26
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

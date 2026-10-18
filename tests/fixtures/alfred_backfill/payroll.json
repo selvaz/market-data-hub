@@ -1,0 +1,70 @@
+{
+  "realtime_start": "2024-01-01",
+  "realtime_end": "2024-04-30",
+  "observation_start": "2023-11-01",
+  "observation_end": "2024-01-01",
+  "units": "lin",
+  "output_type": 1,
+  "file_type": "json",
+  "order_by": "observation_date",
+  "sort_order": "asc",
+  "count": 9,
+  "offset": 0,
+  "limit": 1000,
+  "observations": [
+    {
+      "realtime_start": "2024-01-01",
+      "realtime_end": "2024-01-04",
+      "date": "2023-11-01",
+      "value": "157087"
+    },
+    {
+      "realtime_start": "2024-01-05",
+      "realtime_end": "2024-02-01",
+      "date": "2023-11-01",
+      "value": "157016"
+    },
+    {
+      "realtime_start": "2024-02-02",
+      "realtime_end": "2024-04-30",
+      "date": "2023-11-01",
+      "value": "157014"
+    },
+    {
+      "realtime_start": "2024-01-05",
+      "realtime_end": "2024-02-01",
+      "date": "2023-12-01",
+      "value": "157232"
+    },
+    {
+      "realtime_start": "2024-02-02",
+      "realtime_end": "2024-03-07",
+      "date": "2023-12-01",
+      "value": "157347"
+    },
+    {
+      "realtime_start": "2024-03-08",
+      "realtime_end": "2024-04-30",
+      "date": "2023-12-01",
+      "value": "157304"
+    },
+    {
+      "realtime_start": "2024-02-02",
+      "realtime_end": "2024-03-07",
+      "date": "2024-01-01",
+      "value": "157700"
+    },
+    {
+      "realtime_start": "2024-03-08",
+      "realtime_end": "2024-04-04",
+      "date": "2024-01-01",
+      "value": "157533"
+    },
+    {
+      "realtime_start": "2024-04-05",
+      "realtime_end": "2024-04-30",
+      "date": "2024-01-01",
+      "value": "157560"
+    }
+  ]
+}

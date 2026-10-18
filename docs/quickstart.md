@@ -132,6 +132,13 @@ LazyStats. See
 [Architecture & process](ARCHITECTURE.md#7-automation) for the full task
 table and why the scheduled action uses `-Command` instead of `-File`.
 
+## ALFRED vintage backfill
+
+For historical data as it was known at the time, see
+[ALFRED real-time vintage history](alfred-backfill.md): the versioned series
+list, resumable command, request estimate, reader, and production one-shot
+procedure. This is independent of the daily latest-value refresh.
+
 ## Read it from your code
 
 ```python

@@ -127,13 +127,13 @@ def test_italy_prefers_fresh_bund_common_date_else_labelled_ecb(bund_date, refer
 
 
 def test_additive_metadata_migration_preserves_official_history(tmp_db):
-    from market_data_hub.db.connection import get_conn, migrate
+    from market_data_hub.db.connection import get_conn, migrate, SCHEMA_VERSION
     with get_conn(tmp_db) as con:
         con.execute("INSERT INTO macro_series (date,series_id,value) VALUES ('2026-08-31','CB_IT_10Y',4.1)")
         con.execute('DROP TABLE sovereign_bond_metadata')
         con.execute("UPDATE schema_meta SET value='24' WHERE key='schema_version'")
-        assert migrate(con) == 25
-        assert migrate(con) == 25
+        assert migrate(con) == SCHEMA_VERSION
+        assert migrate(con) == SCHEMA_VERSION
         assert con.execute('SELECT value FROM macro_series').fetchone()[0] == 4.1
         assert con.execute('SELECT count(*) FROM sovereign_bond_metadata').fetchone()[0] == 0
 

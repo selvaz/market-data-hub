@@ -1,0 +1,148 @@
+version: 1
+reviewed: '2026-10-18'
+# Paths are provenance only; the installed command needs none of these files.
+sources:
+  pilot: _design/indicatori-macro/08-forecasting-repos.md section 4 (including benchmarks)
+  v2: _design/indicatori-macro/scripts/leadlag_v2.py load_hub/load_long and scripts/data/*.csv
+  probit: _design/indicatori-macro/scripts/probit_common_v2.py monthly_forecasts (imports leadlag_v2)
+  hub: market_data_hub/config/macro_series.yaml fred (macro_series FRED universe)
+series:
+  - series_id: PAYEMS
+    sources: [pilot, v2, hub]
+    reason: Payroll input and activity target; monthly and benchmark revisions.
+  - series_id: UNRATE
+    sources: [pilot, v2, hub]
+    reason: Labour input and recession detector; seasonal revisions.
+  - series_id: AWHMAN
+    sources: [pilot, v2]
+    reason: Manufacturing hours lead; monthly and benchmark revisions.
+  - series_id: ICSA
+    sources: [pilot, v2]
+    reason: Weekly initial claims aggregated monthly; weekly and seasonal revisions.
+  - series_id: JTSJOL
+    sources: [pilot]
+    reason: JOLTS openings input; monthly and annual revisions.
+  - series_id: INDPRO
+    sources: [pilot, v2, hub]
+    reason: Industrial output input and lead/lag target; extensive benchmark revisions.
+  - series_id: RSAFS
+    sources: [pilot, v2, hub]
+    reason: Retail sales input; use vendor vintages to avoid the documented mixed hub vintage.
+  - series_id: CMRMTSPL
+    sources: [pilot]
+    reason: Real manufacturing and trade sales coincident input; revised deflators and sales.
+  - series_id: W875RX1
+    sources: [pilot]
+    reason: Real personal income excluding transfers; revised BEA income and deflators.
+  - series_id: NEWORDER
+    sources: [pilot, v2]
+    reason: Nondefense capital goods orders lead; monthly and benchmark revisions.
+  - series_id: HOUST
+    sources: [pilot, v2, hub]
+    reason: Housing starts input and lead; monthly and seasonal revisions.
+  - series_id: PERMIT
+    sources: [pilot, v2]
+    reason: Building permits lead; monthly and seasonal revisions.
+  - series_id: UMCSENT
+    sources: [pilot]
+    reason: Soft sentiment input; preliminary/final estimates.
+  - series_id: GACDFSA066MSFRBPHI
+    sources: [pilot]
+    reason: Philadelphia Fed soft activity input; preserve actual archived depth without inventing early vintages.
+  - series_id: CPIAUCSL
+    sources: [pilot, v2, hub]
+    reason: Seasonally adjusted price control and inflation target; seasonal revisions.
+  - series_id: PCEPI
+    sources: [pilot, hub]
+    reason: PCE price control; monthly and BEA benchmark revisions.
+  - series_id: NFCI
+    sources: [pilot, v2, hub]
+    reason: Financial conditions input; historical index estimates are revised.
+  - series_id: GDPC1
+    sources: [pilot, hub]
+    reason: Real GDP quarterly target; advance, second, third and benchmark estimates.
+  - series_id: GDP
+    sources: [hub]
+    reason: Nominal GDP; successive BEA estimates and benchmark revisions.
+  - series_id: GDPNOW
+    sources: [pilot]
+    reason: GDPNow external benchmark; preserve successive within-quarter nowcasts.
+  - series_id: STLENI
+    sources: [pilot]
+    reason: St. Louis economic news index descriptive benchmark; evolving estimates.
+  - series_id: USREC
+    sources: [v2, probit]
+    reason: NBER recession labels are assigned retrospectively; avoid hindsight labels.
+  - series_id: SAHMREALTIME
+    sources: [v2]
+    reason: Published real-time Sahm detector; archive actual publication availability.
+  - series_id: SAHMCURRENT
+    sources: [v2]
+    reason: Revised Sahm comparator built from revised unemployment history.
+  - series_id: BUSLOANS
+    sources: [v2]
+    reason: Commercial and industrial loans lead; revised bank aggregates and seasonal factors.
+  - series_id: DRTSCILM
+    sources: [v2]
+    reason: Quarterly lending standards lead from SLOOS; retain vendor publication history.
+  - series_id: CCSA
+    sources: [v2]
+    reason: Continuing claims download in scripts/data; weekly and seasonal revisions.
+  - series_id: PPIFIS
+    sources: [v2]
+    reason: Final demand PPI control; preliminary and seasonal revisions. Source download is PPIFIS.csv.
+  - series_id: WPSFD49207
+    sources: [v2]
+    reason: Final demand goods PPI control in scripts/data; monthly and seasonal revisions.
+  - series_id: CPILFESL
+    sources: [v2, hub]
+    reason: Core CPI target; seasonal factor revisions.
+  - series_id: PCEPILFE
+    sources: [v2, hub]
+    reason: Core PCE target; monthly and benchmark revisions.
+  - series_id: CES0500000003
+    sources: [v2, hub]
+    reason: Average hourly earnings target; payroll benchmark and monthly revisions.
+  - series_id: M2SL
+    sources: [v2, hub]
+    reason: Money stock lead; seasonal and source revisions.
+  - series_id: CP0000EZ19M086NEST
+    sources: [hub]
+    reason: Euro area HICP; preserve source revisions and discontinued aggregate vintages.
+  - series_id: CLVMEURSCAB1GQEA19
+    sources: [hub]
+    reason: Euro area real GDP; national accounts revisions, including discontinued aggregate history.
+  - series_id: EUNNGDP
+    sources: [hub]
+    reason: Euro area nominal GDP; national accounts revisions.
+  - series_id: LRHUTTTTEZM156S
+    sources: [hub]
+    reason: Euro area harmonised unemployment; seasonal and source revisions, including stale history.
+  - series_id: WALCL
+    sources: [hub]
+    reason: Fed balance sheet weekly aggregate; H.4.1 accounting revisions.
+  - series_id: WTREGEN
+    sources: [hub]
+    reason: Treasury General Account weekly balance; H.4.1 accounting revisions.
+  - series_id: STLFSI4
+    sources: [hub]
+    reason: Financial stress index estimates; historical normalization and input revisions.
+  - series_id: THREEFYTP10
+    sources: [hub]
+    reason: Kim-Wright model term premium; reestimated model history, rather than observed market yield.
+  - series_id: DTWEXBGS
+    sources: [v2, hub]
+    reason: Broad trade-weighted dollar index; revised trade weights affect historical index values.
+excluded:
+  - series_ids: [DGS10, DGS2, DGS30, DGS3MO, T10Y2Y, T10Y3M, GS10, TB3MS, BAA, AAA, VIXCLS, EFFR, T5YIE, T10YIE, T5YIFR, DFII10, DFII5]
+    sources: [pilot, v2, probit, hub]
+    reason: Observed market rates, spreads and volatility; use macro_series with observation-date filtering.
+  - series_ids: [DCOILBRENTEU, DCOILWTICO, DDFUELNYH, GASDESW, ECBDFR, ECBMRRFR, ECBMLFR, RRPONTSYD, BAMLEMCBPIOAS, BAMLEMHBHYCRPIOAS, BAMLC0A0CM, BAMLH0A0HYM2, BAMLC0A4CBBB, BAMLH0A3HYC]
+    sources: [hub]
+    reason: Observed prices, policy rates, operation results or market credit spreads; outside revised macro history.
+  - series_ids: [ebp_csv, feds200628]
+    sources: [v2, probit]
+    reason: External Fed EBP/GZ and GSW curve files, not ALFRED series; no vendor vintage API.
+  - series_pattern: IRLTLT01* and DEX*
+    sources: [hub]
+    reason: Observed sovereign bond yields and bilateral FX market quotes; excluded from revised macro universe.
