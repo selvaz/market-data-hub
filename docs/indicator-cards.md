@@ -30,11 +30,15 @@ de-duplicates by card key in first-input order. `unmapped` retains input order
 and duplicates. Id matching is case sensitive and trims surrounding whitespace.
 
 Exact mappings take precedence over the explicit wildcard patterns in the
-approved table. Competing matches sort lexicographically by `(country, concept,
-key)`, independently of source-row order. Prefer prefixed ids. The table's
-shared `pan:bis_policy_rate` (and bare `bis_policy_rate`) resolves to
-`ea_ecb_dfr` ahead of GBR, PANEL and USA; `pan:imf_policy_rate` resolves to
-`pan_policy_rate_imf` ahead of USA. The coverage CLI lists candidates and winners.
+approved table. A shared id first resolves to the row whose own id list is
+exactly that id with the same prefix; otherwise competing matches sort
+lexicographically by `(country, concept, key)`, independently of source-row
+order. Prefer prefixed ids. The table's shared `pan:bis_policy_rate` (and bare
+`bis_policy_rate`) resolves to its own row `pan_policy_rate_bis`, not to the
+ECB, BoE or EFFR rows that merely also carry it; `pan:imf_policy_rate` resolves
+to `pan_policy_rate_imf`. The coverage CLI lists candidates and winners.
+`indicator_card(None)` returns `None`; `unmapped` and `cards_for` raise
+`TypeError` for a bare string rather than iterating its characters.
 These panel aliases are contextual and do not select a country inside a panel.
 `derived ms:DGS10,DGS3MO` describes spread ingredients, not aliases: `ms:DGS10`
 keeps its own yield card. Missing-store annotations never become fabricated ids.
@@ -62,10 +66,13 @@ as a predictor: Q18 is **IP → payrolls**, not payrolls → IP.
   Matched turning-point leads remain **not estimated**.
 
 The compact renderer preserves the timing guardrails and every passing horizon.
-For longer sets of relationships it prints pair ids and directs the reader to
-the full card for directions/transforms. Revisions and caveats may be shortened
-with an ellipsis; use the structured card for complete rationale, flags and peak
-estimates. Revision wording is copied only from explicit revision clauses in
+Every screen names its relationship: the full pair for one or two screens, and
+a short direction such as `Q17 IP->unrate` or `Q20 unrate->wages` for longer
+sets (transforms are in the full card). A pass therefore always belongs to the
+named pair, never to the card's indicator by default. HYPOTHESIS cards say
+"hypothesis" in words. The caveat is never clipped: the theme, revisions and
+source are shortened or dropped first. Use the structured card for complete
+rationale, flags and peak estimates. Revision wording is copied only from explicit revision clauses in
 the approved rationale. Otherwise it says **Not specified in approved row**;
 no default revision policy is inferred from HARD or MARKET nature. Flags are
 preserved in `known_failure_modes`, and the full rationale carries further

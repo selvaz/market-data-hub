@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import re
 
 import pytest
 from pydantic import ValidationError
@@ -14,7 +15,7 @@ from market_data_hub.indicator_cards.build import (
 )
 from market_data_hub.indicator_cards.coverage import coverage_report, mapping_ambiguities
 from market_data_hub.indicator_cards.models import IndicatorCard, PredictiveScreen
-from market_data_hub.indicator_cards.render import MAX_CARD_CHARS
+from market_data_hub.indicator_cards.render import MAX_CARD_CHARS, short_pair
 
 
 def test_generated_json_freshness_and_provenance():
@@ -84,14 +85,27 @@ def test_derived_ingredients_are_not_spread_aliases():
     assert indicator_card("ms:ICSA") is None  # explicitly not stored, not an approved id
 
 
-def test_ambiguity_resolution_is_country_concept_key_order():
+def test_ambiguity_resolution_prefers_the_ids_own_row_then_country_concept_key():
     report = mapping_ambiguities()
-    assert report["pan:bis_policy_rate"]["selected"] == "ea_ecb_dfr"
+    assert report["pan:bis_policy_rate"]["selected"] == "pan_policy_rate_bis"
+    assert report["bis_policy_rate"]["selected"] == "pan_policy_rate_bis"
     assert report["pan:imf_policy_rate"]["selected"] == "pan_policy_rate_imf"
+    assert indicator_card("pan:bis_policy_rate").key == "pan_policy_rate_bis"
     for identity, detail in report.items():
         cards = [indicator_card(key) for key in detail["candidates"]]
-        expected = min(cards, key=lambda c: (c.country, c.concept, c.key))
+        bare = identity.split(":", 1)[-1]
+        own = [c for c in cards if [v for s in ("ms", "es", "cal", "cat", "pan", "hub")
+                                    for v in getattr(c.ids, s)] == [bare]]
+        expected = own[0] if own else min(cards, key=lambda c: (c.country, c.concept, c.key))
         assert indicator_card(identity) == expected
+
+
+def test_none_and_bare_string_inputs():
+    assert indicator_card(None) is None
+    for fn in (unmapped, cards_for):
+        with pytest.raises(TypeError):
+            fn("abc")
+    assert unmapped(["abc"]) == ["abc"]
 
 
 @pytest.mark.parametrize("card", dataset().cards, ids=lambda c: c.key)
@@ -111,6 +125,32 @@ def test_render_bound_and_timing_semantics(card):
             assert screen.pass_horizons
             assert ",".join(screen.pass_horizons) in rendered
             assert "no real-time validation" in rendered
+
+
+def test_every_screen_names_its_pair_even_with_many_screens():
+    card = indicator_card("us_unrate")
+    rendered = render_card(card)
+    assert len(card.timing.predictive_screen) > 2 and len(rendered) <= MAX_CARD_CHARS
+    for screen in card.timing.predictive_screen:
+        assert f"{screen.relationship_id} {short_pair(screen.pair)}:{screen.status}" in rendered
+    assert "Q17 IP->unrate:PRED-PASS 3m" in rendered
+    assert "Q20 unrate->wages:PRED-PASS 3m,6m,12m" in rendered
+    for c in dataset().cards:
+        text = render_card(c)
+        for screen in c.timing.predictive_screen:
+            label = short_pair(screen.pair)
+            assert re.fullmatch(r"[\w.\-]+(->|~)[\w.\-]+", label), (c.key, label)
+            assert screen.relationship_id in text
+            assert label in text or screen.pair in text
+
+
+def test_hypothesis_is_said_in_words_and_caveats_are_never_clipped():
+    for key in ("us_curve_10y2y", "us_vix", "uk_credit_conditions"):
+        assert "hypothesis" in render_card(indicator_card(key))
+    for c in dataset().cards:
+        caveat = " ".join("; ".join(filter(None, (c.flag, c.rationale))).split()).rstrip(".")
+        assert f"Caveat: {caveat}." in render_card(c), c.key
+    assert "whose screen is partial only" in render_card(indicator_card("us_nfci"))
 
 
 def test_predictive_direction_and_horizons_are_not_inferred_from_class():
