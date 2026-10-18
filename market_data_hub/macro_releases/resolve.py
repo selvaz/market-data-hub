@@ -24,11 +24,13 @@ No decisions are persisted and no wall clock or network is used here.
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, replace
+from functools import cached_property
 import json
 import math
 from typing import Optional
 
 from .models import utc
+from .read_times import known_by, normalize, stored_rows, timestamp
 
 RULE_VERSION = "macro-resolver:m6-v1"
 END_OF_TIME = "9999-12-31T23:59:59.999999+00:00"
@@ -88,6 +90,8 @@ class Evidence:
     revision_kind: Optional[str] = None
     reading_kind: str = "actual"
     legacy: Optional[dict] = None
+    ordering_at: Optional[str] = None
+    timestamp_precisions: dict = field(default_factory=dict)
 
     @property
     def official(self):
@@ -130,6 +134,22 @@ class Snapshot:
     consensus: list
     cutoff: str
     collect_families: list = field(default_factory=list)
+    limitations: list = field(default_factory=list)
+
+    @cached_property
+    def evidence_by_event(self):
+        result = {}
+        for evidence in self.evidence:
+            result.setdefault(evidence.event_id, []).append(evidence)
+        return result
+
+    @cached_property
+    def families_by_indicator(self):
+        result = {}
+        for evidence in self.evidence:
+            if evidence.event_id in self.events:
+                result.setdefault(evidence.indicator_id, set()).add(self.events[evidence.event_id]["family"])
+        return result
 
     @classmethod
     def load(cls, store, as_known_at=None):
@@ -147,46 +167,75 @@ class Snapshot:
             indicators = {r["id"]: dict(r) for r in conn.execute("SELECT * FROM indicators")}
             events = {r["id"]: dict(r) for r in conn.execute("SELECT * FROM release_events")}
             series = [dict(r) for r in conn.execute("SELECT * FROM source_series")]
-            vintages = [dict(r) for r in conn.execute("SELECT * FROM value_vintages WHERE first_seen_at<=?", (cutoff,))]
-            readings = [dict(r) for r in conn.execute("SELECT * FROM readings WHERE first_seen_at<=?", (cutoff,))]
-            links = {r["reading_id"]: dict(r) for r in conn.execute("SELECT * FROM legacy_reading_links WHERE updated_at<=?", (cutoff,))}
-            schedules = [dict(r) for r in conn.execute("SELECT * FROM schedule_versions WHERE recorded_at<=? ORDER BY recorded_at,id", (cutoff,))]
-            consensus = [dict(r) for r in conn.execute("SELECT * FROM consensus_readings WHERE captured_at<=?", (cutoff,))]
+            vintages = [dict(r) for r in conn.execute("SELECT * FROM value_vintages")]
+            readings = [dict(r) for r in conn.execute("SELECT * FROM readings")]
+            links = [dict(r) for r in conn.execute("SELECT * FROM legacy_reading_links")]
+            schedules = [dict(r) for r in conn.execute("SELECT * FROM schedule_versions")]
+            consensus = [dict(r) for r in conn.execute("SELECT * FROM consensus_readings")]
             tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             collect_families = [] if "collect_run_families" not in tables else [dict(r) for r in conn.execute(
                 "SELECT f.*,r.started_at FROM collect_run_families f JOIN collect_runs r "
-                "ON r.run_id=f.run_id AND r.status='running' WHERE f.finished_at<=? "
-                "ORDER BY f.finished_at DESC,f.rowid DESC", (cutoff,))]
+                "ON r.run_id=f.run_id AND r.status='running' "
+                "ORDER BY f.finished_at DESC,f.rowid DESC")]
         finally:
             if owns_transaction:
                 conn.execute("ROLLBACK")  # finish read transaction; never mutate
         by_id = {s["id"]: s for s in series}
         by_key = {(s["indicator_id"], s["source_id"], s["source_key"]): s for s in series}
+        limitations = []
+
+        def metadata(rows, fields, known_at, table):
+            return stored_rows(rows, fields, known_at=known_at, cutoff=cutoff,
+                               limitations=limitations, table=table)
+
+        links = {r["reading_id"]: r for r in metadata(links, {"updated_at": None}, "updated_at", "legacy_reading_links")}
+        schedules = metadata(schedules, {"expected_at": None, "recorded_at": None}, "recorded_at", "schedule_versions")
+        schedules.sort(key=lambda r: (r["recorded_at"], r["id"]))
+        consensus = metadata(consensus, {"captured_at": None, "published_at": None, "release_cutoff_at": None},
+                             "captured_at", "consensus_readings")
+        collect_families = metadata(collect_families, {"finished_at": None, "started_at": None},
+                                    "finished_at", "collect_run_families")
+        collect_families.sort(key=lambda r: r["finished_at"], reverse=True)
         evidence = []
         for row in vintages:
-            source = by_id[row["source_series_id"]]
-            if not source["is_published"] or row["formula_version"]:
-                continue
-            evidence.append(cls._evidence(row, source, indicators, events, vintage=True))
-        for row in readings:
-            link = links.get(row["id"])
-            legacy = json.loads(row["raw_payload_json"]) if row["parser_version"].startswith("legacy-calendar-") else None
-            if legacy:
-                # Do not apply today's mutable mapping to a historical snapshot.
-                if not link or not link["indicator_id"]:
+            try:
+                row = normalize(row, {"first_seen_at": None, "issuer_published_at": None})
+                if not known_by(row, "first_seen_at", cutoff):
                     continue
-                row["indicator_id"] = link["indicator_id"]
-                row["estimate_stage"] = link["estimate_stage"]
-                legacy = dict(legacy, link=link)
-            if row["indicator_id"] not in indicators:
-                continue
-            source = by_key.get((row["indicator_id"], row["source_id"], row["series_key"]))
-            if source and not source["is_published"]:
-                continue
-            evidence.append(cls._evidence(row, source, indicators, events, legacy=legacy))
+                source = by_id[row["source_series_id"]]
+                if not source["is_published"] or row["formula_version"]:
+                    continue
+                evidence.append(cls._evidence(row, source, indicators, events, vintage=True))
+            except (ValueError, TypeError, KeyError, OverflowError) as exc:
+                limitations.append(f"Skipped vintage:{row['id']}: invalid stored evidence ({exc}).")
+        for row in readings:
+            try:
+                row = normalize(row, {"first_seen_at": None, "published_at": None})
+                if not known_by(row, "first_seen_at", cutoff):
+                    continue
+                link = links.get(row["id"])
+                legacy = None
+                if row["parser_version"].startswith("legacy-calendar-"):
+                    # Do not apply today's mutable mapping to a historical snapshot.
+                    if not link or not link["indicator_id"]:
+                        continue
+                    payload = json.loads(row["raw_payload_json"])
+                    if not isinstance(payload, dict) or not isinstance(payload.get("row"), dict):
+                        raise ValueError("invalid legacy envelope")
+                    row["indicator_id"] = link["indicator_id"]
+                    row["estimate_stage"] = link["estimate_stage"]
+                    legacy = dict(payload, link=link)
+                if row["indicator_id"] not in indicators:
+                    continue
+                source = by_key.get((row["indicator_id"], row["source_id"], row["series_key"]))
+                if source and not source["is_published"]:
+                    continue
+                evidence.append(cls._evidence(row, source, indicators, events, legacy=legacy))
+            except (ValueError, TypeError, KeyError, OverflowError) as exc:
+                limitations.append(f"Skipped reading:{row['id']}: invalid stored evidence ({exc}).")
         evidence = [e for e in evidence if e is not None and
                     (e.published_at is None or e.published_at <= cutoff)]
-        return cls(indicators, events, schedules, evidence, consensus, cutoff, collect_families)
+        return cls(indicators, events, schedules, evidence, consensus, cutoff, collect_families, limitations)
 
     @staticmethod
     def _evidence(row, source, indicators, events, *, vintage=False, legacy=None):
@@ -211,12 +260,24 @@ class Snapshot:
         if role != "issuer":
             time_basis = "source_publication"
         precision = row["publication_precision"]
+        published_field = "issuer_published_at" if vintage else "published_at"
+        precisions = dict(row["timestamp_precisions"])
+        if precisions.get(published_field, "exact") != "exact":
+            precision = precisions[published_field]
+        ordering_at = None
         if legacy:
             raw, link = legacy["row"], legacy["link"]
             event_id = f"legacy:{row['source_id']}:{link['occurrence_key'] or row['series_key']}:{row['estimate_stage']}"
             event_time = raw.get("release_at_utc") or raw.get("scheduled_at_utc")
-            precision = "exact" if event_time else "date_only"
-            event_time = utc(event_time or raw["release_date"] + "T00:00:00Z")
+            # LazyCommittee calendar/prompts.toml specifies UTC YYYY-MM-DDTHH:MM
+            # and YYYY-MM-DD. merge.py copies release_at_utc to scheduled_at_utc.
+            event_time, precision = timestamp(event_time or raw["release_date"], assumed_timezone="UTC")
+            precisions["legacy_event_time"] = precision
+            run_time, run_precision = timestamp(legacy["legacy_first_seen_at"], assumed_timezone="UTC")
+            ordering_at, order_precision = timestamp(raw.get("observed_at") or legacy["legacy_first_seen_at"],
+                                                     assumed_timezone="UTC")
+            legacy = dict(legacy, normalized_run_started_at=run_time)
+            precisions.update(legacy_run_started_at=run_precision, legacy_publication_order=order_precision)
             time_basis = "legacy_calendar"
         return Evidence(
             id=f"{'vintage' if vintage else 'reading'}:{row['id']}",
@@ -232,6 +293,7 @@ class Snapshot:
             precision=precision, composition_id=row["composition_id"],
             url=None if vintage else row["url"], event_time=event_time, time_basis=time_basis,
             revision_kind=row.get("revision_kind"), reading_kind=row.get("reading_kind", "actual"), legacy=legacy,
+            ordering_at=ordering_at, timestamp_precisions=precisions,
         )
 
 
@@ -255,9 +317,7 @@ def _tie(e):
 def publication_order(e):
     if e.published_at:
         return e.published_at
-    if e.legacy:
-        return utc(e.legacy["row"].get("observed_at") or e.legacy["legacy_first_seen_at"])
-    return ""
+    return e.ordering_at or ""
 
 
 def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_id=None):

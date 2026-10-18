@@ -69,8 +69,7 @@ def family_for(snapshot, indicator):
     for family, members in FAMILY_INDICATORS.items():
         if indicator in members:
             return family
-    families = sorted({snapshot.events[e.event_id]["family"] for e in snapshot.evidence
-                       if e.indicator_id == indicator and e.event_id in snapshot.events})
+    families = sorted(snapshot.families_by_indicator.get(indicator, ()))
     if len(families) == 1:
         return families[0]
     info = snapshot.indicators[indicator]
@@ -86,14 +85,14 @@ def collection_failure(snapshot, family, start, end):
     for row in snapshot.collect_families:
         if row["family"] != family:
             continue
-        fetch_start = row["fetch_since"] + "-01T00:00:00.000000+00:00"
-        fetch_end = utc(row["fetch_until"] + "T23:59:59.999999Z")
+        fetch_start, fetch_end = row["fetch_start"], row["fetch_end"]
         if start > row["finished_at"] or end <= fetch_start or start > fetch_end:
             continue
         if row["status"] != "failed":
             return None
         return {"reason": "source_failed", "family": family, "run_id": row["run_id"],
                 "time": row["finished_at"], "time_basis": "collect_family_finished_at",
+                "time_precision": row["timestamp_precisions"]["finished_at"],
                 "started_at": row["started_at"], "error_type": row["error_type"],
                 "detail": row["error_message"], "fetch_since": row["fetch_since"],
                 "fetch_until": row["fetch_until"]}
@@ -112,7 +111,7 @@ def event_timing(snapshot, event_id, selected=None):
     Date-only issuer dates remain date-only; consensus retains its saved local
     midnight lower bound. No retrieval time is promoted to a release instant.
     """
-    rows = [e for e in snapshot.evidence if event_id is not None and e.event_id == event_id]
+    rows = snapshot.evidence_by_event.get(event_id, []) if event_id is not None else []
     issuers = [e for e in rows if e.role == "issuer" and e.published_at]
     if issuers:
         exact = [e for e in issuers if e.precision == "exact"]
@@ -170,6 +169,9 @@ class ReadAPI:
     def _cards(self, snapshot, start, end, indicators=None, geography=None):
         requested = ([indicators] if isinstance(indicators, str) else list(dict.fromkeys(indicators))
                      if indicators is not None else sorted(set(INDICATORS) | set(snapshot.indicators)))
+        # The snapshot is immutable during a query. Reuse chronology across
+        # cards instead of resolving every historical event for every card.
+        event_orders = {e.id: event_order(snapshot, e) for e in snapshot.evidence}
         groups = {}
         for e in snapshot.evidence:
             if e.indicator_id not in requested or not e.event_id:
@@ -215,7 +217,7 @@ class ReadAPI:
             # Archive captures after release can establish publication history,
             # but cannot backdate the previous-as-known-at-release field above.
             history = subset(snapshot, (e for e in snapshot.evidence if e.event_id != event_id and
-                                       event_order(snapshot, e) and event_order(snapshot, e) < released_at))
+                                       event_orders[e.id] and event_orders[e.id] < released_at))
             revisions = []
             for changed_period in sorted({e.reference_period for e in evidence if e.reference_period < period}):
                 old = latest_period(history, indicator, changed_period)
@@ -258,7 +260,7 @@ class ReadAPI:
             empty.append({"indicator_id": None, "query": (start, end),
                           "reason": "filtered_out", "detail": "empty indicator selection"})
         return {"since": start, "until": end, "as_known_at": snapshot.cutoff,
-                "cards": cards, "empty": empty, "limitations": [COLLECT_LOG_LIMITATION]}
+                "cards": cards, "empty": empty, "limitations": [COLLECT_LOG_LIMITATION, *snapshot.limitations]}
 
     @staticmethod
     def _consensus(snapshot, resolution, event_id, released_at, precision, time_basis):
@@ -322,7 +324,7 @@ class ReadAPI:
     def _explain(snapshot, indicator, period_or_window, *, geography=None):
         info = snapshot.indicators.get(indicator)
         base = {"indicator_id": indicator, "query": period_or_window,
-                "limitations": [COLLECT_LOG_LIMITATION]}
+                "limitations": [COLLECT_LOG_LIMITATION, *snapshot.limitations]}
         if info is None and indicator not in INDICATORS:
             return dict(base, reason="not_covered", detail="indicator is not in the stored or adapter catalogue")
         if info is None:
@@ -372,7 +374,8 @@ class ReadAPI:
         if failures:
             failure = max(failures, key=lambda e: e.first_seen_at)
             return dict(base, reason="source_failed", family=family,
-                        time=failure.legacy["legacy_first_seen_at"], time_basis="legacy_run_started_at",
+                        time=failure.legacy["normalized_run_started_at"], time_basis="legacy_run_started_at",
+                        time_precision=failure.timestamp_precisions["legacy_run_started_at"],
                         detail="stored imported run failed; exact failure instant was not retained")
         released = [e for e in family_rows if event_order(snapshot, e) and event_order(snapshot, e) <= snapshot.cutoff]
         if released:
@@ -452,4 +455,5 @@ class ReadAPI:
                         missing.update(event_failure)
         return {"since": start, "until": end, "as_known_at": cutoff, "families": families,
                 "count_basis": "distinct release events per family; expected is the union of stored schedules and captured events",
-                "limitations": [COLLECT_LOG_LIMITATION, "No complete release calendar is stored; zero expected does not prove no release was due."]}
+                "limitations": [COLLECT_LOG_LIMITATION, *snapshot.limitations,
+                                "No complete release calendar is stored; zero expected does not prove no release was due."]}
