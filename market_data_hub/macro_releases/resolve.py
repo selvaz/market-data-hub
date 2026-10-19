@@ -174,6 +174,8 @@ class Snapshot:
             schedules = [dict(r) for r in conn.execute("SELECT * FROM schedule_versions")]
             consensus = [dict(r) for r in conn.execute("SELECT * FROM consensus_readings")]
             tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+            worklist = [] if "worklist_resolutions" not in tables else [dict(r) for r in conn.execute(
+                "SELECT * FROM worklist_resolutions WHERE status='complete' AND selected_vintage_id IS NULL")]
             collect_families = [] if "collect_run_families" not in tables else [dict(r) for r in conn.execute(
                 "SELECT f.*,r.started_at FROM collect_run_families f JOIN collect_runs r "
                 "ON r.run_id=f.run_id AND r.status='running' "
@@ -190,6 +192,8 @@ class Snapshot:
                                limitations=limitations, table=table)
 
         links = {r["reading_id"]: r for r in metadata(links, {"updated_at": None}, "updated_at", "legacy_reading_links")}
+        worklist = {(r["source_id"], r["occurrence_key"]): r for r in metadata(
+            worklist, {"resolved_at": None}, "resolved_at", "worklist_resolutions")}
         schedules = metadata(schedules, {"expected_at": None, "recorded_at": None}, "recorded_at", "schedule_versions")
         schedules.sort(key=lambda r: (r["recorded_at"], r["id"]))
         consensus = metadata(consensus, {"captured_at": None, "published_at": None, "release_cutoff_at": None},
@@ -218,7 +222,20 @@ class Snapshot:
                 legacy = None
                 if row["parser_version"].startswith("legacy-calendar-"):
                     # Do not apply today's mutable mapping to a historical snapshot.
-                    if not link or not link["indicator_id"]:
+                    if not link:
+                        continue
+                    key = (f"sighting:{link['legacy_row_id']}" if link["legacy_table"] == "sightings"
+                           else link["occurrence_key"])
+                    mapping = worklist.get((link["source_id"], key))
+                    if mapping is None and link["occurrence_key"] and link["legacy_run_status"] == "published":
+                        mapping = worklist.get((link["source_id"], link["occurrence_key"]))
+                    if mapping:
+                        link = dict(link, indicator_id=mapping["indicator_id"],
+                                    estimate_stage=("unknown" if link["reading_kind"] == "previous"
+                                                    else mapping["estimate_stage"]), worklist_resolution=mapping)
+                        if link["reading_kind"] != "previous":
+                            row["reference_period"] = mapping["reference_period"]
+                    if not link["indicator_id"]:
                         continue
                     payload = json.loads(row["raw_payload_json"])
                     if not isinstance(payload, dict) or not isinstance(payload.get("row"), dict):

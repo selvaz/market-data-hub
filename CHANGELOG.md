@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions are released as `vX.Y.Z` tags; the supported combination with the other
 ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
+## [Unreleased]
+
+### Added
+- Deterministic offline `macro_releases resolve-worklist --db <copy> [--dry-run]`
+  with a reproducible UTC cutoff, exact existing catalogue/alias matching,
+  explicit-period parsing, verified issuer vintage links, specific terminal
+  reasons and a 14-day overdue retry window. The supplied legacy copy moves
+  from 2,633 pending to 95: 534 completed mappings/links and 2,004 new specific
+  terminals; 607 existing failed-run terminals remain unchanged. No aliases,
+  official values or release-derived reference periods are created.
+
+### Changed
+- Macro SQLite schema v5 to v6: additive, append-only `worklist_resolutions`
+  audit table with evidence and optional vintage links. Final dispositions
+  survive repeat imports; the read API applies completed non-official mappings
+  only from their decision time. Readers accept v3-v6; upgrade readers with a
+  v5 ceiling before opening a migrated store. Raw evidence remains unchanged.
+
 ## [0.3.2] — 2026-10-18
 
 Release train `ecosystem-2026.10.5`. Ships the indicator cards, the two-layer sovereign

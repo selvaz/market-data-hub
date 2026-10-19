@@ -59,6 +59,10 @@ Schema v4 adds the append-only daily run lifecycle and per-family outcomes;
 it does not rewrite legacy readings, vintages, mapping links or worklists.
 Schema v5 adds shared raw documents, the review queue and `needs_review` run
 outcomes. Its migration preserves v4 run-log rows and all v3 evidence.
+Schema v6 adds append-only `worklist_resolutions`. It records catalogue/period
+mappings and explicit terminal dispositions without rewriting raw readings,
+vintages, links, documents or run logs. Readers in this version accept v3-v6;
+older binaries with a v5 ceiling must be upgraded before opening a v6 store.
 
 `ResolutionVersion`, `Claim`, and `ClaimEvidence` require a caller-supplied
 `idempotency_key`, unique within their table. A retry reuses its original row id;
@@ -96,6 +100,7 @@ eligible. Do not substitute midnight for a known 08:30 time.
 | `discrepancies` | Reading linked to the selected official vintage, reason and recorded time. Adding a discrepancy cannot suppress an official value. |
 | `legacy_candidates`, `indicator_aliases` | Every original code, raw catalogue metadata, aliases and conservative stage mapping; all remain candidates pending review. |
 | `import_worklist` | Per-source occurrence backlog with reason, pending/complete/terminal status, first/last check and next check. No run watermark. |
+| `worklist_resolutions` | One immutable final import disposition per source/work item, with indicator, explicit reference period, optional official vintage id, rule version, decision time, raw reading ids/hashes and evidence JSON. Completion establishes a mapping; it does not verify a legacy value. |
 | `legacy_reading_links` | Mutable links from raw legacy rows to the latest indicator, stage, occurrence, resolution metadata and run status. They never change a raw reading or its identity. |
 
 An indicator's stage belongs to each observation/publication, not its measure
@@ -242,6 +247,75 @@ are terminal with no next check; repeated pulls do not requeue or advance that
 terminal check time. A subsequent source transition to published can reopen or
 complete the work item. The next pending check is proposed one day later; M4
 does not schedule it.
+
+### Resolving the imported worklist
+
+Use an existing local copy, including its WAL. The command refuses any
+`ProgramData` path, requires `--db`, performs no network calls, and adds no aliases.
+Preview with a fixed UTC cutoff, then apply the same pass:
+
+```powershell
+python -m market_data_hub.macro_releases resolve-worklist --db .tmp/macro_copy.sqlite --dry-run --as-of 2026-10-19T12:00:00Z
+python -m market_data_hub.macro_releases resolve-worklist --db .tmp/macro_copy.sqlite --as-of 2026-10-19T12:00:00Z
+```
+
+`--as-of` defaults to now. JSON contains counts by status/reason before and after,
+counts for each applied rule, the final pending count, and every proposed/final
+decision with evidence. Exit 0 means the pass succeeded, including when honest
+pending items remain; invalid arguments/database errors fail. Dry-run uses the
+daily runner's stable database/WAL snapshot and migrates/applies only in memory;
+it creates no files beside the target. Apply uses the writer lock and commits
+all decisions and worklist changes in one transaction. Readers never migrate.
+
+Rules in `legacy-worklist-v1`, evaluated in order:
+
+1. Use only published-run evidence recorded by the cutoff. Missing evidence and
+   unknown worklist reasons remain pending. Existing failed-run terminals stay
+   terminal. Resolve names by exact normalized spelling plus jurisdiction against
+   the imported catalogue and existing aliases. Case/punctuation normalization
+   creates no new alias; no fuzzy or language-model mapping occurs. Absent and
+   ambiguous matches terminate as `name_not_in_catalogue` / `indicator_ambiguous`.
+2. Accept valid, frequency-compatible ISO periods and explicit English month/year
+   or `Qn YYYY` text. Linked sighting periods may supply an occurrence's missing
+   period. Conflicts terminate as `conflicting_reference_periods`. Neither a
+   release date, a `d:` key, a URL nor frequency alone supplies a period.
+3. Link a verified, published issuer vintage for the exact indicator and period,
+   respecting a known stage and the cutoff: `official_vintage_linked`. Reviewed
+   bridges cover the shipped classification's CPI, payrolls, annualised US GDP,
+   headline EA HICP and UK monthly GDP ids; they also check frequency, transform,
+   unit/scale and geography. GDP requires an explicitly annualised legacy measure;
+   EA20/EA21 use the documented reference-period membership boundary. Concept-card
+   equality alone is insufficient: an index cannot substitute for a growth rate,
+   and contradictory metadata blocks a bridge. Without an explicit period, only
+   a unique issuer period with an exactly equal scaled actual, matching units,
+   an explicit stage and the same recorded release date can supply it. Otherwise
+   terminate as `period_not_derivable`.
+4. Without an official vintage, an overdue item more than **14 calendar days**
+   past its latest recorded release date terminates as `lateness_window_expired`.
+   This is an operational limit on retrying the legacy calendar, not an assertion
+   about an issuer's publication time. Exactly 14 days stays pending. Using the
+   latest date lets rescheduling extend the window. Recent overdue items remain
+   pending and can link or expire on a later pass.
+5. Other exact catalogue/period mappings complete as `catalogue_period_mapped`;
+   late observations complete as `late_value_mapped_unverified`. A scheduled item
+   can be fully mapped while its actual remains absent. Completion does not
+   establish a release, validate a late value, or create an official vintage.
+
+Final decisions live in `worklist_resolutions`; imports and reruns do not reopen
+or rewrite them. New source rows still import normally. Non-official completed
+mappings overlay the read API only from `resolved_at` onward; `previous` periods
+and stages remain unknown. Official links point to the stored vintage without
+changing the raw legacy observation's identity, adjustment or verification.
+Catalogue candidates remain candidates. No release-calendar lag inference is
+implemented because this legacy evidence does not certify such rules.
+
+The local-copy acceptance run at the cutoff above reduced **2,633 pending to 95**:
+534 complete (281 catalogue/period mappings, 242 late unverified mappings, 11
+official vintage links), 2,004 new specific terminals (1,548 absent catalogue
+names, 372 non-derivable periods, 84 expired overdue items). The 607 existing
+failed-run terminals stayed unchanged. The 95 remaining items were overdue by
+at most 14 days. The ignored `.tmp/worklist-report.md` contains before/after
+counts, reproducibly sampled evidence and verification details.
 
 ## Fixtures and later steps
 
@@ -800,8 +874,8 @@ not itself kill a live run. A process crash releases the OS file lock.
 Migrations v4/v5 run automatically under `open_writer`, in one transaction, on
 the first real run. Schema v3 evidence remains intact; a pre-existing v4 log is
 copied unchanged while extending its status enum. Readers never migrate and now
-declare a compatibility floor **3** and ceiling **5**. They accept the additive
-v4/v5 schema and read older v3 stores, treating absent logs/queues as unavailable.
+declare a compatibility floor **3** and ceiling **6**. They accept the additive
+v4/v5/v6 schema and read older v3 stores, treating absent logs/queues as unavailable.
 The v5 database also declares its reader compatibility range. Outside-range or
 non-additive versions fail explicitly; writers still reject newer schemas.
 

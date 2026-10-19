@@ -26,8 +26,17 @@ def main(argv=None):
     review = commands.add_parser("review-queue", help="List provisional issuer releases needing review")
     review.add_argument("--db", required=True, type=Path)
     review.add_argument("--family")
+    resolve = commands.add_parser("resolve-worklist", help="Resolve imported evidence on an explicit local copy")
+    resolve.add_argument("--db", required=True, type=Path)
+    resolve.add_argument("--dry-run", action="store_true")
+    resolve.add_argument("--as-of", help="UTC evaluation cutoff (default: now)")
     args = parser.parse_args(argv)
     try:
+        if args.command == "resolve-worklist":
+            from .worklist import execute
+            result = execute(args.db, dry_run=args.dry_run, as_of=args.as_of)
+            print(json.dumps(result, indent=2, ensure_ascii=False))
+            return 0
         with open_reader(args.db) as store:
             if args.command == "review-queue":
                 tables = {r[0] for r in store.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}

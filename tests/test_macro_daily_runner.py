@@ -357,13 +357,13 @@ def test_migration_v3_preserves_20k_legacy_readings(tmp_path, legacy_calendar):
     old.close()
     original_bytes = db.read_bytes()
     with run_daily.preview_store(db) as preview:
-        assert preview.conn.execute("PRAGMA user_version").fetchone()[0] == 5
+        assert preview.conn.execute("PRAGMA user_version").fetchone()[0] == 6
         assert preview.conn.execute("SELECT COUNT(*) FROM readings").fetchone()[0] == 20_000
     assert db.read_bytes() == original_bytes
     with sqlite3.connect(db) as unchanged:
         assert unchanged.execute("PRAGMA user_version").fetchone()[0] == 3
     with open_writer(db) as upgraded:
-        assert upgraded.conn.execute("PRAGMA user_version").fetchone()[0] == 5
+        assert upgraded.conn.execute("PRAGMA user_version").fetchone()[0] == 6
         for name, rows in before.items():
             assert [tuple(r) for r in upgraded.conn.execute(f'SELECT * FROM "{name}" ORDER BY rowid')] == rows
         assert upgraded.conn.execute("SELECT COUNT(*) FROM readings").fetchone()[0] == 20_000
