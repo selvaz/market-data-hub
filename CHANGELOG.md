@@ -7,19 +7,24 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.3] — 2026-10-19
+
+Release set `ecosystem-2026.10.6`.
+
 ### Added
 - Offline `macro_releases resolve-worklist --db <copy> [--dry-run]`, with
   exact existing catalogue/alias matching, explicit period parsing, consistent
   official vintage links and specific terminal reasons. The fresh-copy fix
   run moves 2,633 pending to **698**: 579 complete and 1,356 new terminals;
   607 existing failed-run terminals stay unchanged. Future releases remain
-  pending, so the previous <=200 claim is withdrawn. No aliases or values are added.
+  pending. No aliases or values are added.
 - Optional idempotently created audit tables **at schema v5**, retaining the full
   prior state of every changed item. `--revert <run_id>` restores one run atomically
   without deleting evidence/history, and refuses concurrent/superseding changes.
 
 ### Fixed
-- Reject future evaluation cutoffs; skip missing release dates; keep future
+- Reject future evaluation cutoffs, and cutoffs earlier than the worklist state the pass
+  would read (the worklist keeps only its latest state); skip missing release dates; keep future
   releases and unrecognized non-empty periods pending. Parse numeric/localized,
   ordinal-quarter, explicit ROC-calendar and week-ending formats consistently.
 - Check indicator, period, release date and available actual values for official
