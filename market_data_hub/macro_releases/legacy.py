@@ -151,12 +151,13 @@ def _work_item(
     store, source_id, key, indicator_id, reason, now, next_check, *, status="pending"
 ):
     with store.transaction():
-        # A resolver disposition is final for this historical work item. New
-        # raw evidence is still imported; repeat imports cannot reopen it.
+        # Reverted/pending decisions and expired windows never suppress new
+        # import evidence. Other active final mappings survive repeat imports.
         if store.conn.execute(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='worklist_resolutions'"
+            "SELECT 1 FROM sqlite_master WHERE type='view' AND name='active_worklist_resolutions'"
         ).fetchone() and store.conn.execute(
-            "SELECT 1 FROM worklist_resolutions WHERE source_id=? AND occurrence_key=?",
+            "SELECT 1 FROM active_worklist_resolutions WHERE source_id=? AND occurrence_key=? "
+            "AND status!='pending' AND reason!='lateness_window_expired'",
             (source_id, key),
         ).fetchone():
             return

@@ -6,22 +6,25 @@ Final decisions are append-only; recent missing releases remain re-runnable.
 from __future__ import annotations
 
 from collections import Counter, defaultdict
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 import json
 from pathlib import Path
 import re
+import sqlite3
+from uuid import uuid4
 
 from .models import utc
 from .resolve import canonical_unit
 from .store import open_writer
+from .lease import RunLease
+from .worklist_periods import explicit_period, frequency, parsed_period
 
-RULE_VERSION = "legacy-worklist-v1"
+RULE_VERSION = "legacy-worklist-v2"
 LATENESS_DAYS = 14
-REASONS = {"period_unknown", "unlinked_sighting", "late_value_needs_review", "overdue", "incomplete"}
-MONTHS = {name: n for n, name in enumerate((
-    "january", "february", "march", "april", "may", "june", "july", "august",
-    "september", "october", "november", "december"), 1)}
-MONTHS.update({name[:3]: n for name, n in list(MONTHS.items())})
+REASONS = {"period_unknown", "unlinked_sighting", "late_value_needs_review", "overdue", "incomplete",
+           "release_in_future", "release_date_missing", "release_date_invalid", "period_format_unrecognised",
+           "period_frequency_mismatch", "evidence_horizon_before_deadline", "legacy_evidence_unavailable"}
 
 
 def normalize_name(value):
@@ -29,46 +32,15 @@ def normalize_name(value):
     return re.sub(r"[\W_]+", " ", value.casefold()).strip()
 
 
-def frequency(value):
-    return {"monthly": "M", "quarterly": "Q", "annual": "A", "yearly": "A",
-            "daily": "D", "weekly": "W"}.get(value.lower(), value.upper())
-
-
-def explicit_period(raw, freq):
-    """Parse only a fully stated period. Release dates/URLs never supply a year."""
-    if not isinstance(raw, str):
-        return None
-    text = raw.strip()
-    freq = frequency(freq)
-    period, kind = None, None
-    if re.fullmatch(r"\d{4}-(0[1-9]|1[0-2])", text):
-        period, kind = text, "M"
-    elif re.fullmatch(r"\d{4}-Q[1-4]", text):
-        period, kind = text, "Q"
-    elif re.fullmatch(r"\d{4}", text) and int(text) > 0:
-        period, kind = text, "A"
-    elif re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
-        try:
-            period, kind = date.fromisoformat(text).isoformat(), "D"
-        except ValueError:
-            return None
-    else:
-        month = re.fullmatch(r"([A-Za-z]+)\.?\s+(\d{4})", text)
-        quarter = re.fullmatch(r"Q([1-4])\s+(\d{4})", text, re.I)
-        if month and month[1].lower() in MONTHS:
-            period, kind = f"{month[2]}-{MONTHS[month[1].lower()]:02}", "M"
-        elif quarter:
-            period, kind = f"{quarter[2]}-Q{quarter[1]}", "Q"
-    if period and not period.startswith("0000") and (freq in {"UNKNOWN", "IRREGULAR"} or
-            freq == kind or (kind == "D" and freq == "W")):
-        return period
-    return None
-
-
 class EvidenceIndex:
     def __init__(self, store):
         conn = store.conn
         self.indicators = {r["id"]: dict(r) for r in conn.execute("SELECT * FROM indicators")}
+        self.import_reasons = {}
+        if conn.execute("SELECT 1 FROM sqlite_master WHERE name='active_worklist_resolutions'").fetchone():
+            for row in conn.execute("SELECT * FROM active_worklist_resolutions"):
+                self.import_reasons[row["source_id"], row["occurrence_key"]] = json.loads(row["evidence_json"]).get(
+                    "original_import_reason", row["prior_reason"])
         self.candidates = {}
         self.names = defaultdict(set)
         for row in conn.execute("SELECT * FROM legacy_candidates ORDER BY source_id,legacy_code"):
@@ -80,13 +52,16 @@ class EvidenceIndex:
         for row in conn.execute("SELECT * FROM indicator_aliases"):
             self.names[row["source_id"], row["geography"], normalize_name(row["alias"])].add(
                 (row["indicator_id"], row["estimate_stage"], row["legacy_code"]))
+        self.name_sources = {(source, name) for source, geo, name in self.names}
         self.rows = defaultdict(list)
         for row in conn.execute(
                 "SELECT l.*,r.reference_period,r.value,r.unit,r.scale,r.content_hash,r.raw_payload_json,r.first_seen_at "
                 "FROM legacy_reading_links l JOIN readings r ON r.id=l.reading_id "
                 "WHERE l.reading_kind='actual' ORDER BY l.reading_id"):
             row = dict(row)
-            row["raw"] = json.loads(row.pop("raw_payload_json"))["row"]
+            payload = json.loads(row.pop("raw_payload_json"))
+            row["raw"] = payload["row"]
+            row["observed_at"] = row["raw"].get("observed_at") or payload.get("legacy_first_seen_at")
             if row["legacy_table"] == "sightings":
                 self.rows[row["source_id"], f"sighting:{row['legacy_row_id']}"].append(row)
             if row["occurrence_key"]:
@@ -107,10 +82,13 @@ class EvidenceIndex:
             mappings.add((work["indicator_id"], "unknown", None))
         identities = {(i, s) for i, s, _ in mappings}
         if len(identities) != 1:
-            return None, "indicator_ambiguous" if identities else "name_not_in_catalogue"
+            elsewhere = any((work["source_id"], normalize_name(row["raw"].get("raw_name", "")))
+                            in self.name_sources for row in rows)
+            return None, ("indicator_ambiguous" if identities else
+                          "catalogue_jurisdiction_mismatch" if elsewhere else "outside_catalogue_scope")
         indicator, stage = next(iter(identities))
         if indicator not in self.indicators:
-            return None, "name_not_in_catalogue"
+            return None, "outside_catalogue_scope"
         return (indicator, stage, sorted(c for i, s, c in mappings if c)), None
 
 
@@ -158,12 +136,25 @@ def official_ids(index, indicator_id, codes, period):
     return result
 
 
-def decide(index, work, as_of):
+def has_actual(row):
+    return row["value"] is not None or row["raw"].get("raw_actual", row["raw"].get("actual_raw")) is not None
+
+
+def value_agrees(row, vintage):
+    return (row["value"] is not None and row["scale"] is not None and
+            canonical_unit(row["unit"]) == canonical_unit(vintage["unit"]) and
+            Decimal(str(row["value"])) * Decimal(str(row["scale"])) ==
+            Decimal(str(vintage["value"])) * Decimal(str(vintage["scale"])))
+
+
+def decide(index, work, as_of, lateness_days=LATENESS_DAYS):
     rows = index.rows[work["source_id"], work["occurrence_key"]]
     published = [r for r in rows if r["legacy_run_status"] == "published" and r["first_seen_at"] <= as_of]
     evidence = {"reading_ids": [r["reading_id"] for r in rows],
                 "content_hashes": sorted({r["content_hash"] for r in rows}),
-                "as_of": as_of, "lateness_days": LATENESS_DAYS}
+                "as_of": as_of, "lateness_days": lateness_days}
+    original_reason = index.import_reasons.get((work["source_id"], work["occurrence_key"]), work["reason"])
+    evidence["original_import_reason"] = original_reason
     decision = dict(source_id=work["source_id"], occurrence_key=work["occurrence_key"],
                     status="pending", reason=work["reason"], indicator_id=work["indicator_id"],
                     reference_period=None, estimate_stage="unknown", selected_vintage_id=None,
@@ -175,6 +166,16 @@ def decide(index, work, as_of):
 
     if not published:
         return finish("pending", "legacy_evidence_unavailable")
+    if any(not r["raw"].get("release_date") for r in published):
+        return finish("pending", "release_date_missing")
+    try:
+        latest = max(date.fromisoformat(r["raw"]["release_date"]) for r in published)
+    except (ValueError, TypeError):
+        return finish("pending", "release_date_invalid")
+    evidence["latest_release_date"] = latest.isoformat()
+    evidence["days_late"] = (date.fromisoformat(as_of[:10]) - latest).days
+    if latest > date.fromisoformat(as_of[:10]):
+        return finish("pending", "release_in_future")
     mapping, error = index.mapping(work, published)
     if error:
         return finish("terminal", error)
@@ -183,19 +184,24 @@ def decide(index, work, as_of):
     evidence["legacy_codes"] = codes
     indicator = index.indicators[indicator_id]
     periods = set()
+    failures = set()
     for row in published:
         raw_period = (row["raw"].get("raw_period") if row["legacy_table"] == "sightings"
                       else row["reference_period"])
-        period = explicit_period(raw_period, indicator["frequency"])
+        period = explicit_period(raw_period, indicator["frequency"], indicator["geography"])
         if period:
             periods.add(period)
+        elif raw_period and not raw_period.startswith("d:"):
+            failures.add("period_frequency_mismatch" if parsed_period(raw_period, indicator["geography"])[0]
+                         else "period_format_unrecognised")
     evidence["explicit_periods"] = sorted(periods)
+    evidence["period_failures"] = sorted(failures)
     if len(periods) > 1:
         return finish("terminal", "conflicting_reference_periods")
+    if failures:
+        return finish("pending", sorted(failures)[0])
     period = next(iter(periods), None)
-    # Missing reference periods can only be supplied by a unique issuer
-    # publication on the explicitly recorded release date, with equal actual
-    # value, compatible units/scales and an explicitly matching stage.
+    actuals = [row for row in published if has_actual(row)]
     ids = official_ids(index, indicator_id, codes, period)
     matches = []
     for v in index.official:
@@ -203,17 +209,12 @@ def decide(index, work, as_of):
             continue
         if v["first_seen_at"] > as_of or v["issuer_published_at"] > as_of:
             continue
-        if period:
-            if v["reference_period"] == period:
-                matches.append(v)
-        elif stage != "unknown":
-            for row in published:
-                if (v["issuer_published_at"][:10] == row["raw"].get("release_date") and
-                        row["value"] is not None and row["scale"] is not None and
-                        canonical_unit(row["unit"]) == canonical_unit(v["unit"]) and
-                        row["value"] * row["scale"] == v["value"] * v["scale"]):
-                    matches.append(v)
-                    break
+        if v["issuer_published_at"][:10] != latest.isoformat():
+            continue
+        if actuals and not all(value_agrees(row, v) for row in actuals):
+            continue
+        if (period and v["reference_period"] == period) or (not period and stage != "unknown" and actuals):
+            matches.append(v)
     targets = {(v["indicator_id"], v["reference_period"]) for v in matches}
     if len(targets) == 1:
         chosen = max(matches, key=lambda v: (v["issuer_published_at"], v["first_seen_at"], v["id"]))
@@ -225,17 +226,17 @@ def decide(index, work, as_of):
     if not period:
         return finish("terminal", "period_not_derivable")
     decision["reference_period"] = period
-    if work["reason"] == "overdue":
-        # A changed schedule must extend the window rather than use the oldest
-        # date retained in an occurrence's observation history.
-        dates = [date.fromisoformat(r["raw"]["release_date"]) for r in published]
-        latest = max(dates)
-        evidence["latest_release_date"] = latest.isoformat()
-        evidence["days_late"] = (date.fromisoformat(as_of[:10]) - latest).days
-        if evidence["days_late"] > LATENESS_DAYS:
+    released = any(r["raw"].get("status") == "released" or has_actual(r) for r in published)
+    evidence["released_evidence_present"] = released
+    if not released and original_reason in {"overdue", "lateness_window_expired", "evidence_horizon_before_deadline"}:
+        if evidence["days_late"] > lateness_days:
+            horizon = max((r["observed_at"] or "")[:10] for r in published)
+            evidence["evidence_horizon"] = horizon
+            if horizon < (latest + timedelta(days=lateness_days)).isoformat():
+                return finish("pending", "evidence_horizon_before_deadline")
             return finish("terminal", "lateness_window_expired")
         return finish("pending", "overdue")
-    return finish("complete", "late_value_mapped_unverified" if work["reason"] == "late_value_needs_review"
+    return finish("complete", "late_value_mapped_unverified" if original_reason == "late_value_needs_review"
                   else "catalogue_period_mapped")
 
 
@@ -244,49 +245,130 @@ def counts(store):
         "SELECT status,reason,COUNT(*) n FROM import_worklist GROUP BY status,reason ORDER BY status,reason")}
 
 
-def resolve_worklist(store, *, as_of=None):
+def now_utc():
+    return utc(datetime.now(timezone.utc).isoformat())
+
+
+def evaluation_cutoff(as_of, lateness_days):
+    now = now_utc()
+    cutoff = utc(as_of) if as_of else now
+    if cutoff > now:
+        raise ValueError("--as-of cannot be later than the current UTC time")
+    if isinstance(lateness_days, bool) or not isinstance(lateness_days, int) or lateness_days < 1:
+        raise ValueError("--lateness-days must be an integer of at least 1")
+    return cutoff
+
+
+def ensure_audit(store):
+    """Create the optional audit feature within the caller's transaction, at v5."""
+    if store.conn.execute("PRAGMA user_version").fetchone()[0] != 5:
+        raise ValueError("worklist resolution requires a schema v5 database copy")
+    statement = ""
+    for line in Path(__file__).with_name("worklist_audit.sql").read_text(encoding="utf-8").splitlines(True):
+        statement += line
+        if sqlite3.complete_statement(statement):
+            store.conn.execute(statement)
+            statement = ""
+
+
+def post_state(prior, decision):
+    return dict(prior, status=decision["status"], reason=decision["reason"], indicator_id=decision["indicator_id"],
+                last_checked_at=decision["resolved_at"], next_check_at=(
+                    (datetime.fromisoformat(decision["resolved_at"]) + timedelta(days=1)).isoformat(timespec="microseconds")
+                    if decision["status"] == "pending" else None))
+
+
+def write_state(store, state):
+    store.conn.execute(
+        "UPDATE import_worklist SET indicator_id=?,reason=?,status=?,first_seen_at=?,last_checked_at=?,next_check_at=? "
+        "WHERE source_id=? AND occurrence_key=?", tuple(state[k] for k in (
+            "indicator_id", "reason", "status", "first_seen_at", "last_checked_at", "next_check_at",
+            "source_id", "occurrence_key")))
+
+
+def resolve_worklist(store, *, as_of=None, lateness_days=LATENESS_DAYS):
     """Resolve pending supported legacy reasons atomically, using no network.
 
     ``as_of`` is a UTC knowledge/evaluation cutoff, recorded with every decision.
     Repeating a pass never rewrites a final decision or changes raw evidence.
     """
-    as_of = utc(as_of or datetime.now(timezone.utc).isoformat())
+    as_of = evaluation_cutoff(as_of, lateness_days)
+    run_id = uuid4().hex
     with store.batch():
+        ensure_audit(store)
         before = counts(store)
+        last_import = store.conn.execute(
+            "SELECT MAX(first_seen_at) FROM readings WHERE parser_version LIKE 'legacy-calendar-%'").fetchone()[0]
         index = EvidenceIndex(store)
-        decisions = [decide(index, dict(row), as_of) for row in store.conn.execute(
-            "SELECT * FROM import_worklist WHERE status='pending' ORDER BY source_id,occurrence_key")
-            if row["reason"] in REASONS]
-        for d in decisions:
-            if d["status"] == "pending":
+        work = [dict(row) for row in store.conn.execute(
+            "SELECT * FROM import_worklist WHERE status='pending' OR reason='lateness_window_expired' "
+            "ORDER BY source_id,occurrence_key") if row["reason"] in REASONS or row["reason"] == "lateness_window_expired"]
+        decisions = [decide(index, row, as_of, lateness_days) for row in work]
+        for prior, d in zip(work, decisions):
+            d["changed"] = any(prior[k] != d[k] for k in ("status", "reason", "indicator_id"))
+            if not d["changed"]:
                 continue
-            values = {k: v for k, v in d.items() if k != "evidence"}
+            values = {k: v for k, v in d.items() if k not in {"evidence", "changed"}}
+            values.update(run_id=run_id, prior_status=prior["status"], prior_reason=prior["reason"],
+                          prior_state_json=json.dumps(prior, sort_keys=True))
             values["evidence_json"] = json.dumps(d["evidence"], sort_keys=True)
             store.conn.execute(
                 f"INSERT INTO worklist_resolutions ({','.join(values)}) "
                 f"VALUES ({','.join('?' for _ in values)})", tuple(values.values()))
-            store.conn.execute(
-                "UPDATE import_worklist SET status=?,reason=?,indicator_id=?,last_checked_at=?,next_check_at=NULL "
-                "WHERE source_id=? AND occurrence_key=?",
-                (d["status"], d["reason"], d["indicator_id"], as_of, d["source_id"], d["occurrence_key"]))
+            write_state(store, post_state(prior, d))
         after = counts(store)
-    return {"rule_version": RULE_VERSION, "as_of": as_of, "before": before, "after": after,
-            "rules": dict(sorted(Counter(d["reason"] for d in decisions if d["status"] != "pending").items())),
+    return {"run_id": run_id, "rule_version": RULE_VERSION, "as_of": as_of, "lateness_days": lateness_days,
+            "warnings": ["Evaluation cutoff precedes the last legacy import; later evidence was skipped"]
+            if last_import and as_of < last_import else [], "before": before, "after": after,
+            "rules": dict(sorted(Counter(d["reason"] for d in decisions if d["changed"]).items())),
             "pending": sum(n for key, n in after.items() if key.startswith("pending/")),
             "decisions": decisions}
 
 
-def execute(path, *, dry_run=False, as_of=None):
+def revert_worklist(store, run_id):
+    """Restore every worklist field atomically; refuse changed or superseded rows."""
+    with store.batch():
+        ensure_audit(store)
+        before = counts(store)
+        if store.conn.execute("SELECT 1 FROM worklist_reverts WHERE run_id=?", (run_id,)).fetchone():
+            return {"reverted_run_id": run_id, "reverted": 0, "before": before, "after": before}
+        rows = [dict(r) for r in store.conn.execute(
+            "SELECT * FROM worklist_resolutions WHERE run_id=? ORDER BY audit_id DESC", (run_id,))]
+        if not rows:
+            raise ValueError("unknown worklist run_id")
+        for row in rows:
+            active = store.conn.execute(
+                "SELECT audit_id FROM active_worklist_resolutions WHERE source_id=? AND occurrence_key=?",
+                (row["source_id"], row["occurrence_key"])).fetchone()
+            current = dict(store.conn.execute(
+                "SELECT * FROM import_worklist WHERE source_id=? AND occurrence_key=?",
+                (row["source_id"], row["occurrence_key"])).fetchone())
+            prior = json.loads(row["prior_state_json"])
+            if not active or active["audit_id"] != row["audit_id"] or current != post_state(prior, row):
+                raise ValueError("revert refused: worklist item changed or a newer run must be reverted first")
+            write_state(store, prior)
+        store.conn.execute("INSERT INTO worklist_reverts VALUES (?,?)", (run_id, now_utc()))
+        return {"reverted_run_id": run_id, "reverted": len(rows), "before": before, "after": counts(store)}
+
+
+def execute(path, *, dry_run=False, as_of=None, lateness_days=LATENESS_DAYS, revert=None):
     path = Path(path).resolve()
     if any(part.casefold() == "programdata" for part in path.parts):
         raise ValueError("resolve-worklist refuses ProgramData paths; use a local copy")
     if not path.is_file():
         raise ValueError("resolve-worklist requires an existing database")
+    if revert and (as_of is not None or lateness_days != LATENESS_DAYS):
+        raise ValueError("--revert cannot be combined with --as-of or --lateness-days")
+    cutoff = None if revert else evaluation_cutoff(as_of, lateness_days)
     if dry_run:
         from .run_daily import preview_store
-        context = preview_store(path)
+        with preview_store(path) as store:
+            result = (revert_worklist(store, revert) if revert else
+                      resolve_worklist(store, as_of=cutoff, lateness_days=lateness_days))
     else:
-        context = open_writer(path)
-    with context as store:
-        result = resolve_worklist(store, as_of=as_of)
+        with RunLease(path, wait_for_writer=False) as lease:
+            with open_writer(path, lock_timeout=0) as store:
+                lease.validate()
+                result = (revert_worklist(store, revert) if revert else
+                          resolve_worklist(store, as_of=cutoff, lateness_days=lateness_days))
     return dict(result, dry_run=dry_run)

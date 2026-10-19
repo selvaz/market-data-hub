@@ -27,25 +27,27 @@ class RunLease:
     owner must still present its token while holding the same writer file lock.
     """
 
-    def __init__(self, db, *, timeout=1800, clock=time.time):
+    def __init__(self, db, *, timeout=1800, clock=time.time, wait_for_writer=True):
         self.db = Path(db).resolve()
         self.path = Path(str(self.db) + ".daily.lease.json")
         self.token = uuid4().hex
         self.timeout = timeout
         self.clock = clock
         self.events = []
+        self.wait_for_writer = wait_for_writer
 
     @contextmanager
     def guard(self):
-        lock = FileLock(str(self.db) + ".writer.lock", timeout=5)
+        lock = FileLock(str(self.db) + ".writer.lock", timeout=5 if self.wait_for_writer else 0)
         # Writer contention is not loss of the run lease. Short waits keep a
         # concurrent start/importer from spuriously killing the live owner.
         while True:
             try:
                 lock.acquire()
                 break
-            except Timeout:
-                continue
+            except Timeout as exc:
+                if not self.wait_for_writer:
+                    raise LeaseBusy("macro writer lock is held") from exc
         try:
             yield
         finally:

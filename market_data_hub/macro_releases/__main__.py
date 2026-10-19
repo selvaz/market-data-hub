@@ -30,11 +30,14 @@ def main(argv=None):
     resolve.add_argument("--db", required=True, type=Path)
     resolve.add_argument("--dry-run", action="store_true")
     resolve.add_argument("--as-of", help="UTC evaluation cutoff (default: now)")
+    resolve.add_argument("--lateness-days", type=int, default=14, help="Retry window, at least 1 day (default: 14)")
+    resolve.add_argument("--revert", metavar="RUN_ID", help="Restore one run's original worklist state atomically")
     args = parser.parse_args(argv)
     try:
         if args.command == "resolve-worklist":
             from .worklist import execute
-            result = execute(args.db, dry_run=args.dry_run, as_of=args.as_of)
+            result = execute(args.db, dry_run=args.dry_run, as_of=args.as_of,
+                             lateness_days=args.lateness_days, revert=args.revert)
             print(json.dumps(result, indent=2, ensure_ascii=False))
             return 0
         with open_reader(args.db) as store:

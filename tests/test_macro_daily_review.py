@@ -314,14 +314,13 @@ def test_future_area_placeholder_and_band_configuration():
     assert run_daily.DEFAULT_LOOKBACK_MONTHS == 24
 
 
-@pytest.mark.parametrize("version", [3, 4, 5, 6])
+@pytest.mark.parametrize("version", [3, 4, 5])
 def test_reader_range_forward_backward_and_read_api(tmp_path, version):
     db = tmp_path / "compatible.sqlite"
     module = Path(migrations.__file__).parent
     with sqlite3.connect(db) as conn:
         for script in ("schema.sql", "migration_003.sql", *(["migration_004.sql"] if version >= 4 else []),
-                       *(["migration_005.sql"] if version >= 5 else []),
-                       *(["migration_006.sql"] if version >= 6 else [])):
+                       *(["migration_005.sql"] if version >= 5 else [])):
             conn.executescript((module / script).read_text())
         conn.execute(f"PRAGMA user_version={version}")
     before = db.read_bytes()
@@ -348,7 +347,7 @@ def test_writer_remains_strict_and_incompatible_readers_reject(tmp_path, monkeyp
     with pytest.raises(RuntimeError, match="not additive"):
         open_reader(db)
     with open_writer(db) as store:
-        store.conn.execute("PRAGMA user_version=7")
+        store.conn.execute("PRAGMA user_version=6")
     with pytest.raises(RuntimeError, match="compatibility range"):
         open_reader(db)
     with pytest.raises(RuntimeError, match="unsupported"):

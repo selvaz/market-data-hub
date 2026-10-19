@@ -174,8 +174,11 @@ class Snapshot:
             schedules = [dict(r) for r in conn.execute("SELECT * FROM schedule_versions")]
             consensus = [dict(r) for r in conn.execute("SELECT * FROM consensus_readings")]
             tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-            worklist = [] if "worklist_resolutions" not in tables else [dict(r) for r in conn.execute(
-                "SELECT * FROM worklist_resolutions WHERE status='complete' AND selected_vintage_id IS NULL")]
+            worklist = [] if "worklist_reverts" not in tables else [dict(r) for r in conn.execute(
+                "SELECT * FROM (SELECT w.*,ROW_NUMBER() OVER(PARTITION BY source_id,occurrence_key "
+                "ORDER BY audit_id DESC) AS rank FROM worklist_resolutions w WHERE resolved_at<=? "
+                "AND NOT EXISTS(SELECT 1 FROM worklist_reverts r WHERE r.run_id=w.run_id AND r.reverted_at<=?)) "
+                "WHERE rank=1 AND status='complete' AND selected_vintage_id IS NULL", (cutoff, cutoff))]
             collect_families = [] if "collect_run_families" not in tables else [dict(r) for r in conn.execute(
                 "SELECT f.*,r.started_at FROM collect_run_families f JOIN collect_runs r "
                 "ON r.run_id=f.run_id AND r.status='running' "
@@ -224,11 +227,22 @@ class Snapshot:
                     # Do not apply today's mutable mapping to a historical snapshot.
                     if not link:
                         continue
+                    payload = json.loads(row["raw_payload_json"])
+                    if not isinstance(payload, dict) or not isinstance(payload.get("row"), dict):
+                        raise ValueError("invalid legacy envelope")
                     key = (f"sighting:{link['legacy_row_id']}" if link["legacy_table"] == "sightings"
                            else link["occurrence_key"])
                     mapping = worklist.get((link["source_id"], key))
                     if mapping is None and link["occurrence_key"] and link["legacy_run_status"] == "published":
                         mapping = worklist.get((link["source_id"], link["occurrence_key"]))
+                    if mapping and link["reading_kind"] != "previous":
+                        from .worklist_periods import explicit_period
+                        indicator = indicators[mapping["indicator_id"]]
+                        raw_period = row["reference_period"] or payload["row"].get("raw_period")
+                        parsed = explicit_period(raw_period, indicator["frequency"], indicator["geography"])
+                        if parsed and parsed != mapping["reference_period"]:
+                            limitations.append(f"Skipped worklist overlay for reading:{row['id']}: conflicting reference period")
+                            mapping = None
                     if mapping:
                         link = dict(link, indicator_id=mapping["indicator_id"],
                                     estimate_stage=("unknown" if link["reading_kind"] == "previous"
@@ -237,9 +251,6 @@ class Snapshot:
                             row["reference_period"] = mapping["reference_period"]
                     if not link["indicator_id"]:
                         continue
-                    payload = json.loads(row["raw_payload_json"])
-                    if not isinstance(payload, dict) or not isinstance(payload.get("row"), dict):
-                        raise ValueError("invalid legacy envelope")
                     row["indicator_id"] = link["indicator_id"]
                     row["estimate_stage"] = link["estimate_stage"]
                     legacy = dict(payload, link=link)
