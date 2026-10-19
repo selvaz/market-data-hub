@@ -409,7 +409,7 @@ def test_overlay_refuses_row_period_that_conflicts_with_audit(tmp_path, legacy):
         assert index.rows[item["source_id"], item["occurrence_key"]]
 
 
-def test_future_cutoff_rejected_without_writes_and_past_import_warns(tmp_path, legacy):
+def test_future_and_stale_cutoffs_are_rejected_without_writes(tmp_path, legacy):
     sighting(legacy)
     db = tmp_path / "hub.sqlite"
     with open_writer(db) as store:
@@ -418,7 +418,12 @@ def test_future_cutoff_rejected_without_writes_and_past_import_warns(tmp_path, l
     with pytest.raises(ValueError, match="later than"):
         execute(db, as_of="2031-01-01T00:00:00Z")
     assert file_hashes(tmp_path) == before
-    assert execute(db, dry_run=True, as_of="2026-10-17T00:00:00Z")["warnings"]
+    # import_worklist keeps only its latest state: a cutoff before the last import/update would judge
+    # items by reasons that did not exist yet, so it is refused rather than warned about.
+    for dry_run in (True, False):
+        with pytest.raises(ValueError, match="precedes the worklist state"):
+            execute(db, dry_run=dry_run, as_of="2026-10-17T00:00:00Z")
+    assert file_hashes(tmp_path) == before
 
 
 def test_unrecognised_nonempty_period_stays_pending_and_reruns_stably(tmp_path, legacy):

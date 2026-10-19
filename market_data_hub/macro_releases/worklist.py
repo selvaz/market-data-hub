@@ -295,10 +295,17 @@ def resolve_worklist(store, *, as_of=None, lateness_days=LATENESS_DAYS):
     as_of = evaluation_cutoff(as_of, lateness_days)
     run_id = uuid4().hex
     with store.batch():
-        ensure_audit(store)
-        before = counts(store)
         last_import = store.conn.execute(
             "SELECT MAX(first_seen_at) FROM readings WHERE parser_version LIKE 'legacy-calendar-%'").fetchone()[0]
+        last_state = store.conn.execute("SELECT MAX(last_checked_at) FROM import_worklist").fetchone()[0]
+        floor = max((t for t in (last_import, last_state) if t), default=None)
+        if floor and as_of < floor:
+            # import_worklist holds only the latest state, not its history: a cutoff before the last
+            # import or worklist update would judge items by reasons that did not exist at that cutoff.
+            raise ValueError(f"--as-of {as_of} precedes the worklist state it would read (last change {floor}); "
+                             "a past cutoff cannot be honoured on mutable worklist rows")
+        ensure_audit(store)
+        before = counts(store)
         index = EvidenceIndex(store)
         work = [dict(row) for row in store.conn.execute(
             "SELECT * FROM import_worklist WHERE status='pending' OR reason='lateness_window_expired' "
@@ -318,8 +325,7 @@ def resolve_worklist(store, *, as_of=None, lateness_days=LATENESS_DAYS):
             write_state(store, post_state(prior, d))
         after = counts(store)
     return {"run_id": run_id, "rule_version": RULE_VERSION, "as_of": as_of, "lateness_days": lateness_days,
-            "warnings": ["Evaluation cutoff precedes the last legacy import; later evidence was skipped"]
-            if last_import and as_of < last_import else [], "before": before, "after": after,
+            "warnings": [], "before": before, "after": after,
             "rules": dict(sorted(Counter(d["reason"] for d in decisions if d["changed"]).items())),
             "pending": sum(n for key, n in after.items() if key.startswith("pending/")),
             "decisions": decisions}
