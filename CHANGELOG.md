@@ -5,6 +5,31 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 Versions are released as `vX.Y.Z` tags; the supported combination with the other
 ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
+## [Unreleased]
+
+### Added
+- Offline `macro_releases resolve-worklist --db <copy> [--dry-run]`, with
+  exact existing catalogue/alias matching, explicit period parsing, consistent
+  official vintage links and specific terminal reasons. The fresh-copy fix
+  run moves 2,633 pending to **698**: 579 complete and 1,356 new terminals;
+  607 existing failed-run terminals stay unchanged. Future releases remain
+  pending, so the previous <=200 claim is withdrawn. No aliases or values are added.
+- Optional idempotently created audit tables **at schema v5**, retaining the full
+  prior state of every changed item. `--revert <run_id>` restores one run atomically
+  without deleting evidence/history, and refuses concurrent/superseding changes.
+
+### Fixed
+- Reject future evaluation cutoffs; skip missing release dates; keep future
+  releases and unrecognized non-empty periods pending. Parse numeric/localized,
+  ordinal-quarter, explicit ROC-calendar and week-ending formats consistently.
+- Check indicator, period, release date and available actual values for official
+  links. Released evidence cannot expire as never-arrived; expired items can
+  resolve against later evidence. The retry window is configurable with
+  `--lateness-days` (default 14, minimum 1), bounded by retained evidence.
+- Apply/revert use the daily runner's lease and writer lock and refuse a held
+  lease/lock. SQLite version, migration ceilings and reader compatibility remain
+  unchanged at v5; no automatic v6 migration is introduced.
+
 ## [0.3.2] — 2026-10-18
 
 Release train `ecosystem-2026.10.5`. Ships the indicator cards, the two-layer sovereign

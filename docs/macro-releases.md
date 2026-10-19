@@ -59,6 +59,10 @@ Schema v4 adds the append-only daily run lifecycle and per-family outcomes;
 it does not rewrite legacy readings, vintages, mapping links or worklists.
 Schema v5 adds shared raw documents, the review queue and `needs_review` run
 outcomes. Its migration preserves v4 run-log rows and all v3 evidence.
+The optional worklist resolver creates its audit tables idempotently inside its
+own transaction at **schema v5**. Ordinary `open_writer`/`migrate` calls do not
+create them. Reader floor 3 and ceiling 5, `user_version`, and the compatibility
+registry are unchanged; existing readers ignore the additional tables.
 
 `ResolutionVersion`, `Claim`, and `ClaimEvidence` require a caller-supplied
 `idempotency_key`, unique within their table. A retry reuses its original row id;
@@ -96,6 +100,7 @@ eligible. Do not substitute midnight for a known 08:30 time.
 | `discrepancies` | Reading linked to the selected official vintage, reason and recorded time. Adding a discrepancy cannot suppress an official value. |
 | `legacy_candidates`, `indicator_aliases` | Every original code, raw catalogue metadata, aliases and conservative stage mapping; all remain candidates pending review. |
 | `import_worklist` | Per-source occurrence backlog with reason, pending/complete/terminal status, first/last check and next check. No run watermark. |
+| `worklist_resolutions`, `worklist_reverts` | Optional append-only run history, complete prior worklist state, selected vintage/evidence, and run-revert markers. The active view selects the latest non-reverted decision per item. |
 | `legacy_reading_links` | Mutable links from raw legacy rows to the latest indicator, stage, occurrence, resolution metadata and run status. They never change a raw reading or its identity. |
 
 An indicator's stage belongs to each observation/publication, not its measure
@@ -242,6 +247,110 @@ are terminal with no next check; repeated pulls do not requeue or advance that
 terminal check time. A subsequent source transition to published can reopen or
 complete the work item. The next pending check is proposed one day later; M4
 does not schedule it.
+
+### Resolving the imported worklist
+
+Use an existing local copy, including its WAL, and retain a SQLite backup before
+applying. The command requires `--db`, refuses any `ProgramData` path, performs no
+network calls, and adds no aliases. The preserved `.tmp/macro_before.sqlite` was
+made from the supplied worktree copy before the first apply; no production file
+is opened. A fresh run deletes the previous `macro_copy.sqlite*` files and copies
+that untouched v5 backup, preserving committed WAL data through SQLite backup.
+
+```powershell
+python -m market_data_hub.macro_releases resolve-worklist --db .tmp/macro_copy.sqlite --dry-run --as-of 2026-10-19T10:45:00Z --lateness-days 14
+python -m market_data_hub.macro_releases resolve-worklist --db .tmp/macro_copy.sqlite --as-of 2026-10-19T10:45:00Z --lateness-days 14
+```
+
+`--as-of` defaults to now and cannot exceed current UTC time. A cutoff before
+the last legacy import produces a warning and excludes later imported evidence.
+`--lateness-days` defaults to 14 and has a minimum of 1; the chosen window is
+recorded with every decision. JSON includes `run_id`, before/after counts,
+changed-item counts per rule, evidence, and the final pending count. Exit 0 means
+the pass succeeded, even if honest pending items exceed the acceptance target.
+Invalid arguments, database errors and held leases/locks exit non-zero with a
+message. No pending count target influences decisions.
+
+Dry-run takes the daily runner's stable database/WAL snapshot and applies only
+in memory, creating no files beside the target. Apply and revert acquire the
+same `RunLease` and writer file lock as `run_daily`, refusing a live lease or held
+writer lock. Writes occur in one short transaction. Optional audit tables/views
+are created with `IF NOT EXISTS`; **SQLite stays at v5**, with no changes to
+reader/migration ceilings or the compatibility registry.
+
+Rules in `legacy-worklist-v2`:
+
+1. Use published-run evidence known at the cutoff. Missing/invalid release dates
+   skip the item as pending `release_date_missing` / `release_date_invalid`.
+   If the latest retained release date is after the cutoff date, leave pending
+   as `release_in_future`, even when an actual, period or official vintage exists.
+2. Resolve names using exact normalized spelling plus source/jurisdiction against
+   the existing catalogue and aliases. Unmatched names terminate as
+   `outside_catalogue_scope`; names found only under a different jurisdiction use
+   `catalogue_jurisdiction_mismatch`; ambiguous identities use `indicator_ambiguous`.
+   These reasons describe this catalogue's scope, not the existence of a statistic.
+3. Parse fully explicit periods compatible with frequency: ISO, numeric `M/YYYY`,
+   `Qn/YYYY`, ordinal/word/Roman quarters (including `2nd Quarter 2026`), localized
+   month names, and fully dated `week ending ...` text. Three-digit ROC years
+   convert by +1911 only with a ROC marker or Taiwan geography; compact `11509`
+   requires Taiwan. Weekly/biweekly/fortnightly share date-period handling;
+   event/aperiodic frequency aliases allow explicit event periods without inferring
+   one from the release date. Neither a `d:` key nor a missing year supplies a
+   reference period. Conflicts terminate as `conflicting_reference_periods`;
+   non-empty unknown formats or incompatible granularity stay pending as
+   `period_format_unrecognised` / `period_frequency_mismatch`. A truly absent or
+   release-date-only period without an exact issuer match uses `period_not_derivable`.
+4. `official_vintage_linked` requires an existing verified published issuer vintage,
+   an approved exact-measure bridge, the correct indicator and period, a compatible
+   known stage, the **same latest recorded release date**, and agreement with
+   **every available actual** in compatible explicit units/scales. An unparseable
+   actual blocks an official link. Missing-period inference additionally needs an
+   explicit stage and an exactly matching actual and unique issuer period. No
+   legacy actual is promoted to official. A failed official comparison may still
+   leave a valid legacy catalogue/period mapping, explicitly unverified.
+5. Released status or any raw/parsed actual blocks `lateness_window_expired`.
+   Map its known indicator/period without validating the value. Reserve expiry
+   for overdue items with no actual or released status, more than the configured
+   window past the latest release, and retained observation evidence reaching
+   that deadline. Otherwise leave `overdue` or `evidence_horizon_before_deadline`
+   pending. This window limits retries of the legacy calendar; it does not assert
+   an issuer publication time. Exactly 14 days remains pending at the default.
+6. Complete other past-dated exact mappings as `catalogue_period_mapped`, or
+   `late_value_mapped_unverified` for late observations. Missing actuals remain
+   missing. Catalogue candidates remain candidates. No release-calendar lag
+   inference is implemented.
+
+Every changed item, including a pending reason change, records its complete prior
+worklist row plus `prior_status` and `prior_reason` under `run_id`. A no-change
+rerun appends nothing. Expired items are reconsidered: a later matching vintage
+or released evidence can supersede expiry. Importer guards ignore expired,
+pending and reverted decisions. Other active final decisions survive imports.
+The read API overlays completed non-official mappings only from their decision
+cutoff onward, checks row-level period agreement, and keeps previous periods and
+stages unknown. Historical snapshots filter decisions and reversals before
+choosing an active mapping.
+
+To reverse one run, use its JSON `run_id` (the dry-run id is only a preview id):
+
+```powershell
+python -m market_data_hub.macro_releases resolve-worklist --db .tmp/macro_copy.sqlite --revert <run_id> --dry-run
+python -m market_data_hub.macro_releases resolve-worklist --db .tmp/macro_copy.sqlite --revert <run_id>
+```
+
+Revert restores **all** original worklist columns atomically and appends a revert
+marker without deleting audit history. Repeating the same revert is a no-op.
+If any item has changed since that run or a newer run supersedes it, revert
+refuses the entire operation; revert newer runs first. Fresh evidence is never
+deleted. The restored items can be resolved again in a new run.
+
+The fresh-copy fix-round run at the cutoff above reduces **2,633 pending to 698**:
+579 complete (332 catalogue/period mappings, 245 late unverified mappings, 2
+consistent official links), 1,356 new specific terminals, and 607 existing
+failed-run terminals unchanged. The 698 pending comprise 447 future releases,
+100 unknown formats, 27 frequency conflicts, 75 insufficient evidence horizons,
+and 49 recent overdue items. The <=200 target cannot be met honestly under the
+future-release rule alone. `.tmp/worklist-report.md` contains the new counts,
+sampled evidence, active run id, and a verified full-run revert/reapply check.
 
 ## Fixtures and later steps
 

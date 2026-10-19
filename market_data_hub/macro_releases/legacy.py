@@ -151,6 +151,16 @@ def _work_item(
     store, source_id, key, indicator_id, reason, now, next_check, *, status="pending"
 ):
     with store.transaction():
+        # Reverted/pending decisions and expired windows never suppress new
+        # import evidence. Other active final mappings survive repeat imports.
+        if store.conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='view' AND name='active_worklist_resolutions'"
+        ).fetchone() and store.conn.execute(
+            "SELECT 1 FROM active_worklist_resolutions WHERE source_id=? AND occurrence_key=? "
+            "AND status!='pending' AND reason!='lateness_window_expired'",
+            (source_id, key),
+        ).fetchone():
+            return
         if reason:
             if status == "terminal":
                 existing = store.conn.execute(
