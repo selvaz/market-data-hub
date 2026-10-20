@@ -254,7 +254,8 @@ def test_ons_publication_date_and_csv_no_redirect_capture(tmp_path):
     ons.check_freshness(document("ons/current-edition.response.json"), document("ons/current-bulletins.response.json"))
     rows = ons.ONSAdapter.parse_levels(document("ons/gdp69-csv.csv"), document("ons/gdp69.json").json(),
                                      "2026-06", publication=document("ons/june-content.response.json"))
-    assert {o.published_at for o in rows} == {"2026-08-13T00:00:00Z"}
+    assert {o.published_at for o in rows} == {utc("2026-08-24T00:00:00Z")}
+    assert {o.edition for o in rows} == {"2026-08-24"}
     meta = json.loads((FIXTURES / "ons/gdp69-csv.meta.json").read_text())
     assert meta["url"] == ons.CSV_URL
     assert meta["status_code"] == 200 and meta["location"] is None
@@ -263,7 +264,7 @@ def test_ons_publication_date_and_csv_no_redirect_capture(tmp_path):
     with open_writer(tmp_path / "levels.sqlite") as store:
         persist(store, rows)
         assert not store.first_release()
-        assert store.latest_official()[0]["issuer_published_at"] == utc("2026-08-13T00:00:00Z")
+        assert store.latest_official()[0]["issuer_published_at"] == utc("2026-08-24T00:00:00Z")
 
 
 @pytest.mark.parametrize("failure_point", ["fetch", "persist"])
