@@ -798,38 +798,64 @@ six proposed, versioned tier-1 mappings in
 against unambiguous stored catalogue aliases. The file supplements aliases at
 read time; it does not rewrite imported catalogue identities. It maps four US
 CPI measures, UK monthly GDP, and euro-area final headline HICP for explicit
-EA21 periods from 2026-01. Country prefixes and stage qualifiers are preserved;
+EA21 issuer periods from 2026-01. Country prefixes and stage qualifiers are preserved;
 German/French CPI cannot become euro-area HICP. Each proposed alias explains its
-FF title. A stored alias with unknown stage is skipped. Unqualified CPI/GDP
-monthly releases use `regular` (a non-staged release, never an inferred `final`);
-the HICP `final` stage must be explicit in the title.
+FF title. A catalogue alias with unknown stage may inherit a known issuer event
+stage. A known catalogue stage or a stage named by FF (Final, Flash, Prelim,
+Advance, Second/2nd, Third/3rd) must agree with that event; disagreement is
+`stage_conflict`. Prelim is compared as `preliminary`, never guessed to mean
+advance or second estimate. Unqualified CPI/GDP aliases distinguish `regular`
+from staged releases; the HICP alias retains its explicit `final` qualifier.
 
-Only explicit fully dated `reference_period`/`period` fields or a final title
-label such as `(2026-09)` are accepted, with catalogue-frequency validation.
-Conflicting, yearless, rolling-window and missing periods are skipped and
-counted. **No monthly lag is inferred from the release date.** Monthly frequency
-alone is insufficient: US CPI in October reports September while UK GDP in
-October reports August. Existing official values are never used to backfill an
-FF event's missing period. Generic aliases also require an existing exact
-edition/event link; the reviewed family mappings can establish that event before
-official collection succeeds.
+**Round 2 (`ff-consensus-v2`) takes the period from the issuer event.** For the
+exact mapped indicator, compare FF's release date with each stored issuer
+event's latest official schedule date or first actual publication date in the
+issuer's time zone. Exactly one event must match before checking its stage.
+Zero candidates are `release_event_not_found`; multiple candidates are
+`release_event_ambiguous`, even if a stage qualifier could choose one. No event
+is created from FF, and no reference period is calculated from a publication lag
+or taken from FF's period text. Offset-aware FF times are converted to the
+issuer zone; naive FF wall times use documented US Eastern. Bare dates remain
+calendar labels. The existing read-side clock helpers handle stored timestamps.
+
+The schema's `release_events` and `schedule_versions` have no indicator/period
+columns. Explicit issuer `readings` or `value_vintages` establish event membership
+and the reference period. Mirrors and imported legacy calendar evidence cannot
+establish it. As in the read API, the largest explicit stored period for that
+indicator/event is the headline; earlier periods carried in the same publication
+are revision rows. The stored release event supplies `estimate_stage`. A schedule
+with no issuer indicator/period membership is insufficient and is counted as
+not found. An issuer reading with a known period but no numeric value can supply
+membership for a scheduled release. Monthly frequency only validates that stored
+period's format; it never establishes a one- or two-month lag.
 
 `load_snapshots` supplies the earliest manifest capture evidence for each file;
 its mtime fallback is diagnostic only. A manifest SHA-256 must match the file.
 `published_at` and `survey_identity` remain null because FF does not supply them.
-The latest stored event schedule known at capture supplies the cutoff when
-available; otherwise the offset-aware FF event date is a `scheduled` cutoff.
-A bare FF release date uses the start of that issuer-local date (`date_only`),
-so same-day ordering remains uncertain. Without a usable FF date, an explicit
-period/stage must identify exactly one already linked catalogue event; its
-cutoff stays null with basis `unknown` if no schedule was saved. An
-unidentifiable release/event is skipped. Store CHECK constraints derive eligibility/post-release flags, and the
-read API retains only eligible pre-release forecasts, separately for each
-provider. Missing forecasts produce neither consensus nor surprise.
+The first exact issuer publication supplies the cutoff (`actual`), then an
+exact official schedule (`scheduled`), then a conservative date-only issuer
+clock. Date-only cutoffs are the start of the issuer-local release date; same-day
+ordering remains uncertain. FF's date is a matching key and does not replace a
+stored issuer cutoff. Store CHECK constraints derive eligibility/post-release
+flags. Metadata found after capture can establish an event association without
+backdating the FF capture. The read API reconciles later issuer clocks while
+the captured reading remains append-only. Missing forecasts produce neither
+consensus nor surprise.
+
+An issuer schedule and explicit period membership can produce a forecast-only
+card before an actual exists. Such cards have `status: scheduled`,
+`resolution: null`, `actual: null`, and `surprise: null`; their consensus section
+retains each provider separately with null surprise. A forecast alone cannot
+create a scheduled card. These cards never count as captured numeric releases
+in `coverage`.
 
 `consensus_snapshots` checkpoints each filename, manifest capture token, raw
-content hash and parser/alias version atomically with its readings. The first
-run backfills; later runs bypass already checkpointed snapshots. Diagnostic
+content hash and parser/alias/issuer-index fingerprint atomically with its
+readings. The first run backfills; later runs bypass already checkpointed
+snapshots while their metadata context is unchanged. New issuer schedules,
+publication clocks, period membership or stages revisit previously skipped
+captures automatically. Existing captured rows are not rewritten or duplicated.
+Diagnostic
 skips are checkpointed too. Missing-manifest files use an empty capture token,
 so newly supplied authoritative manifest evidence can trigger a retry. Failed
 snapshots have no checkpoint and retry next run. After a catalogue correction,
@@ -846,11 +872,12 @@ python -m market_data_hub.macro_releases.run_daily --db .tmp/macro_copy.sqlite -
 The second command retains the existing official collectors' network behavior;
 the M2 copy validation instead replays stored official observations offline.
 See the [production-copy validation report](m2-consensus-ingest-report.md).
-As inspected on 20 October, nine older snapshot files have no manifest evidence
-and all mapped forecast events lack explicit reference periods. The compliant
-backfill therefore inserts **zero rows**; the three historical example cards
-cannot yet show eligible FF forecasts. This is a source-evidence gap, not a
-reason to reconstruct capture times or reference periods.
+As inspected on 20 October, the fresh production copy has 18 issuer release
+events, zero schedule rows and no issuer event dates in 19-23 October. The nine
+older snapshots still have no manifest capture records. Round 2 therefore still
+inserts **zero rows**: the two manifest-backed snapshots each have seven mapped
+forecasts with no matching issuer event. This is a missing issuer-event gap;
+the FF reference-period-text requirement has been removed.
 
 | Empty reason | Meaning |
 | --- | --- |

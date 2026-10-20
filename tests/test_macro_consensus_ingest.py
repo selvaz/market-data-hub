@@ -13,7 +13,13 @@ from market_data_hub.macro_releases import open_reader, open_writer
 from market_data_hub.macro_releases import consensus, migrations, run_daily
 from market_data_hub.macro_releases.adapters import persist
 from market_data_hub.macro_releases.catalogue import INDICATORS
-from market_data_hub.macro_releases.models import ConsensusReading, ScheduleVersion
+from market_data_hub.macro_releases.models import (
+    ConsensusReading,
+    Reading,
+    ReleaseEvent,
+    ScheduleVersion,
+    SourceSeries,
+)
 from test_macro_read_api import observation
 
 
@@ -30,12 +36,20 @@ def store(tmp_path):
     with open_writer(tmp_path / "macro.sqlite") as store:
         for indicator in INDICATORS.values():
             store.put(indicator)
+        persist(
+            store,
+            [
+                observation(indicator=indicator)
+                for indicator in INDICATORS
+                if indicator.startswith("us_cpi_")
+            ],
+        )
         yield store
 
 
 def event(**changes):
     return dict(
-        title="CPI y/y (2026-09)",
+        title="CPI y/y",
         country="USD",
         date="2026-10-14T08:30:00-04:00",
         forecast="3.6%",
@@ -93,7 +107,7 @@ def test_manifest_capture_pre_post_release_separate_providers_and_cards(
     assert pre["provider"] == "ff_forecast" and pre["survey_identity"] is None
     assert pre["captured_at"] == "2026-10-13T21:30:05.123456+00:00"
     assert pre["release_cutoff_at"] == "2026-10-14T12:30:00.000000+00:00"
-    assert pre["cutoff_basis"] == "scheduled"
+    assert pre["cutoff_basis"] == "actual"
     assert (pre["pre_release_eligible"], pre["post_release"]) == (1, 0)
     archive(raw, [event()], filename="2026-10-14.json", captured="2026-10-14T12:30:00Z")
     assert consensus.ingest(store, raw)["readings_added"] == 1
@@ -101,7 +115,9 @@ def test_manifest_capture_pre_post_release_separate_providers_and_cards(
     assert (post["pre_release_eligible"], post["post_release"]) == (0, 1)
     other = {k: pre[k] for k in ConsensusReading.model_fields}
     store.put(ConsensusReading(**dict(other, provider="survey_fixture", value=3.5)))
-    card = store.release_cards("2026-10-12", "2026-10-17")["cards"][0]
+    card = store.release_cards(
+        "2026-10-12", "2026-10-17", indicators=["us_cpi_headline_yy"]
+    )["cards"][0]
     assert card["resolution"]["value"] == 3.7
     values = {r["provider"]: r for r in card["consensus"]}
     assert set(values) == {"ff_forecast", "survey_fixture"}
@@ -117,7 +133,9 @@ def test_post_release_only_has_no_consensus_or_surprise(store, tmp_path):
     persist(store, [observation()])
     archive(tmp_path / "raw", [event()], captured="2026-10-14T12:31:00Z")
     consensus.ingest(store, tmp_path / "raw")
-    card = store.release_cards("2026-10-12", "2026-10-17")["cards"][0]
+    card = store.release_cards(
+        "2026-10-12", "2026-10-17", indicators=["us_cpi_headline_yy"]
+    )["cards"][0]
     assert rows(store)[0]["post_release"] == 1
     assert card["consensus"] == []
     assert card["surprise"] is None
@@ -151,7 +169,7 @@ def test_processed_snapshot_bypasses_parsing_and_new_capture_ingests(
     "changes,reason,mapped",
     [
         ({"title": "CPI-ish y/y (2026-09)"}, "unmapped", 0),
-        ({"title": "CPI y/y"}, "period_unknown", 1),
+        ({"date": "2026-10-15T08:30:00-04:00"}, "release_event_not_found", 1),
         ({"title": "CPI y/y (Sep)"}, "unmapped", 0),
         ({"country": "GBP"}, "unmapped", 0),
         ({"country": "All"}, "unmapped", 0),
@@ -160,9 +178,8 @@ def test_processed_snapshot_bypasses_parsing_and_new_capture_ingests(
         ({"forecast": ""}, "forecast_missing", 1),
         ({"forecast": "around 3.6%"}, "forecast_format_or_unit_unknown", 1),
         ({"forecast": "3.6"}, "forecast_format_or_unit_unknown", 1),
-        ({"date": "2026-10-14T08:30:00"}, "release_schedule_unknown", 1),
-        ({"period": "2026-08"}, "period_unknown", 1),
-        ({"estimate_stage": "final"}, "stage_unknown_or_conflicting", 1),
+        ({"date": None}, "release_event_not_found", 1),
+        ({"estimate_stage": "final"}, "stage_conflict", 1),
     ],
 )
 def test_no_guesses_and_diagnostic_counts(store, tmp_path, changes, reason, mapped):
@@ -190,21 +207,46 @@ def test_mtime_is_not_capture_time_and_later_manifest_evidence_can_retry(
 @pytest.mark.parametrize(
     "captured,flags",
     [
-        ("2026-10-14T03:59:59Z", (1, 0)),
-        ("2026-10-14T04:00:00Z", (0, 0)),
+        ("2026-10-13T22:59:59Z", (1, 0)),
+        ("2026-10-13T23:00:00Z", (0, 0)),
         ("2026-10-15T04:00:00Z", (0, 0)),
     ],
 )
 def test_date_only_issuer_local_lower_bound(store, tmp_path, captured, flags):
-    archive(tmp_path / "raw", [dict(event(), date="2026-10-14")], captured=captured)
+    # A date-only official clock and no actual issuer publication for this
+    # indicator retain an issuer-local midnight bound.
+    item = observation(
+        "uk_gdp_mm",
+        "uk_gdp",
+        period="2026-08",
+        source="ONS",
+        edition="2026-10-14",
+        published="2026-10-14T00:00:00Z",
+    )
+    persist(store, [replace(item, precision="date_only")])
+    store.put(
+        ScheduleVersion(
+            release_event_id="ONS:uk_gdp:regular:2026-10-14",
+            expected_at="2026-10-13T23:00:00Z",
+            issuer_timezone="Europe/London",
+            precision="date_only",
+            source_id="ONS",
+            recorded_at="2026-10-01T00:00:00Z",
+        )
+    )
+    archive(
+        tmp_path / "raw",
+        [dict(event(), title="GDP m/m", country="GBP", date="2026-10-14")],
+        captured=captured,
+    )
     consensus.ingest(store, tmp_path / "raw")
     reading = rows(store)[0]
-    assert reading["release_cutoff_at"] == "2026-10-14T04:00:00.000000+00:00"
+    assert reading["release_cutoff_at"] == "2026-10-13T23:00:00.000000+00:00"
     assert reading["cutoff_precision"] == "date_only"
     assert (reading["pre_release_eligible"], reading["post_release"]) == flags
 
 
-def test_existing_schedule_known_at_capture_wins_over_ff_time(store, tmp_path):
+def test_first_actual_clock_wins_over_schedule_and_ff_time(store, tmp_path):
     persist(store, [observation()])
     release = "BLS:us_cpi:regular:2026-10-14"
     for recorded, expected in [
@@ -223,26 +265,217 @@ def test_existing_schedule_known_at_capture_wins_over_ff_time(store, tmp_path):
         )
     archive(tmp_path / "raw", [event()])
     consensus.ingest(store, tmp_path / "raw")
-    assert rows(store)[0]["release_cutoff_at"] == "2026-10-14T13:00:00.000000+00:00"
+    assert rows(store)[0]["release_cutoff_at"] == "2026-10-14T12:30:00.000000+00:00"
 
 
-def test_linked_explicit_period_can_retain_unknown_cutoff(store, tmp_path):
+def test_explicit_ff_period_cannot_replace_missing_release_day(store, tmp_path):
     persist(store, [observation()])
     archive(tmp_path / "raw", [dict(event(), date=None)])
+    result = consensus.ingest(store, tmp_path / "raw")
+    assert result["readings_added"] == 0
+    assert result["skip_reasons"] == {"release_event_not_found": 1}
+
+
+def test_ff_clock_uses_eastern_and_converts_to_issuer_local_day():
+    from zoneinfo import ZoneInfo
+
+    for raw in ("2026-10-14T23:30:00-04:00", "2026-10-14T23:30:00"):
+        assert (
+            consensus.event_clock({"date": raw}, ZoneInfo("Europe/London"))
+            == "2026-10-15"
+        )
+
+
+def test_unique_issuer_event_supplies_period_and_stage_without_ff_period(
+    store, tmp_path
+):
+    archive(tmp_path / "raw", [dict(event(), period="1999-01")])
     assert consensus.ingest(store, tmp_path / "raw")["readings_added"] == 1
-    reading = rows(store)[0]
-    assert reading["release_event_id"] == "BLS:us_cpi:regular:2026-10-14"
-    assert reading["release_cutoff_at"] is reading["cutoff_precision"] is None
-    assert reading["cutoff_basis"] == "unknown"
-    assert reading["pre_release_eligible"] == reading["post_release"] == 0
+    row = rows(store)[0]
+    assert row["reference_period"] == "2026-09"
+    assert row["estimate_stage"] == "regular"
+    assert row["release_event_id"] == "BLS:us_cpi:regular:2026-10-14"
 
 
-def test_offset_proves_schedule_even_without_known_issuer_zone():
-    edition, cutoff, precision = consensus.event_clock(
-        {"date": "2026-10-14T23:30:00-04:00"}, {"issuer_id": "other_catalogue_issuer"}
+def test_two_same_day_issuer_events_are_ambiguous(store, tmp_path):
+    persist(
+        store,
+        [
+            observation(
+                edition="second-edition-same-day", published="2026-10-14T14:00:00Z"
+            )
+        ],
     )
-    assert edition is None
-    assert (cutoff, precision) == ("2026-10-15T03:30:00.000000+00:00", "exact")
+    archive(tmp_path / "raw", [event()])
+    result = consensus.ingest(store, tmp_path / "raw")
+    assert result["readings_added"] == 0
+    assert result["skip_reasons"] == {"release_event_ambiguous": 1}
+
+
+def test_final_title_on_flash_issuer_event_is_stage_conflict(store, tmp_path):
+    persist(
+        store,
+        [observation("ea21_hicp_yy", "ea_hicp", source="Eurostat", stage="flash")],
+    )
+    archive(tmp_path / "raw", [dict(event(), title="Final CPI y/y", country="EUR")])
+    result = consensus.ingest(store, tmp_path / "raw")
+    assert result["readings_added"] == 0
+    assert result["skip_reasons"] == {"stage_conflict": 1}
+
+
+def pending_release(store, edition="2026-10-22", *, membership=True):
+    release_id = "BLS:us_cpi:regular:" + edition
+    store.put(
+        ReleaseEvent(
+            id=release_id,
+            issuer_id="BLS",
+            family="us_cpi",
+            estimate_stage="regular",
+            edition=edition,
+        )
+    )
+    store.put(
+        ScheduleVersion(
+            release_event_id=release_id,
+            expected_at=edition + "T12:30:00Z",
+            issuer_timezone="America/New_York",
+            precision="exact",
+            source_id="BLS",
+            recorded_at="2026-10-18T00:00:00Z",
+        )
+    )
+    if membership:
+        store.put(
+            SourceSeries(
+                id="planned:cpi",
+                indicator_id="us_cpi_headline_yy",
+                source_id="BLS",
+                issuer_id="BLS",
+                distributor_id="BLS",
+                source_key="planned:cpi",
+                evidence_role="issuer",
+            )
+        )
+        store.put(
+            Reading(
+                indicator_id="us_cpi_headline_yy",
+                release_event_id=release_id,
+                source_id="BLS",
+                series_key="planned:cpi",
+                period_key="2026-09",
+                reference_period="2026-09",
+                edition=edition,
+                estimate_stage="regular",
+                reading_kind="unavailable",
+                issuer_id="BLS",
+                distributor_id="BLS",
+                evidence_origin_id=release_id,
+                first_seen_at="2026-10-18T00:00:00Z",
+                retrieved_at="2026-10-18T00:00:00Z",
+                content_hash=release_id,
+                parser_version="fixture",
+                extraction_method="json",
+                verification_status="unverified",
+                raw_payload_json="{}",
+                issuer_timezone="America/New_York",
+            )
+        )
+    return release_id
+
+
+def test_issuer_schedule_supplies_period_and_forecast_only_card(store, tmp_path):
+    release_id = pending_release(store)
+    raw = tmp_path / "raw"
+    archive(
+        raw,
+        [dict(event(), date="2026-10-22T08:30:00")],
+        filename="2026-10-21.json",
+        captured="2026-10-21T21:30:00Z",
+    )
+    assert consensus.ingest(store, raw)["readings_added"] == 1
+    reading = rows(store)[0]
+    assert reading["release_event_id"] == release_id
+    assert reading["reference_period"] == "2026-09"
+    assert (
+        reading["cutoff_basis"] == "scheduled" and reading["pre_release_eligible"] == 1
+    )
+    card = store.release_cards(
+        "2026-10-19",
+        "2026-10-23",
+        indicators=["us_cpi_headline_yy"],
+        as_known_at="2026-10-21T22:00:00Z",
+    )["cards"][0]
+    assert (
+        card["status"] == "scheduled"
+        and card["resolution"] is card["actual"] is card["surprise"] is None
+    )
+    assert card["consensus"][0]["kind"] == "ff_forecast"
+    assert card["consensus"][0]["normalized_value"] == 3.6
+    assert card["consensus"][0]["surprise"] is None
+    coverage = store.coverage(
+        "2026-10-19", "2026-10-23", as_known_at="2026-10-21T22:00:00Z"
+    )
+    assert coverage["families"]["us_cpi"]["captured"] == 0
+
+
+def test_schedule_without_indicator_period_membership_cannot_link(store, tmp_path):
+    pending_release(store, membership=False)
+    archive(tmp_path / "raw", [dict(event(), date="2026-10-22T08:30:00-04:00")])
+    assert consensus.ingest(store, tmp_path / "raw")["skip_reasons"] == {
+        "release_event_not_found": 1
+    }
+
+
+def test_pending_card_cannot_revive_post_release_forecast_with_later_schedule(
+    store, tmp_path
+):
+    release_id = pending_release(store)
+    raw_row = dict(
+        store.conn.execute(
+            "SELECT * FROM readings WHERE release_event_id=?", (release_id,)
+        ).fetchone()
+    )
+    reading = {key: raw_row[key] for key in Reading.model_fields}
+    reading.update(
+        published_at="2026-10-22T10:00:00Z",
+        publication_precision="exact",
+        content_hash="issuer-published-without-number",
+    )
+    store.put(Reading(**reading))
+    archive(
+        tmp_path / "raw",
+        [dict(event(), date="2026-10-22T08:30:00-04:00")],
+        captured="2026-10-22T11:00:00Z",
+    )
+    assert consensus.ingest(store, tmp_path / "raw")["readings_added"] == 1
+    assert rows(store)[0]["post_release"] == 1
+    assert (
+        store.release_cards(
+            "2026-10-19",
+            "2026-10-23",
+            indicators=["us_cpi_headline_yy"],
+            as_known_at="2026-10-22T12:00:00Z",
+        )["cards"]
+        == []
+    )
+
+
+def test_new_issuer_metadata_revisits_not_found_snapshot_automatically(store, tmp_path):
+    raw = tmp_path / "raw"
+    archive(raw, [dict(event(), date="2026-10-22T08:30:00-04:00")])
+    assert consensus.ingest(store, raw)["skip_reasons"] == {
+        "release_event_not_found": 1
+    }
+    pending_release(store)
+    assert consensus.ingest(store, raw)["readings_added"] == 1
+    assert consensus.ingest(store, raw)["snapshots_unchanged"] == 1
+
+
+def test_issuer_revisions_do_not_supply_the_forecast_period(store, tmp_path):
+    persist(store, [observation(period="2026-08", revision="routine")])
+    archive(tmp_path / "raw", [event()])
+    consensus.ingest(store, tmp_path / "raw")
+    assert rows(store)[0]["reference_period"] == "2026-09"
 
 
 def test_bad_snapshot_hash_retries_and_other_snapshots_continue(store, tmp_path):
@@ -296,11 +529,6 @@ def test_reviewed_aliases_are_limited_exact_and_justified(store, tmp_path):
         )
         mapped, reason = catalogue.match(item, consensus.mapping_title(item))
         assert reason is None and mapped == alias
-    raw = tmp_path / "raw"
-    archive(raw, [dict(event(), title="Final CPI y/y (2025-09)", country="EUR")])
-    assert consensus.ingest(store, raw)["skip_reasons"] == {
-        "geography_period_mismatch": 1
-    }
 
 
 @pytest.mark.parametrize("dry_run", [False, True])

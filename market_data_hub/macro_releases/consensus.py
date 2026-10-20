@@ -1,13 +1,14 @@
 """Offline FF forecasts with exact catalogue mapping and manifest provenance.
 
-An event's release date is never its reference period. Monthly frequency alone
-cannot establish publication lag (UK GDP and US CPI have different lags).
+Reference periods and stages belong to uniquely matched stored issuer events,
+never to a lag inferred from FF's release date or its forecast text.
 """
 
 from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -25,11 +26,14 @@ from market_data_hub.econ_calendar.collect.forexfactory import (
 
 from .models import ConsensusReading, ReleaseEvent, utc
 from .numbers import parse_number
+from .read_api import event_timing, event_timezone, latest_schedule
+from .read_times import timestamp
+from .resolve import Snapshot
 from .store import open_writer
 from .worklist_periods import explicit_period
 
 PROVIDER = "ff_forecast"
-RULE_VERSION = "ff-consensus-v1"
+RULE_VERSION = "ff-consensus-v2"
 ALIAS_FILE = Path(__file__).with_name("ff_aliases_v1.json")
 GEOGRAPHIES = {
     "US": {"USA"},
@@ -86,6 +90,10 @@ class Catalogue:
             + ":"
             + hashlib.sha256(ALIAS_FILE.read_bytes()).hexdigest()[:16]
         )
+        self.releases = IssuerEvents(store)
+        # New issuer metadata must revisit earlier not-found/ambiguous skips.
+        # Repeated unchanged official fetches leave this fingerprint stable.
+        self.version += ":" + self.releases.fingerprint
 
     def match(self, event, title):
         currency = event.get("country")
@@ -107,23 +115,6 @@ class Catalogue:
         return {"indicator_id": indicator_id, "stage": stage}, None
 
 
-def event_period(event, title, indicator):
-    """Only explicit, fully dated periods; strip only a recognized final label."""
-    texts = [event[key] for key in ("reference_period", "period") if event.get(key)]
-    match = re.fullmatch(r"(.+?)\s*\(([^()]+)\)", title)
-    if match and explicit_period(
-        match[2], indicator["frequency"], indicator["geography"]
-    ):
-        texts.append(match[2])
-    periods = {
-        explicit_period(t, indicator["frequency"], indicator["geography"])
-        for t in texts
-    }
-    if len(periods) != 1 or None in periods:
-        return None
-    return periods.pop()
-
-
 def mapping_title(event):
     title = event.get("title")
     if not isinstance(title, str):
@@ -136,74 +127,170 @@ def mapping_title(event):
     return title
 
 
-def event_clock(event, indicator):
-    """FF's offset-aware date is a schedule, never an actual publication time."""
+def event_clock(event, zone):
+    """The FF wall clock defaults to US Eastern, never the machine timezone."""
     raw = event.get("date")
     if not isinstance(raw, str):
-        return None, None, None
+        return None
     try:
-        moment = datetime.fromisoformat(raw.replace("Z", "+00:00"))
-        zone_name = ISSUER_ZONES.get(indicator["issuer_id"])
-        zone = ZoneInfo(zone_name) if zone_name else None
-        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", raw):
-            return (
-                (raw, utc(moment.replace(tzinfo=zone).isoformat()), "date_only")
-                if zone
-                else (raw, None, None)
-            )
-        if moment.tzinfo is None:
-            return None, None, None
-        # An explicit offset proves the schedule instant even when its issuer
-        # zone is absent. Do not guess the edition's issuer-local date.
-        edition = moment.astimezone(zone).date().isoformat() if zone else None
-        return edition, utc(raw), "exact"
+        instant, precision = timestamp(raw, assumed_timezone="America/New_York")
+        if precision == "date_only":
+            return instant[:10]  # a bare date is a label, not a midnight instant
+        return datetime.fromisoformat(instant).astimezone(zone).date().isoformat()
     except (KeyError, ValueError):
-        return None, None, None
+        return None
 
 
-def release_event(store, mapping, indicator, edition, period):
-    family = mapping.get("family")
-    if family and edition is not None:
-        event_id = ":".join((indicator["issuer_id"], family, mapping["stage"], edition))
-        return ReleaseEvent(
-            id=event_id,
-            issuer_id=indicator["issuer_id"],
-            family=family,
-            estimate_stage=mapping["stage"],
-            edition=edition,
-        )
-    # Generic catalogue aliases need an already linked exact edition. Never
-    # create a new family or borrow a different reference period's event.
-    rows = store.conn.execute(
-        "SELECT DISTINCT e.* FROM release_events e JOIN readings r ON r.release_event_id=e.id "
-        "WHERE r.indicator_id=? AND r.reference_period=? AND r.estimate_stage=? "
-        "AND e.issuer_id=? AND (? IS NULL OR e.edition=?) "
-        "AND (? IS NULL OR e.family=?)",
-        (
-            indicator["id"],
-            period,
-            mapping["stage"],
-            indicator["issuer_id"],
-            edition,
-            edition,
-            family,
-            family,
-        ),
-    ).fetchall()
-    return ReleaseEvent(**dict(rows[0])) if len(rows) == 1 else None
+def local_day(instant, precision, zone):
+    if precision == "date_only":
+        return instant[:10]
+    return datetime.fromisoformat(instant).astimezone(zone).date().isoformat()
 
 
-def cutoff(store, event_id, captured_at, ff_cutoff, ff_precision):
-    # Prefer the event schedule known at capture. Otherwise the FF event date
-    # itself is explicit schedule evidence. No actual-time inference from values.
-    row = store.conn.execute(
-        "SELECT * FROM schedule_versions WHERE release_event_id=? AND recorded_at<=? "
-        "ORDER BY recorded_at DESC,id DESC LIMIT 1",
-        (event_id, captured_at),
-    ).fetchone()
-    if row:
-        return row["expected_at"], row["precision"], "scheduled"
-    return ff_cutoff, ff_precision, "scheduled" if ff_cutoff else "unknown"
+class IssuerEvents:
+    """Exact indicator membership and headline periods from stored issuer rows.
+
+    The base schema has no period/indicator columns on release_events or
+    schedule_versions. Issuer readings (including unavailable, scheduled rows)
+    supply that membership. As in ReadAPI._cards, earlier periods carried in
+    one publication are revisions; the largest stored period is the headline.
+    """
+
+    def __init__(self, store):
+        snapshot = Snapshot.load(store)
+        issuer_rows = [
+            e
+            for e in snapshot.evidence
+            if e.role == "issuer"
+            and not e.legacy
+            and e.reading_kind in {"actual", "unavailable"}
+        ]
+        schedules = [
+            s
+            for s in snapshot.schedules
+            if s["release_event_id"] in snapshot.events
+            and s["source_id"] == snapshot.events[s["release_event_id"]]["issuer_id"]
+        ]
+        snapshot = replace(snapshot, evidence=issuer_rows, schedules=schedules)
+        latest = latest_schedule(snapshot)
+        groups = defaultdict(list)
+        for row in issuer_rows:
+            if row.event_id in snapshot.events:
+                groups[row.indicator_id, row.event_id].append(row)
+        self.by_indicator = defaultdict(list)
+        for (indicator_id, event_id), rows in sorted(groups.items()):
+            event = snapshot.events[event_id]
+            info = snapshot.indicators[indicator_id]
+            if event["issuer_id"] != info["issuer_id"]:
+                continue
+            rows = [
+                e
+                for e in rows
+                if e.reference_period
+                and e.stage == event["estimate_stage"]
+                and explicit_period(
+                    e.reference_period, info["frequency"], info["geography"]
+                )
+            ]
+            if not rows:
+                continue
+            selected = rows[0]
+            schedule = latest.get(event_id)
+            zone = event_timezone(
+                snapshot,
+                event_id,
+                selected,
+                "schedule" if schedule else "issuer_publication",
+            )
+            if (
+                zone is None
+                and not schedule
+                and not any(e.issuer_timezone for e in rows)
+            ):
+                zone_name = ISSUER_ZONES.get(info["issuer_id"])
+                zone = ZoneInfo(zone_name) if zone_name else None
+            if zone is None:
+                continue
+            actual, actual_precision, basis = event_timing(snapshot, event_id)
+            clocks = []
+            if actual and basis == "issuer_publication":
+                clocks.append((actual, actual_precision, "actual"))
+            if schedule:
+                clocks.append(
+                    (schedule["expected_at"], schedule["precision"], "scheduled")
+                )
+            if not clocks:
+                continue
+
+            def clock_day(clock):
+                instant, precision, basis = clock
+                # Saved date-only schedules use a UTC issuer-midnight lower
+                # bound; a bare stored date remains a calendar label.
+                if (
+                    basis == "scheduled"
+                    and precision == "date_only"
+                    and schedule["timestamp_precisions"]["expected_at"] == "exact"
+                ):
+                    precision = "exact"
+                return local_day(instant, precision, zone)
+
+            # First exact issuer publication, then exact official schedule;
+            # date-only clocks remain conservative issuer-local lower bounds.
+            bound, precision, cutoff_basis = next(
+                (clock for clock in clocks if clock[1] == "exact"), clocks[0]
+            )
+            if precision == "date_only":
+                day = clock_day((bound, precision, cutoff_basis))
+                bound = utc(
+                    datetime.fromisoformat(day).replace(tzinfo=zone).isoformat()
+                )
+            self.by_indicator[indicator_id].append(
+                dict(
+                    event=event,
+                    period=max(e.reference_period for e in rows),
+                    zone=str(zone),
+                    dates=sorted({clock_day(clock) for clock in clocks}),
+                    cutoff=bound,
+                    precision=precision,
+                    basis=cutoff_basis,
+                )
+            )
+        self.fingerprint = hashlib.sha256(
+            json.dumps(self.by_indicator, sort_keys=True).encode()
+        ).hexdigest()[:16]
+
+    def match(self, indicator_id, event):
+        candidates = [
+            r
+            for r in self.by_indicator.get(indicator_id, [])
+            if event_clock(event, ZoneInfo(r["zone"])) in r["dates"]
+        ]
+        if len(candidates) != 1:
+            return (
+                None,
+                "release_event_ambiguous" if candidates else "release_event_not_found",
+            )
+        return candidates[0], None
+
+
+def title_stage(title):
+    stages = {
+        "final": "final",
+        "flash": "flash",
+        "prelim": "preliminary",
+        "preliminary": "preliminary",
+        "advance": "advance",
+        "second": "second",
+        "2nd": "second",
+        "third": "third",
+        "3rd": "third",
+    }
+    named = {
+        stage
+        for word, stage in stages.items()
+        if re.search(r"\b" + word + r"\b", title.casefold())
+    }
+    return named
 
 
 def prepare(store, catalogue, event, captured_at, snapshot_hash):
@@ -214,24 +301,24 @@ def prepare(store, catalogue, event, captured_at, snapshot_hash):
     indicator = catalogue.indicators[mapping["indicator_id"]]
     if event.get("forecast") in (None, ""):
         return True, "forecast_missing", None
-    period = event_period(event, event.get("title", ""), indicator)
-    if period is None:
-        return True, "period_unknown", None
-    if mapping.get("period_since") and period < mapping["period_since"]:
-        return True, "geography_period_mismatch", None
-    stage = mapping["stage"]
-    if stage in ("unknown", "", None) or event.get("estimate_stage", stage) != stage:
-        return True, "stage_unknown_or_conflicting", None
-    edition, ff_cutoff, ff_precision = event_clock(event, indicator)
-    release = release_event(store, mapping, indicator, edition, period)
-    if release is None:
-        return (
-            True,
-            "release_schedule_unknown" if edition is None else "release_event_unlinked",
-            None,
-        )
     if captured_at is None:
         return True, "capture_time_not_in_manifest", None
+    linked, reason = catalogue.releases.match(indicator["id"], event)
+    if reason:
+        return True, reason, None
+    release = ReleaseEvent(**linked["event"])
+    period, stage = linked["period"], release.estimate_stage
+    if stage in ("unknown", "", None):
+        return True, "stage_unknown", None
+    if mapping.get("period_since") and period < mapping["period_since"]:
+        return True, "geography_period_mismatch", None
+    expected = title_stage(title)
+    if mapping["stage"] not in ("unknown", "", None):
+        expected.add(mapping["stage"])
+    if event.get("estimate_stage"):
+        expected.add(event["estimate_stage"])
+    if any(s != stage for s in expected):
+        return True, "stage_conflict", None
     text = str(event["forecast"]).strip()
     # Forecast cells must contain a complete numeric print in the mapped unit.
     percent = indicator["unit"] in ("%", "percent")
@@ -244,9 +331,6 @@ def prepare(store, catalogue, event, captured_at, snapshot_hash):
         )
     except ValueError:
         return True, "forecast_format_or_unit_unknown", None
-    bound, precision, basis = cutoff(
-        store, release.id, captured_at, ff_cutoff, ff_precision
-    )
     reading = ConsensusReading(
         provider=PROVIDER,
         indicator_id=indicator["id"],
@@ -258,9 +342,9 @@ def prepare(store, catalogue, event, captured_at, snapshot_hash):
         unit=indicator["unit"],
         scale=indicator["scale"],
         captured_at=captured_at,
-        release_cutoff_at=bound,
-        cutoff_precision=precision,
-        cutoff_basis=basis,
+        release_cutoff_at=linked["cutoff"],
+        cutoff_precision=linked["precision"],
+        cutoff_basis=linked["basis"],
         content_hash=hashlib.sha256(
             (
                 snapshot_hash + json.dumps(event, sort_keys=True, ensure_ascii=True)
@@ -371,7 +455,24 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
                     records.append(record)
             with store.batch():
                 for release, reading in records:
-                    store.put(release)
+                    # Preserve the first capture's cutoff metadata if a later
+                    # issuer correction changes our event index. The read API
+                    # reconciles clocks; reprocessing never rewrites a reading.
+                    if store.conn.execute(
+                        "SELECT 1 FROM consensus_readings WHERE provider=? AND indicator_id=? "
+                        "AND reference_period=? AND estimate_stage=? AND release_event_id=? "
+                        "AND captured_at=? AND content_hash=?",
+                        (
+                            reading.provider,
+                            reading.indicator_id,
+                            reading.reference_period,
+                            reading.estimate_stage,
+                            reading.release_event_id,
+                            reading.captured_at,
+                            reading.content_hash,
+                        ),
+                    ).fetchone():
+                        continue
                     before = store.conn.total_changes
                     store.put(reading)
                     counts["readings_added"] += store.conn.total_changes - before

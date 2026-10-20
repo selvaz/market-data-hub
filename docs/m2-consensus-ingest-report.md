@@ -1,4 +1,173 @@
-# M2 consensus capture: production-copy validation, 20 October 2026
+# M2 round 2: issuer-event linking, 20 October 2026
+
+The FF reference-period-text requirement is removed. Forecasts now inherit the
+period, stage and release identity of exactly one stored issuer event whose
+scheduled or actual date matches in the issuer's time zone. **The fresh-copy
+backfill still inserts zero readings because the two manifest-backed snapshots
+cover a week with no issuer events in this store.** The implementation is
+validated with stored-event fixtures; a real populated 19-23 October card remains
+unverified.
+
+## Round-2 source inspection
+
+The round-1 copy was preserved as `.tmp/macro_copy_round1.sqlite`. A new SQLite
+backup from the production database, opened with `mode=ro` and `query_only`,
+replaced `.tmp/macro_copy.sqlite`. No production write or network request was
+performed. No issuer schedule, release event or reading was synthesized to make
+the copy validation pass.
+
+| Table | Fresh copy before | After backfill |
+| --- | ---: | ---: |
+| consensus_readings | 0 | 0 |
+| release_events | 18 | 18 |
+| schedule_versions | 0 | 0 |
+| readings | 20,790 | 20,790 |
+| value_vintages | 396 | 396 |
+
+There are still 821 indicators and 2,108 imported aliases. Catalogue coverage is
+distinct from release-event coverage. The latest dated issuer event is final
+EA HICP on 16 October; the opaque ONS `time-series:69` edition is a historical
+dataset publication, not an upcoming October calendar. There are no stored issuer
+release dates for 19-23 October. A `release_events` row and schedule alone also
+contain no indicator/period columns: explicit issuer reading/vintage membership
+is needed to attach a forecast's reference period. No publication lag is inferred.
+
+## Round-2 counts and comparison
+
+| Measure | Round 1 | Round 2 |
+| --- | ---: | ---: |
+| Snapshots inspected | 11 | 11 |
+| FF event occurrences | 1,110 | 1,110 |
+| Exact country/title matches | 118 | 118 |
+| Inserted readings | 0 | 0 |
+| Unmapped | 992 | 992 |
+| Missing forecast | 9 | 9 |
+| Period unknown from FF | 109 | 0 |
+| Missing manifest capture | masked by period gate | 95 |
+| Issuer release event not found | masked by period gate | 14 |
+| Ambiguous issuer event / stage conflict | 0 / 0 | 0 / 0 |
+
+Primary skip reasons are mutually exclusive. The 95 missing-capture occurrences
+are mapped, forecast-bearing events in the nine files without manifest evidence;
+other occurrences in those files are counted as unmapped or forecast-missing.
+Every event in all nine files remains ineligible for insertion. Round 2 neither
+uses their mtimes nor changes the archive.
+
+| Snapshot day | Inserted | Missing capture | Event not found | Missing forecast | Unmapped | Total skipped |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 2026-10-09 | 0 | 9 | 0 | 1 | 73 | 83 |
+| 2026-10-10 | 0 | 9 | 0 | 1 | 73 | 83 |
+| 2026-10-11 | 0 | 11 | 0 | 1 | 97 | 109 |
+| 2026-10-12 | 0 | 11 | 0 | 1 | 97 | 109 |
+| 2026-10-13 | 0 | 11 | 0 | 1 | 98 | 110 |
+| 2026-10-14 | 0 | 11 | 0 | 1 | 99 | 111 |
+| 2026-10-15 | 0 | 11 | 0 | 1 | 99 | 111 |
+| 2026-10-16 | 0 | 11 | 0 | 1 | 99 | 111 |
+| 2026-10-17 | 0 | 11 | 0 | 1 | 99 | 111 |
+| 2026-10-18 | 0 | 0 | 7 | 0 | 79 | 86 |
+| 2026-10-19 | 0 | 0 | 7 | 0 | 79 | 86 |
+| **Total** | **0** | **95** | **14** | **9** | **992** | **1,110** |
+
+The manifest-backed not-found titles include UK Claimant Count Change,
+Unemployment Rate and Public Sector Net Borrowing, plus US Building Permits and
+Housing Starts (two occurrences each). None has a stored issuer event for its FF
+release date. Missing events are counted even if an imported alias has an unknown
+stage; a unique issuer event would supply its known stage. No new aliases were
+added in round 2; the six reviewed mappings from round 1 are unchanged.
+
+A second normal ingest bypassed all 11 snapshots and inserted zero. Forced
+reprocessing also inserted zero. The run had no snapshot failures and passed
+`PRAGMA foreign_key_check`. Checkpoints include an issuer-index fingerprint so
+new authoritative schedule/period metadata can revisit not-found skips. Existing
+readings retain their original cutoff metadata; retries cannot rewrite them.
+
+## Round-2 examples and verification limits
+
+The actual query `release_cards('2026-10-19', '2026-10-23')` on the fresh copy
+returned **zero cards**. There is no real `ff_forecast` consensus section to
+show for that week. The three historical cards reported below still have empty
+consensus sections because all corresponding raw snapshots lack capture records.
+Recovering a reference period from their stored issuer event does not repair a
+missing capture time.
+
+The three real historical API cards were rechecked on the refreshed copy during
+the resumed validation:
+
+| Release | Indicator | Issuer reference period | Actual | API consensus | Surprise |
+| --- | --- | --- | ---: | --- | --- |
+| 14 October | US headline CPI y/y | 2026-09 | 3.7% | `[]` | `null` |
+| 15 October | UK GDP m/m | 2026-08 | 0.1% | `[]` | `null` |
+| 16 October | EA21 final headline HICP y/y | 2026-09 | 3.8% | `[]` | `null` |
+
+The new linker was also run read-only on three actual FF events from the
+12 October snapshot. All three found exactly one issuer event, without an FF
+period label. This confirms the replacement association rule works on the real
+archive where issuer metadata exists:
+
+| FF event / issuer-local date | Stored release_event_id | Inherited period | Stage | Insertion blocker |
+| --- | --- | --- | --- | --- |
+| USD CPI y/y / 14 October | BLS:us_cpi:regular:2026-10-14 | 2026-09 | regular | no manifest capture |
+| GBP GDP m/m / 15 October | ONS:uk_gdp:regular:2026-10-15 | 2026-08 | regular | no manifest capture |
+| EUR Final CPI y/y / 16 October | Eurostat:ea_hicp:final:2026-10-16 | 2026-09 | final | no manifest capture |
+
+Their stored issuer cutoffs are respectively 14 October 12:30 UTC (`exact`),
+14 October 23:00 UTC (start of 15 October in London, `date_only`) and
+15 October 22:00 UTC (start of 16 October in Brussels, `date_only`). No readings
+were inserted during this read-only matching check.
+
+The offline scheduled-release test stores an explicit issuer period membership
+without an actual and an official schedule, then ingests a plain `CPI y/y` FF
+event with no period label. Its API card contains:
+
+```json
+{
+  "reference_period": "2026-09",
+  "stage": "regular",
+  "status": "scheduled",
+  "resolution": null,
+  "actual": null,
+  "surprise": null,
+  "consensus": [{
+    "provider": "ff_forecast",
+    "kind": "ff_forecast",
+    "normalized_value": 3.6,
+    "surprise": null
+  }]
+}
+```
+
+This is explicitly a synthetic fixture, not a production-copy example. Forecast
+cards require official issuer period membership and a schedule; they never count
+as captured numeric releases in coverage. Other tests cover issuer-local date
+conversion (including naive FF Eastern wall times), actual vs scheduled cutoffs,
+revision periods, unknown/ambiguous event skips, Final-vs-flash stage conflicts,
+provider separation, post-release exclusion and automatic retry after new issuer
+metadata. The final targeted ingestion, read-API, consensus-time and daily-runner
+run passed **141 tests**. The final full suite passed **1,728 tests, 1 skipped**
+(the optional `.tmp/prod-copy.sqlite` integration test), with one expected ALFRED
+fixture warning about truncated vendor vintage dates. Both runs used the requested
+`--basetemp=.tmp\pytest-m2`. `ruff check .`, changed-range formatting,
+`git diff --check` and byte compilation passed. `.tmp/pytest-m2` was deleted after
+the full suite, and its absence was verified.
+
+After the interrupted turn was resumed, the six-file diff was inspected and
+the production copy was refreshed again with SQLite's backup API. All per-day
+counts and the three historical cards above were unchanged. The test results
+above are from this resumed validation, including the final post-release guard.
+
+Local round-2 results and reproduction script are
+`.tmp/m2-r2-validation.json` and `.tmp/validate_m2_r2.py`. The production database,
+scheduled tasks and archive writer were untouched. Deployment, a live scheduled
+run, and real populated forecast cards remain unverified; the missing input is
+issuer event/schedule metadata for the manifest-backed week.
+
+---
+
+# Round 1 historical report (superseded period policy)
+
+The remainder preserves the round-1 evidence and validation at `af16f18`.
+Its FF-period-text requirement and remaining-evidence conclusions are historical;
+round 2 above replaces that association policy.
 
 The offline ingestion path, daily-run integration and separate run log are
 implemented. **The existing archive cannot populate eligible historical

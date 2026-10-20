@@ -10,12 +10,20 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 ### Added
 - Offline daily Forex Factory forecast ingestion into `consensus_readings`,
   labelled `ff_forecast`, with manifest capture times, verified archive hashes,
-  exact country/catalogue aliases and explicit reference periods. Schema v6
+  exact country/catalogue aliases and issuer-event reference periods. Schema v6
   adds atomic snapshot checkpoints and a separate consensus run log; failures
   leave official collection status and exit codes unchanged. Six versioned
   tier-1 US/EA/UK aliases include title justifications. The production-copy
-  validation report records the archive's missing capture/period evidence and
+  validation report records missing capture records and missing issuer events and
   the resulting zero-row backfill; no historical consensus is fabricated.
+
+### Fixed
+- Link FF forecasts only to one stored issuer release event on the same
+  issuer-local scheduled or actual date, inheriting its period and stage.
+  Count absent/ambiguous events and stage conflicts; never create an event
+  or require a reference-period label in the FF feed. Revisit skipped captures
+  when issuer metadata changes. Scheduled events with explicit issuer period
+  membership can expose forecast-only cards with null actual and surprise.
 
 ## [0.3.4] — 2026-10-20
 

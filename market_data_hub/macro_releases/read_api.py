@@ -144,7 +144,13 @@ def event_timezone(snapshot, event_id, selected, time_basis):
     elif zones:
         name = None
     else:
-        name = schedule["issuer_timezone"] if schedule else selected.issuer_timezone
+        name = (
+            schedule["issuer_timezone"]
+            if schedule
+            else selected.issuer_timezone
+            if selected
+            else None
+        )
     try:
         return ZoneInfo(name) if name else None
     except (KeyError, ValueError, TypeError):
@@ -273,6 +279,16 @@ class ReadAPI:
                           "legacy_consensus_evidence": legacy_forecasts,
                           "provenance": list({e["id"]: e for e in
                                               [*(e.provenance() for e in evidence), *resolution.provenance]}.values())})
+        cards.extend(
+            self._scheduled_cards(
+                snapshot,
+                start,
+                end,
+                requested,
+                geography,
+                {(c["release_event_id"], c["indicator_id"]) for c in cards},
+            )
+        )
         cards.sort(key=lambda c: (c["released_at"], c["release_event_id"], c["indicator_id"]))
         empty = [self._explain(snapshot, i, (start, end), geography=geography) for i in requested
                  if not any(c["indicator_id"] == i for c in cards)]
@@ -282,16 +298,133 @@ class ReadAPI:
         return {"since": start, "until": end, "as_known_at": snapshot.cutoff,
                 "cards": cards, "empty": empty, "limitations": [COLLECT_LOG_LIMITATION, *snapshot.limitations]}
 
+    def _scheduled_cards(
+        self, snapshot, start, end, requested, geography, numeric_pairs
+    ):
+        """Forecast-only cards require stored issuer period membership and schedule.
+
+        They never create a numeric resolution or count as captured in coverage.
+        No FF forecast can establish a schedule or an official actual by itself.
+        """
+        schedules = latest_schedule(snapshot)
+        groups = {}
+        for row in snapshot.consensus:
+            pair = row["release_event_id"], row["indicator_id"]
+            if row["indicator_id"] in requested and pair not in numeric_pairs:
+                groups.setdefault(pair, []).append(row)
+        cards = []
+        for (event_id, indicator_id), rows in sorted(groups.items()):
+            schedule = schedules.get(event_id)
+            event = snapshot.events.get(event_id)
+            info = snapshot.indicators[indicator_id]
+            if (
+                not schedule
+                or not event
+                or schedule["source_id"] != info["issuer_id"]
+                or event["issuer_id"] != info["issuer_id"]
+                or geography
+                and info["geography"] != geography
+            ):
+                continue
+            # A published issuer clock already establishes the release, even
+            # when its numeric value is unavailable. A later saved schedule
+            # must never revive a post-release forecast as a pending card.
+            if event_timing(snapshot, event_id)[2] != "schedule":
+                continue
+            released_at, precision = schedule["expected_at"], schedule["precision"]
+            if not start <= released_at < end:
+                continue
+            evidence = [
+                e
+                for e in snapshot.evidence_by_event.get(event_id, [])
+                if e.indicator_id == indicator_id
+                and e.role == "issuer"
+                and not e.legacy
+                and e.reading_kind in {"actual", "unavailable"}
+            ]
+            if not evidence or any(e.value is not None for e in evidence):
+                continue
+            periods = {e.reference_period for e in evidence if e.reference_period}
+            if not periods:
+                continue
+            period, stage = max(periods), event["estimate_stage"]
+            key = dict(
+                indicator_id=indicator_id, reference_period=period, estimate_stage=stage
+            )
+            consensus, diagnostics = self._consensus(
+                snapshot,
+                None,
+                event_id,
+                released_at,
+                precision,
+                "schedule",
+                pending=key,
+            )
+            if not consensus:
+                continue
+            cards.append(
+                dict(
+                    release_event_id=event_id,
+                    family=event["family"],
+                    indicator_id=indicator_id,
+                    indicator_name=info["measure"],
+                    geography=info["geography"],
+                    reference_period=period,
+                    stage=stage,
+                    released_at=released_at,
+                    time_basis="schedule",
+                    publication_precision=precision,
+                    status="scheduled",
+                    resolution=None,
+                    actual=None,
+                    surprise=None,
+                    actual_missing_reason="issuer_actual_not_available",
+                    consensus=consensus,
+                    consensus_diagnostics=diagnostics,
+                    provenance=[e.provenance() for e in evidence],
+                )
+            )
+        return cards
+
     @staticmethod
-    def _consensus(snapshot, resolution, event_id, released_at, precision, time_basis):
-        info = snapshot.indicators[resolution.indicator_id]
+    def _consensus(
+        snapshot,
+        resolution,
+        event_id,
+        released_at,
+        precision,
+        time_basis,
+        *,
+        pending=None,
+    ):
+        indicator_id = (
+            resolution.indicator_id if resolution else pending["indicator_id"]
+        )
+        period = (
+            resolution.reference_period if resolution else pending["reference_period"]
+        )
+        stage = resolution.stage if resolution else pending["estimate_stage"]
+        status = resolution.status if resolution else "scheduled"
+        info = snapshot.indicators[indicator_id]
         per_provider = {}
         diagnostics = []
-        selected = next(e for e in snapshot.evidence if e.id == resolution.source["selected_evidence_id"])
+        selected = (
+            next(
+                e
+                for e in snapshot.evidence
+                if e.id == resolution.source["selected_evidence_id"]
+            )
+            if resolution
+            else None
+        )
         for row in snapshot.consensus:
-            if (row["indicator_id"] != resolution.indicator_id or row["release_event_id"] != event_id or
-                    row["reference_period"] != resolution.reference_period or row["estimate_stage"] != resolution.stage or
-                    row["measure"] != info["measure"]):
+            if (
+                row["indicator_id"] != indicator_id
+                or row["release_event_id"] != event_id
+                or row["reference_period"] != period
+                or row["estimate_stage"] != stage
+                or row["measure"] != info["measure"]
+            ):
                 continue
             # The actual time reconciles old date-only/scheduled eligibility.
             # With a date-only publication retain the saved conservative cutoff.
@@ -338,7 +471,13 @@ class ReadAPI:
                     per_provider[key]["captured_at"], per_provider[key]["content_hash"], per_provider[key]["id"]):
                 per_provider[key] = dict(row, eligibility_cutoff_at=cutoff)
         out = []
-        actual = Decimal(str(selected.value)) * Decimal(str(selected.scale)) / Decimal(str(info["scale"]))
+        actual = (
+            Decimal(str(selected.value))
+            * Decimal(str(selected.scale))
+            / Decimal(str(info["scale"]))
+            if selected
+            else None
+        )
         for provider, row in sorted(per_provider.items()):
             forecast = convert(row["value"], row["unit"], row["scale"], info)
             if forecast is None:
@@ -352,12 +491,25 @@ class ReadAPI:
             expected = Decimal(str(row["value"])) * Decimal(str(row["scale"])) / Decimal(str(info["scale"]))
             # Subtract decimal inputs at their explicit scale, avoiding binary
             # artifacts such as 3.7 - 3.6 == 0.10000000000000009.
-            difference = float(actual - expected) if resolution.status != "disputed" else None
+            difference = (
+                float(actual - expected)
+                if actual is not None and status != "disputed"
+                else None
+            )
             kind = "ff_forecast" if provider.lower().replace(" ", "_") in {"ff", "forex_factory", "forexfactory", "ff_forecast"} else "survey_consensus"
-            out.append(dict(row, kind=kind, normalized_value=forecast,
-                            surprise=difference, resolution_status=resolution.status,
-                            issuer_pending=resolution.status == "issuer_pending",
-                            surprise_unit="percentage_points" if info["unit"] in {"%", "percent"} else info["unit"]))
+            out.append(
+                dict(
+                    row,
+                    kind=kind,
+                    normalized_value=forecast,
+                    surprise=difference,
+                    resolution_status=status,
+                    issuer_pending=status == "issuer_pending",
+                    surprise_unit="percentage_points"
+                    if info["unit"] in {"%", "percent"}
+                    else info["unit"],
+                )
+            )
         return out, diagnostics
 
     def explain_empty(self, indicator, period_or_window, *, as_known_at=None):
@@ -455,7 +607,10 @@ class ReadAPI:
                         "latest_published_at": None, "latest_first_seen_at": None} for f in FAMILIES}
         events = {}
         for card in result["cards"]:
-            events.setdefault((card["family"], card["release_event_id"]), []).append(card)
+            if card["resolution"] is not None:
+                events.setdefault(
+                    (card["family"], card["release_event_id"]), []
+                ).append(card)
         event_rows = {}
         for e in snapshot.evidence:
             if e.event_id and e.reading_kind in {"actual", "unavailable", "legacy_merged_actual"}:
