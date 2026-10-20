@@ -18,13 +18,14 @@ from .models import utc
 from .resolve import canonical_unit
 from .store import open_writer
 from .lease import RunLease
-from .worklist_periods import explicit_period, frequency, parsed_period
+from .worklist_periods import (explicit_period as explicit_period, frequency, period_evidence, partial_agrees,
+                              PERIOD_REASONS, NON_PERIOD_REASONS)
 
-RULE_VERSION = "legacy-worklist-v2"
+RULE_VERSION = "legacy-worklist-v3"
 LATENESS_DAYS = 14
 REASONS = {"period_unknown", "unlinked_sighting", "late_value_needs_review", "overdue", "incomplete",
            "release_in_future", "release_date_missing", "release_date_invalid", "period_format_unrecognised",
-           "period_frequency_mismatch", "evidence_horizon_before_deadline", "legacy_evidence_unavailable"}
+           "period_frequency_mismatch", "evidence_horizon_before_deadline", "legacy_evidence_unavailable"} | PERIOD_REASONS
 
 
 def normalize_name(value):
@@ -185,21 +186,39 @@ def decide(index, work, as_of, lateness_days=LATENESS_DAYS):
     indicator = index.indicators[indicator_id]
     periods = set()
     failures = set()
+    partials = []
+    evidence["raw_period_failures"] = []
+    evidence["ignored_period_labels"] = []
+    definition = f"{indicator['measure']} {indicator['definition'] or ''}"
     for row in published:
         raw_period = (row["raw"].get("raw_period") if row["legacy_table"] == "sightings"
                       else row["reference_period"])
-        period = explicit_period(raw_period, indicator["frequency"], indicator["geography"])
+        period, reason = period_evidence(raw_period, indicator["frequency"], indicator["geography"], definition)
         if period:
             periods.add(period)
-        elif raw_period and not raw_period.startswith("d:"):
-            failures.add("period_frequency_mismatch" if parsed_period(raw_period, indicator["geography"])[0]
-                         else "period_format_unrecognised")
+        elif reason == "period_year_missing":
+            partials.append(raw_period)
+        elif reason:
+            failures.add(reason)
+            evidence["raw_period_failures"].append({"raw": raw_period, "reason": reason})
+        elif raw_period:
+            evidence["ignored_period_labels"].append(raw_period)
+    for raw_period in sorted(set(partials)):
+        if len(periods) == 1 and partial_agrees(raw_period, next(iter(periods))):
+            evidence["ignored_period_labels"].append(raw_period)
+        else:
+            failures.add("period_year_missing")
+            evidence["raw_period_failures"].append({"raw": raw_period, "reason": "period_year_missing"})
     evidence["explicit_periods"] = sorted(periods)
     evidence["period_failures"] = sorted(failures)
     if len(periods) > 1:
         return finish("terminal", "conflicting_reference_periods")
+    if failures & NON_PERIOD_REASONS:
+        return finish("terminal", sorted(failures & NON_PERIOD_REASONS)[0])
     if failures:
-        return finish("pending", sorted(failures)[0])
+        # A known incompatible window explains why even a valid month cannot map.
+        windows = failures & {"period_is_cumulative_window", "period_is_rolling_window", "period_is_submonthly_window"}
+        return finish("pending", sorted(windows or failures)[0])
     period = next(iter(periods), None)
     actuals = [row for row in published if has_actual(row)]
     ids = official_ids(index, indicator_id, codes, period)

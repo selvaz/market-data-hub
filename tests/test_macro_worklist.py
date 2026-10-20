@@ -430,7 +430,7 @@ def test_unrecognised_nonempty_period_stays_pending_and_reruns_stably(tmp_path, 
     sighting(legacy, period="week ending October 3")
     with open_writer(tmp_path / "hub.sqlite") as store:
         import_calendar(store, legacy, captured_at="2026-10-18T12:00:00Z")
-        assert resolve_worklist(store, as_of=NOW)["rules"] == {"period_format_unrecognised": 1}
+        assert resolve_worklist(store, as_of=NOW)["rules"] == {"period_year_missing": 1}
         assert resolve_worklist(store, as_of=NOW)["rules"] == {}
 
 
@@ -540,3 +540,25 @@ def test_lateness_cli_option_has_floor_and_controls_policy(tmp_path, legacy, cap
     main(["resolve-worklist", "--db", str(db), "--dry-run", "--as-of", NOW, "--lateness-days", "21"])
     result = json.loads(capsys.readouterr().out)
     assert result["pending"] == 1 and result["decisions"][0]["evidence"]["lateness_days"] == 21
+
+
+def test_v3_meeting_mapping_survives_read_overlay_and_revert(tmp_path, legacy):
+    with sqlite3.connect(legacy) as conn:
+        conn.execute("UPDATE indicators SET frequency='irregular'")
+    occurrence(legacy, period="d:2026-10-02")
+    sighting(legacy, 1, period="Sep 2026 meeting", code="us_cpi_yy", occurrence=1)
+    sighting(legacy, 2, period="9 September 2026 meeting", code="us_cpi_yy", occurrence=1)
+    with open_writer(tmp_path / "hub.sqlite") as store:
+        import_calendar(store, legacy, captured_at="2026-10-18T12:00:00Z")
+        raw = [tuple(row) for row in store.conn.execute("SELECT * FROM readings ORDER BY id")]
+        result = resolve_worklist(store, as_of=NOW)
+        assert result["rule_version"] == "legacy-worklist-v3"
+        assert result["rules"] == {"catalogue_period_mapped": 1}
+        after = Snapshot.load(store, NOW)
+        actuals = [e for e in after.evidence if e.reading_kind in {"actual", "legacy_merged_actual"}]
+        assert len(actuals) == 3
+        assert all(e.reference_period == "2026-09" and not e.verified for e in actuals)
+        assert not any('conflicting reference period' in message for message in after.limitations)
+        assert resolve_worklist(store, as_of=NOW)["rules"] == {}
+        revert_worklist(store, result["run_id"])
+        assert [tuple(row) for row in store.conn.execute("SELECT * FROM readings ORDER BY id")] == raw

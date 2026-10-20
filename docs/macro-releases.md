@@ -278,7 +278,7 @@ writer lock. Writes occur in one short transaction. Optional audit tables/views
 are created with `IF NOT EXISTS`; **SQLite stays at v5**, with no changes to
 reader/migration ceilings or the compatibility registry.
 
-Rules in `legacy-worklist-v2`:
+Rules in `legacy-worklist-v3` (rules 1, 2 and 4–6 retain v2 behavior):
 
 1. Use published-run evidence known at the cutoff. Missing/invalid release dates
    skip the item as pending `release_date_missing` / `release_date_invalid`.
@@ -300,6 +300,66 @@ Rules in `legacy-worklist-v2`:
    non-empty unknown formats or incompatible granularity stay pending as
    `period_format_unrecognised` / `period_frequency_mismatch`. A truly absent or
    release-date-only period without an exact issuer match uses `period_not_derivable`.
+
+   V3 adds these explicit spellings and evidence rules, based on the 19 October
+   period inventory:
+
+   - Ignore `legacy-occurrence:N`, literal `missing`, blank and `d:` labels as
+     non-periods. A yearless month/quarter/week-ending label stays pending as
+     `period_year_missing` unless its named components agree with one independently
+     explicit period on the same item. This never supplies a year or resolves two
+     conflicting explicit periods. Plain/localized months and `Sept.` with a year
+     already worked in v2; their yearless companion labels were vetoing them.
+   - Accept the comma in `September, 2026` and the bounded qualifiers `(advance)`,
+     `(P)` and `(prelim)`. Arbitrary trailing text and spelling corrections remain
+     unsupported (`Septermber 2026` is not silently corrected).
+   - `Sep 2026 Survey` / `September 2026 Survey` is a month for a monthly indicator,
+     or Q3 for a quarterly indicator whose catalogue measure/definition identifies
+     a survey. The named survey month identifies that calendar quarter; no release
+     date is used. Accept `Q3 2026 (Sep survey)`, `Apr-Jun 2026 (Q2 2026)` and
+     `QIII 2026`; redundant annotations must agree.
+   - Meeting/MPC/FOMC/decision text explicitly naming a month/year, including
+     `Sep 15-16, 2026 FOMC meeting`, `Meeting of 9-10 Sep 2026`,
+     `FOMC meeting 15-16 Sep 2026`, `Oct 2026 MPC meeting (Oct 5-7)` and named
+     date ranges, uses that **named event month** for irregular/event catalogue
+     frequencies. Monthly policy/meeting/rate-decision indicators use that month
+     too (e.g. Poland NBP). Named single dates for meeting definitions use the same
+     month, so explicit day and month descriptions of the same meeting agree.
+     Both range endpoints must be valid and ordered; parenthetical MPC dates must
+     agree. Ordinary daily periods retain their precision. Meeting dates never
+     supply a month from a numeric/release date. A monthly price index does not
+     gain a reference month from meeting text. Day ranges normalize en/em dashes.
+   - Weekly `As on October 2, 2026`, `semana al 9 de octubre de 2026` and
+     `al 9 de octubre de 2026` retain the explicit date. For weekly/biweekly
+     indicators whose catalogue explicitly measures the first half of a month,
+     `Primera quincena de Septiembre de 2026` uses the period-end date
+     `2026-09-15`. Without that definition use `period_is_submonthly_window`.
+   - Cumulative ranges (`Jan-Aug 2026`, `January to September 2026`,
+     `January-August 2026`, `First three quarters of 2026`) use a reporting-month
+     index only for a monthly catalogue definition explicitly saying YTD,
+     year-to-date, or from the start of the calendar year. They continue to
+     represent cumulative measures; they are never converted into single-month
+     values. Other definitions stay pending as `period_is_cumulative_window`.
+   - Three-month ranges (`Jun-Aug 2026`, `three months to August 2026`,
+     `3 months to Aug 2026`, `trimestre móvel Jun-Aug 2026`,
+     `quarter ending/ended Aug 2026`) use a reporting-month index only when the
+     monthly catalogue measure/definition explicitly says three months, 3-month
+     or 3M/3M. A calendar-aligned three-month span can represent a quarterly
+     indicator's calendar quarter. Other windows stay `period_is_rolling_window`;
+     even a companion `8/2026` cannot override that incompatibility. Brazil
+     unemployment's current definition does not document its rolling window,
+     so it remains pending. A known incompatible window takes precedence over
+     unknown text in the item's reason; changed decisions retain every raw failure
+     in their audit evidence.
+   - `Issue 1413` / `Issue Number 188` terminate as
+     `period_is_document_identifier`, and `bond maturing 2028-11-01` as
+     `period_is_maturity_date`. These are not observation periods. `2026-27`
+     stays pending as `period_fiscal_year_ambiguous`: no fiscal convention or
+     century expansion is invented. These pending reasons are reconsidered on
+     later runs. No catalogue definitions or frequencies are modified.
+
+   The [period-format investigation](worklist-period-formats-report.md) records
+   every supplied shape, all 100 item outcomes and the production-copy comparison.
 4. `official_vintage_linked` requires an existing verified published issuer vintage,
    an approved exact-measure bridge, the correct indicator and period, a compatible
    known stage, the **same latest recorded release date**, and agreement with
