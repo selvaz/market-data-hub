@@ -1,5 +1,9 @@
 # Worklist period-format investigation — 19 October 2026 inventory
 
+> Historical first-pass results at bfe09c0. The [independent review round 1](worklist-period-formats-review-round1.md)
+> supersedes the survey, window, quarter and full-date inference rules and records
+> the revised preview (448 pending; six original mappings now pending).
+
 Read-only SQLite backup of `C:/ProgramData/InvestmentCommittee/live/db/macro_releases.sqlite` to `.tmp/macro_copy.sqlite`. Both CLI dry runs use **2026-10-20T06:26:46.535002+00:00** and a 14-day lateness window. SQLite source opened with `mode=ro`; only the local copy and in-memory previews are writable. No production apply, deployment, scheduled task or network collection was performed.
 
 ## Findings

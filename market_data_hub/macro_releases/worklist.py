@@ -189,11 +189,16 @@ def decide(index, work, as_of, lateness_days=LATENESS_DAYS):
     partials = []
     evidence["raw_period_failures"] = []
     evidence["ignored_period_labels"] = []
-    definition = f"{indicator['measure']} {indicator['definition'] or ''}"
     for row in published:
         raw_period = (row["raw"].get("raw_period") if row["legacy_table"] == "sightings"
                       else row["reference_period"])
-        period, reason = period_evidence(raw_period, indicator["frequency"], indicator["geography"], definition)
+        period, reason = period_evidence(
+            raw_period,
+            indicator["frequency"],
+            indicator["geography"],
+            indicator["definition"] or "",
+            measure=indicator["measure"],
+        )
         if period:
             periods.add(period)
         elif reason == "period_year_missing":

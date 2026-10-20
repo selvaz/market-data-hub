@@ -240,8 +240,13 @@ class Snapshot:
                         indicator = indicators[mapping["indicator_id"]]
                         raw_period = row["reference_period"] or payload["row"].get("raw_period")
                         if mapping["rule_version"] == "legacy-worklist-v3":
-                            parsed, _ = period_evidence(raw_period, indicator["frequency"], indicator["geography"],
-                                                       f"{indicator['measure']} {indicator['definition'] or ''}")
+                            parsed, _ = period_evidence(
+                                raw_period,
+                                indicator["frequency"],
+                                indicator["geography"],
+                                indicator["definition"] or "",
+                                measure=indicator["measure"],
+                            )
                         else:
                             parsed = explicit_period(raw_period, indicator["frequency"], indicator["geography"])
                         if parsed and parsed != mapping["reference_period"]:

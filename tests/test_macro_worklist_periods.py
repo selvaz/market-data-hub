@@ -5,7 +5,10 @@ from types import SimpleNamespace
 import pytest
 
 from market_data_hub.macro_releases.worklist import decide
-from market_data_hub.macro_releases.worklist_periods import period_evidence
+from market_data_hub.macro_releases.worklist_periods import (
+    explicit_period,
+    period_evidence,
+)
 
 
 @pytest.mark.parametrize(
@@ -41,15 +44,12 @@ def test_explicit_month_spellings(raw):
 @pytest.mark.parametrize(
     "raw",
     [
-        "Sep 2026 Survey",
-        "Sep 2026 survey",
-        "September 2026 Survey",
         "Q3 2026 (Sep survey)",
         "Third Quarter of 2026",
         "QIII 2026",
     ],
 )
-def test_quarterly_survey_names_month_or_quarter(raw):
+def test_quarterly_survey_names_quarter(raw):
     assert period_evidence(
         raw, "quarterly", definition="Quarterly business survey"
     ) == ("2026-Q3", None)
@@ -59,7 +59,7 @@ def test_monthly_survey_and_frequency_gate():
     assert period_evidence("September 2026 Survey", "M") == ("2026-09", None)
     assert period_evidence("September 2026 Survey", "Q") == (
         None,
-        "period_frequency_mismatch",
+        "period_survey_quarter_unspecified",
     )
     assert period_evidence("Q2 2026 (Sep survey)", "Q") == (
         None,
@@ -89,9 +89,6 @@ def test_monthly_survey_and_frequency_gate():
         ("9-10 Sep 2026 meeting", "09"),
         ("Meeting of 9-10 Sep 2026", "09"),
         ("FOMC meeting 15-16 Sep 2026", "09"),
-        ("9 September 2026", "09"),
-        ("9 September 2026 meeting", "09"),
-        ("September 24, 2026 decision", "09"),
         ("Oct 2026 meeting", "10"),
         ("Oct 2026 MPC", "10"),
         ("Oct 2026 MPC meeting", "10"),
@@ -192,7 +189,7 @@ def test_rolling_window_requires_three_month_definition(raw):
         None,
         "period_is_rolling_window",
     )
-    assert period_evidence(raw, "M", definition="GDP 3-Month Average (3M/3M)") == (
+    assert period_evidence(raw, "M", measure="GDP 3-Month Average (3M/3M)") == (
         "2026-08",
         None,
     )
@@ -226,7 +223,9 @@ def test_precise_reasons_without_guessed_periods(raw, reason):
     assert period_evidence(raw, "M") == (None, reason)
 
 
-def decision(raws, freq="M", definition="Consumer price index"):
+def decision(
+    raws, freq="M", definition="Consumer price index", measure="Consumer price index"
+):
     rows = [
         dict(
             legacy_run_status="published",
@@ -249,7 +248,7 @@ def decision(raws, freq="M", definition="Consumer price index"):
             "indicator": dict(
                 frequency=freq,
                 geography="USA",
-                measure=definition,
+                measure=measure,
                 definition=definition,
             )
         },
@@ -338,3 +337,125 @@ def test_invalid_new_shapes_are_not_silently_ignored():
             is not None
         )
     assert period_evidence("   ", "M") == (None, None)
+
+
+@pytest.mark.parametrize(
+    "definition",
+    [
+        "ytd also shown",
+        "Monthly growth; ytd also shown",
+        "Not a year-to-date flow",
+        "Comparison vs 13 months earlier",
+        "Comparison vs 3 months earlier",
+        "A survey with a 3-month moving average also shown",
+    ],
+)
+@pytest.mark.parametrize(
+    "raw,reason",
+    [
+        ("Jan-Aug 2026", "period_is_cumulative_window"),
+        ("Jun-Aug 2026", "period_is_rolling_window"),
+    ],
+)
+def test_window_mentions_do_not_define_the_measure(definition, raw, reason):
+    assert period_evidence(raw, "M", definition=definition) == (None, reason)
+    assert period_evidence(raw, "M", measure=definition) == (None, reason)
+
+
+def test_strict_catalogue_window_phrases():
+    assert period_evidence(
+        "Jun-Aug 2026", "M", definition="3-month moving average"
+    ) == ("2026-08", None)
+    assert period_evidence("Jan-Aug 2026", "M", measure="Year-to-date") == (
+        "2026-08",
+        None,
+    )
+    assert period_evidence(
+        "Jun-Aug 2026", "Q", definition="The reference period is the calendar quarter."
+    ) == (None, "period_is_rolling_window")
+    assert period_evidence(
+        "Apr-Jun 2026", "Q", definition="The reference period is the calendar quarter."
+    ) == ("2026-Q2", None)
+
+
+def test_bare_quarter_range_needs_more_than_frequency():
+    assert period_evidence("Apr-Jun 2026", "Q", definition="GDP growth") == (
+        None,
+        "period_is_rolling_window",
+    )
+    result = decision(["Apr-Jun 2026"], "Q", definition="GDP growth")
+    assert (result["status"], result["reference_period"]) == ("pending", None)
+    assert period_evidence("Apr-Jun 2026 (Q2 2026)", "Q") == ("2026-Q2", None)
+
+
+@pytest.mark.parametrize(
+    "raw", ["Sep 2026 Survey", "Sep 2026 survey", "September 2026 Survey"]
+)
+@pytest.mark.parametrize(
+    "definition", ["Quarterly business survey", "Survey about next quarter's outlook"]
+)
+def test_survey_month_never_supplies_a_reference_quarter(raw, definition):
+    assert period_evidence(raw, "Q", definition=definition) == (
+        None,
+        "period_survey_quarter_unspecified",
+    )
+    result = decision([raw], "Q", definition=definition)
+    assert (result["status"], result["reason"], result["reference_period"]) == (
+        "pending",
+        "period_survey_quarter_unspecified",
+        None,
+    )
+
+
+@pytest.mark.parametrize("freq", ["E", "IRREGULAR"])
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("October 2, 2026", "2026-10-02"),
+        ("As on October 9, 2026", "2026-10-09"),
+        ("9 September 2026", "2026-09-09"),
+        ("9 September 2026 meeting", "2026-09-09"),
+        ("September 24, 2026 decision", "2026-09-24"),
+    ],
+)
+def test_full_event_dates_keep_the_day_even_for_meeting_definitions(
+    raw, expected, freq
+):
+    assert period_evidence(raw, freq, definition="Policy meeting minutes") == (
+        expected,
+        None,
+    )
+
+
+def test_window_and_conflicting_month_never_map():
+    result = decision(
+        ["Jan-Aug 2026", "Sep 2026"], definition="Monthly growth; ytd also shown"
+    )
+    assert (result["status"], result["reason"], result["reference_period"]) == (
+        "pending",
+        "period_is_cumulative_window",
+        None,
+    )
+    result = decision(
+        ["Jan-Aug 2026", "Sep 2026"], definition="Cumulative year-to-date flow"
+    )
+    assert (result["status"], result["reason"], result["reference_period"]) == (
+        "terminal",
+        "conflicting_reference_periods",
+        None,
+    )
+    result = decision(
+        ["Sep 2026 meeting", "9 September 2026"],
+        "E",
+        definition="Policy meeting minutes",
+    )
+    assert (result["status"], result["reason"], result["reference_period"]) == (
+        "terminal",
+        "conflicting_reference_periods",
+        None,
+    )
+
+
+def test_comma_month_repair_is_confined_to_v3():
+    assert explicit_period("September, 2026", "M") is None
+    assert period_evidence("September, 2026", "M") == ("2026-09", None)
