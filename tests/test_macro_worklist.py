@@ -277,7 +277,9 @@ def test_cli_preview_matches_apply_without_any_target_writes(tmp_path, legacy, c
     assert {k: v for k, v in preview.items() if k not in {"dry_run", "run_id"}} == {
         k: v for k, v in applied.items() if k not in {"dry_run", "run_id"}}
     with open_reader(db) as store:
-        assert store.conn.execute("PRAGMA user_version").fetchone()[0] == 5
+        from market_data_hub.macro_releases.migrations import SCHEMA_VERSION
+
+        assert store.conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
 
 
 def test_v5_preview_and_apply_preserve_all_existing_evidence(tmp_path, legacy):
@@ -303,13 +305,24 @@ def test_v5_preview_and_apply_preserve_all_existing_evidence(tmp_path, legacy):
     applied = execute(db, as_of=NOW)
     assert applied["decisions"] == preview["decisions"]
     with open_reader(db) as store:
-        assert store.conn.execute("PRAGMA user_version").fetchone()[0] == 5
+        assert (
+            store.conn.execute("PRAGMA user_version").fetchone()[0]
+            == migrations.SCHEMA_VERSION
+        )
         assert [tuple(r) for r in store.conn.execute("SELECT * FROM readings")] == evidence
-        assert [tuple(r) for r in store.conn.execute("SELECT * FROM schema_compatibility")] == compatibility
-        assert migrations.SCHEMA_VERSION == migrations.READER_CEILING == 5
+        assert [
+            tuple(r)
+            for r in store.conn.execute(
+                "SELECT * FROM schema_compatibility WHERE schema_version<=5"
+            )
+        ] == compatibility
+        assert migrations.SCHEMA_VERSION == migrations.READER_CEILING == 6
     with open_writer(db) as store:
         migrations.migrate(store.conn)
-        assert store.conn.execute("PRAGMA user_version").fetchone()[0] == 5
+        assert (
+            store.conn.execute("PRAGMA user_version").fetchone()[0]
+            == migrations.SCHEMA_VERSION
+        )
         assert resolve_worklist(store, as_of=NOW)["rules"] == {}
 
 

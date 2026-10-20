@@ -7,6 +7,16 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Offline daily Forex Factory forecast ingestion into `consensus_readings`,
+  labelled `ff_forecast`, with manifest capture times, verified archive hashes,
+  exact country/catalogue aliases and explicit reference periods. Schema v6
+  adds atomic snapshot checkpoints and a separate consensus run log; failures
+  leave official collection status and exit codes unchanged. Six versioned
+  tier-1 US/EA/UK aliases include title justifications. The production-copy
+  validation report records the archive's missing capture/period evidence and
+  the resulting zero-row backfill; no historical consensus is fabricated.
+
 ## [0.3.4] — 2026-10-20
 
 Release set `ecosystem-2026.10.7`: `resolve-worklist` rule `legacy-worklist-v3` (#115).

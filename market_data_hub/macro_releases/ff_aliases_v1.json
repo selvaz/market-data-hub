@@ -1,0 +1,11 @@
+{
+  "version": "ff-aliases-v1",
+  "aliases": [
+    {"title": "CPI m/m", "currency": "USD", "geography": "USA", "indicator_id": "us_cpi_headline_mm", "family": "us_cpi", "stage": "regular", "justification": "FF CPI m/m is the US headline monthly CPI percent change; unqualified non-staged monthly release."},
+    {"title": "CPI y/y", "currency": "USD", "geography": "USA", "indicator_id": "us_cpi_headline_yy", "family": "us_cpi", "stage": "regular", "justification": "FF CPI y/y is the US headline annual CPI percent change; unqualified non-staged monthly release."},
+    {"title": "Core CPI m/m", "currency": "USD", "geography": "USA", "indicator_id": "us_cpi_core_mm", "family": "us_cpi", "stage": "regular", "justification": "FF explicitly says Core CPI m/m, matching the US CPI excluding food and energy monthly change."},
+    {"title": "Core CPI y/y", "currency": "USD", "geography": "USA", "indicator_id": "us_cpi_core_yy", "family": "us_cpi", "stage": "regular", "justification": "FF explicitly says Core CPI y/y, matching the US CPI excluding food and energy annual change."},
+    {"title": "GDP m/m", "currency": "GBP", "geography": "GBR", "indicator_id": "uk_gdp_mm", "family": "uk_gdp", "stage": "regular", "justification": "FF GDP m/m identifies UK monthly GDP growth, not quarterly or rolling three-month growth."},
+    {"title": "Final CPI y/y", "currency": "EUR", "geography": "EA21", "indicator_id": "ea21_hicp_yy", "family": "ea_hicp", "stage": "final", "period_since": "2026-01", "justification": "FF EUR Final CPI y/y identifies final euro-area headline HICP; EA21 applies only to explicit periods from 2026-01."}
+  ]
+}

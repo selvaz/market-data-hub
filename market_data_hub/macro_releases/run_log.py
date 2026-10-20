@@ -40,6 +40,14 @@ def family_result(store, run_id, family, result):
              result["fetch_since"], result["fetch_until"]))
 
 
+def consensus_result(store, run_id, result):
+    with store.transaction():
+        store.conn.execute(
+            "INSERT INTO collect_run_consensus (run_id,status,finished_at,result_json) VALUES (?,?,?,?)",
+            (run_id, result["status"], now(), json.dumps(result)),
+        )
+
+
 def recover(store):
     """Called only by a new fenced owner; retain committed family successes."""
     rows = store.conn.execute(
@@ -57,4 +65,41 @@ def recover(store):
                         error_message="Previous run ended without a family outcome; recovered by next lease owner",
                         vintages_added=0, readings_added=0, readings_skipped=0,
                         **parameters["fetch_windows"][family]))
-            finish(store, row["run_id"], "failed")
+            if (
+                "consensus_raw_dir" in parameters
+                and not store.conn.execute(
+                    "SELECT 1 FROM collect_run_consensus WHERE run_id=?",
+                    (row["run_id"],),
+                ).fetchone()
+            ):
+                consensus_result(
+                    store,
+                    row["run_id"],
+                    dict(
+                        status="failed",
+                        error_type="InterruptedRun",
+                        error_message="Previous run ended without a consensus outcome; snapshots retry next run",
+                    ),
+                )
+            status = "failed"
+            if "consensus_raw_dir" in parameters:
+                # A crash during consensus cannot relabel already completed
+                # official collection as failed. Missing official outcomes
+                # were recorded as failures above and still take precedence.
+                statuses = {
+                    r[0]
+                    for r in store.conn.execute(
+                        "SELECT status FROM collect_run_families WHERE run_id=?",
+                        (row["run_id"],),
+                    )
+                }
+                status = (
+                    "failed"
+                    if "failed" in statuses
+                    else "ok"
+                    if "ok" in statuses
+                    else "needs_review"
+                    if "needs_review" in statuses
+                    else "no_change"
+                )
+            finish(store, row["run_id"], status)

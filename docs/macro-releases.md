@@ -59,10 +59,12 @@ Schema v4 adds the append-only daily run lifecycle and per-family outcomes;
 it does not rewrite legacy readings, vintages, mapping links or worklists.
 Schema v5 adds shared raw documents, the review queue and `needs_review` run
 outcomes. Its migration preserves v4 run-log rows and all v3 evidence.
-The optional worklist resolver creates its audit tables idempotently inside its
-own transaction at **schema v5**. Ordinary `open_writer`/`migrate` calls do not
-create them. Reader floor 3 and ceiling 5, `user_version`, and the compatibility
-registry are unchanged; existing readers ignore the additional tables.
+Schema v6 adds consensus snapshot checkpoints and separate consensus run
+outcomes without rewriting existing evidence. The optional worklist resolver
+creates its audit tables idempotently inside its own transaction on schema v5
+or later. Ordinary `open_writer`/`migrate` calls do not create those audit tables.
+The current reader floor is 3 and ceiling is 6. The worklist feature itself
+does not change `user_version` or the compatibility registry.
 
 `ResolutionVersion`, `Claim`, and `ClaimEvidence` require a caller-supplied
 `idempotency_key`, unique within their table. A retry reuses its original row id;
@@ -275,8 +277,9 @@ Dry-run takes the daily runner's stable database/WAL snapshot and applies only
 in memory, creating no files beside the target. Apply and revert acquire the
 same `RunLease` and writer file lock as `run_daily`, refusing a live lease or held
 writer lock. Writes occur in one short transaction. Optional audit tables/views
-are created with `IF NOT EXISTS`; **SQLite stays at v5**, with no changes to
-reader/migration ceilings or the compatibility registry.
+are created with `IF NOT EXISTS`; the worklist feature adds no schema version
+of its own. Opening the writer first applies the current additive migrations
+(currently v6), preserving old v5 worklist audit data.
 
 Rules in `legacy-worklist-v3` (rules 1, 2 and 4–6 retain v2 behavior):
 
@@ -780,6 +783,75 @@ capture cannot produce surprise. **Owner decision:** a legacy observation
 captured after release stays evidence, never pre-release consensus, and its
 surprise stays null. This is the accepted behavior of the shadow parity report.
 
+**Daily FF capture (M2, schema v6).** After all official families, the existing
+daily runner consumes the raw archive under its same `macro_releases` run lease
+and writer lock. It makes no network requests. `--consensus-raw-dir` overrides
+`C:\ProgramData\InvestmentCommittee\econ_calendar\raw`. A separate
+`collect_run_consensus` row retains status, inserted counts, skip reasons and
+per-snapshot diagnostics. Consensus failure does not change the official family
+results, terminal official run status, or official exit code. The regular dry run
+evaluates the step on its private preview database.
+
+Mapping uses exact titles and explicit FF currency/country, first against the
+six proposed, versioned tier-1 mappings in
+[`ff_aliases_v1.json`](../market_data_hub/macro_releases/ff_aliases_v1.json), then
+against unambiguous stored catalogue aliases. The file supplements aliases at
+read time; it does not rewrite imported catalogue identities. It maps four US
+CPI measures, UK monthly GDP, and euro-area final headline HICP for explicit
+EA21 periods from 2026-01. Country prefixes and stage qualifiers are preserved;
+German/French CPI cannot become euro-area HICP. Each proposed alias explains its
+FF title. A stored alias with unknown stage is skipped. Unqualified CPI/GDP
+monthly releases use `regular` (a non-staged release, never an inferred `final`);
+the HICP `final` stage must be explicit in the title.
+
+Only explicit fully dated `reference_period`/`period` fields or a final title
+label such as `(2026-09)` are accepted, with catalogue-frequency validation.
+Conflicting, yearless, rolling-window and missing periods are skipped and
+counted. **No monthly lag is inferred from the release date.** Monthly frequency
+alone is insufficient: US CPI in October reports September while UK GDP in
+October reports August. Existing official values are never used to backfill an
+FF event's missing period. Generic aliases also require an existing exact
+edition/event link; the reviewed family mappings can establish that event before
+official collection succeeds.
+
+`load_snapshots` supplies the earliest manifest capture evidence for each file;
+its mtime fallback is diagnostic only. A manifest SHA-256 must match the file.
+`published_at` and `survey_identity` remain null because FF does not supply them.
+The latest stored event schedule known at capture supplies the cutoff when
+available; otherwise the offset-aware FF event date is a `scheduled` cutoff.
+A bare FF release date uses the start of that issuer-local date (`date_only`),
+so same-day ordering remains uncertain. Without a usable FF date, an explicit
+period/stage must identify exactly one already linked catalogue event; its
+cutoff stays null with basis `unknown` if no schedule was saved. An
+unidentifiable release/event is skipped. Store CHECK constraints derive eligibility/post-release flags, and the
+read API retains only eligible pre-release forecasts, separately for each
+provider. Missing forecasts produce neither consensus nor surprise.
+
+`consensus_snapshots` checkpoints each filename, manifest capture token, raw
+content hash and parser/alias version atomically with its readings. The first
+run backfills; later runs bypass already checkpointed snapshots. Diagnostic
+skips are checkpointed too. Missing-manifest files use an empty capture token,
+so newly supplied authoritative manifest evidence can trigger a retry. Failed
+snapshots have no checkpoint and retry next run. After a catalogue correction,
+use `--reprocess` to revisit prior skips; the consensus UNIQUE key still prevents
+duplicate readings. Nothing changes the archive writer or its retry discipline.
+
+```powershell
+# Explicit local copy; backfill without running any official/network collectors.
+python -m market_data_hub.macro_releases.consensus --db .tmp/macro_copy.sqlite
+# Normal daily-run option; --dry-run also previews consensus on a private copy.
+python -m market_data_hub.macro_releases.run_daily --db .tmp/macro_copy.sqlite --dry-run --consensus-raw-dir C:/ProgramData/InvestmentCommittee/econ_calendar/raw
+```
+
+The second command retains the existing official collectors' network behavior;
+the M2 copy validation instead replays stored official observations offline.
+See the [production-copy validation report](m2-consensus-ingest-report.md).
+As inspected on 20 October, nine older snapshot files have no manifest evidence
+and all mapped forecast events lack explicit reference periods. The compliant
+backfill therefore inserts **zero rows**; the three historical example cards
+cannot yet show eligible FF forecasts. This is a source-evidence gap, not a
+reason to reconstruct capture times or reference periods.
+
 | Empty reason | Meaning |
 | --- | --- |
 | `not_covered` | Indicator is absent from both stored and adapter catalogues. |
@@ -863,7 +935,7 @@ including weekends for recovery. This allows an hour after the usual US 08:30 ET
 releases and is after euro-area 11:00 CET/CEST and UK 07:00 local publications,
 including the weeks when Europe and the US change clocks on different dates.
 Use a named time zone/DST-aware local task trigger, rather than a fixed UTC time.
-The marketdata environment must contain the released package with schema v5;
+The marketdata environment must contain the released package with schema v6;
 this PR does not install it or move a runtime pin.
 
 | Exit | Meaning |
@@ -981,19 +1053,21 @@ grace period and cannot block future days. Reclamation is recorded in the run's
 Writer-lock acquisition waits in short five-second intervals so contention does
 not itself kill a live run. A process crash releases the OS file lock.
 
-Migrations v4/v5 run automatically under `open_writer`, in one transaction, on
+Migrations v4/v5/v6 run automatically under `open_writer`, in one transaction, on
 the first real run. Schema v3 evidence remains intact; a pre-existing v4 log is
 copied unchanged while extending its status enum. Readers never migrate and now
-declare a compatibility floor **3** and ceiling **5**. They accept the additive
-v4/v5 schema and read older v3 stores, treating absent logs/queues as unavailable.
-The v5 database also declares its reader compatibility range. Outside-range or
+declare a compatibility floor **3** and ceiling **6**. They accept the additive
+v4/v5/v6 schemas and read older v3 stores, treating absent logs/queues as unavailable.
+The v5/v6 databases also declare their reader compatibility range. Outside-range or
 non-additive versions fail explicitly; writers still reject newer schemas.
 
 **Deployment constraint:** an already-installed, unmodified v0.3.0 reader has a
 hard-coded `user_version == 3` check. This PR cannot retroactively change that
 binary. Deploy/backport the `open_reader` range check before migrating a database
-used by that binary. The v3 read contract itself is unchanged and supports v4/v5
-once that check is patched; no production deployment is performed here.
+used by that binary. Older v5 readers also need their ceiling updated before a
+shared store is migrated to v6. The v3 read contract itself is unchanged and
+supports v4/v5/v6 once that range check is patched; no production deployment is
+performed here.
 `collect_runs` contains immutable lifecycle records: one `running` record
 (`finished_at=NULL`) and one terminal `ok` / `no_change` / `needs_review` / `failed` record for a
 logical `run_id`, with identical start time, families, parameters, package version

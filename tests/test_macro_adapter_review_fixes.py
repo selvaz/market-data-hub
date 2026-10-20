@@ -302,7 +302,9 @@ def test_v2_migration_adds_provenance_and_filters_legacy_archive(tmp_path):
     conn.executescript(Path(migrations.__file__).with_name("schema.sql").read_text())
     conn.execute("PRAGMA user_version=2")
     migrate(conn)
-    assert conn.execute("PRAGMA user_version").fetchone()[0] == 5
+    assert (
+        conn.execute("PRAGMA user_version").fetchone()[0] == migrations.SCHEMA_VERSION
+    )
     assert {"composition_id", "issuer_local_time", "issuer_timezone"}.issubset(
         {r[1] for r in conn.execute("PRAGMA table_info(value_vintages)")})
     conn.close()
