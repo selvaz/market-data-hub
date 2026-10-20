@@ -33,7 +33,7 @@ from .store import open_writer
 from .worklist_periods import explicit_period
 
 PROVIDER = "ff_forecast"
-RULE_VERSION = "ff-consensus-v2"
+RULE_VERSION = "ff-consensus-v3"
 ALIAS_FILE = Path(__file__).with_name("ff_aliases_v1.json")
 GEOGRAPHIES = {
     "US": {"USA"},
@@ -89,6 +89,20 @@ class Catalogue:
             RULE_VERSION
             + ":"
             + hashlib.sha256(ALIAS_FILE.read_bytes()).hexdigest()[:16]
+        )
+        # Stored aliases participate in match() too. Hash their effective,
+        # normalized mappings so catalogue expansion retries unmapped captures,
+        # independent of row order or duplicate source-specific alias rows.
+        stored_aliases = sorted(
+            (geography, title, indicator_id, stage)
+            for (geography, title), candidates in self.names.items()
+            for indicator_id, stage in candidates
+        )
+        self.version += (
+            ":"
+            + hashlib.sha256(
+                json.dumps(stored_aliases, ensure_ascii=True).encode()
+            ).hexdigest()[:16]
         )
         self.releases = IssuerEvents(store)
         # New issuer metadata must revisit earlier not-found/ambiguous skips.
@@ -194,19 +208,23 @@ class IssuerEvents:
             ]
             if not rows:
                 continue
-            selected = rows[0]
             schedule = latest.get(event_id)
+            zones = {
+                e.issuer_timezone
+                for e in snapshot.evidence_by_event.get(event_id, [])
+                if e.issuer_timezone
+            }
+            if schedule and schedule["issuer_timezone"]:
+                zones.add(schedule["issuer_timezone"])
+            if len(zones) > 1:
+                continue  # conflicting issuer metadata cannot certify a day
             zone = event_timezone(
                 snapshot,
                 event_id,
-                selected,
+                None,
                 "schedule" if schedule else "issuer_publication",
             )
-            if (
-                zone is None
-                and not schedule
-                and not any(e.issuer_timezone for e in rows)
-            ):
+            if zone is None and not zones:
                 zone_name = ISSUER_ZONES.get(info["issuer_id"])
                 zone = ZoneInfo(zone_name) if zone_name else None
             if zone is None:
@@ -458,8 +476,8 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
                     # Preserve the first capture's cutoff metadata if a later
                     # issuer correction changes our event index. The read API
                     # reconciles clocks; reprocessing never rewrites a reading.
-                    if store.conn.execute(
-                        "SELECT 1 FROM consensus_readings WHERE provider=? AND indicator_id=? "
+                    existing = store.conn.execute(
+                        "SELECT id FROM consensus_readings WHERE provider=? AND indicator_id=? "
                         "AND reference_period=? AND estimate_stage=? AND release_event_id=? "
                         "AND captured_at=? AND content_hash=?",
                         (
@@ -471,11 +489,39 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
                             reading.captured_at,
                             reading.content_hash,
                         ),
+                    ).fetchone()
+                    if existing:
+                        reading_id = existing["id"]
+                    else:
+                        before = store.conn.total_changes
+                        reading_id = store.put(reading)
+                        counts["readings_added"] += store.conn.total_changes - before
+                    observation_key = (
+                        reading.provider,
+                        reading.captured_at,
+                        reading.content_hash,
+                    )
+                    if store.conn.execute(
+                        "SELECT 1 FROM consensus_readings WHERE provider=? AND captured_at=? "
+                        "AND content_hash=? AND id<>? LIMIT 1",
+                        (*observation_key, reading_id),
                     ).fetchone():
-                        continue
-                    before = store.conn.total_changes
-                    store.put(reading)
-                    counts["readings_added"] += store.conn.total_changes - before
+                        latest = store.conn.execute(
+                            "SELECT v.consensus_reading_id FROM consensus_link_versions v "
+                            "JOIN consensus_readings r ON r.id=v.consensus_reading_id "
+                            "WHERE r.provider=? AND r.captured_at=? AND r.content_hash=? "
+                            "ORDER BY v.id DESC LIMIT 1",
+                            observation_key,
+                        ).fetchone()
+                        if latest is None or latest[0] != reading_id:
+                            store.conn.execute(
+                                "INSERT INTO consensus_link_versions "
+                                "(consensus_reading_id,recorded_at) VALUES (?,?)",
+                                (
+                                    reading_id,
+                                    utc(datetime.now(timezone.utc).isoformat()),
+                                ),
+                            )
                 counts["skip_reasons"] = dict(sorted(skipped.items()))
                 store.conn.execute(
                     "INSERT INTO consensus_snapshots VALUES (?,?,?,?,?,?) ON CONFLICT DO NOTHING",

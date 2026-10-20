@@ -20,6 +20,7 @@ from market_data_hub.macro_releases.models import (
     ScheduleVersion,
     SourceSeries,
 )
+from market_data_hub.macro_releases.resolve import Snapshot
 from test_macro_read_api import observation
 
 
@@ -123,10 +124,33 @@ def test_manifest_capture_pre_post_release_separate_providers_and_cards(
     assert set(values) == {"ff_forecast", "survey_fixture"}
     assert values["ff_forecast"]["id"] == pre["id"]
     assert values["ff_forecast"]["kind"] == "ff_forecast"
-    assert values["ff_forecast"]["surprise"] == 0.1
+    assert values["ff_forecast"]["surprise"] is None
+    assert values["ff_forecast"]["surprise_eligible"] is False
+    assert values["survey_fixture"]["surprise"] == 0.2
+    assert [r["provider"] for r in card["surprise"]] == ["survey_fixture"]
     assert len(rows(store)) == 3
     # UNIQUE keys still deduplicate when the diagnostic ledger is bypassed.
     assert consensus.ingest(store, raw, reprocess=True)["readings_added"] == 0
+
+
+@pytest.mark.parametrize(
+    "provider", ["ff_forecast", "FF", "Forex Factory", "ForexFactory"]
+)
+def test_ff_only_card_has_no_surprise(store, tmp_path, provider):
+    raw = tmp_path / "raw"
+    archive(raw, [event()])
+    consensus.ingest(store, raw)
+    if provider != "ff_forecast":
+        original = rows(store)[0]
+        fields = {key: original[key] for key in ConsensusReading.model_fields}
+        store.put(ConsensusReading(**dict(fields, provider=provider)))
+    card = store.release_cards(
+        "2026-10-12", "2026-10-17", indicators=["us_cpi_headline_yy"]
+    )["cards"][0]
+    assert card["surprise"] == []
+    assert all(
+        r["surprise"] is None and not r["surprise_eligible"] for r in card["consensus"]
+    )
 
 
 def test_post_release_only_has_no_consensus_or_surprise(store, tmp_path):
@@ -471,6 +495,199 @@ def test_new_issuer_metadata_revisits_not_found_snapshot_automatically(store, tm
     assert consensus.ingest(store, raw)["snapshots_unchanged"] == 1
 
 
+def test_new_catalogue_alias_revisits_unmapped_snapshot_automatically(store, tmp_path):
+    raw = tmp_path / "raw"
+    archive(raw, [dict(event(), title="Fixture CPI annual rate")])
+    first = consensus.ingest(store, raw)
+    assert first["skip_reasons"] == {"unmapped": 1}
+    assert rows(store) == []
+    assert consensus.ingest(store, raw)["snapshots_unchanged"] == 1
+    store.conn.execute(
+        "INSERT INTO indicator_aliases VALUES (?,?,?,?,?,?,?)",
+        (
+            "fixture",
+            "Fixture CPI annual rate",
+            "USA",
+            "fixture-cpi",
+            "us_cpi_headline_yy",
+            "regular",
+            "candidate",
+        ),
+    )
+    result = consensus.ingest(store, raw)
+    assert result["snapshots_processed"] == result["readings_added"] == 1
+    assert result["skip_reasons"] == {}
+    reading = rows(store)[0]
+    assert reading["indicator_id"] == "us_cpi_headline_yy"
+    assert reading["release_event_id"] == "BLS:us_cpi:regular:2026-10-14"
+    assert consensus.ingest(store, raw)["snapshots_unchanged"] == 1
+    assert len(rows(store)) == 1
+    assert (
+        store.conn.execute("SELECT COUNT(*) FROM consensus_snapshots").fetchone()[0]
+        == 2
+    )
+    # A duplicate source alias with equivalent normalized text does not alter
+    # match() or invalidate a checkpoint.
+    store.conn.execute(
+        "INSERT INTO indicator_aliases VALUES (?,?,?,?,?,?,?)",
+        (
+            "another-source",
+            "  FIXTURE CPI   annual rate ",
+            "USA",
+            "another-code",
+            "us_cpi_headline_yy",
+            "regular",
+            "candidate",
+        ),
+    )
+    assert consensus.ingest(store, raw)["snapshots_unchanged"] == 1
+
+
+def test_catalogue_alias_fingerprint_is_order_independent_and_tracks_mapping(store):
+    aliases = [
+        (
+            "fixture",
+            "Fixture CPI annual rate",
+            "USA",
+            "yy",
+            "us_cpi_headline_yy",
+            "regular",
+            "candidate",
+        ),
+        (
+            "fixture",
+            "Fixture CPI monthly rate",
+            "USA",
+            "mm",
+            "us_cpi_headline_mm",
+            "regular",
+            "candidate",
+        ),
+    ]
+    sql = "INSERT INTO indicator_aliases VALUES (?,?,?,?,?,?,?)"
+    store.conn.executemany(sql, aliases)
+    version = consensus.Catalogue(store).version
+    store.conn.execute("DELETE FROM indicator_aliases WHERE source_id='fixture'")
+    store.conn.executemany(sql, reversed(aliases))
+    assert consensus.Catalogue(store).version == version
+    store.conn.execute(
+        "UPDATE indicator_aliases SET estimate_stage='final' WHERE legacy_code='yy'"
+    )
+    assert consensus.Catalogue(store).version != version
+
+
+def move_schedule(store, release_id, day, recorded):
+    store.put(
+        ScheduleVersion(
+            release_event_id=release_id,
+            expected_at=day + "T12:30:00Z",
+            issuer_timezone="America/New_York",
+            precision="exact",
+            source_id="BLS",
+            recorded_at=recorded,
+        )
+    )
+
+
+def test_relinked_observation_has_one_live_release_and_can_restore_old_link(
+    store, tmp_path
+):
+    first_id = pending_release(store)
+    second_id = pending_release(store, edition="2026-10-23")
+    raw = tmp_path / "raw"
+    archive(raw, [dict(event(), date="2026-10-22T08:30:00-04:00")])
+    assert consensus.ingest(store, raw)["readings_added"] == 1
+    original_id = rows(store)[0]["id"]
+    move_schedule(store, first_id, "2026-10-23", "2026-10-19T00:00:00Z")
+    move_schedule(store, second_id, "2026-10-22", "2026-10-19T00:00:00Z")
+    assert consensus.ingest(store, raw)["readings_added"] == 1
+    live = Snapshot.load(store).consensus
+    assert len(rows(store)) == 2  # immutable raw evidence is retained
+    assert len(live) == 1 and live[0]["release_event_id"] == second_id
+    assert Snapshot.load(store, "2026-10-19T23:59:00Z").consensus == []
+    cards = store.release_cards(
+        "2026-10-19",
+        "2026-10-24",
+        indicators=["us_cpi_headline_yy"],
+        as_known_at="2026-10-30T00:00:00Z",
+    )["cards"]
+    assert [c["release_event_id"] for c in cards] == [second_id]
+    move_schedule(store, first_id, "2026-10-22", "2026-10-20T00:00:00Z")
+    move_schedule(store, second_id, "2026-10-23", "2026-10-20T00:00:00Z")
+    assert consensus.ingest(store, raw, reprocess=True)["readings_added"] == 0
+    live = Snapshot.load(store).consensus
+    assert len(live) == 1 and live[0]["id"] == original_id
+    assert consensus.ingest(store, raw, reprocess=True)["readings_added"] == 0
+    assert (
+        store.conn.execute("SELECT COUNT(*) FROM consensus_link_versions").fetchone()[0]
+        == 2
+    )
+    for operation in (
+        "DELETE FROM consensus_link_versions",
+        "UPDATE consensus_link_versions SET recorded_at='bad'",
+    ):
+        with pytest.raises(sqlite3.IntegrityError, match="append-only"):
+            store.conn.execute(operation)
+    assert store.conn.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+def test_relinked_observation_supersedes_old_reference_period(store, tmp_path):
+    raw = tmp_path / "raw"
+    archive(raw, [event()])
+    consensus.ingest(store, raw)
+    persist(store, [observation(period="2026-10")])
+    assert consensus.ingest(store, raw)["readings_added"] == 1
+    live = Snapshot.load(store).consensus
+    assert len(rows(store)) == 2
+    assert len(live) == 1 and live[0]["reference_period"] == "2026-10"
+
+
+def test_relink_and_checkpoint_roll_back_together(store, tmp_path):
+    raw = tmp_path / "raw"
+    archive(raw, [event()])
+    consensus.ingest(store, raw)
+    persist(store, [observation(period="2026-10")])
+    store.conn.execute(
+        "CREATE TRIGGER reject_checkpoint BEFORE INSERT ON consensus_snapshots "
+        "BEGIN SELECT RAISE(ABORT, 'fixture checkpoint failure'); END"
+    )
+    assert consensus.ingest(store, raw)["status"] == "failed"
+    assert len(rows(store)) == len(Snapshot.load(store).consensus) == 1
+    assert (
+        store.conn.execute("SELECT COUNT(*) FROM consensus_link_versions").fetchone()[0]
+        == 0
+    )
+    assert (
+        store.conn.execute("SELECT COUNT(*) FROM consensus_snapshots").fetchone()[0]
+        == 1
+    )
+    store.conn.execute("DROP TRIGGER reject_checkpoint")
+    assert consensus.ingest(store, raw)["readings_added"] == 1
+    assert len(rows(store)) == 2 and len(Snapshot.load(store).consensus) == 1
+
+
+def test_conflicting_issuer_zones_refuse_link_even_with_schedule(store, tmp_path):
+    persist(store, [observation(issuer_timezone="America/New_York")])
+    persist(store, [observation(period="2026-08", issuer_timezone="Europe/London")])
+    move_schedule(
+        store, "BLS:us_cpi:regular:2026-10-14", "2026-10-14", "2026-10-01T00:00:00Z"
+    )
+    archive(tmp_path / "raw", [event()])
+    assert consensus.ingest(store, tmp_path / "raw")["skip_reasons"] == {
+        "release_event_not_found": 1
+    }
+    assert rows(store) == []
+
+
+def test_issuer_zone_fallback_without_stored_timezone(store, tmp_path):
+    # No fixture CPI reading, vintage or schedule carries a timezone.
+    assert not any(e.issuer_timezone for e in Snapshot.load(store).evidence)
+    archive(tmp_path / "raw", [event()])
+    assert consensus.ingest(store, tmp_path / "raw")["readings_added"] == 1
+    linked = consensus.Catalogue(store).releases.by_indicator["us_cpi_headline_yy"]
+    assert linked[0]["zone"] == consensus.ISSUER_ZONES["BLS"]
+
+
 def test_issuer_revisions_do_not_supply_the_forecast_period(store, tmp_path):
     persist(store, [observation(period="2026-08", revision="routine")])
     archive(tmp_path / "raw", [event()])
@@ -585,8 +802,9 @@ def test_runner_after_official_same_lease_independent_status(
             )
 
 
-def test_v5_migration_is_additive_and_ledgers_append_only(tmp_path):
-    db = tmp_path / "v5.sqlite"
+@pytest.mark.parametrize("version", [5, 6])
+def test_prior_migration_is_additive_and_ledgers_append_only(tmp_path, version):
+    db = tmp_path / f"v{version}.sqlite"
     with sqlite3.connect(db) as conn:
         for filename in (
             "schema.sql",
@@ -597,12 +815,19 @@ def test_v5_migration_is_additive_and_ledgers_append_only(tmp_path):
             conn.executescript(
                 Path(migrations.__file__).with_name(filename).read_text()
             )
-        conn.execute("PRAGMA user_version=5")
+        if version == 6:
+            conn.executescript(
+                Path(migrations.__file__).with_name("migration_006.sql").read_text()
+            )
+        conn.execute(f"PRAGMA user_version={version}")
         conn.execute(
             "INSERT INTO collect_runs VALUES ('old','2026-10-01',NULL,'running','[]','{}','v5','host')"
         )
     with open_writer(db) as store:
-        assert store.conn.execute("PRAGMA user_version").fetchone()[0] == 6
+        assert (
+            store.conn.execute("PRAGMA user_version").fetchone()[0]
+            == migrations.SCHEMA_VERSION
+        )
         assert (
             store.conn.execute("SELECT code_version FROM collect_runs").fetchone()[0]
             == "v5"

@@ -766,8 +766,11 @@ retain their existing behavior.
 When no date-only cutoff is stored, a date-only release retains its conservative
 date boundary and excludes
 uncertain same-day captures. Measure, event, period, stage, unit and scale must
-match. Forex Factory is labelled `ff_forecast`. `surprise` is actual minus each
-provider value in the indicator's scale (percentage-point differences for
+match. Forex Factory is labelled `ff_forecast` with `surprise_eligible: false`;
+its reading-level surprise is null and it never enters the card's surprise list.
+A card with only pre-release FF forecasts has an empty surprise list. Survey
+providers have `surprise_eligible: true`. Their `surprise` is actual minus each
+survey value in the indicator's scale (percentage-point differences for
 percentages). Decimal arithmetic preserves input precision without binary
 subtraction artifacts. Every surprise entry includes `resolution_status` and an
 explicit `issuer_pending` flag. For `disputed`, both the card's surprise and
@@ -783,7 +786,7 @@ capture cannot produce surprise. **Owner decision:** a legacy observation
 captured after release stays evidence, never pre-release consensus, and its
 surprise stays null. This is the accepted behavior of the shadow parity report.
 
-**Daily FF capture (M2, schema v6).** After all official families, the existing
+**Daily FF capture (M2, schema v7).** After all official families, the existing
 daily runner consumes the raw archive under its same `macro_releases` run lease
 and writer lock. It makes no network requests. `--consensus-raw-dir` overrides
 `C:\ProgramData\InvestmentCommittee\econ_calendar\raw`. A separate
@@ -807,8 +810,8 @@ Advance, Second/2nd, Third/3rd) must agree with that event; disagreement is
 advance or second estimate. Unqualified CPI/GDP aliases distinguish `regular`
 from staged releases; the HICP alias retains its explicit `final` qualifier.
 
-**Round 2 (`ff-consensus-v2`) takes the period from the issuer event.** For the
-exact mapped indicator, compare FF's release date with each stored issuer
+**Round 2 takes the period from the issuer event (`ff-consensus-v3` after review).**
+For the exact mapped indicator, compare FF's release date with each stored issuer
 event's latest official schedule date or first actual publication date in the
 issuer's time zone. Exactly one event must match before checking its stage.
 Zero candidates are `release_event_not_found`; multiple candidates are
@@ -817,6 +820,9 @@ is created from FF, and no reference period is calculated from a publication lag
 or taken from FF's period text. Offset-aware FF times are converted to the
 issuer zone; naive FF wall times use documented US Eastern. Bare dates remain
 calendar labels. The existing read-side clock helpers handle stored timestamps.
+Stored issuer zones must agree across the event and its schedule; conflicts
+are refused. Without a stored zone, the versioned BLS/BEA/ONS/Eurostat issuer
+zone defaults apply. No evidence-row order selects a timezone.
 
 The schema's `release_events` and `schedule_versions` have no indicator/period
 columns. Explicit issuer `readings` or `value_vintages` establish event membership
@@ -852,9 +858,20 @@ in `coverage`.
 `consensus_snapshots` checkpoints each filename, manifest capture token, raw
 content hash and parser/alias/issuer-index fingerprint atomically with its
 readings. The first run backfills; later runs bypass already checkpointed
-snapshots while their metadata context is unchanged. New issuer schedules,
+snapshots while their metadata context is unchanged. The alias fingerprint
+includes both the reviewed FF alias file and the normalized stored
+`indicator_aliases` mappings (geography, title, indicator and stage). Catalogue
+additions therefore retry unmapped titles without `--reprocess`; row order and
+duplicate equivalent mappings leave the fingerprint unchanged. New issuer schedules,
 publication clocks, period membership or stages revisit previously skipped
-captures automatically. Existing captured rows are not rewritten or duplicated.
+captures automatically. Existing captured rows are not rewritten.
+If a corrected issuer index associates the same FF event, capture time and
+content hash with a different event or period, its original raw row is retained.
+Schema v7's append-only `consensus_link_versions` selects one live association in
+the same transaction as the replacement row and checkpoint. The read API excludes
+the other associations, including when a later correction restores an older row.
+Before the latest correction's recorded time, historical queries conservatively
+omit that observation rather than revive a known incorrect association.
 Diagnostic
 skips are checkpointed too. Missing-manifest files use an empty capture token,
 so newly supplied authoritative manifest evidence can trigger a retry. Failed

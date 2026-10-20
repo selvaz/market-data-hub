@@ -18,6 +18,11 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   the resulting zero-row backfill; no historical consensus is fabricated.
 
 ### Fixed
+- Include normalized stored indicator aliases in FF checkpoint fingerprints so
+  catalogue additions automatically retry previously unmapped captures.
+- Suppress FF forecast surprises through provider eligibility; atomically retire
+  corrected issuer links with an append-only schema v7 journal, and refuse
+  conflicting issuer time zones when matching archived FF events.
 - Link FF forecasts only to one stored issuer release event on the same
   issuer-local scheduled or actual date, inheriting its period and stage.
   Count absent/ambiguous events and stage conflicts; never create an event
