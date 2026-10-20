@@ -236,10 +236,19 @@ class Snapshot:
                     if mapping is None and link["occurrence_key"] and link["legacy_run_status"] == "published":
                         mapping = worklist.get((link["source_id"], link["occurrence_key"]))
                     if mapping and link["reading_kind"] != "previous":
-                        from .worklist_periods import explicit_period
+                        from .worklist_periods import explicit_period, period_evidence
                         indicator = indicators[mapping["indicator_id"]]
                         raw_period = row["reference_period"] or payload["row"].get("raw_period")
-                        parsed = explicit_period(raw_period, indicator["frequency"], indicator["geography"])
+                        if mapping["rule_version"] == "legacy-worklist-v3":
+                            parsed, _ = period_evidence(
+                                raw_period,
+                                indicator["frequency"],
+                                indicator["geography"],
+                                indicator["definition"] or "",
+                                measure=indicator["measure"],
+                            )
+                        else:
+                            parsed = explicit_period(raw_period, indicator["frequency"], indicator["geography"])
                         if parsed and parsed != mapping["reference_period"]:
                             limitations.append(f"Skipped worklist overlay for reading:{row['id']}: conflicting reference period")
                             mapping = None

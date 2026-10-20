@@ -7,6 +7,22 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Fixed
+- Tighten v3's explicit-only boundary after independent review: require
+  separate, word-bounded catalogue window definitions; require an explicit
+  calendar quarter for quarterly ranges; keep quarterly survey months pending
+  without a named quarter; preserve full event dates. Confine comma-month repair
+  to v3 so shared v2 parsing stays unchanged.
+- Resolve explicit imported reference periods under `legacy-worklist-v3` without
+  letting placeholders or agreeing yearless labels veto fully dated evidence.
+  Support the reviewed survey, meeting, annotated quarter, localized weekly and
+  first-half-month spellings. Gate cumulative/rolling reporting-month indices by
+  the catalogue definition, retaining precise reasons for unsupported windows,
+  missing years, fiscal ambiguity, issue identifiers and bond maturity dates.
+  Preserve the v3 period interpretation in read overlays; retain raw evidence,
+  audit/revert behavior and unverified legacy values. The production-copy report
+  documents the 100-item investigation and remaining pending evidence.
+
 ## [0.3.3] — 2026-10-19
 
 Release set `ecosystem-2026.10.6`.
