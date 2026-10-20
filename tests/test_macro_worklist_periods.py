@@ -459,3 +459,21 @@ def test_window_and_conflicting_month_never_map():
 def test_comma_month_repair_is_confined_to_v3():
     assert explicit_period("September, 2026", "M") is None
     assert period_evidence("September, 2026", "M") == ("2026-09", None)
+
+
+@pytest.mark.parametrize(
+    "raws",
+    [
+        ["As on October 2", "week ending 2026-10-02"],
+        ["September meeting", "Sep 2026"],
+    ],
+)
+def test_yearless_label_with_stripped_prefix_never_aborts_the_pass(raws):
+    # Review P1 on #115: period_evidence strips "As on"/qualifiers before calling
+    # a label yearless, partial_period does not; the unpack used to raise TypeError
+    # and abort the whole resolve-worklist pass.
+    result = decision(raws, freq="W" if "week" in raws[1] else "M")
+    # No exception, and never a mapping the partial label did not prove.
+    assert result["status"] in {"pending", "complete"}
+    if result["status"] == "complete":
+        assert result["reference_period"] in {"2026-10-02", "2026-W40", "2026-09"}

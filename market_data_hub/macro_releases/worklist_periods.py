@@ -381,7 +381,14 @@ def partial_period(text):
 
 
 def partial_agrees(raw, period):
-    kind, number, day = partial_period(raw)
+    # period_evidence may classify a label as yearless after stripping prefixes
+    # or qualifiers that partial_period does not strip ("As on October 2",
+    # "September meeting"). Unparsed here means "no proven agreement": the item
+    # stays pending instead of the whole pass aborting on the unpack.
+    parsed = partial_period(raw)
+    if parsed is None:
+        return False
+    kind, number, day = parsed
     if kind == "Q":
         return period.endswith(f"-Q{number}")
     if len(period) not in {7, 10} or period[4] != "-" or not period[5:7].isdigit():
