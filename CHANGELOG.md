@@ -7,6 +7,10 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.4] — 2026-10-20
+
+Release set `ecosystem-2026.10.7`: `resolve-worklist` rule `legacy-worklist-v3` (#115).
+
 ### Fixed
 - Tighten v3's explicit-only boundary after independent review: require
   separate, word-bounded catalogue window definitions; require an explicit
