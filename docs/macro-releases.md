@@ -3,8 +3,8 @@
 `market_data_hub.macro_releases` owns a separate SQLite publication and evidence
 store. M4 supplies contracts, migrations, a small data-access API, and a read-only
 legacy importer. M5 adds manual collectors; M6 adds the resolver and read API in
-shadow mode; M7a adds an explicit-path production daily CLI. No production
-consumer, including the ECO recap, uses this API yet.
+shadow mode; M7a adds an explicit-path production daily CLI. LazyCommittee
+consumes `ReadAPI.release_cards` through `macro_cards.read_cards(db, as_of, 7)`.
 
 ## Database and access
 
@@ -125,8 +125,10 @@ The importer never makes the issuer-publication assertion for legacy web rows.
 
 `Store.put` deduplicates readings on source, series, period key, edition and
 content hash. Legacy hashes cover the complete source row envelope, source-table
-name, value role and source index. Distinct observations of the same figure stay
-distinct readings, while reading the same row twice adds nothing.
+name, value role and source index. Distinct legacy observations of the same figure
+stay distinct readings, while reading the same row twice adds nothing. Official
+adapters additionally skip unchanged semantic observations across document hashes,
+as described in the daily collection section below.
 
 Vintage retry identity is source series × period × release event × document hash;
 source series identifies source and key, and the event identifies edition.
@@ -494,7 +496,7 @@ new/reused vintages, and explicitly unavailable observations.
 | `us_payrolls` | BLS CES `CES0000000001`, issuer `net_changes[1]`; unit `persons`, scale 1000. | Inspect at least the newest month and two prior months, even with a newer `--since`. February editions inspect five complete calendar years plus the current year and mark historical changes `benchmark`. All belong to one publication event. The current API does not recover old initial editions. |
 | `us_gdp` | BEA NIPA `T10101`, line 1, `A191RL`, percent change at annual rate. No calculation from GDPC1 levels. | Current API plus issuer PDF archives of the advance/second estimates. An absent line raises `FetchError`; it can never return the remaining table. Older revised quarters share the headline publication event while retaining their own value stage. |
 | `ea_hicp` | Eurostat ECOICOP v2 `prc_hicp_fpd`, **`release=FLS`**, for flash; `prc_hicp_minr` for current final. `coicop18=TOTAL`, evolving **`geo=EA`**, `RCH_A`/`RCH_M`. | Resolve membership by reference period: EA20 in 2023–2025, EA21 in 2026; unreviewed periods fail explicitly. `ea_hicp_*` remains the fixed EA20 golden identity; `ea21_hicp_*` is EA21. Each composition shares flash/final indicator ids and records `composition_id` in readings/vintages. Historical flash is preserved; `minr` supplies current-edition history, classified against stored issuer vintages. Estimated cells are never labelled final. |
-| `uk_gdp` | ONS `gdp-to-four-decimal-places`, edition `time-series`, **version 69**, SIC `A--T`, UK. | Check the current edition and bulletin index before reading the pin; newer versions/bulletins fail for review. Index levels end in June 2026 and use the June bulletin's **13 August** publication date, not the 24 August upload date; first-load history is backfill. July/August bulletins provide published growth/revisions via a narrow HTML parser. |
+| `uk_gdp` | ONS `gdp-to-four-decimal-places`, edition `time-series`, **version 69**, SIC `A--T`, UK. | Check the current edition and bulletin index before reading the pin; newer versions/bulletins fail for review. Index levels end in June 2026 and use the dataset metadata's **24 August** `release_date`, independently of the June bulletin's 13 August publication; first-load history is backfill. July/August bulletins provide published growth/revisions via a narrow HTML parser. |
 
 All issuer API/CSV values have `extraction_method="api"` and verified status.
 Archived BEA PDFs use `pdf`; ONS bulletin growth uses `html`. BLS tool-rendered
@@ -1016,7 +1018,7 @@ retains its reviewed-edition behavior. Daily discovery uses these issuer sources
 | `us_payrolls` | BLS v2 CES data plus `https://www.bls.gov/feed/empsit.rss`, with the same period/date binding. |
 | `us_gdp` | NIPA `T10101`/`A191RL` identity and `LastRevised`, checked against `https://www.bea.gov/news/current-releases` for quarter, estimate stage and date. |
 | `ea_hicp` | JSON-stat dataset/dimensions, checked against the issuer release-calendar feed `https://ec.europa.eu/eurostat/o/calendars/eventsJson` for each reference month and flash/final stage. The dataset `updated` timestamp is not a publication date. |
-| `uk_gdp` | ONS current-edition `latest_version` and version metadata, plus the GDP bulletin `previousreleases` index and each bulletin's publication date. CSV levels bind to their reference month's bulletin, not their later upload timestamp. |
+| `uk_gdp` | ONS current-edition `latest_version` and version metadata, plus the GDP bulletin `previousreleases` index and each bulletin's publication date. CSV levels use their dataset's own `release_date`; monthly growth uses the corresponding bulletin date. |
 
 New editions need the same dataset/series identity, expected structure, units and
 headline periods, a verified prior baseline within the sanity band, and consistent
@@ -1071,6 +1073,45 @@ from document identity hashes; release dates, periods, values and units remain.
 with a raw-body hash, URL, retrieval time and normalization version. New readings
 carry a `document_hash` reference instead of a repeated full body. Existing raw
 reading envelopes remain append-only and are not rewritten by migration.
+
+Official `Reading` retries also compare the latest observation's semantics
+within source/series/period/edition/stage/event/kind. Document hashes can change
+because of an envelope or another observation without changing this value.
+An unchanged retry preserves the first reading and its `first_seen_at`, and
+increments `readings_skipped`; its raw document remains content-addressed.
+Corrections, new editions/stages and changed verification/extraction provenance
+are distinct. This check also recognizes pre-fix readings. Existing duplicate
+rows remain append-only; no cleanup is needed or performed by this change.
+
+The ONS four-decimal GDP index has an independent dataset publication:
+`release_date` in version metadata supplies the date-only edition and
+`published_at` (v69: **2026-08-24**). `last_updated` is not a release clock;
+the June GDP bulletin's **2026-08-13** date does not date the dataset.
+The version remains `provider_vintage_id`, rather than an edition such as
+`time-series:69`. Missing/invalid `release_date` makes level parsing fail
+explicitly as not tier-1-resolvable; daily discovery records
+`index_not_tier1_resolvable_missing_release_date`. The saved v69 levels still
+end at **2026-06**: assigning their correct publication date does not manufacture
+August or September levels. Pre-fix malformed index evidence produces
+`invalid_publication_edition` in the read API with a recollection instruction.
+It stays stored for audit, but is excluded from cards. Recollecting adds a
+correct edition without rewriting that evidence. Corrected index evidence with
+no publication in the requested window reports `no_release_in_window`, with
+its last publication and reference period, independently of GDP m/m releases.
+
+Cards select the head reference period across an event's comparable frequency
+before indicator/geography filters. Re-observed older periods stay available
+as vintage and revision evidence; they do not become separate release cards
+when the same edition includes a new composition's head period. EA20 HICP
+(`ea_hicp_mm/yy`) explicitly names EA21 (`ea21_hicp_mm/yy`) as its successor.
+If the old head is at least **3 months** before publication and its successor
+has a newer official numeric period published by that date, current cards for
+the old series are suppressed even across different events. The empty result
+reports `discontinued_series`, successor, both head periods and threshold.
+This is a read-time classification: it does not change catalogue identity or
+delete history. The query's `as_known_at` cutoff and each event's publication
+date bound successor evidence, preserving legitimate historical EA20 cards.
+Shared-family membership alone does not establish succession.
 
 One HTTP client and one limiter per provider are shared across all families in
 the run, including the separate CPI and payroll fetches. Each provider has

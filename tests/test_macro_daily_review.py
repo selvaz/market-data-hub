@@ -377,7 +377,7 @@ def test_migration_from_original_v4_keeps_run_log(tmp_path):
         assert store.conn.execute("PRAGMA foreign_key_check").fetchall() == []
 
 
-def test_only_new_readings_does_not_report_new_data(tmp_path, observations, monkeypatch, capsys):
+def test_transport_only_changes_are_skipped_and_do_not_report_new_data(tmp_path, observations, monkeypatch, capsys):
     day = SimpleNamespace(value=0)
     class Adapter:
         def __init__(self, client):
@@ -385,7 +385,7 @@ def test_only_new_readings_does_not_report_new_data(tmp_path, observations, monk
 
         def fetch(self, *args):
             obs = next(o for o in observations if o.family == "us_cpi" and o.value is not None)
-            # A genuinely different transport document adds evidence, not a vintage.
+            # Changed transport bytes retain the same observation semantics.
             return [replace(obs, document=replace(obs.document, document_hash=f"new-raw-{day.value}"))]
     monkeypatch.setitem(run_daily.ADAPTERS, "us_cpi", Adapter)
     db = tmp_path / "macro.sqlite"
@@ -394,7 +394,8 @@ def test_only_new_readings_does_not_report_new_data(tmp_path, observations, monk
     day.value = 1
     assert run_daily.main(["--db", str(db), "--families", "us_cpi"]) == 3
     result = json.loads(capsys.readouterr().out)["families"]["us_cpi"]
-    assert result["status"] == "no_change" and result["readings_added"] == 1 and result["vintages_added"] == 0
+    assert result["status"] == "no_change" and result["readings_added"] == 0 and result["vintages_added"] == 0
+    assert result["readings_skipped"] == 1
 
 
 def test_publication_calendar_mismatch_goes_to_review(tmp_path, observations):
