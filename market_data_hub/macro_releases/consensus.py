@@ -378,7 +378,16 @@ def prepare(store, catalogue, event, captured_at, snapshot_hash):
     return True, None, (release, reading)
 
 
-LINK_REJECTIONS = frozenset({"release_event_not_found", "release_event_ambiguous"})
+# Reasons that mean the current rules no longer support an observation's
+# indicator/event association: an existing live link must be retired.
+LINK_REJECTIONS = frozenset(
+    {
+        "release_event_not_found",
+        "release_event_ambiguous",
+        "unmapped",
+        "mapping_ambiguous",
+    }
+)
 
 
 def observation_hash(snapshot_hash, event):
@@ -398,7 +407,9 @@ def latest_link(store, observation_key):
     ).fetchone()
 
 
-def journal_link(store, reading_id, *, retired):
+def journal_link(store, reading_id, *, retired, counts=None):
+    if counts is not None:
+        counts["links_changed"] += 1
     store.conn.execute(
         "INSERT INTO consensus_link_versions (consensus_reading_id,recorded_at,retired) "
         "VALUES (?,?,?)",
@@ -440,6 +451,7 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
         snapshots_processed=0,
         snapshots_unchanged=0,
         readings_added=0,
+        links_changed=0,
         events_total=0,
         events_mapped=0,
         events_skipped=0,
@@ -485,6 +497,7 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
                 captured_at=captured_at,
                 capture_source=snapshot.captured_at_source,
                 readings_added=0,
+                links_changed=0,
                 events_total=len(events),
                 events_mapped=0,
                 events_skipped=0,
@@ -549,7 +562,7 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
                     if (latest is None and other) or (
                         latest is not None and (latest[0] != reading_id or latest[1])
                     ):
-                        journal_link(store, reading_id, retired=False)
+                        journal_link(store, reading_id, retired=False, counts=counts)
                 for captured, content_hash in rejected:
                     # A linked observation the current rules no longer place on a
                     # unique issuer event: retire its live link, keep the raw row.
@@ -568,6 +581,7 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
                         store,
                         latest[0] if latest is not None else live["id"],
                         retired=True,
+                        counts=counts,
                     )
                 counts["skip_reasons"] = dict(sorted(skipped.items()))
                 store.conn.execute(
@@ -582,6 +596,7 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
             summary["snapshots"].append(counts)
             for field in (
                 "readings_added",
+                "links_changed",
                 "events_total",
                 "events_mapped",
                 "events_skipped",
@@ -604,7 +619,7 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
         "failed"
         if summary["failures"]
         else "ok"
-        if summary["readings_added"]
+        if summary["readings_added"] or summary["links_changed"]
         else "no_change"
     )
     return summary

@@ -1011,3 +1011,31 @@ def test_existing_catalogue_alias_requires_exact_stage_event_and_respects_scale(
         "persons",
     )
     assert reading["release_event_id"] == "BLS:us_payrolls:regular:2026-10-02"
+
+
+def test_removed_catalogue_alias_retires_the_link_and_reports_a_change(store, tmp_path):
+    # Review P2s on #117: a mapping rejection retires an existing link, and a run
+    # whose only effect is a journal change is not "no_change".
+    raw = tmp_path / "raw"
+    archive(raw, [dict(event(), title="Fixture CPI annual rate")])
+    store.conn.execute(
+        "INSERT INTO indicator_aliases VALUES (?,?,?,?,?,?,?)",
+        (
+            "fixture",
+            "Fixture CPI annual rate",
+            "USA",
+            "fixture-cpi",
+            "us_cpi_headline_yy",
+            "regular",
+            "candidate",
+        ),
+    )
+    assert consensus.ingest(store, raw)["readings_added"] == 1
+    assert len(Snapshot.load(store).consensus) == 1
+    store.conn.execute("DELETE FROM indicator_aliases WHERE source_id='fixture'")
+    result = consensus.ingest(store, raw)
+    assert result["skip_reasons"] == {"unmapped": 1}
+    assert result["readings_added"] == 0 and result["links_changed"] == 1
+    assert result["status"] == "ok"
+    assert Snapshot.load(store).consensus == []
+    assert len(rows(store)) == 1
