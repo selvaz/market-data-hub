@@ -386,6 +386,9 @@ LINK_REJECTIONS = frozenset(
         "release_event_ambiguous",
         "unmapped",
         "mapping_ambiguous",
+        "stage_conflict",
+        "stage_unknown",
+        "geography_period_mismatch",
     }
 )
 

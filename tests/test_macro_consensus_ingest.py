@@ -1039,3 +1039,30 @@ def test_removed_catalogue_alias_retires_the_link_and_reports_a_change(store, tm
     assert result["status"] == "ok"
     assert Snapshot.load(store).consensus == []
     assert len(rows(store)) == 1
+
+
+def test_stage_change_on_stored_alias_retires_the_link(store, tmp_path):
+    # Review P2 on #117: an alias whose stage changes to a conflicting one (stage_conflict)
+    # invalidates the association like a lost mapping does.
+    raw = tmp_path / "raw"
+    archive(raw, [dict(event(), title="Fixture CPI annual rate")])
+    store.conn.execute(
+        "INSERT INTO indicator_aliases VALUES (?,?,?,?,?,?,?)",
+        (
+            "fixture",
+            "Fixture CPI annual rate",
+            "USA",
+            "fixture-cpi",
+            "us_cpi_headline_yy",
+            "regular",
+            "candidate",
+        ),
+    )
+    assert consensus.ingest(store, raw)["readings_added"] == 1
+    store.conn.execute(
+        "UPDATE indicator_aliases SET estimate_stage='final' WHERE source_id='fixture'"
+    )
+    result = consensus.ingest(store, raw)
+    assert result["skip_reasons"] == {"stage_conflict": 1}
+    assert result["links_changed"] == 1 and result["status"] == "ok"
+    assert Snapshot.load(store).consensus == []
