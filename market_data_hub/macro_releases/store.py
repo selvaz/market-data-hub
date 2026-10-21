@@ -103,7 +103,7 @@ class Store:
                 self._batch = False
 
     def put(self, record: m.Contract) -> Union[int, str]:
-        """Idempotent typed insert. Readings retain distinct raw-observation hashes.
+        """Idempotent typed insert. Raw documents retain transport hashes.
 
         Vintage document hashes deduplicate transport retries; an unchanged value
         in the same publication is also a re-read, even if its bytes changed.
@@ -120,6 +120,21 @@ class Store:
                 and record.captured_at >= cutoff
             )
         with self.transaction():
+            if isinstance(record, m.Reading) and record.parser_version.startswith("official-adapters:"):
+                # A document can change its transport envelope or another series
+                # without changing this observation. Compare the latest semantic
+                # state, including provenance, against pre-fix rows as well.
+                previous = self.conn.execute(
+                    "SELECT * FROM readings WHERE source_id=? AND series_key=? "
+                    "AND period_key=? AND edition=? AND estimate_stage=? "
+                    "AND release_event_id IS ? AND reading_kind=? ORDER BY id DESC LIMIT 1",
+                    (record.source_id, record.series_key, record.period_key, record.edition,
+                     record.estimate_stage, record.release_event_id, record.reading_kind),
+                ).fetchone()
+                volatile = {"first_seen_at", "retrieved_at", "content_hash", "raw_payload_json", "url"}
+                if previous and all(previous[key] == value for key, value in data.items()
+                                    if key not in volatile):
+                    return previous["id"]
             if isinstance(record, m.ValueVintage):
                 semantics = ("indicator_id", "value", "unit", "scale", "estimate_stage")
                 provenance = ("verification_status", "extraction_method")

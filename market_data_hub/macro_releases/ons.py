@@ -14,6 +14,7 @@ import re
 
 from .adapters import Observation
 from .http import FetchError, json_payload
+from .models import utc
 
 VERSION = 69
 VERSION_URL = ("https://api.beta.ons.gov.uk/v1/datasets/gdp-to-four-decimal-places/"
@@ -81,22 +82,26 @@ class ONSAdapter:
         if payload.get("version") != VERSION or payload.get("edition") != "time-series":
             raise FetchError("ONS pinned dataset version changed")
         levels = self.client.get("ons", CSV_URL)
-        publication = self.client.get("ons", BULLETIN_BASE + LEVEL_BULLETIN)
-        out = self.parse_levels(levels, payload, since, publication=publication)
+        out = self.parse_levels(levels, payload, since)
         for edition in BULLETINS:
             doc = self.client.get("ons", BULLETIN_BASE + edition)
             out.extend(self.parse_bulletin(doc, since))
         return out
 
     @staticmethod
-    def parse_levels(document, metadata, since="1900-01", *, publication, version=VERSION):
+    def parse_levels(document, metadata, since="1900-01", *, publication=None, version=VERSION):
         if metadata.get("version") != version or metadata.get("edition") != "time-series":
             raise FetchError("ONS pinned dataset version changed")
         rows = list(csv.DictReader(StringIO(document.body.decode("utf-8-sig"))))
         if not rows:
             raise FetchError("ONS GDP CSV empty")
-        # ONS CSV format is checked against the saved v69 response, not guessed.
-        published_at = bulletin_date(publication) + "T00:00:00Z"
+        # The dataset has its own publication, distinct from the monthly GDP
+        # bulletin and from last_updated. Midnight certifies only a date.
+        try:
+            published_at = utc(metadata["release_date"])
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            raise FetchError("ONS index dataset release_date missing or invalid; not tier-1-resolvable") from exc
+        edition = published_at[:10]
         out = []
         for row in rows:
             if row.get("sic-unofficial") != "A--T":
@@ -108,7 +113,7 @@ class ONSAdapter:
                 continue
             out.append(Observation("uk_gdp_index", "uk_gdp", period, float(row["v4_0"]), row["v4_0"],
                                    f"gdp-to-four-decimal-places:time-series:{version}:A--T", "ONS", document,
-                                   f"time-series:{version}", published_at, provider_vintage=str(version), revision="routine"))
+                                   edition, published_at, provider_vintage=str(version), revision="routine"))
         if not out:
             raise FetchError("ONS pinned GDP version has no levels in requested window")
         return out

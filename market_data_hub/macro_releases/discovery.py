@@ -300,14 +300,13 @@ def _ons(client, family, since):
     if not slugs:
         batch.issue("issuer_bulletin_listing_empty")
         return batch
-    # Bind the index levels to their reference month's actual issuer bulletin,
-    # never the later API upload timestamp. The version number is not a series.
+    # The level dataset's release_date is independent of the GDP bulletin.
+    # Still review the linked reference month and the latest bulletin shapes.
     import csv
     from io import StringIO
     rows = list(csv.DictReader(StringIO(csv_doc.body.decode("utf-8-sig"))))
     periods = [datetime.strptime(r["mmm-yy"], "%b-%y") for r in rows if r.get("sic-unofficial") == "A--T"]
     level_slug = max(periods).strftime("%B%Y").lower() if periods else None
-    publication = None
     for slug in dict.fromkeys([level_slug, *slugs[-2:]]):
         if slug is None or slug not in slugs:
             batch.issue("level_period_missing_from_bulletin_listing")
@@ -318,8 +317,6 @@ def _ons(client, family, since):
                 batch.issue("issuer_listing_publication_date_mismatch")
         except FetchError:
             batch.issue("issuer_publication_date_missing")
-        if slug == level_slug:
-            publication = doc
         try:
             if slug in slugs[-2:]:
                 parsed = ons.ONSAdapter.parse_bulletin(doc, since)
@@ -330,12 +327,13 @@ def _ons(client, family, since):
                 batch.anchors &= slug in ons.BULLETINS
         except (FetchError, ValueError, KeyError, TypeError):
             batch.issue("bulletin_structure_changed")
-    if publication:
-        try:
-            batch.observations.extend(ons.ONSAdapter.parse_levels(csv_doc, metadata, since,
-                publication=publication, version=version))
-        except (FetchError, ValueError, KeyError, TypeError):
-            batch.issue("dataset_series_units_or_periods_changed")
+    try:
+        batch.observations.extend(ons.ONSAdapter.parse_levels(csv_doc, metadata, since, version=version))
+    except FetchError as exc:
+        batch.issue("index_not_tier1_resolvable_missing_release_date" if "release_date" in str(exc)
+                    else "dataset_series_units_or_periods_changed")
+    except (ValueError, KeyError, TypeError):
+        batch.issue("dataset_series_units_or_periods_changed")
     if metadata.get("version") != version or metadata.get("edition") != "time-series":
         batch.issue("dataset_version_identity_changed")
     if metadata.get("links", {}).get("dataset", {}).get("id") != "gdp-to-four-decimal-places":

@@ -7,6 +7,17 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Fixed
+- Skip unchanged official readings across document/envelope changes, retaining
+  the original first-seen time and counting daily retries as `readings_skipped`.
+  Preserve real corrections, stages, editions and verification provenance.
+- Use the ONS index dataset's own `release_date` for its publication edition,
+  retaining the dataset version as provenance. Diagnose pre-existing malformed
+  index editions explicitly; never borrow a monthly GDP bulletin's date.
+- Select the edition's head period before card filters, retaining older values
+  as revision evidence. Suppress stale EA20 cards when EA21 has advanced and
+  expose `discontinued_series` with the successor and last reference periods.
+
 ## [0.3.4] — 2026-10-20
 
 Release set `ecosystem-2026.10.7`: `resolve-worklist` rule `legacy-worklist-v3` (#115).

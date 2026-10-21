@@ -22,6 +22,36 @@ FAMILY_INDICATORS = {
     "uk_gdp": {"uk_gdp_mm", "uk_gdp_index"},
 }
 
+# Explicit comparable composition successors; never infer succession merely
+# from a shared issuer or family. Three missing monthly periods is the gate.
+SUCCESSORS = {f"ea_hicp_{basis}": f"ea21_hicp_{basis}" for basis in ("mm", "yy")}
+STALE_MONTHS = 3
+
+
+def malformed_edition(evidence):
+    return evidence.indicator_id == "uk_gdp_index" and evidence.edition.startswith("time-series:")
+
+
+def stale_series(snapshot, indicator, period, released_at):
+    successor = SUCCESSORS.get(indicator)
+    if not successor or not re.fullmatch(r"\d{4}-\d{2}", period):
+        return None
+    available = [e.reference_period for e in snapshot.evidence
+                 if e.indicator_id == successor and e.official and e.value is not None
+                 and e.published_at and e.published_at <= released_at
+                 and re.fullmatch(r"\d{4}-\d{2}", e.reference_period or "")]
+    if not available:
+        return None
+    head = max(available)
+    year, month = map(int, period.split("-"))
+    release_year, release_month = map(int, released_at[:7].split("-"))
+    if head > period and (release_year - year) * 12 + release_month - month >= STALE_MONTHS:
+        return {"reason": "discontinued_series", "successor": successor,
+                "last_reference_period": period, "successor_reference_period": head,
+                "stale_months": STALE_MONTHS,
+                "detail": "series has no new monthly period while its explicit composition successor has advanced"}
+    return None
+
 
 def window(since, until):
     """Half-open UTC bounds. A date-only until includes that entire UTC date."""
@@ -192,9 +222,14 @@ class ReadAPI:
         # The snapshot is immutable during a query. Reuse chronology across
         # cards instead of resolving every historical event for every card.
         event_orders = {e.id: event_order(snapshot, e) for e in snapshot.evidence}
+        heads = {}
+        for e in snapshot.evidence:
+            if e.event_id and e.reference_period and e.official and e.reading_kind == "actual" and not malformed_edition(e):
+                key = (e.event_id, snapshot.indicators[e.indicator_id]["frequency"])
+                heads[key] = max(heads.get(key, e.reference_period), e.reference_period)
         groups = {}
         for e in snapshot.evidence:
-            if e.indicator_id not in requested or not e.event_id:
+            if e.indicator_id not in requested or not e.event_id or malformed_edition(e):
                 continue
             info = snapshot.indicators[e.indicator_id]
             if geography and info["geography"] != geography:
@@ -205,6 +240,10 @@ class ReadAPI:
         for (event_id, indicator), evidence in sorted(groups.items()):
             # One headline period per indicator; older periods are revision rows.
             period = max(e.reference_period for e in evidence)
+            # An edition republishes history, including earlier compositions.
+            # Determine its head before applying indicator/geography filters.
+            if period < heads.get((event_id, snapshot.indicators[indicator]["frequency"]), period):
+                continue
             headline = [e for e in evidence if e.reference_period == period]
             stage = snapshot.events.get(event_id, {}).get("estimate_stage")
             stage = stage if stage in {e.stage for e in headline} else sorted({e.stage for e in headline})[-1]
@@ -220,6 +259,8 @@ class ReadAPI:
                     resolution = contextual
             released_at, precision, time_basis = event_timing(snapshot, event_id, selected)
             if released_at is None or not start <= released_at < end or released_at > snapshot.cutoff:
+                continue
+            if stale_series(snapshot, indicator, period, released_at):
                 continue
             prior = prior_period(period)
             # The previous figure is strictly what we knew by release time.
@@ -394,6 +435,23 @@ class ReadAPI:
             return bool(instant and start <= instant < end)
 
         relevant = [e for e in rows if matches(e)]
+        valid_rows = [e for e in rows if not malformed_edition(e)]
+        if rows and not valid_rows:
+            return dict(base, reason="invalid_publication_edition",
+                        detail="ONS index time-series version is not a publication edition; recollect using dataset release_date (v69: 2026-08-24), not the GDP bulletin date")
+        if indicator == "uk_gdp_index" and is_window and valid_rows:
+            published = [e for e in valid_rows if e.published_at]
+            if published and max(e.published_at for e in published) < start:
+                latest = max(published, key=lambda e: (e.published_at, e.reference_period or ""))
+                return dict(base, reason="no_release_in_window", last_published_at=latest.published_at,
+                            last_reference_period=latest.reference_period,
+                            detail="ONS index dataset has no publication in this window; monthly GDP bulletin releases do not publish this dataset")
+        monthly = [e.reference_period for e in valid_rows
+                   if e.official and re.fullmatch(r"\d{4}-\d{2}", e.reference_period or "")]
+        if monthly and is_window:
+            discontinued = stale_series(snapshot, indicator, max(monthly), min(end, snapshot.cutoff))
+            if discontinued:
+                return dict(base, **discontinued)
         family = family_for(snapshot, indicator) if indicator in snapshot.indicators else next(
             f for f, members in FAMILY_INDICATORS.items() if indicator in members)
         family_schedules = [s for event, s in latest_schedule(snapshot).items()

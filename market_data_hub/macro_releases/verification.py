@@ -19,7 +19,8 @@ def reviewed_anchor(obs):
         return (obs.edition == eurostat.PUBLICATIONS.get((obs.period, obs.stage)) or
                 obs.stage == "final" and obs.edition in {d for (_, stage), d in eurostat.PUBLICATIONS.items() if stage == "final"})
     if obs.family == "uk_gdp":
-        return (obs.edition == "time-series:" + str(ons.VERSION) or obs.provider_vintage in ons.BULLETINS)
+        return ((obs.indicator_id == "uk_gdp_index" and obs.provider_vintage == str(ons.VERSION)
+                 and obs.edition == "2026-08-24") or obs.provider_vintage in ons.BULLETINS)
     return False
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
