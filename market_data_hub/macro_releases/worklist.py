@@ -284,9 +284,17 @@ def evaluation_cutoff(as_of, lateness_days):
 
 
 def ensure_audit(store):
-    """Create the optional audit feature within the caller's transaction, at v5."""
-    if store.conn.execute("PRAGMA user_version").fetchone()[0] != 5:
-        raise ValueError("worklist resolution requires a schema v5 database copy")
+    """Create the optional audit feature on v5 and additive compatible schemas."""
+    from .migrations import SCHEMA_VERSION
+
+    if (
+        not 5
+        <= store.conn.execute("PRAGMA user_version").fetchone()[0]
+        <= SCHEMA_VERSION
+    ):
+        raise ValueError(
+            "worklist resolution requires a schema v5 or later database copy"
+        )
     statement = ""
     for line in Path(__file__).with_name("worklist_audit.sql").read_text(encoding="utf-8").splitlines(True):
         statement += line

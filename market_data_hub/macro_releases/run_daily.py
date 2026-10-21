@@ -15,6 +15,7 @@ from .adapters import persist
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
 from .catalogue import FAMILIES
+from .consensus import DEFAULT_RAW_DIR, ingest
 from .eurostat import EurostatAdapter
 from .discovery import FamilyFetch, fetch_daily
 from .http import FetchError, HttpClient
@@ -118,19 +119,29 @@ def persist_counts(store, observations):
             "readings_skipped": len(observations) - added["readings"]}
 
 
-def execute(target, families, lookback, dry_run, *, bands=None):
+def execute(
+    target, families, lookback, dry_run, *, bands=None, raw_dir=DEFAULT_RAW_DIR
+):
     today = datetime.now(timezone.utc).date()
     since, windows = fetch_windows(families, lookback, today)
     run_id = uuid4().hex
     summary = {"run_id": run_id, "db": str(target), "dry_run": dry_run,
                "requested_since": since, "families": {}}
-    parameters = {"lookback_months": lookback, "fetch_windows": windows, "sanity_bands": bands or configured_bands()}
+    parameters = {
+        "lookback_months": lookback,
+        "fetch_windows": windows,
+        "sanity_bands": bands or configured_bands(),
+        "consensus_raw_dir": str(raw_dir),
+    }
     if dry_run:
         client = HttpClient()
         with preview_store(target) as store:
             for family in families:
                 summary["families"].update(collect_family(
                     lambda: nullcontext(store), client, run_id, family, windows, dry_run=True, bands=bands))
+            summary["consensus"] = collect_consensus(
+                lambda: nullcontext(store), run_id, raw_dir, dry_run=True
+            )
     else:
         with RunLease(target) as lease:
             client = HttpClient(before_request=lease.renew)
@@ -143,6 +154,9 @@ def execute(target, families, lookback, dry_run, *, bands=None):
             for family in families:
                 summary["families"].update(collect_family(
                     lambda: open_writer(target), client, run_id, family, windows, lease=lease, bands=bands))
+            summary["consensus"] = collect_consensus(
+                lambda: open_writer(target), run_id, raw_dir, lease=lease
+            )
             with open_writer(target) as store:
                 lease.validate()
                 run_log.finish(store, run_id, outcome(summary["families"]))
@@ -150,6 +164,29 @@ def execute(target, families, lookback, dry_run, *, bands=None):
     summary["exit_code"] = 1 if summary["status"] == "failed" else 0 if any(
         r["vintages_added"] for r in summary["families"].values()) else 3
     return summary
+
+
+def collect_consensus(writer, run_id, raw_dir, *, lease=None, dry_run=False):
+    """Independent status under the official run's lease, after its families."""
+    try:
+        with writer() as store:
+            if lease:
+                lease.validate()
+            result = ingest(
+                store, raw_dir, before_snapshot=lease.validate if lease else None
+            )
+    except Exception as exc:
+        result = dict(status="failed", readings_added=0, **safe_error(exc))
+    if not dry_run:
+        try:
+            with writer() as store:
+                if lease:
+                    lease.validate()
+                run_log.consensus_result(store, run_id, result)
+        except Exception as exc:
+            # A consensus/logging failure must not overwrite official outcomes.
+            result = dict(result, status="failed", **safe_error(exc))
+    return result
 
 
 def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_run=False, bands=None):
@@ -200,6 +237,12 @@ def main(argv=None):
     parser.add_argument("--families", nargs="+", default=list(FAMILIES), help="Names separated by spaces or commas")
     parser.add_argument("--lookback-months", type=int, default=DEFAULT_LOOKBACK_MONTHS)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--consensus-raw-dir",
+        type=Path,
+        default=DEFAULT_RAW_DIR,
+        help="Read-only FF archive; consensus status is independent of official status",
+    )
     parser.add_argument("--sanity-bands", type=Path, help="JSON per-indicator max absolute changes")
     args = parser.parse_args(argv)
     families = list(dict.fromkeys(f for group in args.families for f in group.split(",")))
@@ -212,9 +255,21 @@ def main(argv=None):
     except (ValueError, OSError):
         parser.error("--sanity-bands must be a JSON object of positive per-indicator changes")
     try:
-        summary = execute(args.db.resolve(), families, args.lookback_months, args.dry_run, bands=bands)
+        summary = execute(
+            args.db.resolve(),
+            families,
+            args.lookback_months,
+            args.dry_run,
+            bands=bands,
+            raw_dir=args.consensus_raw_dir,
+        )
     except Exception as exc:
-        summary = {"status": "failed", "exit_code": 1, "dry_run": args.dry_run, **safe_error(exc)}
+        summary = {
+            "status": "failed",
+            "exit_code": 1,
+            "dry_run": args.dry_run,
+            **safe_error(exc),
+        }
     print(json.dumps(summary, indent=2))
     return summary["exit_code"]
 

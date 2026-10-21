@@ -1338,7 +1338,11 @@ def test_v1_migration_preserves_evidence_and_backlog_and_fixes_date_only_flags(
             "INSERT INTO import_worklist VALUES ('legacy','sighting:1','payroll','unlinked_sighting','pending','2026-10-17','2026-10-17',NULL)"
         )
     with open_writer(path) as current:
-        assert current.conn.execute("PRAGMA user_version").fetchone()[0] == 5
+        from market_data_hub.macro_releases.migrations import SCHEMA_VERSION
+
+        assert (
+            current.conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
+        )
         assert (
             current.conn.execute(
                 "SELECT COUNT(*) FROM readings WHERE id=?", (reading_id,)

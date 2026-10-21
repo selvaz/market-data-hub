@@ -7,7 +7,29 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Offline daily Forex Factory forecast ingestion into `consensus_readings`,
+  labelled `ff_forecast`, with manifest capture times, verified archive hashes,
+  exact country/catalogue aliases and issuer-event reference periods. Schema v6
+  adds atomic snapshot checkpoints and a separate consensus run log; failures
+  leave official collection status and exit codes unchanged. Six versioned
+  tier-1 US/EA/UK aliases include title justifications. The production-copy
+  validation report records missing capture records and missing issuer events and
+  the resulting zero-row backfill; no historical consensus is fabricated.
+
 ### Fixed
+- Retire a linked FF consensus observation when the current issuer index no longer places it on a unique event (`release_event_not_found` / `release_event_ambiguous`): an append-only v7 journal row with `retired=1` hides it from snapshots and cards, a later valid match restores it, and the checkpoint version includes the journal position so a snapshot is reprocessed when the index returns to an earlier state.
+- Include normalized stored indicator aliases in FF checkpoint fingerprints so
+  catalogue additions automatically retry previously unmapped captures.
+- Suppress FF forecast surprises through provider eligibility; atomically retire
+  corrected issuer links with an append-only schema v7 journal, and refuse
+  conflicting issuer time zones when matching archived FF events.
+- Link FF forecasts only to one stored issuer release event on the same
+  issuer-local scheduled or actual date, inheriting its period and stage.
+  Count absent/ambiguous events and stage conflicts; never create an event
+  or require a reference-period label in the FF feed. Revisit skipped captures
+  when issuer metadata changes. Scheduled events with explicit issuer period
+  membership can expose forecast-only cards with null actual and surprise.
 - Skip unchanged official readings across document/envelope changes, retaining
   the original first-seen time and counting daily retries as `readings_skipped`.
   Preserve real corrections, stages, editions and verification provenance.
