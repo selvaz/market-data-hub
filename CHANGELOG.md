@@ -30,7 +30,6 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   or require a reference-period label in the FF feed. Revisit skipped captures
   when issuer metadata changes. Scheduled events with explicit issuer period
   membership can expose forecast-only cards with null actual and surprise.
-### Fixed
 - Skip unchanged official readings across document/envelope changes, retaining
   the original first-seen time and counting daily retries as `readings_skipped`.
   Preserve real corrections, stages, editions and verification provenance.
