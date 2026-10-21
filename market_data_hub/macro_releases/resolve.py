@@ -253,7 +253,9 @@ class Snapshot:
             try:
                 link = normalize(link, {"recorded_at": None})
                 if known_by(link, "recorded_at", cutoff):
-                    live_ids.add(link["consensus_reading_id"])
+                    # A retired latest link hides the observation entirely.
+                    if not link.get("retired"):
+                        live_ids.add(link["consensus_reading_id"])
                 else:
                     limitations.append(
                         "Consensus observation omitted: issuer link corrected after query cutoff."

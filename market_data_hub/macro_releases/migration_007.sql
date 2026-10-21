@@ -2,7 +2,9 @@
 CREATE TABLE consensus_link_versions (
     id INTEGER PRIMARY KEY,
     consensus_reading_id INTEGER NOT NULL REFERENCES consensus_readings(id),
-    recorded_at TEXT NOT NULL
+    recorded_at TEXT NOT NULL,
+    -- 1 = the observation has no valid issuer link any more (no replacement row).
+    retired INTEGER NOT NULL DEFAULT 0 CHECK (retired IN (0, 1))
 );
 CREATE INDEX consensus_observation_identity
 ON consensus_readings(provider, captured_at, content_hash);

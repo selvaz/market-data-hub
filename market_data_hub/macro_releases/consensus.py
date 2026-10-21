@@ -108,6 +108,16 @@ class Catalogue:
         # New issuer metadata must revisit earlier not-found/ambiguous skips.
         # Repeated unchanged official fetches leave this fingerprint stable.
         self.version += ":" + self.releases.fingerprint
+        # Link retirements change what a snapshot means even when the issuer
+        # index returns to an earlier state (event moved away and back): include
+        # the journal position so such a snapshot is processed again.
+        if store.conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='consensus_link_versions'"
+        ).fetchone():
+            journal = store.conn.execute(
+                "SELECT COUNT(*), COALESCE(MAX(id), 0) FROM consensus_link_versions"
+            ).fetchone()
+            self.version += f":links{journal[0]}-{journal[1]}"
 
     def match(self, event, title):
         currency = event.get("country")
@@ -363,13 +373,37 @@ def prepare(store, catalogue, event, captured_at, snapshot_hash):
         release_cutoff_at=linked["cutoff"],
         cutoff_precision=linked["precision"],
         cutoff_basis=linked["basis"],
-        content_hash=hashlib.sha256(
-            (
-                snapshot_hash + json.dumps(event, sort_keys=True, ensure_ascii=True)
-            ).encode()
-        ).hexdigest(),
+        content_hash=observation_hash(snapshot_hash, event),
     )
     return True, None, (release, reading)
+
+
+LINK_REJECTIONS = frozenset({"release_event_not_found", "release_event_ambiguous"})
+
+
+def observation_hash(snapshot_hash, event):
+    """The content_hash a ConsensusReading built from this event would carry."""
+    return hashlib.sha256(
+        (snapshot_hash + json.dumps(event, sort_keys=True, ensure_ascii=True)).encode()
+    ).hexdigest()
+
+
+def latest_link(store, observation_key):
+    return store.conn.execute(
+        "SELECT v.consensus_reading_id, v.retired FROM consensus_link_versions v "
+        "JOIN consensus_readings r ON r.id=v.consensus_reading_id "
+        "WHERE r.provider=? AND r.captured_at=? AND r.content_hash=? "
+        "ORDER BY v.id DESC LIMIT 1",
+        observation_key,
+    ).fetchone()
+
+
+def journal_link(store, reading_id, *, retired):
+    store.conn.execute(
+        "INSERT INTO consensus_link_versions (consensus_reading_id,recorded_at,retired) "
+        "VALUES (?,?,?)",
+        (reading_id, utc(datetime.now(timezone.utc).isoformat()), int(retired)),
+    )
 
 
 def manifest_hashes(directory):
@@ -458,6 +492,7 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
             skipped = Counter()
             snapshot_titles = Counter()
             records = []
+            rejected = []
             for event in events:
                 mapped, reason, record = prepare(
                     store, catalogue, event, captured_at, digest
@@ -466,6 +501,8 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
                 if reason:
                     counts["events_skipped"] += 1
                     skipped[reason] += 1
+                    if reason in LINK_REJECTIONS and captured_at is not None:
+                        rejected.append((captured_at, observation_hash(digest, event)))
                     snapshot_titles[
                         event.get("country", "?"), event.get("title", "?"), reason
                     ] += 1
@@ -501,27 +538,37 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
                         reading.captured_at,
                         reading.content_hash,
                     )
-                    if store.conn.execute(
+                    latest = latest_link(store, observation_key)
+                    other = store.conn.execute(
                         "SELECT 1 FROM consensus_readings WHERE provider=? AND captured_at=? "
                         "AND content_hash=? AND id<>? LIMIT 1",
                         (*observation_key, reading_id),
-                    ).fetchone():
-                        latest = store.conn.execute(
-                            "SELECT v.consensus_reading_id FROM consensus_link_versions v "
-                            "JOIN consensus_readings r ON r.id=v.consensus_reading_id "
-                            "WHERE r.provider=? AND r.captured_at=? AND r.content_hash=? "
-                            "ORDER BY v.id DESC LIMIT 1",
-                            observation_key,
-                        ).fetchone()
-                        if latest is None or latest[0] != reading_id:
-                            store.conn.execute(
-                                "INSERT INTO consensus_link_versions "
-                                "(consensus_reading_id,recorded_at) VALUES (?,?)",
-                                (
-                                    reading_id,
-                                    utc(datetime.now(timezone.utc).isoformat()),
-                                ),
-                            )
+                    ).fetchone()
+                    # Journal a live link when the observation moved to another
+                    # event, or when a retired observation matches again.
+                    if (latest is None and other) or (
+                        latest is not None and (latest[0] != reading_id or latest[1])
+                    ):
+                        journal_link(store, reading_id, retired=False)
+                for captured, content_hash in rejected:
+                    # A linked observation the current rules no longer place on a
+                    # unique issuer event: retire its live link, keep the raw row.
+                    key_ = (PROVIDER, captured, content_hash)
+                    live = store.conn.execute(
+                        "SELECT id FROM consensus_readings WHERE provider=? AND captured_at=? "
+                        "AND content_hash=? ORDER BY id DESC LIMIT 1",
+                        key_,
+                    ).fetchone()
+                    if live is None:
+                        continue
+                    latest = latest_link(store, key_)
+                    if latest is not None and latest[1]:
+                        continue
+                    journal_link(
+                        store,
+                        latest[0] if latest is not None else live["id"],
+                        retired=True,
+                    )
                 counts["skip_reasons"] = dict(sorted(skipped.items()))
                 store.conn.execute(
                     "INSERT INTO consensus_snapshots VALUES (?,?,?,?,?,?) ON CONFLICT DO NOTHING",

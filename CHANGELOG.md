@@ -18,6 +18,7 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   the resulting zero-row backfill; no historical consensus is fabricated.
 
 ### Fixed
+- Retire a linked FF consensus observation when the current issuer index no longer places it on a unique event (`release_event_not_found` / `release_event_ambiguous`): an append-only v7 journal row with `retired=1` hides it from snapshots and cards, a later valid match restores it, and the checkpoint version includes the journal position so a snapshot is reprocessed when the index returns to an earlier state.
 - Include normalized stored indicator aliases in FF checkpoint fingerprints so
   catalogue additions automatically retry previously unmapped captures.
 - Suppress FF forecast surprises through provider eligibility; atomically retire

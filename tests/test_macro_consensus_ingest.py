@@ -589,6 +589,101 @@ def move_schedule(store, release_id, day, recorded):
     )
 
 
+@pytest.mark.parametrize("reprocess", [False, True])
+@pytest.mark.parametrize(
+    "reason", ["release_event_ambiguous", "release_event_not_found"]
+)
+def test_rejected_release_link_is_retired_and_restorable(
+    store, tmp_path, reason, reprocess
+):
+    first_id = pending_release(store)
+    raw = tmp_path / "raw"
+    archive(raw, [dict(event(), date="2026-10-22T08:30:00-04:00")])
+    assert consensus.ingest(store, raw)["readings_added"] == 1
+    original = rows(store)[0]
+
+    def cards():
+        return store.release_cards(
+            "2026-10-19",
+            "2026-10-24",
+            indicators=["us_cpi_headline_yy"],
+            as_known_at="2026-10-30T00:00:00Z",
+        )["cards"]
+
+    assert cards()[0]["consensus"][0]["id"] == original["id"]
+    if reason == "release_event_ambiguous":
+        second_id = pending_release(store, edition="2026-10-23")
+        move_schedule(store, second_id, "2026-10-22", "2026-10-19T00:00:00Z")
+    else:
+        move_schedule(store, first_id, "2026-10-23", "2026-10-19T00:00:00Z")
+    result = consensus.ingest(store, raw, reprocess=reprocess)
+    assert result["skip_reasons"] == {reason: 1}
+    assert result["readings_added"] == 0
+    assert Snapshot.load(store).consensus == []
+    assert cards() == []
+    assert rows(store) == [original]
+    journal = store.conn.execute("SELECT * FROM consensus_link_versions").fetchall()
+    assert len(journal) == 1
+    assert journal[0]["consensus_reading_id"] == original["id"]
+    assert journal[0]["retired"] == 1
+    assert Snapshot.load(store, "2026-10-19T23:59:00Z").consensus == []
+    consensus.ingest(store, raw, reprocess=True)
+    assert (
+        store.conn.execute("SELECT COUNT(*) FROM consensus_link_versions").fetchone()[0]
+        == 1
+    )
+
+    if reason == "release_event_ambiguous":
+        move_schedule(store, second_id, "2026-10-23", "2026-10-20T00:00:00Z")
+    else:
+        move_schedule(store, first_id, "2026-10-22", "2026-10-20T00:00:00Z")
+    assert consensus.ingest(store, raw, reprocess=reprocess)["readings_added"] == 0
+    assert Snapshot.load(store).consensus[0]["id"] == original["id"]
+    assert cards()[0]["consensus"][0]["id"] == original["id"]
+    assert rows(store) == [original]
+    journal = store.conn.execute(
+        "SELECT * FROM consensus_link_versions ORDER BY id"
+    ).fetchall()
+    assert [r["retired"] for r in journal] == [1, 0]
+    assert store.conn.execute("PRAGMA foreign_key_check").fetchall() == []
+
+
+@pytest.mark.parametrize(
+    "reason", ["release_event_ambiguous", "release_event_not_found"]
+)
+def test_retirement_and_checkpoint_roll_back_together(store, tmp_path, reason):
+    first_id = pending_release(store)
+    raw = tmp_path / "raw"
+    archive(raw, [dict(event(), date="2026-10-22T08:30:00-04:00")])
+    consensus.ingest(store, raw)
+    if reason == "release_event_ambiguous":
+        second_id = pending_release(store, edition="2026-10-23")
+        move_schedule(store, second_id, "2026-10-22", "2026-10-19T00:00:00Z")
+    else:
+        move_schedule(store, first_id, "2026-10-23", "2026-10-19T00:00:00Z")
+    store.conn.execute(
+        "CREATE TRIGGER reject_checkpoint BEFORE INSERT ON consensus_snapshots "
+        "BEGIN SELECT RAISE(ABORT, 'fixture checkpoint failure'); END"
+    )
+    assert consensus.ingest(store, raw)["status"] == "failed"
+    assert len(Snapshot.load(store).consensus) == len(rows(store)) == 1
+    assert (
+        store.conn.execute("SELECT COUNT(*) FROM consensus_link_versions").fetchone()[0]
+        == 0
+    )
+    assert (
+        store.conn.execute("SELECT COUNT(*) FROM consensus_snapshots").fetchone()[0]
+        == 1
+    )
+    store.conn.execute("DROP TRIGGER reject_checkpoint")
+    assert consensus.ingest(store, raw)["skip_reasons"] == {reason: 1}
+    assert Snapshot.load(store).consensus == []
+    assert (
+        store.conn.execute("SELECT COUNT(*) FROM consensus_link_versions").fetchone()[0]
+        == 1
+    )
+
+
 def test_relinked_observation_has_one_live_release_and_can_restore_old_link(
     store, tmp_path
 ):
