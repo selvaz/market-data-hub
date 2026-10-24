@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "870125dab4c94a031fa69b353e51675ed8bb0824ceb7ae2ff1502bb52cc91325",
+  "aliases_sha256": "2277ef339b3e526d23366d68d7fb4e83816b8b4ba137f316e3677f6c35da54de",
   "cards": [
     {
       "concept": "Real GDP",
@@ -4605,7 +4605,8 @@
           "ez_core_hicp_mm"
         ],
         "cat": [
-          "ea_core_hicp_yy"
+          "ea_core_hicp_yy",
+          "ea21_core_hicp_yy"
         ],
         "derived_ms": [],
         "es": [],

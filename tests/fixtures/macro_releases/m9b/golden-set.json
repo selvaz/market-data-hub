@@ -1,5 +1,7 @@
 {
   "cases": [
+    {"family": "ea_core_hicp", "fixture": "ea-core-flash.html", "indicator": "ea21_core_hicp_yy", "period": "2026-09", "edition": "2026-10-02", "stage": "flash", "value": 2.5, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-02102026-ap"},
+    {"family": "ea_core_hicp", "fixture": "ea-core-final.html", "indicator": "ea21_core_hicp_yy", "period": "2026-09", "edition": "2026-10-16", "stage": "final", "value": 2.5, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-16102026-ap"},
     {"family": "us_new_home_sales", "fixture": "newhomes.pdf", "indicator": "us_new_home_sales", "period": "2026-08", "edition": "2026-09-24", "stage": "final", "value": 684, "source_url": "https://www.census.gov/construction/nrs/pdf/newressales.pdf"},
     {"family": "us_new_home_sales", "fixture": "newhomes.pdf", "indicator": "us_new_home_sales", "period": "2026-07", "edition": "2026-09-24", "stage": "final", "value": 643, "source_url": "https://www.census.gov/construction/nrs/pdf/newressales.pdf"},
     {"family": "uk_retail_sales", "fixture": "uk-retail.html", "indicator": "uk_retail_sales_mm", "period": "2026-09", "edition": "2026-10-23", "stage": "final", "value": -0.4, "source_url": "https://www.ons.gov.uk/businessindustryandtrade/retailindustry/bulletins/retailsales/september2026"},
