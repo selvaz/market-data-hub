@@ -210,6 +210,13 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
     try:
         if lease:
             lease.renew()
+        from .ec_surveys import STORED_EDITIONS, stored_official_editions
+        collected = frozenset()
+        if family == "ea_ec_surveys":
+            # Take a short snapshot before network I/O, never a long writer lock.
+            with writer() as store:
+                collected = stored_official_editions(store)
+        collected_token = STORED_EDITIONS.set(collected)
         instant = run_instant(run_at if run_at is not None else result["fetch_until"])
         token = RUN_INSTANT.set(instant)
         pending_token = PENDING_EDITIONS.set({})
@@ -228,8 +235,9 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
         finally:
             PENDING_EDITIONS.reset(pending_token)
             RUN_INSTANT.reset(token)
+            STORED_EDITIONS.reset(collected_token)
         observations = batch.observations
-        if not observations and not batch.issues and not result.get("scheduled_editions"):
+        if not observations and not batch.issues and not result.get("scheduled_editions") and not collected:
             raise FetchError("No observations in requested window")
         if any(o.family != family for o in observations):
             raise ValueError("Adapter returned another family")
