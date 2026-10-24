@@ -5,13 +5,14 @@ import argparse
 import csv
 import hashlib
 import json
+import re
 from collections import defaultdict
 from importlib.resources import files
 from pathlib import Path
 
 from . import dataset, indicator_card, unmapped
 from .build import DATA_DIR, PSV_PATH, parse_ids
-from .models import Evidence, IndicatorCard, Timing
+from .models import CLASSIFICATION_VERSION, Evidence, IndicatorCard, Timing
 
 DRAFT_PSV_PATH = DATA_DIR / "draft_rows_v2.2.psv"
 DRAFT_TIMING_PATH = DATA_DIR / "timing_v2.2-draft.json"
@@ -31,8 +32,10 @@ def load_draft_cards(
 ) -> tuple[IndicatorCard, ...]:
     """Validate proposed cards for offline review only; never alter the shipped index."""
     timing = json.loads(timing_path.read_text(encoding="utf-8"))
-    if timing["classification_version"] != "v2.2-draft":
-        raise ValueError("Expected v2.2-draft timing evidence")
+    version = timing["classification_version"]
+    if not re.fullmatch(r"v\d+\.\d+-draft", version):
+        raise ValueError("Expected draft classification version in timing evidence")
+    pending_flag = f"draft {version.removesuffix('-draft')}, pending owner approval"
     if timing["source_table_sha256"] != hashlib.sha256(psv_path.read_bytes()).hexdigest():
         raise ValueError("Draft timing belongs to a different PSV")
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
@@ -51,7 +54,7 @@ def load_draft_cards(
     for row in rows:
         if None in row or any(value is None for value in row.values()):
             raise ValueError("Draft row must contain exactly 19 values")
-        if row["flag"] != "draft v2.2, pending owner approval":
+        if row["flag"] != pending_flag:
             raise ValueError("Draft row must retain its pending-approval flag")
         if (row["timing_class"], row["timing_basis"], row["vkeys"], row["class_pair"]) != (
             "UNKNOWN", "—", "", "",
@@ -94,9 +97,14 @@ def tier1_coverage(with_drafts: bool = False) -> dict:
     """Resolve actual cards, keeping approved and proposed coverage explicit."""
     drafts = {}
     if with_drafts:
-        for card in load_draft_cards():
-            for identity in (card.key, *card.ids.cat, *(f"cat:{value}" for value in card.ids.cat)):
-                drafts[identity] = card
+        for psv_path in sorted(DATA_DIR.glob("draft_rows_*.psv")):
+            version = psv_path.stem.removeprefix("draft_rows_")
+            timing_path = psv_path.with_name(f"timing_{version}-draft.json")
+            for card in load_draft_cards(psv_path, timing_path):
+                for identity in {card.key, *card.ids.cat, *(f"cat:{value}" for value in card.ids.cat)}:
+                    if identity in drafts:
+                        raise ValueError(f"Duplicate identity across draft files: {identity}")
+                    drafts[identity] = card
     resolutions = {}
     missing = []
     for identity in tier1_ids():
@@ -162,7 +170,7 @@ def coverage_report(with_drafts: bool = False) -> dict:
         "ea_gdp": [i for i in catalogue if i.startswith("cat:ea21_gdp_")],
         "us_jobless_claims": ["cat:us_initial_jobless_claims"],
     }
-    aliases = json.loads(files(__package__).joinpath("aliases_v2.1.json").read_text(encoding="utf-8"))
+    aliases = json.loads(files(__package__).joinpath(f"aliases_{CLASSIFICATION_VERSION}.json").read_text(encoding="utf-8"))
     return {
         "classification_version": dataset().classification_version,
         "cards": len(dataset().cards),
@@ -178,7 +186,7 @@ def coverage_report(with_drafts: bool = False) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--with-drafts", action="store_true", help="Include pending v2.2 cards in tier-1 coverage only")
+    parser.add_argument("--with-drafts", action="store_true", help="Include pending draft_rows_*.psv cards in tier-1 coverage only")
     args = parser.parse_args()
     print(json.dumps(coverage_report(with_drafts=args.with_drafts), ensure_ascii=False, indent=2, sort_keys=True))
 

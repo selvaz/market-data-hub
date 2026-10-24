@@ -1,9 +1,9 @@
-# Indicator cards (classification v2.1)
+# Indicator cards (classification v2.2)
 
 Indicator cards provide the same owner-approved context to domain recaps and
 LazyCommittee. They describe a concept, theme, nature, timing reference, evidence,
 revision behaviour and caveats. They contain no market views or conclusions.
-The 270 concept rows and their timing evidence ship as versioned package data;
+The 294 concept rows and their timing evidence ship as versioned package data;
 reading cards requires no database or network access.
 
 ```python
@@ -19,7 +19,7 @@ if card is not None:
 cards = cards_for(["cal:us_nfp", "es:nonfarm_payrolls", "cal:us_claims"])
 assert [c.key for c in cards] == ["us_payrolls", "us_claims_initial"]
 assert unmapped(["cat:unknown"]) == ["cat:unknown"]
-assert dataset().classification_version == "v2.1"
+assert dataset().classification_version == "v2.2"
 ```
 
 Models are strict, immutable Pydantic models; unknown fields and type coercion
@@ -82,14 +82,27 @@ limitations; an empty flag list does not establish absence of failure modes.
 
 Package resources live under `market_data_hub/indicator_cards/`:
 
-- `master_table_v2.psv`: the owner-approved table (270 rows: v2.1 plus the UK monthly GDP row).
-- `timing_v2.1.json`: verbatim columns (a)/(b) from section 3 of the approved
-  `04-classification-v2.md`, with its source-guide SHA-256. The PSV supplies
-  relationship keys but does not contain the numeric horizons or peak estimates.
-- `aliases_v2.1.json`: explicit, explained aliases from current catalogue ids
+- `master_table_v2.psv`: the owner-approved table (270 existing rows plus the
+  24 tier-1 rows approved on 2026-10-24).
+- `timing_v2.2.json`: existing verbatim columns (a)/(b) from section 3 of the
+  approved `04-classification-v2.md`, plus the 24 promoted timing entries.
+  The original source-guide SHA-256 covers the existing evidence; `promotions`
+  records the approved keys and the hashes of PR #125's draft table and timing
+  file before promotion. The PSV supplies relationship keys but does not contain
+  the numeric horizons or peak estimates.
+- `aliases_v2.2.json`: explicit, explained aliases from current catalogue ids
   to concepts already present in the table, plus documented coverage gaps.
-- `cards_v2.1.json`: generated strict cards, classification/schema versions,
+- `cards_v2.2.json`: generated strict cards, classification/schema versions,
   and SHA-256 hashes of the table, timing extract and aliases.
+- `tier1_v1.json`: the portable snapshot of the 86 external tier-1 measure ids.
+- `draft_rows_v2.2.psv` and `timing_v2.2-draft.json`: empty after promotion,
+  retained for subsequent proposals. Drafts never enter the approved build.
+
+The JSON filenames follow the existing classification-version convention, so
+timing, aliases and generated cards move together from v2.1 to v2.2. The master
+table retains its established `master_table_v2.psv` name: it describes the table
+format rather than the minor classification version. `CLASSIFICATION_VERSION`
+selects the JSON resources; the strict model and build reject mixed versions.
 
 Regenerate or check deterministically from the shipped sources:
 
@@ -97,6 +110,7 @@ Regenerate or check deterministically from the shipped sources:
 python -m market_data_hub.indicator_cards.build
 python -m market_data_hub.indicator_cards.build --check
 python -m market_data_hub.indicator_cards.coverage
+python -m market_data_hub.indicator_cards.coverage --with-drafts
 ```
 
 When an approved guide/table changes, refresh the extract before rebuilding:
@@ -110,27 +124,53 @@ requires a matching concept and store-id row for every PSV key. Freshness tests
 rebuild the JSON and compare it byte for byte. Git preserves source data bytes
 across operating systems so the provenance hashes remain stable.
 
-## Coverage and outstanding source gap
+## Owner approval on 2026-10-24
 
-The offline report uses `macro_releases.catalogue.INDICATORS`, active T1 entries
+All 24 rows from PR #125 now ship with the flag
+`approved v2.2 by owner 2026-10-24`. The nine proposed classification sentences
+have been removed; the rest of each rationale is preserved, including issuer
+metadata and local-validation caveats.
+
+| Promoted keys | Timing class / basis |
+|---|---|
+| `de_gdp_real`, `fr_gdp_real`, `it_gdp_real`, `es_gdp_real`, `jp_gdp_real`, `ca_gdp_monthly` | COIN / DEFINITION; reference: itself (national growth reference) |
+| `fr_cpi` | COIN / DEFINITION; reference: EA HICP |
+| `ea_pmi_composite`, `uk_pmi_mfg` | COIN / HYPOTHESIS; local timing evidence: lit-local |
+| `us_existing_home_sales`, `ea_retail_sales`, `ea_indpro`, `ea_trade_balance`, `fr_indpro`, `fr_unemployment`, `it_indpro`, `es_unemployment`, `es_indpro`, `uk_retail_sales`, `jp_indpro`, `jp_trade_balance`, `cn_indpro`, `cn_retail_sales`, `ca_retail_sales` | UNKNOWN; no timing basis |
+
+The seven definition rows carry the same measurement/mechanism/timing evidence
+as `ea_gdp_real` or `de_cpi`: H / n.a. / n.a. The two PMI hypotheses carry
+M / mixed / lit-local, like `ea_pmi`. The 24 timing entries move intact from the
+draft extract: predictive screens remain **not tested**, descriptive peaks and
+matched turning-point leads remain **not estimated**.
+
+For future proposals, add a `draft_rows_<version>.psv` with the same 19-column
+header and a matching `timing_<version>-draft.json`. `--with-drafts` discovers
+these pairs, verifies their hashes and pending-approval flags, and rejects ids
+that duplicate approved cards or another draft file. Proposed timing must stay
+UNKNOWN and untested. The default coverage report and shipped card index use
+approved cards only.
+
+## Coverage
+
+The offline report uses the tier-1 snapshot, `macro_releases.catalogue.INDICATORS`, active T1 entries
 in `econ_calendar.yaml`, and enabled entries in `macro_series.yaml`. It measures
 configured-id context coverage, not live ingestion or historical completeness.
 
-| Universe / certified family | Cards available |
+| Universe | Measures / ids with approved cards |
 |---|---:|
-| Release catalogue | 12 / 14 |
+| External tier-1 measures | 86 / 86 |
+| Release catalogue | 54 / 54 |
 | Active tier-1 calendar | 65 / 65 |
 | Enabled hub macro series | 107 / 107 |
-| US CPI | 4 / 4 |
-| US payrolls | 1 / 1 |
-| US GDP | 1 / 1 |
-| EA HICP | 6 / 6 |
-| UK GDP | 2 / 2 |
 
 UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) is covered by the owner-approved
 row `uk_gdp_monthly` (added 18/10/2026, mirroring the US GDP row: COIN by
-definition, HARD, ONS). All five certified families are fully covered; tests
-assert that no documented gap remains.
+definition, HARD, ONS). All 33 certified families are fully covered; tests
+assert that no documented gap remains. Tier-1 coverage is 86 approved, zero
+drafts and zero unmapped ids, with or without `--with-drafts`. Main's M9b/M9c
+aliases and per-card id de-duplication are retained; the shared
+`cat:us_new_home_sales` alias appears once with main's M9b explanation.
 
 Catalogue aliases attach **concept context**, never numerical equivalence:
 levels, changes, seasonal adjustments and stages retain their original ids.

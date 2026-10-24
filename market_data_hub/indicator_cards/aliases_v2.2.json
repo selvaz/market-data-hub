@@ -1,5 +1,5 @@
 {
-  "classification_version": "v2.1",
+  "classification_version": "v2.2",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages.",
   "aliases": [
     {"id": "cat:boj_policy_rate_decision", "key": "jp_boj", "basis": "Approved BOJ short-term policy rate decision concept; issuer MPM statement and published rate vote (M9c)."},
@@ -41,11 +41,11 @@
     {"id": "cat:us_sp_global_services_pmi", "key": "us_spglobal_pmi", "basis": "Explicit services member of approved cat:us_sp_global_*; approved cal:us_pmi_svc and cal:us_pmi_svc_flash."},
     {"id": "cat:ea_manufacturing_pmi", "key": "ea_pmi", "basis": "Explicit manufacturing member of the approved HCOB euro-area PMI card; approved cal:ez_pmi_mfg."},
     {"id": "cat:ea_services_pmi", "key": "ea_pmi", "basis": "Explicit services member of the approved HCOB euro-area PMI card; approved cal:ez_pmi_svc."},
-    {"id": "cat:uk_sp_global_services_pmi", "key": "uk_pmi_svc", "basis": "Explicit UK services PMI concept; approved cal:uk_pmi_svc. UK manufacturing requires a separate draft."},
+    {"id": "cat:uk_sp_global_services_pmi", "key": "uk_pmi_svc", "basis": "Explicit UK services PMI concept; approved cal:uk_pmi_svc. UK manufacturing has a separate owner-approved v2.2 card."},
     {"id": "cat:cn_nbs_manufacturing_pmi", "key": "cn_pmi_nbs", "basis": "Explicit NBS manufacturing survey; approved cal:cn_pmi_nbs_mfg. The private S&P panel is separate."},
     {"id": "cat:cn_caixin_manufacturing_pmi", "key": "cn_pmi_private", "basis": "Tier-1 retains the historical Caixin name; approved cal:cn_pmi_caixin_mfg and the approved RatingDog (ex Caixin) manufacturing concept. Context only; current sponsor branding is not re-verified."},
     {"id": "cat:ca_unemployment_rate", "key": "ca_lfs", "basis": "Explicit unemployment member of the approved Canadian Labour Force Survey card; approved cal:ca_unemp."},
     {"id": "cat:ca_employment_change", "key": "ca_lfs", "basis": "Explicit employment-change member of the approved Canadian Labour Force Survey card; approved cal:ca_employment. SEPH payroll employment is separate."}
   ],
-  "certified_gaps": {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"], "ea_trade_balance": ["cat:ea_trade_balance"], "uk_retail_sales": ["cat:uk_retail_sales_mm"]}
+  "certified_gaps": {}
 }

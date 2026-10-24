@@ -1,4 +1,4 @@
-"""Reproduce the versioned JSON from the unchanged PSV and approved evidence."""
+"""Reproduce the versioned JSON from the approved PSV and timing evidence."""
 from __future__ import annotations
 
 import argparse
@@ -9,14 +9,15 @@ import re
 from pathlib import Path
 
 from .models import (
-    CardDataset, DescriptivePeak, Evidence, IndicatorCard, PredictiveScreen, StoreIds, Timing,
+    CLASSIFICATION_VERSION, CardDataset, DescriptivePeak, Evidence, IndicatorCard,
+    PredictiveScreen, StoreIds, Timing,
 )
 
 DATA_DIR = Path(__file__).resolve().parent
 PSV_PATH = DATA_DIR / "master_table_v2.psv"
-TIMING_PATH = DATA_DIR / "timing_v2.1.json"
-ALIASES_PATH = DATA_DIR / "aliases_v2.1.json"
-JSON_PATH = DATA_DIR / "cards_v2.1.json"
+TIMING_PATH = DATA_DIR / f"timing_{CLASSIFICATION_VERSION}.json"
+ALIASES_PATH = DATA_DIR / f"aliases_{CLASSIFICATION_VERSION}.json"
+JSON_PATH = DATA_DIR / f"cards_{CLASSIFICATION_VERSION}.json"
 
 
 def _hash(path: Path) -> str:
@@ -58,7 +59,7 @@ def extract_timing(guide_path: Path, psv_path: Path = PSV_PATH) -> dict:
     if set(extracted) != set(by_key):
         raise ValueError(f"Missing timing rows: {sorted(set(by_key) - set(extracted))}")
     return {
-        "classification_version": "v2.1",
+        "classification_version": CLASSIFICATION_VERSION,
         "source": "04-classification-v2.md, section 3, columns (a) and (b)",
         "source_guide_sha256": _hash(guide_path),
         "source_table_sha256": _hash(psv_path),
@@ -113,6 +114,11 @@ def build_dataset(
 ) -> CardDataset:
     timing = json.loads(timing_path.read_text(encoding="utf-8"))
     aliases = json.loads(aliases_path.read_text(encoding="utf-8"))
+    for name, resource in (("Timing", timing), ("Aliases", aliases)):
+        if resource["classification_version"] != CLASSIFICATION_VERSION:
+            raise ValueError(f"{name} classification version must be {CLASSIFICATION_VERSION}")
+    if len({alias["id"] for alias in aliases["aliases"]}) != len(aliases["aliases"]):
+        raise ValueError("Duplicate alias ids")
     if timing["source_table_sha256"] != _hash(psv_path):
         raise ValueError("Timing extract belongs to a different PSV; re-import the approved guide")
     with psv_path.open(encoding="utf-8-sig", newline="") as f:
