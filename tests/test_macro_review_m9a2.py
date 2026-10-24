@@ -19,7 +19,8 @@ def offline(monkeypatch):
     def forbidden(*args, **kwargs):
         raise AssertionError("Live network forbidden in review regressions")
     monkeypatch.setattr(requests.Session, "request", forbidden)
-    for module in ("fred", "bls", "bea"):
+    # Discovery imports its own api_key binding; never use host credentials.
+    for module in ("fred", "bls", "bea", "discovery"):
         monkeypatch.setattr("market_data_hub.macro_releases." + module + ".api_key", lambda _: "fixture")
 
 
