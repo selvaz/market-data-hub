@@ -15,7 +15,7 @@ from .catalogue import INDICATORS
 from .http import FetchError
 from .publication_times import new_york_release
 from .us_editions import EDITIONS, observation_stage, reviewed
-from .schedule import due, get_edition
+from .schedule import due, get_edition, edition_status, publication_grace, mark_pending
 
 PUBLICATIONS = {
     "us_retail_sales": "https://www.census.gov/retail/marts/www/marts_current.pdf",
@@ -219,5 +219,23 @@ def fetch_publications(client, families, since):
         else:
             out += PARSERS[family](client.get("fred", url), since)
             if family == "us_durable_goods":
-                out += parse_durable_full(client.get("fred", M3_FULL), since)
+                finals = {d: meta for d, meta in due(EDITIONS[family], family=family).items() if meta[1] == "final"}
+                if not finals:
+                    continue
+                expected = max(finals)
+                doc = get_edition(client, "fred", M3_FULL, family, expected)
+                if doc is None:
+                    continue
+                # Validate the edition before applying the requested row cutoff.
+                rows = parse_durable_full(doc)
+                actual = rows[0].edition
+                if edition_status(actual, family=family) == "scheduled":
+                    continue  # Early current-URL bytes are still scheduled.
+                if actual != expected:
+                    previous = max((d for d in finals if d != expected), default=None)
+                    if actual == previous and publication_grace(family, expected):
+                        mark_pending(family, expected)
+                    else:
+                        raise FetchError("Census M3 current full report is not the latest due final edition; needs review")
+                out += [o for o in rows if o.period >= since]
     return out

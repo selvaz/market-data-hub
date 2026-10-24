@@ -195,3 +195,22 @@ def test_census_estimate_stages_follow_printed_labels():
     assert {o.stage for o in full if o.period == "2026-08"} == {"final"}
     assert {o.stage for o in [*advance, *full] if o.period == "2026-07"} == {"revised"}
     assert {o.indicator_id for o in advance} == {"us_durable_goods_orders_mm", "us_durable_goods_ex_transport_mm"}
+
+
+def test_m3_current_pdf_must_match_latest_due_final():
+    from market_data_hub.macro_releases.us_publications import fetch_publications
+    with at("2026-10-24T13:30:00Z"):
+        rows = fetch_publications(MonthlyReplay(), ["us_durable_goods"], "2026-06")
+        assert any(o.edition == "2026-10-02" and o.stage == "final" for o in rows)
+    # The identical October 2 issuer PDF must not stand in for November 3.
+    with at("2026-11-03T22:00:00Z"):
+        with pytest.raises(FetchError, match="latest due final.*needs review"):
+            fetch_publications(MonthlyReplay(), ["us_durable_goods"], "2026-06")
+
+
+def test_m3_previous_final_within_publication_grace_is_scheduled():
+    from market_data_hub.macro_releases.us_publications import fetch_publications
+    with at("2026-11-03T15:30:00Z"):
+        rows = fetch_publications(MonthlyReplay(), ["us_durable_goods"], "2026-06")
+        assert rows and all(o.edition != "2026-11-03" for o in rows)
+        assert schedule.edition_status("2026-11-03", family="us_durable_goods") == "scheduled"
