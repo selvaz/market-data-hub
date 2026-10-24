@@ -73,6 +73,9 @@ def get_edition(client, provider, url, family, edition, params=None):
 
 
 def family_editions(family):
+    from .tier1_editions import EDITIONS as REMAINING
+    if family in REMAINING:
+        return REMAINING[family]
     from .us_editions import EDITIONS as MONTHLY
     from .ons_rates import EDITIONS as UK
     from .eurostat_gdp import EDITIONS as GDP

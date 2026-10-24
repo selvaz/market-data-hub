@@ -94,7 +94,13 @@ INDICATORS.update((i.id, i) for i in [measure(f"ea21_gdp_{basis}", "Eurostat", "
     frequency="Q") for basis in ("qq", "yy")])
 INDICATORS["us_initial_jobless_claims"] = measure("us_initial_jobless_claims", "DOL", "USA", "level", "SA",
     "claims", 1000, "DOL ETA initial unemployment insurance claims, SA level, thousands; reference period is Saturday week ending", frequency="W")
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims")
+REMAINING_FAMILIES = {
+    "ea_unemployment": [measure("ea_unemployment_rate", "Eurostat", "EA21", "level", "SA",
+                                definition="Unemployed as percent of labour force, age 15-74, EA21")],
+}
+for _measures in REMAINING_FAMILIES.values():
+    INDICATORS.update((m.id, m) for m in _measures)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES)
 
 
 def hicp_indicator(period, basis, geography="EA"):
