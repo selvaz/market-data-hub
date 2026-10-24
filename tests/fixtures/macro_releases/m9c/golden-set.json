@@ -39,6 +39,56 @@
         "against": 0
       },
       "precision": "exact"
+    },
+    {
+      "family": "ecb_policy",
+      "fixture": "ecb-july.html",
+      "edition": "2026-07-23",
+      "source_url": "https://www.ecb.europa.eu/press/pr/date/2026/html/ecb.mp260723~29f24d99bc.en.html",
+      "rates": {
+        "deposit_facility": {
+          "rate": 2.25,
+          "change_bp": 0,
+          "change_basis": "issuer_statement"
+        },
+        "main_refinancing": {
+          "rate": 2.4,
+          "change_bp": 0,
+          "change_basis": "issuer_statement"
+        },
+        "marginal_lending": {
+          "rate": 2.65,
+          "change_bp": 0,
+          "change_basis": "issuer_statement"
+        }
+      },
+      "vote_split": null,
+      "precision": "exact"
+    },
+    {
+      "family": "ecb_policy",
+      "fixture": "ecb-sept.html",
+      "edition": "2026-09-10",
+      "source_url": "https://www.ecb.europa.eu/press/pr/date/2026/html/ecb.mp260910~314e508016.en.html",
+      "rates": {
+        "deposit_facility": {
+          "rate": 2.5,
+          "change_bp": 25,
+          "change_basis": "issuer_statement"
+        },
+        "main_refinancing": {
+          "rate": 2.65,
+          "change_bp": 25,
+          "change_basis": "issuer_statement"
+        },
+        "marginal_lending": {
+          "rate": 2.9,
+          "change_bp": 25,
+          "change_basis": "issuer_statement"
+        }
+      },
+      "vote_split": null,
+      "precision": "exact"
     }
   ]
 }

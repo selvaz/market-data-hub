@@ -120,6 +120,8 @@ REMAINING_FAMILIES = {
 for _measures in REMAINING_FAMILIES.values():
     INDICATORS.update((m.id, m) for m in _measures)
 CENTRAL_BANKS = {
+    "ecb_policy": [measure("ecb_deposit_facility_rate_decision", "ECB", "EMU", "level", "n/a", "% per annum",
+        definition="Deposit facility rate set by the ECB Governing Council", frequency="E")],
     "fomc": [measure("fed_funds_rate_decision", "FederalReserve", "USA", "level", "n/a",
         definition="FOMC federal funds target range; scalar value is upper bound, complete range in policy_decision", frequency="E")],
 }
