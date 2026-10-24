@@ -43,6 +43,7 @@ def reviewed_anchor(obs):
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
+    "boe_bank_rate_decision": 3,
     "ecb_deposit_facility_rate_decision": 3,
     "fed_funds_rate_decision": 3,
     "us_cpi_headline_mm": 3, "us_cpi_core_mm": 3,

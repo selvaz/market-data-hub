@@ -141,6 +141,7 @@ class HttpClient:
                     "POST" if payload is not None else "GET", url,
                     params=params, json=payload, timeout=(10, 45),
                     verify=certifi.where(), allow_redirects=False,
+                    **({"headers": {"User-Agent": "Mozilla/5.0"}} if provider == "boe" else {}),
                 )
             except requests.exceptions.SSLError:
                 raise FetchError(f"{provider}: TLS verification failed") from None
