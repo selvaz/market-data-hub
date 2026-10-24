@@ -95,6 +95,8 @@ INDICATORS.update((i.id, i) for i in [measure(f"ea21_gdp_{basis}", "Eurostat", "
 INDICATORS["us_initial_jobless_claims"] = measure("us_initial_jobless_claims", "DOL", "USA", "level", "SA",
     "claims", 1000, "DOL ETA initial unemployment insurance claims, SA level, thousands; reference period is Saturday week ending", frequency="W")
 REMAINING_FAMILIES = {
+    "us_new_home_sales": [measure("us_new_home_sales", "Census", "USA", "level", "SA", "units", 1000,
+                                  "New single-family houses sold, thousands of units, SAAR")],
     "uk_retail_sales": [measure("uk_retail_sales_mm", "ONS", "GBR", "mm", "SA",
         definition="Retail Sales Index, volume, all retailers including fuel, published monthly percent change, Great Britain")],
     "ea_trade_balance": [measure("ea_trade_balance", "Eurostat", "EA21", "level", "SA", "EUR", 1000000,
