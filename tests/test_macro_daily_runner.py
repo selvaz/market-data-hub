@@ -106,7 +106,10 @@ def test_partial_failure_isolated_even_between_bls_families(tmp_path, replay, mo
         assert failure["run_id"] == result["run_id"]
         coverage = reader.coverage("2026-10-01", "2026-10-17")["families"]["us_cpi"]
         assert coverage["collection_failures"][0]["run_id"] == result["run_id"]
-        assert coverage["expected"] == 0  # failed fetch never invents a due release
+        # The independent reviewed calendar establishes the scheduled edition;
+        # a failed fetch still supplies no captured actual.
+        assert coverage["expected"] == 1
+        assert coverage["captured"] == 0
         assert reader.explain_empty("us_cpi_headline_yy", "2010-01")["reason"] != "source_failed"
         assert reader.explain_empty("us_cpi_headline_yy", "2026-09",
                                     as_known_at="2026-10-01T00:00:00Z")["reason"] != "source_failed"
@@ -130,7 +133,8 @@ def test_family_write_rollback_and_failed_log(tmp_path, replay, monkeypatch, cap
     db = tmp_path / "macro.sqlite"
     assert invoke(db, capsys, "--families", "us_cpi,us_payrolls")[0] == 1
     with open_reader(db) as reader:
-        assert reader.conn.execute("SELECT COUNT(*) FROM readings WHERE indicator_id LIKE 'us_cpi_%'").fetchone()[0] == 0
+        assert reader.conn.execute("SELECT COUNT(*) FROM readings WHERE indicator_id LIKE 'us_cpi_%' "
+            "AND extraction_method<>'reviewed_calendar'").fetchone()[0] == 0
         rows = [dict(r) for r in reader.conn.execute("SELECT * FROM collect_run_families")]
         assert rows[0]["status"] == "failed" and rows[0]["readings_added"] == 0
         assert rows[1]["status"] == "ok" and rows[1]["vintages_added"] > 0
