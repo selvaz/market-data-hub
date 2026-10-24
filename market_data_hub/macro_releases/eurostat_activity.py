@@ -9,6 +9,7 @@ from .tier1_publications import month, observation, plain, require, reviewed
 
 CALENDAR = "https://ec.europa.eu/eurostat/o/calendars/eventsJson"
 SPECS = {"ea_unemployment": ("Unemployment", "une_rt_m", "3", "ea_unemployment_rate"),
+         "ea_industrial_production": ("Industrial production", "sts_inpr_m", "4", "ea_industrial_production_mm"),
          "ea_retail_sales": ("Retail trade", "sts_trtu_m", "4", "ea_retail_sales_mm")}
 
 
@@ -49,11 +50,12 @@ def parse(document, family, since="1900-01"):
         if "persons aged 15 to 74" not in body:
             raise FetchError("Eurostat unemployment age definition needs review")
         printed = require(r"In " + month(head) + r", the euro area seasonally adjusted unemployment rate was ([\d.]+)%", body)[1]
-    elif family == "ea_retail_sales":
+    elif family in ("ea_retail_sales", "ea_industrial_production"):
         from .bls import shift_month
         prior = month(shift_month(head, -1))
+        label = "the seasonally adjusted retail trade volume" if family == "ea_retail_sales" else "seasonally adjusted industrial production"
         found = require(r"In " + month(head) + r", compared with " + prior +
-            r", the seasonally adjusted retail trade volume (increased|decreased) by ([\d.]+)% in (?:both )?the euro area", body)
+            r", " + label + r" (increased|decreased) by ([\d.]+)% in (?:both )?the euro area", body)
         printed = ("-" if found[1].lower() == "decreased" else "") + found[2]
     else:
         raise FetchError("Eurostat measure needs review")

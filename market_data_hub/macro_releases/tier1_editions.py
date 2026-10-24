@@ -5,6 +5,12 @@ No dataset update or retrieval timestamp is promoted to a release date.
 """
 EUROSTAT_SCHEDULE = "https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar"
 EDITIONS = {
+    "ea_industrial_production": {
+        "2026-09-16": ("2026-07", "final", "11:00"),
+        "2026-10-15": ("2026-08", "final", "11:00"),
+        "2026-11-16": ("2026-09", "final", "11:00"),
+        "2026-12-15": ("2026-10", "final", "11:00"),
+    },
     "ea_retail_sales": {
         "2026-09-04": ("2026-07", "final", "11:00"),
         "2026-10-06": ("2026-08", "final", "11:00"),
