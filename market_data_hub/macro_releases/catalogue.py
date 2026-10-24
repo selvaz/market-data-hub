@@ -120,6 +120,8 @@ REMAINING_FAMILIES = {
 for _measures in REMAINING_FAMILIES.values():
     INDICATORS.update((m.id, m) for m in _measures)
 CENTRAL_BANKS = {
+    "boc_policy": [measure("boc_overnight_rate_decision", "BoC", "CAN", "level", "n/a",
+        definition="Target for the overnight rate set by the Bank of Canada", frequency="E")],
     "boe_policy": [measure("boe_bank_rate_decision", "BoE", "GBR", "level", "n/a",
         definition="Bank Rate set by the Monetary Policy Committee", frequency="E")],
     "ecb_policy": [measure("ecb_deposit_facility_rate_decision", "ECB", "EMU", "level", "n/a", "% per annum",

@@ -125,6 +125,36 @@
         "against": 3
       },
       "precision": "exact"
+    },
+    {
+      "family": "boc_policy",
+      "fixture": "boc-july.html",
+      "edition": "2026-07-15",
+      "source_url": "https://www.bankofcanada.ca/2026/07/fad-press-release-2026-07-15/",
+      "rates": {
+        "overnight_target": {
+          "rate": 2.25,
+          "change_bp": 0,
+          "change_basis": "issuer_statement"
+        }
+      },
+      "vote_split": null,
+      "precision": "exact"
+    },
+    {
+      "family": "boc_policy",
+      "fixture": "boc-sept.html",
+      "edition": "2026-09-02",
+      "source_url": "https://www.bankofcanada.ca/2026/09/fad-press-release-2026-09-02/",
+      "rates": {
+        "overnight_target": {
+          "rate": 2.25,
+          "change_bp": 0,
+          "change_basis": "issuer_statement"
+        }
+      },
+      "vote_split": null,
+      "precision": "exact"
     }
   ]
 }
