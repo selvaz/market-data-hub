@@ -253,10 +253,11 @@ How to read the tables:
   one; `not classified` is `UNKNOWN`. Nature is `HARD`, `SOFT`, `POLICY`, `MARKET` or `MARKET-DERIVED`.
 - **Evidence** is the card's local-timing label (`ev_timing`); `none` means no timing evidence is recorded.
 - **Stores**: `macro_releases` is the certified official family, built from issuer editions, listing the
-  catalogue indicator ids that map to the card. `ms:` is the hub macro series, `cal:` the web economic
-  calendar, `cat:` the tier-1 release catalogue id, `pan:` the cross-country macro panel, `hub:` a hub table
-  and `es:` an id in the `es` store. Ids are shown as recorded on the card; this page does not verify that each
-  id is present in its store (see the coverage report). Notes copy the card's own gap annotations verbatim.
+  catalogue indicator ids that map to the card. `ms:` is the hub `macro_series` table, `es:` the
+  `econ_state.db` store, `cal:` `calendar.sqlite` (the web economic calendar), `pan:` the cross-country
+  `macro_panel`, `hub:` another hub table and `cat:` the planned catalogue (not downloaded). Ids are shown as
+  recorded on the card; this page does not verify that each id is present in its store (see the coverage
+  report). Notes copy the card's own gap annotations verbatim.
 - **Issuer / source**: `issuer` is the card's source column. `certified issuer` is the issuer of the official
   family. `calendar agency` is the agency named by the calendar catalogue. `feed` is where the hub downloads
   from when that differs from the issuer: FRED is a redistributor, not the issuer.

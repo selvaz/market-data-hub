@@ -13,8 +13,353 @@ in the database. It has two parts.
 
 ## Part A: method and findings
 
-*Part A is pending: the source documents under `_design/indicatori-macro/` were
-not readable in the session that produced this draft.*
+This part summarises how the hub decides whether an indicator is *leading*,
+*coincident* or *lagging*, how much that decision is worth, and what the tests
+found. It is a summary of the owner-approved classification guide (version 2.1,
+18 October 2026), its companion study guide and the research note behind it.
+Each subsection ends with a **Source** line naming the section it summarises.
+Every number below is quoted from those documents with its caveat. Nothing here
+is a forecast or investment view.
+
+```mermaid
+flowchart LR
+    C["Concept<br/>(for example initial claims)"] --> R["Named reference<br/>(for example unemployment rate)"]
+    R --> E{"Evidence type"}
+    E -->|"same thing, or the reference itself"| D["DEFINITION"]
+    E -->|"mechanism or literature only"| H["HYPOTHESIS"]
+    E -->|"cross-correlation peak<br/>with resampling interval"| P["DESCRIPTIVE"]
+    P --> G["Validation gate<br/>LEAD or LAG needs an interior peak<br/>with the interval on one side of zero"]
+    G --> K["Class<br/>LEAD, COIN, LAG<br/>or CTX, UNKNOWN"]
+    D --> K
+    H -->|"labelled hypothesis,<br/>not validated"| K
+    S["Predictive screen<br/>PRED-PASS, PARTIAL, NOT-SUPPORTED<br/>(separate column, revised data)"] -.-> K
+```
+
+*Reading the diagram.* A concept is always compared with a named reference. The
+evidence behind the comparison is one of three kinds. Only a descriptive peak
+goes through the gate, and only a peak that passes it supports a measured LEAD or
+LAG label. DEFINITION rows are carried as stated; HYPOTHESIS rows may carry a
+class but say "hypothesis" and are not validated. The predictive screen is a
+separate question and does not change the class. CTX and UNKNOWN are the
+outcomes where no timing claim is made.
+
+### A1. The classes, and why timing needs a reference
+
+| Class | Plain meaning |
+|---|---|
+| **LEAD** | Moves before the named reference. A timing claim. |
+| **COIN** | Moves with the named reference (within about two months either way). A timing claim. |
+| **LAG** | Moves after the named reference. A timing claim. |
+| **CTX** | Kept as context. We chose to use it that way and make **no** timing claim. |
+| **UNKNOWN** | Not evaluated, or no supported relationship. Deliberately different from CTX. |
+
+- **Timing is never absolute.** "Leading" means nothing without a reference and
+  a transform, so every card reads like "LEAD vs US GDP". The tests show why:
+  the 12-month change in unemployment *follows* industrial-production growth
+  (pair Q17), while its level *precedes* wage growth (Q20).
+- **The bands are disjoint**: coincident is a lead of −2 to +2 months, leading is
+  more than +2 and lagging is less than −2. The continuous estimate is always
+  stored next to the band.
+- **References by theme.** Growth: real GDP and the NBER coincident set. Labour:
+  the unemployment rate and payrolls. Inflation: the official target measure
+  (headline PCE in the US, headline HICP in the euro area, headline CPI
+  elsewhere); core measures are diagnostics. Monetary policy: the current policy
+  state. Financial conditions and housing: a named activity series (IP, payrolls,
+  unemployment or recession status).
+- **A release lead is not an economic lead.** Tokyo CPI, member-state flash CPIs,
+  IPCA-15 and Mexico's fortnightly CPI are published earlier but describe the
+  same period, so they are COIN with a release-lead note.
+- **Eight themes** organise the concepts: growth / activity, labour, inflation,
+  monetary policy & rates, financial conditions & credit, housing, external /
+  global, and fiscal & sovereign. A secondary tag records a cross-theme use (the
+  broad dollar is External / global tagged Financial conditions).
+- **Nature** says what kind of number it is: HARD (measured activity, prices,
+  administrative records), SOFT (opinions, diffusion indices), MARKET (quoted
+  prices), MARKET-DERIVED (fitted curves, term premia, composites such as NFCI;
+  these are revised) and POLICY (central-bank decisions).
+
+*Source:* classification guide §1.1, §1.2, §2.1.
+
+### A2. DEFINITION, HYPOTHESIS and measured evidence
+
+The **basis** of a class says where it comes from:
+
+- **DEFINITION**: the row *is* the reference or a contemporaneous measure of the
+  same thing (CPI against PCE inflation). No test is needed.
+- **HYPOTHESIS**: an economic mechanism or published literature only. It is not
+  validated here. A row can be a LEAD hypothesis even though a related pair passes
+  the predictive screen (10y–2y and VIX): the screen does not establish a lag.
+- **DESCRIPTIVE**: read from the peak of a cross-correlation between the row and
+  its reference. For LEAD and LAG the build asserts that the peak is not at the
+  edge of the search window and that its 5–95% resampling interval lies on one
+  side of zero. It is still a description of how two histories line up, **not a
+  validated lead time**.
+
+Each row also carries **three separate evidence labels**, so that a reliable
+statistic is not mistaken for a reliable timing:
+
+1. *Measurement reliability* (H / M / L): issuer quality, coverage, revision
+   size, known defects.
+2. *Mechanism evidence* (strong / mixed / weak / n.a.): is there a documented
+   economic channel?
+3. *Timing evidence for that country, target and transform*: our own tests
+   (`v2-pred-pass`, `v2-pred-partial`, `v2-pred-not-supported`, `v2-descriptive`,
+   US data only), published local evidence (`lit-local`), US literature only
+   (`lit-US`), a hypothesis carried over from the US (`analogy`), or `none`.
+   **Non-US timing is a hypothesis unless there is local evidence.**
+
+*Source:* classification guide §1.1, §1.3.
+
+### A3. The validation gate: the predictive screen
+
+Separately from the class, each tested pair gets a **predictive screen**: does
+the candidate X add information about the *change* of the reference Y after the
+forecast date, over 3, 6 and 12 months (1, 2 and 4 quarters)? The screen was fixed
+before the v2 results were read (the authors' statement; there is no timestamped
+protocol). The regression is the forward change of Y on X plus Y's own past
+change, with the COVID windows removed. The outcome is:
+
+- **PRED-PASS** if all three legs hold: (a) the coefficient has the expected sign
+  with an approximate HAC |t| of at least 2; (b) the sign is the same in every
+  subperiod with at least 36 monthly (24 quarterly) observations, and at least
+  two subperiods qualify; (c) the expanding-window out-of-sample R² against an
+  own-past model is positive, after at least 120 monthly (40 quarterly) training
+  targets.
+- **PRED-PARTIAL** if (a) holds but (b) or (c) fails.
+- **PRED-NOT-SUPPORTED** if (a) fails. This says the specification failed, not
+  that no useful relationship exists.
+
+**A pass is a screening label, not a validated forecast.** It does not imply a
+statistically significant out-of-sample improvement (no Clark–West test was
+run), real-time availability, a causal mechanism or a lead in months. It does not
+validate the lag of the descriptive peak either: the two use different
+estimands. The guide's own example is building permits → housing starts (A3),
+whose descriptive peak is at k = 0 yet which passes the screen at 12 months.
+Multiple testing is **not corrected**: 42 pairs × 3 horizons = 126 overlapping,
+dependent pair–horizon tests.
+
+How to quote a result: predictive content as "passes at h = …"; a peak, if at
+all, as "descriptive peak k [interval]", never as "X leads Y by k months".
+
+*Source:* classification guide §1.3, §4.2 (how to quote).
+
+### A4. Real-time versus revised data
+
+- **All v2 statistics use latest-vintage (revised) data.** That is not "final"
+  data. A backtest on revised numbers can overstate real-time usefulness, and the
+  bias has no guaranteed sign. The one real-time input is the official
+  real-time Sahm series.
+- A real-time information set is defined by **release times**, not by reference
+  periods: last month's industrial production may be unpublished while this
+  month's market prices are known.
+- Four times must be kept apart: the reference period, the release time, the
+  vintage date, and when *we* ingested the value. `first_seen` in the hub's
+  vintage table is an ingestion time, not a first print.
+- **The vintage effect is visible.** The Sahm rule reads 0.47 in real time in
+  2003-07 and 2003-08 but 0.50 on today's data; in 2024-07 it is 0.53 in real
+  time and 0.50 on today's data. The same month can be a signal in one vintage
+  and not in the other.
+- The recession models train on labels lagged by an extra 12 months. That is a
+  **heuristic** for the NBER announcement delay (4 to 21 months historically),
+  not a guarantee about what was known.
+- A real-time test is possible with ALFRED and archived releases but is not built
+  yet (gap G-R1). Mixed vintages are worse than either pure vintage: the hub's
+  retail-sales series (RSAFS) is the example (see A7).
+
+*Source:* classification guide §1.4, §4.1; study guide §2.
+
+### A5. What the tests found (US data only)
+
+**Pairs.** The guide tests 42 pairs. 21 of them pass the predictive screen at one
+or more horizons, and 35 of the 126 pair–horizon tests pass. These are different
+denominators, and the tests overlap. By theme:
+
+- *Curve.* The 10y–3m spread on long history (1959+) adds information for IP
+  (A11, passes at 3, 6, 12 months) and payrolls (A12, 12 months). On the shorter
+  hub sample the 10y–3m screens are only partial or not supported (Q1–Q3, Q5);
+  10y–2y passes for payrolls at 12 months (Q4) but with a descriptive peak at the
+  edge of the search window, so no lag is identified.
+- *Credit and financial conditions.* The 6-month change in the Baa–10y spread
+  passes for IP (Q9, 3 and 12 months) and unemployment (Q10, 12 months). NFCI and
+  VIX pass for IP at 3 months only (Q11, Q13). The excess bond premium passes for
+  IP and unemployment (A9, A10), and SLOOS C&I tightening for C&I loans (A8).
+- *Housing.* Starts pass for payrolls (Q15, 12 months) and unemployment (Q16);
+  permits pass for starts, payrolls and IP (A3–A5).
+- *Labour.* IP growth precedes the unemployment change at 3 months (Q17;
+  descriptive peak +3 months [2..5]). The unemployment level passes for wage growth
+  at 3, 6 and 12 months (Q20). Initial claims pass for unemployment (A1, all three
+  horizons) and payrolls (A2, 12 months). Manufacturing hours pass for payrolls
+  at 12 months (A6).
+
+The descriptive peaks are searched over −24 to +24 months with a moving-block
+bootstrap (24-month blocks, 400 draws) giving a 5–95% **sensitivity interval**.
+Its coverage is not established. A collapsed interval such as [24..24] means the
+search keeps hitting its boundary, not that the lag is exact.
+
+**What was dropped or downgraded from the first version (v1).**
+
+| v1 claim | v2 result |
+|---|---|
+| Curve leads by 27–32 months; "broke after 2013" | Removed. The edge peak is not a lead; long-history screens pass (A11, A12). |
+| Brent leads headline CPI by about 1 month | Peak inside the coincident band; forward test not supported (Q22): COIN. |
+| Housing starts lead IP | Screen not supported (Q14): not quoted. |
+| Fed reacts to core PCE with a 3–8 month lag | Not supported; the sign flips once own past is controlled (Q29). Policy rows are CTX. |
+| NFCI leads payrolls by 8–9 months | Only partial (Q12): not quoted. |
+| Core capex orders lead IP by 2–6 months (literature) | Not supported, peak coincident (A7). |
+| Any non-US lead (Ifo, ZEW, factory orders, Korean exports, PMIs, credit impulse) | Not tested locally: HYPOTHESIS only. |
+
+**Recession probits.** Monthly and quarterly probit models of NBER recessions (11
+peaks, 1953-07 to 2020-02) from the 10y–3m spread, the excess bond premium (EBP)
+and a near-term forward spread, scored out of sample (from 1985, from 1990 for
+EBP) with Brier skill (positive = beats a base-rate benchmark), log score and
+AUC (ranking). Results:
+
+- *Ranking is above chance:* AUC 0.63–0.89 across models. But there are few
+  recessions and the months within an episode are correlated, so stability across
+  independent episodes is not established.
+- *Calibration is weak for "in recession exactly 12 months later" (target A).*
+  The spread-only model does not beat the base rate on Brier skill (−0.016,
+  1985-01 to 2025-09, 489 months, 36 event months, AUC 0.78), though it does on log
+  score. Its whole highest-probability bin (0.50 to 1.00) is 20 origin months in
+  2023–24 (two runs of 9 and 11 months) in which the observed frequency was 0.0.
+  These are correlated months of one episode, not 20 independent misses.
+- *Target B ("any recession in the next 12 months")*, scored on common origins
+  from 1990: spread + EBP has Brier skill 0.215 and EBP alone 0.264, the spread
+  alone −0.032. This is a descriptive comparison of point scores, not an
+  identified contribution of EBP.
+- *Quarterly:* our approximation of the near-term forward spread has small
+  positive skill (+0.035); the 10y–3m does not (−0.064). This differs from the
+  published result and should be treated as a property of the approximation.
+- **A fitted probability is not a validated forecast.** Data are revised, events
+  are few, the label lag is a heuristic and the quarterly origins are chosen on
+  the ex-post recession state. A target-A probability concerns recession status
+  exactly twelve months later, not "a recession in the coming year".
+
+**Inversion episodes.** Episodes of an inverted curve are separated by at least 6
+non-negative months. Of 12 episodes followed by an NBER peak (two spread
+definitions, so episodes overlap), the curve un-inverted before the peak in 6 and
+after it in 6, in a range of −11 to +34 months (peak minus exit). There is no
+fixed exit rule. The inversion that began in 2022-11 had no NBER peak announced
+through 2026-09 (data end), so at the 12- and 24-month horizons it is a **miss**;
+the horizon is not extended. The 1966 inversion also fails at 24 months.
+
+**Sahm rule.** It is a near-coincident detector, not a leading signal. The 7
+matched real-time new signals (1969 to 2020) came −2 to +4 months around the NBER
+peak. In 2024-07 it was a real-time signal with no recession. 2003 was *not* a
+real-time trigger (0.47): the earlier "false positive" was a current-vintage
+artefact.
+
+*Source:* classification guide §3 (denominators), §4.1–§4.7, §1.5.
+
+### A6. Why so many concepts are CTX or UNKNOWN
+
+The skew is real and intended. Of the 270 concept rows (one per concept and
+country or area; 47 countries and areas):
+
+| Class | LEAD | COIN | LAG | CTX | UNKNOWN | Total |
+|---|---:|---:|---:|---:|---:|---:|
+| Rows | 11 | 64 | 7 | 120 | 68 | 270 |
+
+- **CTX (120 rows)** is a decision, not a gap. Monetary-policy and rates rows are
+  read against the current policy state (72 of the 76 are CTX); 29 of the 40
+  external / global rows and all four fiscal rows are used as context. Annual panel levels are CTX "vs structure", one by
+  one. A context row says "use this to understand the situation", not "this
+  moves before or after X".
+- **UNKNOWN (68 rows)** means no supported relationship has been shown. 25 are
+  hypotheses (mechanism or literature only) and 43 have no
+  evidence at all. All 655 tier-2 and tier-3 calendar indicators are UNKNOWN: no
+  default timing is assigned by concept, and a calendar id inherits a relationship
+  only after a manual mapping to a concept row.
+- **Our tests cover the US only.** Only 13 rows have a DESCRIPTIVE basis (6 LEAD,
+  5 COIN, 2 LAG); 45 rows are COIN by DEFINITION and 49 are HYPOTHESIS. 249 of
+  the 270 rows have no tested pair at all. Eleven rows have at least one
+  relationship that passes the predictive screen; none of these passes is a lead
+  time.
+- By theme, UNKNOWN is concentrated in financial conditions & credit (18 of 30),
+  growth / activity (19 of 39) and labour (15 of 27).
+
+*Source:* classification guide §3 (tables by theme, basis and screen outcome),
+§3.7, §1.3.
+
+### A7. Known failure modes and limitations
+
+- **Yield curve 2022–25**: see A5. A goods/rates tilt in composite indexes is an
+  interpretation, not a demonstrated cause.
+- **Conference Board leading index**: it signalled recession from July 2022 to
+  January 2024 (19 months) and the recession forecast was changed in February
+  2024.
+- **Sahm rule**: near-coincident; 2024-07 was a signal with no recession.
+- **Soft versus hard data**: there is no universal rule to weight hard data more.
+  For measurement, definition and revisions matter; for prediction, validate the
+  incremental forecast power.
+- **COVID** is one of the three NBER recessions in the 2000+ hub sample
+  (2001-03, 2007-12, 2020-02); removing it removes event evidence, and several
+  results change with and without it.
+- **Level versus change versus surprise**: a PMI of 48 rising from 46 is not the
+  same signal as 48 falling from 52. Count independent channels, not variants of
+  one series.
+- **Remaining limits** (guide §4.7): revised rather than real-time data; HAC
+  t-statistics are approximate; no significance test of out-of-sample gains; no
+  multiple-testing correction; resampling intervals with no established coverage;
+  few recessions; **matched turning-point leads are not estimated**; nothing is
+  said about countries other than the US.
+- **Data defects found** (nothing was changed in production): the hub's
+  retail-sales series mixes vintages (41 of 321 months differ from the FRED current
+  vintage by more than 0.5%; the Sep-2026 year-on-year growth reads 1.75% in the
+  hub against 6.29% on a single vintage), so its recent growth rates are invalid
+  until a full refresh; the `econ_state` key `ppi_final_demand` holds the finished-goods
+  index (287.454) rather than headline final demand (159.78); euro-area
+  unemployment in `macro_series` stops at 2023-01-01.
+
+*Source:* classification guide §1.5, §4.7, §5.
+
+### A8. The models behind it, in a few lines
+
+- **Business cycles and turning points.** The NBER defines a recession as a
+  significant decline in activity spread across the economy that lasts more than
+  a few months, weighing depth, diffusion and duration. The peak month is the last
+  month of the expansion. Announcements have come 4 to 21 months after the turn.
+  So "leading" needs something to lead: dated turning points, which exist only
+  after the fact, and only about a dozen in the US since 1953 (11 peaks).
+- **Real-time data and revisions.** Most macro data are revised. A backtest on
+  today's numbers asks whether something would have worked had we known the
+  revised data, which is not the question a forecaster faces. Revised data usually
+  flatter a backtest, but not always.
+- **Indicators and composites.** Leading, coincident and lagging are relative
+  descriptions of a series against a named reference. Composite indexes (the
+  Conference Board's, the OECD's) average many series so that noise cancels,
+  inverting countercyclical ones such as claims before combining. The Conference
+  Board reads declines through duration, depth and diffusion. The OECD aims at a
+  6 to 9 month lead on the growth cycle; that is its stated aim, not a measured
+  property of every country. Studies using the vintages actually published found a
+  composite's predictive ability much weaker in real time than on the final
+  revised index, because the index is revised and its components were chosen with
+  hindsight.
+- **Four different questions.** A nowcast (current activity), a timing study
+  (dated turns), a growth forecast and a recession-event forecast are separate
+  targets. Success on one does not prove success on another: passing a
+  growth-forecast test does not validate a timing statement.
+
+*Source:* study guide, "The four questions", §1, §2, §3.
+
+### A9. The research behind it
+
+The classification starts from a comparison of how practitioners classify
+indicators: the Conference Board leading, coincident and lagging indexes
+(historically 10, 4 and 7 components for the US), the OECD composite leading
+indicator, the NBER dating committee (six monthly coincident series), nowcasting
+models such as the New York Fed Staff Nowcast and GDPNow, growth-and-inflation
+regime frameworks and financial-conditions indexes. Three lessons were carried
+over: timing is relative to a named reference; an indicator should have an
+economic reason for its place (the OECD's four rationales: early-stage,
+rapidly responsive, expectation-sensitive and prime movers); and revisions and
+real-time availability must be taken seriously. The note grades its own evidence
+as strong, mixed or weak and marks references it could not re-open. Its
+typical-lead figures are approximate historical medians from the literature; the
+v2 tests described above replace them where the hub could test them, and
+otherwise the lead stays a hypothesis.
+
+*Source:* research note §1, §2.1, §3 (general pitfalls).
 
 ## Part B: tracked indicators and where they are stored
 
@@ -93,10 +438,11 @@ How to read the tables:
   one; `not classified` is `UNKNOWN`. Nature is `HARD`, `SOFT`, `POLICY`, `MARKET` or `MARKET-DERIVED`.
 - **Evidence** is the card's local-timing label (`ev_timing`); `none` means no timing evidence is recorded.
 - **Stores**: `macro_releases` is the certified official family, built from issuer editions, listing the
-  catalogue indicator ids that map to the card. `ms:` is the hub macro series, `cal:` the web economic
-  calendar, `cat:` the tier-1 release catalogue id, `pan:` the cross-country macro panel, `hub:` a hub table
-  and `es:` an id in the `es` store. Ids are shown as recorded on the card; this page does not verify that each
-  id is present in its store (see the coverage report). Notes copy the card's own gap annotations verbatim.
+  catalogue indicator ids that map to the card. `ms:` is the hub `macro_series` table, `es:` the
+  `econ_state.db` store, `cal:` `calendar.sqlite` (the web economic calendar), `pan:` the cross-country
+  `macro_panel`, `hub:` another hub table and `cat:` the planned catalogue (not downloaded). Ids are shown as
+  recorded on the card; this page does not verify that each id is present in its store (see the coverage
+  report). Notes copy the card's own gap annotations verbatim.
 - **Issuer / source**: `issuer` is the card's source column. `certified issuer` is the issuer of the official
   family. `calendar agency` is the agency named by the calendar catalogue. `feed` is where the hub downloads
   from when that differs from the issuer: FRED is a redistributor, not the issuer.
