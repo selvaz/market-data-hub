@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "8dec189b0f4a0179d579d93f78928d2804d8ff166c62357d1c24130a68ec9985",
+  "aliases_sha256": "00adeb5c67b3e07d867b353f70a6c02ecd3d8cdc11dca20f587c41cfea27e0b9",
   "cards": [
     {
       "concept": "Real GDP",
@@ -5128,6 +5128,7 @@
           "ez_ecb_accounts"
         ],
         "cat": [
+          "ecb_deposit_facility_rate_decision",
           "ecb_deposit_facility_rate_decision"
         ],
         "derived_ms": [],
