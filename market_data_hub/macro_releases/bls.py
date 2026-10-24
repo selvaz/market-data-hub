@@ -5,9 +5,10 @@ from datetime import date, datetime
 import re
 
 from .adapters import Observation
-from .catalogue import BLS_SERIES
+from .catalogue import BLS_SERIES, NEW_BLS_SERIES, bls_family
 from .http import FetchError, api_key, json_payload
 from .publication_times import new_york_release
+from .us_editions import EDITIONS as MONTHLY_EDITIONS
 
 ENDPOINT = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 # The API has no publication timestamp/edition field. Reviewed release metadata,
@@ -17,6 +18,9 @@ EDITIONS = {
     ("us_cpi", "2026-09"): "2026-10-14",
     ("us_payrolls", "2026-09"): "2026-10-02",
 }
+EDITIONS.update({(f, p): d for f in ("us_ppi", "us_jolts")
+                 for d, (p, _, _) in MONTHLY_EDITIONS[f].items()})
+SERIES = dict(BLS_SERIES, **NEW_BLS_SERIES)
 
 
 def shift_month(period, offset):
@@ -39,8 +43,7 @@ class BLSAdapter:
         self.client = client
 
     def fetch(self, families, since):
-        series = [key for key, (indicator, _, _) in BLS_SERIES.items()
-                  if ("us_payrolls" if indicator.startswith("us_payrolls") else "us_cpi") in families]
+        series = [key for key, (indicator, _, _) in SERIES.items() if bls_family(indicator) in families]
         if not series:
             return []
         # One batch, well below BLS's 50-series ceiling. Inspect the SA revision
@@ -61,8 +64,8 @@ class BLSAdapter:
             raise FetchError("BLS rejected request")
         series = {s["seriesID"]: s for s in payload.get("Results", {}).get("series", [])}
         observations = []
-        for key, (indicator, calc, lag) in BLS_SERIES.items():
-            family = "us_payrolls" if indicator.startswith("us_payrolls") else "us_cpi"
+        for key, (indicator, calc, lag) in SERIES.items():
+            family = bls_family(indicator)
             if family not in families:
                 continue
             rows = series.get(key, {}).get("data", [])
@@ -79,7 +82,7 @@ class BLSAdapter:
                 period = row["year"] + "-" + row["period"][1:]
                 if period < cutoff:
                     continue
-                value = row.get("calculations", {}).get(calc, {}).get(lag)
+                value = row["value"] if calc == "level" else row.get("calculations", {}).get(calc, {}).get(lag)
                 if value in (None, "", "-"):
                     base = by_period.get(shift_month(period, -int(lag)), {})
                     if row["value"] != "-" and base.get("value") != "-":
@@ -87,7 +90,8 @@ class BLSAdapter:
                 observations.append(Observation(
                     indicator, family, period, float(value) if value not in (None, "", "-") else None,
                     value or f"not published: {calc}/{lag}", key + ":" + calc + ":" + lag,
-                    "BLS", document, edition, **new_york_release(edition), precision="exact",
+                    "BLS", document, edition, **new_york_release(edition, "10:00" if family == "us_jolts" else "08:30"), precision="exact",
+                    provider_vintage=edition if family in MONTHLY_EDITIONS else None,
                     revision=("initial" if period == newest else
                               "benchmark" if family == "us_payrolls" and edition[5:7] == "02" else "routine"),
                 ))

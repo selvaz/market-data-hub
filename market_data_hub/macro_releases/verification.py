@@ -11,6 +11,9 @@ from .models import utc
 
 def reviewed_anchor(obs):
     from . import bea, bls, eurostat, ons
+    from .us_editions import EDITIONS
+    if obs.family in EDITIONS:
+        return obs.edition in EDITIONS[obs.family]
     if obs.family in ("us_cpi", "us_payrolls"):
         return obs.edition in {d for (family, _), d in bls.EDITIONS.items() if family == obs.family}
     if obs.family == "us_gdp":
@@ -32,6 +35,18 @@ SANITY_BANDS = {
     "ea_future_hicp_yy": 5, "ea_future_hicp_mm": 3,
     "uk_gdp_mm": 5, "uk_gdp_index": 20,
 }
+SANITY_BANDS.update({
+    "us_ppi_mm": 10, "us_ppi_yy": 20, "us_jolts_openings": 6000,
+    "us_pce_price_index_mm": 5, "us_pce_price_index_yy": 10,
+    "us_core_pce_mm": 5, "us_core_pce_yy": 10,
+    "us_retail_sales_mm": 30, "us_retail_sales_ex_auto_mm": 30,
+    "us_housing_starts": 1500, "us_building_permits": 1500,
+    "us_durable_goods_orders_mm": 60, "us_durable_goods_ex_transport_mm": 30,
+    "us_industrial_production_mm": 20, "us_capacity_utilization": 20,
+    "us_trade_balance": 200,
+})
+ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
+                   "us_building_permits": 5000, "us_trade_balance": 1000}
 
 
 def configured_bands(overrides=None):
@@ -74,7 +89,7 @@ def verify(store, batch, bands):
         elif not baseline and not batch.anchors and not reviewed_anchor(obs):
             batch.issue("verified_baseline_missing:" + obs.indicator_id)
         # First bootstrap anchors still reject obviously invalid numeric payloads.
-        cap = 25000 if obs.indicator_id == "us_payrolls_change" else 500 if obs.indicator_id == "uk_gdp_index" else 100
+        cap = ABSOLUTE_BOUNDS.get(obs.indicator_id, 25000 if obs.indicator_id == "us_payrolls_change" else 500 if obs.indicator_id == "uk_gdp_index" else 100)
         if abs(obs.value) > cap:
             batch.issue("absolute_sanity_bound_exceeded:" + obs.indicator_id)
     if batch.issues:

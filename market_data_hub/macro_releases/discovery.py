@@ -344,8 +344,9 @@ def _ons(client, family, since):
 
 
 def fetch_daily(client, family, since):
+    from .us_editions import EDITIONS
     strategy = {"us_cpi": _bls, "us_payrolls": _bls, "us_gdp": _bea,
-                "ea_hicp": _eurostat, "uk_gdp": _ons}[family]
+                "ea_hicp": _eurostat, "uk_gdp": _ons, **{f: _monthly for f in EDITIONS}}[family]
     documents = []
     class Capture:
         def get(self, *args, **kwargs):
@@ -358,8 +359,17 @@ def fetch_daily(client, family, since):
             documents.append(doc)
             return doc
     try:
-        return strategy(Capture(), family, since)
+        batch = strategy(Capture(), family, since)
+        if family in EDITIONS:
+            batch.documents = documents
+        return batch
     except (ValueError, KeyError, TypeError, AttributeError):
         # A malformed top-level payload must not turn a source-format change
         # into a red run. Keep all fetched documents even if no values map.
         return FamilyFetch(documents=documents, issues=["payload_structure_changed"], anchors=False)
+
+
+def _monthly(client, family, since):
+    from .fred import USRedistributorAdapter
+    adapter = bls.BLSAdapter if family in ("us_ppi", "us_jolts") else bea.BEAAdapter if family == "us_pce" else USRedistributorAdapter
+    return FamilyFetch(observations=adapter(client).fetch([family], since))

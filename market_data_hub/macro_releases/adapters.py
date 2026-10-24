@@ -155,7 +155,7 @@ def persist(store, observations):
             for row in mirrors:
                 if row["value"] is not None and row["unit"] == official["unit"] and row["scale"] == official["scale"]:
                     # Official API rates are printed to 0.1 pp; counts to 1 thousand.
-                    tolerance = 0.05 if indicator.unit == "%" else 0.5
+                    tolerance = 0.05 if indicator.unit == "%" or indicator.id == "us_trade_balance" else 0.5
                     if abs(row["value"] - official["value"]) > tolerance + 1e-10:
                         store.put(Discrepancy(reading_id=row["id"], selected_vintage_id=official["id"],
                                               reason="Exact edition differs from issuer published precision",

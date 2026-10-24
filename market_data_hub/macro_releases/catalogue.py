@@ -1,4 +1,4 @@
-"""Reviewed exact measures for the M5 slice; stages never enter indicator ids."""
+"""Reviewed exact measures for the pilot and US monthly families; stages stay separate."""
 from .models import Indicator
 
 
@@ -36,7 +36,51 @@ BLS_SERIES = {
     "CES0000000001": ("us_payrolls_change", "net_changes", "1"),
 }
 
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp")
+# Definitions copied from catalogo-tier1.toml; additions absent there are the
+# M9a-1 brief's explicit measures. The brief corrects PPI y/y to NSA (WPUFD4).
+US_MONTHLY = {
+    "us_ppi": [
+        measure("us_ppi_mm", "BLS", "USA", "mm", "SA", definition="Producer Price Index, final demand, month-over-month percent change"),
+        measure("us_ppi_yy", "BLS", "USA", "yy", "NSA", definition="Producer Price Index, final demand, 12-month percent change")],
+    "us_jolts": [measure("us_jolts_openings", "BLS", "USA", "level", "SA", "persons", 1000,
+                         "Job openings, total nonfarm, level, seasonally adjusted, thousands of jobs")],
+    "us_pce": [
+        measure("us_pce_price_index_mm", "BEA", "USA", "mm", "SA", definition="Personal Consumption Expenditures price index, month-over-month percent change"),
+        measure("us_pce_price_index_yy", "BEA", "USA", "yy", "SA", definition="Personal Consumption Expenditures price index, 12-month percent change -- the Fed's preferred headline inflation gauge"),
+        measure("us_core_pce_mm", "BEA", "USA", "mm", "SA", definition="PCE price index excluding food and energy, month-over-month percent change"),
+        measure("us_core_pce_yy", "BEA", "USA", "yy", "SA", definition="PCE price index excluding food and energy, 12-month percent change -- the FOMC's formal 2% target gauge")],
+    "us_retail_sales": [
+        measure("us_retail_sales_mm", "Census", "USA", "mm", "SA", definition="Advance estimate of retail and food services sales, month-over-month percent change"),
+        measure("us_retail_sales_ex_auto_mm", "Census", "USA", "mm", "SA", definition="Retail sales excluding motor vehicle and parts dealers, m/m percent change")],
+    "us_housing_starts": [
+        measure("us_housing_starts", "Census", "USA", "level", "SA", "units", 1000, "New privately-owned housing units started, total, SAAR"),
+        measure("us_building_permits", "Census", "USA", "level", "SA", "units", 1000, "New privately-owned housing units authorized by building permits, total, SAAR")],
+    "us_durable_goods": [
+        measure("us_durable_goods_orders_mm", "Census", "USA", "mm", "SA", definition="Manufacturers' new orders for durable goods, m/m percent change"),
+        measure("us_durable_goods_ex_transport_mm", "Census", "USA", "mm", "SA", definition="Manufacturers' new orders for durable goods excluding transportation, m/m percent change")],
+    "us_industrial_production": [
+        measure("us_industrial_production_mm", "FederalReserve", "USA", "mm", "SA", definition="Index of real output for manufacturing, mining, and utilities, m/m percent change"),
+        measure("us_capacity_utilization", "FederalReserve", "USA", "level", "SA", definition="Output index divided by capacity index, total industry")],
+    "us_trade_balance": [measure("us_trade_balance", "Census/BEA", "USA", "level", "SA", "USD", 1e9,
+                                 "Balance of payments basis trade balance in goods and services")],
+}
+INDICATORS.update((i.id, i) for measures in US_MONTHLY.values() for i in measures)
+NEW_BLS_SERIES = {
+    "WPSFD4": ("us_ppi_mm", "pct_changes", "1"),
+    "WPUFD4": ("us_ppi_yy", "pct_changes", "12"),
+    "JTS000000000000000JOL": ("us_jolts_openings", "level", "0"),
+}
+
+
+def bls_family(indicator):
+    if indicator in {i.id for i in US_MONTHLY["us_ppi"]}:
+        return "us_ppi"
+    if indicator == "us_jolts_openings":
+        return "us_jolts"
+    return "us_payrolls" if indicator.startswith("us_payrolls") else "us_cpi"
+
+
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY)
 
 
 def hicp_indicator(period, basis, geography="EA"):

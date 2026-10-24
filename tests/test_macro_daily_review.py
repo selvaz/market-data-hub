@@ -18,12 +18,16 @@ from market_data_hub.macro_releases import discovery, run_daily
 from market_data_hub.macro_releases import migrations
 from market_data_hub.macro_releases.__main__ import main as read_main
 from market_data_hub.macro_releases.adapters import persist
-from market_data_hub.macro_releases.catalogue import FAMILIES, hicp_indicator
+from market_data_hub.macro_releases.catalogue import hicp_indicator
 from market_data_hub.macro_releases.http import HttpClient, retry_delay
 from market_data_hub.macro_releases.lease import LeaseBusy, RunLease
 from market_data_hub.macro_releases.verification import SANITY_BANDS
 from market_data_hub.macro_releases.verification import configured_bands
 from test_macro_official_adapters import document, observations as observations
+
+# This harness synthesizes next editions of the original certified pilot only.
+# M9a families have their own saved-response daily replay in test_macro_us_monthly.
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp")
 
 
 @pytest.fixture(autouse=True)
@@ -32,6 +36,7 @@ def offline(monkeypatch, tmp_path):
         raise AssertionError("Live network forbidden")
     monkeypatch.setattr(requests.Session, "request", forbidden)
     monkeypatch.setattr(run_daily.tempfile, "tempdir", str(tmp_path))
+    monkeypatch.setattr(run_daily, "FAMILIES", FAMILIES)
     monkeypatch.setattr(discovery, "api_key", lambda _: "fake-key")
 
 

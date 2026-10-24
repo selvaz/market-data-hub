@@ -17,6 +17,7 @@ from .bls import BLSAdapter, shift_month
 from .catalogue import FAMILIES
 from .consensus import DEFAULT_RAW_DIR, ingest
 from .eurostat import EurostatAdapter
+from .fred import USRedistributorAdapter
 from .discovery import FamilyFetch, fetch_daily
 from .http import FetchError, HttpClient
 from .lease import LeaseBusy, LeaseLost, RunLease
@@ -28,7 +29,10 @@ from .verification import configured_bands, persist_review, verify
 
 DEFAULT_LOOKBACK_MONTHS = 24
 ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapter,
-            "ea_hicp": EurostatAdapter, "uk_gdp": ONSAdapter}
+            "ea_hicp": EurostatAdapter, "uk_gdp": ONSAdapter,
+            "us_ppi": BLSAdapter, "us_jolts": BLSAdapter, "us_pce": BEAAdapter,
+            **{f: USRedistributorAdapter for f in ("us_retail_sales", "us_housing_starts", "us_durable_goods",
+                                                   "us_industrial_production", "us_trade_balance")}}
 DISCOVERY_ADAPTERS = dict(ADAPTERS)
 
 

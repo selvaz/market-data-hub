@@ -1,0 +1,14 @@
+{
+  "url": "https://api.stlouisfed.org/fred/series/observations",
+  "retrieved_at": "2026-10-24T10:57:34.845631+00:00",
+  "sha256": "64e1cdecbd53a332422a3cdc9bbbf6dded8fedf66279cdc2119ee8c6c927d265",
+  "request": {
+    "file_type": "json",
+    "series_id": "DGORDER",
+    "units": "pch",
+    "observation_start": "2026-05-01",
+    "realtime_start": "2026-08-04",
+    "realtime_end": "2026-08-04",
+    "limit": 10000
+  }
+}
