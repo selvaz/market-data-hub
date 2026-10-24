@@ -4,7 +4,7 @@ import re
 
 from .http import FetchError
 from .policy import due_editions, observation, require_origin, reviewed
-from .policy_editions import SCHEDULES
+from .policy_editions import EDITIONS, SCHEDULES
 from .tier1_publications import publication_text, require
 
 HOST = "https://www.bankofengland.co.uk"
@@ -16,7 +16,7 @@ def parse(document, family="boe_policy", since="1900-01"):
     date = require(r"Published on (\d{1,2} \w+ 2026) Monetary Policy Summary", text)[1]
     edition = datetime.strptime(date, "%d %B %Y").date().isoformat()
     reviewed(family, edition)
-    decision = require(r"At its meeting ending on (\d{1,2} \w+ 2026), the Monetary Policy Committee \(MPC\) "
+    decision = require(r"At its meeting ending on (\d{1,2} \w+ 2026), the Monetary Policy Committee(?: \(MPC\))? "
                        r"voted (?:by a majority of (\d+)[–-](\d+)|unanimously) to "
                        r"(maintain|reduce|increase) Bank Rate (?:by ([\d.]+) percentage points?, )?(?:at|to) ([\d.]+)%", text)
     meeting_date, yes, no, action, delta, value = decision.groups()
@@ -33,7 +33,7 @@ def parse(document, family="boe_policy", since="1900-01"):
 def fetch(client, family, since):
     calendar = client.get("boe", SCHEDULES[family])
     paths = set(re.findall(rb'href="(/monetary-policy-summary-and-minutes/2026/[^\"]+)"', calendar.body))
-    allowed = {datetime.fromisoformat(d).strftime("%B").lower() + "-2026" for d in __import__("market_data_hub.macro_releases.policy_editions", fromlist=["EDITIONS"]).EDITIONS[family]}
+    allowed = {datetime.fromisoformat(d).strftime("%B").lower() + "-2026" for d in EDITIONS[family]}
     if any(p.decode().rsplit("/", 1)[-1] not in allowed for p in paths):
         raise FetchError("Unscheduled MPC publication needs review")
     out = []

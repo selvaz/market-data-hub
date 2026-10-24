@@ -14,6 +14,7 @@ RATE = r"(?:\d+(?:-\d+)?/\d+|\d+(?:\.\d+)?)"
 def parse(document, family="fomc", since="1900-01"):
     require_origin(document, "www.federalreserve.gov")
     text, method = publication_text(document)
+    text = text.replace("\u2011", "-").replace("\u2010", "-")
     date = require(r"(\w+ \d{1,2}, 2026) Federal Reserve issues FOMC statement", text)[1]
     edition = datetime.strptime(date, "%B %d, %Y").date().isoformat()
     reviewed(family, edition)
@@ -25,10 +26,22 @@ def parse(document, family="fomc", since="1900-01"):
     lower, upper = number(low), number(high)
     if not 0 <= lower <= upper or upper - lower > 1:
         raise FetchError("FOMC target range needs review")
-    vote = require(r"approved the following statement for release by a (\d+)\s*[^0-9]{1,12}?\s*(\d+) vote", text)
+    vote = re.search(r"approved the following statement for release by a (\d+)\s*[^0-9]{1,12}?\s*(\d+) vote", text)
+    if vote:
+        votes = {"for": int(vote[1]), "against": int(vote[2])}
+    else:
+        names = require(r"Voting for the monetary policy action were (.*?)(?:\. Voting against|\. For media)", text)[1]
+        yes = len([n for n in names.split(";") if n.strip()])
+        against = re.search(r"Voting against (?:this|the monetary policy) action (?:was|were) (.*?), who", text)
+        if "Voting against" in text and against is None:
+            raise FetchError("FOMC dissent voter list needs review")
+        no = len(re.split(r";\s*(?:and )?| and ", against[1])) if against else 0
+        if not 5 <= yes + no <= 12:
+            raise FetchError("FOMC rate voter count needs review")
+        votes = {"for": yes, "against": no}
     rates = {"target_range": dict(lower=lower, upper=upper, change_bp=delta,
                                    change_basis="issuer_statement", scalar_representation="upper_bound")}
-    return [observation(document, family, edition, rates, {"for": int(vote[1]), "against": int(vote[2])},
+    return [observation(document, family, edition, rates, votes,
                         printed=low + " to " + high + " percent", method=method)] if edition[:7] >= since else []
 
 

@@ -31,9 +31,9 @@ def statement(document):
     edition = datetime.strptime(date[1] + ", " + date[2], "%B %d, %Y").date().isoformat()
     require(r"Statement on Monetary Policy|Change in the Guideline for Money Market Operations", text)
     vote = require(r"Policy Board of the Bank of Japan decided, by (?:an? (\d+)-(\d+) majority vote|a unanimous vote), "
-                   r"to set the following guideline for money market operations", text)
-    rate = require(r"The Bank will encourage the uncollateralized o\s*vernight call rate to remain at around ([\d.]+) percent", text)
-    return edition, float(rate[1]), {"for": int(vote[1] or 9), "against": int(vote[2] or 0)}, method
+                   r"to set the following guideline", text)
+    rate = require(r"The Bank will encourage the uncollateralized o\s*vernight ca\s*ll rate to remain at around (\d+(?:\.\s*\d+)?) percent", text)
+    return edition, float(rate[1].replace(" ", "")), {"for": int(vote[1] or 9), "against": int(vote[2] or 0)}, method
 
 
 def release_clock(document, feed, edition):

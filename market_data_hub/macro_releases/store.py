@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from pathlib import Path
+import json
 import sqlite3
 from typing import Optional, Union
 
@@ -132,11 +133,15 @@ class Store:
                      record.estimate_stage, record.release_event_id, record.reading_kind),
                 ).fetchone()
                 volatile = {"first_seen_at", "retrieved_at", "content_hash", "raw_payload_json", "url"}
-                if previous and all(previous[key] == value for key, value in data.items()
+                policy = json.loads(record.raw_payload_json).get("policy_decision")
+                same_policy = not policy or previous and json.loads(previous["raw_payload_json"]).get("policy_decision") == policy
+                if previous and same_policy and all(previous[key] == value for key, value in data.items()
                                     if key not in volatile):
                     return previous["id"]
             if isinstance(record, m.ValueVintage):
                 semantics = ("indicator_id", "value", "unit", "scale", "estimate_stage")
+                if record.policy_decision_json is not None:
+                    semantics += ("policy_decision_json", "issuer_published_at", "publication_precision")
                 provenance = ("verification_status", "extraction_method")
                 same_document = self.conn.execute(
                     "SELECT * FROM value_vintages WHERE source_series_id=? AND reference_period=? "
