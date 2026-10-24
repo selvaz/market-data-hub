@@ -46,6 +46,15 @@ def test_every_approved_row_preserved():
         assert {s.relationship_id for s in card.timing.predictive_screen} <= set(row["vkeys"].split(";"))
 
 
+def test_aliases_never_duplicate_a_source_rows_catalogue_id():
+    # These ids are already in their approved source rows as well as aliases.
+    for identity in ("fed_funds_rate_decision", "pboc_lpr_decision", "us_umich_consumer_sentiment"):
+        assert indicator_card("cat:" + identity).ids.cat.count(identity) == 1
+    for card in build_dataset().cards:
+        for store, ids in card.ids.model_dump().items():
+            assert len(ids) == len(set(ids)), (card.key, store, ids)
+
+
 @pytest.mark.parametrize("identity,key", [
     ("ms:PAYEMS", "us_payrolls"), ("es:nonfarm_payrolls", "us_payrolls"),
     ("cal:us_nfp", "us_payrolls"), ("cat:us_payrolls_change", "us_payrolls"),
