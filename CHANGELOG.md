@@ -7,6 +7,8 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.5] — 2026-10-24
+
 ### Added
 - Offline daily Forex Factory forecast ingestion into `consensus_readings`,
   labelled `ff_forecast`, with manifest capture times, verified archive hashes,
