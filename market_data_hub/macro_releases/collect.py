@@ -10,9 +10,11 @@ import re
 from .adapters import persist
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
-from .catalogue import FAMILIES
+from .catalogue import FAMILIES, REMAINING_FAMILIES
+from .tier1_publications import Tier1Adapter
 from .eurostat import EurostatAdapter
-from .fred import FREDAdapter
+from .fred import FREDAdapter, USRedistributorAdapter
+from .dol import DOLAdapter
 from .http import FetchError, HttpClient
 from .ons import ONSAdapter
 from .store import open_writer
@@ -40,12 +42,15 @@ def main(argv=None):
         parser.error("This manual development collector refuses ProgramData paths")
     client = HttpClient()
     result = {"db": str(target), "families": {}, "failures": {}, "family_failures": {}}
-    adapters = [(BLSAdapter(client), [f for f in families if f in ("us_cpi", "us_payrolls")]),
-                (BEAAdapter(client), [f for f in families if f == "us_gdp"]),
-                (EurostatAdapter(client), [f for f in families if f == "ea_hicp"]),
-                (ONSAdapter(client), [f for f in families if f == "uk_gdp"])]
+    adapters = [(BLSAdapter(client), [f for f in families if f in ("us_cpi", "us_payrolls", "us_ppi", "us_jolts")]),
+                (BEAAdapter(client), [f for f in families if f in ("us_gdp", "us_pce")]),
+                (USRedistributorAdapter(client), [f for f in families if f in ("us_retail_sales", "us_housing_starts", "us_durable_goods", "us_industrial_production", "us_trade_balance")]),
+                (EurostatAdapter(client), [f for f in families if f in ("ea_hicp", "ea_gdp")]),
+                (ONSAdapter(client), [f for f in families if f in ("uk_gdp", "uk_cpi", "uk_labour_market")]),
+                (DOLAdapter(client), [f for f in families if f == "us_jobless_claims"])]
     if args.with_redistributors:
         adapters.append((FREDAdapter(client), [f for f in families if f.startswith("us_")]))
+    adapters.append((Tier1Adapter(client), [f for f in families if f in REMAINING_FAMILIES]))
     for adapter, selected in adapters:
         if not selected:
             continue

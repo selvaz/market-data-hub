@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import base64
 import json
+from datetime import date
 from typing import Optional, Protocol
 
 from .catalogue import INDICATORS
@@ -86,6 +87,8 @@ def persist(store, observations):
     ids = []
     for obs in observations:
         indicator = INDICATORS[obs.indicator_id]
+        if indicator.frequency == "W" and (len(obs.period) != 10 or date.fromisoformat(obs.period).weekday() != 5):
+            raise ValueError("Weekly claims require an explicit Saturday week ending date")
         issuer = indicator.issuer_id
         mirror = obs.source != issuer
         verified = not (mirror or not obs.published or obs.method == "archive_text" or obs.needs_review
@@ -155,7 +158,7 @@ def persist(store, observations):
             for row in mirrors:
                 if row["value"] is not None and row["unit"] == official["unit"] and row["scale"] == official["scale"]:
                     # Official API rates are printed to 0.1 pp; counts to 1 thousand.
-                    tolerance = 0.05 if indicator.unit == "%" else 0.5
+                    tolerance = 0.05 if indicator.unit == "%" or indicator.id == "us_trade_balance" else 0.5
                     if abs(row["value"] - official["value"]) > tolerance + 1e-10:
                         store.put(Discrepancy(reading_id=row["id"], selected_vintage_id=official["id"],
                                               reason="Exact edition differs from issuer published precision",

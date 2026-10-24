@@ -1,0 +1,13 @@
+{
+  "url": "https://api.stlouisfed.org/fred/series/observations",
+  "retrieved_at": "2026-10-24T11:10:11.246037+00:00",
+  "sha256": "5d13c56e0be232b570f239bcaf31e1dd3445c1e717603e7c78a9d6b94a6fb296",
+  "request": {
+    "file_type": "json",
+    "series_id": "INDPRO",
+    "units": "pch",
+    "observation_start": "2026-09-01",
+    "sort_order": "desc",
+    "limit": 1
+  }
+}
