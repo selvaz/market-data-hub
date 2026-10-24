@@ -25,7 +25,7 @@ from .lease import LeaseBusy, LeaseLost, RunLease
 from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
-from .schedule import RUN_AT, RUN_DATE, edition_status, family_editions
+from .schedule import RUN_AT, RUN_DATE, edition_due, family_editions
 from .policy import PolicyAdapter
 from .tier1_publications import Tier1Adapter
 from .store import Store, open_writer
@@ -210,7 +210,8 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
         if lease:
             lease.renew()
         token = RUN_DATE.set(result["fetch_until"])
-        instant_token = RUN_AT.set(datetime.now(timezone.utc))
+        run_at = datetime.now(timezone.utc)
+        instant_token = RUN_AT.set(run_at)
         try:
             batch = (fetch_daily(client, family, result["fetch_since"]) if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
                      else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
@@ -221,11 +222,13 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
         if calendar:
             result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t, status="scheduled")
                 for d, (p, s, t) in calendar.items()
-                if edition_status(d, result["fetch_until"]) == "scheduled"]
+                if not edition_due(family, d, as_of=result["fetch_until"], at=run_at)]
         # Even if an endpoint exposes a future reviewed edition early, it is
-        # still scheduled. Keep its document, but never publish future values.
+        # still scheduled until its issuer release instant. Keep its document,
+        # but never publish future values, even earlier on the same local day.
         batch.observations = [o for o in batch.observations
-            if o.edition not in calendar or o.edition <= result["fetch_until"]]
+            if o.edition not in calendar or edition_due(family, o.edition,
+                as_of=result["fetch_until"], at=run_at)]
         observations = batch.observations
         if not observations and not batch.issues and not result.get("scheduled_editions"):
             raise FetchError("No observations in requested window")

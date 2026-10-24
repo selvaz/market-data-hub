@@ -33,7 +33,7 @@ from .store import open_writer
 from .worklist_periods import explicit_period
 
 PROVIDER = "ff_forecast"
-RULE_VERSION = "ff-consensus-v3"
+RULE_VERSION = "ff-consensus-v4"
 ALIAS_FILE = Path(__file__).with_name("ff_aliases_v1.json")
 GEOGRAPHIES = {
     "US": {"USA"},
@@ -213,7 +213,7 @@ class IssuerEvents:
                 if e.reference_period
                 and e.stage == event["estimate_stage"]
                 and explicit_period(
-                    e.reference_period, info["frequency"], info["geography"]
+                    e.reference_period, "D" if info["frequency"] == "E" else info["frequency"], info["geography"]
                 )
             ]
             if not rows:
@@ -340,7 +340,8 @@ def prepare(store, catalogue, event, captured_at, snapshot_hash):
         return True, "stage_unknown", None
     if mapping.get("period_since") and period < mapping["period_since"]:
         return True, "geography_period_mismatch", None
-    expected = title_stage(title)
+    # Reviewed stages understand FF's provider-specific GDP stage vocabulary.
+    expected = set() if "justification" in mapping else title_stage(title)
     if mapping["stage"] not in ("unknown", "", None):
         expected.add(mapping["stage"])
     if event.get("estimate_stage"):
@@ -349,8 +350,10 @@ def prepare(store, catalogue, event, captured_at, snapshot_hash):
         return True, "stage_conflict", None
     text = str(event["forecast"]).strip()
     # Forecast cells must contain a complete numeric print in the mapped unit.
-    percent = indicator["unit"] in ("%", "percent")
+    percent = indicator["unit"] in ("%", "percent", "% per annum")
     pattern = r"[+-]?\d+(?:\.\d+)?%" if percent else r"[+-]?\d+(?:\.\d+)?[KMB]?"
+    if indicator["id"] == "ea_consumer_confidence":
+        pattern = r"[+-]?\d+(?:\.\d+)?%?"  # FF prints this percentage balance bare
     if not re.fullmatch(pattern, text, re.IGNORECASE):
         return True, "forecast_format_or_unit_unknown", None
     try:
@@ -447,6 +450,10 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
     directory = Path(directory)
     if not directory.is_dir():
         raise FileNotFoundError("FF archive directory is unavailable")
+    from .scheduled_events import persist_scheduled_events
+    if before_snapshot:
+        before_snapshot()
+    scheduled = persist_scheduled_events(store)
     catalogue = Catalogue(store)
     hashes = manifest_hashes(directory)
     summary = dict(
@@ -461,6 +468,7 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
         snapshots=[],
         skipped_titles=[],
         failures=[],
+        scheduled_events=scheduled,
     )
     titles = Counter()
     reasons = Counter()
