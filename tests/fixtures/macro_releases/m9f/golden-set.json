@@ -53,6 +53,24 @@
       "period": "2026-08",
       "value": 0.9,
       "source_url": "https://www.census.gov/construction/c30/pdf/release.pdf"
+    },
+    {
+      "family": "us_pmms",
+      "fixture": "pmms.html",
+      "edition": "2026-10-15",
+      "indicator": "us_pmms_30y",
+      "period": "2026-10-14",
+      "value": 7.4,
+      "source_url": "https://www.freddiemac.com/pmms/archive"
+    },
+    {
+      "family": "us_pmms",
+      "fixture": "pmms-current.html",
+      "edition": "2026-10-22",
+      "indicator": "us_pmms_30y",
+      "period": "2026-10-21",
+      "value": 7.32,
+      "source_url": "https://www.freddiemac.com/pmms"
     }
   ]
 }

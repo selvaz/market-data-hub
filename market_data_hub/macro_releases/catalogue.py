@@ -135,6 +135,9 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "us_pmms": [measure("us_pmms_30y", "FreddieMac", "USA", "level", "NSA",
+        definition="Freddie Mac PMMS U.S. weekly average 30-year fixed-rate mortgage, conventional conforming purchase loans, percent; reference period is survey week ending from the issuer calendar",
+        frequency="W")],
     "us_construction_spending": [measure("us_construction_spending_mm", "Census", "USA", "mm", "SA",
         definition="Total value of construction put in place, public and private, SA annual rate; published monthly percent change")],
     "us_fhfa_hpi": [measure("us_fhfa_hpi_" + basis, "FHFA", "USA", basis, "SA",

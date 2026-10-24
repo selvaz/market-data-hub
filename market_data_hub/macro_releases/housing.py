@@ -11,7 +11,7 @@ from .http import FetchError
 from .publication_times import local_release
 from .schedule import due, issuer_zone
 from .tier1_publications import publication_text, require
-from . import census_construction
+from . import census_construction, pmms
 
 FHFA_LIST = "https://www.fhfa.gov/reports/house-price-index"
 FHFA_ARCHIVES = {
@@ -80,8 +80,10 @@ def fetch_fhfa(client, family, since):
     return out
 
 
-PARSERS = {"us_fhfa_hpi": parse_fhfa, "us_construction_spending": census_construction.parse}
-FETCHERS = {"us_fhfa_hpi": fetch_fhfa, "us_construction_spending": census_construction.fetch}
+PARSERS = {"us_fhfa_hpi": parse_fhfa, "us_construction_spending": census_construction.parse,
+           "us_pmms": pmms.parse}
+FETCHERS = {"us_fhfa_hpi": fetch_fhfa, "us_construction_spending": census_construction.fetch,
+            "us_pmms": pmms.fetch}
 
 
 class HousingAdapter:

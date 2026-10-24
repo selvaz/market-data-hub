@@ -4,6 +4,32 @@ Only listed editions can be certified. Calendars permit a fetch, never prove a
 publication. The saved issuer reports include the FHFA 2026 calendar.
 """
 EDITIONS = {
+    # Freddie Mac PMMS publication calendar: (survey week ENDING, stage, ET).
+    # Thanksgiving publishes Wednesday 25 November, covering through Tuesday.
+    "us_pmms": {
+        "2026-08-06": ("2026-08-05", "regular", "12:00"),
+        "2026-08-13": ("2026-08-12", "regular", "12:00"),
+        "2026-08-20": ("2026-08-19", "regular", "12:00"),
+        "2026-08-27": ("2026-08-26", "regular", "12:00"),
+        "2026-09-03": ("2026-09-02", "regular", "12:00"),
+        "2026-09-10": ("2026-09-09", "regular", "12:00"),
+        "2026-09-17": ("2026-09-16", "regular", "12:00"),
+        "2026-09-24": ("2026-09-23", "regular", "12:00"),
+        "2026-10-01": ("2026-09-30", "regular", "12:00"),
+        "2026-10-08": ("2026-10-07", "regular", "12:00"),
+        "2026-10-15": ("2026-10-14", "regular", "12:00"),
+        "2026-10-22": ("2026-10-21", "regular", "12:00"),
+        "2026-10-29": ("2026-10-28", "regular", "12:00"),
+        "2026-11-05": ("2026-11-04", "regular", "12:00"),
+        "2026-11-12": ("2026-11-11", "regular", "12:00"),
+        "2026-11-19": ("2026-11-18", "regular", "12:00"),
+        "2026-11-25": ("2026-11-24", "regular", "12:00"),
+        "2026-12-03": ("2026-12-02", "regular", "12:00"),
+        "2026-12-10": ("2026-12-09", "regular", "12:00"),
+        "2026-12-17": ("2026-12-16", "regular", "12:00"),
+        "2026-12-24": ("2026-12-23", "regular", "12:00"),
+        "2026-12-31": ("2026-12-30", "regular", "12:00"),
+    },
     "us_fhfa_hpi": {
         "2026-08-25": ("2026-06", "regular", "09:00"),
         "2026-09-29": ("2026-07", "regular", "09:00"),
@@ -22,10 +48,12 @@ EDITIONS = {
     },
 }
 SCHEDULES = {
+    "us_pmms": "https://www.freddiemac.com/pmms/docs/PMMS_Publication_Calendar.pdf",
     "us_fhfa_hpi": "https://www.fhfa.gov/data/hpi",
     "us_construction_spending": "https://www.census.gov/economic-indicators/calendar-listview-2026.html",
 }
-SOURCES = {"us_fhfa_hpi": ("FHFA", "official", "M"),
+SOURCES = {"us_pmms": ("FreddieMac", "official", "W"),
+           "us_fhfa_hpi": ("FHFA", "official", "M"),
            "us_construction_spending": ("Census", "official", "M")}
 
 

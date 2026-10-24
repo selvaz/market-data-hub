@@ -93,7 +93,12 @@ def window(since, until):
     return start, end
 
 
-def prior_period(period, frequency=None):
+def prior_period(period, frequency=None, *, indicator=None):
+    if indicator == "us_pmms_30y":
+        from .housing_editions import EDITIONS
+        # Holiday survey weeks may end six or eight days apart. Preserve the
+        # issuer calendar rather than inventing a seven-day comparison date.
+        return max((p for p, _, _ in EDITIONS["us_pmms"].values() if p < period), default=None)
     if re.fullmatch(r"\d{4}-\d{2}", period):
         first = date.fromisoformat(period + "-01")
         return (first - timedelta(days=1)).strftime("%Y-%m")
@@ -383,7 +388,7 @@ class ReadAPI:
             if stale_series(snapshot, indicator, period, released_at):
                 continue
             frequency = snapshot.indicators[indicator]["frequency"]
-            prior = prior_period(period, frequency) if frequency != "E" else None
+            prior = prior_period(period, frequency, indicator=indicator) if frequency != "E" else None
             decisions = None
             if frequency == "E":
                 # Event periods are decision dates, not a daily calendar. Only

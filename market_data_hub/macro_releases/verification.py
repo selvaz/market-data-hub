@@ -91,7 +91,8 @@ ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
                    "us_building_permits": 5000, "us_trade_balance": 1000,
                    "us_initial_jobless_claims": 10000}
 SANITY_BANDS.update({"us_fhfa_hpi_mm": 15, "us_fhfa_hpi_yy": 30,
-                     "us_construction_spending_mm": 30})
+                     "us_construction_spending_mm": 30, "us_pmms_30y": 3})
+ABSOLUTE_BOUNDS["us_pmms_30y"] = 25
 
 
 def configured_bands(overrides=None):
