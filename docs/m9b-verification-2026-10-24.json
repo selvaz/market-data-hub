@@ -1,0 +1,207 @@
+{
+  "status": "ok",
+  "copy": "D:\\Temp\\mdh-m9b-vjz1_fu4\\macro_releases.sqlite",
+  "backup_method": "SQLite backup API from stable private main/WAL snapshot",
+  "integrity": "ok",
+  "source_main_unchanged": true,
+  "required_official_cards_found": true,
+  "tested_revision": "792e18c74c6eeac655c0ea9272d072f71856b5d0",
+  "tests": {
+    "scope": [
+      "tests/test_macro_*",
+      "tests/test_indicator_cards.py"
+    ],
+    "passed": 1015,
+    "skipped": 1
+  },
+  "families": {
+    "us_umich_sentiment": {
+      "dry_run": {
+        "status": "ok",
+        "vintages_added": 3,
+        "readings_added": 3
+      },
+      "copy_collection": {
+        "status": "ok",
+        "vintages_added": 3,
+        "readings_added": 3
+      }
+    },
+    "ea_ec_surveys": {
+      "dry_run": {
+        "status": "ok",
+        "vintages_added": 4,
+        "readings_added": 4
+      },
+      "copy_collection": {
+        "status": "ok",
+        "vintages_added": 4,
+        "readings_added": 4
+      }
+    },
+    "uk_total_pay": {
+      "dry_run": {
+        "status": "ok",
+        "vintages_added": 23,
+        "readings_added": 23
+      },
+      "copy_collection": {
+        "status": "ok",
+        "vintages_added": 23,
+        "readings_added": 23
+      }
+    },
+    "ea_core_hicp": {
+      "dry_run": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "copy_collection": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      }
+    },
+    "us_new_home_sales": {
+      "dry_run": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "copy_collection": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      }
+    },
+    "uk_retail_sales": {
+      "dry_run": {
+        "status": "ok",
+        "vintages_added": 4,
+        "readings_added": 4
+      },
+      "copy_collection": {
+        "status": "ok",
+        "vintages_added": 4,
+        "readings_added": 4
+      }
+    },
+    "ea_trade_balance": {
+      "dry_run": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "copy_collection": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      }
+    },
+    "ea_industrial_production": {
+      "dry_run": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "copy_collection": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      }
+    },
+    "ea_retail_sales": {
+      "dry_run": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "copy_collection": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      }
+    },
+    "ea_unemployment": {
+      "dry_run": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "copy_collection": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      }
+    }
+  },
+  "week_cards": [
+    {
+      "indicator_id": "uk_average_weekly_earnings_yy",
+      "reference_period": "2026-08",
+      "value": 3.7,
+      "edition": "2026-10-20",
+      "status": "official",
+      "source": {
+        "source_id": "ONS",
+        "issuer_id": "ONS",
+        "distributor_id": "ONS",
+        "evidence_role": "issuer",
+        "selected_evidence_id": "vintage:426"
+      }
+    },
+    {
+      "indicator_id": "ea_consumer_confidence",
+      "reference_period": "2026-10",
+      "value": -17.9,
+      "edition": "2026-10-22",
+      "status": "official",
+      "source": {
+        "source_id": "ECFIN",
+        "issuer_id": "ECFIN",
+        "distributor_id": "ECFIN",
+        "evidence_role": "issuer",
+        "selected_evidence_id": "vintage:403"
+      }
+    },
+    {
+      "indicator_id": "uk_retail_sales_mm",
+      "reference_period": "2026-09",
+      "value": -0.4,
+      "edition": "2026-10-23",
+      "status": "official",
+      "source": {
+        "source_id": "ONS",
+        "issuer_id": "ONS",
+        "distributor_id": "ONS",
+        "evidence_role": "issuer",
+        "selected_evidence_id": "vintage:433"
+      }
+    },
+    {
+      "indicator_id": "us_umich_consumer_sentiment",
+      "reference_period": "2026-10",
+      "value": 48.0,
+      "edition": "2026-10-23",
+      "status": "official",
+      "source": {
+        "source_id": "UMich",
+        "issuer_id": "UMich",
+        "distributor_id": "UMich",
+        "evidence_role": "issuer",
+        "selected_evidence_id": "vintage:399"
+      }
+    }
+  ],
+  "indicator_card_coverage": {
+    "mapped": 44,
+    "total": 48,
+    "unmapped": [
+      "cat:ea_industrial_production_mm",
+      "cat:ea_retail_sales_mm",
+      "cat:ea_trade_balance",
+      "cat:uk_retail_sales_mm"
+    ]
+  }
+}
