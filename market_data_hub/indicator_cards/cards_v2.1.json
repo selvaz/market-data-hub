@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "56972c2cd9086e2b2f94dab1263beef2f568cfaf6f5e8850465194f4b91cbe7b",
+  "aliases_sha256": "85409dae83e6aa386558afc006555ef7cd860cce3a6cacb8798a065056329146",
   "cards": [
     {
       "concept": "Real GDP",
@@ -1099,7 +1099,9 @@
           "us_pmi_svc_flash"
         ],
         "cat": [
-          "us_sp_global_*"
+          "us_sp_global_*",
+          "us_sp_global_manufacturing_pmi",
+          "us_sp_global_services_pmi"
         ],
         "derived_ms": [],
         "es": [],
@@ -1450,7 +1452,9 @@
         ],
         "cat": [
           "us_cpi_core_yy",
-          "us_cpi_core_mm"
+          "us_cpi_core_mm",
+          "us_core_cpi_yy",
+          "us_core_cpi_mm"
         ],
         "derived_ms": [],
         "es": [
@@ -3956,7 +3960,9 @@
         "cal": [
           "us_new_home_sales"
         ],
-        "cat": [],
+        "cat": [
+          "us_new_home_sales"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -4841,7 +4847,10 @@
           "ez_pmi_mfg",
           "ez_pmi_svc"
         ],
-        "cat": [],
+        "cat": [
+          "ea_manufacturing_pmi",
+          "ea_services_pmi"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -7100,7 +7109,9 @@
         "cal": [
           "uk_pmi_svc"
         ],
-        "cat": [],
+        "cat": [
+          "uk_sp_global_services_pmi"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -7936,7 +7947,9 @@
         "cal": [
           "cn_pmi_nbs_mfg"
         ],
-        "cat": [],
+        "cat": [
+          "cn_nbs_manufacturing_pmi"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -7981,7 +7994,9 @@
         "cal": [
           "cn_pmi_caixin_mfg"
         ],
-        "cat": [],
+        "cat": [
+          "cn_caixin_manufacturing_pmi"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -8491,7 +8506,10 @@
           "ca_employment",
           "ca_unemp"
         ],
-        "cat": [],
+        "cat": [
+          "ca_unemployment_rate",
+          "ca_employment_change"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
