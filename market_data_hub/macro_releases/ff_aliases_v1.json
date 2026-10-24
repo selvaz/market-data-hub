@@ -1,6 +1,7 @@
 {
   "version": "ff-aliases-v1",
   "aliases": [
+    {"title": "Construction Spending m/m", "currency": "USD", "geography": "USA", "indicator_id": "us_construction_spending_mm", "family": "us_construction_spending", "stage": "regular", "justification": "FF Construction Spending m/m: Census total public and private value put in place, published SA monthly percent change; excludes residential/private subtotals and the spending level."},
     {"title": "CPI m/m", "currency": "USD", "geography": "USA", "indicator_id": "us_cpi_headline_mm", "family": "us_cpi", "stage": "regular", "justification": "FF CPI m/m is the US headline monthly CPI percent change; unqualified non-staged monthly release."},
     {"title": "CPI y/y", "currency": "USD", "geography": "USA", "indicator_id": "us_cpi_headline_yy", "family": "us_cpi", "stage": "regular", "justification": "FF CPI y/y is the US headline annual CPI percent change; unqualified non-staged monthly release."},
     {"title": "Core CPI m/m", "currency": "USD", "geography": "USA", "indicator_id": "us_cpi_core_mm", "family": "us_cpi", "stage": "regular", "justification": "FF explicitly says Core CPI m/m, matching the US CPI excluding food and energy monthly change."},

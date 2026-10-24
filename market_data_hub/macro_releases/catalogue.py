@@ -135,6 +135,8 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "us_construction_spending": [measure("us_construction_spending_mm", "Census", "USA", "mm", "SA",
+        definition="Total value of construction put in place, public and private, SA annual rate; published monthly percent change")],
     "us_fhfa_hpi": [measure("us_fhfa_hpi_" + basis, "FHFA", "USA", basis, "SA",
         definition="FHFA monthly purchase-only national house price index, published " + basis + " percent change")
         for basis in ("mm", "yy")],

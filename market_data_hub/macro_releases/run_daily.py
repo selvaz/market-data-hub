@@ -14,7 +14,7 @@ from uuid import uuid4
 from .adapters import persist
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
-from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS
+from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
 from .consensus import DEFAULT_RAW_DIR, ingest
 from .eurostat import EurostatAdapter
 from .fred import USRedistributorAdapter
@@ -28,6 +28,7 @@ from . import run_log
 from .schedule import RUN_INSTANT, PENDING_EDITIONS, edition_status, family_editions, run_instant
 from .policy import PolicyAdapter
 from .tier1_publications import Tier1Adapter
+from .housing import HousingAdapter
 from .store import Store, open_writer
 from .verification import configured_bands, persist_review, verify
 
@@ -44,8 +45,6 @@ ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
 ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 DISCOVERY_ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
-from .housing import HousingAdapter
-from .catalogue import HOUSING_FAMILIES
 ADAPTERS.update({f: HousingAdapter for f in HOUSING_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: HousingAdapter for f in HOUSING_FAMILIES})
 

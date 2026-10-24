@@ -224,15 +224,16 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     report = coverage_report()
     print(json.dumps(report, indent=2))
     assert set(report["certified_families"]) == set(FAMILIES)
-    # Every certified family is covered since the owner-approved UK GDP row
-    # (18/10/2026); no documented gap remains.
+    # Every certified family is either mapped to approved context or has an
+    # explicit concept gap. Draft v2.2 rows do not count as owner approval.
     for family in FAMILIES:
         assert report["certified_families"][family]["unmapped"] == report["documented_certified_gaps"].get(family, [])
     gaps = {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"], "ea_trade_balance": ["cat:ea_trade_balance"]}
     gaps["uk_retail_sales"] = ["cat:uk_retail_sales_mm"]
+    gaps["us_fhfa_hpi"] = ["cat:us_fhfa_hpi_mm", "cat:us_fhfa_hpi_yy"]
     assert report["documented_certified_gaps"] == gaps
-    # M9a/M9b: 44 mapped; M9c adds six approved policy concepts, four gaps remain.
-    assert report["macro_releases"] == {"mapped": 50, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
+    # M9f adds an approved construction alias and a pending FHFA concept.
+    assert report["macro_releases"] == {"mapped": 51, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out

@@ -35,6 +35,24 @@
       "period": "2026-07",
       "value": 2.6,
       "source_url": "https://www.fhfa.gov/document/d/hpi/fhfa-hpi-monthly-september-2026"
+    },
+    {
+      "family": "us_construction_spending",
+      "fixture": "construction-june.pdf",
+      "edition": "2026-08-03",
+      "indicator": "us_construction_spending_mm",
+      "period": "2026-06",
+      "value": -0.1,
+      "source_url": "https://www.census.gov/construction/c30/pdf/pr202606.pdf"
+    },
+    {
+      "family": "us_construction_spending",
+      "fixture": "construction-current.pdf",
+      "edition": "2026-10-01",
+      "indicator": "us_construction_spending_mm",
+      "period": "2026-08",
+      "value": 0.9,
+      "source_url": "https://www.census.gov/construction/c30/pdf/release.pdf"
     }
   ]
 }
