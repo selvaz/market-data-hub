@@ -2,6 +2,7 @@
   "classification_version": "v2.1",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages.",
   "aliases": [
+    {"id": "cat:boj_policy_rate_decision", "key": "jp_boj", "basis": "Approved BOJ short-term policy rate decision concept; issuer MPM statement and published rate vote (M9c)."},
     {"id": "cat:pboc_lpr_decision", "key": "cn_lpr", "basis": "Approved PBOC/NIFC LPR decision concept; both published tenors retained in the policy card (M9c)."},
     {"id": "cat:boc_overnight_rate_decision", "key": "ca_boc", "basis": "Approved target overnight rate decision concept; issuer fixed-announcement statement at 09:45 ET (M9c)."},
     {"id": "cat:boe_bank_rate_decision", "key": "uk_boe", "basis": "Approved MPC Bank Rate decision concept; statement decision, publication date and rate vote (M9c)."},

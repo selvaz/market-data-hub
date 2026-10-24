@@ -43,6 +43,7 @@ def reviewed_anchor(obs):
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
+    "boj_policy_rate_decision": 3,
     "pboc_lpr_decision": 3,
     "boc_overnight_rate_decision": 3,
     "boe_bank_rate_decision": 3,
