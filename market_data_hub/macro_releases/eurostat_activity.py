@@ -48,7 +48,9 @@ def parse(document, family, since="1900-01"):
     edition = stamp[:10]
     head, _, _ = reviewed(family, edition)
     body = plain(raw)
-    if not re.search(r"euro area \(EA21\)", body, re.I):
+    membership = ("data for January 2026 onwards represent EA21 series" in body if family == "ea_core_hicp"
+                  else bool(re.search(r"euro area \(EA21\)", body, re.I)))
+    if not membership:
         raise FetchError("Eurostat composition needs review")
     if family == "ea_unemployment":
         if "persons aged 15 to 74" not in body:
