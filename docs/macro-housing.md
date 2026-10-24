@@ -1,13 +1,16 @@
 # M9f housing release families
 
-Branch `feat/m9f-housing` is based on `origin/integrate/m2b` at `e301c52`.
+Branch `feat/m9f-housing` was cut from `origin/integrate/m2b` at `e301c52`,
+originally stacked on [#128](https://github.com/selvaz/market-data-hub/pull/128).
+That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
-stacks on [#128](https://github.com/selvaz/market-data-hub/pull/128). Do not merge
-before the integration PR. Work is delivered one family at a time.
+remains draft while work is delivered one family at a time. Do not merge it.
 
 ## Current-main integration (24 October 2026)
 
-Merged `origin/main` at `fd59e26` into the feature branch without rebasing.
+Merged `origin/main` at `fd59e26` into the feature branch without rebasing
+(merge commit `6de8e24`). All 27 conflicted files were resolved, keeping both
+main's fixes and housing coverage.
 The schema-8 and conflicting-base limitations recorded in the earlier step
 reports below are historical. The integrated code includes schema v9, BoJ
 clock enrichment, main's per-stage schedules and FF-independent calendar seeding,
@@ -23,12 +26,34 @@ macro-indicators documentation and version 0.3.7.
 | Tests | Kept main's review regressions, archive-present/missing cases and v9 assertions; retained housing goldens, PMMS survey-week comparisons and private issuer labels. Every new housing test stubs imported credential bindings and blocks network. |
 | Documentation | Kept main's corrected event-previous contract, BoJ timing notes and source-path links; regenerated macro-indicators Part B to include housing coverage. |
 
-The focused integration suite passed **130 tests**, and `mkdocs build --strict`
-passed locally. Both indicator-card and documentation freshness checks pass.
+The required `tests/test_macro_*.py`, `tests/test_indicator_cards.py` and
+`tests/test_macro_indicators_docs.py` suite passed **1,279 tests, 1 skipped**
+in 403.66 seconds. The focused integration suite also passed all 130 tests.
+Repository-wide Ruff and `mkdocs build --strict` passed locally. Both
+indicator-card and documentation freshness checks pass after regeneration.
 The docs workflow now has a read-only build job on pull requests; deployment
 remains restricted to main. Current-production verification explicitly requires
 source schema 9 before private migration, and all verifier SQLite snapshots and
 rate-ledger writes are confined to its new directory under `D:\Temp`.
+
+The current-production schema-v9 verification passed for **all six families**:
+`D:\Temp\mdh-m9f-b6ezheho\verification.json`, with the writable database copy
+beside it. The source was the current production main/WAL bytes, read twice
+for a stable private snapshot; SQLite opened only private files. The report
+records `source_schema: 9`, dry run and copy collection `ok` for every family,
+repeat collection `no_change`, all nine latest read-API measures certified
+against their issuers with the correct official/private source classes,
+SQLite integrity `ok`, and `source_main_unchanged: true`.
+
+Reproduce the complete current check with bytecode writes disabled:
+
+```powershell
+& C:\ProgramData\spyder-6\python.exe -B scripts\verify_macro_m9f.py --source C:\ProgramData\InvestmentCommittee\live\db\macro_releases.sqlite --destination-root D:\Temp
+```
+
+The GitHub strict docs job passed on the merge commit. Final-head Python
+3.9–3.12 and docs results are tracked in PR #130; the next family starts only
+after those checks pass.
 
 ## Certified so far (24 October 2026)
 
