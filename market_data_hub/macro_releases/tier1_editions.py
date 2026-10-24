@@ -5,6 +5,14 @@ No dataset update or retrieval timestamp is promoted to a release date.
 """
 EUROSTAT_SCHEDULE = "https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar"
 EDITIONS = {
+    "ea_core_hicp": {
+        "2026-10-02": ("2026-09", "flash", "11:00"),
+        "2026-10-16": ("2026-09", "final", "11:00"),
+        "2026-11-04": ("2026-10", "flash", "11:00"),
+        "2026-11-18": ("2026-10", "final", "11:00"),
+        "2026-12-01": ("2026-11", "flash", "11:00"),
+        "2026-12-17": ("2026-11", "final", "11:00"),
+    },
     "us_new_home_sales": {
         "2026-08-25": ("2026-07", "final", "10:00"),
         "2026-09-24": ("2026-08", "final", "10:00"),

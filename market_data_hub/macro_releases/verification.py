@@ -54,6 +54,7 @@ SANITY_BANDS.update({
     "ea_trade_balance": 200000,
     "uk_retail_sales_mm": 30,
     "us_new_home_sales": 2000,
+    "ea21_core_hicp_yy": 10,
     "us_ppi_mm": 10, "us_ppi_yy": 20, "us_jolts_openings": 6000,
     "us_pce_price_index_mm": 5, "us_pce_price_index_yy": 10,
     "us_core_pce_mm": 5, "us_core_pce_yy": 10,

@@ -9,6 +9,7 @@ from .tier1_publications import month, observation, plain, require, reviewed
 
 CALENDAR = "https://ec.europa.eu/eurostat/o/calendars/eventsJson"
 SPECS = {"ea_unemployment": ("Unemployment", "une_rt_m", "3", "ea_unemployment_rate"),
+         "ea_core_hicp": ("Inflation (HICP)", "prc_hicp_manr", "2", "ea21_core_hicp_yy"),
          "ea_trade_balance": ("International trade in goods", "ext_st_easitc", "6", "ea_trade_balance"),
          "ea_industrial_production": ("Industrial production", "sts_inpr_m", "4", "ea_industrial_production_mm"),
          "ea_retail_sales": ("Retail trade", "sts_trtu_m", "4", "ea_retail_sales_mm")}
@@ -18,14 +19,16 @@ def calendar_editions(document, family):
     title, dataset, _, _ = SPECS[family]
     found = {}
     for row in json_payload(document):
-        if row.get("euroindAuthor") != "estat" or not row.get("euroind") or row.get("title") != title:
+        core_titles = {"Inflation (HICP)": "final", "Flash estimate inflation euro area": "flash"}
+        if row.get("euroindAuthor") != "estat" or not row.get("euroind") or row.get("title") not in (core_titles if family == "ea_core_hicp" else {title}):
             continue
         edition = row["start"][:10]
         if edition < min(EDITIONS[family]) or edition > run_date():
             continue
         ref = datetime.strptime(row["period"], "%B %Y").strftime("%Y-%m")
         if (row.get("preliminary") or dataset not in row.get("datasetCodes", "").split(",") or
-                edition not in EDITIONS[family] or EDITIONS[family][edition][0] != ref):
+                edition not in EDITIONS[family] or EDITIONS[family][edition][0] != ref or
+                family == "ea_core_hicp" and EDITIONS[family][edition][1] != core_titles[row["title"]]):
             raise FetchError("Eurostat calendar edition needs review")
         found[edition] = EDITIONS[family][edition]
     if set(due(EDITIONS[family])) != set(found):
@@ -45,7 +48,7 @@ def parse(document, family, since="1900-01"):
     edition = stamp[:10]
     head, _, _ = reviewed(family, edition)
     body = plain(raw)
-    if "Euro area (EA21)" not in body:
+    if not re.search(r"euro area \(EA21\)", body, re.I):
         raise FetchError("Eurostat composition needs review")
     if family == "ea_unemployment":
         if "persons aged 15 to 74" not in body:
@@ -58,6 +61,18 @@ def parse(document, family, since="1900-01"):
         found = require(r"In " + month(head) + r", compared with " + prior +
             r", " + label + r" (increased|decreased) by ([\d.]+)% in (?:both )?the euro area", body)
         printed = ("-" if found[1].lower() == "decreased" else "") + found[2]
+    elif family == "ea_core_hicp":
+        stage = EDITIONS[family][edition][1]
+        short = datetime.strptime(head, "%Y-%m").strftime("%b %y")
+        if not re.search(r"Annual rate Monthly rate .*?" + short + " " + short, body):
+            raise FetchError("Eurostat HICP table columns needs review")
+        token = r"[+-]?\d+(?:\.\d+)?e?"
+        row = require(r"energy, food, alcohol & tobacco ((?:" + token + r"\s+){8}" + token + ")", body)[1]
+        values = row.split()
+        printed = values[7]
+        if printed.endswith("e") != (stage == "flash") or (stage == "flash" and "expected to be" not in body):
+            raise FetchError("Eurostat HICP estimate stage needs review")
+        printed = printed.removesuffix("e")
     elif family == "ea_trade_balance":
         from .bls import shift_month
         # The headline is NSA. Only the explicitly labelled SA annex matches.
