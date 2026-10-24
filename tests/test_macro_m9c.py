@@ -12,7 +12,7 @@ from market_data_hub.macro_releases import open_reader, open_writer
 from market_data_hub.macro_releases.adapters import persist
 from market_data_hub.macro_releases.http import Document, FetchError
 from market_data_hub.macro_releases.policy import due_editions
-from market_data_hub.macro_releases.schedule import RUN_AT, RUN_DATE
+from market_data_hub.macro_releases.schedule import RUN_INSTANT
 
 ROOT = Path(__file__).parent / "fixtures/macro_releases/m9c"
 GOLDEN = json.loads((ROOT / "golden-set.json").read_text())["cases"]
@@ -23,11 +23,9 @@ def offline(monkeypatch):
     def forbidden(*args, **kwargs):
         raise AssertionError("Network forbidden in M9c tests")
     monkeypatch.setattr(requests.Session, "request", forbidden)
-    date_token = RUN_DATE.set("2026-10-24")
-    time_token = RUN_AT.set(datetime(2026, 10, 24, 18, tzinfo=timezone.utc))
+    time_token = RUN_INSTANT.set(datetime(2026, 10, 24, 18, tzinfo=timezone.utc))
     yield
-    RUN_DATE.reset(date_token)
-    RUN_AT.reset(time_token)
+    RUN_INSTANT.reset(time_token)
 
 
 def document(name):
@@ -81,15 +79,13 @@ def test_fomc_issuer_unknown_edition_and_format_fail_closed():
 
 
 def test_fomc_due_at_exact_issuer_instant():
-    date = RUN_DATE.set("2026-09-16")
-    before = RUN_AT.set(datetime(2026, 9, 16, 17, 59, 59, tzinfo=timezone.utc))
+    before = RUN_INSTANT.set(datetime(2026, 9, 16, 17, 59, 59, tzinfo=timezone.utc))
     try:
         assert "2026-09-16" not in due_editions("fomc", "2026-09")
-        RUN_AT.set(datetime(2026, 9, 16, 18, tzinfo=timezone.utc))
+        RUN_INSTANT.set(datetime(2026, 9, 16, 18, tzinfo=timezone.utc))
         assert "2026-09-16" in due_editions("fomc", "2026-09")
     finally:
-        RUN_DATE.reset(date)
-        RUN_AT.reset(before)
+        RUN_INSTANT.reset(before)
 
 
 class Replay:
@@ -144,10 +140,9 @@ def test_all_40_decisions_daily_collection_and_idempotence(tmp_path, monkeypatch
 def test_release_instants_including_winter_dst(family, edition, instant):
     from datetime import timedelta
     stamp = datetime.fromisoformat(instant)
-    RUN_DATE.set(edition)
-    RUN_AT.set(stamp - timedelta(seconds=1))
+    RUN_INSTANT.set(stamp - timedelta(seconds=1))
     assert edition not in due_editions(family, edition[:7])
-    RUN_AT.set(stamp)
+    RUN_INSTANT.set(stamp)
     assert edition in due_editions(family, edition[:7])
 
 
@@ -246,7 +241,7 @@ def test_emergency_decision_and_expired_calendar_need_review():
     from market_data_hub.macro_releases.policy import PolicyAdapter, reviewed
     with pytest.raises(FetchError, match="needs review"):
         reviewed("boj_policy", "2026-08-03")
-    RUN_DATE.set("2027-01-01")
+    RUN_INSTANT.set(datetime(2027, 1, 1, tzinfo=timezone.utc))
     with pytest.raises(FetchError, match="needs review"):
         PolicyAdapter(Replay()).fetch(["boc_policy"], "2026-01")
 

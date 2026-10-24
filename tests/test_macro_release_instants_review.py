@@ -73,10 +73,10 @@ def test_only_edition_specific_404_gets_bounded_publication_delay_grace():
     class Missing:
         def __init__(self, code):
             self.code = code
-        def get(self, provider, url):
+        def get(self, provider, url, params=None):
             raise FetchError(f"{provider}: HTTP {self.code}")
     pending = schedule.PENDING_EDITIONS.set({})
-    clock = schedule.RUN_AT.set(datetime.fromisoformat("2026-10-27T14:05:00+00:00"))
+    clock = schedule.RUN_INSTANT.set(datetime.fromisoformat("2026-10-27T14:05:00+00:00"))
     try:
         assert schedule.get_edition(Missing(404), "census", "https://www.census.gov/edition.pdf",
                                     "us_new_home_sales", "2026-10-27") is None
@@ -85,13 +85,13 @@ def test_only_edition_specific_404_gets_bounded_publication_delay_grace():
             with pytest.raises(FetchError, match=f"HTTP {code}"):
                 schedule.get_edition(Missing(code), "census", "https://www.census.gov/edition.pdf",
                                      "us_new_home_sales", "2026-10-27")
-        schedule.RUN_AT.set(datetime.fromisoformat("2026-10-27T20:00:00+00:00"))
+        schedule.RUN_INSTANT.set(datetime.fromisoformat("2026-10-27T20:00:00+00:00"))
         with pytest.raises(FetchError, match="HTTP 404"):
             schedule.get_edition(Missing(404), "census", "https://www.census.gov/edition.pdf",
                                  "us_new_home_sales", "2026-10-27")
     finally:
         schedule.PENDING_EDITIONS.reset(pending)
-        schedule.RUN_AT.reset(clock)
+        schedule.RUN_INSTANT.reset(clock)
 
 
 def test_publication_grace_does_not_excuse_a_changed_format(tmp_path, monkeypatch):

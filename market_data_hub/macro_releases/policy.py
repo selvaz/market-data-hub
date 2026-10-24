@@ -1,5 +1,4 @@
 """Statement-only policy decisions. No price feed or news-derived decisions."""
-from datetime import datetime, timezone
 from decimal import Decimal
 from fractions import Fraction
 import math
@@ -10,7 +9,7 @@ from .catalogue import CENTRAL_BANKS
 from .http import FetchError
 from .policy_editions import EDITIONS, ZONES
 from .publication_times import local_release
-from .schedule import RUN_AT, run_date
+from .schedule import due, run_date
 
 
 def number(printed):
@@ -31,19 +30,7 @@ def reviewed(family, edition):
 
 def due_editions(family, since):
     """Gate in issuer time, including DST. Same-day publication is not assumed."""
-    instant = RUN_AT.get() or datetime.now(timezone.utc)
-    out = []
-    for edition, (_, _, clock) in EDITIONS[family].items():
-        if edition[:7] < since or edition > run_date():
-            continue
-        if clock is not None:
-            stamp = datetime.fromisoformat(local_release(edition, clock, ZONES[family])["published_at"])
-            if stamp > instant:
-                continue
-        # BOJ has no announced instant: fetching a document is allowed on the
-        # meeting date, but its publication must independently identify the day.
-        out.append(edition)
-    return out
+    return [edition for edition in due(EDITIONS[family], family=family) if edition[:7] >= since]
 
 
 def observation(document, family, edition, rates, vote_split, *, printed=None,

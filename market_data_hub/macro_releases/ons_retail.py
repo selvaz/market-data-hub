@@ -2,7 +2,7 @@
 from .bls import shift_month
 from .http import FetchError
 from .ons import bulletin_date
-from .schedule import due
+from .schedule import due, get_edition
 from .tier1_editions import EDITIONS
 from .tier1_publications import month, observation, plain, require, reviewed
 
@@ -32,10 +32,13 @@ def parse(document, family="uk_retail_sales", since="1900-01"):
 
 def fetch(client, family, since):
     out = []
-    for edition, (period, _, _) in due(EDITIONS[family]).items():
+    for edition, (period, _, _) in due(EDITIONS[family], family=family).items():
         if period < since:
             continue
-        rows = parse(client.get("ons", publication_url(period)), family, since)
+        doc = get_edition(client, "ons", publication_url(period), family, edition)
+        if doc is None:
+            continue
+        rows = parse(doc, family, since)
         if not rows or {o.edition for o in rows} != {edition}:
             raise FetchError("ONS requested retail archive needs review")
         out += rows

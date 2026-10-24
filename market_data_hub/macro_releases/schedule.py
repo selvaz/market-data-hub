@@ -26,6 +26,9 @@ def run_date():
 
 
 def issuer_zone(family):
+    from .policy_editions import ZONES
+    if family in ZONES:
+        return ZONES[family]
     return ("Europe/London" if family and family.startswith("uk_") else
             "Europe/Luxembourg" if family and family.startswith("ea_") else "America/New_York")
 
@@ -34,14 +37,19 @@ def release_instant(edition, metadata=None, *, family=None):
     if metadata is None:
         metadata = family_editions(family).get(edition, ())
     time = metadata[2] if len(metadata) >= 3 else "08:30"
+    if time is None:
+        return None  # Permission on the meeting date is not an exact publication time.
     local = datetime.fromisoformat(edition + "T" + time).replace(tzinfo=ZoneInfo(issuer_zone(family)))
     return local.astimezone(timezone.utc)
 
 
 def edition_status(edition, as_of=None, *, metadata=None, family=None):
     pending = PENDING_EDITIONS.get() or {}
-    return "scheduled" if ((family, edition) in pending or
-        run_instant(as_of) < release_instant(edition, metadata, family=family)) else "due"
+    instant = run_instant(as_of)
+    release = release_instant(edition, metadata, family=family)
+    before = (instant < release if release is not None else
+              instant.astimezone(ZoneInfo(issuer_zone(family))).date().isoformat() < edition)
+    return "scheduled" if (family, edition) in pending or before else "due"
 
 
 def due(editions, as_of=None, *, family=None):
@@ -50,7 +58,10 @@ def due(editions, as_of=None, *, family=None):
 
 
 def publication_grace(family, edition):
-    age = run_instant() - release_instant(edition, family=family)
+    release = release_instant(edition, family=family)
+    if release is None:
+        return False
+    age = run_instant() - release
     return timedelta(0) <= age < timedelta(hours=6)
 
 

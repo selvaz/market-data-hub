@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 
 from .http import FetchError, json_payload
-from .schedule import due, run_date
+from .schedule import due, run_date, get_edition
 from .tier1_editions import EDITIONS
 from .tier1_publications import month, observation, plain, require, reviewed
 
@@ -31,9 +31,9 @@ def calendar_editions(document, family):
                 family == "ea_core_hicp" and EDITIONS[family][edition][1] != core_titles[row["title"]]):
             raise FetchError("Eurostat calendar edition needs review")
         found[edition] = EDITIONS[family][edition]
-    if set(due(EDITIONS[family])) != set(found):
+    if not set(due(EDITIONS[family], family=family)).issubset(found):
         raise FetchError("Eurostat due calendar edition missing; needs review")
-    return found
+    return due(found, family=family)
 
 
 def publication_url(family, edition):
@@ -94,7 +94,9 @@ def fetch(client, family, since):
     out = []
     for edition, (period, _, _) in calendar_editions(document, family).items():
         if period >= since:
-            doc = client.get("eurostat", publication_url(family, edition))
+            doc = get_edition(client, "eurostat", publication_url(family, edition), family, edition)
+            if doc is None:
+                continue
             rows = parse(doc, family, since)
             if not rows or {o.edition for o in rows} != {edition}:
                 raise FetchError("Eurostat requested archive edition needs review")

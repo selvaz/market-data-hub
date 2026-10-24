@@ -41,7 +41,7 @@ def parse(doc, family, since="1900-01"):
 @pytest.fixture(autouse=True)
 def offline(monkeypatch):
     from datetime import datetime, timezone
-    from market_data_hub.macro_releases.schedule import RUN_DATE
+    from market_data_hub.macro_releases.schedule import RUN_INSTANT
     class Clock:
         @staticmethod
         def now(tz):
@@ -50,9 +50,9 @@ def offline(monkeypatch):
     def forbidden(*args, **kwargs):
         raise AssertionError("Network forbidden in M9b tests")
     monkeypatch.setattr(requests.Session, "request", forbidden)
-    token = RUN_DATE.set("2026-10-24")
+    token = RUN_INSTANT.set(datetime(2026, 10, 24, 18, tzinfo=timezone.utc))
     yield
-    RUN_DATE.reset(token)
+    RUN_INSTANT.reset(token)
 
 
 def document(name):
