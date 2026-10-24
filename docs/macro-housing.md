@@ -82,8 +82,9 @@ Dry run and copy collection were `ok` for all three implemented families:
 22 October at 16:00 UTC, for the survey week ending 21 October.
 SQLite integrity was `ok`; production main-file size and modification time
 were unchanged. This run used the same command below with `us_pmms` appended
-to the family list. The full macro and indicator-card regression rerun is in
-progress; PMMS offline checks, repository-wide lint and card freshness pass.
+to the family list. The full macro and indicator-card regression rerun passed:
+**1,173 passed, 1 skipped**. PMMS offline checks, repository-wide lint and card
+freshness pass. No new dependency was added, and M9f tests forbid network.
 
 The verifier reads a stable private snapshot of production's main/WAL bytes,
 then uses SQLite's backup API. SQLite opens only the private snapshot and copy.
