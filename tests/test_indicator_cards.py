@@ -219,9 +219,10 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     # (18/10/2026); no documented gap remains.
     for family in FAMILIES:
         assert report["certified_families"][family]["unmapped"] == report["documented_certified_gaps"].get(family, [])
-    assert report["documented_certified_gaps"] == {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"]}
+    gaps = {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"], "ea_trade_balance": ["cat:ea_trade_balance"]}
+    assert report["documented_certified_gaps"] == gaps
     # 14 pilot + 16 US monthly (M9a-1) + 7 UK, EA GDP and claims (M9a-2) measures.
-    assert report["macro_releases"] == {"mapped": 38, "total": len(INDICATORS), "unmapped": ["cat:ea_industrial_production_mm", "cat:ea_retail_sales_mm"]}
+    assert report["macro_releases"] == {"mapped": 38, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out
