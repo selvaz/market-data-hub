@@ -38,6 +38,9 @@ def document(name):
 
 
 def parse(case):
+    if case["family"] == "pboc_lpr":
+        from market_data_hub.macro_releases.pboc_lpr import parse
+        return parse(document(case["fixture"]), document(case["previous_fixture"]))[0]
     from market_data_hub.macro_releases import fomc, ecb_policy, boe_policy, boc_policy
     return {"fomc": fomc, "ecb_policy": ecb_policy, "boe_policy": boe_policy, "boc_policy": boc_policy}[case["family"]].parse(document(case["fixture"]))[0]
 
