@@ -31,6 +31,7 @@ import math
 from typing import Optional
 
 from .models import utc
+from .boj_timing import TIME_FIELDS
 from .read_times import known_by, normalize, stored_rows, timestamp
 
 RULE_VERSION = "macro-resolver:m6-v1"
@@ -41,6 +42,17 @@ COLLECT_LOG_LIMITATION = (
     "fetch failure, not that a release was due. Imported failed legacy runs retain "
     "only their original start time."
 )
+
+
+def policy_payload(row, vintage):
+    """Old stores and arbitrary raw readings need not contain policy metadata."""
+    if vintage:
+        return json.loads(row["policy_decision_json"]) if row.get("policy_decision_json") else None
+    try:
+        payload = json.loads(row["raw_payload_json"])
+    except (ValueError, TypeError):
+        return None
+    return payload.get("policy_decision") if isinstance(payload, dict) else None
 
 
 def canonical_unit(unit):
@@ -98,6 +110,7 @@ class Evidence:
     ordering_at: Optional[str] = None
     timestamp_precisions: dict = field(default_factory=dict)
     issuer_timezone: Optional[str] = None
+    policy_decision: Optional[dict] = None
 
     @property
     def official(self):
@@ -126,6 +139,7 @@ class Resolution:
     provenance: tuple[dict, ...]
     reason: str
     rule_version: str = RULE_VERSION
+    policy_decision: Optional[dict] = None
 
     def to_dict(self):
         return asdict(self)
@@ -196,6 +210,8 @@ class Snapshot:
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 )
             }
+            boj_times = ([] if "boj_publication_times" not in tables else
+                [dict(r) for r in conn.execute("SELECT * FROM boj_publication_times")])
             link_versions = (
                 []
                 if "consensus_link_versions" not in tables
@@ -314,8 +330,14 @@ class Snapshot:
         )
         collect_families.sort(key=lambda r: r["finished_at"], reverse=True)
         evidence = []
+        boj_times = {r["value_vintage_id"]: r for r in metadata(
+            boj_times, {"recorded_at": None, "issuer_published_at": None},
+            "recorded_at", "boj_publication_times")}
         for row in vintages:
             try:
+                timing = boj_times.get(row["id"])
+                if timing and row["indicator_id"] == "boj_policy_rate_decision":
+                    row = dict(row, **{k: timing[k] for k in TIME_FIELDS})
                 row = normalize(
                     row, {"first_seen_at": None, "issuer_published_at": None}
                 )
@@ -530,6 +552,7 @@ class Snapshot:
             ordering_at=ordering_at,
             timestamp_precisions=precisions,
             issuer_timezone=row.get("issuer_timezone"),
+            policy_decision=policy_payload(row, vintage),
         )
 
 
@@ -702,6 +725,7 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
         discrepancies=tuple(discrepancies),
         provenance=tuple(e.provenance() for e in sorted(all_rows, key=_tie)),
         reason=reason,
+        policy_decision=selected.policy_decision,
     )
 
 

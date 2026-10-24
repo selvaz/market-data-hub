@@ -10,6 +10,12 @@ from .models import utc
 
 
 def reviewed_anchor(obs):
+    from .policy_editions import EDITIONS as POLICY
+    if obs.family in POLICY:
+        return obs.edition in POLICY[obs.family] and obs.stage == POLICY[obs.family][obs.edition][1]
+    from .tier1_editions import EDITIONS as REMAINING
+    if obs.family in REMAINING:
+        return obs.edition in REMAINING[obs.family] and obs.stage == REMAINING[obs.family][obs.edition][1]
     from . import bea, bls, eurostat, ons
     from .us_editions import EDITIONS
     from .ons_rates import EDITIONS as UK_EDITIONS
@@ -37,6 +43,12 @@ def reviewed_anchor(obs):
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
+    "boj_policy_rate_decision": 3,
+    "pboc_lpr_decision": 3,
+    "boc_overnight_rate_decision": 3,
+    "boe_bank_rate_decision": 3,
+    "ecb_deposit_facility_rate_decision": 3,
+    "fed_funds_rate_decision": 3,
     "us_cpi_headline_mm": 3, "us_cpi_core_mm": 3,
     "us_cpi_headline_yy": 5, "us_cpi_core_yy": 5,
     "us_payrolls_change": 1500, "us_gdp_qq_saar": 15,
@@ -45,6 +57,16 @@ SANITY_BANDS = {
     "uk_gdp_mm": 5, "uk_gdp_index": 20,
 }
 SANITY_BANDS.update({
+    "ea_unemployment_rate": 5,
+    "ea_retail_sales_mm": 30,
+    "ea_industrial_production_mm": 30,
+    "ea_trade_balance": 200000,
+    "uk_retail_sales_mm": 30,
+    "us_new_home_sales": 2000,
+    "ea21_core_hicp_yy": 10,
+    "uk_average_weekly_earnings_yy": 15,
+    "ea_economic_sentiment_indicator": 40, "ea_consumer_confidence": 40,
+    "us_umich_consumer_sentiment": 50,
     "us_ppi_mm": 10, "us_ppi_yy": 20, "us_jolts_openings": 6000,
     "us_pce_price_index_mm": 5, "us_pce_price_index_yy": 10,
     "us_core_pce_mm": 5, "us_core_pce_yy": 10,
@@ -59,6 +81,10 @@ SANITY_BANDS.update({
     "us_initial_jobless_claims": 3000,
 })
 ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
+                   "ea_trade_balance": 1000000,
+                   "us_new_home_sales": 5000,
+                   "ea_economic_sentiment_indicator": 200,
+                   "us_umich_consumer_sentiment": 150,
                    "us_building_permits": 5000, "us_trade_balance": 1000,
                    "us_initial_jobless_claims": 10000}
 

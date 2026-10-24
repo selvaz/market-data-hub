@@ -125,7 +125,7 @@ def build_dataset(
         for alias in aliases["aliases"]:
             if alias["key"] == row["key"]:
                 store, value = alias["id"].split(":", 1)
-                ids = StoreIds(**{**ids.model_dump(), store: getattr(ids, store) + (value,)})
+                ids = StoreIds(**{**ids.model_dump(), store: tuple(dict.fromkeys((*getattr(ids, store), value)))})
         evidence = timing["rows"][row["key"]]
         screens, note = parse_screen(evidence["predictive_screen"])
         peak = evidence["descriptive_peak"]

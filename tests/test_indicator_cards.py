@@ -46,6 +46,15 @@ def test_every_approved_row_preserved():
         assert {s.relationship_id for s in card.timing.predictive_screen} <= set(row["vkeys"].split(";"))
 
 
+def test_aliases_never_duplicate_a_source_rows_catalogue_id():
+    # These ids are already in their approved source rows as well as aliases.
+    for identity in ("fed_funds_rate_decision", "pboc_lpr_decision", "us_umich_consumer_sentiment"):
+        assert indicator_card("cat:" + identity).ids.cat.count(identity) == 1
+    for card in build_dataset().cards:
+        for store, ids in card.ids.model_dump().items():
+            assert len(ids) == len(set(ids)), (card.key, store, ids)
+
+
 @pytest.mark.parametrize("identity,key", [
     ("ms:PAYEMS", "us_payrolls"), ("es:nonfarm_payrolls", "us_payrolls"),
     ("cal:us_nfp", "us_payrolls"), ("cat:us_payrolls_change", "us_payrolls"),
@@ -218,10 +227,12 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     # Every certified family is covered since the owner-approved UK GDP row
     # (18/10/2026); no documented gap remains.
     for family in FAMILIES:
-        assert report["certified_families"][family]["unmapped"] == []
-    assert report["documented_certified_gaps"] == {}
-    # 14 pilot + 16 US monthly (M9a-1) + 7 UK, EA GDP and claims (M9a-2) measures.
-    assert report["macro_releases"] == {"mapped": 37, "total": len(INDICATORS), "unmapped": []}
+        assert report["certified_families"][family]["unmapped"] == report["documented_certified_gaps"].get(family, [])
+    gaps = {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"], "ea_trade_balance": ["cat:ea_trade_balance"]}
+    gaps["uk_retail_sales"] = ["cat:uk_retail_sales_mm"]
+    assert report["documented_certified_gaps"] == gaps
+    # M9a/M9b: 44 mapped; M9c adds six approved policy concepts, four gaps remain.
+    assert report["macro_releases"] == {"mapped": 50, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out

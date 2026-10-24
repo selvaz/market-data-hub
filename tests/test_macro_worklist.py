@@ -582,7 +582,7 @@ def test_v5_preview_and_apply_preserve_all_existing_evidence(tmp_path, legacy):
                 "SELECT * FROM schema_compatibility WHERE schema_version<=5"
             )
         ] == compatibility
-        assert migrations.SCHEMA_VERSION == migrations.READER_CEILING == 7
+        assert migrations.SCHEMA_VERSION == migrations.READER_CEILING == 9
     with open_writer(db) as store:
         migrations.migrate(store.conn)
         assert (

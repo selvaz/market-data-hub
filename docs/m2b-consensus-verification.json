@@ -1,0 +1,2989 @@
+{
+  "copy": "D:\\Temp\\mdh-m2b-pe_u5jua\\macro_releases.sqlite",
+  "source": "C:\\ProgramData\\InvestmentCommittee\\live\\db\\macro_releases.sqlite",
+  "baseline_ref": "353240a",
+  "backup_method": "SQLite backup API from stable private main/WAL snapshot",
+  "readings_added_by_family": {
+    "us_cpi": 0,
+    "us_payrolls": 0,
+    "us_gdp": 0,
+    "ea_hicp": 0,
+    "uk_gdp": 0,
+    "us_ppi": 0,
+    "us_jolts": 0,
+    "us_pce": 0,
+    "us_retail_sales": 0,
+    "us_housing_starts": 12,
+    "us_durable_goods": 0,
+    "us_industrial_production": 0,
+    "us_trade_balance": 0,
+    "uk_cpi": 12,
+    "uk_labour_market": 6,
+    "ea_gdp": 0,
+    "us_jobless_claims": 6,
+    "us_umich_sentiment": 6,
+    "ea_ec_surveys": 6,
+    "uk_total_pay": 6,
+    "ea_core_hicp": 0,
+    "us_new_home_sales": 0,
+    "uk_retail_sales": 6,
+    "ea_trade_balance": 0,
+    "ea_industrial_production": 0,
+    "ea_retail_sales": 0,
+    "ea_unemployment": 0,
+    "boj_policy": 0,
+    "pboc_lpr": 6,
+    "boc_policy": 0,
+    "boe_policy": 0,
+    "ecb_policy": 0,
+    "fomc": 0
+  },
+  "capture_days": [
+    {
+      "day": "2026-10-18",
+      "readings": 11,
+      "pre_release": 11
+    },
+    {
+      "day": "2026-10-19",
+      "readings": 11,
+      "pre_release": 11
+    },
+    {
+      "day": "2026-10-20",
+      "readings": 11,
+      "pre_release": 6
+    },
+    {
+      "day": "2026-10-21",
+      "readings": 11,
+      "pre_release": 4
+    },
+    {
+      "day": "2026-10-22",
+      "readings": 11,
+      "pre_release": 2
+    },
+    {
+      "day": "2026-10-23",
+      "readings": 11,
+      "pre_release": 0
+    }
+  ],
+  "next_week": {
+    "us_gdp": {
+      "edition": "2026-10-29",
+      "matching_archive_forecasts": [],
+      "eligible_forecasts": 0,
+      "scheduled_events": [
+        {
+          "id": "BEA:us_gdp:advance:2026-10-29",
+          "expected_at": "2026-10-29T12:30:00.000000+00:00",
+          "precision": "exact"
+        }
+      ],
+      "rejections": {},
+      "verification": "no_matching_forecast_in_2026_10_23_archive"
+    },
+    "us_pce": {
+      "edition": "2026-10-29",
+      "matching_archive_forecasts": [],
+      "eligible_forecasts": 0,
+      "scheduled_events": [
+        {
+          "id": "BEA:us_pce:regular:2026-10-29",
+          "expected_at": "2026-10-29T12:30:00.000000+00:00",
+          "precision": "exact"
+        }
+      ],
+      "rejections": {},
+      "verification": "no_matching_forecast_in_2026_10_23_archive"
+    },
+    "us_durable_goods": {
+      "edition": "2026-10-27",
+      "matching_archive_forecasts": [],
+      "eligible_forecasts": 0,
+      "scheduled_events": [
+        {
+          "id": "Census:us_durable_goods:advance:2026-10-27",
+          "expected_at": "2026-10-27T12:30:00.000000+00:00",
+          "precision": "exact"
+        }
+      ],
+      "rejections": {},
+      "verification": "no_matching_forecast_in_2026_10_23_archive"
+    },
+    "fomc": {
+      "edition": "2026-10-28",
+      "matching_archive_forecasts": [],
+      "eligible_forecasts": 0,
+      "scheduled_events": [
+        {
+          "id": "FederalReserve:fomc:final:2026-10-28",
+          "expected_at": "2026-10-28T18:00:00.000000+00:00",
+          "precision": "exact"
+        }
+      ],
+      "rejections": {},
+      "verification": "no_matching_forecast_in_2026_10_23_archive"
+    }
+  },
+  "integrity": "ok",
+  "foreign_keys": [],
+  "official_vintages_unchanged": true,
+  "ff_card_readings": 11,
+  "ff_surprises_suppressed": true,
+  "source_main_unchanged": true,
+  "raw_archive_unchanged": true,
+  "status": "ok",
+  "pre_release_readings_by_family": {
+    "ea_ec_surveys": 4,
+    "pboc_lpr": 2,
+    "uk_cpi": 6,
+    "uk_labour_market": 2,
+    "uk_retail_sales": 5,
+    "uk_total_pay": 2,
+    "us_housing_starts": 4,
+    "us_jobless_claims": 4,
+    "us_umich_sentiment": 5
+  },
+  "external_contract_check": {
+    "exit_code": 1,
+    "as_of": "2026-10-24",
+    "missing_pre_release_days": [
+      "2026-10-23",
+      "2026-10-24"
+    ],
+    "obsolete_log_requirement": "no econ_calendar log since 2026-10-20"
+  },
+  "before": {
+    "status": "no_change",
+    "snapshots_processed": 15,
+    "snapshots_unchanged": 0,
+    "readings_added": 0,
+    "links_changed": 0,
+    "events_total": 1454,
+    "events_mapped": 146,
+    "events_skipped": 1454,
+    "skipped_titles": [
+      {
+        "currency": "All",
+        "title": "IMF Meetings",
+        "reason": "unmapped",
+        "count": 48
+      },
+      {
+        "currency": "GBP",
+        "title": "BOE Gov Bailey Speaks",
+        "reason": "unmapped",
+        "count": 36
+      },
+      {
+        "currency": "EUR",
+        "title": "German Buba President Nagel Speaks",
+        "reason": "unmapped",
+        "count": 22
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Greene Speaks",
+        "reason": "unmapped",
+        "count": 22
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Breeden Speaks",
+        "reason": "unmapped",
+        "count": 21
+      },
+      {
+        "currency": "USD",
+        "title": "ADP Weekly Employment Change",
+        "reason": "unmapped",
+        "count": 17
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Pill Speaks",
+        "reason": "unmapped",
+        "count": 16
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Bowman Speaks",
+        "reason": "unmapped",
+        "count": 16
+      },
+      {
+        "currency": "USD",
+        "title": "API Weekly Statistical Bulletin",
+        "reason": "unmapped",
+        "count": 15
+      },
+      {
+        "currency": "USD",
+        "title": "Crude Oil Inventories",
+        "reason": "unmapped",
+        "count": 15
+      },
+      {
+        "currency": "USD",
+        "title": "Natural Gas Storage",
+        "reason": "unmapped",
+        "count": 15
+      },
+      {
+        "currency": "USD",
+        "title": "Unemployment Claims",
+        "reason": "unmapped",
+        "count": 15
+      },
+      {
+        "currency": "CAD",
+        "title": "BOC Gov Macklem Speaks",
+        "reason": "unmapped",
+        "count": 14
+      },
+      {
+        "currency": "EUR",
+        "title": "ECB President Lagarde Speaks",
+        "reason": "unmapped",
+        "count": 14
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Barkin Speaks",
+        "reason": "unmapped",
+        "count": 14
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Hammack Speaks",
+        "reason": "unmapped",
+        "count": 14
+      },
+      {
+        "currency": "AUD",
+        "title": "RBA Assist Gov Kent Speaks",
+        "reason": "unmapped",
+        "count": 13
+      },
+      {
+        "currency": "EUR",
+        "title": "EU Economic Summit",
+        "reason": "unmapped",
+        "count": 10
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Mann Speaks",
+        "reason": "unmapped",
+        "count": 9
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Collins Speaks",
+        "reason": "unmapped",
+        "count": 9
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Waller Speaks",
+        "reason": "unmapped",
+        "count": 9
+      },
+      {
+        "currency": "NZD",
+        "title": "GDT Price Index",
+        "reason": "unmapped",
+        "count": 8
+      },
+      {
+        "currency": "AUD",
+        "title": "CB Leading Index m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "Employment Change",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "MI Leading Index m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "Monetary Policy Meeting Minutes",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "NAB Business Confidence",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "RBA Annual Report",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "Unemployment Rate",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Bank Holiday",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Building Permits m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Foreign Securities Purchases",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Gov Council Member Alexopoulos Speaks",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Gov Council Member Rogers Speaks",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Housing Starts",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Manufacturing Sales m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Wholesale Sales m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CHF",
+        "title": "PPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CHF",
+        "title": "SNB Chairman Schlegel Speaks",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "CPI y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "M2 Money Supply y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "New Loans",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "PPI y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "USD-Denominated Trade Balance",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "Final CPI y/y",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "Final Core CPI y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "French Final CPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "German 30-y Bond Auction",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "German Final CPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "German WPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "Italian Trade Balance",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "Trade Balance",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "BRC Retail Sales Monitor y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "CB Leading Index m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "Construction Output m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "GDP m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "Goods Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "Index of Services 3m/3m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "Manufacturing Production m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "Bank Holiday",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "Bank Lending y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "Core Machinery Orders m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "M2 Money Stock y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "PPI y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "Revised Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "NZD",
+        "title": "BusinessNZ Manufacturing Index",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "NZD",
+        "title": "FPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "NZD",
+        "title": "Visitor Arrivals m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Bank Holiday",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Beige Book",
+        "reason": "forecast_missing",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Business Inventories m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "CPI m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "CPI y/y",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Capacity Utilization Rate",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Core CPI m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Core CPI y/y",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Core PPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Core Retail Sales m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Empire State Manufacturing Index",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Existing Home Sales",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Fed Chairman Warsh Speaks",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Federal Budget Balance",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Import Prices m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "NFIB Small Business Index",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "PPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Philly Fed Manufacturing Index",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Retail Sales m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "TIC Long-Term Purchases",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "AUD",
+        "title": "Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "AUD",
+        "title": "RBA Deputy Gov Hauser Speaks",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "BOC Business Outlook Survey",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "CPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Common CPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Core CPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Core Retail Sales m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "IPPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Median CPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "NHPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "RMPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Retail Sales m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Trimmed CPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CHF",
+        "title": "Daylight Saving Time Shift",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CHF",
+        "title": "Summary of Monetary Policy Discussions",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "1-y Loan Prime Rate",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "5-y Loan Prime Rate",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Bank Holiday",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Fixed Asset Investment ytd/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Foreign Direct Investment ytd/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "GDP q/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Industrial Production y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "NBS Press Conference",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "New Home Prices m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Retail Sales y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Unemployment Rate",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Belgian NBB Business Climate",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Consumer Confidence",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Current Account",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Daylight Saving Time Shift",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "French Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "French Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "German Buba Monthly Report",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "German Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "German Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "German PPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "German ZEW Economic Sentiment",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "ZEW Economic Sentiment",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "10-y Bond Auction",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Average Earnings Index 3m/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "CBI Industrial Order Expectations",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "CPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Claimant Count Change",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Core CPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Daylight Saving Time Shift",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "GfK Consumer Confidence",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "HPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "PPI Input m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "PPI Output m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Public Sector Net Borrowing",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "RPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Retail Sales m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Rightmove HPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Unemployment Rate",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "JPY",
+        "title": "Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "JPY",
+        "title": "National Core CPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "JPY",
+        "title": "Tertiary Industry Activity m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "JPY",
+        "title": "Trade Balance",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "NZD",
+        "title": "BusinessNZ Services Index",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "NZD",
+        "title": "CPI q/q",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "NZD",
+        "title": "Credit Card Spending y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "NZD",
+        "title": "Trade Balance",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Building Permits",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "CB Leading Index m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Housing Starts",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "NAHB Housing Market Index",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Pending Home Sales m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Revised UoM Consumer Sentiment",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Revised UoM Inflation Expectations",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Goolsbee Speaks",
+        "reason": "unmapped",
+        "count": 4
+      },
+      {
+        "currency": "AUD",
+        "title": "ANZ Job Advertisements m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "AUD",
+        "title": "Bank Holiday",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "AUD",
+        "title": "MI Inflation Expectations",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "AUD",
+        "title": "MI Inflation Gauge m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "AUD",
+        "title": "Westpac Consumer Sentiment",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "All",
+        "title": "OPEC-JMMC Meetings",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "CAD",
+        "title": "Employment Change",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "CAD",
+        "title": "Ivey PMI",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "CAD",
+        "title": "Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "CAD",
+        "title": "Unemployment Rate",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "CHF",
+        "title": "Foreign Currency Reserves",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "CHF",
+        "title": "Gov Board Member Martin Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "CHF",
+        "title": "SECO Consumer Climate",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "CHF",
+        "title": "Unemployment Rate",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "ECB Monetary Policy Meeting Accounts",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "ECOFIN Meetings",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Eurogroup Meetings",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Final Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "French Final Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "French Gov Budget Balance",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "French Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "French Trade Balance",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "German Factory Orders m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "German Final Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "German Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "German Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Italian Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Italian Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "PPI m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Retail Sales m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Sentix Investor Confidence",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Spanish Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "BOE Credit Conditions Survey",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "Construction PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "Final Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "Housing Equity Withdrawal q/q",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "Lloyds HPI m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Dhingra Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Lombardelli Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "RICS House Price Balance",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "10-y Bond Auction",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "30-y Bond Auction",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Average Cash Earnings y/y",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "BOJ Gov Ueda Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Consumer Confidence",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Current Account",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Economy Watchers Sentiment",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Household Spending y/y",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Leading Indicators",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Prelim Machine Tool Orders y/y",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "NZD",
+        "title": "ANZ Commodity Prices m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "NZD",
+        "title": "NZIER Business Confidence",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "10-y Bond Auction",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "30-y Bond Auction",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Consumer Credit m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Meeting Minutes",
+        "reason": "forecast_missing",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Musalem Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Schmid Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Final Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Final Wholesale Inventories m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "ISM Services PMI",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Prelim UoM Consumer Sentiment",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Prelim UoM Inflation Expectations",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "President Trump Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "RCM/TIPP Economic Optimism",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      }
+    ],
+    "failures": [],
+    "skip_reasons": {
+      "capture_time_not_in_manifest": 95,
+      "forecast_missing": 9,
+      "release_event_not_found": 42,
+      "unmapped": 1308
+    }
+  },
+  "after": {
+    "status": "ok",
+    "snapshots_processed": 15,
+    "snapshots_unchanged": 0,
+    "readings_added": 66,
+    "links_changed": 0,
+    "events_total": 1454,
+    "events_mapped": 263,
+    "events_skipped": 1388,
+    "skipped_titles": [
+      {
+        "currency": "All",
+        "title": "IMF Meetings",
+        "reason": "unmapped",
+        "count": 48
+      },
+      {
+        "currency": "GBP",
+        "title": "BOE Gov Bailey Speaks",
+        "reason": "unmapped",
+        "count": 36
+      },
+      {
+        "currency": "EUR",
+        "title": "German Buba President Nagel Speaks",
+        "reason": "unmapped",
+        "count": 22
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Greene Speaks",
+        "reason": "unmapped",
+        "count": 22
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Breeden Speaks",
+        "reason": "unmapped",
+        "count": 21
+      },
+      {
+        "currency": "USD",
+        "title": "ADP Weekly Employment Change",
+        "reason": "unmapped",
+        "count": 17
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Pill Speaks",
+        "reason": "unmapped",
+        "count": 16
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Bowman Speaks",
+        "reason": "unmapped",
+        "count": 16
+      },
+      {
+        "currency": "USD",
+        "title": "API Weekly Statistical Bulletin",
+        "reason": "unmapped",
+        "count": 15
+      },
+      {
+        "currency": "USD",
+        "title": "Crude Oil Inventories",
+        "reason": "unmapped",
+        "count": 15
+      },
+      {
+        "currency": "USD",
+        "title": "Natural Gas Storage",
+        "reason": "unmapped",
+        "count": 15
+      },
+      {
+        "currency": "CAD",
+        "title": "BOC Gov Macklem Speaks",
+        "reason": "unmapped",
+        "count": 14
+      },
+      {
+        "currency": "EUR",
+        "title": "ECB President Lagarde Speaks",
+        "reason": "unmapped",
+        "count": 14
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Barkin Speaks",
+        "reason": "unmapped",
+        "count": 14
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Hammack Speaks",
+        "reason": "unmapped",
+        "count": 14
+      },
+      {
+        "currency": "AUD",
+        "title": "RBA Assist Gov Kent Speaks",
+        "reason": "unmapped",
+        "count": 13
+      },
+      {
+        "currency": "EUR",
+        "title": "EU Economic Summit",
+        "reason": "unmapped",
+        "count": 10
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Mann Speaks",
+        "reason": "unmapped",
+        "count": 9
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Collins Speaks",
+        "reason": "unmapped",
+        "count": 9
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Waller Speaks",
+        "reason": "unmapped",
+        "count": 9
+      },
+      {
+        "currency": "USD",
+        "title": "Unemployment Claims",
+        "reason": "capture_time_not_in_manifest",
+        "count": 9
+      },
+      {
+        "currency": "NZD",
+        "title": "GDT Price Index",
+        "reason": "unmapped",
+        "count": 8
+      },
+      {
+        "currency": "AUD",
+        "title": "CB Leading Index m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "Employment Change",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "MI Leading Index m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "Monetary Policy Meeting Minutes",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "NAB Business Confidence",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "RBA Annual Report",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "Unemployment Rate",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Bank Holiday",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Building Permits m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Foreign Securities Purchases",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Gov Council Member Alexopoulos Speaks",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Gov Council Member Rogers Speaks",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Housing Starts",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Manufacturing Sales m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CAD",
+        "title": "Wholesale Sales m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CHF",
+        "title": "PPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CHF",
+        "title": "SNB Chairman Schlegel Speaks",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "CPI y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "M2 Money Supply y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "New Loans",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "PPI y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "CNY",
+        "title": "USD-Denominated Trade Balance",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "Final CPI y/y",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "Final Core CPI y/y",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "French Final CPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "German 30-y Bond Auction",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "German Final CPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "German WPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "Industrial Production m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "Italian Trade Balance",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "EUR",
+        "title": "Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "BRC Retail Sales Monitor y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "CB Leading Index m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "Construction Output m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "GDP m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "Goods Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "Index of Services 3m/3m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "GBP",
+        "title": "Manufacturing Production m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "Bank Holiday",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "Bank Lending y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "Core Machinery Orders m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "M2 Money Stock y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "PPI y/y",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "JPY",
+        "title": "Revised Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "NZD",
+        "title": "BusinessNZ Manufacturing Index",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "NZD",
+        "title": "FPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "NZD",
+        "title": "Visitor Arrivals m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Bank Holiday",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Beige Book",
+        "reason": "forecast_missing",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Business Inventories m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "CPI m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "CPI y/y",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Capacity Utilization Rate",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Core CPI m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Core CPI y/y",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Core PPI m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Core Retail Sales m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Empire State Manufacturing Index",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Existing Home Sales",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Fed Chairman Warsh Speaks",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Federal Budget Balance",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Import Prices m/m",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Industrial Production m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "NFIB Small Business Index",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "PPI m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Philly Fed Manufacturing Index",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "Retail Sales m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 7
+      },
+      {
+        "currency": "USD",
+        "title": "TIC Long-Term Purchases",
+        "reason": "unmapped",
+        "count": 7
+      },
+      {
+        "currency": "AUD",
+        "title": "Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "AUD",
+        "title": "Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "AUD",
+        "title": "RBA Deputy Gov Hauser Speaks",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "BOC Business Outlook Survey",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "CPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Common CPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Core CPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Core Retail Sales m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "IPPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Median CPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "NHPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "RMPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Retail Sales m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CAD",
+        "title": "Trimmed CPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CHF",
+        "title": "Daylight Saving Time Shift",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CHF",
+        "title": "Summary of Monetary Policy Discussions",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "5-y Loan Prime Rate",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Bank Holiday",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Fixed Asset Investment ytd/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Foreign Direct Investment ytd/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "GDP q/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Industrial Production y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "NBS Press Conference",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "New Home Prices m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Retail Sales y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "CNY",
+        "title": "Unemployment Rate",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Belgian NBB Business Climate",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Current Account",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Daylight Saving Time Shift",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "French Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "French Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "German Buba Monthly Report",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "German Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "German Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "German PPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "German ZEW Economic Sentiment",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "EUR",
+        "title": "ZEW Economic Sentiment",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "10-y Bond Auction",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "CBI Industrial Order Expectations",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Claimant Count Change",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Daylight Saving Time Shift",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "GfK Consumer Confidence",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "HPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "PPI Input m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "PPI Output m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Public Sector Net Borrowing",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "RPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "GBP",
+        "title": "Rightmove HPI m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "JPY",
+        "title": "Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "JPY",
+        "title": "National Core CPI y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "JPY",
+        "title": "Tertiary Industry Activity m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "JPY",
+        "title": "Trade Balance",
+        "reason": "release_event_not_found",
+        "count": 6
+      },
+      {
+        "currency": "NZD",
+        "title": "BusinessNZ Services Index",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "NZD",
+        "title": "CPI q/q",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "NZD",
+        "title": "Credit Card Spending y/y",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "NZD",
+        "title": "Trade Balance",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "CB Leading Index m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Flash Manufacturing PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Flash Services PMI",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "NAHB Housing Market Index",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Pending Home Sales m/m",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "Revised UoM Inflation Expectations",
+        "reason": "unmapped",
+        "count": 6
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Goolsbee Speaks",
+        "reason": "unmapped",
+        "count": 4
+      },
+      {
+        "currency": "AUD",
+        "title": "ANZ Job Advertisements m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "AUD",
+        "title": "Bank Holiday",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "AUD",
+        "title": "MI Inflation Expectations",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "AUD",
+        "title": "MI Inflation Gauge m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "AUD",
+        "title": "Westpac Consumer Sentiment",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "All",
+        "title": "OPEC-JMMC Meetings",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "CAD",
+        "title": "Employment Change",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "CAD",
+        "title": "Ivey PMI",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "CAD",
+        "title": "Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "CAD",
+        "title": "Unemployment Rate",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "CHF",
+        "title": "Foreign Currency Reserves",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "CHF",
+        "title": "Gov Board Member Martin Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "CHF",
+        "title": "SECO Consumer Climate",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "CHF",
+        "title": "Unemployment Rate",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "ECB Monetary Policy Meeting Accounts",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "ECOFIN Meetings",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Eurogroup Meetings",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Final Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "French Final Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "French Gov Budget Balance",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "French Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "French Trade Balance",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "German Factory Orders m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "German Final Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "German Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "German Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Italian Industrial Production m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Italian Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "PPI m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Retail Sales m/m",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Sentix Investor Confidence",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "EUR",
+        "title": "Spanish Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "BOE Credit Conditions Survey",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "Construction PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "Final Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "Housing Equity Withdrawal q/q",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "Lloyds HPI m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Dhingra Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "MPC Member Lombardelli Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "GBP",
+        "title": "RICS House Price Balance",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "10-y Bond Auction",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "30-y Bond Auction",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Average Cash Earnings y/y",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "BOJ Gov Ueda Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Consumer Confidence",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Current Account",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Economy Watchers Sentiment",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Household Spending y/y",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Leading Indicators",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "JPY",
+        "title": "Prelim Machine Tool Orders y/y",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "NZD",
+        "title": "ANZ Commodity Prices m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "NZD",
+        "title": "NZIER Business Confidence",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "10-y Bond Auction",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "30-y Bond Auction",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Consumer Credit m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Meeting Minutes",
+        "reason": "forecast_missing",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Musalem Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "FOMC Member Schmid Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Final Services PMI",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Final Wholesale Inventories m/m",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "ISM Services PMI",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Prelim UoM Consumer Sentiment",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Prelim UoM Inflation Expectations",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "President Trump Speaks",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "RCM/TIPP Economic Optimism",
+        "reason": "unmapped",
+        "count": 2
+      },
+      {
+        "currency": "USD",
+        "title": "Trade Balance",
+        "reason": "capture_time_not_in_manifest",
+        "count": 2
+      }
+    ],
+    "failures": [],
+    "scheduled_events": {
+      "events_added": 161,
+      "schedules_added": 200,
+      "memberships_added": 230
+    },
+    "skip_reasons": {
+      "capture_time_not_in_manifest": 164,
+      "forecast_missing": 9,
+      "release_event_not_found": 24,
+      "unmapped": 1191
+    }
+  },
+  "idempotence": {
+    "status": "no_change",
+    "snapshots_processed": 0,
+    "snapshots_unchanged": 15,
+    "readings_added": 0,
+    "links_changed": 0,
+    "events_total": 0,
+    "events_mapped": 0,
+    "events_skipped": 0,
+    "skipped_titles": [],
+    "failures": [],
+    "scheduled_events": {
+      "events_added": 0,
+      "schedules_added": 0,
+      "memberships_added": 0
+    },
+    "skip_reasons": {}
+  },
+  "validation": {
+    "requested_tests": "tests/test_macro_*.py and tests/test_indicator_cards.py",
+    "passed": 1078,
+    "skipped": 1,
+    "skip_reason": "legacy integration test requires .tmp/prod-copy.sqlite",
+    "lint": "ruff check .: passed",
+    "whitespace": "git diff --check: passed",
+    "network_in_tests": false
+  }
+}

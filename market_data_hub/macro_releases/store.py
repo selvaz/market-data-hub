@@ -8,13 +8,23 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from pathlib import Path
+import json
 import sqlite3
 from typing import Optional, Union
 
 from filelock import FileLock
 
 from . import models as m
+from .boj_timing import decision_facts, record_time
 from .migrations import READER_CEILING, READER_FLOOR, migrate
+
+
+def _policy_facts(payload):
+    try:
+        value = json.loads(payload)
+    except (ValueError, TypeError):
+        return None
+    return value.get("policy_decision") if isinstance(value, dict) else None
 
 TABLES = {
     m.Indicator: "indicators",
@@ -132,11 +142,16 @@ class Store:
                      record.estimate_stage, record.release_event_id, record.reading_kind),
                 ).fetchone()
                 volatile = {"first_seen_at", "retrieved_at", "content_hash", "raw_payload_json", "url"}
-                if previous and all(previous[key] == value for key, value in data.items()
+                policy = _policy_facts(record.raw_payload_json)
+                same_policy = not policy or previous and _policy_facts(previous["raw_payload_json"]) == policy
+                if previous and same_policy and all(previous[key] == value for key, value in data.items()
                                     if key not in volatile):
                     return previous["id"]
             if isinstance(record, m.ValueVintage):
-                semantics = ("indicator_id", "value", "unit", "scale", "estimate_stage")
+                value_semantics = ("indicator_id", "value", "unit", "scale", "estimate_stage")
+                semantics = value_semantics
+                if record.policy_decision_json is not None:
+                    semantics += ("policy_decision_json", "issuer_published_at", "publication_precision")
                 provenance = ("verification_status", "extraction_method")
                 same_document = self.conn.execute(
                     "SELECT * FROM value_vintages WHERE source_series_id=? AND reference_period=? "
@@ -149,7 +164,18 @@ class Store:
                     ),
                 ).fetchone()
                 if same_document:
-                    if any(same_document[key] != data[key] for key in semantics):
+                    boj = (record.indicator_id == "boj_policy_rate_decision"
+                        and record.policy_decision_json is not None
+                        and same_document["policy_decision_json"] is not None
+                        and self.conn.execute(
+                            "SELECT 1 FROM release_events e JOIN source_series s ON s.id=? "
+                            "WHERE e.id=? AND e.family='boj_policy' AND e.issuer_id='BOJ' "
+                            "AND s.source_id='BOJ' AND s.issuer_id='BOJ' AND s.evidence_role='issuer'",
+                            (record.source_series_id, record.release_event_id)).fetchone() is not None)
+                    compared = value_semantics if boj else semantics
+                    if (any(same_document[key] != data[key] for key in compared)
+                        or boj and decision_facts(same_document["policy_decision_json"]) !=
+                                   decision_facts(record.policy_decision_json)):
                         raise ValueError(
                             "same publication hash has conflicting value semantics"
                         )
@@ -157,6 +183,8 @@ class Store:
                         raise ValueError(
                             "publication re-read has conflicting verification/extraction provenance"
                         )
+                    if boj:
+                        record_time(self.conn, same_document, data)
                     return same_document["id"]
                 previous = self.conn.execute(
                     "SELECT * FROM value_vintages WHERE source_series_id=? AND reference_period=? "

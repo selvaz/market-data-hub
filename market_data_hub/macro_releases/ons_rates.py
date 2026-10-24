@@ -44,8 +44,8 @@ def period(row, cdid):
     return result
 
 
-def parse_rate(document, cdid, since="1900-01"):
-    family, indicator, dataset, title, path = SERIES[cdid]
+def parse_rate(document, cdid, since="1900-01", *, series=SERIES, editions=EDITIONS):
+    family, indicator, dataset, title, path = series[cdid]
     payload = json_payload(document)
     meta = payload.get("description", {})
     if (payload.get("type") != "timeseries" or payload.get("uri") != path or
@@ -54,15 +54,15 @@ def parse_rate(document, cdid, since="1900-01"):
         raise FetchError("ONS series identity, definition or units needs review")
     # releaseDate is local midnight serialized in UTC, not the 07:00 publication.
     edition = datetime.fromisoformat(meta["releaseDate"].replace("Z", "+00:00")).astimezone(ZoneInfo("Europe/London")).date().isoformat()
-    if edition not in EDITIONS[family]:
+    if edition not in editions[family]:
         raise FetchError("ONS edition metadata needs review")
-    headline, stage, time = EDITIONS[family][edition]
+    headline, stage, time = editions[family][edition]
     rows = payload.get("months", [])
     if not rows or max(period(r, cdid) for r in rows) != headline:
         raise FetchError("ONS headline period needs review")
     if cdid == "MGSX" and meta.get("monthLabelStyle") != "three month average":
         raise FetchError("ONS unemployment window definition needs review")
-    if cdid == "KAI9" and meta.get("keyNote") != "Year on year 3 months average":
+    if cdid in ("KAI9", "KAC3") and meta.get("keyNote", "").strip() != "Year on year 3 months average":
         raise FetchError("ONS earnings window definition needs review")
     versions = payload.get("versions", [])
     if not versions or versions[-1].get("updateDate", "")[:10] != edition:

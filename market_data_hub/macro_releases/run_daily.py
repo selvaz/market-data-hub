@@ -14,7 +14,7 @@ from uuid import uuid4
 from .adapters import persist
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
-from .catalogue import FAMILIES
+from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS
 from .consensus import DEFAULT_RAW_DIR, ingest
 from .eurostat import EurostatAdapter
 from .fred import USRedistributorAdapter
@@ -26,6 +26,8 @@ from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
 from .schedule import RUN_INSTANT, PENDING_EDITIONS, edition_status, family_editions, run_instant
+from .policy import PolicyAdapter
+from .tier1_publications import Tier1Adapter
 from .store import Store, open_writer
 from .verification import configured_bands, persist_review, verify
 
@@ -38,6 +40,10 @@ ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapte
             **{f: USRedistributorAdapter for f in ("us_retail_sales", "us_housing_starts", "us_durable_goods",
                                                    "us_industrial_production", "us_trade_balance")}}
 DISCOVERY_ADAPTERS = dict(ADAPTERS)
+ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
+DISCOVERY_ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
+ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
+DISCOVERY_ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 
 
 def fetch_windows(families, lookback, today):
@@ -98,7 +104,7 @@ def safe_error(exc):
         text = str(exc)
         if re.fullmatch(r"Missing credential: (BLS|BEA|FRED)_API_KEY", text):
             message = text
-        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons|dol): HTTP \d{3}", text):
+        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons|dol|census|ecfin|umich): HTTP \d{3}", text):
             message = text
         elif "needs review" in text or "metadata" in text:
             message = "Provider publication metadata/version needs review before this edition can be certified"
@@ -106,6 +112,8 @@ def safe_error(exc):
             message = "Provider daily quota exhausted; try the next daily run"
         elif "transport" in text:
             message = "Provider transport failed after bounded retries"
+        elif "rate ledger lock is busy" in text:
+            message = "Provider rate ledger is busy; retry after the bounded request attempts"
         else:
             message = "Provider fetch/parse failed; check availability and certified response schema"
     elif isinstance(exc, (LeaseBusy, LeaseLost)):
@@ -204,6 +212,13 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
     try:
         if lease:
             lease.renew()
+        from .ec_surveys import STORED_EDITIONS, stored_official_editions
+        collected = frozenset()
+        if family == "ea_ec_surveys":
+            # Take a short snapshot before network I/O, never a long writer lock.
+            with writer() as store:
+                collected = stored_official_editions(store)
+        collected_token = STORED_EDITIONS.set(collected)
         instant = run_instant(run_at if run_at is not None else result["fetch_until"])
         token = RUN_INSTANT.set(instant)
         pending_token = PENDING_EDITIONS.set({})
@@ -222,8 +237,9 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
         finally:
             PENDING_EDITIONS.reset(pending_token)
             RUN_INSTANT.reset(token)
+            STORED_EDITIONS.reset(collected_token)
         observations = batch.observations
-        if not observations and not batch.issues and not result.get("scheduled_editions"):
+        if not observations and not batch.issues and not result.get("scheduled_editions") and not collected:
             raise FetchError("No observations in requested window")
         if any(o.family != family for o in observations):
             raise ValueError("Adapter returned another family")

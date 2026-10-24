@@ -26,6 +26,9 @@ def run_date():
 
 
 def issuer_zone(family):
+    from .policy_editions import ZONES
+    if family in ZONES:
+        return ZONES[family]
     return ("Europe/London" if family and family.startswith("uk_") else
             "Europe/Luxembourg" if family and family.startswith("ea_") else "America/New_York")
 
@@ -34,14 +37,19 @@ def release_instant(edition, metadata=None, *, family=None):
     if metadata is None:
         metadata = family_editions(family).get(edition, ())
     time = metadata[2] if len(metadata) >= 3 else "08:30"
+    if time is None:
+        return None  # Permission on the meeting date is not an exact publication time.
     local = datetime.fromisoformat(edition + "T" + time).replace(tzinfo=ZoneInfo(issuer_zone(family)))
     return local.astimezone(timezone.utc)
 
 
 def edition_status(edition, as_of=None, *, metadata=None, family=None):
     pending = PENDING_EDITIONS.get() or {}
-    return "scheduled" if ((family, edition) in pending or
-        run_instant(as_of) < release_instant(edition, metadata, family=family)) else "due"
+    instant = run_instant(as_of)
+    release = release_instant(edition, metadata, family=family)
+    before = (instant < release if release is not None else
+              instant.astimezone(ZoneInfo(issuer_zone(family))).date().isoformat() < edition)
+    return "scheduled" if (family, edition) in pending or before else "due"
 
 
 def due(editions, as_of=None, *, family=None):
@@ -50,7 +58,10 @@ def due(editions, as_of=None, *, family=None):
 
 
 def publication_grace(family, edition):
-    age = run_instant() - release_instant(edition, family=family)
+    release = release_instant(edition, family=family)
+    if release is None:
+        return False
+    age = run_instant() - release
     return timedelta(0) <= age < timedelta(hours=6)
 
 
@@ -72,12 +83,35 @@ def get_edition(client, provider, url, family, edition, params=None):
         return None
 
 
+def current_edition_allowed(family, edition):
+    """Rolling pages may retain only the immediately previous edition in grace."""
+    from .http import FetchError
+    calendar = family_editions(family)
+    eligible = due(calendar, family=family)
+    if edition not in eligible:
+        return False  # A reviewed publication exposed before its release instant.
+    expected = max(eligible)
+    if edition == expected:
+        return True
+    previous = max((d for d in eligible if d < expected), default=None)
+    if edition == previous and publication_grace(family, expected):
+        mark_pending(family, expected)
+        return True
+    raise FetchError("Issuer current publication is stale; needs review")
+
+
 def family_editions(family):
+    from .policy_editions import EDITIONS as POLICY
+    if family in POLICY:
+        return POLICY[family]
+    from .tier1_editions import EDITIONS as REMAINING
+    if family in REMAINING:
+        return REMAINING[family]
     from .us_editions import EDITIONS as MONTHLY
     from .ons_rates import EDITIONS as UK
     from .eurostat_gdp import EDITIONS as GDP
     from .dol import EDITIONS as CLAIMS
-    from . import bea, bls
+    from . import bea, bls, eurostat
     if family in MONTHLY:
         return MONTHLY[family]
     if family in UK:
@@ -88,4 +122,9 @@ def family_editions(family):
         return CLAIMS
     if family == "us_gdp":
         return {d: (*meta, "08:30") for d, meta in bea.EDITIONS.items()}
+    if family == "ea_hicp":
+        # Headline and core HICP share the same reviewed Eurostat editions.
+        result = {d: (p, s, "11:00") for (p, s), d in eurostat.PUBLICATIONS.items()}
+        result.update(REMAINING["ea_core_hicp"])
+        return result
     return {d: (p, "regular", "08:30") for (f, p), d in bls.EDITIONS.items() if f == family}
