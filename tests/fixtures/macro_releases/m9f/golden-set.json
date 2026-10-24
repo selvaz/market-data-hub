@@ -1,6 +1,24 @@
 {
   "cases": [
     {
+      "family": "us_pending_home_sales",
+      "fixture": "nar-pending-aug.html",
+      "edition": "2026-09-17",
+      "indicator": "us_pending_home_sales_mm",
+      "period": "2026-08",
+      "value": 0.3,
+      "source_url": "https://www.nar.realtor/newsroom/nar-pending-home-sales-report-shows-0-point-3-percent-increase-in-august"
+    },
+    {
+      "family": "us_pending_home_sales",
+      "fixture": "nar-pending-sept.html",
+      "edition": "2026-10-20",
+      "indicator": "us_pending_home_sales_mm",
+      "period": "2026-09",
+      "value": -7.3,
+      "source_url": "https://www.nar.realtor/newsroom/pending-home-sales-decreased-7-3-percent-in-september"
+    },
+    {
       "family": "us_fhfa_hpi",
       "fixture": "fhfa-aug.pdf",
       "edition": "2026-08-25",

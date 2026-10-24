@@ -18,6 +18,7 @@ from .tier1_publications import month, plain, require
 CALENDAR = "https://www.nar.realtor/press-releases/nar-releases-2026-statistical-news-release-schedule"
 LANDINGS = {
     "us_existing_home_sales": "https://www.nar.realtor/research-and-statistics/housing-statistics/existing-home-sales",
+    "us_pending_home_sales": "https://www.nar.realtor/research-and-statistics/housing-statistics/pending-home-sales",
 }
 
 
@@ -78,6 +79,24 @@ def parse_existing(document, family="us_existing_home_sales", since="1900-01"):
     return rows if head >= since else []
 
 
+def parse_pending(document, family="us_pending_home_sales", since="1900-01"):
+    body, title, edition, head, local = metadata(document, family)
+    require(r"Pending Home Sales.*? in " + month(head).split()[0] + r"\b", title)
+    summary = require(r"Month-Over-Month (.*?)Year-Over-Year", body)[1]
+    headline = require(r"(\d+(?:\.\d+)?)% (increase|decrease) in pending home sales", summary)
+    intro = require(r"WASHINGTON \([^)]*\).*?Pending home sales in (\w+) (increased|decreased) by "
+                    r"(\d+(?:\.\d+)?)% month-over-month", body)
+    if (intro[1] != month(head).split()[0] or intro[2].lower() != headline[2].lower() + "d" or
+            intro[3] != headline[1]):
+        raise FetchError("NAR pending-sales reference month or national headline disagreement needs review")
+    rate, direction = re.escape(headline[1]), headline[2]
+    require(r"(?:\b" + direction + r"d? " + rate + r"%|" + rate + r"% " + direction + r"\b)", title)
+    row = headline_row(document, family, edition, "us_pending_home_sales_mm",
+                       headline[1] + "% " + direction, local,
+                       value=float(headline[1]) * (-1 if direction.lower() == "decrease" else 1))
+    return [row] if head >= since else []
+
+
 def release_link(document, family):
     links = set()
     for url, anchor in re.findall(r'href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', document.body.decode("utf-8-sig"), re.S):
@@ -96,7 +115,7 @@ def release_link(document, family):
     return links.pop()
 
 
-PARSERS = {"us_existing_home_sales": parse_existing}
+PARSERS = {"us_existing_home_sales": parse_existing, "us_pending_home_sales": parse_pending}
 
 
 def fetch(client, family, since):

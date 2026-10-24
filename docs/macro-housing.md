@@ -13,6 +13,7 @@ before the integration PR. Work is delivered one family at a time.
 | US total construction spending, SA m/m | Census | Official, free | Monthly | 3 Aug, 1 Sep, 1 Oct, 2 Nov, 1 Dec; 10:00 America/New_York | 2 distinct publications: June -0.1% (3 Aug) and August +0.9% (1 Oct) |
 | US PMMS 30-year fixed-rate mortgage average, NSA | Freddie Mac | Official issuer, free | Weekly | 22 editions from 6 Aug to 31 Dec; 12:00 America/New_York; Thanksgiving release 25 Nov | 2 dated editions: 15 Oct archive entry (7.40%) and 22 Oct current publication (7.32%) |
 | US existing-home sales national public headline | NAR | Private issuer, public press release only | Monthly | 11 Aug, 10 Sep, 13 Oct, 12 Nov, 9 Dec; schedule 10:00 America/New_York | 2 independently printed headline measures in the 13 Oct edition: 3.99 million SAAR and +1.5% m/m |
+| US pending home sales national public m/m headline | NAR | Private issuer, public press release only | Monthly | 18 Aug, 17 Sep, 20 Oct, 18 Nov, 17 Dec; 10:00 America/New_York | 2 distinct editions: August +0.3% (17 Sep) and September -7.3% (20 Oct) |
 
 Calendars: [FHFA](https://www.fhfa.gov/data/hpi) and
 [Census](https://www.census.gov/economic-indicators/calendar-listview-2026.html), plus the
@@ -29,6 +30,9 @@ Issuer golden URLs:
 - [Census rolling construction release, August edition captured 24 October](https://www.census.gov/construction/c30/pdf/release.pdf).
 - [Freddie Mac archive, including the 15 October edition](https://www.freddiemac.com/pmms/archive).
 - [Freddie Mac current PMMS publication, 22 October edition captured 24 October](https://www.freddiemac.com/pmms).
+- [NAR existing sales, September headline in the 13 October edition](https://www.nar.realtor/newsroom/existing-home-sales-increased-1-5-in-september-according-to-nar-report).
+- [NAR pending sales, August headline in the 17 September edition](https://www.nar.realtor/newsroom/nar-pending-home-sales-report-shows-0-point-3-percent-increase-in-august).
+- [NAR pending sales, September headline in the 20 October edition](https://www.nar.realtor/newsroom/pending-home-sales-decreased-7-3-percent-in-september).
 
 Each fixture has its original body, issuer URL, capture timestamp and SHA-256
 in `tests/fixtures/macro_releases/m9f`; `golden-set.json` states expected values.
@@ -67,6 +71,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 | Construction spending | August 2026 | 1 October 2026 | 10:00 EDT / 14:00 UTC | +0.9% m/m, total SA |
 | PMMS 30-year mortgage rate | Survey week ending 21 October 2026 | 22 October 2026 | 12:00 EDT / 16:00 UTC | 7.32%, NSA weekly average |
 | Existing-home sales (private NAR headline) | September 2026 | 13 October 2026 | Page timestamp 10:01 EDT / 14:01 UTC; scheduled 10:00 EDT | 3.99 million SAAR; +1.5% m/m |
+| Pending home sales (private NAR headline) | September 2026 | 20 October 2026 | 10:00 EDT / 14:00 UTC | -7.3% m/m |
 
 Live verification report:
 `D:\Temp\mdh-m9f-sl4iuv5p\verification.json`.
@@ -111,17 +116,21 @@ All writes go to the copy. Reproduce with the project interpreter:
 - The exact FF title `Construction Spending m/m`, USD, aliases the total SA
   m/m measure. Other countries, spending levels and residential subtotals do
   not match. No FHFA or PMMS FF alias has been added.
+- NAR existing and pending sales are separate draft concepts, with timing
+  `UNKNOWN` and pending owner approval. Existing sales uses the concept key
+  already proposed in #125; both files retain the same strict 19-column format.
+  Only the exact USD FF titles `Existing Home Sales` (level) and
+  `Pending Home Sales m/m` (monthly percent change) are added.
 
 ## Remaining steps, in order
 
-1. NAR pending home sales: public-release headline, private source.
-2. Case-Shiller national and 20-city: public-release headlines, private source;
+1. Case-Shiller national and 20-city: public-release headlines, private source;
    FRED may supply redistributor history only.
-3. Eurostat quarterly HPI, y/y and q/q.
-4. ECB house-purchase loan growth and composite cost of borrowing.
-5. ONS/HM Land Registry UK HPI, y/y.
-6. BoE mortgage approvals for house purchase.
-7. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
+2. Eurostat quarterly HPI, y/y and q/q.
+3. ECB house-purchase loan growth and composite cost of borrowing.
+4. ONS/HM Land Registry UK HPI, y/y.
+5. BoE mortgage approvals for house purchase.
+6. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.
@@ -160,6 +169,35 @@ SQLite integrity `ok`, and the production source unchanged. The saved-publicatio
 and end-to-end housing tests passed (50 cases before the redirect regression
 was added); the full macro regression suite is repeated with the pending-sales
 step below.
+
+## NAR pending-sales step
+
+Pending sales uses the same restricted issuer-link discovery and page-clock
+validation. It certifies only the national m/m headline, matching summary,
+direction, title and the opening paragraph's reference month. The two saved
+dated editions exercise both increases and decreases. Index levels, y/y rates,
+regional values, licensed tables and calculated history are excluded. The public
+headline does not state seasonal adjustment, so its catalogue metadata records
+`not-stated` rather than assuming a class. Read cards explicitly identify NAR
+as a private issuer.
+
+The saved NAR calendar validates all ten existing/pending editions through
+December. The release-instant, current-edition and six-hour publication-grace
+rules apply to both families. A changed structure, mismatched national values,
+wrong month, unknown date, retired link or stale current release after the
+grace period enters `needs_review`, retaining issuer evidence without writing
+an official value.
+
+Live verification for all five completed families passed on
+`D:\Temp\mdh-m9f-ysoldsca\macro_releases.sqlite`; the full report is
+`D:\Temp\mdh-m9f-ysoldsca\verification.json`. Dry run and collection were
+`ok` for every family, and the repeat was `no_change` for all five. All seven
+latest measure cards were issuer-certified, including both NAR families with
+`source_class=private`. SQLite integrity was `ok` and the production main-file
+size/modification time were unchanged. Pending sales added one September
+vintage at -7.3% m/m, published 20 October at 14:00 UTC. Its 25 focused offline
+tests, repository-wide Ruff, generated-card freshness and draft-format checks
+passed; the full macro/cards regression is recorded after completion.
 
 ## Validation for the construction step
 

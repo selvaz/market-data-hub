@@ -135,6 +135,8 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "us_pending_home_sales": [measure("us_pending_home_sales_mm", "NAR", "USA", "mm", "not-stated",
+        definition="Private NAR public press-release national headline: pending home sales monthly percent change; contracts, not closed sales. Adjustment is not stated in the public headline; no index level or licensed table is collected")],
     "us_existing_home_sales": [
         measure("us_existing_home_sales", "NAR", "USA", "level", "SA", "units", 1000000,
                 "Private NAR public press-release national headline: total existing-home sales, SA annual rate in millions"),

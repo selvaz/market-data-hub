@@ -107,6 +107,43 @@ def test_nar_link_discovery_only_accepts_one_publisher_press_release():
         nar.parse_existing(document("nar-existing-index.html"))
 
 
+@pytest.mark.parametrize("before,after", [
+    (b"Pending Home Sales Decreased 7.3%", b"Existing Home Sales Decreased 7.3%"),
+    (b"Pending Home Sales Decreased 7.3%", b"Pending Home Sales Increased 7.3%"),
+    (b"7.3% decrease in pending home sales", b"11.3% decrease in pending home sales"),
+    (b"7.3% decrease in pending home sales", b"7.3% increase in pending home sales"),
+    (b"7.3% decrease in pending home sales", b"7.3% decrease in regional pending home sales"),
+    (b"Pending home sales in September decreased", b"Pending home sales in August decreased"),
+    (b"7.3% month-over-month", b"7.3% year-over-year"),
+    (b"2026-10-20T09:00:00-05:00", b"2026-10-21T09:00:00-05:00"),
+])
+def test_pending_measure_direction_reference_or_clock_disagreement_fails_closed(before, after):
+    doc = document("nar-pending-sept.html")
+    assert before in doc.body
+    with pytest.raises(FetchError, match="needs review"):
+        nar.parse_pending(replace(doc, body=doc.body.replace(before, after)))
+
+
+def test_pending_normalizes_issuer_link_and_gates_calendar_without_using_overview_values():
+    doc = document("nar-pending-index.html")
+    assert nar.release_link(doc, "us_pending_home_sales") == document("nar-pending-sept.html").url
+    with pytest.raises(FetchError, match="needs review"):
+        nar.parse_pending(doc)
+    for instant, count in (("2026-10-20T13:59:59Z", 0), ("2026-10-20T14:00:00Z", 1)):
+        token = RUN_INSTANT.set(instant)
+        try:
+            assert len(nar.fetch(Replay(), "us_pending_home_sales", "2026-01")) == count
+        finally:
+            RUN_INSTANT.reset(token)
+    assert nar.parse_pending(document("nar-pending-sept.html"), since="2026-10") == []
+    token = RUN_INSTANT.set("2026-11-18T21:00:00Z")
+    try:
+        with pytest.raises(FetchError, match="needs review"):
+            nar.fetch(Replay(), "us_pending_home_sales", "2026-01")
+    finally:
+        RUN_INSTANT.reset(token)
+
+
 def test_calendar_and_actual_page_clock_both_gate_existing_release():
     client = Replay()
     token = RUN_INSTANT.set("2026-08-11T13:59:59Z")
@@ -171,3 +208,19 @@ def test_existing_exact_ff_alias_and_draft_only_context(tmp_path):
         assert catalogue.match({"country": "USD"}, "Existing Home Sales m/m")[0] is None
         assert catalogue.match({"country": "CAD"}, "Existing Home Sales")[0] is None
     assert indicator_card("cat:us_existing_home_sales") is None
+
+
+def test_pending_exact_ff_alias_and_draft_only_context(tmp_path):
+    from market_data_hub.indicator_cards import indicator_card
+    from market_data_hub.macro_releases.catalogue import INDICATORS
+    from market_data_hub.macro_releases.consensus import Catalogue
+    with open_writer(tmp_path / "aliases.sqlite") as store:
+        for indicator in INDICATORS.values():
+            store.put(indicator)
+        catalogue = Catalogue(store)
+        alias, reason = catalogue.match({"country": "USD"}, "Pending Home Sales m/m")
+        assert reason is None and alias["indicator_id"] == "us_pending_home_sales_mm"
+        assert catalogue.match({"country": "USD"}, "Pending Home Sales")[0] is None
+        assert catalogue.match({"country": "USD"}, "Pending Home Sales y/y")[0] is None
+        assert catalogue.match({"country": "CAD"}, "Pending Home Sales m/m")[0] is None
+    assert indicator_card("cat:us_pending_home_sales_mm") is None

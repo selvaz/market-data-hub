@@ -81,9 +81,10 @@ def fetch_fhfa(client, family, since):
 
 
 PARSERS = {"us_fhfa_hpi": parse_fhfa, "us_construction_spending": census_construction.parse,
-           "us_pmms": pmms.parse, "us_existing_home_sales": nar.parse_existing}
+           "us_pmms": pmms.parse, "us_existing_home_sales": nar.parse_existing,
+           "us_pending_home_sales": nar.parse_pending}
 FETCHERS = {"us_fhfa_hpi": fetch_fhfa, "us_construction_spending": census_construction.fetch,
-            "us_pmms": pmms.fetch, "us_existing_home_sales": nar.fetch}
+            "us_pmms": pmms.fetch, "us_existing_home_sales": nar.fetch, "us_pending_home_sales": nar.fetch}
 
 
 class HousingAdapter:
