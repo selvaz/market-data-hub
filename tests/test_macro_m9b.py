@@ -17,6 +17,9 @@ GOLDEN = json.loads((ROOT / "golden-set.json").read_text())["cases"]
 
 
 def parse(doc, family, since="1900-01"):
+    if family == "us_umich_sentiment":
+        from market_data_hub.macro_releases.umich import parse as parse_umich
+        return parse_umich(doc, family, since)
     if family == "ea_ec_surveys":
         from market_data_hub.macro_releases.ec_surveys import parse as parse_ec, parse_annex
         if "statistical_annex" in doc.url:
