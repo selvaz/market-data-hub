@@ -35,6 +35,8 @@ def assess(report):
             and report["integrity"] == "ok" and report["source_main_unchanged"]
             and set(report["latest_cards"]) == set(CENTRAL_BANKS)
             and all(c["resolution"]["status"] == "official" and c["policy_decision"]
+                    and c["previous"] is not None and c["previous_revised"] is not None
+                    and c["previous_period"] == c["previous"]["reference_period"]
                     for c in report["latest_cards"].values()))
 
 
@@ -94,6 +96,9 @@ def main():
     path = directory / "verification.json"
     path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print("Card counts:", json.dumps(report["card_counts"]), flush=True)
+    print("Previous decisions:", json.dumps({f: dict(period=c["previous_period"],
+        value=c["previous"]["value"] if c["previous"] else None)
+        for f, c in latest.items()}), flush=True)
     print("Publication time gaps:", json.dumps(report["publication_time_gaps"]), flush=True)
     print("Report:", path, flush=True)
     print("Verification:", report["status"], flush=True)

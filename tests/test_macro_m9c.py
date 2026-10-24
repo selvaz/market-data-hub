@@ -78,6 +78,61 @@ def test_fomc_issuer_unknown_edition_and_format_fail_closed():
         parse(replace(doc, url="https://news.example/statement"))
 
 
+@pytest.mark.parametrize("captured_before_release", [False, True])
+def test_fomc_previous_is_the_preceding_stored_decision(tmp_path, captured_before_release):
+    from market_data_hub.macro_releases.fomc import parse as parse_fomc
+    july = parse_fomc(document("fed-july.html"))[0]
+    september = parse_fomc(document("fed-sept.html"))[0]
+    if captured_before_release:
+        july = replace(july, document=replace(july.document, retrieved_at="2026-07-29T18:01:00Z"))
+    with open_writer(tmp_path / "previous.sqlite") as store:
+        # Include empty scheduled decisions and a different bank's closer date.
+        from market_data_hub.macro_releases.scheduled_events import persist_scheduled_events
+        persist_scheduled_events(store, recorded_at="2026-01-01T00:00:00Z")
+        ecb = next(c for c in GOLDEN if c["fixture"] == "ecb-sept.html")
+        persist(store, [july, parse(ecb), september])
+        card, = store.release_cards("2026-09-16", "2026-09-16",
+            indicators=[september.indicator_id], as_known_at="2026-10-25T00:00:00Z")["cards"]
+        assert card["previous_period"] == "2026-07-29"
+        assert card["previous"]["reference_period"] == "2026-07-29"
+        assert card["previous"]["value"] == 3.75
+        assert card["previous_revised"] == card["previous"]
+        assert card["resolution"]["value"] == 4.0
+        if captured_before_release:
+            assert card["previous_before_release"] == card["previous"]
+        else:
+            assert card["previous_before_release"] is None
+
+
+def test_first_stored_bank_decision_has_no_previous(tmp_path):
+    from market_data_hub.macro_releases.fomc import parse as parse_fomc
+    first = parse_fomc(document("fed-july.html"))[0]
+    other = parse(next(c for c in GOLDEN if c["fixture"] == "ecb-july.html"))
+    with open_writer(tmp_path / "first.sqlite") as store:
+        from market_data_hub.macro_releases.scheduled_events import persist_scheduled_events
+        persist_scheduled_events(store, recorded_at="2026-01-01T00:00:00Z")
+        persist(store, [other, first])
+        card, = store.release_cards("2026-07-29", "2026-07-29",
+            indicators=[first.indicator_id], as_known_at="2026-10-25T00:00:00Z")["cards"]
+        assert card["previous_period"] is None
+        assert card["previous"] is card["previous_revised"] is card["previous_before_release"] is None
+        assert card["previous_missing_reason"] == "no preceding stored decision"
+
+
+def test_previous_decision_respects_query_knowledge_cutoff(tmp_path):
+    from market_data_hub.macro_releases.fomc import parse
+    july = parse(document("fed-july.html"))[0]
+    july = replace(july, document=replace(july.document, retrieved_at="2026-10-26T00:00:00Z"))
+    september = parse(document("fed-sept.html"))[0]
+    with open_writer(tmp_path / "knowledge.sqlite") as store:
+        persist(store, [july, september])
+        for cutoff, prior in (("2026-10-25T00:00:00Z", None), ("2026-10-27T00:00:00Z", "2026-07-29")):
+            card, = store.release_cards("2026-09-16", "2026-09-16",
+                indicators=[september.indicator_id], as_known_at=cutoff)["cards"]
+            assert card["previous_period"] == prior
+            assert (card["previous"] is None) == (prior is None)
+
+
 def test_fomc_due_at_exact_issuer_instant():
     before = RUN_INSTANT.set(datetime(2026, 9, 16, 17, 59, 59, tzinfo=timezone.utc))
     try:
@@ -118,6 +173,8 @@ def test_all_40_decisions_daily_collection_and_idempotence(tmp_path, monkeypatch
         for family in CENTRAL_BANKS:
             latest = max((c for c in cards if c["family"] == family), key=lambda c: c["reference_period"])
             assert latest["policy_decision"]["source_url"].startswith("https://")
+            assert latest["previous"]["reference_period"] == latest["previous_period"]
+            assert latest["previous_revised"] is not None
             if family == "boj_policy":
                 assert latest["policy_decision"]["published_at"] is None
                 assert latest["publication_precision"] == "date_only"

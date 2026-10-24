@@ -41,7 +41,11 @@ def test_ons_retail_collector_uses_london_clock(tmp_path, monkeypatch):
         result = run_daily.execute(db, ["uk_retail_sales"], 24, False, raw_dir=tmp_path / "none")
         assert result["families"]["uk_retail_sales"]["status"] == "ok", result
         with open_reader(db) as store:
-            editions = {r[0] for r in store.conn.execute("SELECT edition FROM release_events")}
+            # M2b seeds future calendar events; only numeric issuer vintages
+            # establish that collection published the retail-sales edition.
+            editions = {r[0] for r in store.conn.execute(
+                "SELECT DISTINCT e.edition FROM release_events e JOIN value_vintages v "
+                "ON v.release_event_id=e.id WHERE e.family='uk_retail_sales'")}
         assert ("2026-10-23" in editions) is due
 
 

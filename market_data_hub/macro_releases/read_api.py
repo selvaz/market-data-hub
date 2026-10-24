@@ -381,7 +381,21 @@ class ReadAPI:
                 continue
             if stale_series(snapshot, indicator, period, released_at):
                 continue
-            prior = prior_period(period, snapshot.indicators[indicator]["frequency"])
+            frequency = snapshot.indicators[indicator]["frequency"]
+            prior = prior_period(period, frequency) if frequency != "E" else None
+            decisions = None
+            if frequency == "E":
+                # Event periods are decision dates, not a daily calendar. Only
+                # stored actuals of this indicator can establish a predecessor;
+                # unavailable calendar memberships and other banks cannot.
+                decisions = subset(snapshot, (
+                    e for e in snapshot.evidence
+                    if e.indicator_id == indicator and e.event_id != event_id
+                    and e.reading_kind == "actual" and e.value is not None
+                    and e.reference_period and e.reference_period < period
+                    and event_order(snapshot, e) and event_order(snapshot, e) < released_at
+                ))
+                prior = max((e.reference_period for e in decisions.evidence), default=None)
             # The previous figure is strictly what we knew by release time.
             before = subset(
                 snapshot,
@@ -393,9 +407,13 @@ class ReadAPI:
                     and (e.published_at is None or e.published_at < released_at)
                 ),
             )
-            previous = latest_period(before, indicator, prior) if prior else None
+            previous_before_release = latest_period(before, indicator, prior) if prior else None
+            # A late archive capture can establish the preceding decision at the
+            # query cutoff without backdating what we knew before this release.
+            previous = (latest_period(decisions, indicator, prior) if prior else None
+                        ) if decisions is not None else previous_before_release
             revised_previous = (
-                latest_period(subset(snapshot, evidence), indicator, prior)
+                latest_period(snapshot if frequency == "E" else subset(snapshot, evidence), indicator, prior)
                 if prior
                 else None
             )
@@ -495,12 +513,13 @@ class ReadAPI:
                     "resolution": resolution.to_dict(),
                     "policy_decision": resolution.policy_decision,
                     "previous": previous,
-                    "previous_before_release": previous,
+                    "previous_before_release": previous_before_release,
                     "previous_revised": revised_previous,
                     "previous_period": prior,
                     "previous_missing_reason": None
                     if previous
-                    else "prior period not known at release time",
+                    else ("no preceding stored decision" if frequency == "E" else
+                          "prior period not known at release time"),
                     "revisions": revisions,
                     "stage_change": stage_change,
                     "consensus": consensus,

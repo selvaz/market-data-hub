@@ -727,7 +727,15 @@ The owner decision is to expose **both** prior-period values:
   equals `previous_before_release` when this release makes no revision; a later
   release's revision cannot leak into it. If the old figure was unknown, it
   remains null before release even when this event supplies the prior figure.
-- `previous` remains a compatibility alias for `previous_before_release`.
+- For calendar-frequency series, `previous` remains a compatibility alias for
+  `previous_before_release`.
+- For event-frequency (`E`) series, `previous_period` is the preceding stored
+  decision date of the same indicator, and `previous` resolves that decision.
+  Empty scheduled events and other indicators do not establish a predecessor.
+  `previous_revised` resolves corrections to that decision known at the query
+  cutoff. A late archive capture can establish these fields while
+  `previous_before_release` remains null; it never backdates historical knowledge.
+  A bank's first stored decision has null previous fields and `previous_period`.
 
 A missing prior period stays null with a reason; the API never skips a gap or
 backdates an archive capture. `revisions` compare prior periods in the event with older publication
