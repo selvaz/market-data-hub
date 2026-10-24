@@ -276,6 +276,17 @@ backup; it does not certify this branch against the current schema-9 production
 DB. No schema guard was bypassed, no DB version was downgraded, and no production
 write or branch merge was performed.
 
+Final Case-Shiller regression (24 October 2026): all `tests/test_macro_*.py`
+and `tests/test_indicator_cards.py` passed: **1,229 passed, 1 skipped** in
+347 seconds. Repository-wide Ruff, generated-card freshness, all five strict
+19-column pending drafts and `git diff --check` passed. No dependency was added,
+and saved-publication tests prohibit network access. Reproduce the live check
+using the compatible production backup source:
+
+```powershell
+& C:\ProgramData\spyder-6\python.exe scripts\verify_macro_m9f.py --source D:\Temp\mdh-m9f-ysoldsca\macro_releases.sqlite --destination-root D:\Temp --families us_case_shiller
+```
+
 ## Validation for the construction step
 
 - All `tests/test_macro_*.py` plus `tests/test_indicator_cards.py`:
