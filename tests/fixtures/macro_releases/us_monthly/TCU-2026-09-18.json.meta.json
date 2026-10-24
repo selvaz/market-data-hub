@@ -1,0 +1,14 @@
+{
+  "url": "https://api.stlouisfed.org/fred/series/observations",
+  "retrieved_at": "2026-10-24T10:55:44.738231+00:00",
+  "sha256": "c50294d8d5b9258a03b229ea34c6355771c0fec5774b915ee9ba63bce2251acf",
+  "request": {
+    "file_type": "json",
+    "series_id": "TCU",
+    "units": "lin",
+    "observation_start": "2026-05-01",
+    "realtime_start": "2026-09-18",
+    "realtime_end": "2026-09-18",
+    "limit": 10000
+  }
+}

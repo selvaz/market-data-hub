@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import base64
 import json
+from datetime import date
 from typing import Optional, Protocol
 
 from .catalogue import INDICATORS
@@ -47,6 +48,7 @@ class Observation:
     issuer_timezone: Optional[str] = None
     needs_review: bool = False
     unit: Optional[str] = None
+    policy_decision: Optional[dict] = None
 
 
 class Adapter(Protocol):
@@ -86,6 +88,8 @@ def persist(store, observations):
     ids = []
     for obs in observations:
         indicator = INDICATORS[obs.indicator_id]
+        if indicator.frequency == "W" and (len(obs.period) != 10 or date.fromisoformat(obs.period).weekday() != 5):
+            raise ValueError("Weekly claims require an explicit Saturday week ending date")
         issuer = indicator.issuer_id
         mirror = obs.source != issuer
         verified = not (mirror or not obs.published or obs.method == "archive_text" or obs.needs_review
@@ -118,6 +122,7 @@ def persist(store, observations):
             verification_status="verified" if verified and obs.value is not None else "unverified", url=obs.document.url,
             reading_kind="unavailable" if obs.value is None else ("actual" if obs.published else "derived"),
             raw_payload_json=json.dumps({"provider_vintage": obs.provider_vintage,
+                                         "policy_decision": obs.policy_decision,
                                          "document_hash": identity}),
             composition_id=obs.composition_id, issuer_local_time=obs.issuer_local_time,
             issuer_timezone=obs.issuer_timezone,
@@ -136,6 +141,7 @@ def persist(store, observations):
             derived_from_json=json.dumps(obs.inputs), formula_version=obs.formula,
             composition_id=obs.composition_id, issuer_local_time=obs.issuer_local_time,
             issuer_timezone=obs.issuer_timezone,
+            policy_decision_json=json.dumps(obs.policy_decision) if obs.policy_decision else None,
         ))
         ids.append(vintage_id)
         # Also reconcile mirrors fetched before the issuer, without mutating them.
@@ -155,7 +161,7 @@ def persist(store, observations):
             for row in mirrors:
                 if row["value"] is not None and row["unit"] == official["unit"] and row["scale"] == official["scale"]:
                     # Official API rates are printed to 0.1 pp; counts to 1 thousand.
-                    tolerance = 0.05 if indicator.unit == "%" else 0.5
+                    tolerance = 0.05 if indicator.unit == "%" or indicator.id == "us_trade_balance" else 0.5
                     if abs(row["value"] - official["value"]) > tolerance + 1e-10:
                         store.put(Discrepancy(reading_id=row["id"], selected_vintage_id=official["id"],
                                               reason="Exact edition differs from issuer published precision",

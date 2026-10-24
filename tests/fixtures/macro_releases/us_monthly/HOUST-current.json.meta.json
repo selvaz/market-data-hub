@@ -1,0 +1,13 @@
+{
+  "url": "https://api.stlouisfed.org/fred/series/observations",
+  "retrieved_at": "2026-10-24T11:10:03.016587+00:00",
+  "sha256": "ba27c24e3b3191ad53d36bde4dea83285a6becf84710c72bfe52dc9edc115f65",
+  "request": {
+    "file_type": "json",
+    "series_id": "HOUST",
+    "units": "lin",
+    "observation_start": "2026-09-01",
+    "sort_order": "desc",
+    "limit": 1
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "url": "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/namq_10_gdp?lang=EN&geo=EA21&na_item=B1GQ&s_adj=SCA&unit=CLV_PCH_PRE&unit=CLV_PCH_SM&sinceTimePeriod=2026-Q1",
+  "retrieved_at": "2026-10-24T12:06:30.791015+00:00",
+  "sha256": "4f68ff3ab8c9e6cfe3202fd96d87d2139a1d98422691b8490779c216737665a5"
+}

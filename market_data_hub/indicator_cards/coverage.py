@@ -32,18 +32,26 @@ def mapping_ambiguities() -> dict[str, dict]:
 def coverage_report() -> dict:
     from market_data_hub.config_loader import get_macro_series
     from market_data_hub.econ_calendar.catalog import load_catalog_rows
-    from market_data_hub.macro_releases.catalogue import INDICATORS
+    from market_data_hub.macro_releases.catalogue import INDICATORS, UK_FAMILIES, US_MONTHLY, REMAINING_FAMILIES, CENTRAL_BANKS
 
     catalogue = sorted(f"cat:{key}" for key in INDICATORS)
     calendar = sorted({f"cal:{r['indicator_key']}" for r in load_catalog_rows()
                        if r["criticality"] == "T1" and r["active"]})
     macro = sorted({f"ms:{r['symbol']}" for r in get_macro_series() if r.get("enabled", True)})
     families = {
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in CENTRAL_BANKS.items()},
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in REMAINING_FAMILIES.items()},
         "us_cpi": [i for i in catalogue if i.startswith("cat:us_cpi_")],
         "us_payrolls": ["cat:us_payrolls_change"],
         "us_gdp": ["cat:us_gdp_qq_saar"],
         "ea_hicp": [i for i in catalogue if "hicp" in i],
         "uk_gdp": [i for i in catalogue if i.startswith("cat:uk_gdp_")],
+        # M9a-1 (24/10): the US monthly families list their own measures.
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in US_MONTHLY.items()},
+        # M9a-2 (24/10): UK families, euro-area GDP and weekly claims.
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in UK_FAMILIES.items()},
+        "ea_gdp": [i for i in catalogue if i.startswith("cat:ea21_gdp_")],
+        "us_jobless_claims": ["cat:us_initial_jobless_claims"],
     }
     aliases = json.loads(files(__package__).joinpath("aliases_v2.1.json").read_text(encoding="utf-8"))
     return {

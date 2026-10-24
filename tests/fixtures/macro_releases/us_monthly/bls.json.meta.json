@@ -1,0 +1,16 @@
+{
+  "url": "https://api.bls.gov/publicAPI/v2/timeseries/data/",
+  "retrieved_at": "2026-10-24T10:53:41.534170+00:00",
+  "sha256": "e2ac3232baf2eda072857b99acd868054300f19210b81ae8ebddade98db8b663",
+  "request": {
+    "seriesid": [
+      "WPSFD4",
+      "WPUFD4",
+      "JTS000000000000000JOL"
+    ],
+    "startyear": "2025",
+    "endyear": "2026",
+    "calculations": true,
+    "catalog": true
+  }
+}

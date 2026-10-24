@@ -1,11 +1,11 @@
-"""Reviewed exact measures for the M5 slice; stages never enter indicator ids."""
+"""Reviewed exact measures for the pilot and US monthly families; stages stay separate."""
 from .models import Indicator
 
 
-def measure(id, issuer, geo, transform, adjustment, unit="%", scale=1, definition=None):
+def measure(id, issuer, geo, transform, adjustment, unit="%", scale=1, definition=None, frequency=None):
     return Indicator(id=id, measure=id, issuer_id=issuer, geography=geo,
                      seasonal_adjustment=adjustment, transform=transform, unit=unit,
-                     scale=scale, frequency="Q" if transform == "qq_saar" else "M",
+                     scale=scale, frequency=frequency or ("Q" if transform == "qq_saar" else "M"),
                      tier="T1", definition=definition or id, catalogue_status="supported", active=True)
 
 
@@ -36,7 +36,95 @@ BLS_SERIES = {
     "CES0000000001": ("us_payrolls_change", "net_changes", "1"),
 }
 
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp")
+# Definitions copied from catalogo-tier1.toml; additions absent there are the
+# M9a-1 brief's explicit measures. The brief corrects PPI y/y to NSA (WPUFD4).
+US_MONTHLY = {
+    "us_ppi": [
+        measure("us_ppi_mm", "BLS", "USA", "mm", "SA", definition="Producer Price Index, final demand, month-over-month percent change"),
+        measure("us_ppi_yy", "BLS", "USA", "yy", "NSA", definition="Producer Price Index, final demand, 12-month percent change")],
+    "us_jolts": [measure("us_jolts_openings", "BLS", "USA", "level", "SA", "persons", 1000,
+                         "Job openings, total nonfarm, level, seasonally adjusted, thousands of jobs")],
+    "us_pce": [
+        measure("us_pce_price_index_mm", "BEA", "USA", "mm", "SA", definition="Personal Consumption Expenditures price index, month-over-month percent change"),
+        measure("us_pce_price_index_yy", "BEA", "USA", "yy", "SA", definition="Personal Consumption Expenditures price index, 12-month percent change -- the Fed's preferred headline inflation gauge"),
+        measure("us_core_pce_mm", "BEA", "USA", "mm", "SA", definition="PCE price index excluding food and energy, month-over-month percent change"),
+        measure("us_core_pce_yy", "BEA", "USA", "yy", "SA", definition="PCE price index excluding food and energy, 12-month percent change -- the FOMC's formal 2% target gauge")],
+    "us_retail_sales": [
+        measure("us_retail_sales_mm", "Census", "USA", "mm", "SA", definition="Advance estimate of retail and food services sales, month-over-month percent change"),
+        measure("us_retail_sales_ex_auto_mm", "Census", "USA", "mm", "SA", definition="Retail sales excluding motor vehicle and parts dealers, m/m percent change")],
+    "us_housing_starts": [
+        measure("us_housing_starts", "Census", "USA", "level", "SA", "units", 1000, "New privately-owned housing units started, total, SAAR"),
+        measure("us_building_permits", "Census", "USA", "level", "SA", "units", 1000, "New privately-owned housing units authorized by building permits, total, SAAR")],
+    "us_durable_goods": [
+        measure("us_durable_goods_orders_mm", "Census", "USA", "mm", "SA", definition="Manufacturers' new orders for durable goods, m/m percent change"),
+        measure("us_durable_goods_ex_transport_mm", "Census", "USA", "mm", "SA", definition="Manufacturers' new orders for durable goods excluding transportation, m/m percent change")],
+    "us_industrial_production": [
+        measure("us_industrial_production_mm", "FederalReserve", "USA", "mm", "SA", definition="Index of real output for manufacturing, mining, and utilities, m/m percent change"),
+        measure("us_capacity_utilization", "FederalReserve", "USA", "level", "SA", definition="Output index divided by capacity index, total industry")],
+    "us_trade_balance": [measure("us_trade_balance", "Census/BEA", "USA", "level", "SA", "USD", 1e9,
+                                 "Balance of payments basis trade balance in goods and services")],
+}
+INDICATORS.update((i.id, i) for measures in US_MONTHLY.values() for i in measures)
+NEW_BLS_SERIES = {
+    "WPSFD4": ("us_ppi_mm", "pct_changes", "1"),
+    "WPUFD4": ("us_ppi_yy", "pct_changes", "12"),
+    "JTS000000000000000JOL": ("us_jolts_openings", "level", "0"),
+}
+
+
+def bls_family(indicator):
+    if indicator in {i.id for i in US_MONTHLY["us_ppi"]}:
+        return "us_ppi"
+    if indicator == "us_jolts_openings":
+        return "us_jolts"
+    return "us_payrolls" if indicator.startswith("us_payrolls") else "us_cpi"
+
+
+UK_FAMILIES = {
+    "uk_cpi": [
+        measure("uk_cpi_yy", "ONS", "GBR", "yy", "NSA", definition="CPI all items, published 12-month rate, D7G7"),
+        measure("uk_core_cpi_yy", "ONS", "GBR", "yy", "NSA", definition="CPI excluding energy, food, alcohol and tobacco, published 12-month rate, DKO8")],
+    "uk_labour_market": [
+        measure("uk_unemployment_rate", "ONS", "GBR", "level", "SA", definition="ILO unemployment rate, aged 16+, three months ending reference month, MGSX"),
+        measure("uk_regular_pay_yy", "ONS", "GBR", "yy", "SA", definition="Great Britain whole economy regular pay excluding arrears, nominal three-month average y/y growth, KAI9; period is ending month")],
+}
+INDICATORS.update((i.id, i) for measures in UK_FAMILIES.values() for i in measures)
+INDICATORS.update((i.id, i) for i in [measure(f"ea21_gdp_{basis}", "Eurostat", "EA21", basis, "SCA",
+    definition="EA21 real GDP, published chain-linked volume percent change, seasonal and calendar adjustment",
+    frequency="Q") for basis in ("qq", "yy")])
+INDICATORS["us_initial_jobless_claims"] = measure("us_initial_jobless_claims", "DOL", "USA", "level", "SA",
+    "claims", 1000, "DOL ETA initial unemployment insurance claims, SA level, thousands; reference period is Saturday week ending", frequency="W")
+REMAINING_FAMILIES = {
+    "us_umich_sentiment": [measure("us_umich_consumer_sentiment", "UMich", "USA", "level", "NSA", "index",
+        definition="Index of Consumer Sentiment, 1966 Q1=100, issuer preliminary and final readings")],
+    "ea_ec_surveys": [
+        measure("ea_economic_sentiment_indicator", "ECFIN", "EA21", "level", "SA", "index", definition="Economic Sentiment Indicator, issuer standardised business and consumer composite, long-term mean 100"),
+        measure("ea_consumer_confidence", "ECFIN", "EA21", "level", "SA", "%", definition="Consumer confidence indicator, seasonally adjusted balance of positive and negative responses; flash and final")],
+    "uk_total_pay": [measure("uk_average_weekly_earnings_yy", "ONS", "GBR", "yy", "SA",
+        definition="Average weekly earnings, total pay including bonuses, three-month average y/y growth; reference month is window ending")],
+    "ea_core_hicp": [measure("ea21_core_hicp_yy", "Eurostat", "EA21", "yy", "NSA",
+        definition="HICP excluding energy, food, alcohol and tobacco, issuer 12-month rate, EA21")],
+    "us_new_home_sales": [measure("us_new_home_sales", "Census", "USA", "level", "SA", "units", 1000,
+                                  "New single-family houses sold, thousands of units, SAAR")],
+    "uk_retail_sales": [measure("uk_retail_sales_mm", "ONS", "GBR", "mm", "SA",
+        definition="Retail Sales Index, volume, all retailers including fuel, published monthly percent change, Great Britain")],
+    "ea_trade_balance": [measure("ea_trade_balance", "Eurostat", "EA21", "level", "SA", "EUR", 1000000,
+        "Balance of extra-euro area exports and imports of goods, seasonally adjusted, millions of EUR")],
+    "ea_industrial_production": [measure("ea_industrial_production_mm", "Eurostat", "EA21", "mm", "SA",
+        definition="Production in total industry excluding construction, published monthly percent change, EA21")],
+    "ea_retail_sales": [measure("ea_retail_sales_mm", "Eurostat", "EA21", "mm", "SA",
+                                definition="Deflated turnover (volume) of total retail trade, published monthly percent change, EA21")],
+    "ea_unemployment": [measure("ea_unemployment_rate", "Eurostat", "EA21", "level", "SA",
+                                definition="Unemployed as percent of labour force, age 15-74, EA21")],
+}
+for _measures in REMAINING_FAMILIES.values():
+    INDICATORS.update((m.id, m) for m in _measures)
+CENTRAL_BANKS = {
+    "fomc": [measure("fed_funds_rate_decision", "FederalReserve", "USA", "level", "n/a",
+        definition="FOMC federal funds target range; scalar value is upper bound, complete range in policy_decision", frequency="E")],
+}
+INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS)
 
 
 def hicp_indicator(period, basis, geography="EA"):
