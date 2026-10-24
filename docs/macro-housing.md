@@ -88,3 +88,16 @@ All writes go to the copy. Reproduce with the project interpreter:
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.
+
+## Validation for the construction step
+
+- All `tests/test_macro_*.py` plus `tests/test_indicator_cards.py`:
+  **1,159 passed, 1 skipped** (24 October 2026).
+- Repository-wide `ruff check .`: passed.
+- Generated indicator-card JSON freshness and `git diff --check`: passed.
+- Live backup verification for both implemented housing families: passed,
+  including the unchanged second collection and latest official read-API cards.
+
+The regression suite records FHFA's unapproved concept as an explicit card gap.
+Consensus aliases must be exact and justified, but need not exist for every
+family; FHFA deliberately has no FF alias. No new dependency was added.
