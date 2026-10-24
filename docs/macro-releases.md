@@ -721,21 +721,28 @@ is ignored). Resolution values use the indicator's unit/scale/transform.
 
 The owner decision is to expose **both** prior-period values:
 
-- `previous_before_release` is the immediately prior calendar period's latest
-  edition/stage known to us strictly before this event.
-- `previous_revised` applies this event's revision of that prior period. It
+- For calendar-frequency series, `previous_before_release` is the immediately
+  prior calendar period's latest edition/stage known to us strictly before this
+  event. For event-frequency series it is the preceding decision's value **as at
+  this release**, with the same strict publication and capture-time bounds.
+- For calendar-frequency series, `previous_revised` applies this event's revision of that prior period. It
   equals `previous_before_release` when this release makes no revision; a later
   release's revision cannot leak into it. If the old figure was unknown, it
   remains null before release even when this event supplies the prior figure.
 - For calendar-frequency series, `previous` remains a compatibility alias for
   `previous_before_release`.
-- For event-frequency (`E`) series, `previous_period` is the preceding stored
-  decision date of the same indicator, and `previous` resolves that decision.
+- For event-frequency (`E`) series, `previous_period` is the preceding decision
+  date of the same indicator, and `previous` resolves that decision **as known at
+  the query cutoff** (`as_known_at`), including corrections captured by that cutoff.
   Empty scheduled events and other indicators do not establish a predecessor.
   `previous_revised` resolves corrections to that decision known at the query
   cutoff. A late archive capture can establish these fields while
   `previous_before_release` remains null; it never backdates historical knowledge.
-  A bank's first stored decision has null previous fields and `previous_period`.
+  If a reviewed meeting between the candidate and this release was not collected,
+  `previous_period` identifies that missing meeting, the previous fields are null,
+  and `previous_missing_reason` explicitly names the gap; an older decision cannot
+  silently replace it. A bank's first stored decision has null previous fields and
+  `previous_period`.
 
 A missing prior period stays null with a reason; the API never skips a gap or
 backdates an archive capture. `revisions` compare prior periods in the event with older publication

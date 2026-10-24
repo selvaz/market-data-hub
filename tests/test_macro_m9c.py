@@ -151,6 +151,25 @@ def test_previous_does_not_skip_an_uncollected_reviewed_meeting(tmp_path, seed_c
         assert card["previous_missing_reason"] == "reviewed decision not collected: 2026-07-29"
 
 
+def test_event_previous_uses_query_cutoff_while_before_release_keeps_the_old_value(tmp_path):
+    from test_macro_read_api import observation
+    indicator = "fed_funds_rate_decision"
+    july = observation(indicator, "fomc", "2026-07-29", 3.75, "2026-07-29", "final",
+        "FederalReserve", seen="2026-07-29T18:01:00Z", published="2026-07-29T18:00:00Z")
+    september = observation(indicator, "fomc", "2026-09-16", 4.0, "2026-09-16", "final",
+        "FederalReserve", seen="2026-09-16T18:01:00Z", published="2026-09-16T18:00:00Z")
+    correction = observation(indicator, "fomc", "2026-07-29", 3.5, "2026-07-29", "final",
+        "FederalReserve", seen="2026-10-24T18:01:00Z", published="2026-10-24T18:00:00Z")
+    with open_writer(tmp_path / "query-contract.sqlite") as store:
+        persist(store, [july, september, correction])
+        for cutoff, expected in (("2026-10-23T00:00:00Z", 3.75), ("2026-10-25T00:00:00Z", 3.5)):
+            card, = store.release_cards("2026-09-16", "2026-09-16", indicators=[indicator],
+                as_known_at=cutoff)["cards"]
+            assert card["previous"]["value"] == card["previous_revised"]["value"] == expected
+            assert card["previous_before_release"]["value"] == 3.75
+            assert card["previous_period"] == "2026-07-29"
+
+
 def test_fomc_due_at_exact_issuer_instant():
     before = RUN_INSTANT.set(datetime(2026, 9, 16, 17, 59, 59, tzinfo=timezone.utc))
     try:
