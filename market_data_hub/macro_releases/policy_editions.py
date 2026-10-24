@@ -4,6 +4,7 @@ Meeting end dates are decision periods, never observation months. BOJ publishes
 after the meeting, with no fixed clock; None must never become an exact time.
 """
 SCHEDULES = {
+    "boj_policy": "https://www.boj.or.jp/en/mopo/mpmsche_minu/index.htm",
     "pboc_lpr": "https://www.chinamoney.com.cn/chinese/bklpr/",
     "boc_policy": "https://www.bankofcanada.ca/2025/08/bank-canada-publishes-2026-schedule-policy-interest-rate-announcements-other-major-publications/",
     "boe_policy": "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates",
@@ -13,7 +14,11 @@ SCHEDULES = {
 ZONES = {"fomc": "America/New_York", "ecb_policy": "Europe/Berlin", "boe_policy": "Europe/London"}
 ZONES["boc_policy"] = "America/Toronto"
 ZONES["pboc_lpr"] = "Asia/Shanghai"
+ZONES["boj_policy"] = "Asia/Tokyo"
 EDITIONS = {
+    "boj_policy": {d: (d, "final", None) for d in (
+        "2026-01-23", "2026-03-19", "2026-04-28", "2026-06-16",
+        "2026-07-31", "2026-09-18", "2026-10-30", "2026-12-18")},
     # Past dates independently printed in the PBOC archive (including Sept 20).
     # Nov 20 / Dec 21 follow NIFC's published 20th/next-business-day rule.
     "pboc_lpr": {d: (d, "final", "09:00") for d in (

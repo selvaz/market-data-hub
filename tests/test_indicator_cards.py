@@ -223,7 +223,7 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     gaps["uk_retail_sales"] = ["cat:uk_retail_sales_mm"]
     assert report["documented_certified_gaps"] == gaps
     # 37 through M9a-2, plus 11 M9b measures: 44 mapped, four approved-card gaps.
-    assert report["macro_releases"] == {"mapped": 49, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
+    assert report["macro_releases"] == {"mapped": 50, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out

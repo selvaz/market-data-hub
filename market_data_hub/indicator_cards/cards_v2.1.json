@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "90a2d2fb9789e6192f6b50c1ab21a2b531c3d65abd06c6a977d2fef5983cf826",
+  "aliases_sha256": "e3b4e27ebeb8ee078976b42d4bcdee929dff1d56d58975c03c212b039e6ed4a0",
   "cards": [
     {
       "concept": "Real GDP",
@@ -7579,6 +7579,7 @@
           "jp_boj"
         ],
         "cat": [
+          "boj_policy_rate_decision",
           "boj_policy_rate_decision"
         ],
         "derived_ms": [],

@@ -197,6 +197,44 @@
       },
       "vote_split": null,
       "precision": "exact"
+    },
+    {
+      "family": "boj_policy",
+      "fixture": "boj-july.pdf",
+      "previous_fixture": "boj-june.pdf",
+      "edition": "2026-07-31",
+      "source_url": "https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k260731a.pdf",
+      "rates": {
+        "overnight_call_rate": {
+          "rate": 1,
+          "change_bp": 0,
+          "change_basis": "consecutive_issuer_statements"
+        }
+      },
+      "vote_split": {
+        "for": 8,
+        "against": 1
+      },
+      "precision": "date_only"
+    },
+    {
+      "family": "boj_policy",
+      "fixture": "boj-sept.pdf",
+      "previous_fixture": "boj-july.pdf",
+      "edition": "2026-09-18",
+      "source_url": "https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k260918a.pdf",
+      "rates": {
+        "overnight_call_rate": {
+          "rate": 1.25,
+          "change_bp": 25,
+          "change_basis": "consecutive_issuer_statements"
+        }
+      },
+      "vote_split": {
+        "for": 7,
+        "against": 2
+      },
+      "precision": "date_only"
     }
   ]
 }

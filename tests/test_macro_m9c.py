@@ -38,6 +38,9 @@ def document(name):
 
 
 def parse(case):
+    if case["family"] == "boj_policy":
+        from market_data_hub.macro_releases.boj_policy import parse
+        return parse(document(case["fixture"]), document(case["previous_fixture"]))[0]
     if case["family"] == "pboc_lpr":
         from market_data_hub.macro_releases.pboc_lpr import parse
         return parse(document(case["fixture"]), document(case["previous_fixture"]))[0]

@@ -8,6 +8,6 @@ def new_york_release(edition, time="08:30"):
 
 
 def local_release(edition, time, zone):
-    local = datetime.fromisoformat(edition + "T" + time + ":00").replace(tzinfo=ZoneInfo(zone))
+    local = datetime.fromisoformat(edition + "T" + time).replace(tzinfo=ZoneInfo(zone))
     return {"published_at": local.astimezone(timezone.utc).isoformat(),
             "issuer_local_time": local.isoformat(), "issuer_timezone": zone}
