@@ -384,6 +384,7 @@ class ReadAPI:
             frequency = snapshot.indicators[indicator]["frequency"]
             prior = prior_period(period, frequency) if frequency != "E" else None
             decisions = None
+            missing_decision = None
             if frequency == "E":
                 # Event periods are decision dates, not a daily calendar. Only
                 # stored actuals of this indicator can establish a predecessor;
@@ -396,6 +397,16 @@ class ReadAPI:
                     and event_order(snapshot, e) and event_order(snapshot, e) < released_at
                 ))
                 prior = max((e.reference_period for e in decisions.evidence), default=None)
+                if prior is not None:
+                    from .schedule import family_editions
+                    family = snapshot.events.get(event_id, {}).get("family", family_for(snapshot, indicator))
+                    # A reviewed meeting between two saved decisions is a gap,
+                    # not permission to call the older decision the previous one.
+                    missing_decision = max((p for p, _, _ in family_editions(family).values()
+                        if prior < p < period and not any(
+                            e.reference_period == p for e in decisions.evidence)), default=None)
+                    if missing_decision is not None:
+                        prior = missing_decision
             # The previous figure is strictly what we knew by release time.
             before = subset(
                 snapshot,
@@ -518,7 +529,8 @@ class ReadAPI:
                     "previous_period": prior,
                     "previous_missing_reason": None
                     if previous
-                    else ("no preceding stored decision" if frequency == "E" else
+                    else (f"reviewed decision not collected: {missing_decision}" if missing_decision else
+                          "no preceding stored decision" if frequency == "E" else
                           "prior period not known at release time"),
                     "revisions": revisions,
                     "stage_change": stage_change,

@@ -133,6 +133,24 @@ def test_previous_decision_respects_query_knowledge_cutoff(tmp_path):
             assert (card["previous"] is None) == (prior is None)
 
 
+@pytest.mark.parametrize("seed_calendar", [False, True])
+def test_previous_does_not_skip_an_uncollected_reviewed_meeting(tmp_path, seed_calendar):
+    from market_data_hub.macro_releases.scheduled_events import persist_scheduled_events
+    from test_macro_read_api import observation
+    indicator = "fed_funds_rate_decision"
+    with open_writer(tmp_path / "missing-meeting.sqlite") as store:
+        if seed_calendar:
+            persist_scheduled_events(store, recorded_at="2026-01-01T00:00:00Z")
+        persist(store, [observation(indicator, "fomc", d, value, d, "final", "FederalReserve",
+            seen=d + "T18:01:00Z", published=d + "T18:00:00Z")
+            for d, value in (("2026-06-17", 4.5), ("2026-09-16", 4.0))])
+        card, = store.release_cards("2026-09-16", "2026-09-16", indicators=[indicator],
+            as_known_at="2026-10-25T00:00:00Z")["cards"]
+        assert card["previous_period"] == "2026-07-29"
+        assert card["previous"] is card["previous_revised"] is card["previous_before_release"] is None
+        assert card["previous_missing_reason"] == "reviewed decision not collected: 2026-07-29"
+
+
 def test_fomc_due_at_exact_issuer_instant():
     before = RUN_INSTANT.set(datetime(2026, 9, 16, 17, 59, 59, tzinfo=timezone.utc))
     try:
