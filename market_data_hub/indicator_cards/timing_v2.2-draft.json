@@ -1,0 +1,103 @@
+{
+  "classification_version": "v2.2-draft",
+  "rows": {
+    "ca_gdp_monthly": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ca_retail_sales": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "cn_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "cn_retail_sales": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "de_gdp_real": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ea_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ea_pmi_composite": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ea_retail_sales": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ea_trade_balance": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "es_gdp_real": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "es_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "es_unemployment": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "fr_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "fr_gdp_real": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "fr_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "fr_unemployment": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "it_gdp_real": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "it_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "jp_gdp_real": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "jp_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "jp_trade_balance": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "uk_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "uk_retail_sales": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_existing_home_sales": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    }
+  },
+  "source": "Proposed tier-1 rows; no empirical timing estimation or predictive tests performed.",
+  "source_table_sha256": "1193fb171062a8beb536daf7bf141f2b154e5416dfbb75a725d6c1aa2e621060"
+}
