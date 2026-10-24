@@ -9,11 +9,18 @@ import requests
 
 from market_data_hub.macro_releases import open_reader, open_writer, run_daily
 from market_data_hub.macro_releases.adapters import persist
-from market_data_hub.macro_releases.eurostat_activity import parse
+from market_data_hub.macro_releases.eurostat_activity import parse as parse_eurostat
 from market_data_hub.macro_releases.http import Document, FetchError
 
 ROOT = Path(__file__).parent / "fixtures/macro_releases/m9b"
 GOLDEN = json.loads((ROOT / "golden-set.json").read_text())["cases"]
+
+
+def parse(doc, family, since="1900-01"):
+    if family == "uk_retail_sales":
+        from market_data_hub.macro_releases.ons_retail import parse as parse_ons
+        return parse_ons(doc, family, since)
+    return parse_eurostat(doc, family, since)
 
 
 @pytest.fixture(autouse=True)
