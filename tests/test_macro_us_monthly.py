@@ -193,3 +193,18 @@ def test_known_publication_date_cannot_relabel_another_reference_month():
     doc = replace(doc, body=doc.body.replace(b"September 30, 2026", b"August 26, 2026"))
     with pytest.raises(FetchError, match="needs review"):
         parse_pce_publication(doc)
+
+
+def test_pce_schema_change_is_routed_to_review():
+    # Codex P2 on #121: a missing T20807 line must say "needs review" so the
+    # daily collector keeps the response and queues it, instead of failing.
+    from dataclasses import replace
+
+    from market_data_hub.macro_releases.http import FetchError
+
+    doc = document("T20807.json")
+    payload = json.loads(doc.body)
+    data = payload["BEAAPI"]["Results"]["Data"]
+    payload["BEAAPI"]["Results"]["Data"] = [r for r in data if str(r.get("LineNumber")) != "25"]
+    with pytest.raises(FetchError, match="needs review"):
+        BEAAdapter.parse_pce(replace(doc, body=json.dumps(payload).encode()), since="2026-05")

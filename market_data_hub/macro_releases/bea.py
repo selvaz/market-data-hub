@@ -76,7 +76,8 @@ class BEAAdapter:
             rows = [r for r in result.get("Data", []) if r.get("TableName") == "T20807" and str(r.get("LineNumber")) == line]
             if not rows or any(r.get("SeriesCode") != series or r.get("CL_UNIT") != "Percent change" or
                                str(r.get("UNIT_MULT")) != "0" or not re.fullmatch(r"\d{4}M(?:0[1-9]|1[0-2])", r.get("TimePeriod", "")) for r in rows):
-                raise FetchError(f"BEA PCE requested measure absent or changed: T20807/{line}/{series}")
+                # "needs review" routes the captured response to the review queue (Codex P2, #121).
+                raise FetchError(f"BEA PCE requested measure absent or changed; needs review: T20807/{line}/{series}")
             if max(r["TimePeriod"].replace("M", "-") for r in rows) != headline:
                 raise FetchError("BEA PCE headline metadata needs review")
             for row in rows:
