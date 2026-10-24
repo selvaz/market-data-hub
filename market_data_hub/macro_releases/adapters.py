@@ -48,6 +48,7 @@ class Observation:
     issuer_timezone: Optional[str] = None
     needs_review: bool = False
     unit: Optional[str] = None
+    policy_decision: Optional[dict] = None
 
 
 class Adapter(Protocol):
@@ -121,6 +122,7 @@ def persist(store, observations):
             verification_status="verified" if verified and obs.value is not None else "unverified", url=obs.document.url,
             reading_kind="unavailable" if obs.value is None else ("actual" if obs.published else "derived"),
             raw_payload_json=json.dumps({"provider_vintage": obs.provider_vintage,
+                                         "policy_decision": obs.policy_decision,
                                          "document_hash": identity}),
             composition_id=obs.composition_id, issuer_local_time=obs.issuer_local_time,
             issuer_timezone=obs.issuer_timezone,
@@ -139,6 +141,7 @@ def persist(store, observations):
             derived_from_json=json.dumps(obs.inputs), formula_version=obs.formula,
             composition_id=obs.composition_id, issuer_local_time=obs.issuer_local_time,
             issuer_timezone=obs.issuer_timezone,
+            policy_decision_json=json.dumps(obs.policy_decision) if obs.policy_decision else None,
         ))
         ids.append(vintage_id)
         # Also reconcile mirrors fetched before the issuer, without mutating them.

@@ -73,6 +73,9 @@ def get_edition(client, provider, url, family, edition, params=None):
 
 
 def family_editions(family):
+    from .policy_editions import EDITIONS as POLICY
+    if family in POLICY:
+        return POLICY[family]
     from .tier1_editions import EDITIONS as REMAINING
     if family in REMAINING:
         return REMAINING[family]

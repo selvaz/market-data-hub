@@ -98,6 +98,7 @@ class Evidence:
     ordering_at: Optional[str] = None
     timestamp_precisions: dict = field(default_factory=dict)
     issuer_timezone: Optional[str] = None
+    policy_decision: Optional[dict] = None
 
     @property
     def official(self):
@@ -126,6 +127,7 @@ class Resolution:
     provenance: tuple[dict, ...]
     reason: str
     rule_version: str = RULE_VERSION
+    policy_decision: Optional[dict] = None
 
     def to_dict(self):
         return asdict(self)
@@ -530,6 +532,8 @@ class Snapshot:
             ordering_at=ordering_at,
             timestamp_precisions=precisions,
             issuer_timezone=row.get("issuer_timezone"),
+            policy_decision=(json.loads(row["policy_decision_json"]) if row.get("policy_decision_json") else None)
+            if vintage else json.loads(row["raw_payload_json"]).get("policy_decision"),
         )
 
 
@@ -702,6 +706,7 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
         discrepancies=tuple(discrepancies),
         provenance=tuple(e.provenance() for e in sorted(all_rows, key=_tie)),
         reason=reason,
+        policy_decision=selected.policy_decision,
     )
 
 

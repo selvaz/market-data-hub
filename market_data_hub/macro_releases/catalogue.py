@@ -119,7 +119,12 @@ REMAINING_FAMILIES = {
 }
 for _measures in REMAINING_FAMILIES.values():
     INDICATORS.update((m.id, m) for m in _measures)
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES)
+CENTRAL_BANKS = {
+    "fomc": [measure("fed_funds_rate_decision", "FederalReserve", "USA", "level", "n/a",
+        definition="FOMC federal funds target range; scalar value is upper bound, complete range in policy_decision", frequency="E")],
+}
+INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS)
 
 
 def hicp_indicator(period, basis, geography="EA"):

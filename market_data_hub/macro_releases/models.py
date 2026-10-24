@@ -105,6 +105,7 @@ class ValueVintage(Contract):
     composition_id: Optional[str] = None
     issuer_local_time: Optional[str] = None
     issuer_timezone: Optional[str] = None
+    policy_decision_json: Optional[str] = None
 
     @field_validator("reference_period")
     @classmethod

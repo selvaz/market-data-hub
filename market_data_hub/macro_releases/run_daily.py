@@ -41,6 +41,10 @@ ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapte
 DISCOVERY_ADAPTERS = dict(ADAPTERS)
 ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
+from .catalogue import CENTRAL_BANKS
+from .policy import PolicyAdapter
+ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
+DISCOVERY_ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 
 
 def fetch_windows(families, lookback, today):
