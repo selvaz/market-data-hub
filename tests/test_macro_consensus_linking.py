@@ -45,13 +45,15 @@ def test_wrong_measure_transform_geography_and_private_pmi_do_not_map(tmp_path, 
     ("Federal Funds Rate", "fed_funds_rate_decision", "fomc", "2026-10-28", "2026-10-28", "final", "4.25%"),
     ("Prelim GDP q/q", "us_gdp_qq_saar", "us_gdp", "2026-11-25", "2026-Q3", "second", "2.5%"),
     ("Final GDP q/q", "us_gdp_qq_saar", "us_gdp", "2026-12-23", "2026-Q3", "third", "2.5%"),
+    ("Prelim Flash GDP q/q", "ea21_gdp_qq", "ea_gdp", "2026-10-30", "2026-Q3", "preliminary_flash", "0.2%"),
 ])
 def test_scheduled_forecast_and_later_official_share_event(
     tmp_path, title, indicator, family, edition, period, stage, value
 ):
     with open_writer(tmp_path / "macro.sqlite") as store:
         raw = tmp_path / "raw"
-        archive(raw, [dict(event(), title=title, date=edition, forecast=value)],
+        archive(raw, [dict(event(), title=title, date=edition, forecast=value,
+                          country="EUR" if family == "ea_gdp" else "USD")],
                 filename="2026-10-23.json", captured="2026-10-23T21:30:00Z")
         result = consensus.ingest(store, raw)
         assert result["status"] == "ok" and result["readings_added"] == 1, result
@@ -76,6 +78,33 @@ def test_scheduled_forecast_and_later_official_share_event(
         assert official["consensus"][0]["surprise"] is None
         assert official["consensus"][0]["surprise_eligible"] is False
         assert len(rows(store)) == 1
+
+
+@pytest.mark.parametrize("currency,title,edition,stage", [
+    ("USD", "Prelim UoM Consumer Sentiment", "2026-10-23", "final"),
+    ("EUR", "Final CPI y/y", "2026-10-02", "flash"),
+])
+def test_reviewed_justification_does_not_exempt_title_stage_conflicts(
+    tmp_path, currency, title, edition, stage
+):
+    with open_writer(tmp_path / "conflict.sqlite") as store:
+        persist_scheduled_events(store)
+        catalogue = consensus.Catalogue(store)
+        key = currency, consensus.name(title)
+        catalogue.reviewed[key] = dict(catalogue.reviewed[key], stage=stage)
+        _, reason, record = consensus.prepare(store, catalogue,
+            dict(event(), country=currency, title=title, date=edition),
+            "2026-10-01T00:00:00Z", "fixture")
+        assert reason == "stage_conflict" and record is None
+
+
+def test_gdp_vocabulary_does_not_exempt_an_explicit_conflicting_stage(tmp_path):
+    with open_writer(tmp_path / "gdp-conflict.sqlite") as store:
+        persist_scheduled_events(store)
+        _, reason, record = consensus.prepare(store, consensus.Catalogue(store),
+            dict(event(), title="Prelim GDP q/q", date="2026-11-25", estimate_stage="final"),
+            "2026-10-23T00:00:00Z", "fixture")
+        assert reason == "stage_conflict" and record is None
 
 
 def test_missing_calendar_date_stays_not_found(tmp_path):

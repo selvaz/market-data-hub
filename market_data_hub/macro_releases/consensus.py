@@ -33,7 +33,7 @@ from .store import open_writer
 from .worklist_periods import explicit_period
 
 PROVIDER = "ff_forecast"
-RULE_VERSION = "ff-consensus-v4"
+RULE_VERSION = "ff-consensus-v5"
 ALIAS_FILE = Path(__file__).with_name("ff_aliases_v1.json")
 GEOGRAPHIES = {
     "US": {"USA"},
@@ -340,8 +340,16 @@ def prepare(store, catalogue, event, captured_at, snapshot_hash):
         return True, "stage_unknown", None
     if mapping.get("period_since") and period < mapping["period_since"]:
         return True, "geography_period_mismatch", None
-    # Reviewed stages understand FF's provider-specific GDP stage vocabulary.
-    expected = set() if "justification" in mapping else title_stage(title)
+    expected = title_stage(title)
+    # Only these exact reviewed FF names use a different issuer vocabulary.
+    # A justification on an unrelated alias cannot waive title-stage checks.
+    vocabulary = {
+        ("USD", "prelim gdp q/q", "us_gdp_qq_saar", "second"),
+        ("USD", "final gdp q/q", "us_gdp_qq_saar", "third"),
+        ("EUR", "prelim flash gdp q/q", "ea21_gdp_qq", "preliminary_flash"),
+    }
+    if (event.get("country"), name(title), indicator["id"], mapping["stage"]) in vocabulary:
+        expected = {mapping["stage"]}
     if mapping["stage"] not in ("unknown", "", None):
         expected.add(mapping["stage"])
     if event.get("estimate_stage"):
