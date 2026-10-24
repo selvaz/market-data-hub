@@ -11,7 +11,13 @@
     {"id": "cat:ea21_hicp_yy", "key": "ea_hicp", "basis": "Explicit EA headline HICP concept. Approved rationale explicitly requires geography-version checks against EA21; this is context, not an EA19/EA21 series splice."},
     {"id": "cat:ea21_hicp_mm", "key": "ea_hicp", "basis": "Explicit EA headline HICP concept and mm calendar ids, with the approved EA21 geography-version caveat."},
     {"id": "cat:ea_future_hicp_yy", "key": "ea_hicp", "basis": "EA headline HICP context only for the catalogue's unresolved membership placeholder. Geography remains unresolved; no series equivalence is asserted."},
-    {"id": "cat:ea_future_hicp_mm", "key": "ea_hicp", "basis": "EA headline HICP context only for the catalogue's unresolved membership placeholder. Geography remains unresolved; no series equivalence is asserted."}
+    {"id": "cat:ea_future_hicp_mm", "key": "ea_hicp", "basis": "EA headline HICP context only for the catalogue's unresolved membership placeholder. Geography remains unresolved; no series equivalence is asserted."},
+    {"id": "cat:us_ppi_mm", "key": "us_ppi_final_demand", "basis": "Same PPI final demand concept as cat:us_ppi_yy; approved cal:us_ppi_mm (M9a-1, 24/10)."},
+    {"id": "cat:us_pce_price_index_mm", "key": "us_pce_headline", "basis": "Same headline PCE price index concept as cat:us_pce_price_index_yy; approved cal:us_pce_mm (M9a-1)."},
+    {"id": "cat:us_core_pce_mm", "key": "us_pce_core", "basis": "Same PCE ex food and energy concept as cat:us_core_pce_yy; approved cal:us_core_pce (M9a-1)."},
+    {"id": "cat:us_jolts_openings", "key": "us_jolts_openings", "basis": "Explicit JOLTS job openings concept; approved cal:us_jolts and es:jolts_openings (M9a-1)."},
+    {"id": "cat:us_retail_sales_ex_auto_mm", "key": "us_retail_sales", "basis": "Retail sales ex autos is listed on this card as cal:us_retail_ex_auto_mm (M9a-1)."},
+    {"id": "cat:us_durable_goods_ex_transport_mm", "key": "us_durable_orders", "basis": "Durable goods orders ex transportation, same M3 advance report as cat:us_durable_goods_orders_mm (M9a-1)."}
   ],
   "certified_gaps": {}
 }

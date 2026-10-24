@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "796897dc45edeb2e3e8981f901c4fdede3570cc71b214eddd29f0a1df84a46cb",
+  "aliases_sha256": "f2502296af00c84bebdd6737a53aced9506a3e923436b35d6392ef6f47652f09",
   "cards": [
     {
       "concept": "Real GDP",
@@ -190,7 +190,8 @@
           "us_retail_ex_auto_mm"
         ],
         "cat": [
-          "us_retail_sales_mm"
+          "us_retail_sales_mm",
+          "us_retail_sales_ex_auto_mm"
         ],
         "derived_ms": [],
         "es": [],
@@ -901,7 +902,9 @@
         "cal": [
           "us_jolts"
         ],
-        "cat": [],
+        "cat": [
+          "us_jolts_openings"
+        ],
         "derived_ms": [],
         "es": [
           "jolts_openings"
@@ -1282,7 +1285,8 @@
           "us_durable"
         ],
         "cat": [
-          "us_durable_goods_orders_mm"
+          "us_durable_goods_orders_mm",
+          "us_durable_goods_ex_transport_mm"
         ],
         "derived_ms": [],
         "es": [],
@@ -1511,7 +1515,8 @@
           "us_pce_yy"
         ],
         "cat": [
-          "us_pce_price_index_yy"
+          "us_pce_price_index_yy",
+          "us_pce_price_index_mm"
         ],
         "derived_ms": [],
         "es": [
@@ -1563,7 +1568,8 @@
           "us_core_pce_yy"
         ],
         "cat": [
-          "us_core_pce_yy"
+          "us_core_pce_yy",
+          "us_core_pce_mm"
         ],
         "derived_ms": [],
         "es": [],
@@ -1628,7 +1634,8 @@
           "us_ppi_mm"
         ],
         "cat": [
-          "us_ppi_yy"
+          "us_ppi_yy",
+          "us_ppi_mm"
         ],
         "derived_ms": [],
         "es": [],
