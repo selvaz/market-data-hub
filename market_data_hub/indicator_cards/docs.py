@@ -88,8 +88,12 @@ def _ff_alias_cards() -> set:
 def _release_time(family: str) -> str:
     """Distinct local release times of a family's reviewed editions, with the zone."""
     from market_data_hub.macro_releases.schedule import family_editions, issuer_zone
-    times = sorted({meta[2] for meta in family_editions(family).values() if len(meta) >= 3})
-    return f"{' / '.join(times)} {issuer_zone(family)}" if times else ""
+    editions = [meta for meta in family_editions(family).values() if len(meta) >= 3]
+    times = sorted({meta[2] for meta in editions if meta[2]})
+    if not times:
+        # BOJ policy editions carry a date only: no issuer release time to show.
+        return "date only" if editions else ""
+    return f"{' / '.join(times)} {issuer_zone(family)}"
 
 
 def _calendar_rows() -> Dict[str, dict]:

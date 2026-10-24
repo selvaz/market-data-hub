@@ -125,5 +125,7 @@ def test_release_times_and_consensus_are_derived():
     assert rows["us_payrolls"].release_time == "08:30 America/New_York"
     assert rows["us_jolts_openings"].release_time == "10:00 America/New_York"
     assert rows["us_payrolls"].families == ("us_payrolls",)
-    assert rows["us_cpi_headline"].consensus and not rows["us_payrolls"].consensus
+    # M2b (#128) aliased payrolls to FF; UK regular pay has no exact FF title.
+    assert rows["us_cpi_headline"].consensus and rows["us_payrolls"].consensus
+    assert rows["uk_awe_regular"].families and not rows["uk_awe_regular"].consensus
     assert rows["us_sahm"].release_time == docs.DASH and not rows["us_sahm"].families
