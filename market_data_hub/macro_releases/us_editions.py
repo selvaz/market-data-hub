@@ -1,7 +1,7 @@
 """Reviewed US monthly editions. Dates are issuer dates, never retrieval dates.
 
-Reviewed 2026-10-24 against the linked issuer schedules. Only released editions
-are enabled. A new headline month or publication date must be reviewed first.
+Reviewed 2026-10-24 against the linked issuer schedules through December 2026.
+Future editions remain scheduled until their date; an unlisted edition fails closed.
 """
 from .http import FetchError
 
@@ -15,34 +15,55 @@ EDITIONS = {
     # https://www.bls.gov/schedule/2026/home.htm (national JOLTS)
     "us_ppi": {"2026-08-13": ("2026-07", "regular", "08:30"),
                "2026-09-10": ("2026-08", "regular", "08:30"),
-               "2026-10-15": ("2026-09", "regular", "08:30")},
+               "2026-10-15": ("2026-09", "regular", "08:30"),
+               "2026-11-13": ("2026-10", "regular", "08:30"),
+               "2026-12-15": ("2026-11", "regular", "08:30")},
     "us_jolts": {"2026-08-04": ("2026-06", "regular", "10:00"),
                  "2026-09-01": ("2026-07", "regular", "10:00"),
-                 "2026-09-29": ("2026-08", "regular", "10:00")},
+                 "2026-09-29": ("2026-08", "regular", "10:00"),
+                 "2026-11-03": ("2026-09", "regular", "10:00"),
+                 "2026-12-01": ("2026-10", "regular", "10:00")},
     # https://www.bea.gov/news/schedule/full (September PCE: October 29)
     "us_pce": {"2026-08-26": ("2026-07", "regular", "08:30"),
-               "2026-09-30": ("2026-08", "regular", "08:30")},
+               "2026-09-30": ("2026-08", "regular", "08:30"),
+               "2026-10-29": ("2026-09", "regular", "08:30"),
+               "2026-11-25": ("2026-10", "regular", "08:30"),
+               "2026-12-23": ("2026-11", "regular", "08:30")},
     # https://www.census.gov/economic-indicators/calendar-listview-2026.html
     # Includes the M3 full reports at 10:00.
     "us_retail_sales": {"2026-08-14": ("2026-07", "advance", "08:30"),
                         "2026-09-16": ("2026-08", "advance", "08:30"),
-                        "2026-10-15": ("2026-09", "advance", "08:30")},
+                        "2026-10-15": ("2026-09", "advance", "08:30"),
+                        "2026-11-17": ("2026-10", "advance", "08:30"),
+                        "2026-12-16": ("2026-11", "advance", "08:30")},
     "us_housing_starts": {"2026-08-18": ("2026-07", "regular", "08:30"),
                           "2026-09-17": ("2026-08", "regular", "08:30"),
-                          "2026-10-20": ("2026-09", "regular", "08:30")},
+                          "2026-10-20": ("2026-09", "regular", "08:30"),
+                          "2026-11-18": ("2026-10", "regular", "08:30"),
+                          "2026-12-17": ("2026-11", "regular", "08:30")},
     "us_durable_goods": {"2026-08-04": ("2026-06", "final", "10:00"),
                          "2026-08-26": ("2026-07", "advance", "08:30"),
                          "2026-09-02": ("2026-07", "final", "10:00"),
                          "2026-09-25": ("2026-08", "advance", "08:30"),
-                         "2026-10-02": ("2026-08", "final", "10:00")},
+                         "2026-10-02": ("2026-08", "final", "10:00"),
+                         "2026-10-27": ("2026-09", "advance", "08:30"),
+                         "2026-11-03": ("2026-09", "final", "10:00"),
+                         "2026-11-25": ("2026-10", "advance", "08:30"),
+                         "2026-12-03": ("2026-10", "final", "10:00"),
+                         "2026-12-23": ("2026-11", "advance", "08:30")},
     # https://www.federalreserve.gov/releases/g17/ (09:15 monthly releases)
     "us_industrial_production": {"2026-08-18": ("2026-07", "regular", "09:15"),
                                  "2026-09-18": ("2026-08", "regular", "09:15"),
-                                 "2026-10-16": ("2026-09", "regular", "09:15")},
+                                 "2026-10-16": ("2026-09", "regular", "09:15"),
+                                 "2026-11-17": ("2026-10", "regular", "09:15"),
+                                 "2026-11-24": ("2026-10", "benchmark", "09:15"),
+                                 "2026-12-16": ("2026-11", "regular", "09:15")},
     # https://www.bea.gov/news/schedule/full (joint Census/BEA publication)
     "us_trade_balance": {"2026-08-04": ("2026-06", "regular", "08:30"),
                          "2026-09-03": ("2026-07", "regular", "08:30"),
-                         "2026-10-06": ("2026-08", "regular", "08:30")},
+                         "2026-10-06": ("2026-08", "regular", "08:30"),
+                         "2026-11-04": ("2026-09", "regular", "08:30"),
+                         "2026-12-08": ("2026-10", "regular", "08:30")},
 }
 
 SCHEDULES = {f: BLS_SCHEDULE if f in ("us_ppi", "us_jolts") else

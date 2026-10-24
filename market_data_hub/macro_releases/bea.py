@@ -8,11 +8,15 @@ from .adapters import Observation
 from .http import FetchError, api_key, json_payload
 from .publication_times import new_york_release
 from .us_editions import reviewed
+from .schedule import due
 
 ENDPOINT = "https://apps.bea.gov/api/data/"
 TABLE = "T10101"
+# https://www.bea.gov/news/schedule/full -- 08:30 America/New_York
 EDITIONS = {"2026-07-30": ("2026-Q2", "advance"),
-            "2026-08-26": ("2026-Q2", "second"), "2026-09-30": ("2026-Q2", "third")}
+            "2026-08-26": ("2026-Q2", "second"), "2026-09-30": ("2026-Q2", "third"),
+            "2026-10-29": ("2026-Q3", "advance"), "2026-11-25": ("2026-Q3", "second"),
+            "2026-12-23": ("2026-Q3", "third")}
 ARCHIVES = {
     "2026-07-30": "https://www.bea.gov/sites/default/files/2026-07/gdp2q26-adv.pdf",
     "2026-08-26": "https://www.bea.gov/sites/default/files/2026-08/gdp2q26-2nd.pdf",
@@ -47,7 +51,7 @@ class BEAAdapter:
             "method": "GetData", "datasetname": "NIPA", "TableName": "T20807",
             "Frequency": "M", "Year": years, "ResultFormat": "JSON"})
         out = self.parse_pce(doc, since=since)
-        for edition, (period, _, _) in EDITIONS["us_pce"].items():
+        for edition, (period, _, _) in due(EDITIONS["us_pce"]).items():
             if period >= since:
                 out += parse_pce_publication(self.client.get("bea", pce_url(period)), since)
         return out

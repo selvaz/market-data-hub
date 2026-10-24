@@ -15,8 +15,13 @@ ENDPOINT = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 # never a guess from collection time or reference period. New releases fail closed
 # until their issuer publication metadata has been reviewed.
 EDITIONS = {
+    # https://www.bls.gov/schedule/2026/home.htm -- 08:30 America/New_York
     ("us_cpi", "2026-09"): "2026-10-14",
+    ("us_cpi", "2026-10"): "2026-11-10",
+    ("us_cpi", "2026-11"): "2026-12-10",
     ("us_payrolls", "2026-09"): "2026-10-02",
+    ("us_payrolls", "2026-10"): "2026-11-06",
+    ("us_payrolls", "2026-11"): "2026-12-04",
 }
 EDITIONS.update({(f, p): d for f in ("us_ppi", "us_jolts")
                  for d, (p, _, _) in MONTHLY_EDITIONS[f].items()})

@@ -15,6 +15,7 @@ from .catalogue import INDICATORS
 from .http import FetchError
 from .publication_times import new_york_release
 from .us_editions import EDITIONS, observation_stage, reviewed
+from .schedule import due
 
 PUBLICATIONS = {
     "us_retail_sales": "https://www.census.gov/retail/marts/www/marts_current.pdf",
@@ -188,7 +189,7 @@ def fetch_publications(client, families, since):
             continue
         url = PUBLICATIONS[family]
         if family in ("us_industrial_production", "us_trade_balance"):
-            for edition, (period, _, _) in EDITIONS[family].items():
+            for edition, (period, _, _) in due(EDITIONS[family]).items():
                 if period >= since:
                     month = datetime.strptime(period, "%Y-%m").strftime("%B").lower()
                     out += PARSERS[family](client.get("fred", url.format(date=edition.replace("-", ""), month=month)), since)

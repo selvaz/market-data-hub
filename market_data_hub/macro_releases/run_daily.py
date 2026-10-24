@@ -24,6 +24,7 @@ from .lease import LeaseBusy, LeaseLost, RunLease
 from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
+from .schedule import RUN_DATE, edition_status
 from .store import Store, open_writer
 from .verification import configured_bands, persist_review, verify
 
@@ -199,8 +200,17 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
     try:
         if lease:
             lease.renew()
-        batch = (fetch_daily(client, family, result["fetch_since"]) if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
-                 else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
+        token = RUN_DATE.set(result["fetch_until"])
+        try:
+            batch = (fetch_daily(client, family, result["fetch_since"]) if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
+                     else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
+        finally:
+            RUN_DATE.reset(token)
+        from .us_editions import EDITIONS
+        if family in EDITIONS:
+            result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t, status="scheduled")
+                for d, (p, s, t) in EDITIONS[family].items()
+                if edition_status(d, result["fetch_until"]) == "scheduled"]
         observations = batch.observations
         if not observations and not batch.issues:
             raise FetchError("No observations in requested window")

@@ -10,6 +10,7 @@ from .bls import revision_start, shift_month
 from .http import FetchError, api_key, json_payload, require_complete
 from .publication_times import new_york_release
 from .us_editions import EDITIONS as MONTHLY_EDITIONS, reviewed, observation_stage
+from .schedule import due, run_date
 
 ENDPOINT = "https://api.stlouisfed.org/fred/series/observations"
 MAPPINGS = {
@@ -45,7 +46,7 @@ class FREDAdapter:
             if family in MONTHLY_EDITIONS:
                 # A current-head probe is only a freshness guard. Its values
                 # are never attached to an older reviewed as-of edition.
-                latest = max(p for p, _, _ in MONTHLY_EDITIONS[family].values())
+                latest = max(p for p, _, _ in due(MONTHLY_EDITIONS[family]).values())
                 current = self.client.get("fred", ENDPOINT, {
                     "api_key": api_key("FRED_API_KEY"), "file_type": "json", "series_id": series,
                     "units": units, "observation_start": latest + "-01",
@@ -56,10 +57,10 @@ class FREDAdapter:
                 if (payload.get("units") != units or not rows or rows[0]["value"] == "." or
                         rows[0]["date"][:7] != latest):
                     raise FetchError(f"FRED current headline metadata needs review: {family}")
-            editions = ([(d, stage) for d, (p, stage, _) in MONTHLY_EDITIONS[family].items() if p >= since]
+            editions = ([(d, stage) for d, (p, stage, _) in due(MONTHLY_EDITIONS[family]).items() if p >= since]
                         if family in MONTHLY_EDITIONS else
-                        [(d, stage) for d, (_, stage) in GDP_EDITIONS.items()] if family == "us_gdp"
-                        else [(max(d for (f, _), d in BLS_EDITIONS.items() if f == family), "regular")])
+                        [(d, stage) for d, (_, stage) in due(GDP_EDITIONS).items()] if family == "us_gdp"
+                        else [(max(d for (f, _), d in BLS_EDITIONS.items() if f == family and d <= run_date()), "regular")])
             # An explicit as-of request for EVERY edition preserves the unchanged
             # second GDP estimate that ALFRED's change-only history omits.
             for edition, stage in editions:
@@ -69,7 +70,7 @@ class FREDAdapter:
                 elif family in MONTHLY_EDITIONS:
                     start = min(since, shift_month(MONTHLY_EDITIONS[family][edition][0], -2))
                 else:
-                    latest = max(p for (f, p) in BLS_EDITIONS if f == family)
+                    latest = max(p for (f, p), d in BLS_EDITIONS.items() if f == family and d <= run_date())
                     start = revision_start(family, latest, start, edition)
                 doc = self.client.get("fred", ENDPOINT, {
                     "api_key": api_key("FRED_API_KEY"), "file_type": "json", "series_id": series,

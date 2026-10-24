@@ -14,15 +14,18 @@ from market_data_hub.macro_releases.bls import BLSAdapter, shift_month
 from market_data_hub.macro_releases.catalogue import FAMILIES, INDICATORS, US_MONTHLY
 from market_data_hub.macro_releases.fred import FREDAdapter, MAPPINGS
 from market_data_hub.macro_releases.http import Document, FetchError
-from market_data_hub.macro_releases.us_editions import EDITIONS
+from market_data_hub.macro_releases.us_editions import EDITIONS as CALENDAR
+from market_data_hub.macro_releases.schedule import RUN_DATE, due
 from market_data_hub.macro_releases.us_publications import PARSERS, parse_pce_publication
 
 ROOT = Path(__file__).parent / "fixtures/macro_releases/us_monthly"
 GOLDEN = json.loads((ROOT / "golden.json").read_text())['cases']
+EDITIONS = {f: due(editions, "2026-10-24") for f, editions in CALENDAR.items()}
 
 
 @pytest.fixture(autouse=True)
 def offline(monkeypatch):
+    monkeypatch.setattr("market_data_hub.macro_releases.schedule.run_date", lambda: "2026-10-24")
     def forbidden(*args, **kwargs):
         raise AssertionError("Network forbidden in monthly release certification")
     monkeypatch.setattr(requests.Session, "request", forbidden)
