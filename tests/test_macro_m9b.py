@@ -187,3 +187,17 @@ def test_eurostat_calendar_cache_is_one_unchanged_document_per_run(monkeypatch):
     assert len(calls) == 1
     client.get("eurostat", CALENDAR, {**params, "theme": "2"})
     assert len(calls) == 2
+
+
+def test_long_provider_interval_is_distinct_from_clock_skew(monkeypatch):
+    from market_data_hub.macro_releases import http
+    sleeps = []
+    monkeypatch.setattr(http.time, "time", lambda: 1000.0)
+    monkeypatch.setattr(http.time, "sleep", sleeps.append)
+    limiter = http.RateLimiter("eurostat", interval=15.0, persistent=False)
+    limiter.acquire()
+    limiter.acquire()
+    assert sleeps == [15.0]
+    limiter.state["last"] = 1006.0
+    with pytest.raises(FetchError, match="clock is ahead"):
+        limiter.acquire()

@@ -104,7 +104,7 @@ class RateLimiter:
             if self.daily_limit is not None and count >= self.daily_limit:
                 raise FetchError("Provider daily quota exhausted; try the next daily run")
             delay = max(0, state.get("last", 0) + self.interval - now)
-            if delay > 5:
+            if state.get("last", 0) > now + 5:
                 raise FetchError("Provider rate ledger clock is ahead; no wait loop")
             if delay:
                 time.sleep(delay)
