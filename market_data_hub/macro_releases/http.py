@@ -122,7 +122,8 @@ class HttpClient:
         self.calendar_cache = {}
         # Use certifi explicitly: the Windows system store is broken here.
         self.session.trust_env = False
-        self.limiters = {p: RateLimiter(p, rate_directory, interval=5.0 if p == "eurostat" else 1.0,
+        # The public Euro-indicator archive throttles bursts across families.
+        self.limiters = {p: RateLimiter(p, rate_directory, interval=15.0 if p == "eurostat" else 1.0,
                                      daily_limit=500 if p == "bls" else None,
                                      persistent=persistent_rates)
                          for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich")}
