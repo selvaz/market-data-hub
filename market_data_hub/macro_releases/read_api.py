@@ -553,6 +553,12 @@ class ReadAPI:
                 {(c["release_event_id"], c["indicator_id"]) for c in cards},
             )
         )
+        from .housing_editions import SOURCES
+        for card in cards:
+            if card["family"] in SOURCES:
+                # "official" resolution means issuer-certified evidence; this
+                # separate label preserves private issuer ownership (e.g. NAR).
+                card["issuer_id"], card["source_class"], _ = SOURCES[card["family"]]
         cards.sort(
             key=lambda c: (c["released_at"], c["release_event_id"], c["indicator_id"])
         )

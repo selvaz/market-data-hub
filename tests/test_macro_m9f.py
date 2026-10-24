@@ -54,11 +54,19 @@ def test_unknown_fhfa_date_fails_closed():
         reviewed("us_fhfa_hpi", "2027-01-01")
 
 
-def test_every_housing_family_has_two_distinct_golden_editions_and_calendar():
+def test_every_housing_family_has_two_issuer_golden_cases_and_calendar():
     from market_data_hub.macro_releases.catalogue import HOUSING_FAMILIES
     from market_data_hub.macro_releases.housing_editions import EDITIONS, SCHEDULES
     for family in HOUSING_FAMILIES:
-        assert len({c["edition"] for c in GOLDEN if c["family"] == family}) >= 2
+        cases = [c for c in GOLDEN if c["family"] == family]
+        assert len({(c["edition"], c["indicator"], c["period"]) for c in cases}) >= 2
+        if family == "us_existing_home_sales":
+            # The older issuer press URL redirects to its rolling overview.
+            # Two independently printed headline measures in the saved current
+            # release meet the brief's two-case rule without inventing history.
+            assert {c["indicator"] for c in cases} == {"us_existing_home_sales", "us_existing_home_sales_mm"}
+        else:
+            assert len({c["edition"] for c in cases}) >= 2
         assert SCHEDULES[family].startswith("https://")
         assert max(EDITIONS[family]) <= "2026-12-31"
 

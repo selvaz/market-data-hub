@@ -12,6 +12,7 @@ before the integration PR. Work is delivered one family at a time.
 | US FHFA monthly purchase-only HPI, SA m/m and y/y | FHFA | Official, free | Monthly | 25 Aug, 29 Sep, 27 Oct, 24 Nov, 29 Dec; 09:00 America/New_York | 4 measurements in 2 distinct publications (25 Aug and 29 Sep) |
 | US total construction spending, SA m/m | Census | Official, free | Monthly | 3 Aug, 1 Sep, 1 Oct, 2 Nov, 1 Dec; 10:00 America/New_York | 2 distinct publications: June -0.1% (3 Aug) and August +0.9% (1 Oct) |
 | US PMMS 30-year fixed-rate mortgage average, NSA | Freddie Mac | Official issuer, free | Weekly | 22 editions from 6 Aug to 31 Dec; 12:00 America/New_York; Thanksgiving release 25 Nov | 2 dated editions: 15 Oct archive entry (7.40%) and 22 Oct current publication (7.32%) |
+| US existing-home sales national public headline | NAR | Private issuer, public press release only | Monthly | 11 Aug, 10 Sep, 13 Oct, 12 Nov, 9 Dec; schedule 10:00 America/New_York | 2 independently printed headline measures in the 13 Oct edition: 3.99 million SAAR and +1.5% m/m |
 
 Calendars: [FHFA](https://www.fhfa.gov/data/hpi) and
 [Census](https://www.census.gov/economic-indicators/calendar-listview-2026.html), plus the
@@ -65,6 +66,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 | FHFA | July 2026 | 29 September 2026 | 09:00 EDT / 13:00 UTC | +0.3% m/m; +2.6% y/y, purchase-only SA |
 | Construction spending | August 2026 | 1 October 2026 | 10:00 EDT / 14:00 UTC | +0.9% m/m, total SA |
 | PMMS 30-year mortgage rate | Survey week ending 21 October 2026 | 22 October 2026 | 12:00 EDT / 16:00 UTC | 7.32%, NSA weekly average |
+| Existing-home sales (private NAR headline) | September 2026 | 13 October 2026 | Page timestamp 10:01 EDT / 14:01 UTC; scheduled 10:00 EDT | 3.99 million SAAR; +1.5% m/m |
 
 Live verification report:
 `D:\Temp\mdh-m9f-sl4iuv5p\verification.json`.
@@ -112,7 +114,7 @@ All writes go to the copy. Reproduce with the project interpreter:
 
 ## Remaining steps, in order
 
-1. NAR existing and pending home sales: public-release headlines, private source.
+1. NAR pending home sales: public-release headline, private source.
 2. Case-Shiller national and 20-city: public-release headlines, private source;
    FRED may supply redistributor history only.
 3. Eurostat quarterly HPI, y/y and q/q.
@@ -123,6 +125,41 @@ All writes go to the copy. Reproduce with the project interpreter:
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.
+
+## NAR existing-sales step
+
+The collector follows the unique **Read the full news release** link on NAR's
+existing-sales overview and accepts values only from the publisher's newsroom
+press release. It stores only the national headline level in millions SAAR and
+the printed national m/m rate, checking the title, summary and introductory
+paragraph against each other. Inventory, prices, regional values and licensed
+tables are not collected. The exact USD FF title `Existing Home Sales` maps to
+the level; no m/m alias is invented. The pending v2.2 row uses the same concept
+key as #125, extends its ids with the headline m/m measure, and keeps timing
+`UNKNOWN` and pending owner approval.
+
+Source ownership is explicit in read-API cards: `issuer_id=NAR`,
+`source_class=private`. Resolution status `official` means verified against
+the issuer; it does not mean a government source. The calendar permits a fetch
+at 10:00 ET; the press page's own timestamp is retained (13 October: 10:01 ET).
+Values cannot be released before either the scheduled instant or that page clock.
+
+Issuer evidence: [13 October public release](https://www.nar.realtor/newsroom/existing-home-sales-increased-1-5-in-september-according-to-nar-report)
+and [2026 release calendar](https://www.nar.realtor/press-releases/nar-releases-2026-statistical-news-release-schedule).
+The older [August release URL](https://www.nar.realtor/newsroom/nar-existing-home-sales-report-shows-2-0-decrease-in-august)
+now redirects to the rolling overview. It is not an archived publication and
+does not certify an August vintage. Therefore the existing-sales golden set
+has **two headline cases in one saved edition**, not two archived editions.
+This archive limitation is explicit; no earlier issuer edition or history is
+invented. A retired/redirected current press link enters `needs_review`.
+
+The existing-sales live backup check passed at
+`D:\Temp\mdh-m9f-z7h2uycr\verification.json`: dry run and collection `ok`,
+repeat `no_change`, both latest cards issuer-certified and labelled private,
+SQLite integrity `ok`, and the production source unchanged. The saved-publication
+and end-to-end housing tests passed (50 cases before the redirect regression
+was added); the full macro regression suite is repeated with the pending-sales
+step below.
 
 ## Validation for the construction step
 

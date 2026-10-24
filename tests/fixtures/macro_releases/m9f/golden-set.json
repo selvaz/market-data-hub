@@ -71,6 +71,24 @@
       "period": "2026-10-21",
       "value": 7.32,
       "source_url": "https://www.freddiemac.com/pmms"
+    },
+    {
+      "family": "us_existing_home_sales",
+      "fixture": "nar-existing-sept.html",
+      "edition": "2026-10-13",
+      "indicator": "us_existing_home_sales",
+      "period": "2026-09",
+      "value": 3.99,
+      "source_url": "https://www.nar.realtor/newsroom/existing-home-sales-increased-1-5-in-september-according-to-nar-report"
+    },
+    {
+      "family": "us_existing_home_sales",
+      "fixture": "nar-existing-sept.html",
+      "edition": "2026-10-13",
+      "indicator": "us_existing_home_sales_mm",
+      "period": "2026-09",
+      "value": 1.5,
+      "source_url": "https://www.nar.realtor/newsroom/existing-home-sales-increased-1-5-in-september-according-to-nar-report"
     }
   ]
 }

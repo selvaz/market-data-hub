@@ -4,6 +4,13 @@ Only listed editions can be certified. Calendars permit a fetch, never prove a
 publication. The saved issuer reports include the FHFA 2026 calendar.
 """
 EDITIONS = {
+    "us_existing_home_sales": {
+        "2026-08-11": ("2026-07", "regular", "10:00"),
+        "2026-09-10": ("2026-08", "regular", "10:00"),
+        "2026-10-13": ("2026-09", "regular", "10:00"),
+        "2026-11-12": ("2026-10", "regular", "10:00"),
+        "2026-12-09": ("2026-11", "regular", "10:00"),
+    },
     # Freddie Mac PMMS publication calendar: (survey week ENDING, stage, ET).
     # Thanksgiving publishes Wednesday 25 November, covering through Tuesday.
     "us_pmms": {
@@ -48,11 +55,13 @@ EDITIONS = {
     },
 }
 SCHEDULES = {
+    "us_existing_home_sales": "https://www.nar.realtor/press-releases/nar-releases-2026-statistical-news-release-schedule",
     "us_pmms": "https://www.freddiemac.com/pmms/docs/PMMS_Publication_Calendar.pdf",
     "us_fhfa_hpi": "https://www.fhfa.gov/data/hpi",
     "us_construction_spending": "https://www.census.gov/economic-indicators/calendar-listview-2026.html",
 }
-SOURCES = {"us_pmms": ("FreddieMac", "official", "W"),
+SOURCES = {"us_existing_home_sales": ("NAR", "private", "M"),
+           "us_pmms": ("FreddieMac", "official", "W"),
            "us_fhfa_hpi": ("FHFA", "official", "M"),
            "us_construction_spending": ("Census", "official", "M")}
 

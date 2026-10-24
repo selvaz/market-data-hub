@@ -135,6 +135,11 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "us_existing_home_sales": [
+        measure("us_existing_home_sales", "NAR", "USA", "level", "SA", "units", 1000000,
+                "Private NAR public press-release national headline: total existing-home sales, SA annual rate in millions"),
+        measure("us_existing_home_sales_mm", "NAR", "USA", "mm", "SA",
+                definition="Private NAR public press-release national headline: total existing-home sales monthly percent change")],
     "us_pmms": [measure("us_pmms_30y", "FreddieMac", "USA", "level", "NSA",
         definition="Freddie Mac PMMS U.S. weekly average 30-year fixed-rate mortgage, conventional conforming purchase loans, percent; reference period is survey week ending from the issuer calendar",
         frequency="W")],

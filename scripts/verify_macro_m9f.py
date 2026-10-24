@@ -60,8 +60,9 @@ def main():
             passed &= {c["indicator_id"] for c in cards if c["resolution"]["status"] == "official"} == set(ids)
             for card in cards:
                 r = card["resolution"]
+                passed &= card.get("source_class") == SOURCES[family][1]
                 report["latest_cards"].append(dict(family=family, indicator=card["indicator_id"],
-                    issuer=SOURCES[family][0], source_class=SOURCES[family][1],
+                    issuer=card["issuer_id"], source_class=card["source_class"],
                     period=card["reference_period"], edition=r["edition"], value=r["value"],
                     status=r["status"], released_at=card["released_at"], provenance=r.get("provenance")))
         report["integrity"] = store.conn.execute("PRAGMA quick_check").fetchone()[0]
