@@ -1,0 +1,10 @@
+{
+  "url": "https://ec.europa.eu/eurostat/o/calendars/eventsJson",
+  "params": {
+    "start": "2026-07-01T00:00:00Z",
+    "end": "2027-01-01T00:00:00Z",
+    "theme": "2"
+  },
+  "retrieved_at": "2026-10-24T12:07:25.004678+00:00",
+  "sha256": "ebb4db1385e5d54b4a6f9946648e682ba6ef44ecc377cc75d977ff6f2eef5ac1"
+}

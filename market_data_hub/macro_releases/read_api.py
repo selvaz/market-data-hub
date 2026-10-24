@@ -8,7 +8,7 @@ from decimal import Decimal
 import re
 from zoneinfo import ZoneInfo
 
-from .catalogue import FAMILIES, INDICATORS, US_MONTHLY
+from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, UK_FAMILIES
 from .models import utc
 from .resolve import (
     COLLECT_LOG_LIMITATION,
@@ -27,7 +27,8 @@ FAMILY_INDICATORS = {
     "ea_hicp": {i for i in INDICATORS if "hicp" in i},
     "uk_gdp": {"uk_gdp_mm", "uk_gdp_index"},
 }
-FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in US_MONTHLY.items()})
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in {**US_MONTHLY, **UK_FAMILIES}.items()})
+FAMILY_INDICATORS["ea_gdp"] = {"ea21_gdp_qq", "ea21_gdp_yy"}
 
 # Explicit comparable composition successors; never infer succession merely
 # from a shared issuer or family. Three missing monthly periods is the gate.

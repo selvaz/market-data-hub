@@ -10,6 +10,7 @@ import requests
 from market_data_hub.macro_releases import open_reader, open_writer, run_daily
 from market_data_hub.macro_releases.adapters import persist
 from market_data_hub.macro_releases.http import Document, FetchError
+from market_data_hub.macro_releases.eurostat import EurostatAdapter
 from market_data_hub.macro_releases.ons import ONSAdapter
 from market_data_hub.macro_releases.ons_rates import SERIES, EDITIONS as UK_EDITIONS
 
@@ -32,6 +33,10 @@ def document(name):
 
 
 def parse(case):
+    if case["family"] == "ea_gdp":
+        doc = document(case["fixture"])
+        return (EurostatAdapter.parse_gdp_snapshot(doc, case["edition"], "2026-01") if case["stage"] == "update"
+                else EurostatAdapter.parse_gdp_publication(doc, "2026-01"))
     return ONSAdapter.parse_rate(document(case["fixture"]), case["series"], "2026-01")
 
 
@@ -54,6 +59,10 @@ class Replay:
             if url == "https://www.ons.gov.uk" + path + "/data":
                 assert provider == "ons"
                 return document(cdid.lower() + ".json")
+        if provider == "eurostat":
+            for name in ("ea-calendar.json", "ea-gdp.json", "ea-gdp-flash.html", "ea-gdp-second.html", "ea-gdp-regular.html"):
+                if document(name).url.split("?")[0] == url:
+                    return document(name)
         raise AssertionError("Unexpected fixture URL: " + url)
 
 
@@ -101,3 +110,35 @@ def test_unknown_ons_format_retains_document_in_review_queue(tmp_path, monkeypat
     with open_reader(db) as store:
         assert store.conn.execute("SELECT COUNT(*) FROM review_queue").fetchone()[0] > 0
         assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 0
+
+
+def test_gdp_unchanged_flash_and_later_revision_are_separate_editions(tmp_path, monkeypatch):
+    monkeypatch.setattr(run_daily, "HttpClient", Replay)
+    db = tmp_path / "gdp.sqlite"
+    result = run_daily.execute(db, ["ea_gdp"], 24, False, raw_dir=tmp_path / "none")
+    assert result["families"]["ea_gdp"]["status"] == "ok", result
+    with open_reader(db) as store:
+        rows = store.conn.execute("SELECT estimate_stage,value FROM value_vintages WHERE indicator_id='ea21_gdp_qq' AND reference_period='2026-Q2' ORDER BY issuer_published_at").fetchall()
+        assert [tuple(r) for r in rows] == [("preliminary_flash", 0.4), ("flash", 0.4), ("regular", 0.6), ("update", 0.6)]
+        cards = store.release_cards("2026-10-19", "2026-10-23")["cards"]
+        assert len(cards) == 2 and all(c["resolution"]["status"] == "official" for c in cards)
+    again = run_daily.execute(db, ["ea_gdp"], 24, False, raw_dir=tmp_path / "none")
+    assert again["status"] == "no_change", again
+
+
+def test_gdp_dataset_updated_is_not_a_publication_date():
+    rows = EurostatAdapter.parse_gdp_snapshot(document("ea-gdp.json"), "2026-10-20")
+    assert all(o.edition == "2026-10-20" and o.provider_vintage.startswith("2026-10-22") for o in rows)
+    assert all(o.precision == "date_only" for o in rows)
+    with pytest.raises(FetchError, match="needs review"):
+        EurostatAdapter.parse_gdp_snapshot(document("ea-gdp.json"), "2026-07-30")
+
+
+def test_gdp_unknown_calendar_edition_and_membership_fail_closed():
+    from market_data_hub.macro_releases.eurostat_gdp import calendar_editions
+    doc = document("ea-calendar.json")
+    with pytest.raises(FetchError, match="needs review"):
+        calendar_editions(replace(doc, body=doc.body.replace(b"2026-10-30T11:00Z", b"2026-10-29T11:00Z")))
+    doc = document("ea-gdp-flash.html")
+    with pytest.raises(FetchError, match="needs review"):
+        EurostatAdapter.parse_gdp_publication(replace(doc, body=doc.body.replace(b"Euro area (EA21)", b"Euro area (EA22)")))

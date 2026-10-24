@@ -89,7 +89,10 @@ UK_FAMILIES = {
         measure("uk_regular_pay_yy", "ONS", "GBR", "yy", "SA", definition="Great Britain whole economy regular pay excluding arrears, nominal three-month average y/y growth, KAI9; period is ending month")],
 }
 INDICATORS.update((i.id, i) for measures in UK_FAMILIES.values() for i in measures)
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES)
+INDICATORS.update((i.id, i) for i in [measure(f"ea21_gdp_{basis}", "Eurostat", "EA21", basis, "SCA",
+    definition="EA21 real GDP, published chain-linked volume percent change, seasonal and calendar adjustment",
+    frequency="Q") for basis in ("qq", "yy")])
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp")
 
 
 def hicp_indicator(period, basis, geography="EA"):

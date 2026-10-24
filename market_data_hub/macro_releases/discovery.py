@@ -347,7 +347,7 @@ def fetch_daily(client, family, since):
     from .us_editions import EDITIONS
     strategy = {"us_cpi": _bls, "us_payrolls": _bls, "us_gdp": _bea,
                 "ea_hicp": _eurostat, "uk_gdp": _ons, "uk_cpi": _ons_rates,
-                "uk_labour_market": _ons_rates, **{f: _monthly for f in EDITIONS}}[family]
+                "uk_labour_market": _ons_rates, "ea_gdp": _gdp, **{f: _monthly for f in EDITIONS}}[family]
     documents = []
     class Capture:
         def get(self, *args, **kwargs):
@@ -381,3 +381,7 @@ def _monthly(client, family, since):
 
 def _ons_rates(client, family, since):
     return FamilyFetch(observations=ons.ONSAdapter(client).fetch([family], since))
+
+
+def _gdp(client, family, since):
+    return FamilyFetch(observations=eurostat.EurostatAdapter(client).fetch([family], since))
