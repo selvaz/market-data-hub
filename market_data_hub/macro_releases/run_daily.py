@@ -41,6 +41,11 @@ ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapte
 DISCOVERY_ADAPTERS = dict(ADAPTERS)
 ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
+from .catalogue import CENTRAL_BANKS
+from .policy import PolicyAdapter
+from .schedule import RUN_AT
+ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
+DISCOVERY_ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 
 
 def fetch_windows(families, lookback, today):
@@ -207,11 +212,13 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
         if lease:
             lease.renew()
         token = RUN_DATE.set(result["fetch_until"])
+        instant_token = RUN_AT.set(datetime.now(timezone.utc))
         try:
             batch = (fetch_daily(client, family, result["fetch_since"]) if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
                      else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
         finally:
             RUN_DATE.reset(token)
+            RUN_AT.reset(instant_token)
         calendar = family_editions(family)
         if calendar:
             result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t, status="scheduled")

@@ -10,6 +10,9 @@ from .models import utc
 
 
 def reviewed_anchor(obs):
+    from .policy_editions import EDITIONS as POLICY
+    if obs.family in POLICY:
+        return obs.edition in POLICY[obs.family] and obs.stage == POLICY[obs.family][obs.edition][1]
     from .tier1_editions import EDITIONS as REMAINING
     if obs.family in REMAINING:
         return obs.edition in REMAINING[obs.family] and obs.stage == REMAINING[obs.family][obs.edition][1]
@@ -40,6 +43,7 @@ def reviewed_anchor(obs):
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
+    "fed_funds_rate_decision": 3,
     "us_cpi_headline_mm": 3, "us_cpi_core_mm": 3,
     "us_cpi_headline_yy": 5, "us_cpi_core_yy": 5,
     "us_payrolls_change": 1500, "us_gdp_qq_saar": 15,

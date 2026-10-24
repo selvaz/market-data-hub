@@ -3,6 +3,7 @@ from contextvars import ContextVar
 from datetime import date
 
 RUN_DATE = ContextVar("macro_release_run_date", default=None)
+RUN_AT = ContextVar("macro_release_run_instant", default=None)
 
 
 def run_date():
@@ -19,6 +20,9 @@ def due(editions, as_of=None):
 
 
 def family_editions(family):
+    from .policy_editions import EDITIONS as POLICY
+    if family in POLICY:
+        return POLICY[family]
     from .tier1_editions import EDITIONS as REMAINING
     if family in REMAINING:
         return REMAINING[family]

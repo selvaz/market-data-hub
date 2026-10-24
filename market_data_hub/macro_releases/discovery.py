@@ -354,12 +354,13 @@ def _ons(client, family, since):
 
 def fetch_daily(client, family, since):
     from .us_editions import EDITIONS
-    from .catalogue import REMAINING_FAMILIES
+    from .catalogue import REMAINING_FAMILIES, CENTRAL_BANKS
     strategy = {"us_cpi": _bls, "us_payrolls": _bls, "us_gdp": _bea,
                 "ea_hicp": _eurostat, "uk_gdp": _ons, "uk_cpi": _ons_rates,
                 "uk_labour_market": _ons_rates, "ea_gdp": _gdp, "us_jobless_claims": _claims,
                 **{f: _monthly for f in EDITIONS},
-                **{f: _remaining for f in REMAINING_FAMILIES}}[family]
+                **{f: _remaining for f in REMAINING_FAMILIES},
+                **{f: _policy for f in CENTRAL_BANKS}}[family]
     documents = []
     class Capture:
         def get(self, *args, **kwargs):
@@ -394,6 +395,11 @@ def _monthly(client, family, since):
 def _remaining(client, family, since):
     from .tier1_publications import Tier1Adapter
     return FamilyFetch(observations=Tier1Adapter(client).fetch([family], since))
+
+
+def _policy(client, family, since):
+    from .policy import PolicyAdapter
+    return FamilyFetch(observations=PolicyAdapter(client).fetch([family], since))
 
 
 def _ons_rates(client, family, since):
