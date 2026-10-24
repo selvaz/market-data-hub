@@ -98,7 +98,7 @@ Reproduce:
 
 ## Reviewed alias table
 
-54 exact title/currency aliases cover all 33 certified families. Every alias has a title-specific justification in [ff_aliases_v1.json](../market_data_hub/macro_releases/ff_aliases_v1.json). Stages remain distinct; an explicit title qualifier never changes the measure or transform.
+54 exact title/currency aliases cover all 33 certified families. Every alias has a title-specific justification in `market_data_hub/macro_releases/ff_aliases_v1.json`. Stages remain distinct; an explicit title qualifier never changes the measure or transform.
 
 | Currency | FF title | Indicator | Stage |
 |---|---|---|---|

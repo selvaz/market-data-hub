@@ -814,7 +814,7 @@ evaluates the step on its private preview database.
 
 Mapping uses exact titles and explicit FF currency/country, first against the
 six proposed, versioned tier-1 mappings in
-[`ff_aliases_v1.json`](../market_data_hub/macro_releases/ff_aliases_v1.json), then
+`market_data_hub/macro_releases/ff_aliases_v1.json`, then
 against unambiguous stored catalogue aliases. The file supplements aliases at
 read time; it does not rewrite imported catalogue identities. It maps four US
 CPI measures, UK monthly GDP, and euro-area final headline HICP for explicit
