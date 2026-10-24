@@ -229,3 +229,16 @@ def test_pce_publication_checks_month_headers_before_mapping_cells(prior, headli
         parse_pce_publication(replace(doc, body=body))
     good = parse_pce_publication(doc)
     assert {(o.period, o.value) for o in good if o.indicator_id == "us_pce_price_index_mm"} == {("2026-07", 0.1), ("2026-08", 0.3)}
+
+
+@pytest.mark.parametrize("family", ["us_cpi", "us_payrolls"])
+def test_malformed_bls_rss_deliberately_reviews_already_reviewed_edition(tmp_path, family):
+    from test_macro_daily_review import Replay as PilotReplay
+    client = PilotReplay(family)
+    client.docs["listing"] = replace(client.docs["listing"], body=b"<rss><channel><broken>")
+    db, result = collect(tmp_path, client, family, "2026-12-01T13:30:00Z")
+    assert result["status"] == "needs_review", result
+    assert "issuer_publication_unconfirmed" in result["review_reasons"]
+    assert result["vintages_added"] == 0 and result["readings_added"] > 0
+    with open_reader(db) as store:
+        assert store.conn.execute("SELECT COUNT(*) FROM review_queue").fetchone()[0] > 0

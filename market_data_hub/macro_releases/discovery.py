@@ -126,8 +126,9 @@ def _bls(client, family, since):
         if not batch.anchors:
             batch.issue("issuer_publication_unconfirmed")
     except (ValueError, TypeError, ElementTree.ParseError):
-        # Reachable but contradictory/malformed issuer evidence cannot be
-        # excused by a pre-reviewed date. HTTP unavailability alone can.
+        # Deliberately review malformed CPI/payrolls RSS even when its edition
+        # is already reviewed. Contradictory issuer evidence cannot be excused
+        # by that anchor; HTTP unavailability alone can use the reviewed date.
         batch.issue("issuer_publication_unconfirmed")
     publication = registry.get((family, newest))
     try:
