@@ -14,7 +14,7 @@ from uuid import uuid4
 from .adapters import persist
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
-from .catalogue import FAMILIES, REMAINING_FAMILIES
+from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS
 from .consensus import DEFAULT_RAW_DIR, ingest
 from .eurostat import EurostatAdapter
 from .fred import USRedistributorAdapter
@@ -26,6 +26,7 @@ from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
 from .schedule import RUN_INSTANT, PENDING_EDITIONS, edition_status, family_editions, run_instant
+from .policy import PolicyAdapter
 from .tier1_publications import Tier1Adapter
 from .store import Store, open_writer
 from .verification import configured_bands, persist_review, verify
@@ -41,8 +42,6 @@ ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapte
 DISCOVERY_ADAPTERS = dict(ADAPTERS)
 ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
-from .catalogue import CENTRAL_BANKS
-from .policy import PolicyAdapter
 ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 DISCOVERY_ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 

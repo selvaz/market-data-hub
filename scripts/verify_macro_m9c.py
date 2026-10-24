@@ -22,6 +22,22 @@ def fingerprint(path):
     return dict(size=path.stat().st_size, sha256=hashlib.sha256(path.read_bytes()).hexdigest())
 
 
+def successful_run(run, label):
+    """The collector deliberately exits 3 when an idempotent run does no work."""
+    expected = "no_change" if label == "idempotence" else "ok"
+    return (run["exit_code"] == (3 if label == "idempotence" else 0)
+            and set(run["families"]) == set(CENTRAL_BANKS)
+            and all(r["status"] == expected for r in run["families"].values()))
+
+
+def assess(report):
+    return (all(successful_run(report[label], label) for label in ("dry_run", "copy_collection", "idempotence"))
+            and report["integrity"] == "ok" and report["source_main_unchanged"]
+            and set(report["latest_cards"]) == set(CENTRAL_BANKS)
+            and all(c["resolution"]["status"] == "official" and c["policy_decision"]
+                    for c in report["latest_cards"].values()))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", required=True, type=Path)
@@ -54,8 +70,7 @@ def main():
         compact = {f: {k: r.get(k) for k in ("status", "vintages_added", "review_reasons", "error_message")}
                    for f, r in run["families"].items()}
         print(label, json.dumps(compact, indent=2), flush=True)
-        expected = "no_change" if label == "idempotence" else "ok"
-        passed &= result.returncode == 0 and all(r["status"] == expected for r in run["families"].values())
+        passed &= successful_run(run, label)
         (directory / "verification.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     with open_reader(target) as store:
         report["integrity"] = store.conn.execute("PRAGMA quick_check").fetchone()[0]
@@ -74,8 +89,7 @@ def main():
     report["source_main_unchanged"] = before == report["source_main_after"]
     report["publication_time_gaps"] = {f: c["policy_decision"]["time_missing_reason"]
         for f, c in latest.items() if c["policy_decision"]["publication_precision"] != "exact"}
-    passed &= report["integrity"] == "ok" and report["source_main_unchanged"] and len(latest) == 6
-    report["status"] = "ok" if passed else "failed"
+    report["status"] = "ok" if passed and assess(report) else "failed"
     report["exact_publication_times_complete"] = not report["publication_time_gaps"]
     path = directory / "verification.json"
     path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
