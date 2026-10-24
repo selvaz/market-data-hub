@@ -38,8 +38,8 @@ def document(name):
 
 
 def parse(case):
-    from market_data_hub.macro_releases import fomc, ecb_policy, boe_policy
-    return {"fomc": fomc, "ecb_policy": ecb_policy, "boe_policy": boe_policy}[case["family"]].parse(document(case["fixture"]))[0]
+    from market_data_hub.macro_releases import fomc, ecb_policy, boe_policy, boc_policy
+    return {"fomc": fomc, "ecb_policy": ecb_policy, "boe_policy": boe_policy, "boc_policy": boc_policy}[case["family"]].parse(document(case["fixture"]))[0]
 
 
 @pytest.mark.parametrize("case", GOLDEN, ids=lambda c: c["family"] + ":" + c["edition"])
