@@ -13,7 +13,10 @@ from market_data_hub.indicator_cards import cards_for, dataset, indicator_card, 
 from market_data_hub.indicator_cards.build import (
     ALIASES_PATH, JSON_PATH, PSV_PATH, TIMING_PATH, build_dataset, build_json, extract_timing, parse_screen,
 )
-from market_data_hub.indicator_cards.coverage import coverage_report, mapping_ambiguities
+from market_data_hub.indicator_cards.coverage import (
+    DRAFT_PSV_PATH, DRAFT_TIMING_PATH, coverage_report, load_draft_cards,
+    mapping_ambiguities, tier1_coverage, tier1_ids,
+)
 from market_data_hub.indicator_cards.models import IndicatorCard, PredictiveScreen
 from market_data_hub.indicator_cards.render import MAX_CARD_CHARS, short_pair
 
@@ -236,3 +239,100 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("identity,key", [
+    ("us_core_cpi_yy", "us_cpi_core"), ("us_core_cpi_mm", "us_cpi_core"),
+    ("us_retail_sales_ex_auto_mm", "us_retail_sales"),
+    ("us_sp_global_manufacturing_pmi", "us_spglobal_pmi"),
+    ("us_sp_global_services_pmi", "us_spglobal_pmi"),
+    ("us_new_home_sales", "us_new_home_sales"), ("us_initial_jobless_claims", "us_claims_initial"),
+    ("ea_manufacturing_pmi", "ea_pmi"), ("ea_services_pmi", "ea_pmi"),
+    ("uk_sp_global_services_pmi", "uk_pmi_svc"),
+    ("cn_nbs_manufacturing_pmi", "cn_pmi_nbs"),
+    ("cn_caixin_manufacturing_pmi", "cn_pmi_private"),
+    ("ca_unemployment_rate", "ca_lfs"), ("ca_employment_change", "ca_lfs"),
+])
+def test_tier1_aliases_reuse_approved_concepts(identity, key):
+    assert indicator_card(identity).key == indicator_card(f"cat:{identity}").key == key
+    aliases = json.loads(ALIASES_PATH.read_text(encoding="utf-8"))["aliases"]
+    assert any(a["id"] == f"cat:{identity}" and a["key"] == key and a["basis"] for a in aliases)
+
+
+def test_every_tier1_id_resolves_to_an_approved_or_strict_draft_card(monkeypatch):
+    import socket
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("Tier-1 coverage must remain offline")
+
+    monkeypatch.setattr(socket, "getaddrinfo", no_network)
+    monkeypatch.setattr(socket.socket, "connect", no_network)
+    ids = tier1_ids()
+    assert len(ids) == len(set(ids)) == 86
+    approved = tier1_coverage()
+    report = coverage_report(with_drafts=True)["tier_1_measures"]
+    drafts = load_draft_cards()
+    assert approved["mapped"] == approved["approved"] == report["approved"] == 62
+    assert approved["draft"] == 0 and approved["with_drafts"] is False
+    assert report["mapped"] == report["total"] == 86
+    assert report["draft"] == len(drafts) == 24
+    assert report["unmapped"] == [] and report["with_drafts"] is True
+    draft_index = {identity: card for card in drafts for identity in card.ids.cat}
+    assert set(approved["unmapped"]) == set(draft_index)
+    for identity in ids:
+        card = indicator_card(identity) or draft_index.get(identity)
+        assert card is not None
+        assert IndicatorCard.model_validate_json(card.model_dump_json()) == card
+        assert report["resolutions"][identity]["key"] == card.key
+
+
+def test_draft_rows_and_timing_are_conservative_and_never_shipped():
+    shipped = dataset()
+    with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
+        header = next(csv.reader(f, delimiter="|"))
+    with DRAFT_PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
+        rows = list(csv.reader(f, delimiter="|"))
+    assert rows[0] == header and all(len(row) == 19 for row in rows)
+    timing = json.loads(DRAFT_TIMING_PATH.read_text(encoding="utf-8"))
+    for card in load_draft_cards():
+        assert card.key not in {c.key for c in shipped.cards}
+        for identity in (card.key, *card.ids.cat, *(f"cat:{i}" for i in card.ids.cat)):
+            assert indicator_card(identity) is None
+        assert card.flag == "draft v2.2, pending owner approval"
+        assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
+        assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
+        assert card.timing.screen_note == "not tested"
+        assert card.nature == ("SOFT" if "pmi" in card.key else "HARD")
+        assert "Source: https://" in card.rationale and "not fetched" in card.rationale
+        assert timing["rows"][card.key] == {"descriptive_peak": "not estimated", "predictive_screen": "not tested"}
+    assert dataset() is shipped and len(shipped.cards) == 270
+    assert "ea_composite_pmi" in tier1_coverage()["unmapped"]
+
+
+def test_draft_loader_rejects_stale_timing_and_approved_overlap(tmp_path):
+    psv = tmp_path / "draft.psv"
+    timing = tmp_path / "timing.json"
+    psv.write_bytes(DRAFT_PSV_PATH.read_bytes() + b"\n")
+    timing.write_bytes(DRAFT_TIMING_PATH.read_bytes())
+    with pytest.raises(ValueError, match="different PSV"):
+        load_draft_cards(psv, timing)
+    psv.write_text(DRAFT_PSV_PATH.read_text(encoding="utf-8").replace(
+        "cat:us_existing_home_sales", "cat:us_new_home_sales",
+    ), encoding="utf-8")
+    evidence = json.loads(timing.read_text(encoding="utf-8"))
+    evidence["source_table_sha256"] = hashlib.sha256(psv.read_bytes()).hexdigest()
+    timing.write_text(json.dumps(evidence), encoding="utf-8")
+    with pytest.raises(ValueError, match="overlaps an approved card"):
+        load_draft_cards(psv, timing)
+
+
+def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
+    import sys
+    from market_data_hub.indicator_cards.coverage import main
+
+    for args, mapped in (([], 62), (["--with-drafts"], 86)):
+        monkeypatch.setattr(sys, "argv", ["coverage", *args])
+        main()
+        report = json.loads(capsys.readouterr().out)
+        assert report["tier_1_measures"]["mapped"] == mapped
+        assert report["cards"] == 270
