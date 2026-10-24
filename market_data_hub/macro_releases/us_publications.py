@@ -94,8 +94,17 @@ def parse_pce_publication(document, since="1900-01"):
         value = match(pattern, annual)
         printed = ("-" if value[1].lower() == "decreased" else "") + value[2]
         out.append(observation(document, "us_pce", edition, indicator, head, printed, method))
-    for row in re.findall(r"<tr\b[^>]*>(.*?)</tr>", raw, re.S):
-        cells = [text(c) for c in re.findall(r"<t[dh]\b[^>]*>(.*?)</t[dh]>", row, re.S)]
+    tables = [table for table in re.findall(r"<table\b[^>]*>.*?</table>", raw, re.S)
+              if "Personal Income and Related Measures" in text(table) and "PCE price index" in text(table)]
+    if len(tables) != 1:
+        raise FetchError("BEA PCE publication rate table needs review")
+    rows = [[text(c) for c in re.findall(r"<t[dh]\b[^>]*>(.*?)</t[dh]>", row, re.S)]
+            for row in re.findall(r"<tr\b[^>]*>(.*?)</tr>", tables[0], re.S)]
+    expected = ["", *[datetime.strptime(p, "%Y-%m").strftime("%B")
+                       for p in (shift_month(head, -1), head)]]
+    if len(rows) < 2 or rows[1] != expected:
+        raise FetchError("BEA PCE publication month headers need review")
+    for cells in rows[2:]:
         indicator = {"PCE price index": "us_pce_price_index_mm",
                      "PCE price index excluding food and energy": "us_core_pce_mm"}.get(cells[0] if cells else "")
         if indicator:

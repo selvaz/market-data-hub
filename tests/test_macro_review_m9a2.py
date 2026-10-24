@@ -214,3 +214,18 @@ def test_m3_previous_final_within_publication_grace_is_scheduled():
         rows = fetch_publications(MonthlyReplay(), ["us_durable_goods"], "2026-06")
         assert rows and all(o.edition != "2026-11-03" for o in rows)
         assert schedule.edition_status("2026-11-03", family="us_durable_goods") == "scheduled"
+
+
+@pytest.mark.parametrize("prior,headline", [("August", "July"), ("June", "August"),
+                                           ("July", "September"), ("", "August")])
+def test_pce_publication_checks_month_headers_before_mapping_cells(prior, headline):
+    from market_data_hub.macro_releases.us_publications import parse_pce_publication
+    doc = monthly_document("pce.html")
+    body = doc.body.replace(b">July</td>", b">PRIOR_MONTH</td>").replace(b">August</td>", b">HEADLINE_MONTH</td>")
+    body = body.replace(b">PRIOR_MONTH</td>", (">" + prior + "</td>").encode())
+    body = body.replace(b">HEADLINE_MONTH</td>", (">" + headline + "</td>").encode())
+    assert body != doc.body
+    with pytest.raises(FetchError, match="month headers.*review"):
+        parse_pce_publication(replace(doc, body=body))
+    good = parse_pce_publication(doc)
+    assert {(o.period, o.value) for o in good if o.indicator_id == "us_pce_price_index_mm"} == {("2026-07", 0.1), ("2026-08", 0.3)}
