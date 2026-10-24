@@ -8,7 +8,8 @@ from .tier1_editions import EDITIONS
 from .tier1_publications import month, observation, plain, require, reviewed
 
 CALENDAR = "https://ec.europa.eu/eurostat/o/calendars/eventsJson"
-SPECS = {"ea_unemployment": ("Unemployment", "une_rt_m", "3", "ea_unemployment_rate")}
+SPECS = {"ea_unemployment": ("Unemployment", "une_rt_m", "3", "ea_unemployment_rate"),
+         "ea_retail_sales": ("Retail trade", "sts_trtu_m", "4", "ea_retail_sales_mm")}
 
 
 def calendar_editions(document, family):
@@ -48,6 +49,12 @@ def parse(document, family, since="1900-01"):
         if "persons aged 15 to 74" not in body:
             raise FetchError("Eurostat unemployment age definition needs review")
         printed = require(r"In " + month(head) + r", the euro area seasonally adjusted unemployment rate was ([\d.]+)%", body)[1]
+    elif family == "ea_retail_sales":
+        from .bls import shift_month
+        prior = month(shift_month(head, -1))
+        found = require(r"In " + month(head) + r", compared with " + prior +
+            r", the seasonally adjusted retail trade volume (increased|decreased) by ([\d.]+)% in (?:both )?the euro area", body)
+        printed = ("-" if found[1].lower() == "decreased" else "") + found[2]
     else:
         raise FetchError("Eurostat measure needs review")
     return [observation(document, family, edition, SPECS[family][3], head, printed)] if head >= since else []

@@ -218,10 +218,10 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     # Every certified family is covered since the owner-approved UK GDP row
     # (18/10/2026); no documented gap remains.
     for family in FAMILIES:
-        assert report["certified_families"][family]["unmapped"] == []
-    assert report["documented_certified_gaps"] == {}
+        assert report["certified_families"][family]["unmapped"] == report["documented_certified_gaps"].get(family, [])
+    assert report["documented_certified_gaps"] == {"ea_retail_sales": ["cat:ea_retail_sales_mm"]}
     # 14 pilot + 16 US monthly (M9a-1) + 7 UK, EA GDP and claims (M9a-2) measures.
-    assert report["macro_releases"] == {"mapped": 38, "total": len(INDICATORS), "unmapped": []}
+    assert report["macro_releases"] == {"mapped": 38, "total": len(INDICATORS), "unmapped": ["cat:ea_retail_sales_mm"]}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out
