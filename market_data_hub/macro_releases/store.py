@@ -17,6 +17,14 @@ from filelock import FileLock
 from . import models as m
 from .migrations import READER_CEILING, READER_FLOOR, migrate
 
+
+def _policy_facts(payload):
+    try:
+        value = json.loads(payload)
+    except (ValueError, TypeError):
+        return None
+    return value.get("policy_decision") if isinstance(value, dict) else None
+
 TABLES = {
     m.Indicator: "indicators",
     m.SourceSeries: "source_series",
@@ -133,8 +141,8 @@ class Store:
                      record.estimate_stage, record.release_event_id, record.reading_kind),
                 ).fetchone()
                 volatile = {"first_seen_at", "retrieved_at", "content_hash", "raw_payload_json", "url"}
-                policy = json.loads(record.raw_payload_json).get("policy_decision")
-                same_policy = not policy or previous and json.loads(previous["raw_payload_json"]).get("policy_decision") == policy
+                policy = _policy_facts(record.raw_payload_json)
+                same_policy = not policy or previous and _policy_facts(previous["raw_payload_json"]) == policy
                 if previous and same_policy and all(previous[key] == value for key, value in data.items()
                                     if key not in volatile):
                     return previous["id"]

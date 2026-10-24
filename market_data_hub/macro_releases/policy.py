@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 from fractions import Fraction
-import re
+import math
 from urllib.parse import urlsplit
 
 from .adapters import Observation
@@ -11,7 +11,6 @@ from .http import FetchError
 from .policy_editions import EDITIONS, ZONES
 from .publication_times import local_release
 from .schedule import RUN_AT, run_date
-from .tier1_publications import require
 
 
 def number(printed):
@@ -50,6 +49,13 @@ def due_editions(family, since):
 def observation(document, family, edition, rates, vote_split, *, printed=None,
                 time=None, time_missing_reason=None, evidence=(), method="html", decision_date=None):
     _, stage, clock = reviewed(family, edition)
+    for rate in rates.values():
+        if ("change_bp" not in rate or not math.isfinite(rate["change_bp"])
+                or any(not math.isfinite(rate[k]) or abs(rate[k]) > 100 for k in ("rate", "lower", "upper") if k in rate)):
+            raise FetchError("Policy rate/change payload needs review")
+    if vote_split is not None and (set(vote_split) != {"for", "against"}
+            or any(not isinstance(v, int) or not 0 <= v <= 24 for v in vote_split.values())):
+        raise FetchError("Policy rate vote payload needs review")
     clock = time or clock
     measure = CENTRAL_BANKS[family][0]
     timing = local_release(edition, clock or "00:00", ZONES[family])
@@ -75,6 +81,8 @@ class PolicyAdapter:
         self.client = client
 
     def fetch(self, families, since):
+        if run_date() > "2026-12-31":
+            raise FetchError("Central-bank edition calendar beyond 2026 needs review")
         from . import fomc, ecb_policy, boe_policy, boc_policy, pboc_lpr, boj_policy
         adapters = {"fomc": fomc, "ecb_policy": ecb_policy, "boe_policy": boe_policy,
                     "boc_policy": boc_policy, "pboc_lpr": pboc_lpr, "boj_policy": boj_policy}

@@ -235,6 +235,44 @@
         "against": 2
       },
       "precision": "date_only"
+    },
+    {
+      "family": "fomc",
+      "fixture": "archive-fomc-5636ef09a8.html",
+      "edition": "2026-01-28",
+      "source_url": "https://www.federalreserve.gov/newsevents/pressreleases/monetary20260128a.htm",
+      "rates": {
+        "target_range": {
+          "lower": 3.5,
+          "upper": 3.75,
+          "change_bp": 0,
+          "change_basis": "issuer_statement",
+          "scalar_representation": "upper_bound"
+        }
+      },
+      "vote_split": {
+        "for": 10,
+        "against": 2
+      },
+      "precision": "exact"
+    },
+    {
+      "family": "boe_policy",
+      "fixture": "archive-boe_policy-922621dc3f.html",
+      "edition": "2026-02-05",
+      "source_url": "https://www.bankofengland.co.uk/monetary-policy-summary-and-minutes/2026/february-2026",
+      "rates": {
+        "bank_rate": {
+          "rate": 3.75,
+          "change_bp": 0,
+          "change_basis": "issuer_statement"
+        }
+      },
+      "vote_split": {
+        "for": 5,
+        "against": 4
+      },
+      "precision": "exact"
     }
   ]
 }
