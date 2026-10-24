@@ -9,6 +9,7 @@ from .tier1_publications import month, observation, plain, require, reviewed
 
 CALENDAR = "https://ec.europa.eu/eurostat/o/calendars/eventsJson"
 SPECS = {"ea_unemployment": ("Unemployment", "une_rt_m", "3", "ea_unemployment_rate"),
+         "ea_trade_balance": ("International trade in goods", "ext_st_easitc", "6", "ea_trade_balance"),
          "ea_industrial_production": ("Industrial production", "sts_inpr_m", "4", "ea_industrial_production_mm"),
          "ea_retail_sales": ("Retail trade", "sts_trtu_m", "4", "ea_retail_sales_mm")}
 
@@ -33,7 +34,7 @@ def calendar_editions(document, family):
 
 
 def publication_url(family, edition):
-    suffix = "bp" if (family, edition) == ("ea_unemployment", "2026-09-01") else "ap"
+    suffix = "bp" if (family, edition) in (("ea_unemployment", "2026-09-01"), ("ea_trade_balance", "2026-10-16")) else "ap"
     return ("https://ec.europa.eu/eurostat/web/products-euro-indicators/w/" + SPECS[family][2] + "-" +
             datetime.strptime(edition, "%Y-%m-%d").strftime("%d%m%Y") + "-" + suffix)
 
@@ -57,6 +58,15 @@ def parse(document, family, since="1900-01"):
         found = require(r"In " + month(head) + r", compared with " + prior +
             r", " + label + r" (increased|decreased) by ([\d.]+)% in (?:both )?the euro area", body)
         printed = ("-" if found[1].lower() == "decreased" else "") + found[2]
+    elif family == "ea_trade_balance":
+        from .bls import shift_month
+        # The headline is NSA. Only the explicitly labelled SA annex matches.
+        section = require(r"Annex - Seasonally adjusted data (.*?)EA and EU trade", body)[1]
+        found = require(r"In " + month(head) + r" compared with " + month(shift_month(head, -1)) +
+            r", euro area seasonally adjusted exports.*?The seasonally adjusted balance was [\u20ac]([+-]?[\d.]+) bn", section)
+        printed = found[1]
+        return [observation(document, family, edition, SPECS[family][3], head, printed,
+                            value=float(printed) * 1000)] if head >= since else []
     else:
         raise FetchError("Eurostat measure needs review")
     return [observation(document, family, edition, SPECS[family][3], head, printed)] if head >= since else []

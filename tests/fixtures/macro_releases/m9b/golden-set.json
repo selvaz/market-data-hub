@@ -1,5 +1,7 @@
 {
   "cases": [
+    {"family": "ea_trade_balance", "fixture": "ea-trade.html", "indicator": "ea_trade_balance", "period": "2026-08", "edition": "2026-10-16", "stage": "final", "value": -6800, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/6-16102026-bp"},
+    {"family": "ea_trade_balance", "fixture": "ea-trade-prev.html", "indicator": "ea_trade_balance", "period": "2026-07", "edition": "2026-09-15", "stage": "final", "value": 5000, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/6-15092026-ap"},
     {"family": "ea_industrial_production", "fixture": "ea-ip.html", "indicator": "ea_industrial_production_mm", "period": "2026-08", "edition": "2026-10-15", "stage": "final", "value": -0.5, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/4-15102026-ap"},
     {"family": "ea_industrial_production", "fixture": "ea-ip-prev.html", "indicator": "ea_industrial_production_mm", "period": "2026-07", "edition": "2026-09-16", "stage": "final", "value": -0.1, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/4-16092026-ap"},
     {"family": "ea_retail_sales", "fixture": "ea-retail.html", "indicator": "ea_retail_sales_mm", "period": "2026-08", "edition": "2026-10-06", "stage": "final", "value": 0.1, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/4-06102026-ap"},
