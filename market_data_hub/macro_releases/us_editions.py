@@ -83,6 +83,14 @@ def observation_stage(family, edition, period):
     head, stage, _ = reviewed(family, edition)
     if period > head:
         raise FetchError(f"US headline period needs review: {family} {period}")
-    if period != head and family in ("us_retail_sales", "us_durable_goods"):
-        return "revised" if family == "us_retail_sales" else "final"
+    if period != head:
+        if family == "us_retail_sales":
+            from .bls import shift_month
+            # Census Table 2 labels the second estimate Preliminary (p);
+            # Revised (r) is the third estimate, not the first revision.
+            return "preliminary" if period == shift_month(head, -1) else "revised"
+        if family in ("us_housing_starts", "us_durable_goods"):
+            # Both issuer reports label earlier months revised (r). The
+            # durable headline alone advances from advance to full/final.
+            return "revised"
     return stage

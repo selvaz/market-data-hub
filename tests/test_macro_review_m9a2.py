@@ -10,7 +10,7 @@ import requests
 
 from market_data_hub.macro_releases import open_reader, open_writer, run_daily, schedule
 from market_data_hub.macro_releases.http import FetchError
-from test_macro_us_monthly import Replay as MonthlyReplay
+from test_macro_us_monthly import Replay as MonthlyReplay, document as monthly_document
 from test_macro_m9a2 import Replay, document
 
 
@@ -177,3 +177,21 @@ def test_gdp_nightly_refresh_without_release_adds_no_verified_vintage(tmp_path):
         assert second["vintages_added"] == second["readings_added"] == 0
         assert store.conn.execute("SELECT COUNT(*) FROM value_vintages WHERE verification_status='verified'").fetchone()[0] == 4
         assert not store.conn.execute("SELECT 1 FROM value_vintages GROUP BY indicator_id,reference_period,release_event_id HAVING COUNT(*)>1").fetchone()
+
+
+def test_census_estimate_stages_follow_printed_labels():
+    from market_data_hub.macro_releases.us_publications import parse_retail, parse_housing, parse_durable, parse_durable_full
+    from market_data_hub.macro_releases.us_editions import observation_stage
+    retail = parse_retail(monthly_document("retail.pdf"))
+    assert {o.stage for o in retail if o.period == "2026-09"} == {"advance"}
+    assert {o.stage for o in retail if o.period == "2026-08"} == {"preliminary"}
+    assert observation_stage("us_retail_sales", "2026-10-15", "2026-07") == "revised"
+    housing = parse_housing(monthly_document("housing.pdf"))
+    assert {o.stage for o in housing if o.period == "2026-08"} == {"revised"}
+    assert all(o.event_stage == "regular" for o in housing)
+    advance = parse_durable(monthly_document("durable.pdf"))
+    full = parse_durable_full(document("census-m3.pdf"))
+    assert {o.stage for o in advance if o.period == "2026-08"} == {"advance"}
+    assert {o.stage for o in full if o.period == "2026-08"} == {"final"}
+    assert {o.stage for o in [*advance, *full] if o.period == "2026-07"} == {"revised"}
+    assert {o.indicator_id for o in advance} == {"us_durable_goods_orders_mm", "us_durable_goods_ex_transport_mm"}

@@ -206,7 +206,7 @@ def test_all_new_families_replay_together(tmp_path, monkeypatch):
 def test_full_m3_final_has_durable_rate_not_all_manufacturing_ex_transport(tmp_path):
     from market_data_hub.macro_releases.us_publications import parse_durable_full
     rows = parse_durable_full(document("census-m3.pdf"), "2026-07")
-    assert [(o.period, o.value, o.stage) for o in rows] == [("2026-08", -0.1, "final"), ("2026-07", 0.9, "final")]
+    assert [(o.period, o.value, o.stage) for o in rows] == [("2026-08", -0.1, "final"), ("2026-07", 0.9, "revised")]
     assert {o.indicator_id for o in rows} == {"us_durable_goods_orders_mm"}
     with open_writer(tmp_path / "final.sqlite") as store:
         persist(store, rows)
