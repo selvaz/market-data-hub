@@ -242,3 +242,16 @@ def test_malformed_bls_rss_deliberately_reviews_already_reviewed_edition(tmp_pat
     assert result["vintages_added"] == 0 and result["readings_added"] > 0
     with open_reader(db) as store:
         assert store.conn.execute("SELECT COUNT(*) FROM review_queue").fetchone()[0] > 0
+
+
+def test_pce_header_mismatch_is_reviewed_by_daily_collector(tmp_path):
+    class WrongHeader(MonthlyReplay):
+        def get(self, *args, **kwargs):
+            doc = super().get(*args, **kwargs)
+            if doc.url.endswith("personal-income-and-outlays-august-2026"):
+                body = doc.body.replace(b">July</td>", b">June</td>")
+                return replace(doc, body=body, document_hash=hashlib.sha256(body).hexdigest())
+            return doc
+    _, result = collect(tmp_path, WrongHeader(), "us_pce", "2026-10-24T13:30:00Z")
+    assert result["status"] == "needs_review", result
+    assert result["vintages_added"] == 0

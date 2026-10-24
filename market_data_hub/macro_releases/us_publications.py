@@ -103,7 +103,7 @@ def parse_pce_publication(document, since="1900-01"):
     expected = ["", *[datetime.strptime(p, "%Y-%m").strftime("%B")
                        for p in (shift_month(head, -1), head)]]
     if len(rows) < 2 or rows[1] != expected:
-        raise FetchError("BEA PCE publication month headers need review")
+        raise FetchError("BEA PCE publication month headers changed; needs review")
     for cells in rows[2:]:
         indicator = {"PCE price index": "us_pce_price_index_mm",
                      "PCE price index excluding food and energy": "us_core_pce_mm"}.get(cells[0] if cells else "")
