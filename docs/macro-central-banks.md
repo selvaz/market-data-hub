@@ -59,6 +59,14 @@ matching issuer RSS item can establish its variable clock. An unknown or
 emergency edition, changed format, nonconsecutive comparison statement, or
 calendar beyond 2026 fails closed with `needs_review` and retained raw evidence.
 
+BOJ release clocks can be enriched when a matching RSS item becomes available.
+Schema v9 stores this exact-time evidence separately from the immutable PDF value
+vintage, with its capture time and RSS attribution/hash. The read API applies it
+only once it was known at the query cutoff. Later feed rollover cannot remove an
+established clock. The PDF identity, rate, votes and other decision facts remain
+strictly compared; contradictory exact clocks still fail closed. Other families'
+same-document comparisons are unchanged.
+
 ## Golden publications and card coverage
 
 `golden-set.json` records 14 golden cases with issuer URLs and SHA-256 checked

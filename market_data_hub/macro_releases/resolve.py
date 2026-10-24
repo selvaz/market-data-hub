@@ -31,6 +31,7 @@ import math
 from typing import Optional
 
 from .models import utc
+from .boj_timing import TIME_FIELDS
 from .read_times import known_by, normalize, stored_rows, timestamp
 
 RULE_VERSION = "macro-resolver:m6-v1"
@@ -209,6 +210,8 @@ class Snapshot:
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 )
             }
+            boj_times = ([] if "boj_publication_times" not in tables else
+                [dict(r) for r in conn.execute("SELECT * FROM boj_publication_times")])
             link_versions = (
                 []
                 if "consensus_link_versions" not in tables
@@ -327,8 +330,14 @@ class Snapshot:
         )
         collect_families.sort(key=lambda r: r["finished_at"], reverse=True)
         evidence = []
+        boj_times = {r["value_vintage_id"]: r for r in metadata(
+            boj_times, {"recorded_at": None, "issuer_published_at": None},
+            "recorded_at", "boj_publication_times")}
         for row in vintages:
             try:
+                timing = boj_times.get(row["id"])
+                if timing and row["indicator_id"] == "boj_policy_rate_decision":
+                    row = dict(row, **{k: timing[k] for k in TIME_FIELDS})
                 row = normalize(
                     row, {"first_seen_at": None, "issuer_published_at": None}
                 )
