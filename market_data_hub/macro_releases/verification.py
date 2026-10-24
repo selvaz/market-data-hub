@@ -10,6 +10,9 @@ from .models import utc
 
 
 def reviewed_anchor(obs):
+    from .tier1_editions import EDITIONS as REMAINING
+    if obs.family in REMAINING:
+        return obs.edition in REMAINING[obs.family] and obs.stage == REMAINING[obs.family][obs.edition][1]
     from . import bea, bls, eurostat, ons
     from .us_editions import EDITIONS
     from .ons_rates import EDITIONS as UK_EDITIONS
@@ -45,6 +48,7 @@ SANITY_BANDS = {
     "uk_gdp_mm": 5, "uk_gdp_index": 20,
 }
 SANITY_BANDS.update({
+    "ea_unemployment_rate": 5,
     "us_ppi_mm": 10, "us_ppi_yy": 20, "us_jolts_openings": 6000,
     "us_pce_price_index_mm": 5, "us_pce_price_index_yy": 10,
     "us_core_pce_mm": 5, "us_core_pce_yy": 10,

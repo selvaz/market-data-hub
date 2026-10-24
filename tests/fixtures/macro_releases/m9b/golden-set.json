@@ -1,0 +1,6 @@
+{
+  "cases": [
+    {"family": "ea_unemployment", "fixture": "ea-unemployment.html", "indicator": "ea_unemployment_rate", "period": "2026-08", "edition": "2026-10-01", "stage": "final", "value": 6.4, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/3-01102026-ap"},
+    {"family": "ea_unemployment", "fixture": "ea-unemployment-prev.html", "indicator": "ea_unemployment_rate", "period": "2026-07", "edition": "2026-09-01", "stage": "final", "value": 6.4, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/3-01092026-bp"}
+  ]
+}

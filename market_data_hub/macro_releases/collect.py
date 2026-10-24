@@ -10,7 +10,8 @@ import re
 from .adapters import persist
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
-from .catalogue import FAMILIES
+from .catalogue import FAMILIES, REMAINING_FAMILIES
+from .tier1_publications import Tier1Adapter
 from .eurostat import EurostatAdapter
 from .fred import FREDAdapter, USRedistributorAdapter
 from .dol import DOLAdapter
@@ -49,6 +50,7 @@ def main(argv=None):
                 (DOLAdapter(client), [f for f in families if f == "us_jobless_claims"])]
     if args.with_redistributors:
         adapters.append((FREDAdapter(client), [f for f in families if f.startswith("us_")]))
+    adapters.append((Tier1Adapter(client), [f for f in families if f in REMAINING_FAMILIES]))
     for adapter, selected in adapters:
         if not selected:
             continue

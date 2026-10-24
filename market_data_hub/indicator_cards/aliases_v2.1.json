@@ -2,6 +2,7 @@
   "classification_version": "v2.1",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages.",
   "aliases": [
+    {"id": "cat:ea_unemployment_rate", "key": "ea_unemployment", "basis": "Same approved unemployment concept, fixed EA21 composition, age 15-74 SA (M9b)."},
     {"id": "cat:us_cpi_headline_yy", "key": "us_cpi_headline", "basis": "Explicit headline CPI-U concept; approved cat:us_cpi_yy and cal:us_cpi_yy."},
     {"id": "cat:us_cpi_headline_mm", "key": "us_cpi_headline", "basis": "Explicit headline CPI-U concept; approved cat:us_cpi_mm and cal:us_cpi_mm."},
     {"id": "cat:us_cpi_core_yy", "key": "us_cpi_core", "basis": "Explicit CPI ex food and energy concept; approved cal:us_core_cpi_yy."},

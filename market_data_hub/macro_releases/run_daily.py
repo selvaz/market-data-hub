@@ -38,6 +38,10 @@ ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapte
             **{f: USRedistributorAdapter for f in ("us_retail_sales", "us_housing_starts", "us_durable_goods",
                                                    "us_industrial_production", "us_trade_balance")}}
 DISCOVERY_ADAPTERS = dict(ADAPTERS)
+from .catalogue import REMAINING_FAMILIES
+from .tier1_publications import Tier1Adapter
+ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
+DISCOVERY_ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
 
 
 def fetch_windows(families, lookback, today):
