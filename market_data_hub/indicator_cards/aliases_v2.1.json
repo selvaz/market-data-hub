@@ -17,7 +17,11 @@
     {"id": "cat:us_core_pce_mm", "key": "us_pce_core", "basis": "Same PCE ex food and energy concept as cat:us_core_pce_yy; approved cal:us_core_pce (M9a-1)."},
     {"id": "cat:us_jolts_openings", "key": "us_jolts_openings", "basis": "Explicit JOLTS job openings concept; approved cal:us_jolts and es:jolts_openings (M9a-1)."},
     {"id": "cat:us_retail_sales_ex_auto_mm", "key": "us_retail_sales", "basis": "Retail sales ex autos is listed on this card as cal:us_retail_ex_auto_mm (M9a-1)."},
-    {"id": "cat:us_durable_goods_ex_transport_mm", "key": "us_durable_orders", "basis": "Durable goods orders ex transportation, same M3 advance report as cat:us_durable_goods_orders_mm (M9a-1)."}
+    {"id": "cat:us_durable_goods_ex_transport_mm", "key": "us_durable_orders", "basis": "Durable goods orders ex transportation, same M3 advance report as cat:us_durable_goods_orders_mm (M9a-1)."},
+    {"id": "cat:ea21_gdp_qq", "key": "ea_gdp_real", "basis": "Same real GDP concept as cat:ea_gdp_qq, EA21 geography version; approved cal:ez_gdp (M9a-2, 24/10)."},
+    {"id": "cat:ea21_gdp_yy", "key": "ea_gdp_real", "basis": "Same real GDP concept, y/y published rate, EA21 geography version (M9a-2)."},
+    {"id": "cat:uk_regular_pay_yy", "key": "uk_awe_regular", "basis": "Explicit AWE regular pay concept; approved cal:uk_earnings_ex_bonus (M9a-2)."},
+    {"id": "cat:us_initial_jobless_claims", "key": "us_claims_initial", "basis": "Explicit initial claims concept; approved cal:us_claims (M9a-2)."}
   ],
   "certified_gaps": {}
 }

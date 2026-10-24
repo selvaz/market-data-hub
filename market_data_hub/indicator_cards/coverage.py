@@ -32,7 +32,7 @@ def mapping_ambiguities() -> dict[str, dict]:
 def coverage_report() -> dict:
     from market_data_hub.config_loader import get_macro_series
     from market_data_hub.econ_calendar.catalog import load_catalog_rows
-    from market_data_hub.macro_releases.catalogue import INDICATORS, US_MONTHLY
+    from market_data_hub.macro_releases.catalogue import INDICATORS, UK_FAMILIES, US_MONTHLY
 
     catalogue = sorted(f"cat:{key}" for key in INDICATORS)
     calendar = sorted({f"cal:{r['indicator_key']}" for r in load_catalog_rows()
@@ -46,6 +46,10 @@ def coverage_report() -> dict:
         "uk_gdp": [i for i in catalogue if i.startswith("cat:uk_gdp_")],
         # M9a-1 (24/10): the US monthly families list their own measures.
         **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in US_MONTHLY.items()},
+        # M9a-2 (24/10): UK families, euro-area GDP and weekly claims.
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in UK_FAMILIES.items()},
+        "ea_gdp": [i for i in catalogue if i.startswith("cat:ea21_gdp_")],
+        "us_jobless_claims": ["cat:us_initial_jobless_claims"],
     }
     aliases = json.loads(files(__package__).joinpath("aliases_v2.1.json").read_text(encoding="utf-8"))
     return {

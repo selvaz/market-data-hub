@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "f2502296af00c84bebdd6737a53aced9506a3e923436b35d6392ef6f47652f09",
+  "aliases_sha256": "56972c2cd9086e2b2f94dab1263beef2f568cfaf6f5e8850465194f4b91cbe7b",
   "cards": [
     {
       "concept": "Real GDP",
@@ -773,7 +773,9 @@
         "cal": [
           "us_claims"
         ],
-        "cat": [],
+        "cat": [
+          "us_initial_jobless_claims"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -4649,7 +4651,9 @@
           "ez_gdp"
         ],
         "cat": [
-          "ea_gdp_qq"
+          "ea_gdp_qq",
+          "ea21_gdp_qq",
+          "ea21_gdp_yy"
         ],
         "derived_ms": [],
         "es": [],
@@ -6867,7 +6871,9 @@
         "cal": [
           "uk_earnings_ex_bonus"
         ],
-        "cat": [],
+        "cat": [
+          "uk_regular_pay_yy"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
