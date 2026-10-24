@@ -48,7 +48,11 @@ def replay(monkeypatch, observations):
 
 
 def invoke(db, capsys, *args):
-    code = run_daily.main(["--db", str(db), *args])
+    # Use a private empty archive: the machine's live FF captures must not
+    # provide schedules or consensus to this saved-publication lifecycle test.
+    raw = db.parent / "raw"
+    raw.mkdir(exist_ok=True)
+    code = run_daily.main(["--db", str(db), "--consensus-raw-dir", str(raw), *args])
     result = json.loads(capsys.readouterr().out)
     assert result["exit_code"] == code
     return code, result
@@ -94,6 +98,10 @@ def test_partial_failure_isolated_even_between_bls_families(tmp_path, replay, mo
             raise RuntimeError("https://issuer.example/?api_key=super-secret body=super-secret")
     monkeypatch.setitem(run_daily.ADAPTERS, "us_cpi", Broken)
     db = tmp_path / "macro.sqlite"
+    # Replay bypasses discovery, so supply the reviewed schedule explicitly.
+    # A failed fetch supplies no publication or numeric actual of its own.
+    with open_writer(db) as store:
+        schedule(store)
     code, result = invoke(db, capsys)
     assert code == 1 and result["status"] == "failed"
     assert result["families"]["us_payrolls"]["vintages_added"] > 0

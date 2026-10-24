@@ -199,6 +199,14 @@ vintage at -7.3% m/m, published 20 October at 14:00 UTC. Its 25 focused offline
 tests, repository-wide Ruff, generated-card freshness and draft-format checks
 passed; the full macro/cards regression is recorded after completion.
 
+Regression maintenance: the old consensus negative case now uses unsupported
+`Existing Home Sales m/m`; the exact `Existing Home Sales` level is covered by
+the new positive NAR test. Daily-runner replay tests now use a private empty FF
+archive and explicitly seed the reviewed schedule in the failed-fetch scenario.
+This removes dependence on the local machine's live FF archive (which masked
+the missing fixture schedule on Windows). All 20 daily-runner tests and the
+55 combined consensus/NAR tests pass independently of those live captures.
+
 ## Validation for the construction step
 
 - All `tests/test_macro_*.py` plus `tests/test_indicator_cards.py`:
