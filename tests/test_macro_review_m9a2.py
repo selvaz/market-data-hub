@@ -1,6 +1,9 @@
 """Independent-review regressions; saved publications only, never live HTTP."""
 from contextlib import contextmanager
+from dataclasses import replace
 from datetime import datetime, timezone
+import hashlib
+import json
 
 import pytest
 import requests
@@ -141,3 +144,36 @@ def test_gdp_update_is_not_requested_before_local_release_time(tmp_path):
     _, result = collect(tmp_path, Before(), "ea_gdp", "2026-10-20T08:30:00Z")
     assert result["status"] == "ok", result
     assert any(d["edition"] == "2026-10-20" for d in result["scheduled_editions"])
+
+
+def changed(doc, payload):
+    body = json.dumps(payload).encode()
+    return replace(doc, body=body, document_hash=hashlib.sha256(body).hexdigest())
+
+
+@pytest.mark.parametrize("updated", ["2026-10-19T23:00:00+0200", "2026-10-20T10:59:59+02:00",
+                                    "2026-10-20T11:00:00", None])
+def test_gdp_update_cannot_relabel_an_older_or_unconfirmed_snapshot(updated):
+    from market_data_hub.macro_releases.eurostat_gdp import parse_snapshot
+    doc = document("ea-gdp.json")
+    payload = doc.json()
+    payload["updated"] = updated
+    with pytest.raises(FetchError, match="needs review"):
+        parse_snapshot(changed(doc, payload), "2026-10-20")
+    payload["updated"] = "2026-10-20T11:00:00+02:00"
+    assert parse_snapshot(changed(doc, payload), "2026-10-20")
+
+
+def test_gdp_nightly_refresh_without_release_adds_no_verified_vintage(tmp_path):
+    from market_data_hub.macro_releases.eurostat_gdp import parse_snapshot
+    doc = document("ea-gdp.json")
+    payload = doc.json()
+    payload["updated"] = "2026-10-23T23:00:00+0200"
+    refresh = changed(doc, payload)
+    with open_writer(tmp_path / "refresh.sqlite") as store:
+        first = run_daily.persist_counts(store, parse_snapshot(doc, "2026-10-20"))
+        second = run_daily.persist_counts(store, parse_snapshot(refresh, "2026-10-20"))
+        assert first["vintages_added"] == 4
+        assert second["vintages_added"] == second["readings_added"] == 0
+        assert store.conn.execute("SELECT COUNT(*) FROM value_vintages WHERE verification_status='verified'").fetchone()[0] == 4
+        assert not store.conn.execute("SELECT 1 FROM value_vintages GROUP BY indicator_id,reference_period,release_event_id HAVING COUNT(*)>1").fetchone()

@@ -5,7 +5,7 @@ import re
 
 from .adapters import Observation
 from .http import FetchError, json_payload
-from .schedule import due, run_date, get_edition
+from .schedule import due, run_date, get_edition, release_instant
 
 CALENDAR = "https://ec.europa.eu/eurostat/o/calendars/eventsJson"
 DATASET = "namq_10_gdp"
@@ -90,6 +90,14 @@ def parse_snapshot(document, edition, since="1900-01"):
     period, stage, _ = EDITIONS[edition]
     if stage != "update" or payload.get("source") != "ESTAT" or payload.get("class") != "dataset" or payload.get("extension", {}).get("id") != "NAMQ_10_GDP":
         raise FetchError("Eurostat GDP dataset identity or estimate stage needs review")
+    try:
+        updated = datetime.fromisoformat(payload["updated"].replace("Z", "+00:00"))
+        if updated.tzinfo is None or updated < release_instant(edition, family="ea_gdp"):
+            raise ValueError("snapshot predates the edition")
+    except (KeyError, ValueError, TypeError, AttributeError):
+        raise FetchError("Eurostat GDP snapshot update predates release or is invalid; needs review") from None
+    # updated is only a freshness bound, never an edition. Nightly refreshes
+    # retain the same event identity; Store.put deduplicates identical values.
     expected = {"freq": {"Q"}, "unit": {"CLV_PCH_PRE", "CLV_PCH_SM"},
                 "s_adj": {"SCA"}, "na_item": {"B1GQ"}, "geo": {"EA21"}}
     if set(payload.get("id", [])) != set(expected) | {"time"}:
