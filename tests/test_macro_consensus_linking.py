@@ -114,6 +114,29 @@ def test_boj_date_only_bound_and_no_invented_publication(tmp_path):
         assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 0
 
 
+@pytest.mark.parametrize("family,stage,edition,published,omitted", [
+    ("ea_ec_surveys", "flash", "2026-10-22", "ea_consumer_confidence", "ea_economic_sentiment_indicator"),
+    ("us_durable_goods", "final", "2026-10-02", "us_durable_goods_orders_mm", "us_durable_goods_ex_transport_mm"),
+])
+def test_seed_membership_and_empty_queries_follow_the_published_stage(
+    tmp_path, family, stage, edition, published, omitted
+):
+    with open_writer(tmp_path / "stages.sqlite") as store:
+        persist_scheduled_events(store, recorded_at="2026-01-01T00:00:00Z")
+        members = {r[0] for r in store.conn.execute(
+            "SELECT r.indicator_id FROM readings r JOIN release_events e ON e.id=r.release_event_id "
+            "WHERE e.family=? AND e.edition=? AND e.estimate_stage=?", (family, edition, stage))}
+        assert members == {published}
+        for cutoff in (edition + "T00:00:00Z", edition + "T23:59:59Z"):
+            explanation = store.explain_empty(omitted, (edition, edition), as_known_at=cutoff)
+            assert explanation["reason"] == "no_release_scheduled", explanation
+        other_stage = "final" if stage == "flash" else "advance"
+        assert store.conn.execute(
+            "SELECT 1 FROM readings r JOIN release_events e ON e.id=r.release_event_id "
+            "WHERE e.family=? AND e.estimate_stage=? AND r.indicator_id=?",
+            (family, other_stage, omitted)).fetchone()
+
+
 @pytest.mark.parametrize("family,edition,before,at", [
     ("fomc", "2026-10-28", "2026-10-28T17:59:59+00:00", "2026-10-28T18:00:00+00:00"),
     ("us_gdp", "2026-10-29", "2026-10-29T12:29:59+00:00", "2026-10-29T12:30:00+00:00"),

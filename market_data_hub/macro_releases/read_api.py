@@ -33,6 +33,16 @@ FAMILY_INDICATORS["us_jobless_claims"] = {"us_initial_jobless_claims"}
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in REMAINING_FAMILIES.items()})
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in CENTRAL_BANKS.items()})
 
+
+def indicators_for_stage(family, stage):
+    """Only measures actually published by this family's edition stage."""
+    if (family, stage) == ("ea_ec_surveys", "flash"):
+        return {"ea_consumer_confidence"}
+    if (family, stage) == ("us_durable_goods", "final"):
+        return {"us_durable_goods_orders_mm"}
+    return FAMILY_INDICATORS[family]
+
+
 # Explicit comparable composition successors; never infer succession merely
 # from a shared issuer or family. Three missing monthly periods is the gate.
 SUCCESSORS = {f"ea_hicp_{basis}": f"ea21_hicp_{basis}" for basis in ("mm", "yy")}
@@ -949,10 +959,20 @@ class ReadAPI:
             if not is_window
             or start <= event_timing(snapshot, s["release_event_id"])[0] < end
         ]
+        if family in FAMILY_INDICATORS and is_window and schedules and not relevant and all(
+            indicator not in indicators_for_stage(family, snapshot.events[s["release_event_id"]]["estimate_stage"])
+            for s in schedules
+        ):
+            return dict(base, reason="no_release_scheduled", family=family,
+                detail="reviewed editions in this window do not publish the requested indicator")
+        if family in FAMILY_INDICATORS:
+            schedules = [s for s in schedules if indicator in indicators_for_stage(
+                family, snapshot.events[s["release_event_id"]]["estimate_stage"])]
         family_rows = [
             e
             for e in snapshot.evidence
             if family_for(snapshot, e.indicator_id) == family and matches(e)
+            and (family not in FAMILY_INDICATORS or indicator in indicators_for_stage(family, e.stage))
         ]
         # Schedules lack reference periods: a family schedule cannot be assigned
         # to an arbitrary period when no evidence links that period to the event.
