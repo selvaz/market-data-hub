@@ -92,7 +92,9 @@ INDICATORS.update((i.id, i) for measures in UK_FAMILIES.values() for i in measur
 INDICATORS.update((i.id, i) for i in [measure(f"ea21_gdp_{basis}", "Eurostat", "EA21", basis, "SCA",
     definition="EA21 real GDP, published chain-linked volume percent change, seasonal and calendar adjustment",
     frequency="Q") for basis in ("qq", "yy")])
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp")
+INDICATORS["us_initial_jobless_claims"] = measure("us_initial_jobless_claims", "DOL", "USA", "level", "SA",
+    "claims", 1000, "DOL ETA initial unemployment insurance claims, SA level, thousands; reference period is Saturday week ending", frequency="W")
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims")
 
 
 def hicp_indicator(period, basis, geography="EA"):

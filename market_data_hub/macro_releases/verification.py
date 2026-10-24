@@ -18,6 +18,9 @@ def reviewed_anchor(obs):
     if obs.family == "ea_gdp":
         from .eurostat_gdp import EDITIONS as GDP_EDITIONS
         return obs.edition in GDP_EDITIONS and obs.stage == GDP_EDITIONS[obs.edition][1]
+    if obs.family == "us_jobless_claims":
+        from .dol import EDITIONS as CLAIMS_EDITIONS
+        return obs.edition in CLAIMS_EDITIONS
     if obs.family in EDITIONS:
         return obs.edition in EDITIONS[obs.family]
     if obs.family in ("us_cpi", "us_payrolls"):
@@ -53,9 +56,11 @@ SANITY_BANDS.update({
     "uk_cpi_yy": 10, "uk_core_cpi_yy": 10,
     "uk_unemployment_rate": 5, "uk_regular_pay_yy": 15,
     "ea21_gdp_qq": 20, "ea21_gdp_yy": 30,
+    "us_initial_jobless_claims": 3000,
 })
 ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
-                   "us_building_permits": 5000, "us_trade_balance": 1000}
+                   "us_building_permits": 5000, "us_trade_balance": 1000,
+                   "us_initial_jobless_claims": 10000}
 
 
 def configured_bands(overrides=None):

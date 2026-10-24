@@ -1,5 +1,6 @@
 """Round-one regressions: dynamic issuer editions, review routing and truthfulness."""
 from dataclasses import replace
+from datetime import datetime
 import hashlib
 import json
 import os
@@ -37,6 +38,9 @@ def offline(monkeypatch, tmp_path):
     monkeypatch.setattr(requests.Session, "request", forbidden)
     monkeypatch.setattr(run_daily.tempfile, "tempdir", str(tmp_path))
     monkeypatch.setattr(run_daily, "FAMILIES", FAMILIES)
+    # This harness captures synthetic November editions on December 1. A
+    # current October clock must not publish those future observations.
+    monkeypatch.setattr(run_daily, "datetime", SimpleNamespace(now=lambda tz: datetime(2026, 12, 1, tzinfo=tz)))
     monkeypatch.setattr(discovery, "api_key", lambda _: "fake-key")
 
 
@@ -73,7 +77,7 @@ def next_documents(family, mode="ok"):
                     row["year"], row["period"] = period[:4], "M" + period[5:]
         docs["data"] = changed(doc, payload)
         title = "Consumer Price Index" if family == "us_cpi" else "Employment Situation"
-        day = "12" if family == "us_cpi" else "06"
+        day = "10" if family == "us_cpi" else "06"
         docs["listing"] = changed(doc, f'<rss><channel><item><title>{title} for October 2026</title>'
             f'<pubDate>Thu, {day} Nov 2026 08:30:00 -0500</pubDate></item></channel></rss>',
             discovery.BLS_FEEDS[family])
@@ -150,6 +154,11 @@ class Replay:
         return self.docs["data"]
 
     def get(self, provider, url, params=None):
+        # Forward reviewed metadata now makes the Q3 edition an anchor, so
+        # discovery also checks the original archived Q2 estimates.
+        if provider == "bea" and url in discovery.bea.ARCHIVES.values():
+            name = "advance" if url.endswith("adv.pdf") else "second"
+            return document(f"bea/{name}-release.pdf")
         if provider in ("bls", "bea"):
             return self.docs["listing" if url in (discovery.BEA_LISTING, *discovery.BLS_FEEDS.values()) else "data"]
         if provider == "eurostat":

@@ -11,6 +11,7 @@ import math
 from .adapters import Observation
 from .catalogue import hicp_indicator
 from .http import FetchError, json_payload
+from .eurostat_gdp import fetch_gdp, parse_publication as parse_gdp_publication, parse_snapshot as parse_gdp_snapshot
 
 BASE = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/"
 DATASETS = {"flash": "prc_hicp_fpd", "final": "prc_hicp_minr"}
@@ -37,7 +38,6 @@ def cells(payload):
             yield dict(zip(dims, combination)), value, status
 
 
-from .eurostat_gdp import fetch_gdp, parse_publication as parse_gdp_publication, parse_snapshot as parse_gdp_snapshot
 
 
 class EurostatAdapter:

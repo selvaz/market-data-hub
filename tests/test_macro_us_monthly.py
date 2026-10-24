@@ -15,7 +15,7 @@ from market_data_hub.macro_releases.catalogue import FAMILIES, INDICATORS, US_MO
 from market_data_hub.macro_releases.fred import FREDAdapter, MAPPINGS
 from market_data_hub.macro_releases.http import Document, FetchError
 from market_data_hub.macro_releases.us_editions import EDITIONS as CALENDAR
-from market_data_hub.macro_releases.schedule import RUN_DATE, due
+from market_data_hub.macro_releases.schedule import due
 from market_data_hub.macro_releases.us_publications import PARSERS, parse_pce_publication
 
 ROOT = Path(__file__).parent / "fixtures/macro_releases/us_monthly"

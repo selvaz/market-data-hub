@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import base64
 import json
+from datetime import date
 from typing import Optional, Protocol
 
 from .catalogue import INDICATORS
@@ -86,6 +87,8 @@ def persist(store, observations):
     ids = []
     for obs in observations:
         indicator = INDICATORS[obs.indicator_id]
+        if indicator.frequency == "W" and (len(obs.period) != 10 or date.fromisoformat(obs.period).weekday() != 5):
+            raise ValueError("Weekly claims require an explicit Saturday week ending date")
         issuer = indicator.issuer_id
         mirror = obs.source != issuer
         verified = not (mirror or not obs.published or obs.method == "archive_text" or obs.needs_review

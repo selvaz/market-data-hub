@@ -207,6 +207,45 @@
       "source_class": "issuer",
       "unit": "%",
       "verified": true
+    },
+    {
+      "family": "us_jobless_claims",
+      "indicator": "us_initial_jobless_claims",
+      "period": "2026-10-17",
+      "value": 194.0,
+      "edition": "2026-10-22",
+      "fixture": "dol.pdf",
+      "source_url": "https://www.dol.gov/ui/data.pdf",
+      "source_class": "issuer",
+      "unit": "claims",
+      "scale": 1000,
+      "verified": true
+    },
+    {
+      "family": "us_jobless_claims",
+      "indicator": "us_initial_jobless_claims",
+      "period": "2026-10-10",
+      "value": 200.0,
+      "edition": "2026-10-22",
+      "fixture": "dol.pdf",
+      "source_url": "https://www.dol.gov/ui/data.pdf",
+      "source_class": "issuer",
+      "unit": "claims",
+      "scale": 1000,
+      "verified": true
+    },
+    {
+      "family": "us_jobless_claims",
+      "indicator": "us_initial_jobless_claims",
+      "period": "2026-10-10",
+      "value": 199.0,
+      "edition": "2026-10-15",
+      "fixture": "dol-2026-10-15.pdf",
+      "source_url": "https://oui.doleta.gov/press/2026/101526.pdf",
+      "source_class": "issuer",
+      "unit": "claims",
+      "scale": 1000,
+      "verified": true
     }
   ]
 }

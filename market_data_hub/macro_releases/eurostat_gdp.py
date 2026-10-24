@@ -38,7 +38,7 @@ def calendar_editions(document):
         if row.get("euroindAuthor") != "estat" or DATASET not in row.get("datasetCodes", "").split(","):
             continue
         edition = row["start"][:10]
-        if edition < min(EDITIONS):
+        if edition < min(EDITIONS) or edition > run_date():
             continue
         if row.get("preliminary") or row.get("title") not in TITLES:
             raise FetchError("Eurostat GDP calendar format or confirmation needs review")
@@ -68,7 +68,7 @@ def parse_publication(document, since="1900-01"):
         raise FetchError("Eurostat GDP stage, reference period, adjustment or membership needs review")
     patterns = {
         "qq": rf"In the {quarter} quarter of {period[:4]}, seasonally adjusted GDP (increased|decreased) by ([\d.]+)% in the euro area",
-        "yy": rf"Compared with the same quarter of the previous year, seasonally adjusted GDP (increased|decreased) by ([\d.]+)% in the euro area",
+        "yy": r"Compared with the same quarter of the previous year, seasonally adjusted GDP (increased|decreased) by ([\d.]+)% in the euro area",
     }
     out = []
     for basis, pattern in patterns.items():

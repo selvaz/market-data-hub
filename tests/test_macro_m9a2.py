@@ -10,6 +10,7 @@ import requests
 from market_data_hub.macro_releases import open_reader, open_writer, run_daily
 from market_data_hub.macro_releases.adapters import persist
 from market_data_hub.macro_releases.http import Document, FetchError
+from market_data_hub.macro_releases.dol import DOLAdapter
 from market_data_hub.macro_releases.eurostat import EurostatAdapter
 from market_data_hub.macro_releases.ons import ONSAdapter
 from market_data_hub.macro_releases.ons_rates import SERIES, EDITIONS as UK_EDITIONS
@@ -33,6 +34,8 @@ def document(name):
 
 
 def parse(case):
+    if case["family"] == "us_jobless_claims":
+        return DOLAdapter.parse(document(case["fixture"]), "2026-01")
     if case["family"] == "ea_gdp":
         doc = document(case["fixture"])
         return (EurostatAdapter.parse_gdp_snapshot(doc, case["edition"], "2026-01") if case["stage"] == "update"
@@ -62,6 +65,10 @@ class Replay:
         if provider == "eurostat":
             for name in ("ea-calendar.json", "ea-gdp.json", "ea-gdp-flash.html", "ea-gdp-second.html", "ea-gdp-regular.html"):
                 if document(name).url.split("?")[0] == url:
+                    return document(name)
+        if provider == "dol":
+            for name in ("dol.pdf", "dol-2026-10-15.pdf", "dol-100126.pdf", "dol-100826.pdf"):
+                if document(name).url == url:
                     return document(name)
         raise AssertionError("Unexpected fixture URL: " + url)
 
@@ -138,7 +145,59 @@ def test_gdp_unknown_calendar_edition_and_membership_fail_closed():
     from market_data_hub.macro_releases.eurostat_gdp import calendar_editions
     doc = document("ea-calendar.json")
     with pytest.raises(FetchError, match="needs review"):
-        calendar_editions(replace(doc, body=doc.body.replace(b"2026-10-30T11:00Z", b"2026-10-29T11:00Z")))
+        calendar_editions(replace(doc, body=doc.body.replace(b"2026-10-20T11:00Z", b"2026-10-19T11:00Z")))
     doc = document("ea-gdp-flash.html")
     with pytest.raises(FetchError, match="needs review"):
         EurostatAdapter.parse_gdp_publication(replace(doc, body=doc.body.replace(b"Euro area (EA21)", b"Euro area (EA22)")))
+
+
+def test_weekly_claims_official_card_revisions_and_idempotence(tmp_path, monkeypatch):
+    from market_data_hub.macro_releases.catalogue import INDICATORS
+    from market_data_hub.macro_releases.read_api import prior_period
+    monkeypatch.setattr(run_daily, "HttpClient", Replay)
+    db = tmp_path / "claims.sqlite"
+    result = run_daily.execute(db, ["us_jobless_claims"], 24, False, raw_dir=tmp_path / "none")
+    assert result["families"]["us_jobless_claims"]["status"] == "ok", result
+    assert INDICATORS["us_initial_jobless_claims"].frequency == "W"
+    assert INDICATORS["us_initial_jobless_claims"].scale == 1000
+    assert prior_period("2026-10-17", "W") == "2026-10-10"
+    assert prior_period("2026-10-17") == "2026-10-16"  # Daily semantics unchanged.
+    assert prior_period("2026-10") == "2026-09"
+    with open_reader(db) as store:
+        cards = store.release_cards("2026-10-19", "2026-10-23")["cards"]
+        assert len(cards) == 1
+        card = cards[0]
+        assert card["resolution"]["status"] == "official"
+        assert card["resolution"]["reference_period"] == "2026-10-17"
+        assert card["resolution"]["value"] == 194
+        assert card["resolution"]["source"]["issuer_id"] == "DOL"
+        rows = store.conn.execute("SELECT value FROM value_vintages WHERE reference_period='2026-10-10' ORDER BY issuer_published_at").fetchall()
+        assert [r[0] for r in rows] == [199, 200]
+    again = run_daily.execute(db, ["us_jobless_claims"], 24, False, raw_dir=tmp_path / "none")
+    assert again["status"] == "no_change", again
+
+
+def test_claims_unknown_edition_reference_week_and_format_fail_closed():
+    from pypdf import PdfReader
+    from io import BytesIO
+    from market_data_hub.macro_releases.dol import parse_text, EDITIONS
+    doc = document("dol.pdf")
+    text = PdfReader(BytesIO(doc.body)).pages[0].extract_text()
+    for before, after in (("October 22, 2026", "October 23, 2026"),
+                          ("October 17", "October 16"),
+                          ("initial claims", "continuing claims")):
+        with pytest.raises(FetchError, match="needs review"):
+            parse_text(text.replace(before, after), doc)
+    assert EDITIONS["2026-11-25"][0] == "2026-11-21"
+    assert "2026-11-26" not in EDITIONS
+    assert EDITIONS["2026-12-31"][0] == "2026-12-26"
+
+
+def test_all_new_families_replay_together(tmp_path, monkeypatch):
+    monkeypatch.setattr(run_daily, "HttpClient", Replay)
+    result = run_daily.execute(tmp_path / "new.sqlite", [*UK_EDITIONS, "ea_gdp", "us_jobless_claims"],
+                               24, False, raw_dir=tmp_path / "none")
+    assert result["status"] == "ok", result
+    assert all(r["vintages_added"] > 0 for r in result["families"].values())
+    assert all(all(d["status"] == "scheduled" and d["edition"] > "2026-10-24"
+                   for d in r["scheduled_editions"]) for r in result["families"].values())

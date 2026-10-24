@@ -14,6 +14,7 @@ import re
 
 from .adapters import Observation
 from .http import FetchError, json_payload
+from .ons_rates import fetch_rates, parse_rate
 from .models import utc
 
 VERSION = 69
@@ -69,7 +70,6 @@ class Paragraphs(HTMLParser):
             self.text = None
 
 
-from .ons_rates import fetch_rates, parse_rate
 
 
 class ONSAdapter:

@@ -29,6 +29,7 @@ FAMILY_INDICATORS = {
 }
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in {**US_MONTHLY, **UK_FAMILIES}.items()})
 FAMILY_INDICATORS["ea_gdp"] = {"ea21_gdp_qq", "ea21_gdp_yy"}
+FAMILY_INDICATORS["us_jobless_claims"] = {"us_initial_jobless_claims"}
 
 # Explicit comparable composition successors; never infer succession merely
 # from a shared issuer or family. Three missing monthly periods is the gate.
@@ -89,7 +90,7 @@ def window(since, until):
     return start, end
 
 
-def prior_period(period):
+def prior_period(period, frequency=None):
     if re.fullmatch(r"\d{4}-\d{2}", period):
         first = date.fromisoformat(period + "-01")
         return (first - timedelta(days=1)).strftime("%Y-%m")
@@ -102,7 +103,7 @@ def prior_period(period):
     if re.fullmatch(r"\d{4}", period):
         return str(int(period) - 1)
     if re.fullmatch(r"\d{4}-\d{2}-\d{2}", period):
-        return (date.fromisoformat(period) - timedelta(days=1)).isoformat()
+        return (date.fromisoformat(period) - timedelta(days=7 if frequency == "W" else 1)).isoformat()
     return None
 
 
@@ -378,7 +379,7 @@ class ReadAPI:
                 continue
             if stale_series(snapshot, indicator, period, released_at):
                 continue
-            prior = prior_period(period)
+            prior = prior_period(period, snapshot.indicators[indicator]["frequency"])
             # The previous figure is strictly what we knew by release time.
             before = subset(
                 snapshot,

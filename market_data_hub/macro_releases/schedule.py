@@ -16,3 +16,22 @@ def edition_status(edition, as_of=None):
 def due(editions, as_of=None):
     return {d: metadata for d, metadata in editions.items()
             if edition_status(d, as_of) == "due"}
+
+
+def family_editions(family):
+    from .us_editions import EDITIONS as MONTHLY
+    from .ons_rates import EDITIONS as UK
+    from .eurostat_gdp import EDITIONS as GDP
+    from .dol import EDITIONS as CLAIMS
+    from . import bea, bls
+    if family in MONTHLY:
+        return MONTHLY[family]
+    if family in UK:
+        return UK[family]
+    if family == "ea_gdp":
+        return GDP
+    if family == "us_jobless_claims":
+        return CLAIMS
+    if family == "us_gdp":
+        return {d: (*meta, "08:30") for d, meta in bea.EDITIONS.items()}
+    return {d: (p, "regular", "08:30") for (f, p), d in bls.EDITIONS.items() if f == family}

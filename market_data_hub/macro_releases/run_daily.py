@@ -18,13 +18,14 @@ from .catalogue import FAMILIES
 from .consensus import DEFAULT_RAW_DIR, ingest
 from .eurostat import EurostatAdapter
 from .fred import USRedistributorAdapter
+from .dol import DOLAdapter
 from .discovery import FamilyFetch, fetch_daily
 from .http import FetchError, HttpClient
 from .lease import LeaseBusy, LeaseLost, RunLease
 from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
-from .schedule import RUN_DATE, edition_status
+from .schedule import RUN_DATE, edition_status, family_editions
 from .store import Store, open_writer
 from .verification import configured_bands, persist_review, verify
 
@@ -32,6 +33,7 @@ DEFAULT_LOOKBACK_MONTHS = 24
 ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapter,
             "ea_hicp": EurostatAdapter, "ea_gdp": EurostatAdapter, "uk_gdp": ONSAdapter,
             "uk_cpi": ONSAdapter, "uk_labour_market": ONSAdapter,
+            "us_jobless_claims": DOLAdapter,
             "us_ppi": BLSAdapter, "us_jolts": BLSAdapter, "us_pce": BEAAdapter,
             **{f: USRedistributorAdapter for f in ("us_retail_sales", "us_housing_starts", "us_durable_goods",
                                                    "us_industrial_production", "us_trade_balance")}}
@@ -96,7 +98,7 @@ def safe_error(exc):
         text = str(exc)
         if re.fullmatch(r"Missing credential: (BLS|BEA|FRED)_API_KEY", text):
             message = text
-        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons): HTTP \d{3}", text):
+        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons|dol): HTTP \d{3}", text):
             message = text
         elif "needs review" in text or "metadata" in text:
             message = "Provider publication metadata/version needs review before this edition can be certified"
@@ -207,13 +209,17 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
                      else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
         finally:
             RUN_DATE.reset(token)
-        from .us_editions import EDITIONS
-        if family in EDITIONS:
+        calendar = family_editions(family)
+        if calendar:
             result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t, status="scheduled")
-                for d, (p, s, t) in EDITIONS[family].items()
+                for d, (p, s, t) in calendar.items()
                 if edition_status(d, result["fetch_until"]) == "scheduled"]
+        # Even if an endpoint exposes a future reviewed edition early, it is
+        # still scheduled. Keep its document, but never publish future values.
+        batch.observations = [o for o in batch.observations
+            if o.edition not in calendar or o.edition <= result["fetch_until"]]
         observations = batch.observations
-        if not observations and not batch.issues:
+        if not observations and not batch.issues and not result.get("scheduled_editions"):
             raise FetchError("No observations in requested window")
         if any(o.family != family for o in observations):
             raise ValueError("Adapter returned another family")

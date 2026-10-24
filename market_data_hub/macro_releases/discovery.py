@@ -118,11 +118,17 @@ def _bls(client, family, since):
     try:
         listing = batch.get(client, "bls", BLS_FEEDS[family])
         publication = bls_publication(listing, family, newest)
+        if (family, newest) in registry and registry[family, newest] != publication:
+            batch.issue("issuer_calendar_date_mismatch")
         batch.anchors &= registry.get((family, newest)) == publication
         registry[family, newest] = publication
-    except (FetchError, ValueError, TypeError, ElementTree.ParseError):
+    except FetchError:
         if not batch.anchors:
             batch.issue("issuer_publication_unconfirmed")
+    except (ValueError, TypeError, ElementTree.ParseError):
+        # Reachable but contradictory/malformed issuer evidence cannot be
+        # excused by a pre-reviewed date. HTTP unavailability alone can.
+        batch.issue("issuer_publication_unconfirmed")
     publication = registry.get((family, newest))
     try:
         batch.observations = bls.BLSAdapter(client).parse(doc, [family], since, editions=registry)
@@ -168,6 +174,9 @@ def _bea(client, family, since):
     batch.anchors = publication in registry
     try:
         listed = bea_publications(batch.get(client, "bea", BEA_LISTING))
+        if publication in registry and any(d != publication and meta == registry[publication]
+                                           for d, meta in listed.items()):
+            batch.issue("issuer_calendar_or_estimate_stage_mismatch")
         if publication in registry and publication in listed and registry[publication] != listed[publication]:
             batch.issue("issuer_calendar_or_estimate_stage_mismatch")
         registry.update(listed)
@@ -347,7 +356,8 @@ def fetch_daily(client, family, since):
     from .us_editions import EDITIONS
     strategy = {"us_cpi": _bls, "us_payrolls": _bls, "us_gdp": _bea,
                 "ea_hicp": _eurostat, "uk_gdp": _ons, "uk_cpi": _ons_rates,
-                "uk_labour_market": _ons_rates, "ea_gdp": _gdp, **{f: _monthly for f in EDITIONS}}[family]
+                "uk_labour_market": _ons_rates, "ea_gdp": _gdp, "us_jobless_claims": _claims,
+                **{f: _monthly for f in EDITIONS}}[family]
     documents = []
     class Capture:
         def get(self, *args, **kwargs):
@@ -385,3 +395,8 @@ def _ons_rates(client, family, since):
 
 def _gdp(client, family, since):
     return FamilyFetch(observations=eurostat.EurostatAdapter(client).fetch([family], since))
+
+
+def _claims(client, family, since):
+    from .dol import DOLAdapter
+    return FamilyFetch(observations=DOLAdapter(client).fetch([family], since))

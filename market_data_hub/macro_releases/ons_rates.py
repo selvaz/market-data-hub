@@ -67,6 +67,9 @@ def parse_rate(document, cdid, since="1900-01"):
     versions = payload.get("versions", [])
     if not versions or versions[-1].get("updateDate", "")[:10] != edition:
         raise FetchError("ONS edition/version association needs review")
+    newest = max(rows, key=lambda row: row["date"][:4] + datetime.strptime(row["date"], "%Y %b").strftime("%m"))
+    if newest["date"] != meta.get("date") or newest["value"] != meta.get("number"):
+        raise FetchError("ONS headline summary needs review")
     out = []
     for row in rows:
         ref = period(row, cdid)
