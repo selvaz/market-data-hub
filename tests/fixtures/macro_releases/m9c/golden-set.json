@@ -155,6 +155,48 @@
       },
       "vote_split": null,
       "precision": "exact"
+    },
+    {
+      "family": "pboc_lpr",
+      "fixture": "pboc-sept.html",
+      "previous_fixture": "pboc-aug.html",
+      "edition": "2026-09-20",
+      "source_url": "https://www.pbc.gov.cn/zhengcehuobisi/125207/125213/125440/3876551/2026092008384254324/index.html",
+      "rates": {
+        "one_year": {
+          "rate": 3.0,
+          "change_bp": 0,
+          "change_basis": "consecutive_issuer_statements"
+        },
+        "over_five_year": {
+          "rate": 3.5,
+          "change_bp": 0,
+          "change_basis": "consecutive_issuer_statements"
+        }
+      },
+      "vote_split": null,
+      "precision": "exact"
+    },
+    {
+      "family": "pboc_lpr",
+      "fixture": "pboc-oct.html",
+      "previous_fixture": "pboc-sept.html",
+      "edition": "2026-10-20",
+      "source_url": "https://www.pbc.gov.cn/zhengcehuobisi/125207/125213/125440/3876551/2026102008303870640/index.html",
+      "rates": {
+        "one_year": {
+          "rate": 3.0,
+          "change_bp": 0,
+          "change_basis": "consecutive_issuer_statements"
+        },
+        "over_five_year": {
+          "rate": 3.5,
+          "change_bp": 0,
+          "change_basis": "consecutive_issuer_statements"
+        }
+      },
+      "vote_split": null,
+      "precision": "exact"
     }
   ]
 }

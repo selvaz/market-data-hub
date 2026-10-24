@@ -120,6 +120,8 @@ REMAINING_FAMILIES = {
 for _measures in REMAINING_FAMILIES.values():
     INDICATORS.update((m.id, m) for m in _measures)
 CENTRAL_BANKS = {
+    "pboc_lpr": [measure("pboc_lpr_decision", "PBOC/NIFC", "CHN", "level", "n/a",
+        definition="1-year and over-5-year Loan Prime Rates published by NIFC under PBOC authorization; scalar is 1Y", frequency="E")],
     "boc_policy": [measure("boc_overnight_rate_decision", "BoC", "CAN", "level", "n/a",
         definition="Target for the overnight rate set by the Bank of Canada", frequency="E")],
     "boe_policy": [measure("boe_bank_rate_decision", "BoE", "GBR", "level", "n/a",

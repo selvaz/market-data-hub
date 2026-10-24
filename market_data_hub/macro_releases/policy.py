@@ -75,6 +75,7 @@ class PolicyAdapter:
         self.client = client
 
     def fetch(self, families, since):
-        from . import fomc, ecb_policy, boe_policy, boc_policy
-        adapters = {"fomc": fomc, "ecb_policy": ecb_policy, "boe_policy": boe_policy, "boc_policy": boc_policy}
+        from . import fomc, ecb_policy, boe_policy, boc_policy, pboc_lpr
+        adapters = {"fomc": fomc, "ecb_policy": ecb_policy, "boe_policy": boe_policy,
+                    "boc_policy": boc_policy, "pboc_lpr": pboc_lpr}
         return [o for family in families for o in adapters[family].fetch(self.client, family, since)]

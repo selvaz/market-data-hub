@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "20aa971dc81d2e261a636d5752bf871a7b4e43b15913b0ac62b9714df1edb33d",
+  "aliases_sha256": "90a2d2fb9789e6192f6b50c1ab21a2b531c3d65abd06c6a977d2fef5983cf826",
   "cards": [
     {
       "concept": "Real GDP",
@@ -8317,6 +8317,7 @@
           "cn_lpr_5y"
         ],
         "cat": [
+          "pboc_lpr_decision",
           "pboc_lpr_decision"
         ],
         "derived_ms": [],
