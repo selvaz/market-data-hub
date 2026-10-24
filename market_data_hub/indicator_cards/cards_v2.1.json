@@ -1147,7 +1147,6 @@
           "us_umich_prelim"
         ],
         "cat": [
-          "us_umich_consumer_sentiment",
           "us_umich_consumer_sentiment"
         ],
         "derived_ms": [],
@@ -2088,7 +2087,6 @@
           "us_fomc"
         ],
         "cat": [
-          "fed_funds_rate_decision",
           "fed_funds_rate_decision"
         ],
         "derived_ms": [],
@@ -4752,7 +4750,6 @@
           "ez_unemp"
         ],
         "cat": [
-          "ea_unemployment_rate",
           "ea_unemployment_rate"
         ],
         "derived_ms": [],
@@ -4895,7 +4892,6 @@
           "ez_services_confidence"
         ],
         "cat": [
-          "ea_economic_sentiment_indicator",
           "ea_economic_sentiment_indicator"
         ],
         "derived_ms": [],
@@ -5128,7 +5124,6 @@
           "ez_ecb_accounts"
         ],
         "cat": [
-          "ecb_deposit_facility_rate_decision",
           "ecb_deposit_facility_rate_decision"
         ],
         "derived_ms": [],
@@ -6833,7 +6828,6 @@
           "uk_earnings"
         ],
         "cat": [
-          "uk_average_weekly_earnings_yy",
           "uk_average_weekly_earnings_yy"
         ],
         "derived_ms": [],
@@ -7249,7 +7243,6 @@
           "uk_boe"
         ],
         "cat": [
-          "boe_bank_rate_decision",
           "boe_bank_rate_decision"
         ],
         "derived_ms": [],
@@ -7579,7 +7572,6 @@
           "jp_boj"
         ],
         "cat": [
-          "boj_policy_rate_decision",
           "boj_policy_rate_decision"
         ],
         "derived_ms": [],
@@ -8318,7 +8310,6 @@
           "cn_lpr_5y"
         ],
         "cat": [
-          "pboc_lpr_decision",
           "pboc_lpr_decision"
         ],
         "derived_ms": [],
@@ -8643,7 +8634,6 @@
           "ca_boc"
         ],
         "cat": [
-          "boc_overnight_rate_decision",
           "boc_overnight_rate_decision"
         ],
         "derived_ms": [],
