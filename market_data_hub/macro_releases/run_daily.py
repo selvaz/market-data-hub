@@ -112,6 +112,8 @@ def safe_error(exc):
             message = "Provider daily quota exhausted; try the next daily run"
         elif "transport" in text:
             message = "Provider transport failed after bounded retries"
+        elif "rate ledger lock is busy" in text:
+            message = "Provider rate ledger is busy; retry after the bounded request attempts"
         else:
             message = "Provider fetch/parse failed; check availability and certified response schema"
     elif isinstance(exc, (LeaseBusy, LeaseLost)):

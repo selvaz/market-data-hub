@@ -16,12 +16,17 @@ import time
 from urllib.parse import urlsplit
 
 import certifi
-from filelock import FileLock
+from filelock import FileLock, Timeout as FileLockTimeout
 import requests
 
 
 class FetchError(RuntimeError):
     """Safe to report: never includes credential-bearing URLs or bodies."""
+
+
+class RateLimitBusy(FetchError):
+    """A contended provider ledger can be retried within the request budget."""
+    retryable = True
 
 
 def api_key(name: str) -> str:
@@ -96,21 +101,29 @@ class RateLimiter:
         self.daily_limit = daily_limit
 
     def acquire(self):
-        with FileLock(str(self.path) + ".lock", timeout=15) if self.path else nullcontext():
-            now = time.time()
-            state = (json.loads(self.path.read_text()) if self.path.exists() else {}) if self.path else self.state
-            day = datetime.fromtimestamp(now, timezone.utc).date().isoformat()
-            count = state.get("count", 0) if state.get("day") == day else 0
-            if self.daily_limit is not None and count >= self.daily_limit:
-                raise FetchError("Provider daily quota exhausted; try the next daily run")
-            delay = max(0, state.get("last", 0) + self.interval - now)
-            if state.get("last", 0) > now + 5:
-                raise FetchError("Provider rate ledger clock is ahead; no wait loop")
-            if delay:
-                time.sleep(delay)
-            self.state = {"day": day, "count": count + 1, "last": time.time()}
-            if self.path:
-                self.path.write_text(json.dumps(self.state))
+        try:
+            with FileLock(str(self.path) + ".lock", timeout=15) if self.path else nullcontext():
+                now = time.time()
+                state = (json.loads(self.path.read_text()) if self.path.exists() else {}) if self.path else self.state
+                day = datetime.fromtimestamp(now, timezone.utc).date().isoformat()
+                count = state.get("count", 0) if state.get("day") == day else 0
+                if self.daily_limit is not None and count >= self.daily_limit:
+                    raise FetchError("Provider daily quota exhausted; try the next daily run")
+                if state.get("last", 0) > now + 5:
+                    raise FetchError("Provider rate ledger clock is ahead; no wait loop")
+                # Old ledgers have only last. A reservation may legitimately be
+                # far ahead; keep it separate from the wall clock skew guard.
+                slot = max(now, state.get("reserved_until", state.get("last", 0)) + self.interval)
+                delay = slot - now
+                self.state = {"day": day, "count": count + 1, "last": now, "reserved_until": slot}
+                if self.path:
+                    self.path.write_text(json.dumps(self.state))
+        except FileLockTimeout:
+            raise RateLimitBusy("Provider rate ledger lock is busy; retry within the request budget") from None
+        # Sleeping never holds the ledger lock: other processes can reserve
+        # their own distinct slots without exhausting the lock timeout.
+        if delay:
+            time.sleep(delay)
 
 
 class HttpClient:
@@ -135,7 +148,13 @@ class HttpClient:
         for attempt in range(self.max_attempts):
             if self.before_request:
                 self.before_request()
-            self.limiters[provider].acquire()
+            try:
+                self.limiters[provider].acquire()
+            except RateLimitBusy:
+                if attempt + 1 == self.max_attempts:
+                    raise
+                self._backoff(retry_delay(None, attempt))
+                continue
             try:
                 response = self.session.request(
                     "POST" if payload is not None else "GET", url,
