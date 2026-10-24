@@ -201,3 +201,26 @@ def test_all_new_families_replay_together(tmp_path, monkeypatch):
     assert all(r["vintages_added"] > 0 for r in result["families"].values())
     assert all(all(d["status"] == "scheduled" and d["edition"] > "2026-10-24"
                    for d in r["scheduled_editions"]) for r in result["families"].values())
+
+
+def test_full_m3_final_has_durable_rate_not_all_manufacturing_ex_transport(tmp_path):
+    from market_data_hub.macro_releases.us_publications import parse_durable_full
+    rows = parse_durable_full(document("census-m3.pdf"), "2026-07")
+    assert [(o.period, o.value, o.stage) for o in rows] == [("2026-08", -0.1, "final"), ("2026-07", 0.9, "final")]
+    assert {o.indicator_id for o in rows} == {"us_durable_goods_orders_mm"}
+    with open_writer(tmp_path / "final.sqlite") as store:
+        persist(store, rows)
+        assert next(r for r in store.latest_official("us_durable_goods_orders_mm") if r["reference_period"] == "2026-08")["value"] == -0.1
+
+
+def test_claims_unchanged_previous_level_is_preserved():
+    from pypdf import PdfReader
+    from io import BytesIO
+    from market_data_hub.macro_releases.dol import parse_text
+    doc = document("dol.pdf")
+    text = PdfReader(BytesIO(doc.body)).pages[0].extract_text()
+    # Fault injection exercises the issuer's unchanged-level wording.
+    import re
+    text = re.sub(r"The previous week's level was revised up by 1,000 from 199,000 to\s+200,000\.",
+                  "The previous week's level was unrevised at 200,000.", text)
+    assert parse_text(text, doc)[1].value == 200

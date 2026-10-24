@@ -24,6 +24,7 @@ PUBLICATIONS = {
     "us_industrial_production": "https://www.federalreserve.gov/releases/g17/{date}/",
     "us_trade_balance": "https://www.bea.gov/news/2026/us-international-trade-goods-and-services-{month}-2026",
 }
+M3_FULL = "https://www.census.gov/manufacturing/m3/prel/pdf/s-i-o.pdf"
 NUMBER = r"[+-]?(?:\d+\.\d+|\.\d+)"
 
 
@@ -55,6 +56,8 @@ def publication(document, family, title):
         "us_durable_goods": r"MONTHLY ADVANCE REPORT ON DURABLE GOODS.*?INVENTORIES AND ORDERS\s*(\w+ \d{4})",
         "us_pce": r"Personal Income and Outlays,\s*(\w+ \d{4})",
     }
+    if family == "us_durable_goods" and "MONTHLY FULL REPORT" in body:
+        headings[family] = r"MONTHLY FULL REPORT ON MANUFACTURERS.*?INVENTORIES AND ORDERS\s*(\w+ \d{4})"
     month_confirmed = month.lower() in body.lower()
     if family in headings:
         month_confirmed = match(headings[family], body)[1].lower() == month.lower()
@@ -71,7 +74,8 @@ def observation(document, family, edition, indicator, period, printed, method):
         indicator + ":published-table", INDICATORS[indicator].issuer_id, document, edition,
         **new_york_release(edition, time), stage=observation_stage(family, edition, period),
         event_stage=event_stage, provider_vintage=edition, method=method, precision="exact",
-        revision="initial" if period == head and event_stage != "final" else "routine")
+        revision="benchmark" if event_stage == "benchmark" else
+                 "initial" if period == head and event_stage != "final" else "routine")
 
 
 def pce_url(period):
@@ -149,6 +153,20 @@ def parse_durable(document, since="1900-01"):
     return [o for o in out if o.period >= since]
 
 
+def parse_durable_full(document, since="1900-01"):
+    """M3 prints durable headline rates; its ex-transport row is ALL manufacturing.
+
+    Never substitute that row or calculate a durable ex-transport rate from levels.
+    """
+    raw, _, method, edition, head = publication(document, "us_durable_goods", "MONTHLY FULL REPORT")
+    if reviewed("us_durable_goods", edition)[1] != "final":
+        raise FetchError("Census full report stage needs review")
+    table = match(r"Table 2\.\s+Value of Manufacturers' New Orders(.*?)Table 3\.", re.sub(r"\s+", " ", raw))[1]
+    row = match(r"Durable goods industries\d?[^\d]*([\d,]+)\s+([\d,]+)\s+([\d,]+)\s+(" + NUMBER + r")\s+(" + NUMBER + r")", table)
+    return [observation(document, "us_durable_goods", edition, "us_durable_goods_orders_mm", period, value, method)
+            for period, value in ((head, row[4]), (shift_month(head, -1), row[5])) if period >= since]
+
+
 def parse_ip(document, since="1900-01"):
     raw, _, method, edition, head = publication(document, "us_industrial_production", "Industrial Production and Capacity Utilization")
     out = []
@@ -189,10 +207,15 @@ def fetch_publications(client, families, since):
             continue
         url = PUBLICATIONS[family]
         if family in ("us_industrial_production", "us_trade_balance"):
-            for edition, (period, _, _) in due(EDITIONS[family]).items():
+            for edition, (period, stage, _) in due(EDITIONS[family]).items():
                 if period >= since:
                     month = datetime.strptime(period, "%Y-%m").strftime("%B").lower()
-                    out += PARSERS[family](client.get("fred", url.format(date=edition.replace("-", ""), month=month)), since)
+                    # Annual G.17 releases live in the issuer's revision archive.
+                    template = ("https://www.federalreserve.gov/releases/g17/revisions/{date}/DefaultRev.htm"
+                                if family == "us_industrial_production" and stage == "benchmark" else url)
+                    out += PARSERS[family](client.get("fred", template.format(date=edition.replace("-", ""), month=month)), since)
         else:
             out += PARSERS[family](client.get("fred", url), since)
+            if family == "us_durable_goods":
+                out += parse_durable_full(client.get("fred", M3_FULL), since)
     return out

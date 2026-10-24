@@ -79,6 +79,10 @@ class Replay:
         return document("bls.json")
 
     def get(self, provider, url, params=None):
+        if url == "https://www.census.gov/manufacturing/m3/prel/pdf/s-i-o.pdf":
+            path = ROOT.parent / "m9a2/census-m3.pdf"
+            meta = json.loads(path.with_name(path.name + ".meta.json").read_text())
+            return Document(path.read_bytes(), meta["url"], meta["retrieved_at"], meta["sha256"])
         if params and "series_id" in params:
             series = params["series_id"]
             family = next(f for f, s, _ in MAPPINGS.values() if s == series)
