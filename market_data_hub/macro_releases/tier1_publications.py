@@ -3,6 +3,7 @@ from datetime import datetime
 from html import unescape
 from io import BytesIO
 import re
+from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
 from .adapters import Observation
 from .catalogue import INDICATORS
@@ -58,10 +59,18 @@ class Tier1Adapter:
         self.client = client
 
     def fetch(self, families, since):
-        from . import eurostat_activity, ons_retail, census_sales, ons_pay
+        from . import eurostat_activity, ons_retail, census_sales, ons_pay, ec_surveys
         out = []
+        client = self.client
+        class PublicClient:
+            def get(self, provider, url, params=None):
+                parts = urlsplit(url)
+                if parts.query:
+                    params = dict(parse_qsl(parts.query), **(params or {}))
+                    url = urlunsplit(parts._replace(query=""))
+                return client.get(provider, url, params)
         for family in families:
             adapter = {"uk_retail_sales": ons_retail, "us_new_home_sales": census_sales,
-                       "uk_total_pay": ons_pay}.get(family, eurostat_activity)
-            out += adapter.fetch(self.client, family, since)
+                       "uk_total_pay": ons_pay, "ea_ec_surveys": ec_surveys}.get(family, eurostat_activity)
+            out += adapter.fetch(PublicClient(), family, since)
         return out

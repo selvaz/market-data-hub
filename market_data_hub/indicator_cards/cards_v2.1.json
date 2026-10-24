@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "6b5ebcb2fbcc52ea7ad737b353e3f6ea7bc30b91f225f7cf179d56616ba10ada",
+  "aliases_sha256": "b46d9af2d2d46fd71574b98d13a5254f6eb45fcc7e70ee89e0100ae2160af304",
   "cards": [
     {
       "concept": "Real GDP",
@@ -4893,6 +4893,7 @@
           "ez_services_confidence"
         ],
         "cat": [
+          "ea_economic_sentiment_indicator",
           "ea_economic_sentiment_indicator"
         ],
         "derived_ms": [],
@@ -4940,7 +4941,9 @@
           "ez_consumer_confidence_flash",
           "ez_consumer_confidence_final"
         ],
-        "cat": [],
+        "cat": [
+          "ea_consumer_confidence"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
