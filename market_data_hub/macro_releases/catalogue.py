@@ -2,10 +2,10 @@
 from .models import Indicator
 
 
-def measure(id, issuer, geo, transform, adjustment, unit="%", scale=1, definition=None):
+def measure(id, issuer, geo, transform, adjustment, unit="%", scale=1, definition=None, frequency=None):
     return Indicator(id=id, measure=id, issuer_id=issuer, geography=geo,
                      seasonal_adjustment=adjustment, transform=transform, unit=unit,
-                     scale=scale, frequency="Q" if transform == "qq_saar" else "M",
+                     scale=scale, frequency=frequency or ("Q" if transform == "qq_saar" else "M"),
                      tier="T1", definition=definition or id, catalogue_status="supported", active=True)
 
 
@@ -80,7 +80,16 @@ def bls_family(indicator):
     return "us_payrolls" if indicator.startswith("us_payrolls") else "us_cpi"
 
 
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY)
+UK_FAMILIES = {
+    "uk_cpi": [
+        measure("uk_cpi_yy", "ONS", "GBR", "yy", "NSA", definition="CPI all items, published 12-month rate, D7G7"),
+        measure("uk_core_cpi_yy", "ONS", "GBR", "yy", "NSA", definition="CPI excluding energy, food, alcohol and tobacco, published 12-month rate, DKO8")],
+    "uk_labour_market": [
+        measure("uk_unemployment_rate", "ONS", "GBR", "level", "SA", definition="ILO unemployment rate, aged 16+, three months ending reference month, MGSX"),
+        measure("uk_regular_pay_yy", "ONS", "GBR", "yy", "SA", definition="Great Britain whole economy regular pay excluding arrears, nominal three-month average y/y growth, KAI9; period is ending month")],
+}
+INDICATORS.update((i.id, i) for measures in UK_FAMILIES.values() for i in measures)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES)
 
 
 def hicp_indicator(period, basis, geography="EA"):

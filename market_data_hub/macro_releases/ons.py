@@ -69,13 +69,19 @@ class Paragraphs(HTMLParser):
             self.text = None
 
 
+from .ons_rates import fetch_rates, parse_rate
+
+
 class ONSAdapter:
+    parse_rate = staticmethod(parse_rate)
+
     def __init__(self, client):
         self.client = client
 
     def fetch(self, families, since):
+        rates = fetch_rates(self.client, families, since)
         if "uk_gdp" not in families:
-            return []
+            return rates
         check_freshness(self.client.get("ons", EDITION_URL), self.client.get("ons", BULLETIN_INDEX_URL))
         meta = self.client.get("ons", VERSION_URL)
         payload = json_payload(meta)
@@ -86,7 +92,7 @@ class ONSAdapter:
         for edition in BULLETINS:
             doc = self.client.get("ons", BULLETIN_BASE + edition)
             out.extend(self.parse_bulletin(doc, since))
-        return out
+        return rates + out
 
     @staticmethod
     def parse_levels(document, metadata, since="1900-01", *, publication=None, version=VERSION):

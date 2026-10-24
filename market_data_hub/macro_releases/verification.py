@@ -12,6 +12,9 @@ from .models import utc
 def reviewed_anchor(obs):
     from . import bea, bls, eurostat, ons
     from .us_editions import EDITIONS
+    from .ons_rates import EDITIONS as UK_EDITIONS
+    if obs.family in UK_EDITIONS:
+        return obs.edition in UK_EDITIONS[obs.family]
     if obs.family in EDITIONS:
         return obs.edition in EDITIONS[obs.family]
     if obs.family in ("us_cpi", "us_payrolls"):
@@ -44,6 +47,8 @@ SANITY_BANDS.update({
     "us_durable_goods_orders_mm": 60, "us_durable_goods_ex_transport_mm": 30,
     "us_industrial_production_mm": 20, "us_capacity_utilization": 20,
     "us_trade_balance": 200,
+    "uk_cpi_yy": 10, "uk_core_cpi_yy": 10,
+    "uk_unemployment_rate": 5, "uk_regular_pay_yy": 15,
 })
 ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
                    "us_building_permits": 5000, "us_trade_balance": 1000}

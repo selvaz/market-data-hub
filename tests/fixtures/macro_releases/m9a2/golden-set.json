@@ -1,0 +1,108 @@
+{
+  "cases": [
+    {
+      "family": "uk_cpi",
+      "indicator": "uk_cpi_yy",
+      "period": "2026-08",
+      "value": 3.1,
+      "edition": "2026-10-21",
+      "fixture": "d7g7.json",
+      "series": "D7G7",
+      "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23/data",
+      "source_class": "issuer",
+      "unit": "%",
+      "verified": true
+    },
+    {
+      "family": "uk_cpi",
+      "indicator": "uk_cpi_yy",
+      "period": "2026-09",
+      "value": 3.5,
+      "edition": "2026-10-21",
+      "fixture": "d7g7.json",
+      "series": "D7G7",
+      "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/d7g7/mm23/data",
+      "source_class": "issuer",
+      "unit": "%",
+      "verified": true
+    },
+    {
+      "family": "uk_cpi",
+      "indicator": "uk_core_cpi_yy",
+      "period": "2026-08",
+      "value": 2.6,
+      "edition": "2026-10-21",
+      "fixture": "dko8.json",
+      "series": "DKO8",
+      "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/dko8/mm23/data",
+      "source_class": "issuer",
+      "unit": "%",
+      "verified": true
+    },
+    {
+      "family": "uk_cpi",
+      "indicator": "uk_core_cpi_yy",
+      "period": "2026-09",
+      "value": 2.8,
+      "edition": "2026-10-21",
+      "fixture": "dko8.json",
+      "series": "DKO8",
+      "source_url": "https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/dko8/mm23/data",
+      "source_class": "issuer",
+      "unit": "%",
+      "verified": true
+    },
+    {
+      "family": "uk_labour_market",
+      "indicator": "uk_unemployment_rate",
+      "period": "2026-07",
+      "value": 4.9,
+      "edition": "2026-10-20",
+      "fixture": "mgsx.json",
+      "series": "MGSX",
+      "source_url": "https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms/data",
+      "source_class": "issuer",
+      "unit": "%",
+      "verified": true
+    },
+    {
+      "family": "uk_labour_market",
+      "indicator": "uk_unemployment_rate",
+      "period": "2026-08",
+      "value": 4.7,
+      "edition": "2026-10-20",
+      "fixture": "mgsx.json",
+      "series": "MGSX",
+      "source_url": "https://www.ons.gov.uk/employmentandlabourmarket/peoplenotinwork/unemployment/timeseries/mgsx/lms/data",
+      "source_class": "issuer",
+      "unit": "%",
+      "verified": true
+    },
+    {
+      "family": "uk_labour_market",
+      "indicator": "uk_regular_pay_yy",
+      "period": "2026-07",
+      "value": 3.6,
+      "edition": "2026-10-20",
+      "fixture": "kai9.json",
+      "series": "KAI9",
+      "source_url": "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/kai9/lms/data",
+      "source_class": "issuer",
+      "unit": "%",
+      "verified": true
+    },
+    {
+      "family": "uk_labour_market",
+      "indicator": "uk_regular_pay_yy",
+      "period": "2026-08",
+      "value": 3.7,
+      "edition": "2026-10-20",
+      "fixture": "kai9.json",
+      "series": "KAI9",
+      "source_url": "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/kai9/lms/data",
+      "source_class": "issuer",
+      "unit": "%",
+      "verified": true
+    }
+  ]
+}

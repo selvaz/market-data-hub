@@ -31,6 +31,7 @@ from .verification import configured_bands, persist_review, verify
 DEFAULT_LOOKBACK_MONTHS = 24
 ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapter,
             "ea_hicp": EurostatAdapter, "uk_gdp": ONSAdapter,
+            "uk_cpi": ONSAdapter, "uk_labour_market": ONSAdapter,
             "us_ppi": BLSAdapter, "us_jolts": BLSAdapter, "us_pce": BEAAdapter,
             **{f: USRedistributorAdapter for f in ("us_retail_sales", "us_housing_starts", "us_durable_goods",
                                                    "us_industrial_production", "us_trade_balance")}}
