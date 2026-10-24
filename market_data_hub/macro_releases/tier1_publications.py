@@ -1,5 +1,6 @@
 """Shared machinery for narrow, edition-bound public issuer publications."""
 from datetime import datetime
+from dataclasses import replace
 from html import unescape
 from io import BytesIO
 import re
@@ -64,11 +65,14 @@ class Tier1Adapter:
         client = self.client
         class PublicClient:
             def get(self, provider, url, params=None):
+                requested_url = url
                 parts = urlsplit(url)
                 if parts.query:
                     params = dict(parse_qsl(parts.query), **(params or {}))
                     url = urlunsplit(parts._replace(query=""))
-                return client.get(provider, url, params)
+                doc = client.get(provider, url, params)
+                # These public document IDs/filenames are provenance, not keys.
+                return replace(doc, url=requested_url) if parts.query else doc
         for family in families:
             adapter = {"uk_retail_sales": ons_retail, "us_new_home_sales": census_sales,
                        "uk_total_pay": ons_pay, "ea_ec_surveys": ec_surveys,

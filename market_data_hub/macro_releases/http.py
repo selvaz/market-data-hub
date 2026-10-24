@@ -119,9 +119,11 @@ class HttpClient:
         self.session = session or requests.Session()
         self.before_request = before_request
         self.max_attempts = max_attempts
+        self.calendar_cache = {}
         # Use certifi explicitly: the Windows system store is broken here.
         self.session.trust_env = False
-        self.limiters = {p: RateLimiter(p, rate_directory, daily_limit=500 if p == "bls" else None,
+        self.limiters = {p: RateLimiter(p, rate_directory, interval=5.0 if p == "eurostat" else 1.0,
+                                     daily_limit=500 if p == "bls" else None,
                                      persistent=persistent_rates)
                          for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich")}
 
@@ -172,7 +174,17 @@ class HttpClient:
                 self.before_request()
 
     def get(self, provider, url, params=None):
-        return self.request(provider, url, params=params)
+        # A calendar is one run snapshot, shared by its publication families.
+        # Keep the original Document/timestamp and never cache failures.
+        calendar = provider == "eurostat" and url.endswith("/calendars/eventsJson")
+        if not calendar:
+            return self.request(provider, url, params=params)
+        key = (url, json.dumps(params, sort_keys=True))
+        if key in self.calendar_cache:
+            return self.calendar_cache[key]
+        result = self.request(provider, url, params=params)
+        self.calendar_cache[key] = result
+        return result
 
 
 def require_complete(payload, rows, *, count_key="count", offset_key="offset"):

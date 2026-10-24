@@ -222,7 +222,7 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     gaps = {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"], "ea_trade_balance": ["cat:ea_trade_balance"]}
     gaps["uk_retail_sales"] = ["cat:uk_retail_sales_mm"]
     assert report["documented_certified_gaps"] == gaps
-    # 14 pilot + 16 US monthly (M9a-1) + 7 UK, EA GDP and claims (M9a-2) measures.
+    # 37 through M9a-2, plus 11 M9b measures: 44 mapped, four approved-card gaps.
     assert report["macro_releases"] == {"mapped": 44, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107

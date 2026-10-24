@@ -90,7 +90,7 @@ def parse(document, family, since="1900-01"):
 
 
 def fetch(client, family, since):
-    document = client.get("eurostat", CALENDAR, {"start": min(EDITIONS[family]) + "T00:00:00Z", "end": "2027-01-01T00:00:00Z"})
+    document = client.get("eurostat", CALENDAR, {"start": "2026-09-01T00:00:00Z", "end": "2027-01-01T00:00:00Z"})
     out = []
     for edition, (period, _, _) in calendar_editions(document, family).items():
         if period >= since:

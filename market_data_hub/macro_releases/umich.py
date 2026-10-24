@@ -1,6 +1,5 @@
 """Public issuer headline and public dated reports; no delayed FRED substitute."""
 from datetime import datetime
-import re
 
 from .http import FetchError
 from .schedule import due, run_date
@@ -35,11 +34,13 @@ def parse(document, family="us_umich_sentiment", since="1900-01"):
         edition = candidates[0]
         # The headline has no publication date. Bind title/stage to the issuer
         # calendar AND its independently printed next-release date and stage.
-        future = sorted(d for d in EDITIONS[family] if d > edition)
+        next_editions = dict(EDITIONS[family], **{"2027-01-08": ("2027-01", "preliminary", "10:00")})
+        # https://data.sca.isr.umich.edu/fetchdoc.php?docid=81621 (2027 calendar)
+        future = sorted(d for d in next_editions if d > edition)
         if not future:
             raise FetchError("Michigan next edition metadata needs review")
         next_date = future[0]
-        next_head, next_stage, _ = EDITIONS[family][next_date]
+        next_head, next_stage, _ = next_editions[next_date]
         expected = datetime.strptime(next_date, "%Y-%m-%d")
         next_match = require(r"Next data release: (\w+), (\w+) (\d{1,2}), (\d{4}) for (Preliminary|Final) (\w+) data at 10am ET", body)
         if (datetime.strptime(" ".join((next_match[2], next_match[3], next_match[4])), "%B %d %Y").date().isoformat() != next_date or
@@ -58,5 +59,8 @@ def fetch(client, family, since):
             if not rows or {o.edition for o in rows} != {edition}:
                 raise FetchError("Michigan requested archive edition needs review")
             out += rows
-    out += parse(client.get("umich", URL), family, since)
+    headline = parse(client.get("umich", URL), family, since)
+    if headline and {o.edition for o in headline} != {max(due(EDITIONS[family]))}:
+        raise FetchError("Michigan current headline is stale; needs review")
+    out += headline
     return out
