@@ -58,9 +58,9 @@ class Tier1Adapter:
         self.client = client
 
     def fetch(self, families, since):
-        from . import eurostat_activity, ons_retail
+        from . import eurostat_activity, ons_retail, census_sales
         out = []
         for family in families:
-            adapter = ons_retail if family == "uk_retail_sales" else eurostat_activity
+            adapter = {"uk_retail_sales": ons_retail, "us_new_home_sales": census_sales}.get(family, eurostat_activity)
             out += adapter.fetch(self.client, family, since)
         return out

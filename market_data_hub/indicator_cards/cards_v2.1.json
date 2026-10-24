@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "6fdff7b2cd96c0c3b06eb9a15b2ae4adbb8ecca4d4ebe88a0f4b7c453bcddae8",
+  "aliases_sha256": "870125dab4c94a031fa69b353e51675ed8bb0824ceb7ae2ff1502bb52cc91325",
   "cards": [
     {
       "concept": "Real GDP",
@@ -3956,7 +3956,9 @@
         "cal": [
           "us_new_home_sales"
         ],
-        "cat": [],
+        "cat": [
+          "us_new_home_sales"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],

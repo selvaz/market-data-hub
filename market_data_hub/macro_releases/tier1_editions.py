@@ -5,6 +5,13 @@ No dataset update or retrieval timestamp is promoted to a release date.
 """
 EUROSTAT_SCHEDULE = "https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar"
 EDITIONS = {
+    "us_new_home_sales": {
+        "2026-08-25": ("2026-07", "final", "10:00"),
+        "2026-09-24": ("2026-08", "final", "10:00"),
+        "2026-10-27": ("2026-09", "final", "10:00"),
+        "2026-11-25": ("2026-10", "final", "10:00"),
+        "2026-12-23": ("2026-11", "final", "10:00"),
+    },
     "uk_retail_sales": {
         "2026-09-18": ("2026-08", "final", "07:00"),
         "2026-10-23": ("2026-09", "final", "07:00"),
@@ -38,3 +45,4 @@ EDITIONS = {
 }
 SCHEDULES = {family: EUROSTAT_SCHEDULE for family in EDITIONS}
 SCHEDULES["uk_retail_sales"] = "https://www.ons.gov.uk/releasecalendar?keywords=retail%20sales&release-type=type-upcoming"
+SCHEDULES["us_new_home_sales"] = "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
