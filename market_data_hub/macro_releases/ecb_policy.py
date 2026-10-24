@@ -33,7 +33,7 @@ def parse(document, family="ecb_policy", since="1900-01"):
 def fetch(client, family, since):
     listing = client.get("ecb", LISTING)
     indexed = {}
-    for date, path in re.findall(rb'<dt isoDate="(2026-\d{2}-\d{2})">.*?<a href="([^\"]+\.en\.html)"[^>]*>Monetary policy decisions</a>', listing.body, re.S):
+    for date, path in re.findall(rb'<dt isoDate="(2026-\d{2}-\d{2})">(?:(?!<dt\b).)*?<a href="([^\"]+\.en\.html)"[^>]*>Monetary policy decisions</a>', listing.body, re.S):
         edition = date.decode()
         reviewed(family, edition)
         indexed[edition] = HOST + path.decode()

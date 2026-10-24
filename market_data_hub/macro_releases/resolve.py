@@ -43,6 +43,17 @@ COLLECT_LOG_LIMITATION = (
 )
 
 
+def policy_payload(row, vintage):
+    """Old stores and arbitrary raw readings need not contain policy metadata."""
+    if vintage:
+        return json.loads(row["policy_decision_json"]) if row.get("policy_decision_json") else None
+    try:
+        payload = json.loads(row["raw_payload_json"])
+    except (ValueError, TypeError):
+        return None
+    return payload.get("policy_decision") if isinstance(payload, dict) else None
+
+
 def canonical_unit(unit):
     return {"percent": "%", "percentage": "%", "pct": "%"}.get(unit, unit)
 
@@ -532,8 +543,7 @@ class Snapshot:
             ordering_at=ordering_at,
             timestamp_precisions=precisions,
             issuer_timezone=row.get("issuer_timezone"),
-            policy_decision=(json.loads(row["policy_decision_json"]) if row.get("policy_decision_json") else None)
-            if vintage else json.loads(row["raw_payload_json"]).get("policy_decision"),
+            policy_decision=policy_payload(row, vintage),
         )
 
 
