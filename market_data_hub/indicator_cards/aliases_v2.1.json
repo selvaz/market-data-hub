@@ -24,5 +24,5 @@
     {"id": "cat:uk_regular_pay_yy", "key": "uk_awe_regular", "basis": "Explicit AWE regular pay concept; approved cal:uk_earnings_ex_bonus (M9a-2)."},
     {"id": "cat:us_initial_jobless_claims", "key": "us_claims_initial", "basis": "Explicit initial claims concept; approved cal:us_claims (M9a-2)."}
   ],
-  "certified_gaps": {"ea_retail_sales": ["cat:ea_retail_sales_mm"]}
+  "certified_gaps": {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"]}
 }
