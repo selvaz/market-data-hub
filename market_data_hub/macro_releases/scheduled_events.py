@@ -11,7 +11,7 @@ import json
 
 from .catalogue import FAMILIES, INDICATORS, hicp_indicator
 from .models import Reading, ReleaseEvent, ScheduleVersion, SourceSeries, utc
-from .read_api import FAMILY_INDICATORS
+from .read_api import indicators_for_stage
 from .publication_times import local_release
 from .schedule import family_editions, issuer_zone, release_instant
 
@@ -19,8 +19,10 @@ PARSER_VERSION = "reviewed-calendar:m2b-v1"
 
 
 def calendar_source(family):
-    from . import dol, policy_editions, tier1_editions, us_editions
+    from . import dol, housing_editions, policy_editions, tier1_editions, us_editions
     from .ons_rates import EDITIONS as UK
+    if family in housing_editions.SCHEDULES:
+        return housing_editions.SCHEDULES[family]
     if family in policy_editions.SCHEDULES:
         return policy_editions.SCHEDULES[family]
     if family in tier1_editions.SCHEDULES:
@@ -58,7 +60,7 @@ def persist_scheduled_events(store, *, recorded_at=None):
                 zone = issuer_zone(family)
                 measures = ([hicp_indicator(period, basis) for basis in ("mm", "yy")]
                     if family == "ea_hicp" else
-                    [INDICATORS[i] for i in sorted(FAMILY_INDICATORS[family])])
+                    [INDICATORS[i] for i in sorted(indicators_for_stage(family, stage))])
                 issuer = measures[0].issuer_id
                 event_id = ":".join((issuer, family, stage, edition))
                 store.put(ReleaseEvent(id=event_id, issuer_id=issuer, family=family,

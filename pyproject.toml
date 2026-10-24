@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "market-data-hub"
-version = "0.3.6"
+version = "0.3.7"
 description = "Unified market data consolidation pipeline (DuckDB) with a read-only extraction & discovery API for LLMs and downstream tools."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "Proprietary" }
 authors = [{ name = "Marco Selva" }]
 dependencies = [
-    "duckdb>=1.0",
+    "duckdb>=1.0,<2",  # 2.0.0 (Oct 2026) breaks open-result handling; production runs 1.5.4
     "curl_cffi>=0.6",
     "pandas>=2.0",
     "numpy",

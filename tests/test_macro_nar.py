@@ -20,6 +20,9 @@ def offline(monkeypatch):
     def forbidden(*args, **kwargs):
         raise AssertionError("NAR tests must not use network")
     monkeypatch.setattr(requests.Session, "request", forbidden)
+    # Stub every imported credential binding; never consult this host.
+    for module in ("fred", "bls", "bea", "discovery"):
+        monkeypatch.setattr("market_data_hub.macro_releases." + module + ".api_key", lambda _: "fixture")
     token = RUN_INSTANT.set(datetime(2026, 10, 24, 18, tzinfo=timezone.utc))
     yield
     RUN_INSTANT.reset(token)

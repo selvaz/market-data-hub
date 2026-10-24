@@ -67,7 +67,8 @@ def parse(document, previous, family="boj_policy", since="1900-01", *, feed=None
     evidence = [dict(source_url=previous.url, decision_date=prior, rate=old)]
     clock = release_clock(document, feed, edition)
     if clock:
-        evidence.append(dict(source_url=feed.url, evidence="issuer_publication_timestamp"))
+        evidence.append(dict(source_url=feed.url, evidence="issuer_publication_timestamp",
+                             retrieved_at=feed.retrieved_at, content_hash=feed.document_hash))
     return [observation(document, family, edition, rates, votes, evidence=evidence, method=method,
                         time=clock, time_missing_reason=None if clock else TIME_GAP)] if edition[:7] >= since else []
 

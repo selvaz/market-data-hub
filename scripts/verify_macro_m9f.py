@@ -34,16 +34,27 @@ def main():
         raise ValueError("An existing source and separate backup directory are required")
     root.mkdir(parents=True, exist_ok=True)
     directory = Path(tempfile.mkdtemp(prefix="mdh-m9f-", dir=root))
+    previous_tempdir = tempfile.tempdir
+    try:
+        # Private SQLite main/WAL snapshots and rate ledgers also stay under
+        # the approved verification root, not the host's shared temp directory.
+        tempfile.tempdir = str(directory)
+        return verify_copy(args, directory)
+    finally:
+        tempfile.tempdir = previous_tempdir
+
+
+def verify_copy(args, directory):
     target = directory / "macro_releases.sqlite"
     before = args.source.stat()
-    with preview_store(args.source) as source:
+    with preview_store(args.source, expected_schema=9) as source:
         with sqlite3.connect(str(target)) as destination:
             source.conn.backup(destination)
     print("SQLite backup:", target, flush=True)
     raw = directory / "no-consensus-archive"
     raw.mkdir()
     report = dict(copy=str(target), backup_method="SQLite backup API from stable private main/WAL snapshot",
-                  families=args.families)
+                  source_schema=9, temporary_root=str(directory), families=args.families)
     passed = True
     for label, dry_run in (("dry_run", True), ("copy_collection", False), ("idempotence", False)):
         result = run_daily.execute(target, args.families, 24, dry_run, raw_dir=raw)

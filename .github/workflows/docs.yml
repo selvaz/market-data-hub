@@ -1,6 +1,12 @@
 name: docs
 
 on:
+  pull_request:
+    paths:
+      - "market_data_hub/**"
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
   push:
     branches: [main]
     paths:
@@ -20,7 +26,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  build:
+    if: github.event_name == 'pull_request' || github.ref != 'refs/heads/main'
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install docs dependencies
+        run: pip install "mkdocs-material>=9.5"
+      - name: Build docs
+        run: mkdocs build --strict
+
   deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

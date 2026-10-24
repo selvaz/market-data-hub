@@ -3,9 +3,9 @@
 from pathlib import Path
 import sqlite3
 
-SCHEMA_VERSION = 8
+SCHEMA_VERSION = 9
 READER_FLOOR = 3
-READER_CEILING = 8
+READER_CEILING = 9
 APPEND_ONLY = (
     "value_vintages",
     "readings",
@@ -43,7 +43,9 @@ def migrate(conn: sqlite3.Connection) -> None:
             scripts.append("migration_006.sql")
         if current < 7:
             scripts.append("migration_007.sql")
-        scripts.append("migration_008.sql")
+        if current < 8:
+            scripts.append("migration_008.sql")
+        scripts.append("migration_009.sql")
         for script in scripts:
             statement = ""
             for line in (

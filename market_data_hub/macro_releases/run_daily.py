@@ -58,7 +58,7 @@ def fetch_windows(families, lookback, today):
 
 
 @contextmanager
-def preview_store(target):
+def preview_store(target, *, expected_schema=None):
     """Open only a private snapshot; even mode=ro can create live WAL sidecars.
 
     Read the main file and WAL twice and require stable bytes (bounded retries).
@@ -94,6 +94,8 @@ def preview_store(target):
                     source.backup(conn)
                 finally:
                     source.close()
+        if expected_schema is not None and conn.execute("PRAGMA user_version").fetchone()[0] != expected_schema:
+            raise RuntimeError("Preview source does not have the required schema version")
         migrate(conn)
         yield Store(conn, writable=True)
     finally:

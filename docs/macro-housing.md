@@ -5,6 +5,31 @@ Branch `feat/m9f-housing` is based on `origin/integrate/m2b` at `e301c52`.
 stacks on [#128](https://github.com/selvaz/market-data-hub/pull/128). Do not merge
 before the integration PR. Work is delivered one family at a time.
 
+## Current-main integration (24 October 2026)
+
+Merged `origin/main` at `fd59e26` into the feature branch without rebasing.
+The schema-8 and conflicting-base limitations recorded in the earlier step
+reports below are historical. The integrated code includes schema v9, BoJ
+clock enrichment, main's per-stage schedules and FF-independent calendar seeding,
+the `duckdb<2` bound, hermetic credential tests, Eurostat offsets, the generated
+macro-indicators documentation and version 0.3.7.
+
+| Conflict group | Resolution |
+| --- | --- |
+| Scheduling, discovery, catalogue and collection | Retained all six housing families and main's single release-instant path. Housing seeds only stages in its reviewed editions, with the correct issuer calendar URL. Main's flash/final membership restrictions remain. |
+| Schema, store, BoJ and resolver | Kept main's schema-v9 migration and append-only BoJ clock enrichment, including historical query cutoffs and missing-meeting handling. |
+| Card aliases, coverage and generated JSON | Kept main's approved aliases and de-duplication, plus the construction alias and explicit housing card gaps. Regenerated JSON from the authoritative inputs. |
+| Consensus and FF aliases | Kept main's v5 stage-vocabulary and EUR trade evidence fixes, plus the four exact housing aliases. Removed duplicate calendar seeding introduced by the overlapping merge. |
+| Tests | Kept main's review regressions, archive-present/missing cases and v9 assertions; retained housing goldens, PMMS survey-week comparisons and private issuer labels. Every new housing test stubs imported credential bindings and blocks network. |
+| Documentation | Kept main's corrected event-previous contract, BoJ timing notes and source-path links; regenerated macro-indicators Part B to include housing coverage. |
+
+The focused integration suite passed **130 tests**, and `mkdocs build --strict`
+passed locally. Both indicator-card and documentation freshness checks pass.
+The docs workflow now has a read-only build job on pull requests; deployment
+remains restricted to main. Current-production verification explicitly requires
+source schema 9 before private migration, and all verifier SQLite snapshots and
+rate-ledger writes are confined to its new directory under `D:\Temp`.
+
 ## Certified so far (24 October 2026)
 
 | Family | Issuer | Source class | Frequency | Reviewed editions through 31 December 2026 | Golden cases |

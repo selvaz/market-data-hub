@@ -48,13 +48,54 @@ def test_release_day_preserves_previous_edition_before_release_and_during_grace(
         if label == "grace":
             assert pending["reason"] == "not_yet_published"
         with open_reader(db) as store:
-            editions = {r[0] for r in store.conn.execute("SELECT edition FROM release_events")}
+            editions = {r[0] for r in store.conn.execute(
+                "SELECT DISTINCT e.edition FROM release_events e JOIN value_vintages v "
+                "ON v.release_event_id=e.id WHERE e.family=?", (family,))}
             assert max(editions) == prior
             assert release not in editions
     # A stale rolling publication may not hide a missing release indefinitely.
     clock["at"] = stamp + timedelta(hours=6)
     late = run_daily.execute(db, [family], 24, False, raw_dir=tmp_path / "none")
     assert late["families"][family]["status"] == "needs_review", late
+
+
+@pytest.mark.parametrize("edition,period,instant", [
+    ("2026-10-16", "2026-09", "2026-10-16T09:00:00+00:00"),
+    ("2026-11-18", "2026-10", "2026-11-18T10:00:00+00:00"),
+])
+def test_empty_hicp_fetch_is_scheduled_before_release_but_fails_after_grace(
+    tmp_path, monkeypatch, edition, period, instant
+):
+    from market_data_hub.macro_releases import eurostat
+    from market_data_hub.macro_releases.tier1_editions import EDITIONS
+    # Isolate one reviewed HICP edition; later releases cannot excuse its absence.
+    monkeypatch.setattr(eurostat, "PUBLICATIONS", {(period, "final"): edition})
+    monkeypatch.setitem(EDITIONS, "ea_core_hicp", {edition: (period, "final", "11:00")})
+    class Empty:
+        def __init__(self, client):
+            pass
+        def fetch(self, *args):
+            return []
+    monkeypatch.setitem(run_daily.ADAPTERS, "ea_hicp", Empty)
+    stamp = datetime.fromisoformat(instant)
+    clock = {"at": stamp - timedelta(seconds=1)}
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return clock["at"]
+    monkeypatch.setattr(run_daily, "datetime", Clock)
+    db = tmp_path / "hicp.sqlite"
+    before = run_daily.execute(db, ["ea_hicp"], 24, False, raw_dir=tmp_path / "none")
+    family = before["families"]["ea_hicp"]
+    assert family["status"] == "no_change" and "error_type" not in family
+    assert family["scheduled_editions"] == [dict(edition=edition, period=period,
+        stage="final", time="11:00", status="scheduled")]
+    clock["at"] = stamp + timedelta(hours=6)
+    after = run_daily.execute(db, ["ea_hicp"], 24, False, raw_dir=tmp_path / "none")
+    assert after["families"]["ea_hicp"]["status"] == "failed"
+    assert after["families"]["ea_hicp"]["error_type"] == "FetchError"
+    with open_reader(db) as store:
+        assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 0
 
 
 @pytest.mark.parametrize("family,edition,instant", [
