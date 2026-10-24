@@ -40,6 +40,14 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   the resulting zero-row backfill; no historical consensus is fabricated.
 
 ### Fixed
+- Materialize reviewed issuer edition calendars as nonnumeric scheduled event
+  membership and append-only schedule versions before FF consensus ingestion.
+  Pre-release forecasts and subsequent official figures share the adapter's
+  issuer/family/stage/edition identity. Existing schedules are preserved;
+  unlisted dates remain `release_event_not_found`. Recognize policy decision
+  periods, percent-per-annum units and FF's reviewed GDP stage vocabulary;
+  keep FF surprises suppressed. Daily actuals wait for the known issuer release
+  instant, including DST, rather than just its calendar date.
 - Retire a linked FF consensus observation when the current issuer index no longer places it on a unique event (`release_event_not_found` / `release_event_ambiguous`): an append-only v7 journal row with `retired=1` hides it from snapshots and cards, a later valid match restores it, and the checkpoint version includes the journal position so a snapshot is reprocessed when the index returns to an earlier state.
 - Include normalized stored indicator aliases in FF checkpoint fingerprints so
   catalogue additions automatically retry previously unmapped captures.

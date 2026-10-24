@@ -141,6 +141,31 @@ def test_gdp_dataset_updated_is_not_a_publication_date():
         EurostatAdapter.parse_gdp_snapshot(document("ea-gdp.json"), "2026-07-30")
 
 
+@pytest.mark.parametrize("updated,valid", [
+    ("2026-10-20T10:59:59+0200", False),
+    ("2026-10-20T11:00:00+0200", True),
+    ("2026-10-20T10:59:59+02:00", False),
+    ("2026-10-20T11:00:00+02:00", True),
+    ("2026-10-20T04:59:59-0400", False),
+    ("2026-10-20T05:00:00-0400", True),
+    ("2026-10-20T09:00:00Z", True),
+    ("2026-10-20T09:00:00", False),
+    ("not-a-timestamp", False),
+])
+def test_gdp_snapshot_update_requires_aware_instant_at_or_after_release(updated, valid):
+    doc = document("ea-gdp.json")
+    payload = doc.json()
+    payload["updated"] = updated
+    body = json.dumps(payload).encode()
+    doc = replace(doc, body=body, document_hash=hashlib.sha256(body).hexdigest())
+    if valid:
+        rows = EurostatAdapter.parse_gdp_snapshot(doc, "2026-10-20")
+        assert rows and all(o.provider_vintage == updated for o in rows)
+    else:
+        with pytest.raises(FetchError, match="snapshot update predates release or is invalid"):
+            EurostatAdapter.parse_gdp_snapshot(doc, "2026-10-20")
+
+
 def test_gdp_unknown_calendar_edition_and_membership_fail_closed():
     from market_data_hub.macro_releases.eurostat_gdp import calendar_editions
     doc = document("ea-calendar.json")

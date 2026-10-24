@@ -2,6 +2,19 @@
   "classification_version": "v2.1",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages.",
   "aliases": [
+    {"id": "cat:boj_policy_rate_decision", "key": "jp_boj", "basis": "Approved BOJ short-term policy rate decision concept; issuer MPM statement and published rate vote (M9c)."},
+    {"id": "cat:pboc_lpr_decision", "key": "cn_lpr", "basis": "Approved PBOC/NIFC LPR decision concept; both published tenors retained in the policy card (M9c)."},
+    {"id": "cat:boc_overnight_rate_decision", "key": "ca_boc", "basis": "Approved target overnight rate decision concept; issuer fixed-announcement statement at 09:45 ET (M9c)."},
+    {"id": "cat:boe_bank_rate_decision", "key": "uk_boe", "basis": "Approved MPC Bank Rate decision concept; statement decision, publication date and rate vote (M9c)."},
+    {"id": "cat:ecb_deposit_facility_rate_decision", "key": "ea_ecb_decision", "basis": "Approved ECB deposit facility rate decision concept, from the dated Governing Council statement (M9c)."},
+    {"id": "cat:fed_funds_rate_decision", "key": "us_fomc_decision", "basis": "Approved FOMC target range decision concept; statement range, change and vote (M9c)."},
+    {"id": "cat:us_umich_consumer_sentiment", "key": "us_umich_sentiment", "basis": "Same approved University of Michigan Index of Consumer Sentiment concept; issuer public preliminary/final editions, 1966 Q1=100 (M9b)."},
+    {"id": "cat:ea_economic_sentiment_indicator", "key": "ea_esi", "basis": "Same approved DG ECFIN Economic Sentiment Indicator concept; issuer final BCS edition and EA21 aggregate (M9b)."},
+    {"id": "cat:ea_consumer_confidence", "key": "ea_consumer_confidence", "basis": "Same approved EC consumer confidence balance concept as cal:ez_consumer_confidence_flash and final; stages remain editions of one measure (M9b)."},
+    {"id": "cat:uk_average_weekly_earnings_yy", "key": "uk_awe_total", "basis": "Same approved total-pay including bonuses concept; KAC3 three-month average annual growth, unlike regular pay KAI9 (M9b)."},
+    {"id": "cat:ea21_core_hicp_yy", "key": "ea_hicp_core", "basis": "Same approved core HICP concept as cat:ea_core_hicp_yy, fixed EA21 composition and issuer flash/final editions (M9b)."},
+    {"id": "cat:us_new_home_sales", "key": "us_new_home_sales", "basis": "Same approved new single-family home sales concept as cal:us_new_home_sales; Census SAAR in thousands (M9b)."},
+    {"id": "cat:ea_unemployment_rate", "key": "ea_unemployment", "basis": "Same approved unemployment concept, fixed EA21 composition, age 15-74 SA (M9b)."},
     {"id": "cat:us_cpi_headline_yy", "key": "us_cpi_headline", "basis": "Explicit headline CPI-U concept; approved cat:us_cpi_yy and cal:us_cpi_yy."},
     {"id": "cat:us_cpi_headline_mm", "key": "us_cpi_headline", "basis": "Explicit headline CPI-U concept; approved cat:us_cpi_mm and cal:us_cpi_mm."},
     {"id": "cat:us_cpi_core_yy", "key": "us_cpi_core", "basis": "Explicit CPI ex food and energy concept; approved cal:us_core_cpi_yy."},
@@ -23,5 +36,5 @@
     {"id": "cat:uk_regular_pay_yy", "key": "uk_awe_regular", "basis": "Explicit AWE regular pay concept; approved cal:uk_earnings_ex_bonus (M9a-2)."},
     {"id": "cat:us_initial_jobless_claims", "key": "us_claims_initial", "basis": "Explicit initial claims concept; approved cal:us_claims (M9a-2)."}
   ],
-  "certified_gaps": {}
+  "certified_gaps": {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"], "ea_trade_balance": ["cat:ea_trade_balance"], "uk_retail_sales": ["cat:uk_retail_sales_mm"]}
 }

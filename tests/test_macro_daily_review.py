@@ -249,7 +249,8 @@ def test_ons_ray_replay_four_days_has_no_growth(tmp_path, observations, monkeypa
             if counts:
                 assert current == counts
             counts = current
-            assert max(len(r[0]) for r in reader.conn.execute("SELECT raw_payload_json FROM readings")) < 300
+            assert max(len(r[0]) for r in reader.conn.execute("SELECT raw_payload_json FROM readings "
+                "WHERE extraction_method<>'reviewed_calendar'")) < 300
 
 
 @pytest.mark.parametrize("body", ["", '{"token":"cutoff"'])
@@ -473,7 +474,8 @@ def test_document_only_structure_failure_is_reviewed(tmp_path, monkeypatch, caps
     assert json.loads(capsys.readouterr().out)["families"]["us_cpi"]["status"] == "needs_review"
     with open_reader(db) as reader:
         assert reader.conn.execute("SELECT COUNT(*) FROM review_queue").fetchone()[0] == 1
-        assert reader.conn.execute("SELECT COUNT(*) FROM readings").fetchone()[0] == 0
+        assert reader.conn.execute("SELECT COUNT(*) FROM readings "
+            "WHERE extraction_method<>'reviewed_calendar'").fetchone()[0] == 0
 
 
 def test_reviewed_final_bootstraps_unpinned_historical_flash(tmp_path):

@@ -195,7 +195,7 @@ def test_processed_snapshot_bypasses_parsing_and_new_capture_ingests(
         ({"title": "CPI-ish y/y (2026-09)"}, "unmapped", 0),
         ({"date": "2026-10-15T08:30:00-04:00"}, "release_event_not_found", 1),
         ({"title": "CPI y/y (Sep)"}, "unmapped", 0),
-        ({"country": "GBP"}, "unmapped", 0),
+        ({"country": "GBP"}, "release_event_not_found", 1),
         ({"country": "All"}, "unmapped", 0),
         ({"title": "German CPI y/y (2026-09)", "country": "EUR"}, "unmapped", 0),
         ({"title": "Final CPI y/y (2026-09)"}, "unmapped", 0),
@@ -831,10 +831,10 @@ def test_snapshot_rows_and_ledger_roll_back_together(store, tmp_path, monkeypatc
 
 def test_reviewed_aliases_are_limited_exact_and_justified(store, tmp_path):
     catalogue = consensus.Catalogue(store)
-    assert len(catalogue.aliases) == 6
+    assert {alias["family"] for alias in catalogue.aliases} == set(run_daily.FAMILIES)
     for alias in catalogue.aliases:
         indicator = INDICATORS[alias["indicator_id"]]
-        assert indicator.tier == "T1" and indicator.geography in {"USA", "GBR", "EA21"}
+        assert indicator.tier == "T1" and indicator.geography == alias["geography"]
         assert alias["title"] in alias["justification"]
         item = dict(
             event(), title=alias["title"] + " (2026-09)", country=alias["currency"]

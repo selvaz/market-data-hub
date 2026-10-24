@@ -91,7 +91,9 @@ def parse_snapshot(document, edition, since="1900-01"):
     if stage != "update" or payload.get("source") != "ESTAT" or payload.get("class") != "dataset" or payload.get("extension", {}).get("id") != "NAMQ_10_GDP":
         raise FetchError("Eurostat GDP dataset identity or estimate stage needs review")
     try:
-        updated = datetime.fromisoformat(payload["updated"].replace("Z", "+00:00"))
+        # Eurostat emits +0200; Python 3.9/3.10 require +02:00 here.
+        stamp = re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", payload["updated"])
+        updated = datetime.fromisoformat(stamp.replace("Z", "+00:00"))
         if updated.tzinfo is None or updated < release_instant(edition, family="ea_gdp"):
             raise ValueError("snapshot predates the edition")
     except (KeyError, ValueError, TypeError, AttributeError):

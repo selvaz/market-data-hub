@@ -16,12 +16,17 @@ import time
 from urllib.parse import urlsplit
 
 import certifi
-from filelock import FileLock
+from filelock import FileLock, Timeout as FileLockTimeout
 import requests
 
 
 class FetchError(RuntimeError):
     """Safe to report: never includes credential-bearing URLs or bodies."""
+
+
+class RateLimitBusy(FetchError):
+    """A contended provider ledger can be retried within the request budget."""
+    retryable = True
 
 
 def api_key(name: str) -> str:
@@ -96,21 +101,29 @@ class RateLimiter:
         self.daily_limit = daily_limit
 
     def acquire(self):
-        with FileLock(str(self.path) + ".lock", timeout=15) if self.path else nullcontext():
-            now = time.time()
-            state = (json.loads(self.path.read_text()) if self.path.exists() else {}) if self.path else self.state
-            day = datetime.fromtimestamp(now, timezone.utc).date().isoformat()
-            count = state.get("count", 0) if state.get("day") == day else 0
-            if self.daily_limit is not None and count >= self.daily_limit:
-                raise FetchError("Provider daily quota exhausted; try the next daily run")
-            delay = max(0, state.get("last", 0) + self.interval - now)
-            if delay > 5:
-                raise FetchError("Provider rate ledger clock is ahead; no wait loop")
-            if delay:
-                time.sleep(delay)
-            self.state = {"day": day, "count": count + 1, "last": time.time()}
-            if self.path:
-                self.path.write_text(json.dumps(self.state))
+        try:
+            with FileLock(str(self.path) + ".lock", timeout=15) if self.path else nullcontext():
+                now = time.time()
+                state = (json.loads(self.path.read_text()) if self.path.exists() else {}) if self.path else self.state
+                day = datetime.fromtimestamp(now, timezone.utc).date().isoformat()
+                count = state.get("count", 0) if state.get("day") == day else 0
+                if self.daily_limit is not None and count >= self.daily_limit:
+                    raise FetchError("Provider daily quota exhausted; try the next daily run")
+                if state.get("last", 0) > now + 5:
+                    raise FetchError("Provider rate ledger clock is ahead; no wait loop")
+                # Old ledgers have only last. A reservation may legitimately be
+                # far ahead; keep it separate from the wall clock skew guard.
+                slot = max(now, state.get("reserved_until", state.get("last", 0)) + self.interval)
+                delay = slot - now
+                self.state = {"day": day, "count": count + 1, "last": now, "reserved_until": slot}
+                if self.path:
+                    self.path.write_text(json.dumps(self.state))
+        except FileLockTimeout:
+            raise RateLimitBusy("Provider rate ledger lock is busy; retry within the request budget") from None
+        # Sleeping never holds the ledger lock: other processes can reserve
+        # their own distinct slots without exhausting the lock timeout.
+        if delay:
+            time.sleep(delay)
 
 
 class HttpClient:
@@ -119,11 +132,14 @@ class HttpClient:
         self.session = session or requests.Session()
         self.before_request = before_request
         self.max_attempts = max_attempts
+        self.calendar_cache = {}
         # Use certifi explicitly: the Windows system store is broken here.
         self.session.trust_env = False
-        self.limiters = {p: RateLimiter(p, rate_directory, daily_limit=500 if p == "bls" else None,
+        # The public Euro-indicator archive throttles bursts across families.
+        self.limiters = {p: RateLimiter(p, rate_directory, interval=15.0 if p == "eurostat" else 1.0,
+                                     daily_limit=500 if p == "bls" else None,
                                      persistent=persistent_rates)
-                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol")}
+                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich", "fed", "ecb", "boe", "boj", "pboc", "boc")}
 
     def request(self, provider, url, *, params=None, payload=None) -> Document:
         safe_url = urlsplit(url)
@@ -132,12 +148,19 @@ class HttpClient:
         for attempt in range(self.max_attempts):
             if self.before_request:
                 self.before_request()
-            self.limiters[provider].acquire()
+            try:
+                self.limiters[provider].acquire()
+            except RateLimitBusy:
+                if attempt + 1 == self.max_attempts:
+                    raise
+                self._backoff(retry_delay(None, attempt))
+                continue
             try:
                 response = self.session.request(
                     "POST" if payload is not None else "GET", url,
                     params=params, json=payload, timeout=(10, 45),
                     verify=certifi.where(), allow_redirects=False,
+                    **({"headers": {"User-Agent": "Mozilla/5.0"}} if provider == "boe" else {}),
                 )
             except requests.exceptions.SSLError:
                 raise FetchError(f"{provider}: TLS verification failed") from None
@@ -172,7 +195,17 @@ class HttpClient:
                 self.before_request()
 
     def get(self, provider, url, params=None):
-        return self.request(provider, url, params=params)
+        # A calendar is one run snapshot, shared by its publication families.
+        # Keep the original Document/timestamp and never cache failures.
+        calendar = provider == "eurostat" and url.endswith("/calendars/eventsJson")
+        if not calendar:
+            return self.request(provider, url, params=params)
+        key = (url, json.dumps(params, sort_keys=True))
+        if key in self.calendar_cache:
+            return self.calendar_cache[key]
+        result = self.request(provider, url, params=params)
+        self.calendar_cache[key] = result
+        return result
 
 
 def require_complete(payload, rows, *, count_key="count", offset_key="offset"):

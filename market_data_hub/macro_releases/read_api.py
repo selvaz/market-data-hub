@@ -8,7 +8,7 @@ from decimal import Decimal
 import re
 from zoneinfo import ZoneInfo
 
-from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, UK_FAMILIES
+from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS
 from .models import utc
 from .resolve import (
     COLLECT_LOG_LIMITATION,
@@ -24,12 +24,24 @@ FAMILY_INDICATORS = {
     "us_cpi": {i for i in INDICATORS if i.startswith("us_cpi_")},
     "us_payrolls": {"us_payrolls_change"},
     "us_gdp": {"us_gdp_qq_saar"},
-    "ea_hicp": {i for i in INDICATORS if "hicp" in i},
+    "ea_hicp": {i for i in INDICATORS if "hicp" in i and "core" not in i},
     "uk_gdp": {"uk_gdp_mm", "uk_gdp_index"},
 }
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in {**US_MONTHLY, **UK_FAMILIES}.items()})
 FAMILY_INDICATORS["ea_gdp"] = {"ea21_gdp_qq", "ea21_gdp_yy"}
 FAMILY_INDICATORS["us_jobless_claims"] = {"us_initial_jobless_claims"}
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in REMAINING_FAMILIES.items()})
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in CENTRAL_BANKS.items()})
+
+
+def indicators_for_stage(family, stage):
+    """Only measures actually published by this family's edition stage."""
+    if (family, stage) == ("ea_ec_surveys", "flash"):
+        return {"ea_consumer_confidence"}
+    if (family, stage) == ("us_durable_goods", "final"):
+        return {"us_durable_goods_orders_mm"}
+    return FAMILY_INDICATORS[family]
+
 
 # Explicit comparable composition successors; never infer succession merely
 # from a shared issuer or family. Three missing monthly periods is the gate.
@@ -379,7 +391,32 @@ class ReadAPI:
                 continue
             if stale_series(snapshot, indicator, period, released_at):
                 continue
-            prior = prior_period(period, snapshot.indicators[indicator]["frequency"])
+            frequency = snapshot.indicators[indicator]["frequency"]
+            prior = prior_period(period, frequency) if frequency != "E" else None
+            decisions = None
+            missing_decision = None
+            if frequency == "E":
+                # Event periods are decision dates, not a daily calendar. Only
+                # stored actuals of this indicator can establish a predecessor;
+                # unavailable calendar memberships and other banks cannot.
+                decisions = subset(snapshot, (
+                    e for e in snapshot.evidence
+                    if e.indicator_id == indicator and e.event_id != event_id
+                    and e.reading_kind == "actual" and e.value is not None
+                    and e.reference_period and e.reference_period < period
+                    and event_order(snapshot, e) and event_order(snapshot, e) < released_at
+                ))
+                prior = max((e.reference_period for e in decisions.evidence), default=None)
+                if prior is not None:
+                    from .schedule import family_editions
+                    family = snapshot.events.get(event_id, {}).get("family", family_for(snapshot, indicator))
+                    # A reviewed meeting between two saved decisions is a gap,
+                    # not permission to call the older decision the previous one.
+                    missing_decision = max((p for p, _, _ in family_editions(family).values()
+                        if prior < p < period and not any(
+                            e.reference_period == p for e in decisions.evidence)), default=None)
+                    if missing_decision is not None:
+                        prior = missing_decision
             # The previous figure is strictly what we knew by release time.
             before = subset(
                 snapshot,
@@ -391,9 +428,13 @@ class ReadAPI:
                     and (e.published_at is None or e.published_at < released_at)
                 ),
             )
-            previous = latest_period(before, indicator, prior) if prior else None
+            previous_before_release = latest_period(before, indicator, prior) if prior else None
+            # A late archive capture can establish the preceding decision at the
+            # query cutoff without backdating what we knew before this release.
+            previous = (latest_period(decisions, indicator, prior) if prior else None
+                        ) if decisions is not None else previous_before_release
             revised_previous = (
-                latest_period(subset(snapshot, evidence), indicator, prior)
+                latest_period(snapshot if frequency == "E" else subset(snapshot, evidence), indicator, prior)
                 if prior
                 else None
             )
@@ -491,13 +532,16 @@ class ReadAPI:
                     "time_basis": time_basis,
                     "publication_precision": precision,
                     "resolution": resolution.to_dict(),
+                    "policy_decision": resolution.policy_decision,
                     "previous": previous,
-                    "previous_before_release": previous,
+                    "previous_before_release": previous_before_release,
                     "previous_revised": revised_previous,
                     "previous_period": prior,
                     "previous_missing_reason": None
                     if previous
-                    else "prior period not known at release time",
+                    else (f"reviewed decision not collected: {missing_decision}" if missing_decision else
+                          "no preceding stored decision" if frequency == "E" else
+                          "prior period not known at release time"),
                     "revisions": revisions,
                     "stage_change": stage_change,
                     "consensus": consensus,
@@ -915,10 +959,20 @@ class ReadAPI:
             if not is_window
             or start <= event_timing(snapshot, s["release_event_id"])[0] < end
         ]
+        if family in FAMILY_INDICATORS and is_window and schedules and not relevant and all(
+            indicator not in indicators_for_stage(family, snapshot.events[s["release_event_id"]]["estimate_stage"])
+            for s in schedules
+        ):
+            return dict(base, reason="no_release_scheduled", family=family,
+                detail="reviewed editions in this window do not publish the requested indicator")
+        if family in FAMILY_INDICATORS:
+            schedules = [s for s in schedules if indicator in indicators_for_stage(
+                family, snapshot.events[s["release_event_id"]]["estimate_stage"])]
         family_rows = [
             e
             for e in snapshot.evidence
             if family_for(snapshot, e.indicator_id) == family and matches(e)
+            and (family not in FAMILY_INDICATORS or indicator in indicators_for_stage(family, e.stage))
         ]
         # Schedules lack reference periods: a family schedule cannot be assigned
         # to an arbitrary period when no evidence links that period to the event.

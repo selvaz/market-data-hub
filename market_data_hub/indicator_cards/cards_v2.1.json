@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "56972c2cd9086e2b2f94dab1263beef2f568cfaf6f5e8850465194f4b91cbe7b",
+  "aliases_sha256": "e3b4e27ebeb8ee078976b42d4bcdee929dff1d56d58975c03c212b039e6ed4a0",
   "cards": [
     {
       "concept": "Real GDP",
@@ -3956,7 +3956,9 @@
         "cal": [
           "us_new_home_sales"
         ],
-        "cat": [],
+        "cat": [
+          "us_new_home_sales"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -4603,7 +4605,8 @@
           "ez_core_hicp_mm"
         ],
         "cat": [
-          "ea_core_hicp_yy"
+          "ea_core_hicp_yy",
+          "ea21_core_hicp_yy"
         ],
         "derived_ms": [],
         "es": [],
@@ -4936,7 +4939,9 @@
           "ez_consumer_confidence_flash",
           "ez_consumer_confidence_final"
         ],
-        "cat": [],
+        "cat": [
+          "ea_consumer_confidence"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],

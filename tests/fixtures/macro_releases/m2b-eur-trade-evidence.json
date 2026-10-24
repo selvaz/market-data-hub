@@ -1,0 +1,35 @@
+{
+  "archive_file": "C:\\ProgramData\\InvestmentCommittee\\econ_calendar\\raw\\2026-10-17.json",
+  "archive_sha256": "aa7970dbda633f538eb47293c6e8768f0496d5e9815b1bd1d41fd63942f28139",
+  "event": {
+    "title": "Trade Balance",
+    "country": "EUR",
+    "date": "2026-10-16T05:00:00-04:00",
+    "impact": "Low",
+    "forecast": "4.5B",
+    "previous": "5.0B"
+  },
+  "comparison": {
+    "ff_actual": null,
+    "ff_actual_limitation": "No actual field exists in any of the seven saved EUR Trade Balance entries dated 2026-10-11 through 2026-10-17. No actual comparison is inferred.",
+    "previous_release": {
+      "fixture": "m9b/ea-trade-prev.html",
+      "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/6-15092026-ap",
+      "sha256": "9404bad8f242ec5d805bc8e12da3357f1caa3116045ed807cba2763d5c763957",
+      "reference_period": "2026-07",
+      "sa_bn_eur": 5.0,
+      "nsa_bn_eur": 14.2
+    },
+    "current_release": {
+      "fixture": "m9b/ea-trade.html",
+      "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/6-16102026-bp",
+      "sha256": "bef3df59c23d3f11b78949ff6e46cf428e7df0199b7abf07a9a11d0915f101e6",
+      "reference_period": "2026-08",
+      "sa_bn_eur": -6.8,
+      "nsa_bn_eur": -16.1,
+      "revised_previous_sa_bn_eur": 1.4,
+      "revised_previous_nsa_bn_eur": 10.7
+    },
+    "decision": "Retain the SA alias: FF previous 5.0B matches the original July SA release, not its 14.2B NSA headline. Later revisions are not substituted for the prior publication available to the archived forecast."
+  }
+}

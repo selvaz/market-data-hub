@@ -1,0 +1,38 @@
+{
+  "fomc": {
+    "fixture": "fed-calendar.html",
+    "source_url": "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm",
+    "reviewed_on": "2026-10-24",
+    "through": "2026-12-31"
+  },
+  "ecb_policy": {
+    "fixture": "ecb-calendar.html",
+    "source_url": "https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html",
+    "reviewed_on": "2026-10-24",
+    "through": "2026-12-31"
+  },
+  "boe_policy": {
+    "fixture": "boe-calendar.html",
+    "source_url": "https://www.bankofengland.co.uk/monetary-policy/upcoming-mpc-dates",
+    "reviewed_on": "2026-10-24",
+    "through": "2026-12-31"
+  },
+  "boj_policy": {
+    "fixture": "boj-calendar.html",
+    "source_url": "https://www.boj.or.jp/en/mopo/mpmsche_minu/index.htm",
+    "reviewed_on": "2026-10-24",
+    "through": "2026-12-31"
+  },
+  "boc_policy": {
+    "fixture": "boc-calendar.html",
+    "source_url": "https://www.bankofcanada.ca/2025/08/bank-canada-publishes-2026-schedule-policy-interest-rate-announcements-other-major-publications/",
+    "reviewed_on": "2026-10-24",
+    "through": "2026-12-31"
+  },
+  "pboc_lpr": {
+    "fixture": "nifc-lpr.html",
+    "source_url": "https://www.chinamoney.com.cn/chinese/bklpr/",
+    "reviewed_on": "2026-10-24",
+    "through": "2026-12-31"
+  }
+}
