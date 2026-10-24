@@ -1,0 +1,13 @@
+{
+  "url": "https://apps.bea.gov/api/data/",
+  "retrieved_at": "2026-10-24T10:53:42.240943+00:00",
+  "sha256": "2be67d4708c737f62c1f46deabca685dbea34c590d1e90a075e38fecddd7c307",
+  "request": {
+    "method": "GetData",
+    "datasetname": "NIPA",
+    "TableName": "T20807",
+    "Frequency": "M",
+    "Year": "2025,2026",
+    "ResultFormat": "JSON"
+  }
+}

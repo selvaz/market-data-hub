@@ -123,7 +123,7 @@ class HttpClient:
         self.session.trust_env = False
         self.limiters = {p: RateLimiter(p, rate_directory, daily_limit=500 if p == "bls" else None,
                                      persistent=persistent_rates)
-                         for p in ("bls", "bea", "fred", "eurostat", "ons")}
+                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol")}
 
     def request(self, provider, url, *, params=None, payload=None) -> Document:
         safe_url = urlsplit(url)

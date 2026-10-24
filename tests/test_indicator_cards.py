@@ -220,7 +220,8 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     for family in FAMILIES:
         assert report["certified_families"][family]["unmapped"] == []
     assert report["documented_certified_gaps"] == {}
-    assert report["macro_releases"] == {"mapped": 14, "total": len(INDICATORS), "unmapped": []}
+    # 14 pilot + 16 US monthly (M9a-1) + 7 UK, EA GDP and claims (M9a-2) measures.
+    assert report["macro_releases"] == {"mapped": 37, "total": len(INDICATORS), "unmapped": []}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out

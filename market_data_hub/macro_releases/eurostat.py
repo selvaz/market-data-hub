@@ -11,6 +11,7 @@ import math
 from .adapters import Observation
 from .catalogue import hicp_indicator
 from .http import FetchError, json_payload
+from .eurostat_gdp import fetch_gdp, parse_publication as parse_gdp_publication, parse_snapshot as parse_gdp_snapshot
 
 BASE = "https://ec.europa.eu/eurostat/api/dissemination/statistics/1.0/data/"
 DATASETS = {"flash": "prc_hicp_fpd", "final": "prc_hicp_minr"}
@@ -37,13 +38,18 @@ def cells(payload):
             yield dict(zip(dims, combination)), value, status
 
 
+
+
 class EurostatAdapter:
+    parse_gdp_publication = staticmethod(parse_gdp_publication)
+    parse_gdp_snapshot = staticmethod(parse_gdp_snapshot)
     def __init__(self, client):
         self.client = client
 
     def fetch(self, families, since):
+        gdp = fetch_gdp(self.client, since) if "ea_gdp" in families else []
         if "ea_hicp" not in families:
-            return []
+            return gdp
         out = []
         for stage, dataset in DATASETS.items():
             params = {"lang": "EN", "geo": "EA", "coicop18": "TOTAL", "sinceTimePeriod": since}
@@ -51,7 +57,7 @@ class EurostatAdapter:
                 params["release"] = "FLS"
             doc = self.client.get("eurostat", BASE + dataset, params)
             out.extend(self.parse(doc, stage=stage, since=since))
-        return out
+        return gdp + out
 
     @staticmethod
     def parse(document, *, stage, since="1900-01", geography="EA", publications=None):

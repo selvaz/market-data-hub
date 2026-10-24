@@ -10,7 +10,6 @@ import requests
 from market_data_hub import __version__
 from market_data_hub.macro_releases import open_reader, open_writer
 from market_data_hub.macro_releases import migrations, run_daily, run_log
-from market_data_hub.macro_releases.catalogue import FAMILIES
 from market_data_hub.macro_releases.http import FetchError, HttpClient, RateLimiter
 from market_data_hub.macro_releases.adapters import persist
 from market_data_hub.macro_releases.lease import LeaseBusy, LeaseLost, RunLease
@@ -20,6 +19,10 @@ from test_macro_releases import legacy_calendar as legacy_calendar
 from market_data_hub.macro_releases.legacy import import_calendar
 from market_data_hub.macro_releases.store import Store
 
+# Keep this historical five-family lifecycle fixture scoped to its saved data.
+# The expanded default catalogue is covered by test_macro_us_monthly.
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp")
+
 
 @pytest.fixture(autouse=True)
 def offline(monkeypatch, tmp_path):
@@ -27,6 +30,7 @@ def offline(monkeypatch, tmp_path):
         raise AssertionError("Network forbidden in daily-runner tests")
     monkeypatch.setattr(requests.Session, "request", forbidden)
     monkeypatch.setattr(run_daily.tempfile, "tempdir", str(tmp_path))
+    monkeypatch.setattr(run_daily, "FAMILIES", FAMILIES)
 
 
 @pytest.fixture
