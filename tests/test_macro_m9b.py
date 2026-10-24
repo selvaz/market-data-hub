@@ -162,6 +162,67 @@ def test_eurostat_changed_calendar_period_fails_closed():
         calendar_editions(replace(doc, body=doc.body.replace(b'"period":"August 2026"', b'"period":"July 2026"')), "ea_retail_sales")
 
 
+def test_ec_latest_rollover_only_requires_uncollected_official_editions(tmp_path, monkeypatch):
+    from datetime import datetime
+    from market_data_hub.macro_releases import ec_surveys
+    from market_data_hub.macro_releases.publication_times import local_release
+    template = ec_surveys.parse(document("ec-flash.pdf"))[0]
+    monkeypatch.setitem(ec_surveys.EDITIONS, "ea_ec_surveys", {
+        "2026-10-22": ("2026-10", "flash", "16:00"),
+        "2026-11-20": ("2026-11", "flash", "16:00"),
+    })
+    monkeypatch.setattr(ec_surveys, "ARCHIVES", {})
+    state = {"date": "2026-10-24", "edition": "2026-10-22", "requests": []}
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime.fromisoformat(state["date"] + "T18:00:00+00:00")
+    class Rolling:
+        def __init__(self, **kwargs):
+            pass
+        def get(self, provider, url, params=None):
+            state["requests"].append(url)
+            period = state["edition"][:7]
+            name = "Flash_consumer_" + period.replace("-", "_") + "_en.pdf"
+            if url == ec_surveys.LATEST:
+                body = ('<a href="/document/download/current_en?filename=' + name + '">Flash</a>').encode()
+            else:
+                assert (params or {}) == {"filename": name}
+                body = state["edition"].encode()
+            return Document(body, url, state["date"] + "T18:00:00Z", hashlib.sha256(body).hexdigest())
+    def parse_flash(doc, family, since):
+        edition = doc.body.decode()
+        return [replace(template, document=doc, edition=edition, period=edition[:7],
+                        **local_release(edition, "16:00", "Europe/Luxembourg"))]
+    monkeypatch.setattr(run_daily, "datetime", Clock)
+    monkeypatch.setattr(run_daily, "HttpClient", Rolling)
+    monkeypatch.setattr(ec_surveys, "parse", parse_flash)
+    db = tmp_path / "rollover.sqlite"
+    first = run_daily.execute(db, ["ea_ec_surveys"], 24, False, raw_dir=tmp_path / "none")
+    assert first["families"]["ea_ec_surveys"]["status"] == "ok", first
+    # The next latest page has no October link. October must not be fetched again.
+    state.update(date="2026-11-21", edition="2026-11-20", requests=[])
+    second = run_daily.execute(db, ["ea_ec_surveys"], 24, False, raw_dir=tmp_path / "none")
+    assert second["families"]["ea_ec_surveys"]["status"] == "ok", second
+    assert second["families"]["ea_ec_surveys"]["vintages_added"] == 1
+    with open_reader(db) as store:
+        assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 2
+    state["requests"] = []
+    third = run_daily.execute(db, ["ea_ec_surveys"], 24, False, raw_dir=tmp_path / "none")
+    assert third["families"]["ea_ec_surveys"]["status"] == "no_change", third
+    assert state["requests"] == []
+
+
+def test_ec_partial_final_edition_must_not_be_skipped(tmp_path):
+    from market_data_hub.macro_releases.ec_surveys import parse_annex, stored_official_editions
+    rows = parse_annex(document("ec-annex.pdf"), document("ec-final.pdf"))
+    with open_writer(tmp_path / "partial.sqlite") as store:
+        persist(store, rows[:1])
+        assert "2026-09-29" not in stored_official_editions(store)
+        persist(store, rows[1:])
+        assert "2026-09-29" in stored_official_editions(store)
+
+
 def test_each_new_family_has_two_issuer_golden_cases_and_schedule_url():
     from market_data_hub.macro_releases.catalogue import REMAINING_FAMILIES
     from market_data_hub.macro_releases.tier1_editions import EDITIONS, SCHEDULES

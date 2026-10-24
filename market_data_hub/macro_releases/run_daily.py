@@ -209,6 +209,13 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
     try:
         if lease:
             lease.renew()
+        from .ec_surveys import STORED_EDITIONS, stored_official_editions
+        collected = frozenset()
+        if family == "ea_ec_surveys":
+            # Take a short snapshot before network I/O, never a long writer lock.
+            with writer() as store:
+                collected = stored_official_editions(store)
+        collected_token = STORED_EDITIONS.set(collected)
         token = RUN_DATE.set(result["fetch_until"])
         instant_token = RUN_AT.set(datetime.now(timezone.utc))
         try:
@@ -217,6 +224,7 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
         finally:
             RUN_DATE.reset(token)
             RUN_AT.reset(instant_token)
+            STORED_EDITIONS.reset(collected_token)
         calendar = family_editions(family)
         if calendar:
             result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t, status="scheduled")
@@ -227,7 +235,7 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
         batch.observations = [o for o in batch.observations
             if o.edition not in calendar or o.edition <= result["fetch_until"]]
         observations = batch.observations
-        if not observations and not batch.issues and not result.get("scheduled_editions"):
+        if not observations and not batch.issues and not result.get("scheduled_editions") and not collected:
             raise FetchError("No observations in requested window")
         if any(o.family != family for o in observations):
             raise ValueError("Adapter returned another family")

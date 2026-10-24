@@ -1,5 +1,6 @@
 """DG ECFIN flash CCI and final BCS are distinct dated issuer editions."""
 from datetime import datetime
+from contextvars import ContextVar
 from html import unescape
 from io import BytesIO
 import re
@@ -13,6 +14,7 @@ from .tier1_publications import month, observation, publication_text, require, r
 
 LATEST = "https://economy-finance.ec.europa.eu/economic-forecast-and-surveys/business-and-consumer-surveys/latest-business-and-consumer-surveys_en"
 BASE = "https://economy-finance.ec.europa.eu"
+STORED_EDITIONS = ContextVar("ecfin_stored_official_editions", default=frozenset())
 ARCHIVES = {
     "2026-09-29": (
         BASE + "/document/download/60c46029-7f60-40f0-b8ef-a9ca8aa46aae_en?filename=bcs_2026_09_en.pdf",
@@ -23,6 +25,28 @@ ARCHIVES = {
 # file is bound to the independently dated 29 September 2026 release, not to
 # retrieval time. Unknown replacements/other date mismatches fail closed.
 REVIEWED_ANNEX_TYPO = "45a1991de7d16eb6a930d80b4b3406ef967d678967527b2f3322ee89c8d10ca3"
+
+
+def stored_official_editions(store):
+    """A final edition needs both headline cards; a partial save cannot skip it."""
+    rows = store.conn.execute(
+        "SELECT e.edition,v.indicator_id,v.reference_period,v.estimate_stage "
+        "FROM value_vintages v JOIN release_events e ON e.id=v.release_event_id "
+        "JOIN source_series s ON s.id=v.source_series_id "
+        "JOIN indicators i ON i.id=v.indicator_id "
+        "WHERE e.family='ea_ec_surveys' AND v.verification_status='verified' "
+        "AND s.evidence_role='issuer' AND s.is_published=1 "
+        "AND s.source_id=i.issuer_id AND s.issuer_id=i.issuer_id AND e.issuer_id=i.issuer_id"
+    ).fetchall()
+    found = {(r[0], r[1], r[2], r[3]) for r in rows}
+    complete = set()
+    for edition, (period, stage, _) in EDITIONS["ea_ec_surveys"].items():
+        indicators = ["ea_consumer_confidence"]
+        if stage == "final":
+            indicators.append("ea_economic_sentiment_indicator")
+        if all((edition, indicator, period, stage) in found for indicator in indicators):
+            complete.add(edition)
+    return frozenset(complete)
 
 
 def metadata(body, family):
@@ -79,14 +103,16 @@ def parse_annex(document, release, since="1900-01"):
 
 
 def fetch(client, family, since):
-    listing = client.get("ecfin", LATEST)
-    links = [urljoin(BASE, unescape(u)) for u in re.findall(r'href="([^"]+)"', listing.body.decode())]
+    links = None
     out = []
     for edition, (period, stage, _) in due(EDITIONS[family]).items():
-        if period < since:
+        if period < since or edition in STORED_EDITIONS.get():
             continue
         urls = ARCHIVES.get(edition)
         if urls is None:
+            if links is None:
+                listing = client.get("ecfin", LATEST)
+                links = [urljoin(BASE, unescape(u)) for u in re.findall(r'href="([^"]+)"', listing.body.decode())]
             stem = period.replace("-", "_")
             names = (["Flash_consumer_" + stem + "_en.pdf"] if stage == "flash" else
                      ["bcs_" + stem + "_en.pdf", "bcs_" + stem + "_statistical_annex_en.pdf"])
