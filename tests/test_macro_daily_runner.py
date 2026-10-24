@@ -48,7 +48,9 @@ def replay(monkeypatch, observations):
 
 
 def invoke(db, capsys, *args):
-    code = run_daily.main(["--db", str(db), *args])
+    raw = db.parent / "raw"
+    raw.mkdir(exist_ok=True)
+    code = run_daily.main(["--db", str(db), "--consensus-raw-dir", str(raw), *args])
     result = json.loads(capsys.readouterr().out)
     assert result["exit_code"] == code
     return code, result
@@ -84,7 +86,8 @@ def test_logged_official_first_run_and_idempotent_second(tmp_path, replay, capsy
                     store.conn.execute(op)
 
 
-def test_partial_failure_isolated_even_between_bls_families(tmp_path, replay, monkeypatch, capsys):
+@pytest.mark.parametrize("archive_exists", [False, True])
+def test_partial_failure_isolated_even_between_bls_families(tmp_path, replay, monkeypatch, capsys, archive_exists):
     adapter = run_daily.ADAPTERS["us_cpi"]
     class Broken:
         def __init__(self, client):
@@ -94,10 +97,17 @@ def test_partial_failure_isolated_even_between_bls_families(tmp_path, replay, mo
             raise RuntimeError("https://issuer.example/?api_key=super-secret body=super-secret")
     monkeypatch.setitem(run_daily.ADAPTERS, "us_cpi", Broken)
     db = tmp_path / "macro.sqlite"
-    code, result = invoke(db, capsys)
+    raw = tmp_path / "consensus-archive"
+    if archive_exists:
+        raw.mkdir()
+    code, result = invoke(db, capsys, "--consensus-raw-dir", str(raw))
     assert code == 1 and result["status"] == "failed"
     assert result["families"]["us_payrolls"]["vintages_added"] > 0
     assert result["families"]["us_cpi"]["error_type"] == "RuntimeError"
+    assert result["consensus"]["status"] == ("no_change" if archive_exists else "failed")
+    if not archive_exists:
+        assert result["consensus"]["error_type"] == "FileNotFoundError"
+        assert not raw.exists()
     assert "super-secret" not in json.dumps(result)
     with open_reader(db) as reader:
         failure = reader.explain_empty("us_cpi_headline_yy", "2026-09")
@@ -116,7 +126,7 @@ def test_partial_failure_isolated_even_between_bls_families(tmp_path, replay, mo
         assert reader.conn.execute("SELECT status FROM collect_runs WHERE finished_at IS NOT NULL").fetchone()[0] == "failed"
         assert "super-secret" not in repr([tuple(r) for r in reader.conn.execute("SELECT * FROM collect_run_families")])
     monkeypatch.setitem(run_daily.ADAPTERS, "us_cpi", adapter)
-    assert invoke(db, capsys, "--families", "us_cpi")[0] == 0
+    assert invoke(db, capsys, "--families", "us_cpi", "--consensus-raw-dir", str(raw))[0] == 0
     with open_reader(db) as reader:
         assert reader.explain_empty("us_cpi_core_mm", "2026-09")["reason"] != "source_failed"
         assert reader.coverage("2026-10-01", "2026-10-17")["families"]["us_cpi"]["collection_failures"] == []

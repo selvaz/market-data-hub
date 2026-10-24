@@ -456,12 +456,13 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
     a new key. Failed snapshots are not checkpointed and retry on the next run.
     """
     directory = Path(directory)
-    if not directory.is_dir():
-        raise FileNotFoundError("FF archive directory is unavailable")
     from .scheduled_events import persist_scheduled_events
     if before_snapshot:
         before_snapshot()
+    # The reviewed issuer calendar is independent of FF archive availability.
     scheduled = persist_scheduled_events(store)
+    if not directory.is_dir():
+        raise FileNotFoundError("FF archive directory is unavailable")
     catalogue = Catalogue(store)
     hashes = manifest_hashes(directory)
     summary = dict(
