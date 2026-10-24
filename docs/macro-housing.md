@@ -207,6 +207,17 @@ This removes dependence on the local machine's live FF archive (which masked
 the missing fixture schedule on Windows). All 20 daily-runner tests and the
 55 combined consensus/NAR tests pass independently of those live captures.
 
+Final NAR-step verification (24 October 2026): all `tests/test_macro_*.py`
+plus `tests/test_indicator_cards.py` passed on the pushed implementation and
+isolated replay fixtures: **1,202 passed, 1 skipped** in 367 seconds.
+Repository-wide `ruff check .`, generated-card freshness, all four strict
+19-column drafts and `git diff --check` also passed. No dependency was added.
+The latest GitHub matrix was still running at the last check. An
+[earlier Python 3.11 job](https://github.com/selvaz/market-data-hub/actions/runs/40133498030/job/120990028685)
+reported DuckDB `ResourceInUseException` failures in storage code unchanged by
+M9f, as well as the replay-fixture schedule dependency corrected above; no
+repository-wide CI success is claimed.
+
 ## Validation for the construction step
 
 - All `tests/test_macro_*.py` plus `tests/test_indicator_cards.py`:
