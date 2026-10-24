@@ -1,5 +1,8 @@
 """Reviewed FF measures and calendar linking; no network or production writes."""
 from datetime import datetime
+import json
+from pathlib import Path
+import re
 
 import pytest
 import requests
@@ -105,6 +108,34 @@ def test_gdp_vocabulary_does_not_exempt_an_explicit_conflicting_stage(tmp_path):
             dict(event(), title="Prelim GDP q/q", date="2026-11-25", estimate_stage="final"),
             "2026-10-23T00:00:00Z", "fixture")
         assert reason == "stage_conflict" and record is None
+
+
+def test_saved_eur_trade_balance_previous_matches_sa_not_the_nsa_headline(tmp_path):
+    from market_data_hub.macro_releases.eurostat_activity import parse
+    from market_data_hub.macro_releases.numbers import parse_number
+    from market_data_hub.macro_releases.tier1_publications import plain
+    from test_macro_m9b import document
+    evidence = json.loads((Path(__file__).parent / "fixtures/macro_releases/m2b-eur-trade-evidence.json").read_text())
+    item = evidence["event"]
+    assert "actual" not in item and evidence["comparison"]["ff_actual"] is None
+    previous = document("ea-trade-prev.html")
+    current = document("ea-trade.html")
+    assert previous.document_hash == evidence["comparison"]["previous_release"]["sha256"]
+    assert current.document_hash == evidence["comparison"]["current_release"]["sha256"]
+    previous_sa, = parse(previous, "ea_trade_balance")
+    current_sa, = parse(current, "ea_trade_balance")
+    prior_nsa = re.search(r"balance showed a .([\d.]+) bn surplus", plain(previous.body.decode("utf-8")))
+    current_nsa = re.search(r"balance showed a .([\d.]+) bn deficit", plain(current.body.decode("utf-8")))
+    assert prior_nsa and current_nsa
+    assert parse_number(item["previous"], target_scale=INDICATORS["ea_trade_balance"].scale,
+                        allow_bare_magnitudes=True) == previous_sa.value == 5000
+    assert float(prior_nsa[1]) == 14.2 != previous_sa.value / 1000
+    assert current_sa.value == -6800 and -float(current_nsa[1]) == -16.1
+    with open_writer(tmp_path / "eur-trade.sqlite") as store:
+        persist_scheduled_events(store)
+        mapping, reason = consensus.Catalogue(store).match(item, item["title"])
+        assert reason is None and mapping["indicator_id"] == "ea_trade_balance"
+        assert INDICATORS[mapping["indicator_id"]].seasonal_adjustment == "SA"
 
 
 def test_missing_calendar_date_stays_not_found(tmp_path):
