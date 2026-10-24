@@ -5,6 +5,15 @@ No dataset update or retrieval timestamp is promoted to a release date.
 """
 EUROSTAT_SCHEDULE = "https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar"
 EDITIONS = {
+    "ea_ec_surveys": {
+        "2026-09-29": ("2026-09", "final", "11:00"),
+        "2026-10-22": ("2026-10", "flash", "16:00"),
+        "2026-10-29": ("2026-10", "final", "11:00"),
+        "2026-11-20": ("2026-11", "flash", "16:00"),
+        "2026-11-27": ("2026-11", "final", "11:00"),
+        "2026-12-21": ("2026-12", "flash", "16:00"),
+        # December final/ESI is published 2027-01-07, outside this calendar.
+    },
     "uk_total_pay": {
         "2026-09-15": ("2026-07", "final", "07:00"),
         "2026-10-20": ("2026-08", "final", "07:00"),
@@ -61,3 +70,4 @@ SCHEDULES = {family: EUROSTAT_SCHEDULE for family in EDITIONS}
 SCHEDULES["uk_retail_sales"] = "https://www.ons.gov.uk/releasecalendar?keywords=retail%20sales&release-type=type-upcoming"
 SCHEDULES["us_new_home_sales"] = "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
 SCHEDULES["uk_total_pay"] = "https://www.ons.gov.uk/releasecalendar?keywords=labour+market&release-type=type-upcoming"
+SCHEDULES["ea_ec_surveys"] = "https://ec.europa.eu/economy_finance/db_indicators/surveys/documents/calendar/Publication%20dates%202026.pdf"

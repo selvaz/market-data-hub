@@ -102,7 +102,7 @@ def safe_error(exc):
         text = str(exc)
         if re.fullmatch(r"Missing credential: (BLS|BEA|FRED)_API_KEY", text):
             message = text
-        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons|dol): HTTP \d{3}", text):
+        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons|dol|census|ecfin|umich): HTTP \d{3}", text):
             message = text
         elif "needs review" in text or "metadata" in text:
             message = "Provider publication metadata/version needs review before this edition can be certified"

@@ -17,6 +17,11 @@ GOLDEN = json.loads((ROOT / "golden-set.json").read_text())["cases"]
 
 
 def parse(doc, family, since="1900-01"):
+    if family == "ea_ec_surveys":
+        from market_data_hub.macro_releases.ec_surveys import parse as parse_ec, parse_annex
+        if "statistical_annex" in doc.url:
+            return parse_annex(doc, document("ec-final.pdf"), since)
+        return parse_ec(doc, family, since)
     if family == "uk_total_pay":
         from market_data_hub.macro_releases.ons_pay import parse as parse_pay
         return parse_pay(doc, family, since)
