@@ -7,6 +7,23 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.6] — 2026-10-24
+
+### Added
+- processo-macro M9a (#121): twelve new official families in the daily macro collection.
+  - US: PPI, JOLTS, PCE, retail sales, housing starts and permits, durable goods, industrial production and capacity utilization, trade balance, weekly initial jobless claims.
+  - UK: CPI and core CPI; unemployment and regular pay.
+  - Euro area: EA21 GDP, flash and later estimates.
+- Figures come from the issuer publications (BLS, BEA, Census, Fed, DOL, ONS, Eurostat). FRED/ALFRED serves only as a labelled redistributor, for history.
+- Reviewed edition calendars run to 31/12/2026. An edition is due from its release instant: before that it is "scheduled", and a short publication-delay grace applies.
+- Indicator-card aliases cover every new catalogue id.
+
+### Fixed
+- Euro-area GDP snapshots older than their edition's release are rejected, and identical nightly refreshes add no vintage.
+- Census prior-month figures carry the issuer's own estimate stage.
+- The M3 full report must match the due final edition.
+- PCE rate tables are checked against their month headers, and a PCE schema change is routed to the review queue.
+
 ## [0.3.5] — 2026-10-24
 
 ### Added
