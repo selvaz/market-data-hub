@@ -48,12 +48,12 @@ def due_editions(family, since):
 
 
 def observation(document, family, edition, rates, vote_split, *, printed=None,
-                time=None, time_missing_reason=None, evidence=(), method="html"):
+                time=None, time_missing_reason=None, evidence=(), method="html", decision_date=None):
     _, stage, clock = reviewed(family, edition)
     clock = time or clock
     measure = CENTRAL_BANKS[family][0]
     timing = local_release(edition, clock or "00:00", ZONES[family])
-    facts = dict(decision_date=edition, rates=rates, vote_split=vote_split,
+    facts = dict(decision_date=decision_date or edition, announcement_date=edition, rates=rates, vote_split=vote_split,
                  source_url=document.url, published_at=timing["published_at"] if clock else None,
                  publication_precision="exact" if clock else "date_only",
                  time_missing_reason=time_missing_reason, supporting_sources=list(evidence))
@@ -75,6 +75,6 @@ class PolicyAdapter:
         self.client = client
 
     def fetch(self, families, since):
-        from . import fomc, ecb_policy
-        adapters = {"fomc": fomc, "ecb_policy": ecb_policy}
+        from . import fomc, ecb_policy, boe_policy
+        adapters = {"fomc": fomc, "ecb_policy": ecb_policy, "boe_policy": boe_policy}
         return [o for family in families for o in adapters[family].fetch(self.client, family, since)]
