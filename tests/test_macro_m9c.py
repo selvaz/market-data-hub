@@ -249,3 +249,30 @@ def test_emergency_decision_and_expired_calendar_need_review():
     RUN_DATE.set("2027-01-01")
     with pytest.raises(FetchError, match="needs review"):
         PolicyAdapter(Replay()).fetch(["boc_policy"], "2026-01")
+
+
+def test_fomc_all_dissent_clauses_and_oxford_comma_names():
+    from market_data_hub.macro_releases.fomc import vote_split
+    text = ("Voting for the monetary policy action were Ada Alpha, Chair; Ben Beta, Vice Chair. "
+            "Voting against this action were Cy Gamma, who preferred a cut; and Dee Delta, "
+            "Eve Epsilon, and Flo Zeta, who preferred different guidance. For media inquiries")
+    assert vote_split(text) == {"for": 2, "against": 4}
+    for changed in (text.replace("Dee Delta", "Ada Alpha"),
+                    text.replace("Eve Epsilon", "Dee Delta"),
+                    text.replace("; and Dee Delta", "; unidentified clause; and Dee Delta"),
+                    "approved the following statement for release by a 2-3 vote: " + text):
+        with pytest.raises(FetchError, match="needs review"):
+            vote_split(changed)
+
+
+def test_fomc_numeric_split_agrees_with_named_dissenters():
+    from market_data_hub.macro_releases.fomc import parse
+    doc = document("fed-july.html")
+    # A complete three-name dissent list cannot certify a numerical 9-2 split.
+    from market_data_hub.macro_releases.tier1_publications import publication_text
+    text = publication_text(doc)[0]
+    import re
+    changed = re.sub(r"9\s*[^0-9]{1,12}?\s*3 vote", "9-2 vote", text)
+    assert changed != text
+    with pytest.raises(FetchError, match="needs review"):
+        parse(replace(doc, body=changed.encode()))
