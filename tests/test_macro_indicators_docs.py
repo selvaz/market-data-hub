@@ -59,7 +59,7 @@ def test_summary_counts_match_the_cards():
     assert len(rows) == len(dataset().cards)
     block = docs.render()
     summary = block.split("### Summary by geography", 1)[1].split("### Coverage notes", 1)[0]
-    lines = [l for l in summary.splitlines() if l.startswith("| ") and "---" not in l][1:]
+    lines = [row for row in summary.splitlines() if row.startswith("| ") and "---" not in row][1:]
     total = [c.strip() for c in CELL_SPLIT.split(lines[-1])[1:-1]]
     assert total[0] == "**All**"
     assert int(total[1]) == len(rows)
@@ -96,6 +96,28 @@ def test_official_cards_come_from_certified_families_only():
     notes = docs._coverage_notes(rows)[1]
     for family in FAMILIES:
         assert family in reached or f"`{family}`" in notes
+
+
+@pytest.mark.parametrize("source,issuers,via", [
+    ("ICE via FRED", ["ICE"], ["FRED"]),
+    ("FRED / Fed Board", ["Fed Board"], ["FRED"]),
+    ("FRED", [], ["FRED"]),
+    ("FRED / Sahm", [], ["FRED"]),
+    ("Census/BEA", ["Census", "BEA"], []),
+    ("Fed Board H.15; OECD MEI", ["Fed Board H.15", "OECD MEI"], []),
+    ("", [], []),
+])
+def test_split_source_never_calls_a_redistributor_the_issuer(source, issuers, via):
+    assert docs.split_source(source) == (issuers, via)
+
+
+def test_issuer_column_has_no_redistributor_and_names_it_as_feed():
+    for row in docs.build_rows():
+        issuer = row.issuer_line.split("<br>")[0]
+        assert "FRED" not in issuer, row.card.key
+    by_key = {r.card.key: r for r in docs.build_rows()}
+    line = by_key["us_breakeven_5y"].issuer_line
+    assert line.startswith("issuer: Fed Board") and "FRED (redistributor)" in line
 
 
 def test_release_times_and_consensus_are_derived():

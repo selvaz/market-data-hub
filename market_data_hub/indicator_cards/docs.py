@@ -105,6 +105,35 @@ def _macro_series_feeds() -> Dict[str, str]:
     return feeds
 
 
+_REDISTRIBUTORS = ("FRED", "ALFRED")
+# Names that appear in a card's source string but are not publishers (a rule's author).
+_NOT_AN_ISSUER = frozenset({"Sahm"})
+
+
+def split_source(source: str) -> Tuple[List[str], List[str]]:
+    """Split a card's source string into (issuers, redistributors).
+
+    The source string mixes the original publisher with the redistributor that
+    serves the series: ``ICE via FRED``, ``FRED / Fed Board``. FRED and ALFRED
+    are only ever redistributors, never the issuer. Parts are separated by ``;``
+    or ``/``; ``X via FRED`` names X as the issuer. An empty issuer list means the
+    issuer cannot be determined from the string.
+    """
+    issuers: List[str] = []
+    via: List[str] = []
+    for part in (p.strip() for chunk in (source or "").split(";") for p in chunk.split("/")):
+        if not part:
+            continue
+        name, _, tail = part.partition(" via ")
+        for token in (name.strip(), tail.strip()):
+            if token.upper() in _REDISTRIBUTORS:
+                if token.upper() not in via:
+                    via.append(token.upper())
+            elif token and token == name.strip() and token not in _NOT_AN_ISSUER and token not in issuers:
+                issuers.append(token)
+    return issuers, via
+
+
 def _fred_redistributed() -> set:
     from market_data_hub.macro_releases.fred import MAPPINGS
     return set(MAPPINGS)
@@ -144,7 +173,8 @@ def build_rows() -> List[Row]:
         tiers = [INDICATORS[i].tier for i in indicators if INDICATORS[i].tier]
         cal_keys = sorted({k for value in card.ids.cal for k in _expand(value, calendar)})
         tiers += [calendar[k]["criticality"] for k in cal_keys if calendar[k].get("criticality")]
-        issuer = [f"issuer: {_t(card.source)}" if card.source else f"issuer: {DASH}"]
+        source_issuers, source_via = split_source(card.source)
+        issuer = ["issuer: " + (_t("; ".join(source_issuers)) if source_issuers else DASH)]
         certified = sorted({INDICATORS[i].issuer_id for i in indicators})
         if certified:
             issuer.append("certified issuer: " + ", ".join(certified))
@@ -154,6 +184,7 @@ def build_rows() -> List[Row]:
         via = sorted({feeds[v] for v in card.ids.ms if v in feeds})
         if set(indicators) & fred_indicators:
             via.append("FRED (redistributor)")
+        via += [f"{name} (redistributor)" for name in source_via]
         if via:
             issuer.append("feed: " + ", ".join(sorted(set(via))))
         rows.append(Row(card, by_family, card.key in consensus,
@@ -236,7 +267,21 @@ def _coverage_notes(rows: List[Row]) -> List[str]:
     no_map = [f for f in families if f not in FAMILY_INDICATORS]
     no_card = [f for f in families if f in FAMILY_INDICATORS and not any(f in r.families for r in rows)]
     loose = sorted((set(_family_of_indicator()) & set(INDICATORS)) - carded)
+    calendar = _calendar_rows()
+    class_of: Dict[str, str] = {}
+    for r in rows:
+        for value in r.card.ids.cal:
+            for key in _expand(value, calendar):
+                class_of.setdefault(key, r.card.timing.timing_class)
+    tiers = Counter(c.get("criticality") or DASH for c in calendar.values())
+    low = [k for k, c in calendar.items() if c.get("criticality") in ("T2", "T3")]
+    low_mapped = Counter(class_of[k] for k in low if k in class_of)
     return [
+        f"- Economic-calendar catalogue (`config/econ_calendar.yaml`): {len(calendar)} entries "
+        f"({', '.join(f'{t} {n}' for t, n in sorted(tiers.items()))}). "
+        f"{len(low)} are tier 2 or 3: {sum(low_mapped.values())} of them map to an approved card and carry "
+        f"that card's class ({', '.join(f'{low_mapped[c]} {c}' for c in CLASSES if low_mapped[c]) or 'none'}); "
+        f"{len(low) - sum(low_mapped.values())} map to no card and are not classified.",
         f"- Certified families in `macro_releases.catalogue.FAMILIES`: {len(families)} "
         f"({', '.join(f'`{f}`' for f in families)}).",
         "- Families with no indicator card: " + (", ".join(f"`{f}`" for f in no_card) or "none") + ".",
@@ -254,13 +299,19 @@ How to read the tables:
 - **Evidence** is the card's local-timing label (`ev_timing`); `none` means no timing evidence is recorded.
 - **Stores**: `macro_releases` is the certified official family, built from issuer editions, listing the
   catalogue indicator ids that map to the card. `ms:` is the hub `macro_series` table, `es:` the
-  `econ_state.db` store, `cal:` `calendar.sqlite` (the web economic calendar), `pan:` the cross-country
+  `econ_state.db` store named by the approved table (it is not part of this repository), `cal:` an economic-
+  calendar indicator key (`calendar_indicators.indicator_key`; the tables `calendar_indicators`,
+  `calendar_events` and `calendar_observations` live in the configured hub DuckDB database and are written by
+  `run_econ_calendar.py` from the catalogue `config/econ_calendar.yaml`), `pan:` the cross-country
   `macro_panel`, `hub:` another hub table and `cat:` the planned catalogue (not downloaded). Ids are shown as
   recorded on the card; this page does not verify that each id is present in its store (see the coverage
-  report). Notes copy the card's own gap annotations verbatim.
-- **Issuer / source**: `issuer` is the card's source column. `certified issuer` is the issuer of the official
-  family. `calendar agency` is the agency named by the calendar catalogue. `feed` is where the hub downloads
-  from when that differs from the issuer: FRED is a redistributor, not the issuer.
+  report). Some `cal:` ids come from the approved table and are not keys of the catalogue above. Notes copy
+  the card's own gap annotations verbatim.
+- **Issuer / source**: `issuer` is the original publisher named in the card's source column, with any
+  redistributor removed; `—` when the source column does not name one. `certified issuer` is the issuer of the
+  official family. `calendar agency` is the agency named by the calendar catalogue. `feed` is where the hub
+  downloads from, or a redistributor named in the card's source column: FRED and ALFRED are redistributors,
+  never the issuer.
 - **Freq**: D daily, W weekly, 2W fortnightly, M monthly, Q quarterly, A annual, E scheduled events (policy
   meetings), as recorded on the card.
 - **Release time**: local issuer time and zone from the reviewed edition calendars of the official family;

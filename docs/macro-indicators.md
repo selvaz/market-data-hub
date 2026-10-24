@@ -47,19 +47,22 @@ outcomes where no timing claim is made.
 
 | Class | Plain meaning |
 |---|---|
-| **LEAD** | Moves before the named reference. A timing claim. |
-| **COIN** | Moves with the named reference (within about two months either way). A timing claim. |
-| **LAG** | Moves after the named reference. A timing claim. |
+| **LEAD** | Placed before the named reference. A timing claim, as a descriptive band, not a validated lead time. |
+| **COIN** | Placed with the named reference (within about two months either way). A timing claim, as a descriptive band. |
+| **LAG** | Placed after the named reference. A timing claim, as a descriptive band, not a validated lag. |
 | **CTX** | Kept as context. We chose to use it that way and make **no** timing claim. |
 | **UNKNOWN** | Not evaluated, or no supported relationship. Deliberately different from CTX. |
 
 - **Timing is never absolute.** "Leading" means nothing without a reference and
-  a transform, so every card reads like "LEAD vs US GDP". The tests show why:
-  the 12-month change in unemployment *follows* industrial-production growth
-  (pair Q17), while its level *precedes* wage growth (Q20).
-- **The bands are disjoint**: coincident is a lead of −2 to +2 months, leading is
-  more than +2 and lagging is less than −2. The continuous estimate is always
-  stored next to the band.
+  a transform, so every card reads like "LEAD vs US GDP". The tests show why. In
+  the descriptive cross-correlations the 12-month change in unemployment lines up
+  after industrial-production growth (pair Q17, peak at +3 months), while the
+  unemployment level lines up before wage growth (Q20, peak at +16 months
+  [10..24]). These are descriptions of alignment under one transform each, not
+  lead times.
+- **The bands are disjoint**: coincident is an estimated lead of −2 to +2 months,
+  leading is more than +2 and lagging is less than −2. The band describes the
+  estimate; the continuous estimate is always stored next to it.
 - **References by theme.** Growth: real GDP and the NBER coincident set. Labour:
   the unemployment rate and payrolls. Inflation: the official target measure
   (headline PCE in the US, headline HICP in the euro area, headline CPI
@@ -185,9 +188,10 @@ denominators, and the tests overlap. By theme:
   IP and unemployment (A9, A10), and SLOOS C&I tightening for C&I loans (A8).
 - *Housing.* Starts pass for payrolls (Q15, 12 months) and unemployment (Q16);
   permits pass for starts, payrolls and IP (A3–A5).
-- *Labour.* IP growth precedes the unemployment change at 3 months (Q17;
-  descriptive peak +3 months [2..5]). The unemployment level passes for wage growth
-  at 3, 6 and 12 months (Q20). Initial claims pass for unemployment (A1, all three
+- *Labour.* IP growth passes the screen for the unemployment change at 3 months
+  (Q17); the descriptive cross-correlation peak is at +3 months [2..5], which is
+  an estimate of alignment, not a forecast or a lead time. The unemployment level
+  passes for wage growth at 3, 6 and 12 months (Q20). Initial claims pass for unemployment (A1, all three
   horizons) and payrolls (A2, 12 months). Manufacturing hours pass for payrolls
   at 12 months (A6).
 
@@ -244,8 +248,8 @@ through 2026-09 (data end), so at the 12- and 24-month horizons it is a **miss**
 the horizon is not extended. The 1966 inversion also fails at 24 months.
 
 **Sahm rule.** It is a near-coincident detector, not a leading signal. The 7
-matched real-time new signals (1969 to 2020) came −2 to +4 months around the NBER
-peak. In 2024-07 it was a real-time signal with no recession. 2003 was *not* a
+matched real-time new signals (1969 to 2020) were dated −2 to +4 months from the
+NBER peak (a description of past event timing, not a forecast). In 2024-07 it was a real-time signal with no recession. 2003 was *not* a
 real-time trigger (0.47): the earlier "false positive" was a current-vintage
 artefact.
 
@@ -267,9 +271,15 @@ country or area; 47 countries and areas):
   moves before or after X".
 - **UNKNOWN (68 rows)** means no supported relationship has been shown. 25 are
   hypotheses (mechanism or literature only) and 43 have no
-  evidence at all. All 655 tier-2 and tier-3 calendar indicators are UNKNOWN: no
-  default timing is assigned by concept, and a calendar id inherits a relationship
-  only after a manual mapping to a concept row.
+  evidence at all.
+- **Calendar indicators.** When the calendar store was reviewed, its 655 tier-2
+  and tier-3 rows were given a corrected theme and nature, and every one of those
+  rows got timing UNKNOWN: no default timing is assigned by concept. A calendar id
+  carries a class only after a manual mapping onto an approved concept row; it then
+  carries that row's class. So some tier-2 ids are classified (for example
+  industrial production, COIN, and housing starts, LEAD), and the rest stay
+  UNKNOWN. The "Coverage notes" at the start of Part B give the exact counts for
+  the calendar catalogue in this repository, derived from the data.
 - **Our tests cover the US only.** Only 13 rows have a DESCRIPTIVE basis (6 LEAD,
   5 COIN, 2 LAG); 45 rows are COIN by DEFINITION and 49 are HYPOTHESIS. 249 of
   the 270 rows have no tested pair at all. Eleven rows have at least one
@@ -426,6 +436,7 @@ Generated by `python -m market_data_hub.indicator_cards.docs` (check with
 
 ### Coverage notes
 
+- Economic-calendar catalogue (`config/econ_calendar.yaml`): 160 entries (T1 65, T2 69, T3 26). 95 are tier 2 or 3: 21 of them map to an approved card and carry that card's class (1 LEAD, 7 COIN, 1 LAG, 3 CTX, 9 UNKNOWN); 74 map to no card and are not classified.
 - Certified families in `macro_releases.catalogue.FAMILIES`: 17 (`us_cpi`, `us_payrolls`, `us_gdp`, `ea_hicp`, `uk_gdp`, `us_ppi`, `us_jolts`, `us_pce`, `us_retail_sales`, `us_housing_starts`, `us_durable_goods`, `us_industrial_production`, `us_trade_balance`, `uk_cpi`, `uk_labour_market`, `ea_gdp`, `us_jobless_claims`).
 - Families with no indicator card: none.
 - Families the read API has no indicator map for: none.
@@ -439,13 +450,19 @@ How to read the tables:
 - **Evidence** is the card's local-timing label (`ev_timing`); `none` means no timing evidence is recorded.
 - **Stores**: `macro_releases` is the certified official family, built from issuer editions, listing the
   catalogue indicator ids that map to the card. `ms:` is the hub `macro_series` table, `es:` the
-  `econ_state.db` store, `cal:` `calendar.sqlite` (the web economic calendar), `pan:` the cross-country
+  `econ_state.db` store named by the approved table (it is not part of this repository), `cal:` an economic-
+  calendar indicator key (`calendar_indicators.indicator_key`; the tables `calendar_indicators`,
+  `calendar_events` and `calendar_observations` live in the configured hub DuckDB database and are written by
+  `run_econ_calendar.py` from the catalogue `config/econ_calendar.yaml`), `pan:` the cross-country
   `macro_panel`, `hub:` another hub table and `cat:` the planned catalogue (not downloaded). Ids are shown as
   recorded on the card; this page does not verify that each id is present in its store (see the coverage
-  report). Notes copy the card's own gap annotations verbatim.
-- **Issuer / source**: `issuer` is the card's source column. `certified issuer` is the issuer of the official
-  family. `calendar agency` is the agency named by the calendar catalogue. `feed` is where the hub downloads
-  from when that differs from the issuer: FRED is a redistributor, not the issuer.
+  report). Some `cal:` ids come from the approved table and are not keys of the catalogue above. Notes copy
+  the card's own gap annotations verbatim.
+- **Issuer / source**: `issuer` is the original publisher named in the card's source column, with any
+  redistributor removed; `—` when the source column does not name one. `certified issuer` is the issuer of the
+  official family. `calendar agency` is the agency named by the calendar catalogue. `feed` is where the hub
+  downloads from, or a redistributor named in the card's source column: FRED and ALFRED are redistributors,
+  never the issuer.
 - **Freq**: D daily, W weekly, 2W fortnightly, M monthly, Q quarterly, A annual, E scheduled events (policy
   meetings), as recorded on the card.
 - **Release time**: local issuer time and zone from the reviewed edition calendars of the official family;
@@ -461,25 +478,25 @@ How to read the tables:
 | Advance goods trade balance (`us_adv_goods_trade`) | External / global | not classified<br>HARD | none | cal: `us_advance_goods_trade_balance` | issuer: Census | M | — | no | no | — |
 | Broad trade-weighted dollar (`us_dollar_broad`) | External / global | CTX vs core CPI<br>MARKET | v2-pred-not-supported (US) | ms: `DTWEXBGS` | issuer: Fed H.10<br>feed: FRED (redistributor) | D | — | no | no | — |
 | Current account (`us_current_account`) | External / global | CTX vs external balance<br>HARD | none | cal: `us_current_account` | issuer: BEA | Q | — | no | no | — |
-| Goods and services trade balance (`us_trade_balance`) | External / global | not classified<br>HARD | none | **macro_releases** `us_trade_balance` (`us_trade_balance`)<br>cal: `us_trade`<br>cat: `us_trade_balance` | issuer: Census/BEA<br>certified issuer: Census/BEA<br>calendar agency: BEA / Census Bureau<br>feed: FRED (redistributor) | M | 08:30 America/New_York | yes | no | T1 |
-| NY Harbor ULSD diesel spot (`us_diesel_spot`) | External / global | not classified<br>MARKET | none | ms: `DDFUELNYH` | issuer: EIA via FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
-| Baa minus 10y Treasury spread (`us_spread_baa10y`) | Financial conditions & credit | LEAD vs IP growth; unemployment [DESCRIPTIVE]<br>MARKET | v2-pred-pass (US) | derived from ms: `BAA`, `DGS10` | issuer: Moody's / Fed Board | M | — | no | no | — |
+| Goods and services trade balance (`us_trade_balance`) | External / global | not classified<br>HARD | none | **macro_releases** `us_trade_balance` (`us_trade_balance`)<br>cal: `us_trade`<br>cat: `us_trade_balance` | issuer: Census; BEA<br>certified issuer: Census/BEA<br>calendar agency: BEA / Census Bureau<br>feed: FRED (redistributor) | M | 08:30 America/New_York | yes | no | T1 |
+| NY Harbor ULSD diesel spot (`us_diesel_spot`) | External / global | not classified<br>MARKET | none | ms: `DDFUELNYH` | issuer: EIA<br>feed: FRED (redistributor) | D | — | no | no | — |
+| Baa minus 10y Treasury spread (`us_spread_baa10y`) | Financial conditions & credit | LEAD vs IP growth; unemployment [DESCRIPTIVE]<br>MARKET | v2-pred-pass (US) | derived from ms: `BAA`, `DGS10` | issuer: Moody's; Fed Board | M | — | no | no | — |
 | Baa minus Aaa spread (`us_spread_baa_aaa`) | Financial conditions & credit | not classified<br>MARKET | none | derived from ms: `BAA`, `AAA` | issuer: Moody's | M | — | no | no | — |
 | Chicago Fed NFCI (`us_nfci`) | Financial conditions & credit | LEAD vs IP growth [DESCRIPTIVE]<br>MARKET-DERIVED | v2-pred-pass (US) | ms: `NFCI` | issuer: Chicago Fed<br>feed: FRED (redistributor) | W | — | no | no | — |
 | Fed total assets (`us_fed_assets`) | Financial conditions & credit | CTX vs market liquidity<br>HARD | none | ms: `WALCL` | issuer: Fed H.4.1<br>feed: FRED (redistributor) | W | — | no | no | — |
 | G.19 consumer credit (`us_consumer_credit`) | Financial conditions & credit | not classified<br>HARD | none | cal: `us_consumer_credit` | issuer: Fed G.19 | M | — | no | no | — |
 | H.8 bank credit (`us_bank_credit`) | Financial conditions & credit | not classified<br>HARD | none | cal: `us_bank_credit` | issuer: Fed H.8 | W | — | no | no | — |
 | H.8 loans and leases (`us_bank_loans_leases`) | Financial conditions & credit | not classified<br>HARD | none | cal: `us_bank_loans_leases` | issuer: Fed H.8 | W | — | no | no | — |
-| ICE BofA BBB OAS (`us_oas_bbb`) | Financial conditions & credit | not classified<br>MARKET | none | ms: `BAMLC0A4CBBB` | issuer: ICE via FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
-| ICE BofA CCC and lower OAS (`us_oas_ccc`) | Financial conditions & credit | not classified<br>MARKET | none | ms: `BAMLH0A3HYC` | issuer: ICE via FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
-| ICE BofA US corporate master OAS (`us_oas_ig`) | Financial conditions & credit | not classified<br>MARKET | lit-US | ms: `BAMLC0A0CM` | issuer: ICE via FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
-| ICE BofA US high yield OAS (`us_oas_hy`) | Financial conditions & credit | not classified<br>MARKET | lit-US | ms: `BAMLH0A0HYM2` | issuer: ICE via FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
+| ICE BofA BBB OAS (`us_oas_bbb`) | Financial conditions & credit | not classified<br>MARKET | none | ms: `BAMLC0A4CBBB` | issuer: ICE<br>feed: FRED (redistributor) | D | — | no | no | — |
+| ICE BofA CCC and lower OAS (`us_oas_ccc`) | Financial conditions & credit | not classified<br>MARKET | none | ms: `BAMLH0A3HYC` | issuer: ICE<br>feed: FRED (redistributor) | D | — | no | no | — |
+| ICE BofA US corporate master OAS (`us_oas_ig`) | Financial conditions & credit | not classified<br>MARKET | lit-US | ms: `BAMLC0A0CM` | issuer: ICE<br>feed: FRED (redistributor) | D | — | no | no | — |
+| ICE BofA US high yield OAS (`us_oas_hy`) | Financial conditions & credit | not classified<br>MARKET | lit-US | ms: `BAMLH0A0HYM2` | issuer: ICE<br>feed: FRED (redistributor) | D | — | no | no | — |
 | M2 money stock (`us_m2`) | Financial conditions & credit | CTX vs CPI inflation<br>HARD | v2-pred-not-supported (US) | ms: `M2SL` | issuer: Fed H.6<br>feed: FRED (redistributor) | M | — | no | no | — |
-| Moody's Baa and Aaa corporate yields (`us_corp_yields`) | Financial conditions & credit | CTX<br>MARKET | none | ms: `BAA`, `AAA` | issuer: Moody's via FRED<br>feed: FRED (redistributor) | M | — | no | no | — |
+| Moody's Baa and Aaa corporate yields (`us_corp_yields`) | Financial conditions & credit | CTX<br>MARKET | none | ms: `BAA`, `AAA` | issuer: Moody's<br>feed: FRED (redistributor) | M | — | no | no | — |
 | Overnight reverse repo (`us_on_rrp`) | Financial conditions & credit | CTX vs market liquidity<br>HARD | none | ms: `RRPONTSYD` | issuer: NY Fed<br>feed: FRED (redistributor) | D | — | no | no | — |
 | St. Louis Fed Financial Stress Index (`us_stlfsi`) | Financial conditions & credit | not classified<br>MARKET-DERIVED | none | ms: `STLFSI4` | issuer: St. Louis Fed<br>feed: FRED (redistributor) | W | — | no | no | — |
-| VIX (`us_vix`) | Financial conditions & credit | LEAD vs IP growth [HYPOTHESIS]<br>MARKET | v2-pred-pass (US) | ms: `VIXCLS` | issuer: Cboe via FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
-| Treasury General Account (`us_tga`) | Fiscal & sovereign | CTX vs market liquidity<br>HARD | none | ms: `WTREGEN`<br>hub: `treasury_cash_balance` | issuer: Treasury / Fed H.4.1<br>feed: FRED (redistributor) | W | — | no | no | — |
+| VIX (`us_vix`) | Financial conditions & credit | LEAD vs IP growth [HYPOTHESIS]<br>MARKET | v2-pred-pass (US) | ms: `VIXCLS` | issuer: Cboe<br>feed: FRED (redistributor) | D | — | no | no | — |
+| Treasury General Account (`us_tga`) | Fiscal & sovereign | CTX vs market liquidity<br>HARD | none | ms: `WTREGEN`<br>hub: `treasury_cash_balance` | issuer: Treasury; Fed H.4.1<br>feed: FRED (redistributor) | W | — | no | no | — |
 | Treasury debt outstanding (`us_treasury_debt`) | Fiscal & sovereign | CTX vs debt stock<br>HARD | none | hub: `treasury_debt_outstanding` | issuer: US Treasury | M | — | no | no | — |
 | Capacity utilisation (`us_capacity_util`) | Growth / activity | not classified<br>HARD | none | **macro_releases** `us_industrial_production` (`us_capacity_utilization`)<br>cal: `us_capacity_utilization`<br>cat: `us_capacity_utilization` | issuer: Fed Board<br>certified issuer: FederalReserve<br>feed: FRED (redistributor) | M | 09:15 America/New_York | yes | no | T1 |
 | Conference Board consumer confidence (`us_conf_board_confidence`) | Growth / activity | not classified<br>SOFT | none | cal: `us_consumer_confidence`<br>cat: `us_conference_board_consumer_confidence` | issuer: Conference Board | M | — | no | no | — |
@@ -503,9 +520,9 @@ How to read the tables:
 | Housing starts (`us_housing_starts`) | Housing | LEAD vs unemployment and payrolls [DESCRIPTIVE]<br>HARD | v2-pred-pass (US) | **macro_releases** `us_housing_starts` (`us_housing_starts`)<br>ms: `HOUST`<br>cal: `us_housing`<br>cat: `us_housing_starts` | issuer: Census<br>certified issuer: Census<br>calendar agency: Census Bureau<br>feed: FRED (redistributor) | M | 08:30 America/New_York | yes | no | T1 |
 | NAHB housing market index (`us_nahb`) | Housing | not classified<br>SOFT | none | cal: `us_nahb_housing_index` | issuer: NAHB | M | — | no | no | — |
 | New home sales (`us_new_home_sales`) | Housing | not classified<br>HARD | none | cal: `us_new_home_sales` | issuer: Census | M | — | no | no | — |
-| 10y breakeven inflation (`us_breakeven_10y`) | Inflation | CTX vs inflation expectations<br>MARKET | none | ms: `T10YIE` | issuer: FRED / Fed Board<br>feed: FRED (redistributor) | D | — | no | no | — |
-| 5y breakeven inflation (`us_breakeven_5y`) | Inflation | COIN vs headline CPI [DESCRIPTIVE]<br>MARKET | v2-pred-partial (US) | ms: `T5YIE` | issuer: FRED / Fed Board<br>feed: FRED (redistributor) | D | — | no | no | — |
-| 5y5y forward inflation expectation (`us_breakeven_5y5y`) | Inflation | CTX vs anchoring of expectations<br>MARKET | none | ms: `T5YIFR` | issuer: FRED / Fed Board<br>feed: FRED (redistributor) | D | — | no | no | — |
+| 10y breakeven inflation (`us_breakeven_10y`) | Inflation | CTX vs inflation expectations<br>MARKET | none | ms: `T10YIE` | issuer: Fed Board<br>feed: FRED (redistributor) | D | — | no | no | — |
+| 5y breakeven inflation (`us_breakeven_5y`) | Inflation | COIN vs headline CPI [DESCRIPTIVE]<br>MARKET | v2-pred-partial (US) | ms: `T5YIE` | issuer: Fed Board<br>feed: FRED (redistributor) | D | — | no | no | — |
+| 5y5y forward inflation expectation (`us_breakeven_5y5y`) | Inflation | CTX vs anchoring of expectations<br>MARKET | none | ms: `T5YIFR` | issuer: Fed Board<br>feed: FRED (redistributor) | D | — | no | no | — |
 | CPI ex food and energy (`us_cpi_core`) | Inflation | COIN vs core PCE [DESCRIPTIVE]<br>HARD | v2-descriptive (US) | **macro_releases** `us_cpi` (`us_cpi_core_mm`, `us_cpi_core_yy`)<br>ms: `CPILFESL`<br>cal: `us_core_cpi_mm`, `us_core_cpi_yy`<br>es: `cpi_core`<br>cat: `us_cpi_core_yy`, `us_cpi_core_mm` | issuer: BLS<br>certified issuer: BLS<br>calendar agency: BLS<br>feed: FRED (redistributor) | M | 08:30 America/New_York | yes | yes | T1 |
 | CPI-U all items (`us_cpi_headline`) | Inflation | COIN vs headline PCE (Fed target measure) [DEFINITION]<br>HARD | n.a. | **macro_releases** `us_cpi` (`us_cpi_headline_mm`, `us_cpi_headline_yy`)<br>ms: `CPIAUCSL`<br>cal: `us_cpi_mm`, `us_cpi_yy`<br>es: `cpi_headline`<br>cat: `us_cpi_yy`, `us_cpi_mm`, `us_cpi_headline_yy`, `us_cpi_headline_mm` | issuer: BLS<br>certified issuer: BLS<br>calendar agency: BLS<br>feed: FRED (redistributor) | M | 08:30 America/New_York | yes | yes | T1 |
 | Core PCE price index (`us_pce_core`) | Inflation | COIN vs headline PCE [DEFINITION]<br>HARD | n.a. | **macro_releases** `us_pce` (`us_core_pce_mm`, `us_core_pce_yy`)<br>ms: `PCEPILFE`<br>cal: `us_core_pce`, `us_core_pce_yy`<br>cat: `us_core_pce_yy`, `us_core_pce_mm` | issuer: BEA<br>certified issuer: BEA<br>calendar agency: BEA<br>feed: FRED (redistributor) | M | 08:30 America/New_York | yes | no | T1 |
@@ -522,7 +539,7 @@ How to read the tables:
 | Initial jobless claims (`us_claims_initial`) | Labour | LEAD vs unemployment rate [DESCRIPTIVE]<br>HARD | v2-pred-pass (US) | **macro_releases** `us_jobless_claims` (`us_initial_jobless_claims`)<br>cal: `us_claims`<br>cat: `us_initial_jobless_claims`<br>note: FRED ICSA not stored (gap) | issuer: DOL<br>certified issuer: DOL<br>calendar agency: Dept. of Labor | W | 08:30 America/New_York | yes | no | T1 |
 | JOLTS job openings (`us_jolts_openings`) | Labour | not classified<br>HARD | none | **macro_releases** `us_jolts` (`us_jolts_openings`)<br>cal: `us_jolts`<br>es: `jolts_openings`<br>cat: `us_jolts_openings` | issuer: BLS JOLTS<br>certified issuer: BLS<br>calendar agency: BLS | M | 10:00 America/New_York | yes | no | T1 |
 | Nonfarm payrolls (`us_payrolls`) | Labour | COIN vs NBER coincident set [DEFINITION]<br>HARD | v2-pred-partial (US) | **macro_releases** `us_payrolls` (`us_payrolls_change`)<br>ms: `PAYEMS`<br>cal: `us_nfp`<br>es: `nonfarm_payrolls`<br>cat: `us_nfp`, `us_payrolls_change` | issuer: BLS CES<br>certified issuer: BLS<br>calendar agency: BLS<br>feed: FRED (redistributor) | M | 08:30 America/New_York | yes | no | T1 |
-| Sahm rule (real-time) (`us_sahm`) | Labour | COIN vs NBER peak [DESCRIPTIVE]<br>HARD | v2-descriptive (US) | note: computed<br>note: FRED SAHMREALTIME not stored (gap) | issuer: FRED / Sahm | M | — | no | no | — |
+| Sahm rule (real-time) (`us_sahm`) | Labour | COIN vs NBER peak [DESCRIPTIVE]<br>HARD | v2-descriptive (US) | note: computed<br>note: FRED SAHMREALTIME not stored (gap) | issuer: —<br>feed: FRED (redistributor) | M | — | no | no | — |
 | Unemployment rate (`us_unrate`) | Labour | LAG vs IP (output) [DESCRIPTIVE]<br>HARD | v2-pred-pass (US) | ms: `UNRATE`<br>cal: `us_unemp`<br>cat: `us_unemployment_rate` | issuer: BLS CPS<br>calendar agency: BLS<br>feed: FRED (redistributor) | M | — | no | no | T1 |
 | 10-year Treasury yield (`us_ust_10y`) | Monetary policy & rates | CTX<br>MARKET | none | ms: `DGS10`, `IRLTLT01USM156N` | issuer: Fed Board H.15; OECD MEI<br>feed: FRED (redistributor) | D | — | no | no | — |
 | 10y TIPS real yield (`us_tips_10y`) | Monetary policy & rates | not classified<br>MARKET | none | ms: `DFII10` | issuer: Fed Board H.15<br>feed: FRED (redistributor) | D | — | no | no | — |
@@ -536,8 +553,8 @@ How to read the tables:
 | FOMC target-range decision (`us_fomc_decision`) | Monetary policy & rates | CTX vs current policy state<br>POLICY | none | cal: `us_fomc`<br>cat: `fed_funds_rate_decision`<br>pan: `imf_policy_rate` | issuer: Fed<br>calendar agency: Federal Reserve | E | — | no | no | T1 |
 | Kim-Wright 10y term premium (`us_term_premium_kw`) | Monetary policy & rates | CTX vs curve diagnostic<br>MARKET-DERIVED | none | ms: `THREEFYTP10` | issuer: Fed Board (model)<br>feed: FRED (redistributor) | D | — | no | no | — |
 | Treasury auction results (`us_treasury_auctions`) | Monetary policy & rates | CTX vs funding conditions<br>MARKET | none | hub: `treasury_auctions` | issuer: US Treasury | E | — | no | no | — |
-| Yield curve 10y minus 2y (`us_curve_10y2y`) | Monetary policy & rates | LEAD vs payroll growth [HYPOTHESIS]<br>MARKET | v2-pred-pass (US) | ms: `T10Y2Y` | issuer: FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
-| Yield curve 10y minus 3m (`us_curve_10y3m`) | Monetary policy & rates | LEAD vs NBER recession within 12m; IP and payroll growth [DESCRIPTIVE]<br>MARKET | v2-pred-pass (US) | derived from ms: `DGS10`, `DGS3MO`<br>note: FRED T10Y3M not stored | issuer: Fed Board / FRED | D | — | no | no | — |
+| Yield curve 10y minus 2y (`us_curve_10y2y`) | Monetary policy & rates | LEAD vs payroll growth [HYPOTHESIS]<br>MARKET | v2-pred-pass (US) | ms: `T10Y2Y` | issuer: —<br>feed: FRED (redistributor) | D | — | no | no | — |
+| Yield curve 10y minus 3m (`us_curve_10y3m`) | Monetary policy & rates | LEAD vs NBER recession within 12m; IP and payroll growth [DESCRIPTIVE]<br>MARKET | v2-pred-pass (US) | derived from ms: `DGS10`, `DGS3MO`<br>note: FRED T10Y3M not stored | issuer: Fed Board<br>feed: FRED (redistributor) | D | — | no | no | — |
 
 ### EA
 
@@ -553,7 +570,7 @@ How to read the tables:
 | HICP ex energy, food, alcohol, tobacco (`ea_hicp_core`) | Inflation | COIN vs headline HICP [DEFINITION]<br>HARD | none | cal: `ez_core_hicp`, `ez_core_hicp_flash_yy`, `ez_core_hicp_mm`<br>cat: `ea_core_hicp_yy` | issuer: Eurostat<br>calendar agency: Eurostat | M | — | no | no | T1 |
 | HICP headline (`ea_hicp`) | Inflation | COIN vs itself (ECB target measure) [DEFINITION]<br>HARD | n.a. | **macro_releases** `ea_hicp` (`ea21_hicp_mm`, `ea21_hicp_yy`, `ea_future_hicp_mm`, `ea_future_hicp_yy`, `ea_hicp_mm`, `ea_hicp_yy`)<br>ms: `CP0000EZ19M086NEST`<br>cal: `ez_hicp_yy`, `ez_hicp_mm_flash`, `ez_hicp_mm_final`, `ez_hicp_yy_final`<br>cat: `ea_hicp_yy`, `ea_hicp_mm`, `ea21_hicp_yy`, `ea21_hicp_mm`, `ea_future_hicp_yy`, `ea_future_hicp_mm` | issuer: Eurostat<br>certified issuer: Eurostat<br>calendar agency: Eurostat<br>feed: FRED (redistributor) | M | — | yes | yes | T1 |
 | Employment (`ea_employment`) | Labour | not classified<br>HARD | none | cal: `ez_employment_yy` | issuer: Eurostat | Q | — | no | no | — |
-| Unemployment rate (`ea_unemployment`) | Labour | LAG vs EA output [HYPOTHESIS]<br>HARD | analogy | ms: `LRHUTTTTEZM156S`<br>cal: `ez_unemp`<br>cat: `ea_unemployment_rate` | issuer: OECD MEI via FRED<br>calendar agency: Eurostat<br>feed: FRED (redistributor) | M | — | no | no | T3 |
+| Unemployment rate (`ea_unemployment`) | Labour | LAG vs EA output [HYPOTHESIS]<br>HARD | analogy | ms: `LRHUTTTTEZM156S`<br>cal: `ez_unemp`<br>cat: `ea_unemployment_rate` | issuer: OECD MEI<br>calendar agency: Eurostat<br>feed: FRED (redistributor) | M | — | no | no | T3 |
 | EA AAA government 10y spot (fitted) (`ea_aaa_10y`) | Monetary policy & rates | CTX<br>MARKET-DERIVED | none | ms: `CB_EA_AAA_10Y` | issuer: ECB | D | — | no | no | — |
 | EA AAA government 2y spot (fitted) (`ea_aaa_2y`) | Monetary policy & rates | CTX vs expected policy path plus premia<br>MARKET-DERIVED | none | ms: `CB_EA_AAA_2Y` | issuer: ECB | D | — | no | no | — |
 | EA all-issuer government 10y spot (fitted) (`ea_all_10y`) | Monetary policy & rates | CTX<br>MARKET-DERIVED | none | ms: `CB_EA_ALL_10Y` | issuer: ECB | D | — | no | no | — |
@@ -567,22 +584,22 @@ How to read the tables:
 | Concept (card key) | Theme | Timing class vs reference · nature | Evidence (`ev_timing`) | Stores | Issuer / source | Freq | Release time | Official card | Consensus | Tier |
 |---|---|---|---|---|---|---|---|---|---|---|
 | BIS real effective exchange rate (monthly) (`pan_reer`) | External / global | CTX vs competitiveness<br>HARD | none | pan: `reer_broad` | issuer: BIS | M | — | no | no | — |
-| Current account, trade, FDI, remittances, commodity shares, tourism (`pan_external`) | External / global | CTX vs structure<br>HARD | none | pan: `current_account_gdp`, `current_account_usd`, `exports_gdp`, `imports_gdp`, `trade_openness`, `fdi_inflows_gdp`, `remittances_gdp`, `iip_net_position`, `food_exports_share`, `fuel_exports_share`, `metals_exports_share`, `food_imports_share`, `fuel_imports_share`, `high_tech_exports_share`, `tourism_exports_share`, `tourism_receipts_usd` | issuer: WB / IMF | A | — | no | no | — |
-| External debt and reserves (`pan_ext_debt`) | External / global | CTX vs sovereign risk<br>HARD | none | pan: `total_external_debt_usd`, `external_debt_gni`, `ppg_external_debt_usd`, `short_term_debt_usd`, `short_term_debt_reserves`, `debt_service_exports`, `ext_debt_nonres_usd`, `fx_debt_usd`, `fx_reserves_usd`, `fx_reserves_months_imports`, `official_fx_rate`, `ppp_conversion_rate` | issuer: WB / IMF | A | — | no | no | — |
+| Current account, trade, FDI, remittances, commodity shares, tourism (`pan_external`) | External / global | CTX vs structure<br>HARD | none | pan: `current_account_gdp`, `current_account_usd`, `exports_gdp`, `imports_gdp`, `trade_openness`, `fdi_inflows_gdp`, `remittances_gdp`, `iip_net_position`, `food_exports_share`, `fuel_exports_share`, `metals_exports_share`, `food_imports_share`, `fuel_imports_share`, `high_tech_exports_share`, `tourism_exports_share`, `tourism_receipts_usd` | issuer: WB; IMF | A | — | no | no | — |
+| External debt and reserves (`pan_ext_debt`) | External / global | CTX vs sovereign risk<br>HARD | none | pan: `total_external_debt_usd`, `external_debt_gni`, `ppg_external_debt_usd`, `short_term_debt_usd`, `short_term_debt_reserves`, `debt_service_exports`, `ext_debt_nonres_usd`, `fx_debt_usd`, `fx_reserves_usd`, `fx_reserves_months_imports`, `official_fx_rate`, `ppp_conversion_rate` | issuer: WB; IMF | A | — | no | no | — |
 | BIS credit-to-GDP gap (`pan_credit_gap`) | Financial conditions & credit | LEAD vs banking stress (multi-year) [HYPOTHESIS]<br>HARD | lit-local | pan: `bis_credit_gap` | issuer: BIS | Q | — | no | no | — |
 | BIS private debt service ratio (`pan_dsr`) | Financial conditions & credit | not classified<br>HARD | none | pan: `bis_dsr_private` | issuer: BIS | Q | — | no | no | — |
 | Bank capital, NPLs, lending rate (`pan_bank_health`) | Financial conditions & credit | CTX vs structure<br>HARD | none | pan: `bank_capital_ratio`, `npl_ratio`, `lending_interest_rate` | issuer: World Bank | A | — | no | no | — |
 | Broad money (% GDP) (`pan_money`) | Financial conditions & credit | CTX vs structure<br>HARD | none | pan: `broad_money_gdp` | issuer: World Bank | A | — | no | no | — |
 | ECB MIR cost of borrowing (households, NFC) (`pan_mir`) | Financial conditions & credit | not classified<br>HARD | lit-local | pan: `ecb_cost_borrow_house`, `ecb_cost_borrow_nfc` | issuer: ECB MIR | M | — | no | no | — |
-| Private, household, corporate debt and credit (% GDP) (`pan_debt_stocks`) | Financial conditions & credit | CTX vs structure<br>HARD | none | pan: `private_credit_gdp`, `private_debt_gdp`, `household_debt_gdp`, `corporate_debt_gdp` | issuer: WB / IMF GDD | A | — | no | no | — |
-| Fiscal balance, debt, expenditure, revenue, interest, military (`pan_fiscal`) | Fiscal & sovereign | CTX vs fiscal stance<br>HARD | none | pan: `fiscal_balance_gdp`, `public_debt_gdp`, `govt_net_debt_gdp`, `primary_balance_gdp`, `government_expenditure_gdp`, `government_revenue_gdp`, `interest_on_debt_gdp`, `interest_revenue`, `military_expenditure_gdp` | issuer: IMF WEO / WB | A | — | no | no | — |
-| GDP growth, levels, per capita, PPP (`pan_growth`) | Growth / activity | CTX vs structure<br>HARD | none | pan: `real_gdp_growth`, `gdp_growth_weo`, `gdp_current_usd`, `gdp_usd_weo`, `gdp_ppp`, `gdp_per_capita_ppp`, `gdp_per_capita_usd`, `gdp_ppp_world_share`, `gdp_per_capita_growth` | issuer: WB / IMF WEO | A | — | no | no | — |
-| Investment, savings, productivity, R&D, resource rents, demography, governance, inequality (`pan_structure`) | Growth / activity | CTX vs structure<br>HARD | none | pan: `investment_gdp`, `gross_savings_gdp`, `labor_productivity_level`, `rnd_expenditure_gdp`, `natural_resource_rents_gdp`, `population`, `population_growth`, `dependency_ratio`, `wgi_control_corruption`, `wgi_government_effectiveness`, `wgi_political_stability`, `wgi_regulatory_quality`, `wgi_rule_of_law`, `wgi_voice_accountability`, `gini` | issuer: WB / IMF | A | — | no | no | — |
-| CPI inflation (average, end-period) (`pan_inflation`) | Inflation | CTX vs structure<br>HARD | none | pan: `inflation_cpi`, `inflation_avg_weo`, `inflation_eop_weo` | issuer: WB / IMF WEO | A | — | no | no | — |
-| Unemployment (ILO modelled, WEO) (`pan_unemployment`) | Labour | CTX vs structure<br>HARD | none | pan: `unemployment_rate`, `unemployment_weo` | issuer: WB / IMF WEO | A | — | no | no | — |
+| Private, household, corporate debt and credit (% GDP) (`pan_debt_stocks`) | Financial conditions & credit | CTX vs structure<br>HARD | none | pan: `private_credit_gdp`, `private_debt_gdp`, `household_debt_gdp`, `corporate_debt_gdp` | issuer: WB; IMF GDD | A | — | no | no | — |
+| Fiscal balance, debt, expenditure, revenue, interest, military (`pan_fiscal`) | Fiscal & sovereign | CTX vs fiscal stance<br>HARD | none | pan: `fiscal_balance_gdp`, `public_debt_gdp`, `govt_net_debt_gdp`, `primary_balance_gdp`, `government_expenditure_gdp`, `government_revenue_gdp`, `interest_on_debt_gdp`, `interest_revenue`, `military_expenditure_gdp` | issuer: IMF WEO; WB | A | — | no | no | — |
+| GDP growth, levels, per capita, PPP (`pan_growth`) | Growth / activity | CTX vs structure<br>HARD | none | pan: `real_gdp_growth`, `gdp_growth_weo`, `gdp_current_usd`, `gdp_usd_weo`, `gdp_ppp`, `gdp_per_capita_ppp`, `gdp_per_capita_usd`, `gdp_ppp_world_share`, `gdp_per_capita_growth` | issuer: WB; IMF WEO | A | — | no | no | — |
+| Investment, savings, productivity, R&D, resource rents, demography, governance, inequality (`pan_structure`) | Growth / activity | CTX vs structure<br>HARD | none | pan: `investment_gdp`, `gross_savings_gdp`, `labor_productivity_level`, `rnd_expenditure_gdp`, `natural_resource_rents_gdp`, `population`, `population_growth`, `dependency_ratio`, `wgi_control_corruption`, `wgi_government_effectiveness`, `wgi_political_stability`, `wgi_regulatory_quality`, `wgi_rule_of_law`, `wgi_voice_accountability`, `gini` | issuer: WB; IMF | A | — | no | no | — |
+| CPI inflation (average, end-period) (`pan_inflation`) | Inflation | CTX vs structure<br>HARD | none | pan: `inflation_cpi`, `inflation_avg_weo`, `inflation_eop_weo` | issuer: WB; IMF WEO | A | — | no | no | — |
+| Unemployment (ILO modelled, WEO) (`pan_unemployment`) | Labour | CTX vs structure<br>HARD | none | pan: `unemployment_rate`, `unemployment_weo` | issuer: WB; IMF WEO | A | — | no | no | — |
 | BIS policy rate (monthly) (`pan_policy_rate_bis`) | Monetary policy & rates | CTX vs current policy state<br>POLICY | none | pan: `bis_policy_rate` | issuer: BIS | M | — | no | no | — |
 | IMF MFS policy-related rate (monthly) (`pan_policy_rate_imf`) | Monetary policy & rates | CTX vs current policy state<br>POLICY | none | pan: `imf_policy_rate` | issuer: IMF | M | — | no | no | — |
-| Real interest and real long rate (`pan_real_rates`) | Monetary policy & rates | CTX vs structure<br>HARD | none | pan: `real_interest_rate`, `real_long_rate` | issuer: WB / IMF | A | — | no | no | — |
+| Real interest and real long rate (`pan_real_rates`) | Monetary policy & rates | CTX vs structure<br>HARD | none | pan: `real_interest_rate`, `real_long_rate` | issuer: WB; IMF | A | — | no | no | — |
 
 ### CHN (China)
 
@@ -618,9 +635,9 @@ How to read the tables:
 | Core CPI (`uk_cpi_core`) | Inflation | COIN vs headline CPI [DEFINITION]<br>HARD | none | **macro_releases** `uk_cpi` (`uk_core_cpi_yy`)<br>cal: `uk_core_cpi`<br>cat: `uk_core_cpi_yy` | issuer: ONS<br>certified issuer: ONS<br>calendar agency: ONS | M | 07:00 Europe/London | yes | no | T1 |
 | Average weekly earnings, regular pay (ex bonus) (`uk_awe_regular`) | Labour | not classified<br>HARD | none | **macro_releases** `uk_labour_market` (`uk_regular_pay_yy`)<br>cal: `uk_earnings_ex_bonus`<br>cat: `uk_regular_pay_yy` | issuer: ONS<br>certified issuer: ONS | M | 07:00 Europe/London | yes | no | T1 |
 | Average weekly earnings, total pay (`uk_awe_total`) | Labour | not classified<br>HARD | none | cal: `uk_earnings`<br>cat: `uk_average_weekly_earnings_yy` | issuer: ONS<br>calendar agency: ONS | M | — | no | no | T1 |
-| Claimant count (`uk_claimant`) | Labour | not classified<br>HARD | none | cal: `uk_claimant` | issuer: ONS/DWP<br>calendar agency: ONS | M | — | no | no | T2 |
+| Claimant count (`uk_claimant`) | Labour | not classified<br>HARD | none | cal: `uk_claimant` | issuer: ONS; DWP<br>calendar agency: ONS | M | — | no | no | T2 |
 | LFS employment change (`uk_lfs_employment`) | Labour | not classified<br>HARD | none | cal: `uk_employment_change` | issuer: ONS LFS | M | — | no | no | — |
-| PAYE RTI payrolled employees (`uk_rti_payrolls`) | Labour | COIN vs UK output [HYPOTHESIS]<br>HARD | none | cal: `uk_payrolls_change_mm` | issuer: ONS/HMRC | M | — | no | no | — |
+| PAYE RTI payrolled employees (`uk_rti_payrolls`) | Labour | COIN vs UK output [HYPOTHESIS]<br>HARD | none | cal: `uk_payrolls_change_mm` | issuer: ONS; HMRC | M | — | no | no | — |
 | Unemployment rate (LFS) (`uk_unemployment`) | Labour | LAG vs UK output [HYPOTHESIS]<br>HARD | analogy | **macro_releases** `uk_labour_market` (`uk_unemployment_rate`)<br>cat: `uk_unemployment_rate` | issuer: ONS LFS<br>certified issuer: ONS | M | 07:00 Europe/London | yes | no | T1 |
 | Bank Rate decision (`uk_boe`) | Monetary policy & rates | CTX vs current policy state<br>POLICY | none | cal: `uk_boe`<br>cat: `boe_bank_rate_decision`<br>pan: `bis_policy_rate` | issuer: BoE<br>calendar agency: Bank of England | E | — | no | no | T1 |
 | Gilt 10y (`uk_gilt_10y`) | Monetary policy & rates | CTX<br>MARKET-DERIVED | none | ms: `CB_GB_10Y`, `IRLTLT01GBM156N` | issuer: BoE (fitted zero-coupon); OECD MEI<br>feed: FRED (redistributor) | D | — | no | no | — |
@@ -715,7 +732,7 @@ How to read the tables:
 
 | Concept (card key) | Theme | Timing class vs reference · nature | Evidence (`ev_timing`) | Stores | Issuer / source | Freq | Release time | Official card | Consensus | Tier |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Exports (full month) (`kr_exports`) | External / global | COIN vs global trade [HYPOTHESIS]<br>HARD | none | cal: `kr_exports` | issuer: MOTIE/KCS<br>calendar agency: MOTIE / Dogane | M | — | no | no | T1 |
+| Exports (full month) (`kr_exports`) | External / global | COIN vs global trade [HYPOTHESIS]<br>HARD | none | cal: `kr_exports` | issuer: MOTIE; KCS<br>calendar agency: MOTIE / Dogane | M | — | no | no | T1 |
 | Exports, first 20 days (`kr_exports_20d`) | External / global | COIN vs global trade [HYPOTHESIS]<br>HARD | none | cal: `kr_exports20` | issuer: KCS<br>calendar agency: Dogane coreane | M | — | no | no | T1 |
 | KRW per USD (`fx_krw`) | External / global | CTX<br>MARKET | none | ms: `DEXKOUS` | issuer: Fed H.10<br>feed: FRED (redistributor) | D | — | no | no | — |
 | Employment change and unemployment (NSA) (`kr_labour`) | Labour | not classified<br>HARD | none | cal: `kr_employment_change_yy`, `kr_unemployment_rate_nsa` | issuer: Statistics Korea | M | — | no | no | — |
@@ -748,7 +765,7 @@ How to read the tables:
 | Concept (card key) | Theme | Timing class vs reference · nature | Evidence (`ev_timing`) | Stores | Issuer / source | Freq | Release time | Official card | Consensus | Tier |
 |---|---|---|---|---|---|---|---|---|---|---|
 | CPI flash and final (`pl_cpi`) | Inflation | COIN vs itself (NBP target) [DEFINITION]<br>HARD | n.a. | cal: `pl_cpi_flash_mm`, `pl_cpi_flash_yy`, `pl_cpi_final_mm`, `pl_cpi_yy` | issuer: GUS | M | — | no | no | — |
-| HICP final (`pl_hicp`) | Inflation | COIN vs national CPI [DEFINITION]<br>HARD | n.a. | cal: `pl_hicp_final_mm`, `pl_hicp_final_yy` | issuer: GUS/Eurostat | M | — | no | no | — |
+| HICP final (`pl_hicp`) | Inflation | COIN vs national CPI [DEFINITION]<br>HARD | n.a. | cal: `pl_hicp_final_mm`, `pl_hicp_final_yy` | issuer: GUS; Eurostat | M | — | no | no | — |
 | Registered unemployment (`pl_unemployment`) | Labour | LAG vs Polish output [HYPOTHESIS]<br>HARD | analogy | cal: `pl_unemployment_rate` | issuer: GUS | M | — | no | no | — |
 | NBP decision and minutes (`pl_nbp`) | Monetary policy & rates | CTX vs current policy state<br>POLICY | none | cal: `pl_nbp`, `pl_nbp_minutes` | issuer: NBP | E | — | no | no | — |
 | Poland 10y (OECD monthly) (`pl_10y`) | Monetary policy & rates | CTX<br>MARKET | none | ms: `IRLTLT01PLM156N` | issuer: OECD MEI<br>feed: FRED (redistributor) | M | — | no | no | — |
@@ -822,15 +839,15 @@ How to read the tables:
 
 | Concept (card key) | Theme | Timing class vs reference · nature | Evidence (`ev_timing`) | Stores | Issuer / source | Freq | Release time | Official card | Consensus | Tier |
 |---|---|---|---|---|---|---|---|---|---|---|
-| ICE BofA EM corporate plus OAS (`em_oas_corp`) | Financial conditions & credit | not classified<br>MARKET | none | ms: `BAMLEMCBPIOAS` | issuer: ICE via FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
-| ICE BofA EM high yield corporate plus OAS (`em_oas_hy`) | Financial conditions & credit | not classified<br>MARKET | none | ms: `BAMLEMHBHYCRPIOAS` | issuer: ICE via FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
+| ICE BofA EM corporate plus OAS (`em_oas_corp`) | Financial conditions & credit | not classified<br>MARKET | none | ms: `BAMLEMCBPIOAS` | issuer: ICE<br>feed: FRED (redistributor) | D | — | no | no | — |
+| ICE BofA EM high yield corporate plus OAS (`em_oas_hy`) | Financial conditions & credit | not classified<br>MARKET | none | ms: `BAMLEMHBHYCRPIOAS` | issuer: ICE<br>feed: FRED (redistributor) | D | — | no | no | — |
 
 ### GLOBAL
 
 | Concept (card key) | Theme | Timing class vs reference · nature | Evidence (`ev_timing`) | Stores | Issuer / source | Freq | Release time | Official card | Consensus | Tier |
 |---|---|---|---|---|---|---|---|---|---|---|
-| Brent crude spot (`gl_brent`) | External / global | COIN vs US headline CPI [DESCRIPTIVE]<br>MARKET | v2-descriptive (US) | ms: `DCOILBRENTEU` | issuer: EIA via FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
-| WTI crude spot (`gl_wti`) | External / global | not classified<br>MARKET | none | ms: `DCOILWTICO` | issuer: EIA via FRED<br>feed: FRED (redistributor) | D | — | no | no | — |
+| Brent crude spot (`gl_brent`) | External / global | COIN vs US headline CPI [DESCRIPTIVE]<br>MARKET | v2-descriptive (US) | ms: `DCOILBRENTEU` | issuer: EIA<br>feed: FRED (redistributor) | D | — | no | no | — |
+| WTI crude spot (`gl_wti`) | External / global | not classified<br>MARKET | none | ms: `DCOILWTICO` | issuer: EIA<br>feed: FRED (redistributor) | D | — | no | no | — |
 
 ### NOR (Norway)
 
