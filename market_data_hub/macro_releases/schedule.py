@@ -72,6 +72,23 @@ def get_edition(client, provider, url, family, edition, params=None):
         return None
 
 
+def current_edition_allowed(family, edition):
+    """Rolling pages may retain only the immediately previous edition in grace."""
+    from .http import FetchError
+    calendar = family_editions(family)
+    eligible = due(calendar, family=family)
+    if edition not in eligible:
+        return False  # A reviewed publication exposed before its release instant.
+    expected = max(eligible)
+    if edition == expected:
+        return True
+    previous = max((d for d in eligible if d < expected), default=None)
+    if edition == previous and publication_grace(family, expected):
+        mark_pending(family, expected)
+        return True
+    raise FetchError("Issuer current publication is stale; needs review")
+
+
 def family_editions(family):
     from .policy_editions import EDITIONS as POLICY
     if family in POLICY:

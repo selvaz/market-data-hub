@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 
 from .bls import shift_month
 from .http import FetchError
-from .schedule import due
+from .schedule import due, get_edition, mark_pending, publication_grace
 from .tier1_editions import EDITIONS
 from .tier1_publications import month, observation, publication_text, require, reviewed
 
@@ -105,7 +105,7 @@ def parse_annex(document, release, since="1900-01"):
 def fetch(client, family, since):
     links = None
     out = []
-    for edition, (period, stage, _) in due(EDITIONS[family]).items():
+    for edition, (period, stage, _) in due(EDITIONS[family], family=family).items():
         if period < since or edition in STORED_EDITIONS.get():
             continue
         urls = ARCHIVES.get(edition)
@@ -120,10 +120,28 @@ def fetch(client, family, since):
             for name in names:
                 matches = [u for u in links if u.endswith("filename=" + name)]
                 if len(matches) != 1:
+                    previous_names = [
+                        ("Flash_consumer_" if meta[1] == "flash" else "bcs_") + meta[0].replace("-", "_") + "_en.pdf"
+                        for d, meta in EDITIONS[family].items() if d < edition]
+                    if (not matches and publication_grace(family, edition) and
+                            any(u.endswith("filename=" + old) for u in links for old in previous_names)):
+                        mark_pending(family, edition)
+                        urls = []
+                        break
                     raise FetchError("EC due publication link needs review")
                 urls += matches
-        release = client.get("ecfin", urls[0])
-        rows = parse(release, family, since) if stage == "flash" else parse_annex(client.get("ecfin", urls[1]), release, since)
+        if not urls:
+            continue
+        release = get_edition(client, "ecfin", urls[0], family, edition)
+        if release is None:
+            continue
+        if stage == "flash":
+            rows = parse(release, family, since)
+        else:
+            annex = get_edition(client, "ecfin", urls[1], family, edition)
+            if annex is None:
+                continue
+            rows = parse_annex(annex, release, since)
         if not rows or {o.edition for o in rows} != {edition}:
             raise FetchError("EC requested archive edition needs review")
         out += rows
