@@ -80,6 +80,12 @@ LLM agents get the same surface through the LazyTools `datahub` connector
 shared identity/result vocabulary lives in the
 [lazydatacore contract](LAZYDATACORE.md).
 
+The macro indicators the hub tracks, how each is classified (leading,
+coincident, lagging, context, not classified) and where each is stored (official
+release family, hub series, web calendar, consensus) are listed in
+[Macro indicators](macro-indicators.md); the per-indicator context API is
+described in [Indicator cards](indicator-cards.md).
+
 ## Automation
 
 Two Windows Task Scheduler jobs (`setup_scheduler.ps1`) keep the DB fresh:
