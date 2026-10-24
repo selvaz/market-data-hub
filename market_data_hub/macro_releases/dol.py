@@ -6,7 +6,7 @@ import re
 from .adapters import Observation
 from .http import FetchError
 from .publication_times import new_york_release
-from .schedule import due
+from .schedule import due, publication_grace, mark_pending, edition_status
 
 LATEST = "https://www.dol.gov/ui/data.pdf"
 SCHEDULE = "https://oui.doleta.gov/unemploy/claims_arch.asp"
@@ -87,11 +87,20 @@ class DOLAdapter:
     def fetch(self, families, since):
         if "us_jobless_claims" not in families:
             return []
-        editions = due(EDITIONS)
+        editions = due(EDITIONS, family="us_jobless_claims")
         out = self.parse(self.client.get("dol", LATEST), since)
-        if not out or {o.edition for o in out} != {max(editions, default=None)}:
+        newest = max(editions, default=None)
+        if out and out[0].edition != newest and newest and publication_grace("us_jobless_claims", newest):
+            previous = max((d for d in editions if d != newest), default=None)
+            if out[0].edition == previous:
+                mark_pending("us_jobless_claims", newest)
+                editions.pop(newest)
+                newest = previous
+        if out and edition_status(out[0].edition, family="us_jobless_claims") == "scheduled":
+            out = []  # Early bytes cannot replace the previous due archive.
+        elif not out or out[0].edition != newest:
             raise FetchError("DOL latest scheduled edition missing; needs review")
-        latest = out[0].edition
+        latest = out[0].edition if out else None
         for edition, (period, _, _) in editions.items():
             if edition != latest and period >= since:
                 parsed = self.parse(self.client.get("dol", archive_url(edition)), since)

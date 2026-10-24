@@ -1,0 +1,143 @@
+"""Independent-review regressions; saved publications only, never live HTTP."""
+from contextlib import contextmanager
+from datetime import datetime, timezone
+
+import pytest
+import requests
+
+from market_data_hub.macro_releases import open_reader, open_writer, run_daily, schedule
+from market_data_hub.macro_releases.http import FetchError
+from test_macro_us_monthly import Replay as MonthlyReplay
+from test_macro_m9a2 import Replay, document
+
+
+@pytest.fixture(autouse=True)
+def offline(monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Live network forbidden in review regressions")
+    monkeypatch.setattr(requests.Session, "request", forbidden)
+    for module in ("fred", "bls", "bea"):
+        monkeypatch.setattr("market_data_hub.macro_releases." + module + ".api_key", lambda _: "fixture")
+
+
+@contextmanager
+def at(instant):
+    token = schedule.RUN_INSTANT.set(instant)
+    pending = schedule.PENDING_EDITIONS.set({})
+    try:
+        yield
+    finally:
+        schedule.PENDING_EDITIONS.reset(pending)
+        schedule.RUN_INSTANT.reset(token)
+
+
+def collect(tmp_path, client, family, instant):
+    db = tmp_path / "review.sqlite"
+    result = run_daily.collect_family(lambda: open_writer(db), client, "review", family,
+        {family: {"fetch_since": "2026-06", "fetch_until": instant[:10]}}, dry_run=True, run_at=instant)[family]
+    return db, result
+
+
+@pytest.mark.parametrize("family,edition,before,release", [
+    ("us_jolts", "2026-09-29", "2026-09-29T13:30:00Z", "2026-09-29T14:00:00Z"),
+    ("us_durable_goods", "2026-10-02", "2026-10-02T13:30:00Z", "2026-10-02T14:00:00Z"),
+    ("ea_gdp", "2026-10-20", "2026-10-20T08:30:00Z", "2026-10-20T09:00:00Z"),
+    ("ea_gdp", "2026-12-07", "2026-12-07T09:30:00Z", "2026-12-07T10:00:00Z"),
+    ("uk_cpi", "2026-10-21", "2026-10-21T05:30:00Z", "2026-10-21T06:00:00Z"),
+    ("us_jobless_claims", "2026-10-22", "2026-10-22T12:00:00Z", "2026-10-22T12:30:00Z"),
+])
+def test_due_uses_issuer_release_instant_and_dst(family, edition, before, release):
+    calendar = schedule.family_editions(family)
+    assert edition not in schedule.due(calendar, before, family=family)
+    assert schedule.edition_status(edition, before, family=family) == "scheduled"
+    assert edition in schedule.due(calendar, release, family=family)
+
+
+def test_1330_run_keeps_previous_m3_edition_without_review(tmp_path):
+    db, result = collect(tmp_path, MonthlyReplay(), "us_durable_goods", "2026-10-02T13:30:00Z")
+    assert result["status"] == "ok", result
+    assert any(d["edition"] == "2026-10-02" for d in result["scheduled_editions"])
+    with open_reader(db) as store:
+        assert not store.conn.execute("SELECT 1 FROM value_vintages v JOIN release_events e ON e.id=v.release_event_id WHERE e.edition='2026-10-02'").fetchone()
+        rows = store.latest_official("us_durable_goods_orders_mm")
+        assert any(r["reference_period"] == "2026-08" and r["value"] == 0 for r in rows)
+
+
+def test_pre_release_claims_keeps_previous_publication(tmp_path):
+    class Before(Replay):
+        def get(self, provider, url, params=None):
+            if url == "https://www.dol.gov/ui/data.pdf":
+                return document("dol-2026-10-15.pdf")
+            return super().get(provider, url, params)
+    _, result = collect(tmp_path, Before(), "us_jobless_claims", "2026-10-22T12:00:00Z")
+    assert result["status"] == "ok", result
+    assert any(d["edition"] == "2026-10-22" for d in result["scheduled_editions"])
+
+
+@pytest.mark.parametrize("family,edition,url,provider", [
+    ("us_pce", "2026-10-29", "https://www.bea.gov/news/2026/personal-income-and-outlays-september-2026", "bea"),
+    ("us_industrial_production", "2026-10-16", "https://www.federalreserve.gov/releases/g17/20261016/", "fred"),
+    ("ea_gdp", "2026-10-30", "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-30102026-ap", "eurostat"),
+])
+def test_newly_due_url_404_is_pending_but_old_404_is_error(family, edition, url, provider):
+    class Missing:
+        def get(self, *args):
+            raise FetchError(provider + ": HTTP 404")
+    release = schedule.release_instant(edition, family=family)
+    from datetime import timedelta
+    with at(release + timedelta(hours=1)):
+        assert schedule.get_edition(Missing(), provider, url, family, edition) is None
+        assert schedule.edition_status(edition, family=family) == "scheduled"
+    with at(release + timedelta(hours=6)):
+        with pytest.raises(FetchError, match="404"):
+            schedule.get_edition(Missing(), provider, url, family, edition)
+
+
+def test_recent_fred_head_delay_keeps_previous_edition(tmp_path):
+    _, result = collect(tmp_path, MonthlyReplay(), "us_housing_starts", "2026-11-18T14:00:00Z")
+    assert result["status"] == "ok", result
+    assert any(d["edition"] == "2026-11-18" and d.get("reason") == "not_yet_published"
+               for d in result["scheduled_editions"])
+
+
+def test_execute_carries_full_utc_instant_to_fetchers(tmp_path, monkeypatch):
+    observed = []
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 10, 2, 13, 30, tzinfo=timezone.utc)
+    class Capture(MonthlyReplay):
+        def get(self, *args, **kwargs):
+            observed.append(schedule.run_instant())
+            return super().get(*args, **kwargs)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
+    monkeypatch.setattr(run_daily, "HttpClient", Capture)
+    result = run_daily.execute(tmp_path / "clock.sqlite", ["us_durable_goods"], 24, True,
+                               raw_dir=tmp_path / "none")
+    assert result["status"] == "ok", result
+    assert observed and all(t == Clock.now(None) for t in observed)
+
+
+def test_new_pce_url_404_retains_old_official_values_without_review(tmp_path):
+    class Late(MonthlyReplay):
+        def get(self, provider, url, params=None):
+            if url.endswith("personal-income-and-outlays-september-2026"):
+                raise FetchError("bea: HTTP 404")
+            return super().get(provider, url, params)
+    db, result = collect(tmp_path, Late(), "us_pce", "2026-10-29T13:30:00Z")
+    assert result["status"] == "ok", result
+    assert any(d["edition"] == "2026-10-29" and d.get("reason") == "not_yet_published"
+               for d in result["scheduled_editions"])
+    with open_reader(db) as store:
+        assert all(r["issuer_published_at"].startswith("2026-09-30") or r["issuer_published_at"].startswith("2026-08-26")
+                   for r in store.latest_official("us_core_pce_mm"))
+
+
+def test_gdp_update_is_not_requested_before_local_release_time(tmp_path):
+    class Before(Replay):
+        def get(self, provider, url, params=None):
+            assert not url.endswith("/data/namq_10_gdp")
+            return super().get(provider, url, params)
+    _, result = collect(tmp_path, Before(), "ea_gdp", "2026-10-20T08:30:00Z")
+    assert result["status"] == "ok", result
+    assert any(d["edition"] == "2026-10-20" for d in result["scheduled_editions"])

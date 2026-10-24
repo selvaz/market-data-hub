@@ -5,12 +5,11 @@ from dataclasses import replace
 
 from .adapters import Observation
 from .bea import EDITIONS as GDP_EDITIONS
-from .bls import EDITIONS as BLS_EDITIONS
 from .bls import revision_start, shift_month
 from .http import FetchError, api_key, json_payload, require_complete
 from .publication_times import new_york_release
 from .us_editions import EDITIONS as MONTHLY_EDITIONS, reviewed, observation_stage
-from .schedule import due, run_date
+from .schedule import due, family_editions, publication_grace, mark_pending
 
 ENDPOINT = "https://api.stlouisfed.org/fred/series/observations"
 MAPPINGS = {
@@ -43,10 +42,11 @@ class FREDAdapter:
         for indicator, (family, series, units) in MAPPINGS.items():
             if family not in families:
                 continue
+            calendar = due(family_editions(family), family=family)
             if family in MONTHLY_EDITIONS:
                 # A current-head probe is only a freshness guard. Its values
                 # are never attached to an older reviewed as-of edition.
-                latest = max(p for p, _, _ in due(MONTHLY_EDITIONS[family]).values())
+                latest = max(p for p, _, _ in calendar.values())
                 current = self.client.get("fred", ENDPOINT, {
                     "api_key": api_key("FRED_API_KEY"), "file_type": "json", "series_id": series,
                     "units": units, "observation_start": latest + "-01",
@@ -54,13 +54,21 @@ class FREDAdapter:
                 })
                 payload = json_payload(current)
                 rows = payload.get("observations", [])
+                actual = rows[0]["date"][:7] if rows else None
+                newest = max(calendar)
+                previous = {d: meta for d, meta in calendar.items() if d != newest}
+                if (actual != latest and previous and publication_grace(family, newest) and
+                        actual == max(p for p, _, _ in previous.values())):
+                    mark_pending(family, newest)
+                    calendar = previous
+                    latest = max(p for p, _, _ in calendar.values())
                 if (payload.get("units") != units or not rows or rows[0]["value"] == "." or
-                        rows[0]["date"][:7] != latest):
+                        actual != latest):
                     raise FetchError(f"FRED current headline metadata needs review: {family}")
-            editions = ([(d, stage) for d, (p, stage, _) in due(MONTHLY_EDITIONS[family]).items() if p >= since]
+            editions = ([(d, stage) for d, (p, stage, _) in calendar.items() if p >= since]
                         if family in MONTHLY_EDITIONS else
-                        [(d, stage) for d, (_, stage) in due(GDP_EDITIONS).items()] if family == "us_gdp"
-                        else [(max(d for (f, _), d in BLS_EDITIONS.items() if f == family and d <= run_date()), "regular")])
+                        [(d, stage) for d, (_, stage) in due(GDP_EDITIONS, family=family).items()] if family == "us_gdp"
+                        else [(max(calendar), "regular")])
             # An explicit as-of request for EVERY edition preserves the unchanged
             # second GDP estimate that ALFRED's change-only history omits.
             for edition, stage in editions:
@@ -70,7 +78,7 @@ class FREDAdapter:
                 elif family in MONTHLY_EDITIONS:
                     start = min(since, shift_month(MONTHLY_EDITIONS[family][edition][0], -2))
                 else:
-                    latest = max(p for (f, p), d in BLS_EDITIONS.items() if f == family and d <= run_date())
+                    latest = max(p for p, _, _ in calendar.values())
                     start = revision_start(family, latest, start, edition)
                 doc = self.client.get("fred", ENDPOINT, {
                     "api_key": api_key("FRED_API_KEY"), "file_type": "json", "series_id": series,

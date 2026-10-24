@@ -1,5 +1,6 @@
 """M9a: real saved API/publication certification and fully offline daily replay."""
 from dataclasses import replace
+from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -25,7 +26,8 @@ EDITIONS = {f: due(editions, "2026-10-24") for f, editions in CALENDAR.items()}
 
 @pytest.fixture(autouse=True)
 def offline(monkeypatch):
-    monkeypatch.setattr("market_data_hub.macro_releases.schedule.run_date", lambda: "2026-10-24")
+    monkeypatch.setattr("market_data_hub.macro_releases.schedule.run_instant",
+                        lambda as_of=None: as_of if isinstance(as_of, datetime) else datetime(2026, 10, 24, tzinfo=timezone.utc))
     def forbidden(*args, **kwargs):
         raise AssertionError("Network forbidden in monthly release certification")
     monkeypatch.setattr(requests.Session, "request", forbidden)

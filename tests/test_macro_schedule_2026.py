@@ -26,7 +26,7 @@ def test_reviewed_calendar_to_december():
 def test_future_edition_is_scheduled_and_becomes_due_on_issuer_date():
     assert edition_status("2026-10-29", "2026-10-24") == "scheduled"
     assert "2026-10-29" not in due(bea.EDITIONS, "2026-10-28")
-    assert due(bea.EDITIONS, "2026-10-29")["2026-10-29"] == ("2026-Q3", "advance")
+    assert due(bea.EDITIONS, "2026-10-29T12:30:00Z")["2026-10-29"] == ("2026-Q3", "advance")
 
 
 def test_forward_calendar_no_future_http_and_not_an_error(tmp_path, monkeypatch):

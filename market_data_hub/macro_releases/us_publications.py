@@ -15,7 +15,7 @@ from .catalogue import INDICATORS
 from .http import FetchError
 from .publication_times import new_york_release
 from .us_editions import EDITIONS, observation_stage, reviewed
-from .schedule import due
+from .schedule import due, get_edition
 
 PUBLICATIONS = {
     "us_retail_sales": "https://www.census.gov/retail/marts/www/marts_current.pdf",
@@ -207,13 +207,15 @@ def fetch_publications(client, families, since):
             continue
         url = PUBLICATIONS[family]
         if family in ("us_industrial_production", "us_trade_balance"):
-            for edition, (period, stage, _) in due(EDITIONS[family]).items():
+            for edition, (period, stage, _) in due(EDITIONS[family], family=family).items():
                 if period >= since:
                     month = datetime.strptime(period, "%Y-%m").strftime("%B").lower()
                     # Annual G.17 releases live in the issuer's revision archive.
                     template = ("https://www.federalreserve.gov/releases/g17/revisions/{date}/DefaultRev.htm"
                                 if family == "us_industrial_production" and stage == "benchmark" else url)
-                    out += PARSERS[family](client.get("fred", template.format(date=edition.replace("-", ""), month=month)), since)
+                    publication = get_edition(client, "fred", template.format(date=edition.replace("-", ""), month=month), family, edition)
+                    if publication is not None:
+                        out += PARSERS[family](publication, since)
         else:
             out += PARSERS[family](client.get("fred", url), since)
             if family == "us_durable_goods":

@@ -8,7 +8,7 @@ from .adapters import Observation
 from .http import FetchError, api_key, json_payload
 from .publication_times import new_york_release
 from .us_editions import reviewed
-from .schedule import due
+from .schedule import due, get_edition
 
 ENDPOINT = "https://apps.bea.gov/api/data/"
 TABLE = "T10101"
@@ -51,9 +51,11 @@ class BEAAdapter:
             "method": "GetData", "datasetname": "NIPA", "TableName": "T20807",
             "Frequency": "M", "Year": years, "ResultFormat": "JSON"})
         out = self.parse_pce(doc, since=since)
-        for edition, (period, _, _) in due(EDITIONS["us_pce"]).items():
+        for edition, (period, _, _) in due(EDITIONS["us_pce"], family="us_pce").items():
             if period >= since:
-                out += parse_pce_publication(self.client.get("bea", pce_url(period)), since)
+                publication = get_edition(self.client, "bea", pce_url(period), "us_pce", edition)
+                if publication is not None:
+                    out += parse_pce_publication(publication, since)
         return out
 
     @staticmethod

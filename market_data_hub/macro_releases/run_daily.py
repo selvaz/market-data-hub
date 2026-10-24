@@ -25,7 +25,7 @@ from .lease import LeaseBusy, LeaseLost, RunLease
 from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
-from .schedule import RUN_DATE, edition_status, family_editions
+from .schedule import RUN_INSTANT, PENDING_EDITIONS, edition_status, family_editions, run_instant
 from .store import Store, open_writer
 from .verification import configured_bands, persist_review, verify
 
@@ -130,13 +130,14 @@ def persist_counts(store, observations):
 def execute(
     target, families, lookback, dry_run, *, bands=None, raw_dir=DEFAULT_RAW_DIR
 ):
-    today = datetime.now(timezone.utc).date()
-    since, windows = fetch_windows(families, lookback, today)
+    run_at = datetime.now(timezone.utc)
+    since, windows = fetch_windows(families, lookback, run_at.date())
     run_id = uuid4().hex
     summary = {"run_id": run_id, "db": str(target), "dry_run": dry_run,
                "requested_since": since, "families": {}}
     parameters = {
         "lookback_months": lookback,
+        "run_at": run_at.isoformat(),
         "fetch_windows": windows,
         "sanity_bands": bands or configured_bands(),
         "consensus_raw_dir": str(raw_dir),
@@ -146,7 +147,7 @@ def execute(
         with preview_store(target) as store:
             for family in families:
                 summary["families"].update(collect_family(
-                    lambda: nullcontext(store), client, run_id, family, windows, dry_run=True, bands=bands))
+                    lambda: nullcontext(store), client, run_id, family, windows, dry_run=True, bands=bands, run_at=run_at))
             summary["consensus"] = collect_consensus(
                 lambda: nullcontext(store), run_id, raw_dir, dry_run=True
             )
@@ -161,7 +162,7 @@ def execute(
             # Keep the writer lock/transaction out of all network and parsing work.
             for family in families:
                 summary["families"].update(collect_family(
-                    lambda: open_writer(target), client, run_id, family, windows, lease=lease, bands=bands))
+                    lambda: open_writer(target), client, run_id, family, windows, lease=lease, bands=bands, run_at=run_at))
             summary["consensus"] = collect_consensus(
                 lambda: open_writer(target), run_id, raw_dir, lease=lease
             )
@@ -197,27 +198,30 @@ def collect_consensus(writer, run_id, raw_dir, *, lease=None, dry_run=False):
     return result
 
 
-def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_run=False, bands=None):
+def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_run=False, bands=None, run_at=None):
     """Fetch outside the writer lock, then atomically commit data and outcome."""
     result = dict(windows[family], vintages_added=0, readings_added=0, readings_skipped=0)
     try:
         if lease:
             lease.renew()
-        token = RUN_DATE.set(result["fetch_until"])
+        instant = run_instant(run_at if run_at is not None else result["fetch_until"])
+        token = RUN_INSTANT.set(instant)
+        pending_token = PENDING_EDITIONS.set({})
         try:
             batch = (fetch_daily(client, family, result["fetch_since"]) if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
                      else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
+            calendar = family_editions(family)
+            if calendar:
+                result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t, status="scheduled",
+                    **({"reason": "not_yet_published"} if (family, d) in PENDING_EDITIONS.get() else {}))
+                    for d, (p, s, t) in calendar.items()
+                    if edition_status(d, metadata=(p, s, t), family=family) == "scheduled"]
+            # An endpoint exposing a reviewed edition early does not make it due.
+            batch.observations = [o for o in batch.observations if o.edition not in calendar or
+                edition_status(o.edition, metadata=calendar[o.edition], family=family) == "due"]
         finally:
-            RUN_DATE.reset(token)
-        calendar = family_editions(family)
-        if calendar:
-            result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t, status="scheduled")
-                for d, (p, s, t) in calendar.items()
-                if edition_status(d, result["fetch_until"]) == "scheduled"]
-        # Even if an endpoint exposes a future reviewed edition early, it is
-        # still scheduled. Keep its document, but never publish future values.
-        batch.observations = [o for o in batch.observations
-            if o.edition not in calendar or o.edition <= result["fetch_until"]]
+            PENDING_EDITIONS.reset(pending_token)
+            RUN_INSTANT.reset(token)
         observations = batch.observations
         if not observations and not batch.issues and not result.get("scheduled_editions"):
             raise FetchError("No observations in requested window")

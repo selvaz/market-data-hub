@@ -5,7 +5,7 @@ import re
 
 from .adapters import Observation
 from .http import FetchError, json_payload
-from .schedule import due, run_date
+from .schedule import due, run_date, get_edition
 
 CALENDAR = "https://ec.europa.eu/eurostat/o/calendars/eventsJson"
 DATASET = "namq_10_gdp"
@@ -47,9 +47,9 @@ def calendar_editions(document):
         if not match or EDITIONS.get(edition, ())[:2] != (f"{match[2]}-Q{match[1]}", stage):
             raise FetchError("Eurostat GDP calendar edition needs review")
         found[edition] = EDITIONS[edition]
-    if not set(due(EDITIONS)).issubset(found):
+    if not set(due(EDITIONS, family="ea_gdp")).issubset(found):
         raise FetchError("Eurostat GDP due calendar edition missing; needs review")
-    return due(found)
+    return due(found, family="ea_gdp")
 
 
 def parse_publication(document, since="1900-01"):
@@ -124,7 +124,9 @@ def fetch_gdp(client, since):
     out = []
     for edition, (period, stage, _) in editions.items():
         if stage != "update" and f"{period[:4]}-{int(period[-1])*3:02d}" >= since:
-            doc = client.get("eurostat", publication_url(edition))
+            doc = get_edition(client, "eurostat", publication_url(edition), "ea_gdp", edition)
+            if doc is None:
+                continue
             parsed = parse_publication(doc, since)
             if not parsed or {o.edition for o in parsed} != {edition}:
                 raise FetchError("Eurostat GDP archive edition needs review")
