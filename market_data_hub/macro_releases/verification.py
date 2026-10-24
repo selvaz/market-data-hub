@@ -93,7 +93,8 @@ ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
 SANITY_BANDS.update({"us_fhfa_hpi_mm": 15, "us_fhfa_hpi_yy": 30,
                      "us_construction_spending_mm": 30, "us_pmms_30y": 3,
                      "us_existing_home_sales": 3, "us_existing_home_sales_mm": 50,
-                     "us_pending_home_sales_mm": 50})
+                     "us_pending_home_sales_mm": 50,
+                     "us_case_shiller_national_yy": 30, "us_case_shiller_20_yy": 30})
 ABSOLUTE_BOUNDS["us_existing_home_sales"] = 20
 ABSOLUTE_BOUNDS["us_pmms_30y"] = 25
 

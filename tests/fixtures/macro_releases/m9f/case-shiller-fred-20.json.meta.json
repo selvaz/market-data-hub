@@ -1,0 +1,5 @@
+{
+  "url": "https://api.stlouisfed.org/fred/series/observations?file_type=json&series_id=SPCS20RNSA&units=pc1&observation_start=2026-06-01&realtime_start=2026-09-29&realtime_end=2026-09-29&limit=10000",
+  "retrieved_at": "2026-10-24T23:02:53.874219+00:00",
+  "sha256": "b2c05678a3593110c5a399c3d32f032353ae5d1fe40a3d68bba4b40afa316a4e"
+}

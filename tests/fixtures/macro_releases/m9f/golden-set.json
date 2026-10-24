@@ -107,6 +107,42 @@
       "period": "2026-09",
       "value": 1.5,
       "source_url": "https://www.nar.realtor/newsroom/existing-home-sales-increased-1-5-in-september-according-to-nar-report"
+    },
+    {
+      "family": "us_case_shiller",
+      "fixture": "case-shiller-press-aug.html",
+      "edition": "2026-08-25",
+      "indicator": "us_case_shiller_national_yy",
+      "period": "2026-06",
+      "value": 1.5,
+      "source_url": "https://press.spglobal.com/2026-08-25-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-June-2026"
+    },
+    {
+      "family": "us_case_shiller",
+      "fixture": "case-shiller-press-aug.html",
+      "edition": "2026-08-25",
+      "indicator": "us_case_shiller_20_yy",
+      "period": "2026-06",
+      "value": 2.1,
+      "source_url": "https://press.spglobal.com/2026-08-25-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-June-2026"
+    },
+    {
+      "family": "us_case_shiller",
+      "fixture": "case-shiller-press-sept.html",
+      "edition": "2026-09-29",
+      "indicator": "us_case_shiller_national_yy",
+      "period": "2026-07",
+      "value": 1.9,
+      "source_url": "https://press.spglobal.com/2026-09-29-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-July-2026"
+    },
+    {
+      "family": "us_case_shiller",
+      "fixture": "case-shiller-press-sept.html",
+      "edition": "2026-09-29",
+      "indicator": "us_case_shiller_20_yy",
+      "period": "2026-07",
+      "value": 2.5,
+      "source_url": "https://press.spglobal.com/2026-09-29-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-July-2026"
     }
   ]
 }

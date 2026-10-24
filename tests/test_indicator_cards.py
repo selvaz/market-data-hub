@@ -234,6 +234,7 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     gaps["us_pmms"] = ["cat:us_pmms_30y"]
     gaps["us_existing_home_sales"] = ["cat:us_existing_home_sales", "cat:us_existing_home_sales_mm"]
     gaps["us_pending_home_sales"] = ["cat:us_pending_home_sales_mm"]
+    gaps["us_case_shiller"] = ["cat:us_case_shiller_20_yy", "cat:us_case_shiller_national_yy"]
     assert report["documented_certified_gaps"] == gaps
     # M9f adds an approved construction alias and a pending FHFA concept.
     assert report["macro_releases"] == {"mapped": 51, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}

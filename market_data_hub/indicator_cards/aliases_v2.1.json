@@ -37,5 +37,5 @@
     {"id": "cat:uk_regular_pay_yy", "key": "uk_awe_regular", "basis": "Explicit AWE regular pay concept; approved cal:uk_earnings_ex_bonus (M9a-2)."},
     {"id": "cat:us_initial_jobless_claims", "key": "us_claims_initial", "basis": "Explicit initial claims concept; approved cal:us_claims (M9a-2)."}
   ],
-  "certified_gaps": {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"], "ea_trade_balance": ["cat:ea_trade_balance"], "uk_retail_sales": ["cat:uk_retail_sales_mm"], "us_fhfa_hpi": ["cat:us_fhfa_hpi_mm", "cat:us_fhfa_hpi_yy"], "us_pmms": ["cat:us_pmms_30y"], "us_existing_home_sales": ["cat:us_existing_home_sales", "cat:us_existing_home_sales_mm"], "us_pending_home_sales": ["cat:us_pending_home_sales_mm"]}
+  "certified_gaps": {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"], "ea_trade_balance": ["cat:ea_trade_balance"], "uk_retail_sales": ["cat:uk_retail_sales_mm"], "us_fhfa_hpi": ["cat:us_fhfa_hpi_mm", "cat:us_fhfa_hpi_yy"], "us_pmms": ["cat:us_pmms_30y"], "us_existing_home_sales": ["cat:us_existing_home_sales", "cat:us_existing_home_sales_mm"], "us_pending_home_sales": ["cat:us_pending_home_sales_mm"], "us_case_shiller": ["cat:us_case_shiller_20_yy", "cat:us_case_shiller_national_yy"]}
 }

@@ -1,0 +1,5 @@
+{
+  "url": "https://api.stlouisfed.org/fred/series/observations?file_type=json&series_id=CSUSHPINSA&units=pc1&observation_start=2026-06-01&realtime_start=2026-09-29&realtime_end=2026-09-29&limit=10000",
+  "retrieved_at": "2026-10-24T23:02:53.450182+00:00",
+  "sha256": "422a65909e223428e71304c928934245ec4849b02fb0976440ea287e0b2b32f0"
+}

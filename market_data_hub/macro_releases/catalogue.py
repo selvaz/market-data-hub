@@ -135,6 +135,9 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "us_case_shiller": [measure("us_case_shiller_" + area + "_yy", "SPDJI", "USA", "yy", "NSA",
+        definition="Private S&P Cotality (formerly CoreLogic) Case-Shiller " + label + " public press-release annual headline; NSA repeat-sales single-family house prices, monthly three-month moving average")
+        for area, label in (("national", "U.S. National"), ("20", "20-City Composite"))],
     "us_pending_home_sales": [measure("us_pending_home_sales_mm", "NAR", "USA", "mm", "not-stated",
         definition="Private NAR public press-release national headline: pending home sales monthly percent change; contracts, not closed sales. Adjustment is not stated in the public headline; no index level or licensed table is collected")],
     "us_existing_home_sales": [

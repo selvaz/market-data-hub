@@ -14,6 +14,7 @@ before the integration PR. Work is delivered one family at a time.
 | US PMMS 30-year fixed-rate mortgage average, NSA | Freddie Mac | Official issuer, free | Weekly | 22 editions from 6 Aug to 31 Dec; 12:00 America/New_York; Thanksgiving release 25 Nov | 2 dated editions: 15 Oct archive entry (7.40%) and 22 Oct current publication (7.32%) |
 | US existing-home sales national public headline | NAR | Private issuer, public press release only | Monthly | 11 Aug, 10 Sep, 13 Oct, 12 Nov, 9 Dec; schedule 10:00 America/New_York | 2 independently printed headline measures in the 13 Oct edition: 3.99 million SAAR and +1.5% m/m |
 | US pending home sales national public m/m headline | NAR | Private issuer, public press release only | Monthly | 18 Aug, 17 Sep, 20 Oct, 18 Nov, 17 Dec; 10:00 America/New_York | 2 distinct editions: August +0.3% (17 Sep) and September -7.3% (20 Oct) |
+| US Case-Shiller national and 20-city NSA y/y headlines | S&P Dow Jones Indices / Cotality | Private issuer, public press release only | Monthly | 25 Aug, 29 Sep, 27 Oct, 24 Nov, 29 Dec; 09:00 America/New_York | 4 headline cases in 2 dated publications: June national +1.5%, 20-city +2.1%; July national +1.9%, 20-city +2.5% |
 
 Calendars: [FHFA](https://www.fhfa.gov/data/hpi) and
 [Census](https://www.census.gov/economic-indicators/calendar-listview-2026.html), plus the
@@ -33,6 +34,8 @@ Issuer golden URLs:
 - [NAR existing sales, September headline in the 13 October edition](https://www.nar.realtor/newsroom/existing-home-sales-increased-1-5-in-september-according-to-nar-report).
 - [NAR pending sales, August headline in the 17 September edition](https://www.nar.realtor/newsroom/nar-pending-home-sales-report-shows-0-point-3-percent-increase-in-august).
 - [NAR pending sales, September headline in the 20 October edition](https://www.nar.realtor/newsroom/pending-home-sales-decreased-7-3-percent-in-september).
+- [S&P public June Case-Shiller release, 25 August](https://press.spglobal.com/2026-08-25-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-June-2026).
+- [S&P public July Case-Shiller release, 29 September](https://press.spglobal.com/2026-09-29-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-July-2026).
 
 Each fixture has its original body, issuer URL, capture timestamp and SHA-256
 in `tests/fixtures/macro_releases/m9f`; `golden-set.json` states expected values.
@@ -72,6 +75,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 | PMMS 30-year mortgage rate | Survey week ending 21 October 2026 | 22 October 2026 | 12:00 EDT / 16:00 UTC | 7.32%, NSA weekly average |
 | Existing-home sales (private NAR headline) | September 2026 | 13 October 2026 | Page timestamp 10:01 EDT / 14:01 UTC; scheduled 10:00 EDT | 3.99 million SAAR; +1.5% m/m |
 | Pending home sales (private NAR headline) | September 2026 | 20 October 2026 | 10:00 EDT / 14:00 UTC | -7.3% m/m |
+| Case-Shiller (private S&P public annual headlines) | July 2026 | 29 September 2026 | 09:00 EDT / 13:00 UTC | National +1.9% y/y; 20-city +2.5% y/y, NSA |
 
 Live verification report:
 `D:\Temp\mdh-m9f-sl4iuv5p\verification.json`.
@@ -124,13 +128,11 @@ All writes go to the copy. Reproduce with the project interpreter:
 
 ## Remaining steps, in order
 
-1. Case-Shiller national and 20-city: public-release headlines, private source;
-   FRED may supply redistributor history only.
-2. Eurostat quarterly HPI, y/y and q/q.
-3. ECB house-purchase loan growth and composite cost of borrowing.
-4. ONS/HM Land Registry UK HPI, y/y.
-5. BoE mortgage approvals for house purchase.
-6. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
+1. Eurostat quarterly HPI, y/y and q/q.
+2. ECB house-purchase loan growth and composite cost of borrowing.
+3. ONS/HM Land Registry UK HPI, y/y.
+4. BoE mortgage approvals for house purchase.
+5. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.
@@ -217,6 +219,62 @@ The latest GitHub matrix was still running at the last check. An
 reported DuckDB `ResourceInUseException` failures in storage code unchanged by
 M9f, as well as the replay-fixture schedule dependency corrected above; no
 repository-wide CI success is claimed.
+
+## Case-Shiller step
+
+The issuer now brands this family S&P **Cotality** Case-Shiller (formerly
+CoreLogic). The free [S&P press archive](https://press.spglobal.com/index.php?s=2429&keywords=Case-Shiller&titles_only=1&l=25)
+provides stable headline search and dated release URLs. The main `spdji`
+announcement/index endpoints returned HTTP 403 to the collector; the issuer's
+own public press host returned HTTP 200 for both saved releases and the archive.
+This is an endpoint limitation, with the public issuer route certified instead.
+
+Only the national and 20-city **NSA annual** headline rates are collected. The
+parser checks the issuer hostname, URL edition, title, dateline, reference month,
+publication rule, NSA definition and agreement between the national lead and
+the year-over-year summary. It reads the 20-city annual narrative, not the
+10-city figure, city observations, unrounded supporting tables or SA monthly
+rates. Cards identify `issuer_id=SPDJI`, `source_class=private`.
+
+Both saved releases state last-Tuesday publication at 09:00 ET. The five dates
+through 31 December were individually reviewed and enumerated in
+`housing_editions.py`; runtime does not extrapolate editions. Missing newly due
+links have the six-hour publication grace; missing older/delayed releases,
+redirected/retired URLs, conflicting links and changed publication structures
+enter `needs_review`, preserving documents without partial certification.
+
+Optional `collect --with-redistributors` history uses FRED/ALFRED `CSUSHPINSA`
+and `SPCS20RNSA`, `units=pc1`, with an explicit reviewed as-of date. Daily
+headline collection needs no FRED key. Saved real FRED responses retain
+`source=FRED`, mirror evidence role, unverified values, provider-history revision
+kind and date-only snapshot precision. They never supply an issuer release
+clock or become official after a numerical match. The July snapshot contains
+revised June history, which is tested separately from June's first press print.
+
+The exact USD FF title `S&P/CS Composite-20 HPI y/y` maps only to the 20-city NSA
+annual measure ([FF measure definition](https://www.forexfactory.com/calendar/240-us-spcs-composite-20-hpi-yy)).
+No national, 10-city, index-level or monthly alias is inferred. Neither annual
+concept is approved in v2.1: a single strict 19-column `us_case_shiller` draft
+groups both measures, pending owner approval, timing `UNKNOWN`. Its header was
+checked against #125's branch; the new key does not collide there.
+
+Live Case-Shiller verification passed at
+`D:\Temp\mdh-m9f-cp7v1jlq\verification.json` (database copy beside it): dry
+run and collection `ok`, four headline vintages added across the two issuer
+editions, repeat `no_change`, both latest cards official with private issuer
+labels, integrity `ok`, source backup unchanged.
+
+**Current production-schema limitation:** production advanced to schema 9
+during this step; this feature branch remains on its original schema-8 base.
+The first attempt to verify a fresh current-production snapshot stopped at the
+schema guard before collection. The proposed upstream `10a7cc0` cherry-pick
+was rejected and was not performed. The successful live issuer run instead
+used today's already-verified production backup
+`D:\Temp\mdh-m9f-ysoldsca\macro_releases.sqlite` as its read-only source and
+created the new copy above. This validates live issuer collection on a production
+backup; it does not certify this branch against the current schema-9 production
+DB. No schema guard was bypassed, no DB version was downgraded, and no production
+write or branch merge was performed.
 
 ## Validation for the construction step
 
