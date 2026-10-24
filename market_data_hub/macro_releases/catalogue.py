@@ -134,7 +134,13 @@ CENTRAL_BANKS = {
         definition="FOMC federal funds target range; scalar value is upper bound, complete range in policy_decision", frequency="E")],
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS)
+HOUSING_FAMILIES = {
+    "us_fhfa_hpi": [measure("us_fhfa_hpi_" + basis, "FHFA", "USA", basis, "SA",
+        definition="FHFA monthly purchase-only national house price index, published " + basis + " percent change")
+        for basis in ("mm", "yy")],
+}
+INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES)
 
 
 def hicp_indicator(period, basis, geography="EA"):

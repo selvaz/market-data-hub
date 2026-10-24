@@ -101,6 +101,9 @@ def current_edition_allowed(family, edition):
 
 
 def family_editions(family):
+    from .housing_editions import EDITIONS as HOUSING
+    if family in HOUSING:
+        return HOUSING[family]
     from .policy_editions import EDITIONS as POLICY
     if family in POLICY:
         return POLICY[family]

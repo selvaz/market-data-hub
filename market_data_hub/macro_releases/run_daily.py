@@ -44,6 +44,10 @@ ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
 ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 DISCOVERY_ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
+from .housing import HousingAdapter
+from .catalogue import HOUSING_FAMILIES
+ADAPTERS.update({f: HousingAdapter for f in HOUSING_FAMILIES})
+DISCOVERY_ADAPTERS.update({f: HousingAdapter for f in HOUSING_FAMILIES})
 
 
 def fetch_windows(families, lookback, today):

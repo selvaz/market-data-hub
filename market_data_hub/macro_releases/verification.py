@@ -10,6 +10,9 @@ from .models import utc
 
 
 def reviewed_anchor(obs):
+    from .housing_editions import EDITIONS as HOUSING
+    if obs.family in HOUSING:
+        return obs.edition in HOUSING[obs.family] and obs.stage == HOUSING[obs.family][obs.edition][1]
     from .policy_editions import EDITIONS as POLICY
     if obs.family in POLICY:
         return obs.edition in POLICY[obs.family] and obs.stage == POLICY[obs.family][obs.edition][1]
@@ -87,6 +90,7 @@ ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
                    "us_umich_consumer_sentiment": 150,
                    "us_building_permits": 5000, "us_trade_balance": 1000,
                    "us_initial_jobless_claims": 10000}
+SANITY_BANDS.update({"us_fhfa_hpi_mm": 15, "us_fhfa_hpi_yy": 30})
 
 
 def configured_bands(overrides=None):

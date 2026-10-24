@@ -1,0 +1,40 @@
+{
+  "cases": [
+    {
+      "family": "us_fhfa_hpi",
+      "fixture": "fhfa-aug.pdf",
+      "edition": "2026-08-25",
+      "indicator": "us_fhfa_hpi_mm",
+      "period": "2026-06",
+      "value": 0.0,
+      "source_url": "https://www.fhfa.gov/document/d/hpi/fhfa-house-price-index-report-2026q2"
+    },
+    {
+      "family": "us_fhfa_hpi",
+      "fixture": "fhfa-aug.pdf",
+      "edition": "2026-08-25",
+      "indicator": "us_fhfa_hpi_yy",
+      "period": "2026-06",
+      "value": 2.3,
+      "source_url": "https://www.fhfa.gov/document/d/hpi/fhfa-house-price-index-report-2026q2"
+    },
+    {
+      "family": "us_fhfa_hpi",
+      "fixture": "fhfa-sept.pdf",
+      "edition": "2026-09-29",
+      "indicator": "us_fhfa_hpi_mm",
+      "period": "2026-07",
+      "value": 0.3,
+      "source_url": "https://www.fhfa.gov/document/d/hpi/fhfa-hpi-monthly-september-2026"
+    },
+    {
+      "family": "us_fhfa_hpi",
+      "fixture": "fhfa-sept.pdf",
+      "edition": "2026-09-29",
+      "indicator": "us_fhfa_hpi_yy",
+      "period": "2026-07",
+      "value": 2.6,
+      "source_url": "https://www.fhfa.gov/document/d/hpi/fhfa-hpi-monthly-september-2026"
+    }
+  ]
+}
