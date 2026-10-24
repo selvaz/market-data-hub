@@ -2,6 +2,7 @@
   "classification_version": "v2.1",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages.",
   "aliases": [
+    {"id": "cat:uk_average_weekly_earnings_yy", "key": "uk_awe_total", "basis": "Same approved total-pay including bonuses concept; KAC3 three-month average annual growth, unlike regular pay KAI9 (M9b)."},
     {"id": "cat:ea21_core_hicp_yy", "key": "ea_hicp_core", "basis": "Same approved core HICP concept as cat:ea_core_hicp_yy, fixed EA21 composition and issuer flash/final editions (M9b)."},
     {"id": "cat:us_new_home_sales", "key": "us_new_home_sales", "basis": "Same approved new single-family home sales concept as cal:us_new_home_sales; Census SAAR in thousands (M9b)."},
     {"id": "cat:ea_unemployment_rate", "key": "ea_unemployment", "basis": "Same approved unemployment concept, fixed EA21 composition, age 15-74 SA (M9b)."},

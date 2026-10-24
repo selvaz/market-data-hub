@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "2277ef339b3e526d23366d68d7fb4e83816b8b4ba137f316e3677f6c35da54de",
+  "aliases_sha256": "6b5ebcb2fbcc52ea7ad737b353e3f6ea7bc30b91f225f7cf179d56616ba10ada",
   "cards": [
     {
       "concept": "Real GDP",
@@ -6827,6 +6827,7 @@
           "uk_earnings"
         ],
         "cat": [
+          "uk_average_weekly_earnings_yy",
           "uk_average_weekly_earnings_yy"
         ],
         "derived_ms": [],

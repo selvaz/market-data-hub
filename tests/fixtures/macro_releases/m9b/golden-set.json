@@ -1,5 +1,7 @@
 {
   "cases": [
+    {"family": "uk_total_pay", "fixture": "ons-total-pay.json", "indicator": "uk_average_weekly_earnings_yy", "period": "2026-08", "edition": "2026-10-20", "stage": "final", "value": 3.7, "source_url": "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/kac3/lms/data"},
+    {"family": "uk_total_pay", "fixture": "ons-total-pay.json", "indicator": "uk_average_weekly_earnings_yy", "period": "2026-07", "edition": "2026-10-20", "stage": "final", "value": 3.9, "source_url": "https://www.ons.gov.uk/employmentandlabourmarket/peopleinwork/earningsandworkinghours/timeseries/kac3/lms/data"},
     {"family": "ea_core_hicp", "fixture": "ea-core-flash.html", "indicator": "ea21_core_hicp_yy", "period": "2026-09", "edition": "2026-10-02", "stage": "flash", "value": 2.5, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-02102026-ap"},
     {"family": "ea_core_hicp", "fixture": "ea-core-final.html", "indicator": "ea21_core_hicp_yy", "period": "2026-09", "edition": "2026-10-16", "stage": "final", "value": 2.5, "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-16102026-ap"},
     {"family": "us_new_home_sales", "fixture": "newhomes.pdf", "indicator": "us_new_home_sales", "period": "2026-08", "edition": "2026-09-24", "stage": "final", "value": 684, "source_url": "https://www.census.gov/construction/nrs/pdf/newressales.pdf"},
