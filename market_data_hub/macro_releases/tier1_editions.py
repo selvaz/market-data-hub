@@ -5,6 +5,16 @@ No dataset update or retrieval timestamp is promoted to a release date.
 """
 EUROSTAT_SCHEDULE = "https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar"
 EDITIONS = {
+    "us_umich_sentiment": {
+        "2026-09-11": ("2026-09", "preliminary", "10:00"),
+        "2026-09-25": ("2026-09", "final", "10:00"),
+        "2026-10-09": ("2026-10", "preliminary", "10:00"),
+        "2026-10-23": ("2026-10", "final", "10:00"),
+        "2026-11-06": ("2026-11", "preliminary", "10:00"),
+        "2026-11-20": ("2026-11", "final", "10:00"),
+        "2026-12-04": ("2026-12", "preliminary", "10:00"),
+        "2026-12-18": ("2026-12", "final", "10:00"),
+    },
     "ea_ec_surveys": {
         "2026-09-29": ("2026-09", "final", "11:00"),
         "2026-10-22": ("2026-10", "flash", "16:00"),
@@ -71,3 +81,4 @@ SCHEDULES["uk_retail_sales"] = "https://www.ons.gov.uk/releasecalendar?keywords=
 SCHEDULES["us_new_home_sales"] = "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
 SCHEDULES["uk_total_pay"] = "https://www.ons.gov.uk/releasecalendar?keywords=labour+market&release-type=type-upcoming"
 SCHEDULES["ea_ec_surveys"] = "https://ec.europa.eu/economy_finance/db_indicators/surveys/documents/calendar/Publication%20dates%202026.pdf"
+SCHEDULES["us_umich_sentiment"] = "https://data.sca.isr.umich.edu/fetchdoc.php?docid=79628"

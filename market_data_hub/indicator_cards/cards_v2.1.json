@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "b46d9af2d2d46fd71574b98d13a5254f6eb45fcc7e70ee89e0100ae2160af304",
+  "aliases_sha256": "89345039723b7755914c2ae10ca6fa1a8d814ece398876c34fc3f3fd754ce32b",
   "cards": [
     {
       "concept": "Real GDP",
@@ -1147,6 +1147,7 @@
           "us_umich_prelim"
         ],
         "cat": [
+          "us_umich_consumer_sentiment",
           "us_umich_consumer_sentiment"
         ],
         "derived_ms": [],

@@ -2,6 +2,7 @@
   "classification_version": "v2.1",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages.",
   "aliases": [
+    {"id": "cat:us_umich_consumer_sentiment", "key": "us_umich_sentiment", "basis": "Same approved University of Michigan Index of Consumer Sentiment concept; issuer public preliminary/final editions, 1966 Q1=100 (M9b)."},
     {"id": "cat:ea_economic_sentiment_indicator", "key": "ea_esi", "basis": "Same approved DG ECFIN Economic Sentiment Indicator concept; issuer final BCS edition and EA21 aggregate (M9b)."},
     {"id": "cat:ea_consumer_confidence", "key": "ea_consumer_confidence", "basis": "Same approved EC consumer confidence balance concept as cal:ez_consumer_confidence_flash and final; stages remain editions of one measure (M9b)."},
     {"id": "cat:uk_average_weekly_earnings_yy", "key": "uk_awe_total", "basis": "Same approved total-pay including bonuses concept; KAC3 three-month average annual growth, unlike regular pay KAI9 (M9b)."},

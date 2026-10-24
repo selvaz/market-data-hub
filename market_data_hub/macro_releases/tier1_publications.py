@@ -59,7 +59,7 @@ class Tier1Adapter:
         self.client = client
 
     def fetch(self, families, since):
-        from . import eurostat_activity, ons_retail, census_sales, ons_pay, ec_surveys
+        from . import eurostat_activity, ons_retail, census_sales, ons_pay, ec_surveys, umich
         out = []
         client = self.client
         class PublicClient:
@@ -71,6 +71,7 @@ class Tier1Adapter:
                 return client.get(provider, url, params)
         for family in families:
             adapter = {"uk_retail_sales": ons_retail, "us_new_home_sales": census_sales,
-                       "uk_total_pay": ons_pay, "ea_ec_surveys": ec_surveys}.get(family, eurostat_activity)
+                       "uk_total_pay": ons_pay, "ea_ec_surveys": ec_surveys,
+                       "us_umich_sentiment": umich}.get(family, eurostat_activity)
             out += adapter.fetch(PublicClient(), family, since)
         return out

@@ -95,6 +95,8 @@ INDICATORS.update((i.id, i) for i in [measure(f"ea21_gdp_{basis}", "Eurostat", "
 INDICATORS["us_initial_jobless_claims"] = measure("us_initial_jobless_claims", "DOL", "USA", "level", "SA",
     "claims", 1000, "DOL ETA initial unemployment insurance claims, SA level, thousands; reference period is Saturday week ending", frequency="W")
 REMAINING_FAMILIES = {
+    "us_umich_sentiment": [measure("us_umich_consumer_sentiment", "UMich", "USA", "level", "NSA", "index",
+        definition="Index of Consumer Sentiment, 1966 Q1=100, issuer preliminary and final readings")],
     "ea_ec_surveys": [
         measure("ea_economic_sentiment_indicator", "ECFIN", "EA21", "level", "SA", "index", definition="Economic Sentiment Indicator, issuer standardised business and consumer composite, long-term mean 100"),
         measure("ea_consumer_confidence", "ECFIN", "EA21", "level", "SA", "%", definition="Consumer confidence indicator, seasonally adjusted balance of positive and negative responses; flash and final")],

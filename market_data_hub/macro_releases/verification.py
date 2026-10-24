@@ -57,6 +57,7 @@ SANITY_BANDS.update({
     "ea21_core_hicp_yy": 10,
     "uk_average_weekly_earnings_yy": 15,
     "ea_economic_sentiment_indicator": 40, "ea_consumer_confidence": 40,
+    "us_umich_consumer_sentiment": 50,
     "us_ppi_mm": 10, "us_ppi_yy": 20, "us_jolts_openings": 6000,
     "us_pce_price_index_mm": 5, "us_pce_price_index_yy": 10,
     "us_core_pce_mm": 5, "us_core_pce_yy": 10,
@@ -74,6 +75,7 @@ ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
                    "ea_trade_balance": 1000000,
                    "us_new_home_sales": 5000,
                    "ea_economic_sentiment_indicator": 200,
+                   "us_umich_consumer_sentiment": 150,
                    "us_building_permits": 5000, "us_trade_balance": 1000,
                    "us_initial_jobless_claims": 10000}
 
