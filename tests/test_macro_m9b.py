@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 import requests
+from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
 from market_data_hub.macro_releases import open_reader, open_writer, run_daily
 from market_data_hub.macro_releases.adapters import persist
@@ -39,9 +40,19 @@ def parse(doc, family, since="1900-01"):
 
 @pytest.fixture(autouse=True)
 def offline(monkeypatch):
+    from datetime import datetime, timezone
+    from market_data_hub.macro_releases.schedule import RUN_DATE
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 10, 24, 18, tzinfo=timezone.utc)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
     def forbidden(*args, **kwargs):
         raise AssertionError("Network forbidden in M9b tests")
     monkeypatch.setattr(requests.Session, "request", forbidden)
+    token = RUN_DATE.set("2026-10-24")
+    yield
+    RUN_DATE.reset(token)
 
 
 def document(name):
@@ -68,3 +79,111 @@ def test_unknown_eurostat_edition_and_membership_fail_closed():
                           (b"seasonally adjusted unemployment rate", b"unadjusted unemployment rate")):
         with pytest.raises(FetchError, match="needs review"):
             parse(replace(doc, body=doc.body.replace(before, after)), "ea_unemployment")
+
+
+class Replay:
+    def __init__(self, **kwargs):
+        pass
+
+    def get(self, provider, url, params=None):
+        if url.endswith("/calendars/eventsJson"):
+            return document("calendar.json")
+        names = {c["fixture"] for c in GOLDEN} | {"ec-latest.html"}
+        for name in sorted(names):
+            doc = document(name)
+            target = urlsplit(doc.url)
+            if urlunsplit(target._replace(query="")) != url:
+                continue
+            if dict(parse_qsl(target.query)) != (params or {}):
+                continue
+            return doc
+        raise AssertionError("Unexpected or future issuer request: " + url)
+
+
+def test_all_families_daily_cards_editions_and_idempotence(tmp_path, monkeypatch):
+    from market_data_hub.macro_releases.catalogue import REMAINING_FAMILIES
+    monkeypatch.setattr(run_daily, "HttpClient", Replay)
+    db = tmp_path / "m9b.sqlite"
+    result = run_daily.execute(db, list(REMAINING_FAMILIES), 24, False, raw_dir=tmp_path / "none")
+    assert result["status"] == "ok", result
+    assert all(r["status"] == "ok" and r["vintages_added"] > 0 for r in result["families"].values())
+    for family in result["families"].values():
+        assert family["scheduled_editions"]
+        assert all(e["status"] == "scheduled" and e["edition"] > "2026-10-24" for e in family["scheduled_editions"])
+    with open_reader(db) as store:
+        cards = store.release_cards("2026-10-19", "2026-10-23")["cards"]
+        assert {c["indicator_id"]: c["resolution"]["value"] for c in cards} == {
+            "uk_retail_sales_mm": -0.4, "uk_average_weekly_earnings_yy": 3.7,
+            "ea_consumer_confidence": -17.9, "us_umich_consumer_sentiment": 48.0}
+        assert all(c["resolution"]["status"] == "official" for c in cards)
+        rows = store.conn.execute("SELECT estimate_stage,value FROM value_vintages WHERE indicator_id='us_umich_consumer_sentiment' AND reference_period='2026-09' ORDER BY issuer_published_at").fetchall()
+        assert [tuple(r) for r in rows] == [("preliminary", 47.8), ("final", 48.1)]
+        rows = store.conn.execute("SELECT estimate_stage,value FROM value_vintages WHERE indicator_id='ea21_core_hicp_yy' ORDER BY issuer_published_at").fetchall()
+        assert [tuple(r) for r in rows] == [("flash", 2.5), ("final", 2.5)]
+        assert store.conn.execute("SELECT COUNT(*) FROM value_vintages WHERE indicator_id='ea_economic_sentiment_indicator' AND issuer_published_at LIKE '2026-10-22%'").fetchone()[0] == 0
+    again = run_daily.execute(db, list(REMAINING_FAMILIES), 24, False, raw_dir=tmp_path / "none")
+    assert again["status"] == "no_change", again
+
+
+def test_unknown_format_retains_document_and_requires_review(tmp_path, monkeypatch):
+    class Changed(Replay):
+        def get(self, *args, **kwargs):
+            doc = super().get(*args, **kwargs)
+            return replace(doc, body=doc.body.replace(b"Retail sales volumes are estimated", b"Retail sales values are estimated"))
+    monkeypatch.setattr(run_daily, "HttpClient", Changed)
+    db = tmp_path / "review.sqlite"
+    result = run_daily.execute(db, ["uk_retail_sales"], 24, False, raw_dir=tmp_path / "none")
+    assert result["families"]["uk_retail_sales"]["status"] == "needs_review", result
+    with open_reader(db) as store:
+        assert store.conn.execute("SELECT COUNT(*) FROM review_queue").fetchone()[0] > 0
+        assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 0
+
+
+def test_ec_unreviewed_annex_typo_and_wrong_companion_fail_closed():
+    from market_data_hub.macro_releases.ec_surveys import parse_annex
+    with pytest.raises(FetchError, match="needs review"):
+        parse_annex(replace(document("ec-annex.pdf"), document_hash="unreviewed"), document("ec-final.pdf"))
+    with pytest.raises(FetchError, match="needs review"):
+        parse_annex(document("ec-annex.pdf"), document("ec-flash.pdf"))
+
+
+def test_michigan_public_headline_unknown_stage_or_next_release_fails_closed():
+    doc = document("umich.html")
+    for before, after in ((b"Final Results", b"Unknown Results"), (b"November 6, 2026", b"November 7, 2026"),
+                          (b"October 2026", b"January 2027")):
+        with pytest.raises(FetchError, match="needs review"):
+            parse(replace(doc, body=doc.body.replace(before, after)), "us_umich_sentiment")
+
+
+def test_eurostat_changed_calendar_period_fails_closed():
+    from market_data_hub.macro_releases.eurostat_activity import calendar_editions
+    doc = document("calendar.json")
+    with pytest.raises(FetchError, match="needs review"):
+        calendar_editions(replace(doc, body=doc.body.replace(b'"period":"August 2026"', b'"period":"July 2026"')), "ea_retail_sales")
+
+
+def test_each_new_family_has_two_issuer_golden_cases_and_schedule_url():
+    from market_data_hub.macro_releases.catalogue import REMAINING_FAMILIES
+    from market_data_hub.macro_releases.tier1_editions import EDITIONS, SCHEDULES
+    for family in REMAINING_FAMILIES:
+        assert len([c for c in GOLDEN if c["family"] == family]) >= 2
+        assert SCHEDULES[family].startswith("https://")
+        assert all(d <= "2026-12-31" for d in EDITIONS[family])
+
+
+def test_eurostat_calendar_cache_is_one_unchanged_document_per_run(monkeypatch):
+    from market_data_hub.macro_releases.http import HttpClient
+    from market_data_hub.macro_releases.eurostat_activity import CALENDAR
+    calls = []
+    client = HttpClient(persistent_rates=False)
+    doc = document("calendar.json")
+    def request(provider, url, *, params=None):
+        calls.append((provider, url, params))
+        return doc
+    monkeypatch.setattr(client, "request", request)
+    params = {"start": "2026-09-01T00:00:00Z", "end": "2027-01-01T00:00:00Z"}
+    assert client.get("eurostat", CALENDAR, params) is doc
+    assert client.get("eurostat", CALENDAR, dict(reversed(list(params.items())))) is doc
+    assert len(calls) == 1
+    client.get("eurostat", CALENDAR, {**params, "theme": "2"})
+    assert len(calls) == 2

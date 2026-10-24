@@ -3,6 +3,8 @@ from datetime import datetime
 
 from .bls import shift_month
 from .http import FetchError
+from .schedule import due
+from .tier1_editions import EDITIONS
 from .tier1_publications import month, observation, publication_text, require, reviewed
 
 URL = "https://www.census.gov/construction/nrs/pdf/newressales.pdf"
@@ -27,4 +29,7 @@ def parse(document, family="us_new_home_sales", since="1900-01"):
 
 def fetch(client, family, since):
     # Rolling issuer PDF identifies its own edition. No history is invented.
-    return parse(client.get("census", URL), family, since)
+    rows = parse(client.get("census", URL), family, since)
+    if rows and {o.edition for o in rows} != {max(due(EDITIONS[family]))}:
+        raise FetchError("Census current sales edition is stale; needs review")
+    return rows
