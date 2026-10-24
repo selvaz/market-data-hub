@@ -25,7 +25,7 @@ from .lease import LeaseBusy, LeaseLost, RunLease
 from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
-from .schedule import RUN_AT, RUN_DATE, edition_status, family_editions
+from .schedule import RUN_AT, RUN_DATE, PENDING_EDITIONS, edition_status, family_editions
 from .policy import PolicyAdapter
 from .tier1_publications import Tier1Adapter
 from .store import Store, open_writer
@@ -218,22 +218,24 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
         collected_token = STORED_EDITIONS.set(collected)
         token = RUN_DATE.set(result["fetch_until"])
         instant_token = RUN_AT.set(datetime.now(timezone.utc))
+        pending_token = PENDING_EDITIONS.set({})
         try:
             batch = (fetch_daily(client, family, result["fetch_since"]) if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
                      else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
+            calendar = family_editions(family)
+            if calendar:
+                result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t, status="scheduled",
+                    **({"reason": "not_yet_published"} if (family, d) in PENDING_EDITIONS.get() else {}))
+                    for d, (p, s, t) in calendar.items()
+                    if edition_status(d, metadata=(p, s, t), family=family) == "scheduled"]
+            # A reviewed publication exposed early remains scheduled.
+            batch.observations = [o for o in batch.observations if o.edition not in calendar or
+                edition_status(o.edition, metadata=calendar[o.edition], family=family) == "due"]
         finally:
+            PENDING_EDITIONS.reset(pending_token)
             RUN_DATE.reset(token)
             RUN_AT.reset(instant_token)
             STORED_EDITIONS.reset(collected_token)
-        calendar = family_editions(family)
-        if calendar:
-            result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t, status="scheduled")
-                for d, (p, s, t) in calendar.items()
-                if edition_status(d, result["fetch_until"]) == "scheduled"]
-        # Even if an endpoint exposes a future reviewed edition early, it is
-        # still scheduled. Keep its document, but never publish future values.
-        batch.observations = [o for o in batch.observations
-            if o.edition not in calendar or o.edition <= result["fetch_until"]]
         observations = batch.observations
         if not observations and not batch.issues and not result.get("scheduled_editions") and not collected:
             raise FetchError("No observations in requested window")

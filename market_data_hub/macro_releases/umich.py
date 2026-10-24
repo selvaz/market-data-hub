@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from .http import FetchError
-from .schedule import due, run_date
+from .schedule import current_edition_allowed, due, run_date
 from .tier1_editions import EDITIONS
 from .tier1_publications import month, observation, publication_text, require, reviewed
 
@@ -54,13 +54,12 @@ def parse(document, family="us_umich_sentiment", since="1900-01"):
 def fetch(client, family, since):
     out = []
     for edition, url in ARCHIVES.items():
-        if edition in due(EDITIONS[family]) and EDITIONS[family][edition][0] >= since:
+        if edition in due(EDITIONS[family], family=family) and EDITIONS[family][edition][0] >= since:
             rows = parse(client.get("umich", url), family, since)
             if not rows or {o.edition for o in rows} != {edition}:
                 raise FetchError("Michigan requested archive edition needs review")
             out += rows
     headline = parse(client.get("umich", URL), family, since)
-    if headline and {o.edition for o in headline} != {max(due(EDITIONS[family]))}:
-        raise FetchError("Michigan current headline is stale; needs review")
-    out += headline
+    if headline and current_edition_allowed(family, headline[0].edition):
+        out += headline
     return out
