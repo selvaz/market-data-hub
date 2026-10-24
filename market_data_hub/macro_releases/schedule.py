@@ -111,7 +111,7 @@ def family_editions(family):
     from .ons_rates import EDITIONS as UK
     from .eurostat_gdp import EDITIONS as GDP
     from .dol import EDITIONS as CLAIMS
-    from . import bea, bls
+    from . import bea, bls, eurostat
     if family in MONTHLY:
         return MONTHLY[family]
     if family in UK:
@@ -122,4 +122,9 @@ def family_editions(family):
         return CLAIMS
     if family == "us_gdp":
         return {d: (*meta, "08:30") for d, meta in bea.EDITIONS.items()}
+    if family == "ea_hicp":
+        # Headline and core HICP share the same reviewed Eurostat editions.
+        result = {d: (p, s, "11:00") for (p, s), d in eurostat.PUBLICATIONS.items()}
+        result.update(REMAINING["ea_core_hicp"])
+        return result
     return {d: (p, "regular", "08:30") for (f, p), d in bls.EDITIONS.items() if f == family}
