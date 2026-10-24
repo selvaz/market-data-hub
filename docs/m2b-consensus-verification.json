@@ -2976,5 +2976,14 @@
       "memberships_added": 0
     },
     "skip_reasons": {}
+  },
+  "validation": {
+    "requested_tests": "tests/test_macro_*.py and tests/test_indicator_cards.py",
+    "passed": 1078,
+    "skipped": 1,
+    "skip_reason": "legacy integration test requires .tmp/prod-copy.sqlite",
+    "lint": "ruff check .: passed",
+    "whitespace": "git diff --check: passed",
+    "network_in_tests": false
   }
 }
