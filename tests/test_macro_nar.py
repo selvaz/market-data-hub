@@ -198,7 +198,7 @@ def test_retired_press_release_redirect_requires_review():
         nar.fetch(Redirect(), "us_existing_home_sales", "2026-01")
 
 
-def test_existing_exact_ff_alias_and_draft_only_context(tmp_path):
+def test_existing_exact_ff_alias_and_approved_v22_context(tmp_path):
     from market_data_hub.indicator_cards import indicator_card
     from market_data_hub.macro_releases.catalogue import INDICATORS
     from market_data_hub.macro_releases.consensus import Catalogue
@@ -210,7 +210,9 @@ def test_existing_exact_ff_alias_and_draft_only_context(tmp_path):
         assert reason is None and alias["indicator_id"] == "us_existing_home_sales"
         assert catalogue.match({"country": "USD"}, "Existing Home Sales m/m")[0] is None
         assert catalogue.match({"country": "CAD"}, "Existing Home Sales")[0] is None
-    assert indicator_card("cat:us_existing_home_sales") is None
+    card = indicator_card("cat:us_existing_home_sales")
+    assert card.key == "us_existing_home_sales"
+    assert indicator_card("cat:us_existing_home_sales_mm") == card
 
 
 def test_pending_exact_ff_alias_and_draft_only_context(tmp_path):

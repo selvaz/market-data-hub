@@ -6,7 +6,64 @@ That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
 remains draft while work is delivered one family at a time. Do not merge it.
 
-## Current-main integration (24 October 2026)
+## Cards v2.2 integration (24 October 2026)
+
+Merged main's owner-approved v2.2 cards (#132, `6109c89`) into the housing
+branch. Main's 294 approved cards, 24 promotion records, master-table and timing
+hashes, 86/86 approved tier-1 mappings and id de-duplication remain intact.
+The card status described in older step notes below is historical; this section
+records the current approved-versus-proposed split.
+
+| Conflict | Resolution |
+| --- | --- |
+| `aliases_v2.2.json` (renamed by main) | Kept every main alias; added construction m/m and NAR existing-sales m/m concept aliases. The NAR level already has an approved v2.2 id. Only the eight still-unapproved housing measures remain explicit concept gaps. |
+| `cards_v2.2.json` | Regenerated from main's unchanged approved master/timing and the reconciled aliases; no proposals enter the shipped dataset. |
+| `draft_rows_v2.2.psv` | Kept main's empty promoted generation and its matching timing hash. Moved the five remaining housing concepts into v2.3; removed the existing-home-sales proposal because its concept is approved. |
+| `tests/test_indicator_cards.py` | Kept main's promotion, alias, de-duplication and 86/86 tier-1 tests; updated housing coverage and added real v2.3 draft/metadata isolation checks. |
+| `docs/macro-indicators.md` | Kept main's v2.2 documentation and regenerated Part B with all housing families. |
+
+Approved housing context:
+
+- `cat:us_construction_spending_mm` aliases `us_construction_spending`.
+- `cat:us_existing_home_sales` resolves directly to the approved v2.2
+  `us_existing_home_sales` card; `cat:us_existing_home_sales_mm` aliases that
+  concept. The SAAR level and monthly change keep separate measure identities.
+
+The next draft generation is `draft_rows_v2.3.psv` with matching
+`timing_v2.3-draft.json`:
+
+| Draft key | Proposed measure ids | Real caveat in `flag` |
+| --- | --- | --- |
+| `us_fhfa_hpi` | `cat:us_fhfa_hpi_mm`; `cat:us_fhfa_hpi_yy` | Purchase-only index; excludes all-transactions measures |
+| `us_pmms_30y` | `cat:us_pmms_30y` | Survey week differs from publication date |
+| `us_pending_home_sales` | `cat:us_pending_home_sales_mm` | Seasonal adjustment not stated in public headline |
+| `us_case_shiller` | `cat:us_case_shiller_national_yy`; `cat:us_case_shiller_20_yy` | Three-month moving average |
+| `ea_hpi` | `cat:ea21_hpi_qq`; `cat:ea21_hpi_yy` | Fixed EA21 composition |
+
+All five proposals retain timing **UNKNOWN**, no timing basis or predictive
+screen, and issuer source URLs in their rationales. Approval state is
+**pending_owner_approval** in draft timing metadata, never in the PSV `flag` or
+rendered failure modes. The loader rejects missing/non-pending state and
+approval wording in caveats. `coverage --with-drafts` validates every draft
+generation and lists these proposals separately, including those outside the
+86-id tier-1 snapshot. Default approved lookups do not return them.
+
+The approved release-catalogue coverage is **57/65**. The remaining eight ids
+are proposed by those five drafts. All 86 external tier-1 ids still resolve to
+approved cards, and their approved count is unchanged by draft opt-in. Release
+collectors, reviewed calendars, FF titles and schema-v9 persistence are retained.
+Required local checks, current-copy verification and final-head CI evidence are
+tracked in PR #130 for this integration checkpoint.
+
+The fresh schema-v9 production-backup check passed for all seven families at
+`D:\Temp\mdh-m9f-_aq370zc\verification.json`: dry run and copy collection `ok`,
+repeat `no_change`, eleven latest issuer-certified measures with the correct
+official/private source classes, SQLite integrity `ok`, production main file
+unchanged. Production was read only as stable main/WAL bytes; all verification
+writes stayed under `D:\Temp`. The focused integration suite passed 435 tests,
+and repository Ruff, regenerated card/doc freshness and strict docs build pass.
+
+## Earlier current-main integration (24 October 2026)
 
 Merged `origin/main` at `fd59e26` into the feature branch without rebasing
 (merge commit `6de8e24`). All 27 conflicted files were resolved, keeping both

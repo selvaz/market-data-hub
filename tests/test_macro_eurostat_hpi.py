@@ -205,9 +205,11 @@ def test_changed_issuer_page_is_retained_for_review_without_partial_certificatio
 
 def test_context_card_is_a_strict_pending_draft_with_unknown_timing():
     from market_data_hub.indicator_cards import indicator_card
-    path = Path(__file__).resolve().parents[1] / "market_data_hub/indicator_cards/draft_rows_v2.2.psv"
+    path = Path(__file__).resolve().parents[1] / "market_data_hub/indicator_cards/draft_rows_v2.3.psv"
     rows = [line.split("|") for line in path.read_text(encoding="utf-8").splitlines()]
     row, = [dict(zip(rows[0], row)) for row in rows[1:] if row[0] == "ea_hpi" and len(row) == 19]
-    assert row["timing_class"] == "UNKNOWN" and row["flag"] == "draft v2.2, pending owner approval"
+    assert row["timing_class"] == "UNKNOWN" and row["flag"] == "fixed EA21 composition"
+    metadata = json.loads(path.with_name("timing_v2.3-draft.json").read_text())
+    assert metadata["approval_status"] == "pending_owner_approval"
     assert set(row["ids"].split(";")) == {"cat:ea21_hpi_qq", "cat:ea21_hpi_yy"}
     assert indicator_card("cat:ea21_hpi_qq") is None

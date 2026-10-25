@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "f68cee5954ecf90ab9fa5491de8a420abf657e84e6e55ce365cc23ffb582ec4f",
+  "aliases_sha256": "df14d444acaae55280ba975e74d998b8fe413a128f61207246aac2c37e1d0f92",
   "cards": [
     {
       "concept": "Real GDP",
@@ -1099,7 +1099,9 @@
           "us_pmi_svc_flash"
         ],
         "cat": [
-          "us_sp_global_*"
+          "us_sp_global_*",
+          "us_sp_global_manufacturing_pmi",
+          "us_sp_global_services_pmi"
         ],
         "derived_ms": [],
         "es": [],
@@ -1450,7 +1452,9 @@
         ],
         "cat": [
           "us_cpi_core_yy",
-          "us_cpi_core_mm"
+          "us_cpi_core_mm",
+          "us_core_cpi_yy",
+          "us_core_cpi_mm"
         ],
         "derived_ms": [],
         "es": [
@@ -4846,7 +4850,10 @@
           "ez_pmi_mfg",
           "ez_pmi_svc"
         ],
-        "cat": [],
+        "cat": [
+          "ea_manufacturing_pmi",
+          "ea_services_pmi"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -7107,7 +7114,9 @@
         "cal": [
           "uk_pmi_svc"
         ],
-        "cat": [],
+        "cat": [
+          "uk_sp_global_services_pmi"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -7943,7 +7952,9 @@
         "cal": [
           "cn_pmi_nbs_mfg"
         ],
-        "cat": [],
+        "cat": [
+          "cn_nbs_manufacturing_pmi"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -7988,7 +7999,9 @@
         "cal": [
           "cn_pmi_caixin_mfg"
         ],
-        "cat": [],
+        "cat": [
+          "cn_caixin_manufacturing_pmi"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -8498,7 +8511,10 @@
           "ca_employment",
           "ca_unemp"
         ],
-        "cat": [],
+        "cat": [
+          "ca_unemployment_rate",
+          "ca_employment_change"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -13074,10 +13090,1075 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "US existing home sales",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "us_existing_home_sales",
+          "us_existing_home_sales_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_existing_home_sales",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "Closed resales, separate from contract-based new-home sales; no local timing validation. Source: https://www.nar.realtor/research-and-statistics/housing-statistics/existing-home-sales (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:us_existing_home_sales",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "National Association of Realtors",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "residential investment",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Euro area retail trade volume, m/m",
+      "country": "EA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "geography EA21",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "ea_retail_sales_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ea_retail_sales",
+      "known_failure_modes": [
+        "geography EA21"
+      ],
+      "nature": "HARD",
+      "rationale": "Deflated retail trade volume, not US nominal sales; the certified release family uses fixed EA21 membership; geography vintages must not be spliced. Source: https://ec.europa.eu/eurostat/databrowser/view/sts_trtu_m/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:ea_retail_sales_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Eurostat",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "EA consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Euro area industrial production, m/m",
+      "country": "EA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "geography EA21",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "ea_industrial_production_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ea_indpro",
+      "known_failure_modes": [
+        "geography EA21"
+      ],
+      "nature": "HARD",
+      "rationale": "Industrial production volume; US timing screens are not transferable to the euro area. Source: https://ec.europa.eu/eurostat/databrowser/view/sts_inpr_m/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:ea_industrial_production_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Eurostat",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "EA output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "HCOB Eurozone Composite PMI",
+      "country": "EA",
+      "evidence": {
+        "local_timing": "lit-local",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "never captured (licensed)",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "ea_composite_pmi"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ea_pmi_composite",
+      "known_failure_modes": [
+        "never captured (licensed)"
+      ],
+      "nature": "SOFT",
+      "rationale": "Composite output survey; ea_pmi covers manufacturing and services separately. Licensed history; no local timing validation. Source: https://www.pmi.spglobal.com/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:ea_composite_pmi",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global (HCOB-sponsored)",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "EA GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Extra-euro area trade balance",
+      "country": "EA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "geography EA21",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "ea_trade_balance"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ea_trade_balance",
+      "known_failure_modes": [
+        "geography EA21"
+      ],
+      "nature": "HARD",
+      "rationale": "Extra-euro-area goods balance; excludes intra-area trade and services. The certified release family uses fixed EA21 membership and dataset ext_st_easitc; geography vintages must not be spliced. Source: https://ec.europa.eu/eurostat/databrowser/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:ea_trade_balance",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Eurostat",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "GDP net exports",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Germany real GDP, q/q",
+      "country": "DEU",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "issuer table id unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "de_gdp_qq"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "de_gdp_real",
+      "known_failure_modes": [
+        "issuer table id unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Real GDP q/q, adjusted; no local timing evidence. Issuer table id remains unverified. Source: https://www.destatis.de/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:de_gdp_qq",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Destatis",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "itself (national growth reference)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "France CPI, y/y",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "fr_cpi_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_cpi",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "National CPI, not HICP; provisional and final stages share this concept. No local timing evidence. Source: https://www.insee.fr/fr/statistiques/serie/IPC-2025 (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:fr_cpi_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INSEE",
+      "theme": "Inflation",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "EA HICP",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "France real GDP, q/q",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "issuer dataset code unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "fr_gdp_qq"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_gdp_real",
+      "known_failure_modes": [
+        "issuer dataset code unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Real GDP q/q; no local timing evidence. Issuer dataset code remains unverified. Source: https://www.insee.fr/fr/statistiques (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:fr_gdp_qq",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INSEE",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "itself (national growth reference)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "France industrial production, m/m",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "issuer series code unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "fr_industrial_production_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_indpro",
+      "known_failure_modes": [
+        "issuer series code unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Industrial production m/m; issuer series code and local timing remain unverified. Source: https://www.insee.fr/fr/statistiques (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:fr_industrial_production_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INSEE",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "French output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "France unemployment rate (ILO definition)",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "fr_unemployment_rate"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_unemployment",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "Quarterly ILO unemployment; a monthly Eurostat estimate is a different frequency. No local lag validation. Source: https://www.insee.fr/fr/statistiques (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:fr_unemployment_rate",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INSEE",
+      "theme": "Labour",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "French output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Italy real GDP, q/q",
+      "country": "ITA",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "issuer dataset code unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "it_gdp_qq"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "it_gdp_real",
+      "known_failure_modes": [
+        "issuer dataset code unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Real GDP q/q; no local timing evidence. Issuer dataset code remains unverified. Source: https://www.istat.it/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:it_gdp_qq",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Istat",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "itself (national growth reference)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "Italy industrial production, m/m",
+      "country": "ITA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "issuer series code unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "it_industrial_production_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "it_indpro",
+      "known_failure_modes": [
+        "issuer series code unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Industrial production m/m; issuer series code and local timing remain unverified. Source: https://www.istat.it/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:it_industrial_production_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Istat",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Italian output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Spain real GDP, q/q",
+      "country": "ESP",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "issuer operation id unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "es_gdp_qq"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "es_gdp_real",
+      "known_failure_modes": [
+        "issuer operation id unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Real GDP q/q from quarterly national accounts; issuer operation id and local timing remain unverified. Source: https://www.ine.es/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:es_gdp_qq",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INE",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "itself (national growth reference)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "Spain unemployment rate (EPA)",
+      "country": "ESP",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "adjustment metadata unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "es_unemployment_rate"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "es_unemployment",
+      "known_failure_modes": [
+        "adjustment metadata unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Quarterly EPA unemployment; monthly harmonised estimates are separate. Adjustment metadata and local lag need issuer verification. Source: https://www.ine.es/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:es_unemployment_rate",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INE",
+      "theme": "Labour",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Spanish output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Spain industrial production, m/m",
+      "country": "ESP",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "issuer operation id unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "es_industrial_production_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "es_indpro",
+      "known_failure_modes": [
+        "issuer operation id unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Industrial production m/m; issuer operation id and local timing remain unverified. Source: https://www.ine.es/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:es_industrial_production_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INE",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Spanish output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "UK retail sales volume, m/m",
+      "country": "GBR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "uk_retail_sales_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "uk_retail_sales",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "Retail volume including fuel; J5EK is the index underlying bulletin m/m growth. No local timing validation. Source: https://www.ons.gov.uk/businessindustryandtrade/retailindustry/timeseries/j5ek/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:uk_retail_sales_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "ONS",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "UK consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "S&P Global/CIPS UK Manufacturing PMI",
+      "country": "GBR",
+      "evidence": {
+        "local_timing": "lit-local",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "never captured (licensed)",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "uk_sp_global_manufacturing_pmi"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "uk_pmi_mfg",
+      "known_failure_modes": [
+        "never captured (licensed)"
+      ],
+      "nature": "SOFT",
+      "rationale": "Manufacturing survey, separate from approved UK services PMI; no local timing validation. Licensed history. Source: https://www.pmi.spglobal.com/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:uk_sp_global_manufacturing_pmi",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / CIPS",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "UK GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Japan real GDP, q/q",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "jp_gdp_qq"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_gdp_real",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "Real GDP q/q, not annualised; ESRI first and second estimates are stages. No local timing evidence. Source: https://www.esri.cao.go.jp/en/sna/sokuhou/sokuhou_top.html (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:jp_gdp_qq",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Cabinet Office (ESRI)",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "itself (national growth reference)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "Japan industrial production, m/m",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "jp_industrial_production_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_indpro",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "METI industrial production m/m, preliminary and final stages; no local timing evidence. Source: https://www.meti.go.jp/english/statistics/tyo/iip/index.html (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:jp_industrial_production_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Ministry of Economy, Trade and Industry (METI)",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Japanese output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Japan trade balance",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "jp_trade_balance"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_trade_balance",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "MOF customs-cleared goods balance, NSA; not services trade or current account. No local timing evidence. Source: https://www.customs.go.jp/toukei/info/index_e.htm (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:jp_trade_balance",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Ministry of Finance (customs-cleared trade statistics)",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Japanese external balance",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "China industrial production, y/y",
+      "country": "CHN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "Jan-Feb combined",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "cn_industrial_production_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "cn_indpro",
+      "known_failure_modes": [
+        "Jan-Feb combined"
+      ],
+      "nature": "HARD",
+      "rationale": "Value-added industrial output y/y; Jan-Feb are combined in the supplied catalogue. No local timing evidence. Source: https://www.stats.gov.cn/english/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:cn_industrial_production_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "National Bureau of Statistics (NBS)",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Chinese output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "China retail sales of consumer goods, y/y",
+      "country": "CHN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "cn_retail_sales_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "cn_retail_sales",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "Retail sales of consumer goods y/y; no volume equivalence or local timing validation is assumed. Source: https://www.stats.gov.cn/english/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:cn_retail_sales_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "National Bureau of Statistics (NBS)",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Chinese consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Canada real GDP by industry, m/m",
+      "country": "CAN",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "issuer table id unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "ca_gdp_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ca_gdp_monthly",
+      "known_failure_modes": [
+        "issuer table id unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Monthly real GDP by industry, separate from quarterly expenditure GDP; issuer table id and timing remain unverified. Source: https://www150.statcan.gc.ca/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:ca_gdp_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Statistics Canada",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "itself (national growth reference)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "Canada retail trade sales, m/m",
+      "country": "CAN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "issuer table id unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "ca_retail_sales_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ca_retail_sales",
+      "known_failure_modes": [
+        "issuer table id unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Retail trade sales m/m; do not equate nominal sales with volume growth. Issuer table id and timing remain unverified. Source: https://www150.statcan.gc.ca/ (issuer reference in catalogo-tier1.toml).",
+      "raw_ids": "cat:ca_retail_sales_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Statistics Canada",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Canadian consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
-  "classification_version": "v2.1",
+  "classification_version": "v2.2",
   "schema_version": 1,
-  "source_table_sha256": "25f14e12729e0053b0d5ff656622bc925a9ee68974f88fd3eeaa1cd41cb7b550",
-  "timing_extract_sha256": "02a475da389e7592313d3fffe675af53ffe39433fd19fcd1d830b31e72df0cda"
+  "source_table_sha256": "4c25e1c6ea0a60944de52d1e5e4228dfb2b1983ab2feef5e91e60a6158deb707",
+  "timing_extract_sha256": "e11d5048618c44f241637f2f2f8dd4a5ebbb71ed7a767e8d70992a0c5eee4f98"
 }
