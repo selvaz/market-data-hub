@@ -4,6 +4,12 @@ Only listed editions can be certified. Calendars permit a fetch, never prove a
 publication. The saved issuer reports include the FHFA 2026 calendar.
 """
 EDITIONS = {
+    "de_building_permits": {
+        "2026-09-18": ("2026-07", "regular", "08:00"),
+        "2026-10-16": ("2026-08", "regular", "08:00"),
+        "2026-11-18": ("2026-09", "regular", "08:00"),
+        "2026-12-18": ("2026-10", "regular", "08:00"),
+    },
     "uk_mortgage_approvals": {
         "2026-09-01": ("2026-07", "regular", "09:30"),
         "2026-09-29": ("2026-08", "regular", "09:30"),
@@ -104,6 +110,7 @@ EDITIONS = {
     },
 }
 SCHEDULES = {
+    "de_building_permits": "https://www.destatis.de/SiteGlobals/Forms/Suche/Termine/EN/Terminsuche_Formular.html?nn=1426424&resourceId=263318&input_=263386&pageLocale=en&templateQueryString=Building+permits",
     "uk_mortgage_approvals": "https://www.bankofengland.co.uk/statistics/tables",
     "uk_hpi": "https://www.gov.uk/government/publications/about-the-uk-house-price-index/about-the-uk-house-price-index",
     "ea_house_purchase_loans": "https://www.ecb.europa.eu/press/calendars/statscal/mfm/html/stprmp.en.html",
@@ -116,8 +123,8 @@ SCHEDULES = {
     "us_fhfa_hpi": "https://www.fhfa.gov/data/hpi",
     "us_construction_spending": "https://www.census.gov/economic-indicators/calendar-listview-2026.html",
 }
-ZONES = {"ea_house_purchase_loans": "Europe/Berlin", "ea_house_purchase_cost": "Europe/Berlin"}
-SOURCES = {"uk_mortgage_approvals": ("BoE", "official", "M"), "uk_hpi": ("HMLR/ONS", "official", "M"), "ea_house_purchase_loans": ("ECB", "official", "M"),
+ZONES = {"de_building_permits": "Europe/Berlin", "ea_house_purchase_loans": "Europe/Berlin", "ea_house_purchase_cost": "Europe/Berlin"}
+SOURCES = {"de_building_permits": ("Destatis", "official", "M"), "uk_mortgage_approvals": ("BoE", "official", "M"), "uk_hpi": ("HMLR/ONS", "official", "M"), "ea_house_purchase_loans": ("ECB", "official", "M"),
            "ea_house_purchase_cost": ("ECB", "official", "M"),
            "ea_hpi": ("Eurostat", "official", "Q"),
            "us_case_shiller": ("SPDJI", "private", "M"),

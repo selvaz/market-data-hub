@@ -46,6 +46,7 @@ def reviewed_anchor(obs):
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
+    "de_building_permits": 100000, "de_building_permits_yy": 50,
     "boj_policy_rate_decision": 3,
     "pboc_lpr_decision": 3,
     "boc_overnight_rate_decision": 3,
@@ -83,7 +84,8 @@ SANITY_BANDS.update({
     "ea21_gdp_qq": 20, "ea21_gdp_yy": 30,
     "us_initial_jobless_claims": 3000,
 })
-ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
+ABSOLUTE_BOUNDS = {
+    "de_building_permits": 1000000,"us_jolts_openings": 20000, "us_housing_starts": 5000,
                    "ea_trade_balance": 1000000,
                    "us_new_home_sales": 5000,
                    "ea_economic_sentiment_indicator": 200,

@@ -135,6 +135,11 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "de_building_permits": [
+        measure("de_building_permits", "Destatis", "DEU", "level", "NSA", "dwellings",
+            definition="Germany: residential dwellings permitted in new and existing buildings, published monthly total rounded to nearest 100; not a count of buildings or YTD"),
+        measure("de_building_permits_yy", "Destatis", "DEU", "yy", "NSA",
+            definition="Germany: published annual percent change in total residential dwellings permitted, including new and existing buildings; not recomputed from rounded counts")],
     "uk_mortgage_approvals": [measure("uk_mortgage_approvals", "BoE", "GBR", "level", "SA", "approvals",
         definition="BoE Money and Credit: net mortgage approvals for house purchase to individuals, seasonally adjusted count; cancellations netted, excludes remortgaging; public release headline rounded to nearest 100, distinct from unrounded LPMVTVX history")],
     "uk_hpi": [measure("uk_hpi_yy", "HMLR/ONS", "GBR", "yy", "NSA",

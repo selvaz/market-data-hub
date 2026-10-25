@@ -251,6 +251,42 @@
       "period": "2026-08",
       "value": 54900,
       "source_url": "https://www.bankofengland.co.uk/statistics/money-and-credit/2026/august-2026"
+    },
+    {
+      "family": "de_building_permits",
+      "fixture": "destatis-july2026.html",
+      "edition": "2026-09-18",
+      "indicator": "de_building_permits",
+      "period": "2026-07",
+      "value": 22500,
+      "source_url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/09/PD26_330_3111.html"
+    },
+    {
+      "family": "de_building_permits",
+      "fixture": "destatis-july2026.html",
+      "edition": "2026-09-18",
+      "indicator": "de_building_permits_yy",
+      "period": "2026-07",
+      "value": 1.9,
+      "source_url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/09/PD26_330_3111.html"
+    },
+    {
+      "family": "de_building_permits",
+      "fixture": "destatis-august2026.html",
+      "edition": "2026-10-16",
+      "indicator": "de_building_permits",
+      "period": "2026-08",
+      "value": 20600,
+      "source_url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/10/PD26_370_3111.html"
+    },
+    {
+      "family": "de_building_permits",
+      "fixture": "destatis-august2026.html",
+      "edition": "2026-10-16",
+      "indicator": "de_building_permits_yy",
+      "period": "2026-08",
+      "value": 6.8,
+      "source_url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/10/PD26_370_3111.html"
     }
   ]
 }

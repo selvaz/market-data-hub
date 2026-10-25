@@ -6,6 +6,18 @@ That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
 remains draft while work is delivered one family at a time. Do not merge it.
 
+## Destatis residential permits verification checkpoint
+
+1524 passed, 1 skipped; 12 focused Destatis tests passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 verification: `D:\Temp\mdh-m9f-9tpkidiy\verification.json`. All 1 collected families returned `ok` for dry run and collection, then `no_change`; all 2 latest read-API measures were issuer-certified with correct source classes. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; every verification write stayed under `D:/Temp`.
+
+## Germany residential building permits
+
+Destatis supplies a stable, free [dated German press release](https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/10/PD26_370_3111.html), so Germany is collected. Family `de_building_permits` covers total **dwellings permitted in new and existing buildings**, monthly NSA count and issuer-published y/y change. August is **20,600 dwellings, +6.8% y/y**; July is **22,500, +1.9%**. These are neither building counts, new-build-only subtotals nor cumulative January-to-date totals. Counts are rounded to 100; annual rates are never recomputed from those rounded counts. Late administrative reports and revisions remain caveats.
+
+The [filtered annual issuer calendar](https://www.destatis.de/SiteGlobals/Forms/Suche/Termine/EN/Terminsuche_Formular.html?nn=1426424&resourceId=263318&input_=263386&pageLocale=en&templateQueryString=Building+permits) explicitly states **08:00 CET/CEST** and confirms the remaining 18 November and 18 December editions. Its ICS midnight defaults are not release clocks. Four regular editions (18 September, 16 October, 18 November, 18 December) are reviewed through year-end. Future article URLs are discovered from the issuer's filtered press index; press-release numbers are not guessed. Clock/calendar, national scope, period, date or title changes fail closed with `needs_review`; newly due publication delays have the shared six-hour grace. No GENESIS credentials are needed.
+
+One new v2.3 draft, `de_building_permits`, covers the count and annual-change ids. It keeps timing UNKNOWN, real rounding/revision caveats, issuer URL rationale and pending owner approval in timing metadata. No FF title mapping is inferred.
+
 ## BoE mortgage approvals verification checkpoint
 
 1508 passed, 1 skipped; 15 focused BoE tests passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 verification: `D:\Temp\mdh-m9f-wjulpyc4\verification.json`. All 1 collected families returned `ok` for dry run and collection, then `no_change`; all 1 latest read-API measures were issuer-certified with correct source classes. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; every verification write stayed under `D:/Temp`.
@@ -253,6 +265,7 @@ after those checks pass.
 
 | Family | Issuer | Source class | Frequency | Reviewed editions through 31 December 2026 | Golden cases |
 | --- | --- | --- | --- | --- | --- |
+| Germany residential dwellings permitted | Destatis | Official, free | Monthly | 18 Sep, 16 Oct, 18 Nov, 18 Dec; 08:00 Europe/Berlin | 4 measurements in 2 dated publications: July 22,500 / +1.9%; August 20,600 / +6.8% |
 | BoE house-purchase mortgage approvals | Bank of England | Official, free | Monthly | 1 Sep, 29 Sep, 29 Oct, 30 Nov; 09:30 Europe/London; next Jan 2027 | 2 dated publications: July 56,100; August 54,900 |
 | UK HPI, NSA annual change | HM Land Registry / ONS | Official, free | Monthly | 16 Sep, 21 Oct, 18 Nov, 16 Dec; 09:30 Europe/London, observed seconds retained | 2 dated reports: July +1.4%, August +0.9% |
 | Euro area house-purchase loan growth | ECB BSI | Official, free | Monthly | 27 Aug, 25 Sep, 27 Oct, 26 Nov, 30 Dec; 10:00 Europe/Berlin | 2 dated annexes: July 3.0%, August 3.1% |
@@ -319,6 +332,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 
 | Family | Reference period | Edition | Issuer release time | Latest official card |
 | --- | --- | --- | --- | --- |
+| Destatis residential permits | August 2026 | 16 October 2026 | 08:00 CEST / 06:00 UTC | 20,600 dwellings; +6.8% y/y, NSA |
 | BoE house-purchase approvals | August 2026 | 29 September 2026 | 09:30 BST / 08:30 UTC | 54,900 net approvals, SA, rounded headline |
 | UK HPI | August 2026 | 21 October 2026 | 09:30:08 BST / 08:30:08 UTC | +0.9% y/y, NSA |
 | ECB house-purchase loans | August 2026 | 25 September 2026 | 10:00 CEST / 08:00 UTC | +3.1% y/y, adjusted loans, SCA |
@@ -382,7 +396,7 @@ All writes go to the copy. Reproduce with the project interpreter:
 
 ## Remaining steps, in order
 
-1. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
+1. CMHC starts, MLIT starts and NBS 70-city prices: investigate
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.
