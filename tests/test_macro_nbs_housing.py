@@ -2,14 +2,36 @@
 from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
+import os
+from pathlib import Path
+import subprocess
+import sys
 
-from bs4 import BeautifulSoup
 import pytest
 
 from market_data_hub.macro_releases import nbs_housing as cn, open_reader, run_daily
 from market_data_hub.macro_releases.http import FetchError
 from market_data_hub.macro_releases.schedule import RUN_INSTANT, PENDING_EDITIONS, release_instant
 from test_macro_m9f import document, offline as offline
+
+
+def test_macro_stack_imports_without_optional_calendar_parser():
+    # Reproduce CI's default install even when this host has calendar extras.
+    env = {k: os.environ[k] for k in ("PATH", "SYSTEMROOT", "LD_LIBRARY_PATH") if k in os.environ}
+    result = subprocess.run([sys.executable, "-c", '''
+import sys
+sys.modules["bs4"] = None
+import requests
+def forbidden(*args, **kwargs):
+    raise AssertionError("Network forbidden in NBS import regression")
+requests.Session.request = forbidden
+from market_data_hub.macro_releases import http
+http.api_key = lambda _: "fixture"
+from market_data_hub.macro_releases.housing import PARSERS
+assert "cn_new_home_prices" in PARSERS
+'''], cwd=Path(__file__).resolve().parents[1], env=env,
+        capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
 
 
 class Replay:
@@ -31,15 +53,14 @@ class Replay:
 
 
 def changed(doc, before, after, *, first_only=False):
-    soup = BeautifulSoup(doc.body.decode("utf-8"), "html.parser")
-    editors = soup.select(".trs_editor_view")
+    soup = cn.Page(doc.body).root
+    editors = cn.editors(soup)
     assert editors
     for editor in editors[:1] if first_only else editors:
-        text = cn.compact(str(editor))
+        text = cn.compact(editor.text())
         assert before in text
-        editor.clear()
-        editor.append(text.replace(before, after))
-    body = str(soup).encode()
+        editor.children = [text.replace(before, after)]
+    body = soup.html().encode()
     return replace(doc, body=body, document_hash=hashlib.sha256(body).hexdigest())
 
 
@@ -89,27 +110,26 @@ def test_conflicting_mobile_and_desktop_copies_need_review():
 @pytest.mark.parametrize("stamp", ["2026/10/19 10:30", "2026/10/18 09:30"])
 def test_changed_publication_instant_needs_review(stamp):
     doc = document("nbs-september2026-headlines.html")
-    soup = BeautifulSoup(doc.body.decode("utf-8"), "html.parser")
-    soup.find("meta", attrs={"name": "PubDate"})["content"] = stamp
+    soup = cn.Page(doc.body).root
+    soup.find_all("meta", attrs={"name": "PubDate"})[0].attrs["content"] = stamp
     with pytest.raises(FetchError, match="needs review"):
-        cn.parse(replace(doc, body=str(soup).encode()))
+        cn.parse(replace(doc, body=soup.html().encode()))
 
 
 @pytest.mark.parametrize("clock", [False, True])
 def test_calendar_date_or_clock_drift_needs_review(clock):
     doc = document("nbs-calendar2026.html")
-    soup = BeautifulSoup(doc.body.decode("utf-8"), "html.parser")
+    soup = cn.Page(doc.body).root
     found = 0
     for row in soup.find_all("tr"):
         cells = row.find_all("td")
-        if len(cells) == 14 and cn.compact(str(cells[1])) == "商品住宅销售价格指数月度报告":
-            cell = row.find_next_sibling("tr").find_all("td")[10] if clock else cells[12]
-            cell.clear()
-            cell.append("10:30" if clock else "17/二")
+        if len(cells) == 14 and cn.compact(cells[1].text()) == "商品住宅销售价格指数月度报告":
+            cell = row.next_sibling("tr").find_all("td")[10] if clock else cells[12]
+            cell.children = ["10:30" if clock else "17/二"]
             found += 1
     assert found
     with pytest.raises(FetchError, match="needs review"):
-        cn.calendar_editions(replace(doc, body=str(soup).encode()))
+        cn.calendar_editions(replace(doc, body=soup.html().encode()))
 
 
 def test_release_instant_publication_delay_and_horizon():

@@ -1,10 +1,10 @@
 """NBS 70-city new commercial residential sales prices, official city tiers."""
 from datetime import datetime
+from html import escape
+from html.parser import HTMLParser
 import re
 import unicodedata
 from urllib.parse import urljoin
-
-from bs4 import BeautifulSoup
 
 from .housing_editions import EDITIONS, reviewed
 from .http import FetchError
@@ -21,19 +21,89 @@ ARCHIVES = {
 TIERS = ((1, "一", 4), (2, "二", 31), (3, "三", 35))
 
 
+class Element:
+    """Small stdlib tree for the issuer's metadata, tables and editor blocks."""
+    def __init__(self, tag="", attrs=(), parent=None):
+        self.tag, self.attrs, self.parent = tag, dict(attrs), parent
+        self.children = []
+
+    def get(self, key, default=""):
+        return self.attrs.get(key, default)
+
+    def find_all(self, tag, attrs=None):
+        found = []
+        for child in self.children:
+            if isinstance(child, Element):
+                if child.tag == tag and all(child.get(k) == v for k, v in (attrs or {}).items()):
+                    found.append(child)
+                found.extend(child.find_all(tag, attrs))
+        return found
+
+    def next_sibling(self, tag):
+        siblings = self.parent.children if self.parent else []
+        return next((c for c in siblings[siblings.index(self) + 1:] if isinstance(c, Element) and c.tag == tag), None)
+
+    def text(self):
+        if self.tag in {"script", "style"}:
+            return ""
+        return "".join(c.text() if isinstance(c, Element) else c for c in self.children)
+
+    def html(self):
+        body = "".join(c.html() if isinstance(c, Element) else escape(c, quote=False) for c in self.children)
+        if not self.tag:
+            return body
+        attrs = "".join(' ' + k + '="' + escape(v or "", quote=True) + '"' for k, v in self.attrs.items())
+        return "<" + self.tag + attrs + ">" + body + ("" if self.tag in Page.VOID else "</" + self.tag + ">")
+
+
+class Page(HTMLParser):
+    VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "param", "source", "track", "wbr"}
+
+    def __init__(self, body):
+        super().__init__(convert_charrefs=True)
+        self.root = Element()
+        self.stack = [self.root]
+        self.feed(body.decode("utf-8"))
+        self.close()
+
+    def handle_starttag(self, tag, attrs):
+        child = Element(tag, attrs, self.stack[-1])
+        self.stack[-1].children.append(child)
+        if tag not in self.VOID:
+            self.stack.append(child)
+
+    def handle_endtag(self, tag):
+        for i in range(len(self.stack) - 1, 0, -1):
+            if self.stack[i].tag == tag:
+                del self.stack[i:]
+                break
+
+    def handle_startendtag(self, tag, attrs):
+        self.handle_starttag(tag, attrs)
+        self.handle_endtag(tag)
+
+    def handle_data(self, data):
+        self.stack[-1].children.append(data)
+
+
+def editors(page):
+    return [e for e in page.find_all("div") if "trs_editor_view" in e.get("class").split()]
+
+
 def compact(raw):
     return re.sub(r"\s+", "", unicodedata.normalize("NFKC", plain(raw)))
 
 
 def calendar_editions(document):
-    soup = BeautifulSoup(document.body.decode("utf-8"), "html.parser")
-    require("2026年国家统计局主要统计信息发布日程表", compact(str(soup)))
+    soup = Page(document.body).root
+    require("2026年国家统计局主要统计信息发布日程表", compact(soup.text()))
     tables = set()
     for row in soup.find_all("tr"):
-        cells = [compact(str(c)) for c in row.find_all("td")]
+        cells = [compact(c.text()) for c in row.find_all("td")]
         if len(cells) != 14 or cells[1] != "商品住宅销售价格指数月度报告":
             continue
-        clocks = tuple(compact(str(c)) for c in row.find_next_sibling("tr").find_all("td"))
+        clock_row = row.next_sibling("tr")
+        clocks = tuple(compact(c.text()) for c in clock_row.find_all("td")) if clock_row else ()
         if len(clocks) != 12:
             raise FetchError("NBS housing calendar clock column layout needs review")
         tables.add((tuple(cells[2:]), clocks))
@@ -66,13 +136,15 @@ def url_pattern(edition):
 
 def publication_links(document):
     urls = {}
-    soup = BeautifulSoup(document.body.decode("utf-8"), "html.parser")
-    for anchor in soup.find_all("a", href=True):
-        text = compact(str(anchor))
+    soup = Page(document.body).root
+    for anchor in soup.find_all("a"):
+        if not anchor.get("href"):
+            continue
+        text = compact(anchor.text())
         for edition, (period, _, _) in EDITIONS[FAMILY].items():
             if not text.startswith("国家统计局城市司") or not text.endswith(title_suffix(period)):
                 continue
-            url = urljoin(INDEX, anchor["href"])
+            url = urljoin(INDEX, anchor.get("href"))
             if not re.fullmatch(url_pattern(edition), url) or (edition in urls and urls[edition] != url):
                 raise FetchError("NBS housing discovery identity needs review")
             urls[edition] = url
@@ -94,7 +166,7 @@ def parse(document, family=FAMILY, since="1900-01"):
     from .housing import observation
     if family != FAMILY:
         raise FetchError("NBS housing family needs review")
-    soup = BeautifulSoup(document.body.decode("utf-8"), "html.parser")
+    soup = Page(document.body).root
     stamps = soup.find_all("meta", attrs={"name": "PubDate"})
     titles = soup.find_all("meta", attrs={"name": "ArticleTitle"})
     if len(stamps) != 1 or len(titles) != 1:
@@ -105,7 +177,7 @@ def parse(document, family=FAMILY, since="1900-01"):
     title = compact(titles[0].get("content", ""))
     if stamp.strftime("%H:%M") != clock or not title.startswith("国家统计局城市司") or not title.endswith(title_suffix(period)) or not re.fullmatch(url_pattern(edition), document.url):
         raise FetchError("NBS housing date, clock, title or issuer URL needs review")
-    bodies = {compact(str(e)) for e in soup.select(".trs_editor_view")}
+    bodies = {compact(e.text()) for e in editors(soup)}
     if len(bodies) != 1:
         raise FetchError("NBS housing desktop/mobile publication agreement needs review")
     body = bodies.pop()
