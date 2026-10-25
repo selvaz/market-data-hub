@@ -150,8 +150,8 @@ class FREDAdapter:
 class BLSFallbackAdapter(FREDAdapter):
     """Edition-bound ALFRED first prints; never a current FRED snapshot.
 
-    A vintage-list entry proves the provider published that day. The as-of
-    response must contain the scheduled headline and the exact vintage date.
+    Initial-release metadata proves when this particular headline first
+    appeared. The transformed as-of response must match that scheduled edition.
     ALFRED only has daily resolution: the BLS calendar supplies the release
     instant, not an invented intraday provider availability timestamp.
     """
@@ -168,14 +168,19 @@ class BLSFallbackAdapter(FREDAdapter):
                         continue
                     params = dict(api_key=api_key("FRED_API_KEY"), file_type="json",
                                   series_id=series, realtime_start=edition, realtime_end=edition)
-                    vintage_doc = self.client.get("fred", "https://api.stlouisfed.org/fred/series/vintagedates",
-                                                  dict(params, limit=10000))
-                    vintages = json_payload(vintage_doc)
-                    require_complete(vintages, vintages.get("vintage_dates", []))
-                    if vintages.get("vintage_dates") != [edition]:
+                    first_doc = self.client.get("fred", ENDPOINT, dict(params,
+                        realtime_start="1776-07-04", output_type=4, units="lin",
+                        observation_start=headline + "-01", observation_end=headline + "-01", limit=10000))
+                    first = json_payload(first_doc)
+                    initial = first.get("observations", [])
+                    require_complete(first, initial)
+                    if (first.get("output_type") != 4 or first.get("units") != "lin" or
+                            first.get("realtime_start") != "1776-07-04" or first.get("realtime_end") != edition or
+                            len(initial) != 1 or initial[0].get("date") != headline + "-01" or
+                            initial[0].get("value") in (None, ".") or initial[0].get("realtime_start") != edition):
                         raise FetchError("ALFRED vintage date does not match BLS edition; needs review")
                     doc = self.client.get("fred", ENDPOINT, dict(params, units=units,
-                        observation_start=headline + "-01", observation_end=headline + "-01", limit=10000))
+                        output_type=1, observation_start=headline + "-01", observation_end=headline + "-01", limit=10000))
                     out.extend(self.parse_first_print(doc, indicator=indicator, edition=edition))
         return out
 
@@ -189,7 +194,7 @@ class BLSFallbackAdapter(FREDAdapter):
         payload = json_payload(document)
         rows = payload.get("observations", [])
         require_complete(payload, rows)
-        if (payload.get("units") != units or payload.get("realtime_start") != edition or
+        if (payload.get("output_type") != 1 or payload.get("units") != units or payload.get("realtime_start") != edition or
                 payload.get("realtime_end") != edition or len(rows) != 1 or
                 rows[0].get("date") != headline + "-01" or rows[0].get("value") in (None, ".") or
                 rows[0].get("realtime_start") != edition or rows[0].get("realtime_end") != edition):

@@ -126,7 +126,10 @@ def test_daily_all_eight_families_official_cards_and_idempotence(tmp_path, monke
     assert all(row["vintages_added"] == 0 for row in second["families"].values())
 
 
-@pytest.mark.parametrize("indicator", [i for i, (f, _, _) in MAPPINGS.items() if f in US_MONTHLY])
+# The BLS outage mappings have their own release-bound replay in M9h; this
+# fixture set covers the original Census/Fed redistributor monthly families.
+@pytest.mark.parametrize("indicator", [i for i, (f, _, _) in MAPPINGS.items()
+                                      if f in US_MONTHLY and f not in ("us_ppi", "us_jolts")])
 def test_alfred_edition_units_and_source(indicator):
     family, series, units = MAPPINGS[indicator]
     edition = max(EDITIONS[family])

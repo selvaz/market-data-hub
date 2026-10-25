@@ -50,18 +50,22 @@ class Outage:
     def get(self, provider, url, params=None):
         assert provider == "fred" and params["api_key"] == "stub-key"
         self.calls.append((url, params))
-        edition = params["realtime_start"]
-        assert params["realtime_end"] == edition
-        if url.endswith("vintagedates"):
-            dates = ["2026-10-26"] if self.mode == "late_list" else [edition]
-            return document(dict(vintage_dates=dates, count=1, offset=0))
+        edition = params["realtime_end"]
+        assert params["realtime_start"] == ("1776-07-04" if params["output_type"] == 4 else edition)
         row = dict(date=params["observation_start"], value="0.2",
                    realtime_start=edition, realtime_end=edition)
+        if params["output_type"] == 4:
+            if self.mode == "late_list":
+                row["realtime_start"] = "2026-10-26"
+            elif self.mode == "early_list":
+                row["realtime_start"] = "2026-01-01"
+            return document(dict(observations=[row], count=1, offset=0, output_type=4,
+                                 units="lin", realtime_start="1776-07-04", realtime_end=edition))
         if self.mode == "late_row":
             row["realtime_start"] = "2026-10-26"
         elif self.mode == "wrong_period":
             row["date"] = "2026-01-01"
-        payload = dict(units=params["units"], realtime_start=edition, realtime_end=edition,
+        payload = dict(units=params["units"], output_type=1, realtime_start=edition, realtime_end=edition,
                        observations=[row], count=1, offset=0)
         if self.mode == "current_snapshot":
             payload["realtime_end"] = "2026-10-25"
@@ -84,7 +88,18 @@ def test_outage_falls_back_to_redistributor(tmp_path, family):
             assert result.value == 0.2
 
 
-@pytest.mark.parametrize("mode", ["late_list", "late_row", "wrong_period", "current_snapshot"])
+@pytest.mark.parametrize("family", FAMILIES)
+def test_daily_fallback_commits_then_is_idempotent(tmp_path, monkeypatch, family):
+    monkeypatch.setattr(run_daily, "HttpClient", lambda **kwargs: Outage())
+    path = tmp_path / "daily.sqlite"
+    first = run_daily.execute(path, [family], 24, False, raw_dir=tmp_path / "empty")
+    assert first["families"][family]["status"] == "ok"
+    second = run_daily.execute(path, [family], 24, False, raw_dir=tmp_path / "empty")
+    assert second["families"][family]["status"] == "no_change"
+    assert second["families"][family]["vintages_added"] == 0
+
+
+@pytest.mark.parametrize("mode", ["early_list", "late_list", "late_row", "wrong_period", "current_snapshot"])
 @pytest.mark.parametrize("family", FAMILIES)
 def test_invalid_fallback_is_needs_review_and_has_no_vintage(tmp_path, monkeypatch, mode, family):
     monkeypatch.setattr(run_daily, "HttpClient", lambda **kwargs: Outage(mode))
