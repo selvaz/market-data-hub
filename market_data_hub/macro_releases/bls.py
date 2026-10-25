@@ -31,6 +31,14 @@ SERIES = dict(BLS_SERIES, **NEW_BLS_SERIES)
 MEASURES = (*SERIES.items(), *EMPLOYMENT_SERIES)
 
 
+def unavailable(error):
+    """Only controlled HTTP/transport/quota or missing-credential failures.
+
+    Parser and publication-review errors must not be hidden by older mirrors.
+    """
+    return str(error).startswith("bls: ") or str(error) == "Missing credential: BLS_API_KEY"
+
+
 def shift_month(period, offset):
     y, m = map(int, period.split("-"))
     y, m = divmod(y * 12 + m - 1 + offset, 12)
@@ -53,7 +61,11 @@ class BLSAdapter:
     def fetch(self, families, since):
         try:
             observations = self.fetch_official(families, since)
-        except FetchError:
+        except FetchError as exc:
+            if not unavailable(exc):
+                if "needs review" in str(exc):
+                    raise
+                raise FetchError(str(exc) + "; needs review") from None
             from .fred import BLSFallbackAdapter
             return BLSFallbackAdapter(self.client).fetch(families, since)
         from .schedule import due, family_editions

@@ -532,9 +532,12 @@ Explicit initial publications and benchmark revisions retain their meaning.
 ### BLS outage fallback (M9h, owner approved 25 October 2026)
 
 The daily and manual BLS collectors try BLS first for `us_cpi`, `us_payrolls`,
-`us_ppi`, `us_jolts`, `us_unemployment` and `us_ahe`. A BLS fetch error invokes
-the release-bound ALFRED adapter. Contradictory issuer metadata discovered by
-the CPI/payroll discovery gate remains subject to review. The production logs
+`us_ppi`, `us_jolts`, `us_unemployment` and `us_ahe`. Only BLS availability errors
+(HTTP, transport, quota or missing BLS credential) invoke the release-bound ALFRED
+adapter. A successful response with an unreviewed edition, missing calculation
+or incompatible structure remains `needs_review`; older mirror prints cannot
+hide the new publication. Contradictory CPI/payroll issuer metadata also remains
+subject to review. The production logs
 for 24 October record `bls: HTTP 503` for each of the original four families;
 the owner approved this recovery path because BLS is unreachable from this server.
 

@@ -99,6 +99,32 @@ def test_daily_fallback_commits_then_is_idempotent(tmp_path, monkeypatch, family
     assert second["families"][family]["vintages_added"] == 0
 
 
+@pytest.mark.parametrize("family", FAMILIES)
+@pytest.mark.parametrize("mode", ["unknown_edition", "missing_calculation"])
+def test_successful_bls_validation_failure_cannot_use_older_alfred(tmp_path, monkeypatch, family, mode):
+    class InvalidBLS:
+        def request(self, provider, url, *, payload):
+            assert provider == "bls"
+            rows = [dict(seriesID=key, data=[dict(year="2026", period="M12" if mode == "unknown_edition" else "M09",
+                        value="1", calculations={})]) for key in payload["seriesid"]]
+            if family in ("us_unemployment", "us_jolts") and mode == "missing_calculation":
+                rows = []  # Published levels have no calculation to omit.
+            return replace(document(dict(status="REQUEST_SUCCEEDED", Results=dict(series=rows))), url=bls.ENDPOINT)
+
+        def get(self, provider, url, params=None):
+            assert provider == "bls", "ALFRED cannot hide a successful BLS response needing review"
+            raise FetchError("bls: HTTP 403")  # RSS absence cannot certify the unknown API edition.
+
+    monkeypatch.setattr(run_daily, "HttpClient", lambda **kwargs: InvalidBLS())
+    path = tmp_path / "validation.sqlite"
+    result = run_daily.execute(path, [family], 24, False, raw_dir=tmp_path / "empty")
+    assert result["families"][family]["status"] == "needs_review"
+    assert result["families"][family]["vintages_added"] == 0
+    with open_reader(path) as store:
+        assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 0
+        assert store.conn.execute("SELECT COUNT(*) FROM review_queue").fetchone()[0] > 0
+
+
 @pytest.mark.parametrize("mode", ["early_list", "late_list", "late_row", "wrong_period", "current_snapshot"])
 @pytest.mark.parametrize("family", FAMILIES)
 def test_invalid_fallback_is_needs_review_and_has_no_vintage(tmp_path, monkeypatch, mode, family):

@@ -378,8 +378,8 @@ def fetch_daily(client, family, since):
     try:
         try:
             batch = strategy(Capture(), family, since)
-        except FetchError:
-            if family not in ("us_cpi", "us_payrolls"):
+        except FetchError as exc:
+            if family not in ("us_cpi", "us_payrolls") or not bls.unavailable(exc):
                 raise
             from .fred import BLSFallbackAdapter
             batch = FamilyFetch(observations=BLSFallbackAdapter(Capture()).fetch([family], since))
