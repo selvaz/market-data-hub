@@ -254,7 +254,7 @@ def out_of_sample(frame):
     return results
 
 
-def monthly_transforms(raw):
+def monthly_transforms(raw, allowed_series=None):
     """Mean of available observations per calendar month; no interpolation.
 
     PMMS uses its weekly observation date, monthly releases their reference
@@ -263,7 +263,7 @@ def monthly_transforms(raw):
     raw = raw.sort_index()
     if raw.index.has_duplicates:
         raise ValueError("Duplicate input dates")
-    if any(s not in PREDICTORS + TARGETS for s in raw.columns):
+    if any(s not in (allowed_series or PREDICTORS + TARGETS) for s in raw.columns):
         raise ValueError("Unexpected series column")
     monthly = raw.groupby(raw.index.to_period("M")).mean()
     monthly = monthly.reindex(pd.period_range(monthly.index.min(), monthly.index.max(), freq="M"))
@@ -279,17 +279,18 @@ def monthly_transforms(raw):
     return monthly, transformed
 
 
-def run_study(raw, provenance):
-    monthly, transformed = monthly_transforms(raw)
+def run_study(raw, provenance, *, predictors=PREDICTORS, targets=TARGETS, periods=None):
+    periods = PERIODS if periods is None else periods
+    monthly, transformed = monthly_transforms(raw, predictors + targets)
     inventory = []
-    for sid in PREDICTORS + TARGETS:
+    for sid in predictors + targets:
         values = monthly[sid].dropna() if sid in monthly else pd.Series(dtype=float)
         inventory.append({"series": sid, "months": len(values),
                           "first": str(values.index[0]) if len(values) else None,
                           "last": str(values.index[-1]) if len(values) else None})
     results = []
-    for predictor in PREDICTORS:
-        for target in TARGETS:
+    for predictor in predictors:
+        for target in targets:
             if predictor in transformed and target in transformed:
                 frame = transformed[[predictor, target]].rename(columns={predictor: "x", target: "y"})
                 valid = frame.dropna()
@@ -297,7 +298,7 @@ def run_study(raw, provenance):
                     frame = frame.loc[valid.index[0]:valid.index[-1]]
             else:
                 frame = pd.DataFrame(columns=["x", "y"], index=pd.PeriodIndex([], freq="M"))
-            for period, (start, end) in PERIODS.items():
+            for period, (start, end) in periods.items():
                 sample = frame.loc[start:end]
                 correlations = cross_correlations(sample)
                 best = max(correlations, key=lambda row: (abs(row["r"]), -row["lag"])) if correlations else None

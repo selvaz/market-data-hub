@@ -1,7 +1,8 @@
 # Do mortgage rates and purchase applications lead US home sales?
 
-Research date: 2026-10-25. Owner proposal only. No collector, card, approved
-timing row or production database is changed.
+Research date: 2026-10-25. The PMMS timing amendment and MBA change card were
+approved by the owner on 2026-10-25 for classification v2.4. The PALI follow-up
+below remains a proposal in v2.5 drafts. Production is unchanged.
 
 **Recommendation:** use PMMS as **CTX**, with no timing basis, and a potential
 MBA purchase measure as **UNKNOWN / HYPOTHESIS**, referenced to NAR existing
@@ -313,6 +314,236 @@ passing relationship. The approved screen schema permits passing horizons
 does not reproduce that protocol. It must not manufacture `PRED-PASS`,
 `v2-pred-pass (US)` or matched turning-point estimates. Conversely, "approved
 screen not tested" does not erase the exploratory tests and their numbers.
+
+## PALI follow-up: full free history, proposal only (2026-10-25)
+
+The [Fannie Mae official workbook](https://www.fanniemae.com/mortgage-application-index/download)
+contains **1,189 weekly levels from January 9, 2004 through October 16, 2026**.
+This is Fannie Mae's own DU-based **Purchase Application-Level Index**, not MBA.
+UPB (`WK_TOTAL_PALI_$`) and application count (`WK_TOTAL_PALI_CT`) are separate
+**NSA** indices, each based at January 9, 2004=100. Their levels do not reveal
+raw dollars or counts. The issuer's [methodology](https://www.fanniemae.com/media/document/pdf/fannie-mae-pali-rali-methodology.pdf)
+allows annual history refreshes and describes duplicate filtering, withdrawn
+applications and changes in DU share as limits on interpretation.
+
+We average weekly levels by their Friday reference date within each month,
+then apply the study's `100 * delta log` activity transform. The cutoff is
+**September 30, 2026**, excluding the unfinished October average. There are
+**273 observed monthly PALI averages / 272 monthly growth observations**.
+January 2004 averages the four available Fridays starting January 9; it does
+not invent the missing January 2 observation. There are **271** paired growth
+months for new sales (through August), **272** for starts (through September),
+and only **12** for existing sales. Existing sales therefore fails the study's
+minimum gates; its correlation, Granger and OOS results are N/A.
+
+The test reuses the study's 0-12 lag correlations, 499-draw block max-r test,
+AIC/BIC Granger selection and expanding direct AR-vs-ARX forecasts at
+h=1,2,3,6,12 with the same training-only lag selection and error bootstrap.
+Both the 2004-2014 and 2015-2026 slices cover the complete history without a
+2008 gap; 2009-2019 and 2020 onward retain the original study's comparisons.
+The **no-PALI baseline** uses activity's own lags and an intercept. Each
+augmented regression adds one PALI variant, never a mixture with refinance.
+
+| Predictor -> target | Paired months | Largest absolute correlation | Granger AIC / BIC (order; p) | h=1 RMSE ratio, 95% block interval; forecasts |
+| --- | ---: | --- | --- | --- |
+| PALI UPB -> new sales | 271 | +0m; r=0.118 | 12; 0.184 / 12; 0.184 | 1.001 [0.997, 1.007]; 151 |
+| PALI UPB -> starts | 272 | +12m; r=-0.078 | 12; 0.808 / 12; 0.808 | 1.004 [0.999, 1.008]; 152 |
+| PALI count -> new sales | 271 | +0m; r=0.116 | 12; 0.288 / 12; 0.288 | 1.001 [0.997, 1.006]; 151 |
+| PALI count -> starts | 272 | +12m; r=-0.075 | 12; 0.822 / 12; 0.822 | 1.004 [0.999, 1.007]; 152 |
+| Either PALI variant -> existing sales | 12 | N/A | N/A | N/A: insufficient history |
+
+Stability is mixed. For UPB -> new sales, h=1 ratios are **0.988 / 0.962**
+in 2004-2014 / 2015 onward, but **1.002 / 0.954** in 2009-2019 / 2020 onward.
+For UPB -> starts the corresponding ratios are **0.933 / 0.902** and
+**1.006 / 0.927**. The whole-sample ratios are above one. Peak lags/signs shift
+across slices (new sales: +3m/-0.134 early, +0m/+0.158 later; starts:
++12m/-0.128 early, +4m/+0.112 later). Stronger isolated subperiod forecast
+results do not validate a stable economic lead. The generated tables retain
+both variants, all lags, horizons, p-values, sample sizes and intervals.
+
+**Proposed PALI classification: UNKNOWN, no timing basis, HARD / M / mixed /
+lit-US**, referencing existing-home closed sales, with new sales and starts
+separately named exploratory tests. This proposal is in `draft_rows_v2.5.psv`;
+only the owner can promote it. No approved v2 PRED-PASS is assigned. Neither
+PALI results nor its free history validate the separate MBA card.
+
+**Limits:** the predictor is NSA while the targets are SA. This faithful
+application of the study method does not remove calendar seasonality; a
+seasonally adjusted or year-over-year robustness study would be a separate
+specification. All data are revised and period-dated, not release-vintage
+information sets. Complete-month PALI averages become known only after the
+last contributing week's publication. Thus OOS here is the same exploratory
+pseudo-OOS as the original study, not an implementable real-time forecast.
+Pull-through, cash purchases, DU coverage and annual history revisions remain
+material. The existing-sales history limitation prevents testing the most
+natural closing reference.
+
+Reproduce offline (the FRED snapshot remains untracked; no DB is opened):
+
+```powershell
+& 'C:\ProgramData\spyder-6\python.exe' scripts/research/pali_lead_study.py --workbook tests/fixtures/macro_releases/mortgage_applications/pali-history.xlsx --snapshot .tmp/mortgage-lead/observations.json --end 2026-09-30 --output .tmp/pali-lead/statistics.json --tables .tmp/pali-lead/tables.md
+```
+
+Input hashes: PALI workbook `955d0993ab6a65d93795139a8a72479ba02702ef98be70473152d72812984a9a`; original FRED snapshot
+`56fb92c98eb67d6f51c8a27f1106e6354535616f9fda94f86d09320d0b114f6a`. The published workbook and metadata are golden fixtures;
+the statistical output contains no raw observations or credentials.
+
+<!-- BEGIN GENERATED PALI STATISTICS -->
+
+<!-- Generated by mortgage_lead_study.py; statistics only. -->
+
+| Series | Monthly levels | First | Last |
+| --- | ---: | --- | --- |
+| PALI_UPB | 273 | 2004-01 | 2026-09 |
+| PALI_COUNT | 273 | 2004-01 | 2026-09 |
+| HSN1F | 272 | 2004-01 | 2026-08 |
+| HOUST | 273 | 2004-01 | 2026-09 |
+| EXHOSLUSM495S | 13 | 2025-09 | 2026-09 |
+
+| X -> Y | Period | n | Best k | r | p (IID) | p x 13 | Block max-r p | Granger AIC lag / p | Granger BIC lag / p |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| PALI_UPB -> HSN1F | full | 271 | 0 | 0.118 | 0.0531 | 0.69 | 0.026 | 12 / 0.184 | 12 / 0.184 |
+| PALI_UPB -> HSN1F | 2004_2014 | 131 | 3 | -0.134 | 0.132 | 1 | 0.28 | 12 / 0.0122 | 1 / 0.876 |
+| PALI_UPB -> HSN1F | 2015_onward | 140 | 0 | 0.158 | 0.0619 | 0.804 | 0.06 | 12 / 0.29 | 1 / 0.0964 |
+| PALI_UPB -> HSN1F | 2009_2019 | 132 | 3 | -0.166 | 0.0598 | 0.777 | 0.048 | 12 / 0.391 | 12 / 0.391 |
+| PALI_UPB -> HSN1F | 2020_onward | 80 | 11 | -0.194 | 0.11 | 1 | 0.446 | 12 / 0.84 | 2 / 0.966 |
+| PALI_UPB -> HOUST | full | 272 | 12 | -0.078 | 0.208 | 1 | 0.354 | 12 / 0.808 | 12 / 0.808 |
+| PALI_UPB -> HOUST | 2004_2014 | 131 | 12 | -0.128 | 0.167 | 1 | 0.03 | 12 / 0.645 | 1 / 0.634 |
+| PALI_UPB -> HOUST | 2015_onward | 141 | 4 | 0.112 | 0.195 | 1 | 0.546 | 12 / 0.0224 | 1 / 0.821 |
+| PALI_UPB -> HOUST | 2009_2019 | 132 | 12 | -0.104 | 0.258 | 1 | 0.142 | 12 / 0.752 | 12 / 0.752 |
+| PALI_UPB -> HOUST | 2020_onward | 81 | 10 | 0.186 | 0.121 | 1 | 0.204 | 12 / 0.236 | 2 / 0.647 |
+| PALI_UPB -> EXHOSLUSM495S | full | 12 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| PALI_UPB -> EXHOSLUSM495S | 2004_2014 | 0 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| PALI_UPB -> EXHOSLUSM495S | 2015_onward | 12 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| PALI_UPB -> EXHOSLUSM495S | 2009_2019 | 0 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| PALI_UPB -> EXHOSLUSM495S | 2020_onward | 12 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| PALI_COUNT -> HSN1F | full | 271 | 0 | 0.116 | 0.0561 | 0.729 | 0.024 | 12 / 0.288 | 12 / 0.288 |
+| PALI_COUNT -> HSN1F | 2004_2014 | 131 | 3 | -0.127 | 0.153 | 1 | 0.356 | 12 / 0.00956 | 1 / 0.813 |
+| PALI_COUNT -> HSN1F | 2015_onward | 140 | 0 | 0.155 | 0.0672 | 0.874 | 0.068 | 12 / 0.272 | 1 / 0.0825 |
+| PALI_COUNT -> HSN1F | 2009_2019 | 132 | 3 | -0.162 | 0.0669 | 0.87 | 0.07 | 12 / 0.464 | 12 / 0.464 |
+| PALI_COUNT -> HSN1F | 2020_onward | 80 | 11 | -0.195 | 0.108 | 1 | 0.458 | 12 / 0.858 | 1 / 0.997 |
+| PALI_COUNT -> HOUST | full | 272 | 12 | -0.075 | 0.227 | 1 | 0.404 | 12 / 0.822 | 12 / 0.822 |
+| PALI_COUNT -> HOUST | 2004_2014 | 131 | 12 | -0.122 | 0.185 | 1 | 0.044 | 12 / 0.602 | 1 / 0.635 |
+| PALI_COUNT -> HOUST | 2015_onward | 141 | 4 | 0.113 | 0.187 | 1 | 0.514 | 12 / 0.079 | 1 / 0.741 |
+| PALI_COUNT -> HOUST | 2009_2019 | 132 | 12 | -0.104 | 0.26 | 1 | 0.198 | 12 / 0.74 | 2 / 0.995 |
+| PALI_COUNT -> HOUST | 2020_onward | 81 | 10 | 0.193 | 0.107 | 1 | 0.174 | 12 / 0.37 | 2 / 0.602 |
+| PALI_COUNT -> EXHOSLUSM495S | full | 12 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| PALI_COUNT -> EXHOSLUSM495S | 2004_2014 | 0 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| PALI_COUNT -> EXHOSLUSM495S | 2015_onward | 12 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| PALI_COUNT -> EXHOSLUSM495S | 2009_2019 | 0 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+| PALI_COUNT -> EXHOSLUSM495S | 2020_onward | 12 | N/A | N/A | N/A | N/A | N/A | N/A | N/A |
+
+| X -> Y | Period | h | Forecasts | First / last target | AR / ARX lag | RMSE AR | RMSE ARX | Ratio | Block CI 95% |
+| --- | --- | ---: | ---: | --- | --- | ---: | ---: | ---: | --- |
+| PALI_UPB -> HSN1F | full | 1 | 151 | 2014-02 / 2026-08 | 1 / 1 | 7.899 | 7.910 | 1.001 | [0.997, 1.007] |
+| PALI_UPB -> HSN1F | full | 2 | 150 | 2014-03 / 2026-08 | 0 / 1 | 8.117 | 8.162 | 1.006 | [0.994, 1.017] |
+| PALI_UPB -> HSN1F | full | 3 | 149 | 2014-04 / 2026-08 | 0 / 1 | 8.140 | 8.238 | 1.012 | [0.988, 1.033] |
+| PALI_UPB -> HSN1F | full | 6 | 146 | 2014-07 / 2026-08 | 0 / 1 | 8.142 | 8.216 | 1.009 | [1.000, 1.017] |
+| PALI_UPB -> HSN1F | full | 12 | 140 | 2015-01 / 2026-08 | 0 / 1 | 8.134 | 8.269 | 1.017 | [0.993, 1.044] |
+| PALI_UPB -> HSN1F | 2004_2014 | 1 | 66 | 2009-07 / 2014-12 | 0 / 1 | 8.680 | 8.575 | 0.988 | [0.964, 1.040] |
+| PALI_UPB -> HSN1F | 2004_2014 | 2 | 65 | 2009-08 / 2014-12 | 0 / 1 | 8.695 | 8.964 | 1.031 | [0.980, 1.070] |
+| PALI_UPB -> HSN1F | 2004_2014 | 3 | 64 | 2009-09 / 2014-12 | 1 / 1 | 8.768 | 8.817 | 1.006 | [0.987, 1.040] |
+| PALI_UPB -> HSN1F | 2004_2014 | 6 | 61 | 2009-12 / 2014-12 | 0 / 1 | 8.938 | 9.120 | 1.020 | [0.993, 1.037] |
+| PALI_UPB -> HSN1F | 2004_2014 | 12 | 55 | 2010-06 / 2014-12 | 0 / 1 | 7.439 | 7.989 | 1.074 | [0.988, 1.216] |
+| PALI_UPB -> HSN1F | 2015_onward | 1 | 70 | 2020-11 / 2026-08 | 0 / 1 | 8.264 | 7.952 | 0.962 | [0.911, 1.014] |
+| PALI_UPB -> HSN1F | 2015_onward | 2 | 69 | 2020-12 / 2026-08 | 0 / 1 | 8.017 | 8.129 | 1.014 | [0.990, 1.041] |
+| PALI_UPB -> HSN1F | 2015_onward | 3 | 68 | 2021-01 / 2026-08 | 0 / 1 | 8.082 | 8.346 | 1.033 | [1.001, 1.082] |
+| PALI_UPB -> HSN1F | 2015_onward | 6 | 65 | 2021-04 / 2026-08 | 0 / 1 | 7.949 | 8.145 | 1.025 | [1.000, 1.054] |
+| PALI_UPB -> HSN1F | 2015_onward | 12 | 59 | 2021-10 / 2026-08 | 0 / 1 | 7.989 | 8.191 | 1.025 | [0.990, 1.058] |
+| PALI_UPB -> HSN1F | 2009_2019 | 1 | 66 | 2014-07 / 2019-12 | 1 / 1 | 6.838 | 6.854 | 1.002 | [0.983, 1.021] |
+| PALI_UPB -> HSN1F | 2009_2019 | 2 | 65 | 2014-08 / 2019-12 | 0 / 1 | 7.347 | 7.418 | 1.010 | [0.986, 1.030] |
+| PALI_UPB -> HSN1F | 2009_2019 | 3 | 64 | 2014-09 / 2019-12 | 0 / 1 | 7.237 | 7.352 | 1.016 | [0.982, 1.055] |
+| PALI_UPB -> HSN1F | 2009_2019 | 6 | 61 | 2014-12 / 2019-12 | 0 / 1 | 7.338 | 7.592 | 1.035 | [0.997, 1.080] |
+| PALI_UPB -> HSN1F | 2009_2019 | 12 | 55 | 2015-06 / 2019-12 | 0 / 1 | 7.336 | 7.525 | 1.026 | [1.012, 1.045] |
+| PALI_UPB -> HSN1F | 2020_onward | 1 | 40 | 2023-05 / 2026-08 | 0 / 1 | 7.826 | 7.463 | 0.954 | [0.930, 0.988] |
+| PALI_UPB -> HSN1F | 2020_onward | 2 | 39 | 2023-06 / 2026-08 | 0 / 1 | 7.636 | 7.833 | 1.026 | [1.007, 1.049] |
+| PALI_UPB -> HSN1F | 2020_onward | 3 | 38 | 2023-07 / 2026-08 | 0 / 1 | 7.668 | 7.477 | 0.975 | [0.933, 1.037] |
+| PALI_UPB -> HSN1F | 2020_onward | 6 | 35 | 2023-10 / 2026-08 | 0 / 2 | 7.637 | 7.887 | 1.033 | [0.991, 1.081] |
+| PALI_UPB -> HSN1F | 2020_onward | 12 | 29 | 2024-04 / 2026-08 | 2 / 1 | 8.794 | 8.441 | 0.960 | [0.901, 0.991] |
+| PALI_UPB -> HOUST | full | 1 | 152 | 2014-02 / 2026-09 | 1 / 1 | 8.365 | 8.397 | 1.004 | [0.999, 1.008] |
+| PALI_UPB -> HOUST | full | 2 | 151 | 2014-03 / 2026-09 | 0 / 1 | 8.925 | 8.995 | 1.008 | [0.998, 1.018] |
+| PALI_UPB -> HOUST | full | 3 | 150 | 2014-04 / 2026-09 | 0 / 1 | 8.944 | 9.029 | 1.010 | [0.988, 1.028] |
+| PALI_UPB -> HOUST | full | 6 | 147 | 2014-07 / 2026-09 | 0 / 1 | 8.977 | 9.019 | 1.005 | [0.999, 1.011] |
+| PALI_UPB -> HOUST | full | 12 | 141 | 2015-01 / 2026-09 | 0 / 1 | 8.949 | 8.953 | 1.000 | [0.973, 1.036] |
+| PALI_UPB -> HOUST | 2004_2014 | 1 | 66 | 2009-07 / 2014-12 | 0 / 1 | 9.070 | 8.462 | 0.933 | [0.890, 0.988] |
+| PALI_UPB -> HOUST | 2004_2014 | 2 | 65 | 2009-08 / 2014-12 | 0 / 3 | 9.129 | 9.969 | 1.092 | [1.032, 1.153] |
+| PALI_UPB -> HOUST | 2004_2014 | 3 | 64 | 2009-09 / 2014-12 | 2 / 2 | 9.589 | 9.950 | 1.038 | [1.000, 1.094] |
+| PALI_UPB -> HOUST | 2004_2014 | 6 | 61 | 2009-12 / 2014-12 | 0 / 1 | 9.287 | 9.454 | 1.018 | [1.002, 1.039] |
+| PALI_UPB -> HOUST | 2004_2014 | 12 | 55 | 2010-06 / 2014-12 | 0 / 1 | 9.498 | 9.601 | 1.011 | [0.984, 1.039] |
+| PALI_UPB -> HOUST | 2015_onward | 1 | 71 | 2020-11 / 2026-09 | 0 / 1 | 8.315 | 7.503 | 0.902 | [0.846, 0.946] |
+| PALI_UPB -> HOUST | 2015_onward | 2 | 70 | 2020-12 / 2026-09 | 0 / 1 | 8.323 | 8.400 | 1.009 | [0.981, 1.033] |
+| PALI_UPB -> HOUST | 2015_onward | 3 | 69 | 2021-01 / 2026-09 | 1 / 1 | 8.493 | 8.528 | 1.004 | [0.995, 1.014] |
+| PALI_UPB -> HOUST | 2015_onward | 6 | 66 | 2021-04 / 2026-09 | 0 / 1 | 8.048 | 8.055 | 1.001 | [0.988, 1.017] |
+| PALI_UPB -> HOUST | 2015_onward | 12 | 60 | 2021-10 / 2026-09 | 0 / 1 | 8.192 | 8.236 | 1.005 | [0.972, 1.043] |
+| PALI_UPB -> HOUST | 2009_2019 | 1 | 66 | 2014-07 / 2019-12 | 1 / 1 | 7.138 | 7.182 | 1.006 | [1.002, 1.009] |
+| PALI_UPB -> HOUST | 2009_2019 | 2 | 65 | 2014-08 / 2019-12 | 0 / 1 | 8.148 | 8.352 | 1.025 | [1.004, 1.046] |
+| PALI_UPB -> HOUST | 2009_2019 | 3 | 64 | 2014-09 / 2019-12 | 0 / 1 | 8.101 | 8.223 | 1.015 | [0.996, 1.039] |
+| PALI_UPB -> HOUST | 2009_2019 | 6 | 61 | 2014-12 / 2019-12 | 0 / 1 | 8.224 | 8.393 | 1.020 | [0.996, 1.036] |
+| PALI_UPB -> HOUST | 2009_2019 | 12 | 55 | 2015-06 / 2019-12 | 0 / 1 | 7.477 | 7.574 | 1.013 | [0.956, 1.110] |
+| PALI_UPB -> HOUST | 2020_onward | 1 | 41 | 2023-05 / 2026-09 | 0 / 1 | 9.016 | 8.361 | 0.927 | [0.875, 0.987] |
+| PALI_UPB -> HOUST | 2020_onward | 2 | 40 | 2023-06 / 2026-09 | 0 / 1 | 8.553 | 8.572 | 1.002 | [0.896, 1.081] |
+| PALI_UPB -> HOUST | 2020_onward | 3 | 39 | 2023-07 / 2026-09 | 0 / 1 | 8.448 | 8.616 | 1.020 | [0.966, 1.069] |
+| PALI_UPB -> HOUST | 2020_onward | 6 | 36 | 2023-10 / 2026-09 | 0 / 1 | 8.547 | 8.578 | 1.004 | [0.988, 1.020] |
+| PALI_UPB -> HOUST | 2020_onward | 12 | 30 | 2024-04 / 2026-09 | 0 / 1 | 8.140 | 8.801 | 1.081 | [1.001, 1.181] |
+| PALI_COUNT -> HSN1F | full | 1 | 151 | 2014-02 / 2026-08 | 1 / 1 | 7.899 | 7.910 | 1.001 | [0.997, 1.006] |
+| PALI_COUNT -> HSN1F | full | 2 | 150 | 2014-03 / 2026-08 | 0 / 1 | 8.117 | 8.161 | 1.005 | [0.994, 1.017] |
+| PALI_COUNT -> HSN1F | full | 3 | 149 | 2014-04 / 2026-08 | 0 / 1 | 8.140 | 8.236 | 1.012 | [0.989, 1.031] |
+| PALI_COUNT -> HSN1F | full | 6 | 146 | 2014-07 / 2026-08 | 0 / 1 | 8.142 | 8.219 | 1.009 | [1.000, 1.018] |
+| PALI_COUNT -> HSN1F | full | 12 | 140 | 2015-01 / 2026-08 | 0 / 1 | 8.134 | 8.255 | 1.015 | [0.992, 1.041] |
+| PALI_COUNT -> HSN1F | 2004_2014 | 1 | 66 | 2009-07 / 2014-12 | 0 / 1 | 8.680 | 8.572 | 0.988 | [0.965, 1.036] |
+| PALI_COUNT -> HSN1F | 2004_2014 | 2 | 65 | 2009-08 / 2014-12 | 0 / 1 | 8.695 | 8.944 | 1.029 | [0.980, 1.066] |
+| PALI_COUNT -> HSN1F | 2004_2014 | 3 | 64 | 2009-09 / 2014-12 | 1 / 1 | 8.768 | 8.838 | 1.008 | [0.990, 1.036] |
+| PALI_COUNT -> HSN1F | 2004_2014 | 6 | 61 | 2009-12 / 2014-12 | 0 / 1 | 8.938 | 9.126 | 1.021 | [0.992, 1.046] |
+| PALI_COUNT -> HSN1F | 2004_2014 | 12 | 55 | 2010-06 / 2014-12 | 0 / 1 | 7.439 | 8.024 | 1.079 | [0.989, 1.227] |
+| PALI_COUNT -> HSN1F | 2015_onward | 1 | 70 | 2020-11 / 2026-08 | 0 / 1 | 8.264 | 7.936 | 0.960 | [0.908, 1.014] |
+| PALI_COUNT -> HSN1F | 2015_onward | 2 | 69 | 2020-12 / 2026-08 | 0 / 1 | 8.017 | 8.123 | 1.013 | [0.992, 1.037] |
+| PALI_COUNT -> HSN1F | 2015_onward | 3 | 68 | 2021-01 / 2026-08 | 0 / 1 | 8.082 | 8.346 | 1.033 | [1.001, 1.081] |
+| PALI_COUNT -> HSN1F | 2015_onward | 6 | 65 | 2021-04 / 2026-08 | 0 / 1 | 7.949 | 8.150 | 1.025 | [0.999, 1.056] |
+| PALI_COUNT -> HSN1F | 2015_onward | 12 | 59 | 2021-10 / 2026-08 | 0 / 1 | 7.989 | 8.192 | 1.025 | [0.990, 1.060] |
+| PALI_COUNT -> HSN1F | 2009_2019 | 1 | 66 | 2014-07 / 2019-12 | 1 / 1 | 6.838 | 6.853 | 1.002 | [0.985, 1.019] |
+| PALI_COUNT -> HSN1F | 2009_2019 | 2 | 65 | 2014-08 / 2019-12 | 0 / 1 | 7.347 | 7.417 | 1.009 | [0.986, 1.030] |
+| PALI_COUNT -> HSN1F | 2009_2019 | 3 | 64 | 2014-09 / 2019-12 | 0 / 1 | 7.237 | 7.380 | 1.020 | [0.987, 1.059] |
+| PALI_COUNT -> HSN1F | 2009_2019 | 6 | 61 | 2014-12 / 2019-12 | 0 / 1 | 7.338 | 7.597 | 1.035 | [0.998, 1.078] |
+| PALI_COUNT -> HSN1F | 2009_2019 | 12 | 55 | 2015-06 / 2019-12 | 0 / 1 | 7.336 | 7.517 | 1.025 | [1.010, 1.043] |
+| PALI_COUNT -> HSN1F | 2020_onward | 1 | 40 | 2023-05 / 2026-08 | 0 / 1 | 7.826 | 7.442 | 0.951 | [0.926, 0.988] |
+| PALI_COUNT -> HSN1F | 2020_onward | 2 | 39 | 2023-06 / 2026-08 | 0 / 1 | 7.636 | 7.826 | 1.025 | [1.005, 1.047] |
+| PALI_COUNT -> HSN1F | 2020_onward | 3 | 38 | 2023-07 / 2026-08 | 0 / 1 | 7.668 | 7.480 | 0.976 | [0.934, 1.036] |
+| PALI_COUNT -> HSN1F | 2020_onward | 6 | 35 | 2023-10 / 2026-08 | 0 / 2 | 7.637 | 7.888 | 1.033 | [0.987, 1.087] |
+| PALI_COUNT -> HSN1F | 2020_onward | 12 | 29 | 2024-04 / 2026-08 | 2 / 1 | 8.794 | 8.432 | 0.959 | [0.898, 0.991] |
+| PALI_COUNT -> HOUST | full | 1 | 152 | 2014-02 / 2026-09 | 1 / 1 | 8.365 | 8.395 | 1.004 | [0.999, 1.007] |
+| PALI_COUNT -> HOUST | full | 2 | 151 | 2014-03 / 2026-09 | 0 / 1 | 8.925 | 8.996 | 1.008 | [0.997, 1.020] |
+| PALI_COUNT -> HOUST | full | 3 | 150 | 2014-04 / 2026-09 | 0 / 1 | 8.944 | 9.029 | 1.010 | [0.988, 1.028] |
+| PALI_COUNT -> HOUST | full | 6 | 147 | 2014-07 / 2026-09 | 0 / 1 | 8.977 | 9.021 | 1.005 | [0.999, 1.011] |
+| PALI_COUNT -> HOUST | full | 12 | 141 | 2015-01 / 2026-09 | 0 / 1 | 8.949 | 8.947 | 1.000 | [0.973, 1.034] |
+| PALI_COUNT -> HOUST | 2004_2014 | 1 | 66 | 2009-07 / 2014-12 | 0 / 1 | 9.070 | 8.459 | 0.933 | [0.889, 0.988] |
+| PALI_COUNT -> HOUST | 2004_2014 | 2 | 65 | 2009-08 / 2014-12 | 0 / 3 | 9.129 | 9.991 | 1.094 | [1.030, 1.161] |
+| PALI_COUNT -> HOUST | 2004_2014 | 3 | 64 | 2009-09 / 2014-12 | 2 / 2 | 9.589 | 9.963 | 1.039 | [1.002, 1.098] |
+| PALI_COUNT -> HOUST | 2004_2014 | 6 | 61 | 2009-12 / 2014-12 | 0 / 1 | 9.287 | 9.466 | 1.019 | [1.003, 1.041] |
+| PALI_COUNT -> HOUST | 2004_2014 | 12 | 55 | 2010-06 / 2014-12 | 0 / 1 | 9.498 | 9.607 | 1.011 | [0.982, 1.043] |
+| PALI_COUNT -> HOUST | 2015_onward | 1 | 71 | 2020-11 / 2026-09 | 0 / 1 | 8.315 | 7.499 | 0.902 | [0.845, 0.946] |
+| PALI_COUNT -> HOUST | 2015_onward | 2 | 70 | 2020-12 / 2026-09 | 0 / 1 | 8.323 | 8.393 | 1.008 | [0.981, 1.032] |
+| PALI_COUNT -> HOUST | 2015_onward | 3 | 69 | 2021-01 / 2026-09 | 1 / 1 | 8.493 | 8.526 | 1.004 | [0.995, 1.013] |
+| PALI_COUNT -> HOUST | 2015_onward | 6 | 66 | 2021-04 / 2026-09 | 0 / 1 | 8.048 | 8.061 | 1.002 | [0.989, 1.017] |
+| PALI_COUNT -> HOUST | 2015_onward | 12 | 60 | 2021-10 / 2026-09 | 0 / 1 | 8.192 | 8.233 | 1.005 | [0.971, 1.043] |
+| PALI_COUNT -> HOUST | 2009_2019 | 1 | 66 | 2014-07 / 2019-12 | 1 / 1 | 7.138 | 7.179 | 1.006 | [1.003, 1.008] |
+| PALI_COUNT -> HOUST | 2009_2019 | 2 | 65 | 2014-08 / 2019-12 | 0 / 1 | 8.148 | 8.365 | 1.027 | [1.004, 1.049] |
+| PALI_COUNT -> HOUST | 2009_2019 | 3 | 64 | 2014-09 / 2019-12 | 0 / 1 | 8.101 | 8.218 | 1.014 | [0.995, 1.039] |
+| PALI_COUNT -> HOUST | 2009_2019 | 6 | 61 | 2014-12 / 2019-12 | 0 / 1 | 8.224 | 8.406 | 1.022 | [0.997, 1.038] |
+| PALI_COUNT -> HOUST | 2009_2019 | 12 | 55 | 2015-06 / 2019-12 | 0 / 1 | 7.477 | 7.564 | 1.012 | [0.956, 1.111] |
+| PALI_COUNT -> HOUST | 2020_onward | 1 | 41 | 2023-05 / 2026-09 | 0 / 1 | 9.016 | 8.383 | 0.930 | [0.874, 0.989] |
+| PALI_COUNT -> HOUST | 2020_onward | 2 | 40 | 2023-06 / 2026-09 | 0 / 1 | 8.553 | 8.569 | 1.002 | [0.896, 1.080] |
+| PALI_COUNT -> HOUST | 2020_onward | 3 | 39 | 2023-07 / 2026-09 | 0 / 1 | 8.448 | 8.621 | 1.020 | [0.967, 1.070] |
+| PALI_COUNT -> HOUST | 2020_onward | 6 | 36 | 2023-10 / 2026-09 | 0 / 1 | 8.547 | 8.603 | 1.007 | [0.991, 1.024] |
+| PALI_COUNT -> HOUST | 2020_onward | 12 | 30 | 2024-04 / 2026-09 | 0 / 1 | 8.140 | 8.765 | 1.077 | [0.996, 1.176] |
+
+| X -> Y (full sample) | k=0 | k=1 | k=2 | k=3 | k=4 | k=5 | k=6 | k=7 | k=8 | k=9 | k=10 | k=11 | k=12 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| PALI_UPB -> HSN1F | 0.118 | 0.017 | -0.017 | -0.060 | -0.004 | -0.007 | -0.002 | 0.028 | -0.020 | -0.046 | 0.015 | -0.052 | -0.053 |
+| PALI_UPB -> HOUST | 0.074 | -0.014 | -0.052 | 0.016 | 0.033 | 0.071 | -0.006 | -0.038 | 0.018 | 0.010 | 0.043 | -0.028 | -0.078 |
+| PALI_COUNT -> HSN1F | 0.116 | 0.014 | -0.018 | -0.055 | -0.004 | -0.002 | -0.001 | 0.030 | -0.012 | -0.047 | 0.005 | -0.050 | -0.047 |
+| PALI_COUNT -> HOUST | 0.068 | -0.018 | -0.059 | 0.019 | 0.033 | 0.070 | -0.006 | -0.038 | 0.010 | 0.006 | 0.047 | -0.028 | -0.075 |
+
+<!-- END GENERATED PALI STATISTICS -->
 
 ## Generated statistical appendix
 
