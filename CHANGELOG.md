@@ -7,6 +7,20 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.9] — 2026-10-25
+
+### Added
+- processo-macro M9h (#135): when BLS is unreachable (transport, HTTP or blocked responses only), the BLS families fall back to the ALFRED first print available at the BLS release instant. Rules:
+  - the vintage date must match the scheduled edition, otherwise the value goes to `needs_review`;
+  - the value is labelled `redistributor`, with BLS as the original issuer, on every read path;
+  - official BLS values take precedence without rewriting history.
+- US unemployment rate (U-3, SA) and average hourly earnings (total private, m/m and y/y, SA), on the Employment Situation calendar.
+
+### Fixed
+- CPI, PPI and AHE fallback percentages are rounded half-up to the one decimal BLS publishes.
+- The generic FRED history collector no longer writes rows for PPI, JOLTS, unemployment or AHE.
+- BLS content failures stay `needs_review` instead of triggering the fallback, and the original reason is kept in the review queue.
+
 ## [0.3.8] — 2026-10-25
 
 ### Added
