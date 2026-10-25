@@ -241,4 +241,5 @@ def test_exact_twenty_city_ff_alias_and_draft_only_concept(tmp_path):
         for title in ("S&P/CS Composite-10 HPI y/y", "S&P/CS Composite-20 HPI m/m", "Case-Shiller National HPI y/y"):
             assert catalogue.match({"country": "USD"}, title)[0] is None
         assert catalogue.match({"country": "CAD"}, "S&P/CS Composite-20 HPI y/y")[0] is None
-    assert indicator_card("cat:us_case_shiller_20_yy") is None
+    card = indicator_card("cat:us_case_shiller_20_yy")
+    assert card.key == "us_case_shiller" and "private" in card.source

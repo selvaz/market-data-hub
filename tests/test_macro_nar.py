@@ -228,4 +228,5 @@ def test_pending_exact_ff_alias_and_draft_only_context(tmp_path):
         assert catalogue.match({"country": "USD"}, "Pending Home Sales")[0] is None
         assert catalogue.match({"country": "USD"}, "Pending Home Sales y/y")[0] is None
         assert catalogue.match({"country": "CAD"}, "Pending Home Sales m/m")[0] is None
-    assert indicator_card("cat:us_pending_home_sales_mm") is None
+    card = indicator_card("cat:us_pending_home_sales_mm")
+    assert card.key == "us_pending_home_sales" and "private" in card.source

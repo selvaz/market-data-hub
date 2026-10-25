@@ -3,7 +3,6 @@ from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
 
 import pytest
 
@@ -203,13 +202,11 @@ def test_changed_issuer_page_is_retained_for_review_without_partial_certificatio
         assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 0
 
 
-def test_context_card_is_a_strict_pending_draft_with_unknown_timing():
+def test_ea_hpi_card_is_approved_as_a_measurement_identity():
     from market_data_hub.indicator_cards import indicator_card
-    path = Path(__file__).resolve().parents[1] / "market_data_hub/indicator_cards/draft_rows_v2.3.psv"
-    rows = [line.split("|") for line in path.read_text(encoding="utf-8").splitlines()]
-    row, = [dict(zip(rows[0], row)) for row in rows[1:] if row[0] == "ea_hpi" and len(row) == 19]
-    assert row["timing_class"] == "UNKNOWN" and row["flag"] == "fixed EA21 composition"
-    metadata = json.loads(path.with_name("timing_v2.3-draft.json").read_text())
-    assert metadata["approval_status"] == "pending_owner_approval"
-    assert set(row["ids"].split(";")) == {"cat:ea21_hpi_qq", "cat:ea21_hpi_yy"}
-    assert indicator_card("cat:ea21_hpi_qq") is None
+    from market_data_hub.indicator_cards.coverage import draft_cards
+    card = indicator_card("cat:ea21_hpi_qq")
+    assert card.key == "ea_hpi" and indicator_card("cat:ea21_hpi_yy").key == "ea_hpi"
+    assert card.timing.timing_class == "COIN" and card.timing.basis == "DEFINITION"
+    assert set(card.ids.cat) == {"ea21_hpi_qq", "ea21_hpi_yy"}
+    assert not [c for c in draft_cards() if c.key == "ea_hpi"]

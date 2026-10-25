@@ -5,7 +5,7 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-CLASSIFICATION_VERSION = "v2.2"
+CLASSIFICATION_VERSION = "v2.3"
 
 
 class StrictModel(BaseModel):
@@ -94,7 +94,7 @@ class IndicatorCard(StrictModel):
 
 class CardDataset(StrictModel):
     schema_version: Literal[1] = 1
-    classification_version: Literal["v2.2"] = CLASSIFICATION_VERSION
+    classification_version: Literal["v2.3"] = CLASSIFICATION_VERSION
     source_table_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     timing_extract_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
     aliases_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")

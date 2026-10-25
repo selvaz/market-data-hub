@@ -1,56 +1,7 @@
 {
-  "classification_version": "v2.3-draft",
   "approval_status": "pending_owner_approval",
-  "source": "M9f housing concept proposals; source URLs are in the PSV rationales; no local timing validation.",
-  "source_table_sha256": "b11bac4f17ba604585dcf995b60afa87ccb22555376480f1526eb923b7f8df21",
-  "rows": {
-    "ea_hpi": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "us_case_shiller": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "us_pending_home_sales": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "us_pmms_30y": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "us_fhfa_hpi": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "ea_loans_house_purchase": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "uk_hpi": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "uk_mortgage_approvals": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "de_building_permits": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "ca_housing_starts": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "jp_housing_starts": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
-    "cn_new_home_prices_tiers": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    }
-  }
+  "classification_version": "v2.3-draft",
+  "rows": {},
+  "source": "Empty M9f housing draft generation after promotion; retained for future proposals.",
+  "source_table_sha256": "1c497b9e206f7c06c7dd5aca7d8df0d5272d6ebc735af17f484104bb263c5773"
 }
