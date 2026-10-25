@@ -6,7 +6,7 @@ from functools import lru_cache
 from importlib.resources import files
 from typing import Iterable, Optional
 
-from .models import CardDataset, IndicatorCard
+from .models import CLASSIFICATION_VERSION, CardDataset, IndicatorCard
 from .render import render_card
 
 __all__ = ["IndicatorCard", "indicator_card", "cards_for", "unmapped", "render_card", "dataset"]
@@ -18,7 +18,9 @@ _STORES = ("ms", "es", "cal", "cat", "pan", "hub")
 @lru_cache(maxsize=1)
 def dataset() -> CardDataset:
     """Load and strictly validate the immutable, versioned package resource."""
-    return CardDataset.model_validate_json(files(__package__).joinpath("cards_v2.1.json").read_text(encoding="utf-8"))
+    return CardDataset.model_validate_json(
+        files(__package__).joinpath(f"cards_{CLASSIFICATION_VERSION}.json").read_text(encoding="utf-8"),
+    )
 
 
 @lru_cache(maxsize=1)

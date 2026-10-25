@@ -13,14 +13,17 @@ from market_data_hub.indicator_cards import cards_for, dataset, indicator_card, 
 from market_data_hub.indicator_cards.build import (
     ALIASES_PATH, JSON_PATH, PSV_PATH, TIMING_PATH, build_dataset, build_json, extract_timing, parse_screen,
 )
-from market_data_hub.indicator_cards.coverage import coverage_report, mapping_ambiguities
+from market_data_hub.indicator_cards.coverage import (
+    DRAFT_PSV_PATH, DRAFT_TIMING_PATH, coverage_report, load_draft_cards,
+    mapping_ambiguities, tier1_coverage, tier1_ids,
+)
 from market_data_hub.indicator_cards.models import IndicatorCard, PredictiveScreen
 from market_data_hub.indicator_cards.render import MAX_CARD_CHARS, short_pair
 
 
 def test_generated_json_freshness_and_provenance():
     assert JSON_PATH.read_text(encoding="utf-8") == build_json()
-    assert dataset().classification_version == "v2.1"
+    assert dataset().classification_version == "v2.2"
     assert dataset().source_table_sha256 == hashlib.sha256(PSV_PATH.read_bytes()).hexdigest()
     assert dataset().timing_extract_sha256 == hashlib.sha256(TIMING_PATH.read_bytes()).hexdigest()
     assert dataset().aliases_sha256 == hashlib.sha256(ALIASES_PATH.read_bytes()).hexdigest()
@@ -32,7 +35,7 @@ def test_generated_json_freshness_and_provenance():
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 270
+    assert len(rows) == len(dataset().cards) == 294
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -53,6 +56,144 @@ def test_aliases_never_duplicate_a_source_rows_catalogue_id():
     for card in build_dataset().cards:
         for store, ids in card.ids.model_dump().items():
             assert len(ids) == len(set(ids)), (card.key, store, ids)
+    aliases = json.loads(ALIASES_PATH.read_text(encoding="utf-8"))["aliases"]
+    assert len({alias["id"] for alias in aliases}) == len(aliases)
+
+
+PROMOTED_CLASSES = {
+    "us_existing_home_sales": ("UNKNOWN", None),
+    "ea_retail_sales": ("UNKNOWN", None),
+    "ea_indpro": ("UNKNOWN", None),
+    "ea_pmi_composite": ("COIN", "HYPOTHESIS"),
+    "ea_trade_balance": ("UNKNOWN", None),
+    "de_gdp_real": ("COIN", "DEFINITION"),
+    "fr_cpi": ("COIN", "DEFINITION"),
+    "fr_gdp_real": ("COIN", "DEFINITION"),
+    "fr_indpro": ("UNKNOWN", None),
+    "fr_unemployment": ("UNKNOWN", None),
+    "it_gdp_real": ("COIN", "DEFINITION"),
+    "it_indpro": ("UNKNOWN", None),
+    "es_gdp_real": ("COIN", "DEFINITION"),
+    "es_unemployment": ("UNKNOWN", None),
+    "es_indpro": ("UNKNOWN", None),
+    "uk_retail_sales": ("UNKNOWN", None),
+    "uk_pmi_mfg": ("COIN", "HYPOTHESIS"),
+    "jp_gdp_real": ("COIN", "DEFINITION"),
+    "jp_indpro": ("UNKNOWN", None),
+    "jp_trade_balance": ("UNKNOWN", None),
+    "cn_indpro": ("UNKNOWN", None),
+    "cn_retail_sales": ("UNKNOWN", None),
+    "ca_gdp_monthly": ("COIN", "DEFINITION"),
+    "ca_retail_sales": ("UNKNOWN", None),
+}
+
+
+@pytest.mark.parametrize("key,classification", PROMOTED_CLASSES.items())
+def test_owner_approved_v22_promotions(key, classification):
+    card = indicator_card(key)
+    assert "approved" not in card.flag.lower()
+    assert (card.timing.timing_class, card.timing.basis) == classification
+    assert "Proposed for approval" not in card.rationale
+    assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
+    assert card.timing.screen_note == (
+        "n.a. (reference or measurement identity)" if classification[1] == "DEFINITION" else "not tested"
+    )
+    assert card.timing.matched_turning_point_leads == "not estimated"
+    assert all(indicator_card(f"cat:{identity}") == card for identity in card.ids.cat)
+    if classification[1] == "DEFINITION":
+        twin = indicator_card("de_cpi" if key == "fr_cpi" else "ea_gdp_real")
+        assert card.evidence == twin.evidence
+        assert card.timing.reference == ("EA HICP" if key == "fr_cpi" else "itself (national growth reference)")
+    elif classification[1] == "HYPOTHESIS":
+        assert card.evidence == indicator_card("ea_pmi").evidence
+        assert card.flag == "never captured (licensed)"
+        assert card.known_failure_modes == ("never captured (licensed)",)
+        assert "Caveat: never captured (licensed)" in render_card(card)
+        assert "hypothesis; not validated" in render_card(card)
+    else:
+        assert card.evidence.local_timing == "none"
+
+
+def test_promotion_provenance_covers_exactly_the_24_owner_approved_rows():
+    timing = json.loads(TIMING_PATH.read_text(encoding="utf-8"))
+    promotion, = timing["promotions"]
+    assert set(promotion["keys"]) == set(PROMOTED_CLASSES)
+    assert promotion["approval"] == "approved v2.2 by owner 2026-10-24"
+    assert promotion["source_table_sha256"] == hashlib.sha256(PSV_PATH.read_bytes()).hexdigest()
+    assert promotion["draft_source_table_sha256"] == "c0852ac6bd9dd13d67652aa2b35d6a92af82a0a596b67cc685ffd225b2c9148e"
+    assert promotion["draft_timing_extract_sha256"] == "13ff30d8d173de796ce78e0b3f5336d43f3bd052ece0d6e5811f4c5477aa09ef"
+    for key, (_, basis) in PROMOTED_CLASSES.items():
+        if basis == "DEFINITION":
+            twin = "de_cpi" if key == "fr_cpi" else "ea_gdp_real"
+            assert timing["rows"][key] == timing["rows"][twin] == {
+                "descriptive_peak": "n.a.", "predictive_screen": "n.a. (reference or measurement identity)",
+            }
+        else:
+            assert timing["rows"][key] == {
+                "descriptive_peak": "not estimated", "predictive_screen": "not tested",
+            }
+
+
+def test_approved_cards_have_no_approval_flags_or_draft_stage_rationales():
+    for card in dataset().cards:
+        assert "approved" not in card.flag.lower(), card.key
+        rationale = card.rationale.lower()
+        for phrase in ("needs approval", "no approved", "not fetched for this offline draft"):
+            assert phrase not in rationale, (card.key, phrase)
+        if card.key in PROMOTED_CLASSES:
+            assert "Source: https://" in card.rationale
+
+
+@pytest.mark.parametrize("key", ["ea_retail_sales", "ea_indpro", "ea_trade_balance"])
+def test_promoted_eurostat_caveats_retain_fixed_geography(key):
+    assert indicator_card(key).flag == "geography EA21"
+    assert "geography unverified" not in indicator_card(key).rationale
+
+
+@pytest.mark.parametrize("defect,message", [
+    ("hash", "Promotion record belongs to a different PSV"),
+    ("missing key", "distinct approved PSV keys"),
+    ("duplicate key", "distinct approved PSV keys"),
+    ("empty keys", "distinct approved PSV keys"),
+    ("overlap", "must not overlap"),
+])
+def test_build_rejects_stale_or_invalid_promotion_records(tmp_path, defect, message):
+    timing = json.loads(TIMING_PATH.read_text(encoding="utf-8"))
+    promotion, = timing["promotions"]
+    if defect == "hash":
+        promotion["source_table_sha256"] = "0" * 64
+    elif defect == "missing key":
+        promotion["keys"].append("missing_card")
+    elif defect == "duplicate key":
+        promotion["keys"].append(promotion["keys"][0])
+    elif defect == "empty keys":
+        promotion["keys"] = []
+    else:
+        timing["promotions"].append(dict(promotion))
+    path = tmp_path / "timing.json"
+    path.write_text(json.dumps(timing), encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
+        build_dataset(timing_path=path)
+
+
+@pytest.mark.parametrize("resource", ["timing", "aliases"])
+def test_build_rejects_mixed_classification_versions(tmp_path, resource):
+    path = TIMING_PATH if resource == "timing" else ALIASES_PATH
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload["classification_version"] = "v2.1"
+    modified = tmp_path / path.name
+    modified.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="classification version must be v2.2"):
+        build_dataset(**{f"{resource}_path": modified})
+
+
+def test_build_rejects_duplicate_alias_ids(tmp_path):
+    aliases = json.loads(ALIASES_PATH.read_text(encoding="utf-8"))
+    aliases["aliases"].append(aliases["aliases"][0])
+    path = tmp_path / "aliases.json"
+    path.write_text(json.dumps(aliases), encoding="utf-8")
+    with pytest.raises(ValueError, match="Duplicate alias ids"):
+        build_dataset(aliases_path=path)
 
 
 @pytest.mark.parametrize("identity,key", [
@@ -224,15 +365,176 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     report = coverage_report()
     print(json.dumps(report, indent=2))
     assert set(report["certified_families"]) == set(FAMILIES)
-    # Every certified family is covered since the owner-approved UK GDP row
-    # (18/10/2026); no documented gap remains.
+    # v2.2 promotes the four M9b source gaps alongside the other tier-1 drafts.
     for family in FAMILIES:
-        assert report["certified_families"][family]["unmapped"] == report["documented_certified_gaps"].get(family, [])
-    gaps = {"ea_retail_sales": ["cat:ea_retail_sales_mm"], "ea_industrial_production": ["cat:ea_industrial_production_mm"], "ea_trade_balance": ["cat:ea_trade_balance"]}
-    gaps["uk_retail_sales"] = ["cat:uk_retail_sales_mm"]
-    assert report["documented_certified_gaps"] == gaps
-    # M9a/M9b: 44 mapped; M9c adds six approved policy concepts, four gaps remain.
-    assert report["macro_releases"] == {"mapped": 50, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
+        assert report["certified_families"][family]["unmapped"] == []
+    assert report["documented_certified_gaps"] == {}
+    assert report["macro_releases"] == {"mapped": 54, "total": len(INDICATORS), "unmapped": []}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("identity,key", [
+    ("us_core_cpi_yy", "us_cpi_core"), ("us_core_cpi_mm", "us_cpi_core"),
+    ("us_retail_sales_ex_auto_mm", "us_retail_sales"),
+    ("us_sp_global_manufacturing_pmi", "us_spglobal_pmi"),
+    ("us_sp_global_services_pmi", "us_spglobal_pmi"),
+    ("us_new_home_sales", "us_new_home_sales"), ("us_initial_jobless_claims", "us_claims_initial"),
+    ("ea_manufacturing_pmi", "ea_pmi"), ("ea_services_pmi", "ea_pmi"),
+    ("uk_sp_global_services_pmi", "uk_pmi_svc"),
+    ("cn_nbs_manufacturing_pmi", "cn_pmi_nbs"),
+    ("cn_caixin_manufacturing_pmi", "cn_pmi_private"),
+    ("ca_unemployment_rate", "ca_lfs"), ("ca_employment_change", "ca_lfs"),
+])
+def test_tier1_aliases_reuse_approved_concepts(identity, key):
+    assert indicator_card(identity).key == indicator_card(f"cat:{identity}").key == key
+    aliases = json.loads(ALIASES_PATH.read_text(encoding="utf-8"))["aliases"]
+    assert any(a["id"] == f"cat:{identity}" and a["key"] == key and a["basis"] for a in aliases)
+
+
+def test_every_tier1_id_resolves_to_an_approved_card_offline(monkeypatch):
+    import socket
+
+    def no_network(*args, **kwargs):
+        raise AssertionError("Tier-1 coverage must remain offline")
+
+    monkeypatch.setattr(socket, "getaddrinfo", no_network)
+    monkeypatch.setattr(socket.socket, "connect", no_network)
+    ids = tier1_ids()
+    assert len(ids) == len(set(ids)) == 86
+    approved = tier1_coverage()
+    report = coverage_report(with_drafts=True)["tier_1_measures"]
+    drafts = load_draft_cards()
+    assert approved["mapped"] == approved["approved"] == report["approved"] == 86
+    assert approved["draft"] == 0 and approved["with_drafts"] is False
+    assert report["mapped"] == report["total"] == 86
+    assert report["draft"] == len(drafts) == 0
+    assert approved["unmapped"] == report["unmapped"] == [] and report["with_drafts"] is True
+    for identity in ids:
+        card = indicator_card(identity)
+        assert card is not None
+        assert IndicatorCard.model_validate_json(card.model_dump_json()) == card
+        assert report["resolutions"][identity] == {"status": "approved", "key": card.key}
+
+
+def test_promoted_draft_files_are_empty_and_consistent():
+    with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
+        header = next(csv.reader(f, delimiter="|"))
+    with DRAFT_PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
+        assert list(csv.reader(f, delimiter="|")) == [header]
+    timing = json.loads(DRAFT_TIMING_PATH.read_text(encoding="utf-8"))
+    assert timing["rows"] == {}
+    assert timing["source_table_sha256"] == hashlib.sha256(DRAFT_PSV_PATH.read_bytes()).hexdigest()
+    assert load_draft_cards() == ()
+
+
+@pytest.fixture
+def future_draft(tmp_path):
+    # A new, unapproved concept keeps the draft checks non-vacuous after promotion.
+    with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
+        header = next(csv.reader(f, delimiter="|"))
+    row = dict.fromkeys(header, "")
+    row.update(
+        key="future_activity", country="EA", concept="Future activity survey",
+        ids="cat:future_activity", source="Example issuer", freq="M",
+        theme="Growth / activity", reference="EA GDP", timing_class="UNKNOWN",
+        timing_basis="—", nature="SOFT", ev_meas="M", ev_mech="mixed", ev_timing="none",
+        flag="draft v2.3, pending owner approval", rationale="No local timing validation.",
+    )
+    psv = tmp_path / "draft_rows_v2.3.psv"
+    with psv.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=header, delimiter="|", lineterminator="\n")
+        writer.writeheader()
+        writer.writerow(row)
+    timing = tmp_path / "timing_v2.3-draft.json"
+    timing.write_text(json.dumps({
+        "classification_version": "v2.3-draft",
+        "source_table_sha256": hashlib.sha256(psv.read_bytes()).hexdigest(),
+        "rows": {row["key"]: {"descriptive_peak": "not estimated", "predictive_screen": "not tested"}},
+    }), encoding="utf-8")
+    return psv, timing
+
+
+def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
+    shipped = dataset()
+    drafts = load_draft_cards(*future_draft)
+    assert len(drafts) == 1
+    card = drafts[0]
+    assert card.key not in {c.key for c in shipped.cards}
+    for identity in (card.key, *card.ids.cat, *(f"cat:{i}" for i in card.ids.cat)):
+        assert indicator_card(identity) is None
+    assert card.flag == "draft v2.3, pending owner approval"
+    assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
+    assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
+    assert card.timing.screen_note == "not tested"
+    assert dataset() is shipped and len(shipped.cards) == 294
+
+
+def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
+    psv, timing = future_draft
+    original = psv.read_bytes()
+    psv.write_bytes(original + b"\n")
+    with pytest.raises(ValueError, match="different PSV"):
+        load_draft_cards(psv, timing)
+    psv.write_bytes(original.replace(b"cat:future_activity", b"cat:us_new_home_sales"))
+    evidence = json.loads(timing.read_text(encoding="utf-8"))
+    evidence["source_table_sha256"] = hashlib.sha256(psv.read_bytes()).hexdigest()
+    timing.write_text(json.dumps(evidence), encoding="utf-8")
+    with pytest.raises(ValueError, match="overlaps an approved card"):
+        load_draft_cards(psv, timing)
+
+
+@pytest.mark.parametrize("field,value", [
+    ("timing_class", "COIN"), ("timing_basis", "HYPOTHESIS"),
+    ("flag", "approved v2.2 by owner 2026-10-24"), ("ids", "ms:MADE_UP"),
+])
+def test_draft_loader_rejects_unapproved_classification_or_store_ids(future_draft, field, value):
+    psv, timing = future_draft
+    with psv.open(encoding="utf-8", newline="") as f:
+        row = next(csv.DictReader(f, delimiter="|"))
+    row[field] = value
+    with psv.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(row), delimiter="|", lineterminator="\n")
+        writer.writeheader()
+        writer.writerow(row)
+    evidence = json.loads(timing.read_text(encoding="utf-8"))
+    evidence["source_table_sha256"] = hashlib.sha256(psv.read_bytes()).hexdigest()
+    timing.write_text(json.dumps(evidence), encoding="utf-8")
+    with pytest.raises(ValueError):
+        load_draft_cards(psv, timing)
+
+
+def test_future_draft_files_are_discovered_only_with_opt_in(future_draft, monkeypatch):
+    from market_data_hub.indicator_cards import coverage
+
+    psv, timing = future_draft
+    monkeypatch.setattr(coverage, "DATA_DIR", psv.parent)
+    monkeypatch.setattr(coverage, "tier1_ids", lambda: ["us_new_home_sales", "future_activity"])
+    assert tier1_coverage()["unmapped"] == ["future_activity"]
+    report = tier1_coverage(with_drafts=True)
+    assert report["mapped"] == report["total"] == 2
+    assert report["approved"] == report["draft"] == 1
+    assert report["resolutions"]["future_activity"] == {"status": "draft", "key": "future_activity"}
+    assert indicator_card("future_activity") is None
+    duplicate = psv.with_name("draft_rows_v2.4.psv")
+    duplicate.write_bytes(psv.read_bytes().replace(b"draft v2.3,", b"draft v2.4,"))
+    evidence = json.loads(timing.read_text(encoding="utf-8"))
+    evidence["classification_version"] = "v2.4-draft"
+    evidence["source_table_sha256"] = hashlib.sha256(duplicate.read_bytes()).hexdigest()
+    timing.with_name("timing_v2.4-draft.json").write_text(json.dumps(evidence), encoding="utf-8")
+    with pytest.raises(ValueError, match="Duplicate identity across draft files"):
+        tier1_coverage(with_drafts=True)
+
+
+def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
+    import sys
+    from market_data_hub.indicator_cards.coverage import main
+
+    for args in ([], ["--with-drafts"]):
+        monkeypatch.setattr(sys, "argv", ["coverage", *args])
+        main()
+        report = json.loads(capsys.readouterr().out)
+        assert report["tier_1_measures"]["mapped"] == report["tier_1_measures"]["approved"] == 86
+        assert report["tier_1_measures"]["draft"] == 0
+        assert report["cards"] == 294
