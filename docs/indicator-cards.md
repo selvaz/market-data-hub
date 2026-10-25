@@ -209,7 +209,7 @@ configured-id context coverage, not live ingestion or historical completeness.
 | Universe | Measures / ids with approved cards |
 |---|---:|
 | External tier-1 measures | 86 / 86 |
-| Release catalogue | 79 / 79 |
+| Release catalogue | 82 / 82 |
 | Active tier-1 calendar | 65 / 65 |
 | Enabled hub macro series | 107 / 107 |
 
@@ -218,12 +218,21 @@ row `uk_gdp_monthly` (added 18/10/2026, mirroring the US GDP row: COIN by
 definition, HARD, ONS). Main's original certified families remain fully covered.
 Housing now includes all 12 promoted v2.3 concepts covering 21 catalogue measures,
 in addition to construction and existing-home-sales context. The generated coverage
-report shows 306 approved concepts, 79/79 catalogue measures and no certified
+report shows 306 approved concepts, 82/82 catalogue measures and no certified
 concept gaps. Tier-1 coverage is 86 approved, zero draft resolutions and zero
 unmapped ids, with or without `--with-drafts`; the opt-in returns an empty
 `draft_cards` list. Main's M9b/M9c
 aliases and per-card id de-duplication are retained; the shared
 `cat:us_new_home_sales` alias appears once with main's M9b explanation.
+
+M9h adds the U-3 SA unemployment rate and total-private all-employee AHE
+m/m and y/y release measures. They reuse approved `us_unrate` and `us_ahe`
+concepts; `cat:us_avg_hourly_earnings_mm` is an explicit context alias. There
+are no new v2.4 draft rows and no timing changes. FF consensus mapping uses only
+the exact saved USD titles `Unemployment Rate` and `Average Hourly Earnings m/m`.
+ALFRED outage values keep BLS as issuer and `source_class=redistributor`;
+their release resolution stays provisional. Concept-card approval does not
+certify a redistributed value as official.
 
 Catalogue aliases attach **concept context**, never numerical equivalence:
 levels, changes, seasonal adjustments and stages retain their original ids.

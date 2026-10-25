@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from decimal import Decimal, ROUND_HALF_UP
+from zoneinfo import ZoneInfo
 
 from .adapters import Observation
 from .bea import EDITIONS as GDP_EDITIONS
@@ -9,7 +11,7 @@ from .bls import revision_start, shift_month
 from .http import FetchError, api_key, json_payload, require_complete
 from .publication_times import new_york_release
 from .us_editions import EDITIONS as MONTHLY_EDITIONS, reviewed, observation_stage
-from .schedule import due, family_editions, publication_grace, mark_pending
+from .schedule import due, family_editions, publication_grace, mark_pending, run_instant
 
 ENDPOINT = "https://api.stlouisfed.org/fred/series/observations"
 MAPPINGS = {
@@ -18,6 +20,12 @@ MAPPINGS = {
     "us_cpi_core_mm": ("us_cpi", "CPILFESL", "pch"),
     "us_cpi_core_yy": ("us_cpi", "CPILFENS", "pc1"),
     "us_payrolls_change": ("us_payrolls", "PAYEMS", "chg"),
+    "us_ppi_mm": ("us_ppi", "PPIFIS", "pch"),
+    "us_ppi_yy": ("us_ppi", "PPIFID", "pc1"),
+    "us_jolts_openings": ("us_jolts", "JTSJOL", "lin"),
+    "us_unemployment_rate": ("us_unemployment", "UNRATE", "lin"),
+    "us_avg_hourly_earnings_mm": ("us_ahe", "CES0500000003", "pch"),
+    "us_avg_hourly_earnings_yy": ("us_ahe", "CES0500000003", "pc1"),
     "us_gdp_qq_saar": ("us_gdp", "A191RL1Q225SBEA", "lin"),
 }
 MAPPINGS.update({
@@ -33,6 +41,9 @@ MAPPINGS.update({
     "us_capacity_utilization": ("us_industrial_production", "TCU", "lin"),
     "us_trade_balance": ("us_trade_balance", "BOPGSTB", "lin"),
 })
+# These mappings serve only the release-bound BLS fallback. Adding them must
+# not expand the optional, date-only FRED provider-history collector.
+BLS_FALLBACK_ONLY = frozenset(("us_ppi", "us_jolts", "us_unemployment", "us_ahe"))
 
 
 class FREDAdapter:
@@ -42,7 +53,7 @@ class FREDAdapter:
     def fetch(self, families, since):
         out = []
         for indicator, (family, series, units) in MAPPINGS.items():
-            if family not in families:
+            if family not in families or family in BLS_FALLBACK_ONLY:
                 continue
             calendar = due(family_editions(family), family=family)
             if family == "us_case_shiller" and not calendar:
@@ -139,6 +150,79 @@ class FREDAdapter:
             if family == "us_gdp" and period != GDP_EDITIONS[edition][0]:
                 out[-1] = replace(out[-1], stage="regular", event_stage=stage)
         return out
+
+
+class BLSFallbackAdapter(FREDAdapter):
+    """Edition-bound ALFRED first prints; never a current FRED snapshot.
+
+    Initial-release metadata proves when this particular headline first
+    appeared. The transformed as-of response must match that scheduled edition.
+    ALFRED only has daily resolution: the BLS calendar supplies the release
+    instant, not an invented intraday provider availability timestamp.
+    """
+
+    def fetch(self, families, since):
+        out = []
+        for family in families:
+            calendar = due(family_editions(family), family=family)
+            pending = set()
+            for indicator, (mapped_family, series, units) in MAPPINGS.items():
+                if mapped_family != family:
+                    continue
+                for edition, (headline, stage, clock) in sorted(calendar.items()):
+                    if headline < since or edition in pending:
+                        continue
+                    params = dict(api_key=api_key("FRED_API_KEY"), file_type="json",
+                                  series_id=series, realtime_start=edition, realtime_end=edition)
+                    first_doc = self.client.get("fred", ENDPOINT, dict(params,
+                        realtime_start="1776-07-04", output_type=4, units="lin",
+                        observation_start=headline + "-01", observation_end=headline + "-01", limit=10000))
+                    first = json_payload(first_doc)
+                    initial = first.get("observations", [])
+                    require_complete(first, initial)
+                    envelope_matches = (first.get("output_type") == 4 and first.get("units") == "lin" and
+                                        first.get("realtime_start") == "1776-07-04" and first.get("realtime_end") == edition)
+                    if (envelope_matches and not initial and
+                            run_instant().astimezone(ZoneInfo("America/New_York")).date().isoformat() == edition):
+                        mark_pending(family, edition)
+                        pending.add(edition)
+                        out = [o for o in out if (o.family, o.edition) != (family, edition)]
+                        continue
+                    if (first.get("output_type") != 4 or first.get("units") != "lin" or
+                            first.get("realtime_start") != "1776-07-04" or first.get("realtime_end") != edition or
+                            len(initial) != 1 or initial[0].get("date") != headline + "-01" or
+                            initial[0].get("value") in (None, ".") or initial[0].get("realtime_start") != edition):
+                        raise FetchError("ALFRED vintage date does not match BLS edition; needs review")
+                    doc = self.client.get("fred", ENDPOINT, dict(params, units=units,
+                        output_type=1, observation_start=headline + "-01", observation_end=headline + "-01", limit=10000))
+                    out.extend(self.parse_first_print(doc, indicator=indicator, edition=edition))
+        return out
+
+    @staticmethod
+    def parse_first_print(document, *, indicator, edition):
+        family, series, units = MAPPINGS[indicator]
+        calendar = family_editions(family)
+        if edition not in due(calendar, family=family):
+            raise FetchError("BLS edition is not released; needs review")
+        headline, stage, clock = calendar[edition]
+        payload = json_payload(document)
+        rows = payload.get("observations", [])
+        require_complete(payload, rows)
+        if (payload.get("output_type") != 1 or payload.get("units") != units or payload.get("realtime_start") != edition or
+                payload.get("realtime_end") != edition or len(rows) != 1 or
+                rows[0].get("date") != headline + "-01" or rows[0].get("value") in (None, ".") or
+                rows[0].get("realtime_start") != edition or rows[0].get("realtime_end") != edition):
+            raise FetchError("ALFRED first-print vintage/period does not match BLS edition; needs review")
+        row = rows[0]
+        # BLS publishes these percentage changes to one decimal. Preserve the
+        # original provider print in the immutable document, while comparisons
+        # and surprises use the same published precision as the issuer.
+        printed = (str(Decimal(row["value"]).quantize(Decimal("0.1"), rounding=ROUND_HALF_UP))
+                   if units in ("pch", "pc1") else row["value"])
+        return [Observation(indicator, family, headline, float(printed), printed,
+                            series + ":" + units, "ALFRED", document, edition,
+                            **new_york_release(edition, clock), stage=stage,
+                            precision="exact", provider_vintage=edition, revision="initial")]
 
 
 class USRedistributorAdapter(FREDAdapter):

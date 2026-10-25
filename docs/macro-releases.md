@@ -494,6 +494,8 @@ new/reused vintages, and explicitly unavailable observations.
 | --- | --- | --- |
 | `us_cpi` | BLS v2 `CUSR0000SA0`, `CUSR0000SA0L1E`: issuer `pct_changes[1]` for SA m/m. `CUUR0000SA0`, `CUUR0000SA0L1E`: issuer `pct_changes[12]` for NSA y/y. | Fetch five complete calendar years plus the current year, with calculation inputs, in one batch. Never synthesize a missing BLS calculation. Nonpublished October 2025 levels and the affected November m/m changes remain nonnumeric readings. |
 | `us_payrolls` | BLS CES `CES0000000001`, issuer `net_changes[1]`; unit `persons`, scale 1000. | Inspect at least the newest month and two prior months, even with a newer `--since`. February editions inspect five complete calendar years plus the current year and mark historical changes `benchmark`. All belong to one publication event. The current API does not recover old initial editions. |
+| `us_unemployment` | BLS CPS `LNS14000000`, published U-3 unemployment rate, age 16+, SA, percent of the civilian labour force. | Same Employment Situation calendar and 08:30 New York release instant as payrolls; historical observations belong to the current issuer edition. |
+| `us_ahe` | BLS CES `CES0500000003`, total-private all-employee AHE, SA; issuer `pct_changes[1]` and `pct_changes[12]` for m/m and y/y. | Same Employment Situation calendar and release instant as payrolls. One series supplies both published calculations; routine CES and February benchmark windows follow payrolls. |
 | `us_gdp` | BEA NIPA `T10101`, line 1, `A191RL`, percent change at annual rate. No calculation from GDPC1 levels. | Current API plus issuer PDF archives of the advance/second estimates. An absent line raises `FetchError`; it can never return the remaining table. Older revised quarters share the headline publication event while retaining their own value stage. |
 | `ea_hicp` | Eurostat ECOICOP v2 `prc_hicp_fpd`, **`release=FLS`**, for flash; `prc_hicp_minr` for current final. `coicop18=TOTAL`, evolving **`geo=EA`**, `RCH_A`/`RCH_M`. | Resolve membership by reference period: EA20 in 2023–2025, EA21 in 2026; unreviewed periods fail explicitly. `ea_hicp_*` remains the fixed EA20 golden identity; `ea21_hicp_*` is EA21. Each composition shares flash/final indicator ids and records `composition_id` in readings/vintages. Historical flash is preserved; `minr` supplies current-edition history, classified against stored issuer vintages. Estimated cells are never labelled final. |
 | `uk_gdp` | ONS `gdp-to-four-decimal-places`, edition `time-series`, **version 69**, SIC `A--T`, UK. | Check the current edition and bulletin index before reading the pin; newer versions/bulletins fail for review. Index levels end in June 2026 and use the dataset metadata's **24 August** `release_date`, independently of the June bulletin's 13 August publication; first-load history is backfill. July/August bulletins provide published growth/revisions via a narrow HTML parser. |
@@ -515,7 +517,7 @@ review and extend those registries before collecting later publications.**
 The ONS version pin also requires deliberate review before being advanced.
 BLS and BEA retain 08:30 issuer-local time and `America/New_York`, converting
 with `zoneinfo`: winter releases are 13:30Z and summer releases 12:30Z.
-Historical snapshots cannot supply first-print history. Re-fetching unchanged
+Current issuer snapshots cannot recover earlier first-print history. Re-fetching unchanged
 values in the same edition reuses vintages even when retrieval time/hash changes;
 a changed value or new edition appends a vintage.
 `adapters.revision_kind` classifies ordinary editions centrally. A historical
@@ -527,7 +529,94 @@ publication times, so a newer edition loaded first cannot revise an older
 archive. Mirror and nonpublished source series do not supply issuer history.
 Explicit initial publications and benchmark revisions retain their meaning.
 
-Add `--with-redistributors` for FRED/ALFRED evidence. CPI uses the corresponding
+### BLS outage fallback (M9h, owner approved 25 October 2026)
+
+The daily and manual BLS collectors try BLS first for `us_cpi`, `us_payrolls`,
+`us_ppi`, `us_jolts`, `us_unemployment` and `us_ahe`. Only BLS availability errors
+(HTTP or transport failures, including blocked requests) invoke the release-bound ALFRED
+adapter. A successful response with an unreviewed edition, missing calculation
+or incompatible structure remains `needs_review`; older mirror prints cannot
+hide the new publication. Contradictory CPI/payroll issuer metadata also remains
+subject to review. The production logs
+for 24 October record `bls: HTTP 503` for each of the original four families;
+the owner approved this recovery path because BLS is unreachable from this server.
+
+The fallback collects only scheduled headline first prints, for reviewed
+editions within the requested reference-month window:
+
+1. The reviewed BLS calendar must make the edition due at the run instant.
+   CPI, PPI and all Employment Situation families release at 08:30
+   `America/New_York`; JOLTS at 10:00. The 6 November Employment Situation
+   release is therefore gated at **13:30Z**, after the US DST change.
+2. Request ALFRED `output_type=4` (Initial Release Only), native `units=lin`,
+   for the exact headline reference month, with a real-time interval from
+   1776-07-04 through the BLS edition. Require the observation's actual initial
+   `realtime_start` to equal the scheduled BLS edition. An earlier or later
+   first-availability date, an absent value or a different period needs review.
+3. Request `output_type=1`, with **both** `realtime_start` and `realtime_end`
+   equal to that edition, applying the exact reviewed FRED transformation.
+   Require one numeric headline observation, matching units, period, response
+   dates and row vintage dates. Never request today's value for an earlier event.
+   Truncated or changed structures fail closed; invalid edition/vintage metadata
+   produces a `needs_review` family outcome and retained review evidence.
+4. Persist `source_id=ALFRED`, `distributor_id=ALFRED`, `issuer_id=BLS`,
+   `evidence_role=mirror`, `provider_vintage_id=<edition>` and unverified status.
+   The resolver, cards and their nested provenance report
+   **`source_class=redistributor`**, with resolution status **`provisional`**.
+   The legacy verified-issuer views exclude these unverified mirrors. A stored
+   FRED/ALFRED source cannot become official even if its role is mislabelled.
+5. A returning verified BLS value takes issuer precedence. The fallback vintage
+   remains immutable; corrections and later release editions append history.
+   Rerunning an unchanged edition creates no new vintage.
+
+The original controlled BLS failure reason is retained in the append-only review
+queue on both fallback and content-review paths. An availability notice does not
+invalidate an accepted redistributor print. An empty, structurally valid initial
+list on the BLS release day is pending (`scheduled`, `not_yet_published`), rather
+than a metadata review; an empty historical edition still requires review.
+The optional generic FRED history collector excludes PPI, JOLTS, unemployment
+and AHE: their added mappings serve only the release-bound BLS fallback.
+
+ALFRED has daily vintage precision. The recorded BLS release instant comes from
+the issuer calendar; it does not assert that FRED was available at that exact
+intraday instant. FRED transformations use inputs from that same as-of vintage
+outside the requested observation output window. A single live `pc1` request
+on 25 October, bounded to September 2026 at the 2 October vintage, returned
+3.02452% for AHE, confirming that the prior-year input need not be in that window.
+CPI, PPI and AHE `pch`/`pc1` prints are rounded to BLS's one-decimal published
+precision (decimal half up) before persistence and surprise/discrepancy comparisons.
+The immutable provider document retains the unrounded value. Payroll `chg` and
+level values are unchanged. The official BLS fetch path intentionally also filters
+reviewed editions against their release instant, including manual collection.
+See the [FRED observations API](https://fred.stlouisfed.org/docs/api/fred/series_observations.html)
+and [ALFRED output formats](https://alfred.stlouisfed.org/help/downloaddata#outputformats).
+
+| Family | ALFRED series / transformation |
+| --- | --- |
+| CPI | `CPIAUCSL/pch`, `CPIAUCNS/pc1`, `CPILFESL/pch`, `CPILFENS/pc1` |
+| Payrolls | `PAYEMS/chg` (thousands of persons) |
+| PPI final demand | `PPIFIS/pch` (SA m/m), `PPIFID/pc1` (NSA y/y) |
+| JOLTS openings | `JTSJOL/lin` (SA, thousands of jobs) |
+| U-3 unemployment | `UNRATE/lin` (SA percent) |
+| AHE total private | `CES0500000003/pch`, `CES0500000003/pc1` (both SA) |
+
+Scheduled membership is seeded separately for each `(family, stage)`;
+payrolls, unemployment and AHE share their calendar and release instants while
+retaining separate event identities. The approved `us_unrate` and `us_ahe`
+cards cover the new catalogue measures, with an explicit m/m AHE concept alias.
+No v2.4 draft or timing reclassification is needed. The saved FF calendar proves
+the exact USD titles `Unemployment Rate` and `Average Hourly Earnings m/m`;
+only those aliases are added. AHE y/y has no inferred FF alias.
+
+`tests/test_macro_bls_fallback.py` and `tests/test_macro_bls_read_classes.py`
+exercise outages, first-availability/edition mismatches, release-instant gating,
+official recovery, immutable history, daily idempotence and every public read
+path. Their credential bindings are stubbed and live network access is forbidden.
+`scripts/verify_macro_m9h.py` performs opt-in live verification on a byte-copied
+production main/WAL snapshot; every temporary database and rate ledger stays
+under the explicit `D:\Temp` destination.
+
+For additional optional manual history, add `--with-redistributors`. CPI uses the corresponding
 SA/NSA levels and FRED's `pch`/`pc1` transformations; payrolls use `PAYEMS/chg`;
 GDP uses the published-rate series `A191RL1Q225SBEA/lin`. Every observation keeps
 the actual issuer and `distributor_id="FRED"`, with `evidence_role="mirror"`
@@ -990,14 +1079,14 @@ investmentcommittee's job TOML and Windows Task Scheduler is a separate step.
 & 'C:\ProgramData\InvestmentCommittee\envs\marketdata\Scripts\python.exe' -m market_data_hub.macro_releases.run_daily --db 'C:\ProgramData\InvestmentCommittee\live\db\macro_releases.sqlite' --lookback-months 24
 ```
 
-Omitting `--families` collects all five certified families:
-`us_cpi,us_payrolls,us_gdp,ea_hicp,uk_gdp`. A subset accepts comma-separated or
-space-separated names, for example `--families us_cpi,us_payrolls`. The runner
-collects issuer evidence only; FRED remains an optional manual redistributor
-adapter and is not required for official cards. Keys are read by the adapters
-from `BLS_API_KEY` and `BEA_API_KEY` in the job environment (the existing Windows
-user-environment fallback remains supported). `FRED_API_KEY` is used only by the
-manual FRED adapter. Census is outside the certified set.
+Omitting `--families` collects the full `catalogue.FAMILIES` set, including
+the six BLS families above. A subset accepts comma-separated or space-separated
+names, for example `--families us_cpi,us_payrolls,us_unemployment,us_ahe`.
+Keys are read by the adapters from `BLS_API_KEY`, `BEA_API_KEY` and, for the
+approved BLS fallback and other configured redistributor paths, `FRED_API_KEY`
+in the job environment. The existing Windows user-environment fallback remains
+supported. Redistributor evidence is never required or promoted to create an
+official card; the BLS fallback produces provisional cards with its own source class.
 
 Recommend one daily trigger at **06:30 America/Los_Angeles / 09:30 America/New_York**,
 including weekends for recovery. This allows an hour after the usual US 08:30 ET

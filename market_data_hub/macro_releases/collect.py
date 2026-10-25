@@ -45,7 +45,7 @@ def main(argv=None):
         parser.error("This manual development collector refuses ProgramData paths")
     client = HttpClient()
     result = {"db": str(target), "families": {}, "failures": {}, "family_failures": {}}
-    adapters = [(BLSAdapter(client), [f for f in families if f in ("us_cpi", "us_payrolls", "us_ppi", "us_jolts")]),
+    adapters = [(BLSAdapter(client), [f for f in families if f in ("us_cpi", "us_payrolls", "us_ppi", "us_jolts", "us_unemployment", "us_ahe")]),
                 (BEAAdapter(client), [f for f in families if f in ("us_gdp", "us_pce")]),
                 (USRedistributorAdapter(client), [f for f in families if f in ("us_retail_sales", "us_housing_starts", "us_durable_goods", "us_industrial_production", "us_trade_balance")]),
                 (EurostatAdapter(client), [f for f in families if f in ("ea_hicp", "ea_gdp")]),

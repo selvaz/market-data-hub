@@ -234,6 +234,11 @@
       "basis": "Same approved v2.2 NAR national existing-home sales concept as cat:us_existing_home_sales; published SA monthly headline change. This is concept context, not equivalence with the SAAR level (M9f).",
       "id": "cat:us_existing_home_sales_mm",
       "key": "us_existing_home_sales"
+    },
+    {
+      "basis": "Same approved total-private all-employee CES earnings concept as cat:us_avg_hourly_earnings_yy and ms:CES0500000003; SA published monthly change. Concept context only; no timing reclassification (M9h).",
+      "id": "cat:us_avg_hourly_earnings_mm",
+      "key": "us_ahe"
     }
   ],
   "certified_gaps": {},

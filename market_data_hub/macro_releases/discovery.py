@@ -8,14 +8,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timedelta
 from email.utils import parsedate_to_datetime
+import hashlib
 from html import unescape
+import json
 import re
 from xml.etree import ElementTree
 
 from .adapters import Observation
 from . import bea, bls, eurostat, ons
 from .catalogue import BLS_SERIES, hicp_indicator
-from .http import FetchError, api_key
+from .http import Document, FetchError, api_key
 from .publication_times import new_york_release
 
 BLS_FEEDS = {"us_cpi": "https://www.bls.gov/feed/cpi.rss",
@@ -30,6 +32,8 @@ class FamilyFetch:
     documents: list = field(default_factory=list)
     issues: list = field(default_factory=list)
     anchors: bool = True
+    # Availability notices are audited without invalidating valid fallback data.
+    review_reasons: list = field(default_factory=list)
 
     def issue(self, reason):
         if reason not in self.issues:
@@ -133,7 +137,9 @@ def _bls(client, family, since):
     publication = registry.get((family, newest))
     try:
         batch.observations = bls.BLSAdapter(client).parse(doc, [family], since, editions=registry)
-    except (FetchError, ValueError, KeyError, TypeError):
+    except (FetchError, ValueError, KeyError, TypeError) as exc:
+        if isinstance(exc, FetchError):
+            batch.review_reasons.append(str(exc))
         batch.issue("expected_series_units_or_periods_missing")
         # Salvage only the requested calculation, never substitute level data.
         for key in keys:
@@ -357,6 +363,7 @@ def fetch_daily(client, family, since):
     from .us_editions import EDITIONS
     from .catalogue import REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
     strategy = {"us_cpi": _bls, "us_payrolls": _bls, "us_gdp": _bea,
+                "us_unemployment": _employment, "us_ahe": _employment,
                 "ea_hicp": _eurostat, "uk_gdp": _ons, "uk_cpi": _ons_rates,
                 "uk_labour_market": _ons_rates, "ea_gdp": _gdp, "us_jobless_claims": _claims,
                 **{f: _monthly for f in EDITIONS},
@@ -364,6 +371,7 @@ def fetch_daily(client, family, since):
                 **{f: _policy for f in CENTRAL_BANKS},
                 **{f: _housing for f in HOUSING_FAMILIES}}[family]
     documents = []
+    reasons = []
     class Capture:
         def get(self, *args, **kwargs):
             doc = client.get(*args, **kwargs)
@@ -375,23 +383,48 @@ def fetch_daily(client, family, since):
             documents.append(doc)
             return doc
     try:
-        batch = strategy(Capture(), family, since)
+        try:
+            batch = strategy(Capture(), family, since)
+        except FetchError as exc:
+            if family not in ("us_cpi", "us_payrolls", "us_ppi", "us_jolts", "us_unemployment", "us_ahe"):
+                raise
+            reasons.append(str(exc))
+            # HTTP failures have no successful response document. Retain the
+            # controlled original reason as evidence, without URLs or secrets.
+            from .schedule import run_instant
+            body = json.dumps(dict(provider="BLS", reason=str(exc))).encode()
+            documents.append(Document(body, bls.ENDPOINT, run_instant().isoformat(), hashlib.sha256(body).hexdigest()))
+            if not bls.unavailable(exc):
+                raise FetchError(str(exc) + "; needs review") from None
+            from .fred import BLSFallbackAdapter
+            try:
+                batch = FamilyFetch(observations=BLSFallbackAdapter(Capture()).fetch([family], since))
+            except FetchError as fallback_error:
+                raise FetchError(str(fallback_error) + "; needs review") from None
         batch.documents = documents
+        batch.review_reasons.extend(reasons)
         return batch
     except FetchError as exc:
         if "needs review" not in str(exc):
             raise
-        return FamilyFetch(documents=documents, issues=["publication_metadata_or_format_needs_review"], anchors=False)
+        return FamilyFetch(documents=documents, issues=["publication_metadata_or_format_needs_review"],
+                           anchors=False, review_reasons=[*reasons, str(exc)])
     except (ValueError, KeyError, TypeError, AttributeError):
         # A malformed top-level payload must not turn a source-format change
         # into a red run. Keep all fetched documents even if no values map.
-        return FamilyFetch(documents=documents, issues=["payload_structure_changed"], anchors=False)
+        return FamilyFetch(documents=documents, issues=["payload_structure_changed"], anchors=False, review_reasons=reasons)
 
 
 def _monthly(client, family, since):
     from .fred import USRedistributorAdapter
     adapter = bls.BLSAdapter if family in ("us_ppi", "us_jolts") else bea.BEAAdapter if family == "us_pce" else USRedistributorAdapter
-    return FamilyFetch(observations=adapter(client).fetch([family], since))
+    rows = (adapter(client).fetch([family], since, fallback=False) if adapter is bls.BLSAdapter
+            else adapter(client).fetch([family], since))
+    return FamilyFetch(observations=rows)
+
+
+def _employment(client, family, since):
+    return FamilyFetch(observations=bls.BLSAdapter(client).fetch([family], since, fallback=False))
 
 
 def _remaining(client, family, since):

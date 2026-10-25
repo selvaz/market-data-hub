@@ -8,7 +8,7 @@ from decimal import Decimal
 import re
 from zoneinfo import ZoneInfo
 
-from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
+from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, EMPLOYMENT_FAMILIES, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
 from .models import utc
 from .source_classes import source_class
 from .resolve import (
@@ -28,7 +28,7 @@ FAMILY_INDICATORS = {
     "ea_hicp": {i for i in INDICATORS if "hicp" in i and "core" not in i},
     "uk_gdp": {"uk_gdp_mm", "uk_gdp_index"},
 }
-FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in {**US_MONTHLY, **UK_FAMILIES}.items()})
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in {**US_MONTHLY, **EMPLOYMENT_FAMILIES, **UK_FAMILIES}.items()})
 FAMILY_INDICATORS["ea_gdp"] = {"ea21_gdp_qq", "ea21_gdp_yy"}
 FAMILY_INDICATORS["us_jobless_claims"] = {"us_initial_jobless_claims"}
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in REMAINING_FAMILIES.items()})
