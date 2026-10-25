@@ -125,6 +125,17 @@ def build_dataset(
         rows = list(csv.DictReader(f, delimiter="|"))
     if set(timing["rows"]) != {r["key"] for r in rows}:
         raise ValueError("Timing extract must cover exactly the PSV keys")
+    promoted_keys: set[str] = set()
+    row_keys = {row["key"] for row in rows}
+    for promotion in timing.get("promotions", []):
+        if promotion["source_table_sha256"] != _hash(psv_path):
+            raise ValueError("Promotion record belongs to a different PSV")
+        keys = promotion["keys"]
+        if not keys or len(keys) != len(set(keys)) or not set(keys) <= row_keys:
+            raise ValueError("Promotion record must name distinct approved PSV keys")
+        if promoted_keys.intersection(keys):
+            raise ValueError("Promotion records must not overlap")
+        promoted_keys.update(keys)
     cards = []
     for row in rows:
         ids = parse_ids(row["ids"])

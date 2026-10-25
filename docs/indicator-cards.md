@@ -89,8 +89,11 @@ Package resources live under `market_data_hub/indicator_cards/`:
 - `timing_v2.2.json`: existing verbatim columns (a)/(b) from section 3 of the
   approved `04-classification-v2.md`, plus the 24 promoted timing entries.
   The original source-guide SHA-256 covers the existing evidence; `promotions`
-  records the approved keys and the hashes of PR #125's draft table and timing
-  file before promotion. The PSV supplies relationship keys but does not contain
+  records the approval, approved keys and current PSV SHA-256. The original
+  hashes from PR #125 are retained separately as `draft_source_table_sha256`
+  and `draft_timing_extract_sha256`. The build checks each promotion's current
+  table hash and requires distinct, existing PSV keys without overlapping
+  promotion records. The PSV supplies relationship keys but does not contain
   the numeric horizons or peak estimates.
 - `aliases_v2.2.json`: explicit, explained aliases from current catalogue ids
   to concepts already present in the table, plus documented coverage gaps.
@@ -135,10 +138,17 @@ across operating systems so the provenance hashes remain stable.
 
 ## Owner approval on 2026-10-24
 
-All 24 rows from PR #125 now ship with the flag
-`approved v2.2 by owner 2026-10-24`. The nine proposed classification sentences
-have been removed; the rest of each rationale is preserved, including issuer
-metadata and local-validation caveats.
+All 24 rows from PR #125 ship as approved cards. The approval record
+`approved v2.2 by owner 2026-10-24` lives only in the `promotions` block of
+`timing_v2.2.json`. The `flag` column carries actual caveats, since it feeds
+`known_failure_modes` and the rendered Caveat text. Both promoted PMI rows
+carry `never captured (licensed)`; other flags identify documented issuer-code,
+adjustment-metadata or geography limitations, and are empty where no separate
+caveat is supported. Approval wording is never a failure mode.
+
+The rationales retain their measurement details, issuer metadata limitations,
+local-validation caveats and `Source:` URLs. Proposal sentences and draft-stage
+wording have been removed.
 
 | Promoted keys | Timing class / basis |
 |---|---|
@@ -149,9 +159,11 @@ metadata and local-validation caveats.
 
 The seven definition rows carry the same measurement/mechanism/timing evidence
 as `ea_gdp_real` or `de_cpi`: H / n.a. / n.a. The two PMI hypotheses carry
-M / mixed / lit-local, like `ea_pmi`. The 24 timing entries move intact from the
-draft extract: predictive screens remain **not tested**, descriptive peaks and
-matched turning-point leads remain **not estimated**.
+M / mixed / lit-local, like `ea_pmi`. The seven definition rows also use their
+twins' exact timing entries: descriptive peak **n.a.** and predictive screen
+**n.a. (reference or measurement identity)**. The other 17 promoted rows retain
+predictive screens **not tested** and descriptive peaks **not estimated**.
+Matched turning-point leads remain **not estimated** for every card.
 
 For future proposals, add a `draft_rows_<version>.psv` with the same 19-column
 header and a matching `timing_<version>-draft.json`. `--with-drafts` discovers

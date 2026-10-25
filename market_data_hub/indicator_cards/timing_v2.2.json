@@ -3,6 +3,8 @@
   "promotions": [
     {
       "approval": "approved v2.2 by owner 2026-10-24",
+      "draft_source_table_sha256": "c0852ac6bd9dd13d67652aa2b35d6a92af82a0a596b67cc685ffd225b2c9148e",
+      "draft_timing_extract_sha256": "13ff30d8d173de796ce78e0b3f5336d43f3bd052ece0d6e5811f4c5477aa09ef",
       "keys": [
         "us_existing_home_sales",
         "ea_retail_sales",
@@ -30,8 +32,7 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "c0852ac6bd9dd13d67652aa2b35d6a92af82a0a596b67cc685ffd225b2c9148e",
-      "timing_extract_sha256": "13ff30d8d173de796ce78e0b3f5336d43f3bd052ece0d6e5811f4c5477aa09ef"
+      "source_table_sha256": "4c25e1c6ea0a60944de52d1e5e4228dfb2b1983ab2feef5e91e60a6158deb707"
     }
   ],
   "rows": {
@@ -124,8 +125,8 @@
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "ca_gdp_monthly": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "ca_lfs": {
       "descriptive_peak": "not estimated",
@@ -248,8 +249,8 @@
       "predictive_screen": "not tested"
     },
     "de_gdp_real": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "de_hicp": {
       "descriptive_peak": "n.a.",
@@ -372,8 +373,8 @@
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "es_gdp_real": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "es_hicp": {
       "descriptive_peak": "n.a.",
@@ -396,12 +397,12 @@
       "predictive_screen": "not tested"
     },
     "fr_cpi": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "fr_gdp_real": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "fr_indpro": {
       "descriptive_peak": "not estimated",
@@ -560,8 +561,8 @@
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "it_gdp_real": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "it_hicp": {
       "descriptive_peak": "n.a.",
@@ -592,8 +593,8 @@
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "jp_gdp_real": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "jp_indpro": {
       "descriptive_peak": "not estimated",
@@ -1212,7 +1213,7 @@
       "predictive_screen": "not tested"
     }
   },
-  "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125, approved by owner 2026-10-24 (not tested / not estimated)",
+  "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "7608caaaa22ccb7ed725113d82e1367be426935b0a3972fbe4ce9e935b04a917"
+  "source_table_sha256": "4c25e1c6ea0a60944de52d1e5e4228dfb2b1983ab2feef5e91e60a6158deb707"
 }

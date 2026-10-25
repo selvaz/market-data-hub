@@ -91,11 +91,13 @@ PROMOTED_CLASSES = {
 @pytest.mark.parametrize("key,classification", PROMOTED_CLASSES.items())
 def test_owner_approved_v22_promotions(key, classification):
     card = indicator_card(key)
-    assert card.flag == "approved v2.2 by owner 2026-10-24"
+    assert "approved" not in card.flag.lower()
     assert (card.timing.timing_class, card.timing.basis) == classification
     assert "Proposed for approval" not in card.rationale
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
-    assert card.timing.screen_note == "not tested"
+    assert card.timing.screen_note == (
+        "n.a. (reference or measurement identity)" if classification[1] == "DEFINITION" else "not tested"
+    )
     assert card.timing.matched_turning_point_leads == "not estimated"
     assert all(indicator_card(f"cat:{identity}") == card for identity in card.ids.cat)
     if classification[1] == "DEFINITION":
@@ -104,6 +106,9 @@ def test_owner_approved_v22_promotions(key, classification):
         assert card.timing.reference == ("EA HICP" if key == "fr_cpi" else "itself (national growth reference)")
     elif classification[1] == "HYPOTHESIS":
         assert card.evidence == indicator_card("ea_pmi").evidence
+        assert card.flag == "never captured (licensed)"
+        assert card.known_failure_modes == ("never captured (licensed)",)
+        assert "Caveat: never captured (licensed)" in render_card(card)
         assert "hypothesis; not validated" in render_card(card)
     else:
         assert card.evidence.local_timing == "none"
@@ -114,10 +119,61 @@ def test_promotion_provenance_covers_exactly_the_24_owner_approved_rows():
     promotion, = timing["promotions"]
     assert set(promotion["keys"]) == set(PROMOTED_CLASSES)
     assert promotion["approval"] == "approved v2.2 by owner 2026-10-24"
-    assert {c.key for c in dataset().cards if c.flag == promotion["approval"]} == set(PROMOTED_CLASSES)
-    assert all(timing["rows"][key] == {
-        "descriptive_peak": "not estimated", "predictive_screen": "not tested",
-    } for key in PROMOTED_CLASSES)
+    assert promotion["source_table_sha256"] == hashlib.sha256(PSV_PATH.read_bytes()).hexdigest()
+    assert promotion["draft_source_table_sha256"] == "c0852ac6bd9dd13d67652aa2b35d6a92af82a0a596b67cc685ffd225b2c9148e"
+    assert promotion["draft_timing_extract_sha256"] == "13ff30d8d173de796ce78e0b3f5336d43f3bd052ece0d6e5811f4c5477aa09ef"
+    for key, (_, basis) in PROMOTED_CLASSES.items():
+        if basis == "DEFINITION":
+            twin = "de_cpi" if key == "fr_cpi" else "ea_gdp_real"
+            assert timing["rows"][key] == timing["rows"][twin] == {
+                "descriptive_peak": "n.a.", "predictive_screen": "n.a. (reference or measurement identity)",
+            }
+        else:
+            assert timing["rows"][key] == {
+                "descriptive_peak": "not estimated", "predictive_screen": "not tested",
+            }
+
+
+def test_approved_cards_have_no_approval_flags_or_draft_stage_rationales():
+    for card in dataset().cards:
+        assert "approved" not in card.flag.lower(), card.key
+        rationale = card.rationale.lower()
+        for phrase in ("needs approval", "no approved", "not fetched for this offline draft"):
+            assert phrase not in rationale, (card.key, phrase)
+        if card.key in PROMOTED_CLASSES:
+            assert "Source: https://" in card.rationale
+
+
+@pytest.mark.parametrize("key", ["ea_retail_sales", "ea_indpro", "ea_trade_balance"])
+def test_promoted_eurostat_caveats_retain_fixed_geography(key):
+    assert indicator_card(key).flag == "geography EA21"
+    assert "geography unverified" not in indicator_card(key).rationale
+
+
+@pytest.mark.parametrize("defect,message", [
+    ("hash", "Promotion record belongs to a different PSV"),
+    ("missing key", "distinct approved PSV keys"),
+    ("duplicate key", "distinct approved PSV keys"),
+    ("empty keys", "distinct approved PSV keys"),
+    ("overlap", "must not overlap"),
+])
+def test_build_rejects_stale_or_invalid_promotion_records(tmp_path, defect, message):
+    timing = json.loads(TIMING_PATH.read_text(encoding="utf-8"))
+    promotion, = timing["promotions"]
+    if defect == "hash":
+        promotion["source_table_sha256"] = "0" * 64
+    elif defect == "missing key":
+        promotion["keys"].append("missing_card")
+    elif defect == "duplicate key":
+        promotion["keys"].append(promotion["keys"][0])
+    elif defect == "empty keys":
+        promotion["keys"] = []
+    else:
+        timing["promotions"].append(dict(promotion))
+    path = tmp_path / "timing.json"
+    path.write_text(json.dumps(timing), encoding="utf-8")
+    with pytest.raises(ValueError, match=message):
+        build_dataset(timing_path=path)
 
 
 @pytest.mark.parametrize("resource", ["timing", "aliases"])
