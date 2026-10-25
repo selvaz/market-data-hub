@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "13ba3e80e4821d75bbbc151e6b8db982eb579d7f9c595647230bc433316d4833",
+  "aliases_sha256": "dda6b25b478a181c7f32da14f744e122d5288afe42ecc74d0a680fa2852f3ed0",
   "cards": [
     {
       "concept": "Real GDP",
@@ -14158,10 +14158,582 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "Eurostat house prices, quarterly and annual change",
+      "country": "EMU",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "fixed EA21 composition",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "ea21_hpi_qq",
+          "ea21_hpi_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ea_hpi",
+      "known_failure_modes": [
+        "fixed EA21 composition"
+      ],
+      "nature": "HARD",
+      "rationale": "Published nominal rates for all newly built and existing residential properties purchased by households, not seasonally adjusted, fixed EA21 composition. July and October 2026 editions remain separate; EA20 and EU aggregates are not substituted. No local timing validation. Source: https://ec.europa.eu/eurostat/web/housing-price-statistics/overview (M9f saved issuer publications and calendar).",
+      "raw_ids": "cat:ea21_hpi_qq;cat:ea21_hpi_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Eurostat",
+      "theme": "Housing",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "EA21 nominal residential property prices (measured quarter)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "Case-Shiller national and 20-city house prices, NSA annual headlines",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "three-month moving average",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "us_case_shiller_national_yy",
+          "us_case_shiller_20_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_case_shiller",
+      "known_failure_modes": [
+        "three-month moving average"
+      ],
+      "nature": "HARD",
+      "rationale": "National and 20-city annual rates printed in the public press release, monthly repeat-sales house prices using a three-month moving average. Former CoreLogic branding is now Cotality. No local timing validation. FRED history retains redistributor provenance and does not certify issuer values. Source: https://press.spglobal.com/index.php?s=2429&keywords=Case-Shiller (M9f saved issuer publications).",
+      "raw_ids": "cat:us_case_shiller_national_yy;cat:us_case_shiller_20_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Dow Jones Indices and Cotality (private)",
+      "theme": "Housing",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US national and 20-city repeat-sales house prices (measured reference period)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "US pending home sales monthly change",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "seasonal adjustment not stated in public headline",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "us_pending_home_sales_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_pending_home_sales",
+      "known_failure_modes": [
+        "seasonal adjustment not stated in public headline"
+      ],
+      "nature": "HARD",
+      "rationale": "National public press-release monthly headline change in home sales under contract. Index levels, annual changes, regional data and licensed tables are excluded. Seasonal adjustment is not stated in the public headline. No local timing validation. Source: https://www.nar.realtor/research-and-statistics/housing-statistics/pending-home-sales (M9f issuer press releases captured in tests/fixtures/macro_releases/m9f).",
+      "raw_ids": "cat:us_pending_home_sales_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "National Association of Realtors (private)",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "residential investment",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Freddie Mac PMMS 30-year fixed-rate mortgage average",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "application reference week differs from publication date",
+      "frequency": "W",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "us_pmms_30y"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_pmms_30y",
+      "known_failure_modes": [
+        "application reference week differs from publication date"
+      ],
+      "nature": "HARD",
+      "rationale": "Weekly national conventional conforming home-purchase mortgage rate, percent; the reference period is the application reference week ending in the issuer calendar, distinct from the publication date. No local timing validation. Source: https://www.freddiemac.com/pmms (M9f issuer publications and calendar captured in tests/fixtures/macro_releases/m9f).",
+      "raw_ids": "cat:us_pmms_30y",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Freddie Mac",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US mortgage financing conditions",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "FHFA monthly purchase-only house prices, SA m/m and y/y",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "purchase-only index; excludes all-transactions measures",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "us_fhfa_hpi_mm",
+          "us_fhfa_hpi_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_fhfa_hpi",
+      "known_failure_modes": [
+        "purchase-only index",
+        "excludes all-transactions measures"
+      ],
+      "nature": "HARD",
+      "rationale": "Monthly national purchase-only SA rates, including the monthly table in quarterly publications; quarterly and all-transactions measures are separate. No local timing validation. Source: https://www.fhfa.gov/data/hpi (M9f issuer publications captured in tests/fixtures/macro_releases/m9f).",
+      "raw_ids": "cat:us_fhfa_hpi_mm;cat:us_fhfa_hpi_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "FHFA",
+      "theme": "Housing",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US purchase-only house prices (measured reference month)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "ECB adjusted household house-purchase loans, annual growth",
+      "country": "EMU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "changing euro area composition; excludes consumer and other household lending",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "ea_loans_house_purchase_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ea_loans_house_purchase",
+      "known_failure_modes": [
+        "changing euro area composition",
+        "excludes consumer and other household lending"
+      ],
+      "nature": "HARD",
+      "rationale": "Adjusted MFI loans to households and NPISH for house purchase, annual growth rate, working day and seasonally adjusted, adjusted for transfers and notional cash pooling. Dated annex prints preserve original releases separately from revised Data Portal history. No local timing validation. Source: https://data.ecb.europa.eu/data/datasets/BSI/BSI.M.U2.Y.U.A22T.A.I.U2.2250.Z01.A (M9f saved issuer releases and calendar).",
+      "raw_ids": "cat:ea_loans_house_purchase_yy",
+      "revision_behaviour": "Dated annex prints preserve original releases separately from revised Data Portal history.",
+      "secondary": [
+        "Financial conditions & credit"
+      ],
+      "source": "ECB BSI",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "mortgage lending cycle",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "UK House Price Index annual change",
+      "country": "GBR",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "provisional estimates; registration lag and revisions",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "uk_hpi_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "uk_hpi",
+      "known_failure_modes": [
+        "provisional estimates",
+        "registration lag and revisions"
+      ],
+      "nature": "HARD",
+      "rationale": "National annual HPI change for all residential properties purchased for market value, including cash and mortgage transactions. Northern Ireland is incorporated quarterly; headline is not seasonally adjusted. First-publication clock is preserved separately from later page updates. No local timing validation. Source: https://www.gov.uk/government/statistics/uk-house-price-index-for-august-2026/uk-house-price-index-summary-august-2026 (M9f saved dated issuer releases).",
+      "raw_ids": "cat:uk_hpi_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "HM Land Registry / ONS",
+      "theme": "Housing",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "UK residential property prices (measured reference month)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "BoE net mortgage approvals for house purchase",
+      "country": "GBR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "headline rounded to nearest 100; cancellations netted; excludes remortgaging",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "uk_mortgage_approvals"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "uk_mortgage_approvals",
+      "known_failure_modes": [
+        "headline rounded to nearest 100",
+        "cancellations netted",
+        "excludes remortgaging"
+      ],
+      "nature": "HARD",
+      "rationale": "Seasonally adjusted number of net house-purchase mortgage approvals to individuals from the dated Money and Credit release; not mortgage lending amounts, remortgaging or unrounded revised history. No local timing validation. Source: https://www.bankofengland.co.uk/statistics/money-and-credit/2026/august-2026 (M9f saved issuer releases and statistical release arrangements).",
+      "raw_ids": "cat:uk_mortgage_approvals",
+      "revision_behaviour": "not mortgage lending amounts, remortgaging or unrounded revised history.",
+      "secondary": [
+        "Financial conditions & credit"
+      ],
+      "source": "Bank of England",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "house-purchase financing demand",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Residential dwellings permitted",
+      "country": "DEU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "rounded dwelling counts; late permit reports and revisions",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "de_building_permits",
+          "de_building_permits_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "de_building_permits",
+      "known_failure_modes": [
+        "rounded dwelling counts",
+        "late permit reports and revisions"
+      ],
+      "nature": "HARD",
+      "rationale": "Issuer headline; no local timing validation. Source: https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/10/PD26_370_3111.html",
+      "raw_ids": "cat:de_building_permits; cat:de_building_permits_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [
+        "Growth / activity"
+      ],
+      "source": "Destatis",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "DEU GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Housing starts, total monthly SAAR",
+      "country": "CAN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "volatile monthly annualized flow; later revisions; distinct from six-month trend",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "ca_housing_starts"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ca_housing_starts",
+      "known_failure_modes": [
+        "volatile monthly annualized flow",
+        "later revisions",
+        "distinct from six-month trend"
+      ],
+      "nature": "HARD",
+      "rationale": "Issuer headline; no local timing validation. Source: https://www.cmhc-schl.gc.ca/media-newsroom/news-releases/2026/housing-starts-construction-data-september-2026",
+      "raw_ids": "cat:ca_housing_starts",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [
+        "Growth / activity"
+      ],
+      "source": "CMHC",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "CAN GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "New residential housing starts, annual change",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "volatile monthly starts; annual change distinct from SAAR monthly change",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "jp_housing_starts_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_housing_starts",
+      "known_failure_modes": [
+        "volatile monthly starts",
+        "annual change distinct from SAAR monthly change"
+      ],
+      "nature": "HARD",
+      "rationale": "Issuer headline; no local timing validation. Source: https://www.mlit.go.jp/report/press/joho04_hh_001395.html",
+      "raw_ids": "cat:jp_housing_starts_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [
+        "Growth / activity"
+      ],
+      "source": "MLIT",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "JPN GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "New commercial residential sales prices, official city-tier changes",
+      "country": "CHN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "70-city sample split into tiers of 4/31/35 cities; no national all-70 scalar; new homes exclude resales",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "cn_new_home_prices_tier1_mm",
+          "cn_new_home_prices_tier1_yy",
+          "cn_new_home_prices_tier2_mm",
+          "cn_new_home_prices_tier2_yy",
+          "cn_new_home_prices_tier3_mm",
+          "cn_new_home_prices_tier3_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "cn_new_home_prices_tiers",
+      "known_failure_modes": [
+        "70-city sample split into tiers of 4/31/35 cities",
+        "no national all-70 scalar",
+        "new homes exclude resales"
+      ],
+      "nature": "HARD",
+      "rationale": "Issuer headline; no local timing validation. Source: https://www.stats.gov.cn/sj/sjjd/202610/t20261019_1965610.html",
+      "raw_ids": "cat:cn_new_home_prices_tier1_mm; cat:cn_new_home_prices_tier1_yy; cat:cn_new_home_prices_tier2_mm; cat:cn_new_home_prices_tier2_yy; cat:cn_new_home_prices_tier3_mm; cat:cn_new_home_prices_tier3_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [
+        "Growth / activity"
+      ],
+      "source": "NBS",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "CHN GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
-  "classification_version": "v2.2",
+  "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "4c25e1c6ea0a60944de52d1e5e4228dfb2b1983ab2feef5e91e60a6158deb707",
-  "timing_extract_sha256": "e11d5048618c44f241637f2f2f8dd4a5ebbb71ed7a767e8d70992a0c5eee4f98"
+  "source_table_sha256": "229cd80dd62a4666a789c78b451646848bd4943bb623757215646f77719f9e69",
+  "timing_extract_sha256": "2ace8e4ee3669f3c1262766b4e1f75b25b8d2e04a997dec192fe02b1b9ee39b2"
 }

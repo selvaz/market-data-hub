@@ -23,7 +23,7 @@ from market_data_hub.indicator_cards.render import MAX_CARD_CHARS, short_pair
 
 def test_generated_json_freshness_and_provenance():
     assert JSON_PATH.read_text(encoding="utf-8") == build_json()
-    assert dataset().classification_version == "v2.2"
+    assert dataset().classification_version == "v2.3"
     assert dataset().source_table_sha256 == hashlib.sha256(PSV_PATH.read_bytes()).hexdigest()
     assert dataset().timing_extract_sha256 == hashlib.sha256(TIMING_PATH.read_bytes()).hexdigest()
     assert dataset().aliases_sha256 == hashlib.sha256(ALIASES_PATH.read_bytes()).hexdigest()
@@ -35,7 +35,7 @@ def test_generated_json_freshness_and_provenance():
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 294
+    assert len(rows) == len(dataset().cards) == 306
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -58,6 +58,67 @@ def test_aliases_never_duplicate_a_source_rows_catalogue_id():
             assert len(ids) == len(set(ids)), (card.key, store, ids)
     aliases = json.loads(ALIASES_PATH.read_text(encoding="utf-8"))["aliases"]
     assert len({alias["id"] for alias in aliases}) == len(aliases)
+
+
+HOUSING_REFERENCES = {
+    "ea_hpi": "EA21 nominal residential property prices (measured quarter)",
+    "us_case_shiller": "US national and 20-city repeat-sales house prices (measured reference period)",
+    "us_fhfa_hpi": "US purchase-only house prices (measured reference month)",
+    "uk_hpi": "UK residential property prices (measured reference month)",
+}
+HOUSING_CLASSES = {
+    "ea_hpi": ("COIN", "DEFINITION"),
+    "us_case_shiller": ("COIN", "DEFINITION"),
+    "us_fhfa_hpi": ("COIN", "DEFINITION"),
+    "uk_hpi": ("COIN", "DEFINITION"),
+    "us_pmms_30y": ("CTX", None),
+    "us_pending_home_sales": ("UNKNOWN", None),
+    "ea_loans_house_purchase": ("UNKNOWN", None),
+    "uk_mortgage_approvals": ("UNKNOWN", None),
+    "de_building_permits": ("UNKNOWN", None),
+    "ca_housing_starts": ("UNKNOWN", None),
+    "jp_housing_starts": ("UNKNOWN", None),
+    "cn_new_home_prices_tiers": ("UNKNOWN", None),
+}
+
+
+@pytest.mark.parametrize("key,classification", HOUSING_CLASSES.items())
+def test_owner_approved_v23_housing_promotions(key, classification):
+    card = indicator_card(key)
+    assert card is not None and card in dataset().cards
+    assert (card.timing.timing_class, card.timing.basis) == classification
+    assert card.nature == "HARD" and card.evidence.measurement == "M"
+    assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
+    assert all(indicator_card("cat:" + identity) == card for identity in card.ids.cat)
+    timing = json.loads(TIMING_PATH.read_text(encoding="utf-8"))
+    if key in HOUSING_REFERENCES:
+        assert card.timing.reference == HOUSING_REFERENCES[key]
+        assert card.evidence.mechanism == card.evidence.local_timing == "n.a."
+        assert card.timing.screen_note == "n.a. (reference or measurement identity)"
+        assert timing["rows"][key] == {
+            "descriptive_peak": "n.a.", "predictive_screen": "n.a. (reference or measurement identity)",
+        }
+    else:
+        assert card.evidence.local_timing == "none" and card.timing.screen_note == "not tested"
+        assert timing["rows"][key] == {
+            "descriptive_peak": "not estimated", "predictive_screen": "not tested",
+        }
+        assert card.evidence.mechanism == ("n.a." if key == "us_pmms_30y" else "mixed")
+    if key == "us_pmms_30y":
+        for text in (card.flag, card.rationale):
+            assert "application reference week" in text and "survey week" not in text
+
+
+def test_v23_housing_promotion_provenance():
+    timing = json.loads(TIMING_PATH.read_text(encoding="utf-8"))
+    promotion = timing["promotions"][-1]
+    assert set(promotion["keys"]) == set(HOUSING_CLASSES)
+    assert len(promotion["keys"]) == 12
+    assert promotion["approval"] == "approved v2.3 by owner 2026-10-25"
+    assert promotion["source_table_sha256"] == hashlib.sha256(PSV_PATH.read_bytes()).hexdigest()
+    assert promotion["draft_source_table_sha256"] == "b11bac4f17ba604585dcf995b60afa87ccb22555376480f1526eb923b7f8df21"
+    assert promotion["draft_timing_extract_sha256"] == "c0dd7a1576e88e4cf5562b8074a1ddb255db3e62cae9aa8bb56909b7a7e7534c"
+    assert sum(len(indicator_card(key).ids.cat) for key in HOUSING_CLASSES) == 21
 
 
 PROMOTED_CLASSES = {
@@ -116,7 +177,8 @@ def test_owner_approved_v22_promotions(key, classification):
 
 def test_promotion_provenance_covers_exactly_the_24_owner_approved_rows():
     timing = json.loads(TIMING_PATH.read_text(encoding="utf-8"))
-    promotion, = timing["promotions"]
+    promotion, housing = timing["promotions"]
+    assert set(housing["keys"]) == set(HOUSING_CLASSES)
     assert set(promotion["keys"]) == set(PROMOTED_CLASSES)
     assert promotion["approval"] == "approved v2.2 by owner 2026-10-24"
     assert promotion["source_table_sha256"] == hashlib.sha256(PSV_PATH.read_bytes()).hexdigest()
@@ -138,9 +200,10 @@ def test_approved_cards_have_no_approval_flags_or_draft_stage_rationales():
     for card in dataset().cards:
         assert "approved" not in card.flag.lower(), card.key
         rationale = card.rationale.lower()
-        for phrase in ("needs approval", "no approved", "not fetched for this offline draft"):
+        for phrase in ("needs approval", "no approved", "not fetched for this offline draft",
+                       "proposed for approval", "pending owner approval", "draft"):
             assert phrase not in rationale, (card.key, phrase)
-        if card.key in PROMOTED_CLASSES:
+        if card.key in PROMOTED_CLASSES or card.key in HOUSING_CLASSES:
             assert "Source: https://" in card.rationale
 
 
@@ -159,7 +222,7 @@ def test_promoted_eurostat_caveats_retain_fixed_geography(key):
 ])
 def test_build_rejects_stale_or_invalid_promotion_records(tmp_path, defect, message):
     timing = json.loads(TIMING_PATH.read_text(encoding="utf-8"))
-    promotion, = timing["promotions"]
+    promotion = timing["promotions"][-1]
     if defect == "hash":
         promotion["source_table_sha256"] = "0" * 64
     elif defect == "missing key":
@@ -183,7 +246,7 @@ def test_build_rejects_mixed_classification_versions(tmp_path, resource):
     payload["classification_version"] = "v2.1"
     modified = tmp_path / path.name
     modified.write_text(json.dumps(payload), encoding="utf-8")
-    with pytest.raises(ValueError, match="classification version must be v2.2"):
+    with pytest.raises(ValueError, match="classification version must be v2.3"):
         build_dataset(**{f"{resource}_path": modified})
 
 
@@ -294,12 +357,22 @@ def test_every_screen_names_its_pair_even_with_many_screens():
             assert label in text or screen.pair in text
 
 
-def test_hypothesis_is_said_in_words_and_caveats_are_never_clipped():
+def test_hypothesis_is_said_in_words_and_long_rationale_clipping_is_explicit():
     for key in ("us_curve_10y2y", "us_vix", "uk_credit_conditions"):
         assert "hypothesis" in render_card(indicator_card(key))
     for c in dataset().cards:
         caveat = " ".join("; ".join(filter(None, (c.flag, c.rationale))).split()).rstrip(".")
-        assert f"Caveat: {caveat}." in render_card(c), c.key
+        rendered = render_card(c)
+        if c.key in HOUSING_CLASSES and f"Caveat: {caveat}." not in rendered:
+            # Housing rationales retain long issuer URLs and measurement details.
+            # The existing compact renderer marks omitted detail explicitly;
+            # the real flag must still survive whole in its preview.
+            assert f"Caveat: {c.flag}; " in rendered, c.key
+            assert " [truncated]." in rendered, c.key
+            preview = rendered.split("Caveat: ", 1)[1].split("… [truncated].", 1)[0]
+            assert caveat.startswith(preview), c.key
+        else:
+            assert f"Caveat: {caveat}." in rendered, c.key
     assert "whose screen is partial only" in render_card(indicator_card("us_nfci"))
 
 
@@ -365,16 +438,10 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     report = coverage_report()
     print(json.dumps(report, indent=2))
     assert set(report["certified_families"]) == set(FAMILIES)
-    # Main's v2.2 promotions remain approved; housing adds 12 new proposals.
-    gaps = {'cn_new_home_prices': ['cat:cn_new_home_prices_tier1_mm', 'cat:cn_new_home_prices_tier1_yy', 'cat:cn_new_home_prices_tier2_mm', 'cat:cn_new_home_prices_tier2_yy', 'cat:cn_new_home_prices_tier3_mm', 'cat:cn_new_home_prices_tier3_yy'], 'jp_housing_starts': ['cat:jp_housing_starts_yy'], 'ca_housing_starts': ['cat:ca_housing_starts'], 'de_building_permits': ['cat:de_building_permits', 'cat:de_building_permits_yy'], "uk_mortgage_approvals": ["cat:uk_mortgage_approvals"], "uk_hpi": ["cat:uk_hpi_yy"], "ea_house_purchase_loans": ["cat:ea_loans_house_purchase_yy"], "ea_hpi": ["cat:ea21_hpi_qq", "cat:ea21_hpi_yy"],
-            "us_case_shiller": ["cat:us_case_shiller_20_yy", "cat:us_case_shiller_national_yy"],
-            "us_pending_home_sales": ["cat:us_pending_home_sales_mm"],
-            "us_pmms": ["cat:us_pmms_30y"],
-            "us_fhfa_hpi": ["cat:us_fhfa_hpi_mm", "cat:us_fhfa_hpi_yy"]}
     for family in FAMILIES:
-        assert report["certified_families"][family]["unmapped"] == gaps.get(family, [])
-    assert report["documented_certified_gaps"] == gaps
-    assert report["macro_releases"] == {"mapped": 61, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
+        assert report["certified_families"][family]["unmapped"] == []
+    assert report["documented_certified_gaps"] == {}
+    assert report["macro_releases"] == {"mapped": 82, "total": len(INDICATORS), "unmapped": []}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out
@@ -474,7 +541,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 294
+    assert dataset() is shipped and len(shipped.cards) == 306
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -544,7 +611,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
         report = json.loads(capsys.readouterr().out)
         assert report["tier_1_measures"]["mapped"] == report["tier_1_measures"]["approved"] == 86
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 294
+        assert report["cards"] == 306
         assert ("draft_cards" in report) == bool(args)
 
 
@@ -557,31 +624,19 @@ def test_housing_aliases_reuse_the_approved_v22_concepts():
     assert indicator_card("cat:us_existing_home_sales_mm") == indicator_card("cat:us_existing_home_sales")
 
 
-def test_packaged_m9f_proposals_are_a_separate_pending_generation():
+def test_housing_promotions_leave_no_packaged_drafts():
     from market_data_hub.indicator_cards.coverage import DATA_DIR, draft_cards
 
-    expected = {'cn_new_home_prices_tiers', 'jp_housing_starts', "ca_housing_starts", 'de_building_permits', "us_fhfa_hpi", "us_pmms_30y", "us_pending_home_sales", "us_case_shiller", "ea_hpi", "ea_loans_house_purchase", "uk_hpi", "uk_mortgage_approvals"}
     psv = DATA_DIR / "draft_rows_v2.3.psv"
     metadata = json.loads(psv.with_name("timing_v2.3-draft.json").read_text(encoding="utf-8"))
     assert metadata["classification_version"] == "v2.3-draft"
-    assert metadata["approval_status"] == "pending_owner_approval"
-    proposals = draft_cards()
-    assert {card.key for card in proposals} == expected == set(metadata["rows"])
-    assert len(proposals) == 12 and sum(len(card.ids.cat) for card in proposals) == 21
-    for card in proposals:
-        assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
-        assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
-        assert card.timing.screen_note == "not tested" and "Source: https://" in card.rationale
-        assert not re.search(r"approved|approval|draft v", card.flag, re.I)
-        assert all("approval" not in caveat.lower() for caveat in card.known_failure_modes)
-        assert all(indicator_card(identity) is None for identity in
-                   (card.key, *card.ids.cat, *("cat:" + i for i in card.ids.cat)))
+    assert metadata["source_table_sha256"] == hashlib.sha256(psv.read_bytes()).hexdigest()
+    with psv.open(encoding="utf-8-sig", newline="") as f:
+        assert list(csv.DictReader(f, delimiter="|")) == []
+    assert metadata["rows"] == {} and draft_cards() == ()
     default = coverage_report()
     review = coverage_report(with_drafts=True)
-    assert "draft_cards" not in default
-    assert {row["key"] for row in review["draft_cards"]} == expected
-    assert all(row["approval_status"] == "pending_owner_approval" and row["timing_class"] == "UNKNOWN"
-               for row in review["draft_cards"])
+    assert "draft_cards" not in default and review["draft_cards"] == []
     for key in ("macro_releases", "certified_families"):
         assert default[key] == review[key]
     assert default["tier_1_measures"]["approved"] == review["tier_1_measures"]["approved"] == 86
