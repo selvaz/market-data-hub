@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "a9fc47228ac942049281b626da71168208dd20e4da511330599807f0e608ee62",
+  "aliases_sha256": "13ba3e80e4821d75bbbc151e6b8db982eb579d7f9c595647230bc433316d4833",
   "cards": [
     {
       "concept": "Real GDP",
@@ -690,7 +690,8 @@
           "us_average_hourly_earnings_mm"
         ],
         "cat": [
-          "us_avg_hourly_earnings_yy"
+          "us_avg_hourly_earnings_yy",
+          "us_avg_hourly_earnings_mm"
         ],
         "derived_ms": [],
         "es": [],

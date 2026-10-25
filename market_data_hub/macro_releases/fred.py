@@ -21,6 +21,9 @@ MAPPINGS = {
     "us_ppi_mm": ("us_ppi", "PPIFIS", "pch"),
     "us_ppi_yy": ("us_ppi", "PPIFID", "pc1"),
     "us_jolts_openings": ("us_jolts", "JTSJOL", "lin"),
+    "us_unemployment_rate": ("us_unemployment", "UNRATE", "lin"),
+    "us_avg_hourly_earnings_mm": ("us_ahe", "CES0500000003", "pch"),
+    "us_avg_hourly_earnings_yy": ("us_ahe", "CES0500000003", "pc1"),
     "us_gdp_qq_saar": ("us_gdp", "A191RL1Q225SBEA", "lin"),
 }
 MAPPINGS.update({

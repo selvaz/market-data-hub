@@ -14,7 +14,7 @@ from market_data_hub.macro_releases.adapters import persist
 from market_data_hub.macro_releases.http import Document, FetchError
 from market_data_hub.macro_releases.schedule import RUN_INSTANT, due, family_editions
 
-FAMILIES = ("us_cpi", "us_payrolls", "us_ppi", "us_jolts")
+FAMILIES = ("us_cpi", "us_payrolls", "us_ppi", "us_jolts", "us_unemployment", "us_ahe")
 
 
 def document(payload):
@@ -130,3 +130,36 @@ def test_official_recovery_wins_without_rewriting_fallback_history(tmp_path, mon
         assert (result.source_class, result.status, result.value) == ("official", "official", 151)
         after = [tuple(r) for r in store.conn.execute("SELECT * FROM value_vintages ORDER BY id")]
         assert after[:len(before)] == before and len(after) == len(before) + 1
+
+
+def test_employment_definitions_official_calculations_and_shared_calendar():
+    payload = dict(status="REQUEST_SUCCEEDED", Results=dict(series=[
+        dict(seriesID="LNS14000000", data=[dict(year="2026", period="M09", value="4.2")]),
+        dict(seriesID="CES0500000003", data=[dict(year="2026", period="M09", value="37.81",
+             calculations=dict(pct_changes={"1": "0.1", "12": "3.0"}))])]))
+    rows = bls.BLSAdapter(None).parse(document(payload), ["us_unemployment", "us_ahe"], "2026-09")
+    assert {r.indicator_id: r.value for r in rows} == {
+        "us_unemployment_rate": 4.2, "us_avg_hourly_earnings_mm": 0.1, "us_avg_hourly_earnings_yy": 3.0}
+    for family in ("us_unemployment", "us_ahe"):
+        assert family_editions(family) == family_editions("us_payrolls")
+    assert {r.published_at for r in rows} == {"2026-10-02T12:30:00+00:00"}
+
+
+def test_new_families_seed_membership_per_family_and_stage(tmp_path):
+    from market_data_hub.macro_releases.scheduled_events import persist_scheduled_events
+    with open_writer(tmp_path / "schedule.sqlite") as store:
+        persist_scheduled_events(store, recorded_at="2026-10-25T20:00:00Z")
+        for family, count in (("us_payrolls", 1), ("us_unemployment", 1), ("us_ahe", 2)):
+            event = f"BLS:{family}:regular:2026-11-06"
+            rows = store.conn.execute("SELECT * FROM readings WHERE release_event_id=?", (event,)).fetchall()
+            assert len(rows) == count
+            assert all(r["value"] is None and r["estimate_stage"] == "regular" for r in rows)
+            schedule = store.conn.execute("SELECT * FROM schedule_versions WHERE release_event_id=?", (event,)).fetchone()
+            assert schedule["expected_at"] == "2026-11-06T13:30:00.000000+00:00"
+
+
+def test_employment_card_aliases_reuse_approved_concepts():
+    from market_data_hub.indicator_cards import indicator_card
+    for indicator, key in (("us_unemployment_rate", "us_unrate"),
+                           ("us_avg_hourly_earnings_mm", "us_ahe"), ("us_avg_hourly_earnings_yy", "us_ahe")):
+        assert indicator_card("cat:" + indicator).key == key

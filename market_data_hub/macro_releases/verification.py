@@ -32,7 +32,7 @@ def reviewed_anchor(obs):
         return obs.edition in CLAIMS_EDITIONS
     if obs.family in EDITIONS:
         return obs.edition in EDITIONS[obs.family]
-    if obs.family in ("us_cpi", "us_payrolls"):
+    if obs.family in ("us_cpi", "us_payrolls", "us_unemployment", "us_ahe"):
         return obs.edition in {d for (family, _), d in bls.EDITIONS.items() if family == obs.family}
     if obs.family == "us_gdp":
         return obs.edition in bea.EDITIONS
@@ -59,6 +59,7 @@ SANITY_BANDS = {
     "us_cpi_headline_mm": 3, "us_cpi_core_mm": 3,
     "us_cpi_headline_yy": 5, "us_cpi_core_yy": 5,
     "us_payrolls_change": 1500, "us_gdp_qq_saar": 15,
+    "us_unemployment_rate": 5, "us_avg_hourly_earnings_mm": 10, "us_avg_hourly_earnings_yy": 20,
     "ea_hicp_yy": 5, "ea_hicp_mm": 3, "ea21_hicp_yy": 5, "ea21_hicp_mm": 3,
     "ea_future_hicp_yy": 5, "ea_future_hicp_mm": 3,
     "uk_gdp_mm": 5, "uk_gdp_index": 20,

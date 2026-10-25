@@ -2,6 +2,7 @@
   "classification_version": "v2.2",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages.",
   "aliases": [
+    {"id": "cat:us_avg_hourly_earnings_mm", "key": "us_ahe", "basis": "Same approved total-private all-employee CES earnings concept as cat:us_avg_hourly_earnings_yy and ms:CES0500000003; SA published monthly change. Concept context only; no timing reclassification (M9h)."},
     {"id": "cat:ea_cost_borrow_house", "key": "pan_mir", "basis": "Same approved ECB MIR house-purchase cost-of-borrowing concept as pan:ecb_cost_borrow_house; euro area U2 monthly headline, not corporations or a fixation bucket. Source: https://data.ecb.europa.eu/data/datasets/MIR/MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N (M9f context only; no FF measure equivalence)."},
     {"id": "cat:boj_policy_rate_decision", "key": "jp_boj", "basis": "Approved BOJ short-term policy rate decision concept; issuer MPM statement and published rate vote (M9c)."},
     {"id": "cat:pboc_lpr_decision", "key": "cn_lpr", "basis": "Approved PBOC/NIFC LPR decision concept; both published tenors retained in the policy card (M9c)."},

@@ -357,6 +357,7 @@ def fetch_daily(client, family, since):
     from .us_editions import EDITIONS
     from .catalogue import REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
     strategy = {"us_cpi": _bls, "us_payrolls": _bls, "us_gdp": _bea,
+                "us_unemployment": _employment, "us_ahe": _employment,
                 "ea_hicp": _eurostat, "uk_gdp": _ons, "uk_cpi": _ons_rates,
                 "uk_labour_market": _ons_rates, "ea_gdp": _gdp, "us_jobless_claims": _claims,
                 **{f: _monthly for f in EDITIONS},
@@ -398,6 +399,10 @@ def _monthly(client, family, since):
     from .fred import USRedistributorAdapter
     adapter = bls.BLSAdapter if family in ("us_ppi", "us_jolts") else bea.BEAAdapter if family == "us_pce" else USRedistributorAdapter
     return FamilyFetch(observations=adapter(client).fetch([family], since))
+
+
+def _employment(client, family, since):
+    return FamilyFetch(observations=bls.BLSAdapter(client).fetch([family], since))
 
 
 def _remaining(client, family, since):

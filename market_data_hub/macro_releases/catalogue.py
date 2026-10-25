@@ -71,8 +71,26 @@ NEW_BLS_SERIES = {
     "JTS000000000000000JOL": ("us_jolts_openings", "level", "0"),
 }
 
+EMPLOYMENT_FAMILIES = {
+    "us_unemployment": [measure("us_unemployment_rate", "BLS", "USA", "level", "SA",
+        definition="CPS civilian unemployment rate U-3, age 16+, seasonally adjusted, percent of civilian labour force")],
+    "us_ahe": [measure("us_avg_hourly_earnings_" + basis, "BLS", "USA", basis, "SA",
+        definition="CES average hourly earnings of all employees, total private, seasonally adjusted, published " + basis + " percent change")
+        for basis in ("mm", "yy")],
+}
+INDICATORS.update((i.id, i) for measures in EMPLOYMENT_FAMILIES.values() for i in measures)
+# A series may supply several published calculations (AHE m/m and y/y).
+EMPLOYMENT_SERIES = (
+    ("LNS14000000", ("us_unemployment_rate", "level", "0")),
+    ("CES0500000003", ("us_avg_hourly_earnings_mm", "pct_changes", "1")),
+    ("CES0500000003", ("us_avg_hourly_earnings_yy", "pct_changes", "12")),
+)
+
 
 def bls_family(indicator):
+    for family, measures in EMPLOYMENT_FAMILIES.items():
+        if indicator in {i.id for i in measures}:
+            return family
     if indicator in {i.id for i in US_MONTHLY["us_ppi"]}:
         return "us_ppi"
     if indicator == "us_jolts_openings":
@@ -178,7 +196,7 @@ HOUSING_FAMILIES = {
         for basis in ("mm", "yy")],
 }
 INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES)
 
 
 def hicp_indicator(period, basis, geography="EA"):

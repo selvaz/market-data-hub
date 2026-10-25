@@ -5,7 +5,7 @@ from datetime import date, datetime
 import re
 
 from .adapters import Observation
-from .catalogue import BLS_SERIES, NEW_BLS_SERIES, bls_family
+from .catalogue import BLS_SERIES, NEW_BLS_SERIES, EMPLOYMENT_SERIES, bls_family
 from .http import FetchError, api_key, json_payload
 from .publication_times import new_york_release
 from .us_editions import EDITIONS as MONTHLY_EDITIONS
@@ -25,7 +25,10 @@ EDITIONS = {
 }
 EDITIONS.update({(f, p): d for f in ("us_ppi", "us_jolts")
                  for d, (p, _, _) in MONTHLY_EDITIONS[f].items()})
+EDITIONS.update({(f, p): d for f in ("us_unemployment", "us_ahe")
+                 for (family, p), d in list(EDITIONS.items()) if family == "us_payrolls"})
 SERIES = dict(BLS_SERIES, **NEW_BLS_SERIES)
+MEASURES = (*SERIES.items(), *EMPLOYMENT_SERIES)
 
 
 def shift_month(period, offset):
@@ -37,8 +40,8 @@ def shift_month(period, offset):
 def revision_start(family, newest, since, edition=None):
     # Annual SA review covers five complete calendar years, plus the current
     # year. A rolling 60-month cutoff would miss the first months of year five.
-    benchmark = family == "us_payrolls" and edition is not None and edition[5:7] == "02"
-    window = (shift_month(newest, -2) if family == "us_payrolls" and not benchmark
+    benchmark = family in ("us_payrolls", "us_ahe") and edition is not None and edition[5:7] == "02"
+    window = (shift_month(newest, -2) if family in ("us_payrolls", "us_ahe") and not benchmark
               else f"{int(newest[:4]) - 5:04d}-01")
     return min(since, window)
 
@@ -57,7 +60,7 @@ class BLSAdapter:
         return [o for o in observations if o.edition in due(family_editions(o.family), family=o.family)]
 
     def fetch_official(self, families, since):
-        series = [key for key, (indicator, _, _) in SERIES.items() if bls_family(indicator) in families]
+        series = list(dict.fromkeys(key for key, (indicator, _, _) in MEASURES if bls_family(indicator) in families))
         if not series:
             return []
         # One batch, well below BLS's 50-series ceiling. Inspect the SA revision
@@ -78,7 +81,7 @@ class BLSAdapter:
             raise FetchError("BLS rejected request")
         series = {s["seriesID"]: s for s in payload.get("Results", {}).get("series", [])}
         observations = []
-        for key, (indicator, calc, lag) in SERIES.items():
+        for key, (indicator, calc, lag) in MEASURES:
             family = bls_family(indicator)
             if family not in families:
                 continue
@@ -107,7 +110,7 @@ class BLSAdapter:
                     "BLS", document, edition, **new_york_release(edition, "10:00" if family == "us_jolts" else "08:30"), precision="exact",
                     provider_vintage=edition if family in MONTHLY_EDITIONS else None,
                     revision=("initial" if period == newest else
-                              "benchmark" if family == "us_payrolls" and edition[5:7] == "02" else "routine"),
+                              "benchmark" if family in ("us_payrolls", "us_ahe") and edition[5:7] == "02" else "routine"),
                 ))
         return observations
 
