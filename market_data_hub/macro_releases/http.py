@@ -56,16 +56,26 @@ class Document:
 
     @property
     def identity_hash(self):
-        normalized = normalize_body(self.body)
+        normalized = normalize_body(self.body, source_url=self.url)
         return hashlib.sha256(normalized).hexdigest() if normalized != self.body and hashlib.sha256(self.body).hexdigest() == self.document_hash else self.document_hash
 
 
-def normalize_body(body):
+def normalize_body(body, *, source_url=""):
     """Remove narrowly identified transport tokens, never dates/values/content."""
     body = re.sub(rb"(window\.__CF\$cv\$params=)\{[^}]*\}", rb"\1{}", body)
     body = re.sub(rb"(?i)((?:cf-ray|ray[_-]?id)[\"']?\s*[:=]\s*[\"'])[a-z0-9-]+", rb"\1VOLATILE", body)
     # BLS reports elapsed request time in an otherwise identical JSON response.
     body = re.sub(rb'("responseTime"\s*:\s*)(?:"[^"]*"|\d+(?:\.\d+)?)', rb'\g<1>0', body)
+    # CMHC's Sitecore render ticks and form CSRF token change per request.
+    # Keep the original body/SHA; normalize only these named transport values.
+    if source_url.startswith("https://www.cmhc-schl.gc.ca/"):
+        body = re.sub(rb"(SearchResourcesProperties_)[0-9a-fA-F]{32}", rb"\1VOLATILE", body)
+        for tag, name, attribute in ((b"meta", b"VIcurrentDateTime", b"content"),
+                                     (b"input", b"__RequestVerificationToken", b"value")):
+            pattern = rb'(?i)<' + tag + rb'\b(?=[^>]*\bname=["\']' + name + rb'["\'])[^>]*>'
+            value_pattern = rb'(?i)(\b' + attribute + rb'\s*=\s*)(["\'])(.*?)\2'
+            body = re.sub(pattern, lambda m: re.sub(value_pattern,
+                lambda v: v[1] + v[2] + b"VOLATILE" + v[2], m[0]), body)
     return body
 
 
@@ -139,7 +149,7 @@ class HttpClient:
         self.limiters = {p: RateLimiter(p, rate_directory, interval=15.0 if p == "eurostat" else 1.0,
                                      daily_limit=500 if p == "bls" else None,
                                      persistent=persistent_rates)
-                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich", "fed", "ecb", "boe", "boj", "pboc", "boc")}
+                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich", "fed", "ecb", "boe", "boj", "pboc", "boc", "fhfa", "nar", "spglobal", "freddiemac", "destatis", "cmhc", "mlit", "nbs")}
 
     def request(self, provider, url, *, params=None, payload=None) -> Document:
         safe_url = urlsplit(url)
@@ -160,7 +170,7 @@ class HttpClient:
                     "POST" if payload is not None else "GET", url,
                     params=params, json=payload, timeout=(10, 45),
                     verify=certifi.where(), allow_redirects=False,
-                    **({"headers": {"User-Agent": "Mozilla/5.0"}} if provider == "boe" else {}),
+                    **({"headers": {"User-Agent": "Mozilla/5.0"}} if provider in {"boe", "cmhc"} else {}),
                 )
             except requests.exceptions.SSLError:
                 raise FetchError(f"{provider}: TLS verification failed") from None

@@ -10,6 +10,9 @@ from .models import utc
 
 
 def reviewed_anchor(obs):
+    from .housing_editions import EDITIONS as HOUSING
+    if obs.family in HOUSING:
+        return obs.edition in HOUSING[obs.family] and obs.stage == HOUSING[obs.family][obs.edition][1]
     from .policy_editions import EDITIONS as POLICY
     if obs.family in POLICY:
         return obs.edition in POLICY[obs.family] and obs.stage == POLICY[obs.family][obs.edition][1]
@@ -43,6 +46,10 @@ def reviewed_anchor(obs):
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
+    **{f"cn_new_home_prices_tier{tier}_{basis}": 20 for tier in (1, 2, 3) for basis in ("mm", "yy")},
+    "jp_housing_starts_yy": 50,
+    "ca_housing_starts": 300000,
+    "de_building_permits": 100000, "de_building_permits_yy": 50,
     "boj_policy_rate_decision": 3,
     "pboc_lpr_decision": 3,
     "boc_overnight_rate_decision": 3,
@@ -80,13 +87,26 @@ SANITY_BANDS.update({
     "ea21_gdp_qq": 20, "ea21_gdp_yy": 30,
     "us_initial_jobless_claims": 3000,
 })
-ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
+ABSOLUTE_BOUNDS = {
+    "ca_housing_starts": 2000000,
+    "de_building_permits": 1000000,"us_jolts_openings": 20000, "us_housing_starts": 5000,
                    "ea_trade_balance": 1000000,
                    "us_new_home_sales": 5000,
                    "ea_economic_sentiment_indicator": 200,
                    "us_umich_consumer_sentiment": 150,
                    "us_building_permits": 5000, "us_trade_balance": 1000,
                    "us_initial_jobless_claims": 10000}
+SANITY_BANDS.update({"uk_mortgage_approvals": 50000, "uk_hpi_yy": 30, "ea_loans_house_purchase_yy": 10, "ea_cost_borrow_house": 3,
+                     "ea21_hpi_qq": 15, "ea21_hpi_yy": 30,
+                     "us_fhfa_hpi_mm": 15, "us_fhfa_hpi_yy": 30,
+                     "us_construction_spending_mm": 30, "us_pmms_30y": 3,
+                     "us_existing_home_sales": 3, "us_existing_home_sales_mm": 50,
+                     "us_pending_home_sales_mm": 50,
+                     "us_case_shiller_national_yy": 30, "us_case_shiller_20_yy": 30})
+ABSOLUTE_BOUNDS["us_existing_home_sales"] = 20
+ABSOLUTE_BOUNDS["us_pmms_30y"] = 25
+ABSOLUTE_BOUNDS["ea_cost_borrow_house"] = 25
+ABSOLUTE_BOUNDS["uk_mortgage_approvals"] = 2000000
 
 
 def configured_bands(overrides=None):

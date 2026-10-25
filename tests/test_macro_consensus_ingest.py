@@ -831,7 +831,14 @@ def test_snapshot_rows_and_ledger_roll_back_together(store, tmp_path, monkeypatc
 
 def test_reviewed_aliases_are_limited_exact_and_justified(store, tmp_path):
     catalogue = consensus.Catalogue(store)
-    assert {alias["family"] for alias in catalogue.aliases} == set(run_daily.FAMILIES)
+    # Coverage does not justify inventing an FF alias: M9f explicitly prefers
+    # a missing alias over a different measure. Every existing alias must still
+    # name a supported family, be unique, exact and justified below.
+    families = {alias["family"] for alias in catalogue.aliases}
+    assert families <= set(run_daily.FAMILIES)
+    assert "us_fhfa_hpi" not in families
+    identities = [(alias["currency"], consensus.name(alias["title"])) for alias in catalogue.aliases]
+    assert len(identities) == len(set(identities))
     for alias in catalogue.aliases:
         indicator = INDICATORS[alias["indicator_id"]]
         assert indicator.tier == "T1" and indicator.geography == alias["geography"]

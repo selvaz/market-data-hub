@@ -13,6 +13,8 @@ from .bls import BLSAdapter, shift_month
 from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS
 from .policy import PolicyAdapter
 from .tier1_publications import Tier1Adapter
+from .housing import HousingAdapter
+from .catalogue import HOUSING_FAMILIES
 from .eurostat import EurostatAdapter
 from .fred import FREDAdapter, USRedistributorAdapter
 from .dol import DOLAdapter
@@ -53,6 +55,7 @@ def main(argv=None):
         adapters.append((FREDAdapter(client), [f for f in families if f.startswith("us_")]))
     adapters.append((Tier1Adapter(client), [f for f in families if f in REMAINING_FAMILIES]))
     adapters.append((PolicyAdapter(client), [f for f in families if f in CENTRAL_BANKS]))
+    adapters.append((HousingAdapter(client), [f for f in families if f in HOUSING_FAMILIES]))
     for adapter, selected in adapters:
         if not selected:
             continue

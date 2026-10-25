@@ -355,13 +355,14 @@ def _ons(client, family, since):
 
 def fetch_daily(client, family, since):
     from .us_editions import EDITIONS
-    from .catalogue import REMAINING_FAMILIES, CENTRAL_BANKS
+    from .catalogue import REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
     strategy = {"us_cpi": _bls, "us_payrolls": _bls, "us_gdp": _bea,
                 "ea_hicp": _eurostat, "uk_gdp": _ons, "uk_cpi": _ons_rates,
                 "uk_labour_market": _ons_rates, "ea_gdp": _gdp, "us_jobless_claims": _claims,
                 **{f: _monthly for f in EDITIONS},
                 **{f: _remaining for f in REMAINING_FAMILIES},
-                **{f: _policy for f in CENTRAL_BANKS}}[family]
+                **{f: _policy for f in CENTRAL_BANKS},
+                **{f: _housing for f in HOUSING_FAMILIES}}[family]
     documents = []
     class Capture:
         def get(self, *args, **kwargs):
@@ -401,6 +402,11 @@ def _remaining(client, family, since):
 def _policy(client, family, since):
     from .policy import PolicyAdapter
     return FamilyFetch(observations=PolicyAdapter(client).fetch([family], since))
+
+
+def _housing(client, family, since):
+    from .housing import HousingAdapter
+    return FamilyFetch(observations=HousingAdapter(client).fetch([family], since))
 
 
 def _ons_rates(client, family, since):

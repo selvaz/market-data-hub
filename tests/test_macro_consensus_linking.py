@@ -27,7 +27,7 @@ def offline(monkeypatch):
 @pytest.mark.parametrize("currency,title", [
     ("USD", "Core PPI m/m"), ("USD", "PPI q/q"),
     ("USD", "Retail Sales y/y"), ("USD", "Core CPI q/q"),
-    ("USD", "Existing Home Sales"), ("GBP", "Retail Sales y/y"),
+    ("USD", "Existing Home Sales m/m"), ("GBP", "Retail Sales y/y"),
     ("GBP", "CPI m/m"), ("EUR", "Main Refinancing Rate"),
     ("CNY", "5-y Loan Prime Rate"), ("JPY", "Trade Balance"),
     ("EUR", "German Industrial Production m/m"),

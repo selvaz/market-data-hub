@@ -2,6 +2,7 @@
   "classification_version": "v2.2",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages.",
   "aliases": [
+    {"id": "cat:ea_cost_borrow_house", "key": "pan_mir", "basis": "Same approved ECB MIR house-purchase cost-of-borrowing concept as pan:ecb_cost_borrow_house; euro area U2 monthly headline, not corporations or a fixation bucket. Source: https://data.ecb.europa.eu/data/datasets/MIR/MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N (M9f context only; no FF measure equivalence)."},
     {"id": "cat:boj_policy_rate_decision", "key": "jp_boj", "basis": "Approved BOJ short-term policy rate decision concept; issuer MPM statement and published rate vote (M9c)."},
     {"id": "cat:pboc_lpr_decision", "key": "cn_lpr", "basis": "Approved PBOC/NIFC LPR decision concept; both published tenors retained in the policy card (M9c)."},
     {"id": "cat:boc_overnight_rate_decision", "key": "ca_boc", "basis": "Approved target overnight rate decision concept; issuer fixed-announcement statement at 09:45 ET (M9c)."},
@@ -45,7 +46,9 @@
     {"id": "cat:cn_nbs_manufacturing_pmi", "key": "cn_pmi_nbs", "basis": "Explicit NBS manufacturing survey; approved cal:cn_pmi_nbs_mfg. The private S&P panel is separate."},
     {"id": "cat:cn_caixin_manufacturing_pmi", "key": "cn_pmi_private", "basis": "Tier-1 retains the historical Caixin name; approved cal:cn_pmi_caixin_mfg and the approved RatingDog (ex Caixin) manufacturing concept. Context only; current sponsor branding is not re-verified."},
     {"id": "cat:ca_unemployment_rate", "key": "ca_lfs", "basis": "Explicit unemployment member of the approved Canadian Labour Force Survey card; approved cal:ca_unemp."},
-    {"id": "cat:ca_employment_change", "key": "ca_lfs", "basis": "Explicit employment-change member of the approved Canadian Labour Force Survey card; approved cal:ca_employment. SEPH payroll employment is separate."}
+    {"id": "cat:ca_employment_change", "key": "ca_lfs", "basis": "Explicit employment-change member of the approved Canadian Labour Force Survey card; approved cal:ca_employment. SEPH payroll employment is separate."},
+    {"id": "cat:us_construction_spending_mm", "key": "us_construction_spending", "basis": "Same approved Census total construction put-in-place concept as cal:us_construction_spending_mm; published SA m/m change, public plus private construction (M9f)."},
+    {"id": "cat:us_existing_home_sales_mm", "key": "us_existing_home_sales", "basis": "Same approved v2.2 NAR national existing-home sales concept as cat:us_existing_home_sales; published SA monthly headline change. This is concept context, not equivalence with the SAAR level (M9f)."}
   ],
-  "certified_gaps": {}
+  "certified_gaps": {"cn_new_home_prices": ["cat:cn_new_home_prices_tier1_mm", "cat:cn_new_home_prices_tier1_yy", "cat:cn_new_home_prices_tier2_mm", "cat:cn_new_home_prices_tier2_yy", "cat:cn_new_home_prices_tier3_mm", "cat:cn_new_home_prices_tier3_yy"], "jp_housing_starts": ["cat:jp_housing_starts_yy"], "ca_housing_starts": ["cat:ca_housing_starts"], "de_building_permits": ["cat:de_building_permits", "cat:de_building_permits_yy"], "uk_mortgage_approvals": ["cat:uk_mortgage_approvals"], "uk_hpi": ["cat:uk_hpi_yy"], "ea_house_purchase_loans": ["cat:ea_loans_house_purchase_yy"], "ea_hpi": ["cat:ea21_hpi_qq", "cat:ea21_hpi_yy"], "us_case_shiller": ["cat:us_case_shiller_20_yy", "cat:us_case_shiller_national_yy"], "us_pending_home_sales": ["cat:us_pending_home_sales_mm"], "us_fhfa_hpi": ["cat:us_fhfa_hpi_mm", "cat:us_fhfa_hpi_yy"], "us_pmms": ["cat:us_pmms_30y"]}
 }

@@ -1,6 +1,6 @@
 """Pure, read-only authority resolution over a knowledge-filtered store snapshot.
 
-Deterministic rules (m6-v1), in order:
+Deterministic rules (m6-v2), in order:
 * Match the exact indicator (measure/geography/adjustment/transform), period,
   stage, compatible units and composition. Never infer an edition from a URL.
 * Filter knowledge BEFORE selection. Rejected and derived evidence cannot win.
@@ -10,6 +10,8 @@ Deterministic rules (m6-v1), in order:
 * Choose the latest captured issuer edition, then its verified publication,
   including a verified copy distributed by a mirror. Without issuer evidence,
   prefer a structured mirror, then other mirror/web/legacy evidence.
+  Reviewed private issuers retain this authority with status private; known
+  redistributors cannot acquire issuer certification from a stored role.
 * Within an authority tier choose the latest publication time. A mirror with a
   strictly later publication of a DIFFERENT edition yields issuer_pending.
   Opaque edition names do not establish chronology. Older editions cannot dispute.
@@ -33,8 +35,9 @@ from typing import Optional
 from .models import utc
 from .boj_timing import TIME_FIELDS
 from .read_times import known_by, normalize, stored_rows, timestamp
+from .source_classes import certification_status, source_class
 
-RULE_VERSION = "macro-resolver:m6-v1"
+RULE_VERSION = "macro-resolver:m6-v2"
 END_OF_TIME = "9999-12-31T23:59:59.999999+00:00"
 COLLECT_LOG_LIMITATION = (
     "Daily collector family outcomes are persisted from schema v4; older/manual "
@@ -113,11 +116,19 @@ class Evidence:
     policy_decision: Optional[dict] = None
 
     @property
+    def source_class(self):
+        return source_class(self.issuer_id, self.source_id, self.role)
+
+    @property
+    def verified_issuer(self):
+        return self.role == "issuer" and self.verified and self.source_class != "redistributor"
+
+    @property
     def official(self):
-        return self.role == "issuer" and self.verified
+        return self.verified_issuer and self.source_class == "official"
 
     def provenance(self):
-        return asdict(self)
+        return dict(asdict(self), source_class=self.source_class)
 
 
 @dataclass(frozen=True)
@@ -140,6 +151,8 @@ class Resolution:
     reason: str
     rule_version: str = RULE_VERSION
     policy_decision: Optional[dict] = None
+    issuer_id: str = ""
+    source_class: str = "unknown"
 
     def to_dict(self):
         return asdict(self)
@@ -465,6 +478,9 @@ class Snapshot:
         event = events.get(row["release_event_id"], {})
         issuer = source["issuer_id"] if source else row["issuer_id"]
         role = source["evidence_role"] if source else "web"
+        source_id = source["source_id"] if source else row["source_id"]
+        if role == "issuer" and source_class(issuer, source_id, role) == "redistributor":
+            role = "mirror"
         if (
             issuer != indicator["issuer_id"]
             or event.get("issuer_id", issuer) != indicator["issuer_id"]
@@ -573,7 +589,7 @@ def compatible(evidence, indicator):
 def _tier(e):
     return (
         0
-        if e.official
+        if e.verified_issuer
         else 1
         if e.role == "issuer"
         else 2
@@ -626,7 +642,7 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
         pool = vintages or stream
         newest = max(e.first_seen_at for e in pool)
         rows.append(min((e for e in pool if e.first_seen_at == newest), key=_tie))
-    issuers = [e for e in rows if e.role == "issuer"]
+    issuers = [e for e in rows if e.role == "issuer" and e.source_class != "redistributor"]
     if issuers:
         newest_issuer = max(publication_order(e) for e in issuers)
         edition_leader = min(
@@ -643,15 +659,16 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
     pending = [
         e
         for e in rows
-        if e.role == "mirror"
+        if e.source_class == "redistributor"
         and e.edition != selected.edition
         and e.published_at
         and (not selected.published_at or e.published_at > selected.published_at)
     ]
-    status = "official" if selected.official else "provisional"
+    status = certification_status(selected.source_class, verified_issuer=selected.verified_issuer)
     reason = (
+        "verified private issuer publication" if selected.verified_issuer and selected.source_class == "private" else
         "verified issuer publication"
-        if selected.official
+        if selected.verified_issuer
         else "only unverified or non-issuer evidence"
     )
     if pending and selected.role == "issuer":
@@ -669,7 +686,7 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
             continue
         same_edition = e.edition == selected.edition
         conflict = same_edition and (
-            (selected.official and e.official)
+            (selected.verified_issuer and e.verified_issuer)
             or (
                 selected.role == "issuer"
                 and not selected.verified
@@ -720,12 +737,15 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
             "distributor_id": selected.distributor_id,
             "evidence_role": selected.role,
             "selected_evidence_id": selected.id,
+            "source_class": selected.source_class,
         },
         evidence_ids=tuple(e.id for e in sorted(all_rows, key=_tie)),
         discrepancies=tuple(discrepancies),
         provenance=tuple(e.provenance() for e in sorted(all_rows, key=_tie)),
         reason=reason,
         policy_decision=selected.policy_decision,
+        issuer_id=selected.issuer_id,
+        source_class=selected.source_class,
     )
 
 

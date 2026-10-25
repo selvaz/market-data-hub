@@ -134,7 +134,51 @@ CENTRAL_BANKS = {
         definition="FOMC federal funds target range; scalar value is upper bound, complete range in policy_decision", frequency="E")],
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS)
+HOUSING_FAMILIES = {
+    "cn_new_home_prices": [measure(f"cn_new_home_prices_tier{tier}_{basis}", "NBS", f"CHN_TIER{tier}", basis, "NSA",
+        definition=f"NBS new commercial residential sales prices, city tier {tier} ({count} cities), published {basis} percent change; no national all-70-city average")
+        for tier, count in ((1, 4), (2, 31), (3, 35)) for basis in ("mm", "yy")],
+    "jp_housing_starts": [measure("jp_housing_starts_yy", "MLIT", "JPN", "yy", "NSA",
+        definition="MLIT national new residential housing starts, published unadjusted annual percent change; excludes nonresidential starts and the separate SAAR monthly change")],
+    "ca_housing_starts": [measure("ca_housing_starts", "CMHC", "CAN", "level", "SA", "units",
+        definition="CMHC total monthly housing starts for all areas in Canada, seasonally adjusted annual rate (SAAR); dated public release original print, not the six-month trend or urban actual starts")],
+    "de_building_permits": [
+        measure("de_building_permits", "Destatis", "DEU", "level", "NSA", "dwellings",
+            definition="Germany: residential dwellings permitted in new and existing buildings, published monthly total rounded to nearest 100; not a count of buildings or YTD"),
+        measure("de_building_permits_yy", "Destatis", "DEU", "yy", "NSA",
+            definition="Germany: published annual percent change in total residential dwellings permitted, including new and existing buildings; not recomputed from rounded counts")],
+    "uk_mortgage_approvals": [measure("uk_mortgage_approvals", "BoE", "GBR", "level", "SA", "approvals",
+        definition="BoE Money and Credit: net mortgage approvals for house purchase to individuals, seasonally adjusted count; cancellations netted, excludes remortgaging; public release headline rounded to nearest 100, distinct from unrounded LPMVTVX history")],
+    "uk_hpi": [measure("uk_hpi_yy", "HMLR/ONS", "GBR", "yy", "NSA",
+        definition="UK House Price Index, all residential properties purchased for market value, cash and mortgage transactions; published national annual change; provisional and subject to registration revisions")],
+    "ea_house_purchase_loans": [measure("ea_loans_house_purchase_yy", "ECB", "EA_CHANGING", "yy", "SCA",
+        definition="ECB BSI.M.U2.Y.U.A22T.A.I.U2.2250.Z01.A: adjusted MFI loans to euro area households and NPISH for house purchase; annual growth rate, working day and seasonally adjusted; transfers and notional cash pooling adjusted; changing euro area composition")],
+    "ea_house_purchase_cost": [measure("ea_cost_borrow_house", "ECB", "EA_CHANGING", "level", "not-stated", "% per annum",
+        definition="ECB MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N: composite cost of borrowing for households and NPISH for house purchase, new business, AAR/NDER; volumes weighted with a moving average; euro denominated; changing euro area composition")],
+    "ea_hpi": [measure("ea21_hpi_" + basis, "Eurostat", "EA21", basis, "NSA",
+        definition="Eurostat EA21 House Price Index, all new and existing residential properties purchased by households; published nominal " + basis + " percent change, not seasonally adjusted",
+        frequency="Q") for basis in ("qq", "yy")],
+    "us_case_shiller": [measure("us_case_shiller_" + area + "_yy", "SPDJI", "USA", "yy", "NSA",
+        definition="Private S&P Cotality (formerly CoreLogic) Case-Shiller " + label + " public press-release annual headline; NSA repeat-sales single-family house prices, monthly three-month moving average")
+        for area, label in (("national", "U.S. National"), ("20", "20-City Composite"))],
+    "us_pending_home_sales": [measure("us_pending_home_sales_mm", "NAR", "USA", "mm", "not-stated",
+        definition="Private NAR public press-release national headline: pending home sales monthly percent change; contracts, not closed sales. Adjustment is not stated in the public headline; no index level or licensed table is collected")],
+    "us_existing_home_sales": [
+        measure("us_existing_home_sales", "NAR", "USA", "level", "SA", "units", 1000000,
+                "Private NAR public press-release national headline: total existing-home sales, SA annual rate in millions"),
+        measure("us_existing_home_sales_mm", "NAR", "USA", "mm", "SA",
+                definition="Private NAR public press-release national headline: total existing-home sales monthly percent change")],
+    "us_pmms": [measure("us_pmms_30y", "FreddieMac", "USA", "level", "NSA",
+        definition="Freddie Mac PMMS U.S. weekly average 30-year fixed-rate mortgage, conventional conforming purchase loans, percent; reference period is survey week ending from the issuer calendar",
+        frequency="W")],
+    "us_construction_spending": [measure("us_construction_spending_mm", "Census", "USA", "mm", "SA",
+        definition="Total value of construction put in place, public and private, SA annual rate; published monthly percent change")],
+    "us_fhfa_hpi": [measure("us_fhfa_hpi_" + basis, "FHFA", "USA", basis, "SA",
+        definition="FHFA monthly purchase-only national house price index, published " + basis + " percent change")
+        for basis in ("mm", "yy")],
+}
+INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES)
 
 
 def hicp_indicator(period, basis, geography="EA"):

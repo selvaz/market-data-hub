@@ -48,6 +48,8 @@ def replay(monkeypatch, observations):
 
 
 def invoke(db, capsys, *args):
+    # Use a private empty archive: the machine's live FF captures must not
+    # provide schedules or consensus to this saved-publication lifecycle test.
     raw = db.parent / "raw"
     raw.mkdir(exist_ok=True)
     code = run_daily.main(["--db", str(db), "--consensus-raw-dir", str(raw), *args])

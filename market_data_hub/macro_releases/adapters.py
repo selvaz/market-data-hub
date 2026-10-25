@@ -88,8 +88,17 @@ def persist(store, observations):
     ids = []
     for obs in observations:
         indicator = INDICATORS[obs.indicator_id]
-        if indicator.frequency == "W" and (len(obs.period) != 10 or date.fromisoformat(obs.period).weekday() != 5):
+        if indicator.frequency == "W":
+            if len(obs.period) != 10:
+                raise ValueError("Weekly measures require an explicit survey week ending date")
+            date.fromisoformat(obs.period)
+        if indicator.id == "us_initial_jobless_claims" and date.fromisoformat(obs.period).weekday() != 5:
             raise ValueError("Weekly claims require an explicit Saturday week ending date")
+        if indicator.id == "us_pmms_30y":
+            from .housing_editions import EDITIONS
+            if (obs.family != "us_pmms" or
+                    EDITIONS["us_pmms"].get(obs.edition, ())[:1] != (obs.period,)):
+                raise ValueError("PMMS requires the reviewed survey week ending date")
         issuer = indicator.issuer_id
         mirror = obs.source != issuer
         verified = not (mirror or not obs.published or obs.method == "archive_text" or obs.needs_review

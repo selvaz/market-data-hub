@@ -101,7 +101,10 @@ Package resources live under `market_data_hub/indicator_cards/`:
   and SHA-256 hashes of the table, timing extract and aliases.
 - `tier1_v1.json`: the portable snapshot of the 86 external tier-1 measure ids.
 - `draft_rows_v2.2.psv` and `timing_v2.2-draft.json`: empty after promotion,
-  retained for subsequent proposals. Drafts never enter the approved build.
+  retained as the promoted generation. Drafts never enter the approved build.
+- `draft_rows_v2.3.psv` and `timing_v2.3-draft.json`: five new M9f housing
+  proposals, with `approval_status: pending_owner_approval` in timing metadata,
+  timing UNKNOWN and only real caveats in the PSV `flag` column.
 
 The JSON filenames follow the existing classification-version convention, so
 timing, aliases and generated cards move together from v2.1 to v2.2. The master
@@ -167,10 +170,13 @@ Matched turning-point leads remain **not estimated** for every card.
 
 For future proposals, add a `draft_rows_<version>.psv` with the same 19-column
 header and a matching `timing_<version>-draft.json`. `--with-drafts` discovers
-these pairs, verifies their hashes and pending-approval flags, and rejects ids
+these pairs, verifies their hashes and pending-approval metadata, and rejects ids
 that duplicate approved cards or another draft file. Proposed timing must stay
 UNKNOWN and untested. The default coverage report and shipped card index use
-approved cards only.
+approved cards only. Nonempty draft metadata requires
+`approval_status: pending_owner_approval`; the `flag` column contains real
+caveats, never approval text. With the opt-in, `draft_cards` lists proposals
+outside the tier-1 snapshot too, without adding them to approved coverage.
 
 ## Coverage
 
@@ -181,15 +187,18 @@ configured-id context coverage, not live ingestion or historical completeness.
 | Universe | Measures / ids with approved cards |
 |---|---:|
 | External tier-1 measures | 86 / 86 |
-| Release catalogue | 54 / 54 |
+| Release catalogue | 57 / 65 |
 | Active tier-1 calendar | 65 / 65 |
 | Enabled hub macro series | 107 / 107 |
 
 UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) is covered by the owner-approved
 row `uk_gdp_monthly` (added 18/10/2026, mirroring the US GDP row: COIN by
-definition, HARD, ONS). All 33 certified families are fully covered; tests
-assert that no documented gap remains. Tier-1 coverage is 86 approved, zero
-drafts and zero unmapped ids, with or without `--with-drafts`. Main's M9b/M9c
+definition, HARD, ONS). Main's original certified families remain fully covered.
+Housing adds approved construction and existing-home-sales context, plus five
+new v2.3 proposals for eight measures; those measures remain explicit concept
+gaps in approved coverage. Tier-1 coverage is 86 approved, zero draft resolutions
+and zero unmapped ids, with or without `--with-drafts`; the opt-in separately
+lists all five housing proposals in `draft_cards`. Main's M9b/M9c
 aliases and per-card id de-duplication are retained; the shared
 `cat:us_new_home_sales` alias appears once with main's M9b explanation.
 

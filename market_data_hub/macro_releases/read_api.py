@@ -8,8 +8,9 @@ from decimal import Decimal
 import re
 from zoneinfo import ZoneInfo
 
-from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS
+from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
 from .models import utc
+from .source_classes import source_class
 from .resolve import (
     COLLECT_LOG_LIMITATION,
     Snapshot,
@@ -32,10 +33,15 @@ FAMILY_INDICATORS["ea_gdp"] = {"ea21_gdp_qq", "ea21_gdp_yy"}
 FAMILY_INDICATORS["us_jobless_claims"] = {"us_initial_jobless_claims"}
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in REMAINING_FAMILIES.items()})
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in CENTRAL_BANKS.items()})
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in HOUSING_FAMILIES.items()})
 
 
 def indicators_for_stage(family, stage):
     """Only measures actually published by this family's edition stage."""
+    if family in HOUSING_FAMILIES:
+        from .housing_editions import EDITIONS
+        stages = {metadata[1] for metadata in EDITIONS[family].values()}
+        return FAMILY_INDICATORS[family] if stage in stages else set()
     if (family, stage) == ("ea_ec_surveys", "flash"):
         return {"ea_consumer_confidence"}
     if (family, stage) == ("us_durable_goods", "final"):
@@ -63,7 +69,7 @@ def stale_series(snapshot, indicator, period, released_at):
         e.reference_period
         for e in snapshot.evidence
         if e.indicator_id == successor
-        and e.official
+        and e.verified_issuer
         and e.value is not None
         and e.published_at
         and e.published_at <= released_at
@@ -102,7 +108,12 @@ def window(since, until):
     return start, end
 
 
-def prior_period(period, frequency=None):
+def prior_period(period, frequency=None, *, indicator=None):
+    if indicator == "us_pmms_30y":
+        from .housing_editions import EDITIONS
+        # Holiday survey weeks may end six or eight days apart. Preserve the
+        # issuer calendar rather than inventing a seven-day comparison date.
+        return max((p for p, _, _ in EDITIONS["us_pmms"].values() if p < period), default=None)
     if re.fullmatch(r"\d{4}-\d{2}", period):
         first = date.fromisoformat(period + "-01")
         return (first - timedelta(days=1)).strftime("%Y-%m")
@@ -313,7 +324,7 @@ class ReadAPI:
             if (
                 e.event_id
                 and e.reference_period
-                and e.official
+                and e.verified_issuer
                 and e.reading_kind == "actual"
                 and not malformed_edition(e)
             ):
@@ -392,7 +403,7 @@ class ReadAPI:
             if stale_series(snapshot, indicator, period, released_at):
                 continue
             frequency = snapshot.indicators[indicator]["frequency"]
-            prior = prior_period(period, frequency) if frequency != "E" else None
+            prior = prior_period(period, frequency, indicator=indicator) if frequency != "E" else None
             decisions = None
             missing_decision = None
             if frequency == "E":
@@ -532,6 +543,8 @@ class ReadAPI:
                     "time_basis": time_basis,
                     "publication_precision": precision,
                     "resolution": resolution.to_dict(),
+                    "issuer_id": resolution.issuer_id,
+                    "source_class": resolution.source_class,
                     "policy_decision": resolution.policy_decision,
                     "previous": previous,
                     "previous_before_release": previous_before_release,
@@ -673,6 +686,8 @@ class ReadAPI:
                     publication_precision=precision,
                     status="scheduled",
                     resolution=None,
+                    issuer_id=info["issuer_id"],
+                    source_class=source_class(info["issuer_id"], info["issuer_id"]),
                     actual=None,
                     surprise=None,
                     actual_missing_reason="issuer_actual_not_available",
@@ -933,7 +948,7 @@ class ReadAPI:
         monthly = [
             e.reference_period
             for e in valid_rows
-            if e.official and re.fullmatch(r"\d{4}-\d{2}", e.reference_period or "")
+            if e.verified_issuer and re.fullmatch(r"\d{4}-\d{2}", e.reference_period or "")
         ]
         if monthly and is_window:
             discontinued = stale_series(
@@ -1092,6 +1107,7 @@ class ReadAPI:
                 "expected": 0,
                 "captured": 0,
                 "official": 0,
+                "private": 0,
                 "provisional": 0,
                 "disputed": 0,
                 "issuer_pending": 0,
@@ -1127,6 +1143,7 @@ class ReadAPI:
                 events.setdefault((family, event), [])
         priorities = {
             "official": 0,
+            "private": 0,
             "provisional": 1,
             "issuer_pending": 2,
             "disputed": 3,
@@ -1138,6 +1155,7 @@ class ReadAPI:
                     "expected": 0,
                     "captured": 0,
                     "official": 0,
+                    "private": 0,
                     "provisional": 0,
                     "disputed": 0,
                     "issuer_pending": 0,

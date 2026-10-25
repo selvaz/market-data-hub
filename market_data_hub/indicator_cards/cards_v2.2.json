@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "974f4a9598a20ba7d404f5cc859a7bf34b3833e79a9b5a45231027a548b49645",
+  "aliases_sha256": "a9fc47228ac942049281b626da71168208dd20e4da511330599807f0e608ee62",
   "cards": [
     {
       "concept": "Real GDP",
@@ -4007,7 +4007,9 @@
         "cal": [
           "us_construction_spending_mm"
         ],
-        "cat": [],
+        "cat": [
+          "us_construction_spending_mm"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -12411,7 +12413,9 @@
       "frequency": "M",
       "ids": {
         "cal": [],
-        "cat": [],
+        "cat": [
+          "ea_cost_borrow_house"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -13102,7 +13106,8 @@
       "ids": {
         "cal": [],
         "cat": [
-          "us_existing_home_sales"
+          "us_existing_home_sales",
+          "us_existing_home_sales_mm"
         ],
         "derived_ms": [],
         "es": [],

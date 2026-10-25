@@ -2,6 +2,7 @@
 
 The old read views and as_known_at retain M4 placeholder selection. The M6
 consumer methods delegate to the pure resolver/read API, without writing decisions.
+Legacy view names do not imply source ownership; returned rows carry source class.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from filelock import FileLock
 from . import models as m
 from .boj_timing import decision_facts, record_time
 from .migrations import READER_CEILING, READER_FLOOR, migrate
+from .source_classes import certification_status, source_class
 
 
 def _policy_facts(payload):
@@ -260,13 +262,26 @@ class Store:
         where, params = (
             (" WHERE indicator_id=?", (indicator_id,)) if indicator_id else ("", ())
         )
-        return [
+        return self._classified_rows([
             dict(row)
             for row in self.conn.execute(
                 f"SELECT * FROM {name}{where} ORDER BY indicator_id, reference_period",
                 params,
             )
-        ]
+        ])
+
+    def _classified_rows(self, rows):
+        """Keep legacy view selection, but never imply public issuer ownership."""
+        sources = {r["id"]: dict(r) for r in self.conn.execute("SELECT * FROM source_series")}
+        result = []
+        for row in rows:
+            series = sources[row["source_series_id"]]
+            kind = source_class(series["issuer_id"], series["source_id"], series["evidence_role"])
+            status = certification_status(kind, verified_issuer=(
+                series["evidence_role"] == "issuer" and row["verification_status"] == "verified"))
+            result.append(dict(row, issuer_id=series["issuer_id"], source_id=series["source_id"],
+                               source_class=kind, resolution_status=status))
+        return result
 
     def as_known_at(
         self, timestamp: str, indicator_id: Optional[str] = None
@@ -280,7 +295,7 @@ class Store:
         params = (
             (m.utc(timestamp), indicator_id) if indicator_id else (m.utc(timestamp),)
         )
-        return [
+        return self._classified_rows([
             dict(row)
             for row in self.conn.execute(
                 "SELECT * FROM (SELECT v.*, ROW_NUMBER() OVER ("
@@ -290,7 +305,7 @@ class Store:
                 "ORDER BY indicator_id, reference_period",
                 params,
             )
-        ]
+        ])
 
 
 def open_reader(path: Union[str, Path]) -> Store:

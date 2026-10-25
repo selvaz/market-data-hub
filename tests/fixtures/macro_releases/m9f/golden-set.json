@@ -1,0 +1,436 @@
+{
+  "cases": [
+    {
+      "family": "us_pending_home_sales",
+      "fixture": "nar-pending-aug.html",
+      "edition": "2026-09-17",
+      "indicator": "us_pending_home_sales_mm",
+      "period": "2026-08",
+      "value": 0.3,
+      "source_url": "https://www.nar.realtor/newsroom/nar-pending-home-sales-report-shows-0-point-3-percent-increase-in-august"
+    },
+    {
+      "family": "us_pending_home_sales",
+      "fixture": "nar-pending-sept.html",
+      "edition": "2026-10-20",
+      "indicator": "us_pending_home_sales_mm",
+      "period": "2026-09",
+      "value": -7.3,
+      "source_url": "https://www.nar.realtor/newsroom/pending-home-sales-decreased-7-3-percent-in-september"
+    },
+    {
+      "family": "us_fhfa_hpi",
+      "fixture": "fhfa-aug.pdf",
+      "edition": "2026-08-25",
+      "indicator": "us_fhfa_hpi_mm",
+      "period": "2026-06",
+      "value": 0.0,
+      "source_url": "https://www.fhfa.gov/document/d/hpi/fhfa-house-price-index-report-2026q2"
+    },
+    {
+      "family": "us_fhfa_hpi",
+      "fixture": "fhfa-aug.pdf",
+      "edition": "2026-08-25",
+      "indicator": "us_fhfa_hpi_yy",
+      "period": "2026-06",
+      "value": 2.3,
+      "source_url": "https://www.fhfa.gov/document/d/hpi/fhfa-house-price-index-report-2026q2"
+    },
+    {
+      "family": "us_fhfa_hpi",
+      "fixture": "fhfa-sept.pdf",
+      "edition": "2026-09-29",
+      "indicator": "us_fhfa_hpi_mm",
+      "period": "2026-07",
+      "value": 0.3,
+      "source_url": "https://www.fhfa.gov/document/d/hpi/fhfa-hpi-monthly-september-2026"
+    },
+    {
+      "family": "us_fhfa_hpi",
+      "fixture": "fhfa-sept.pdf",
+      "edition": "2026-09-29",
+      "indicator": "us_fhfa_hpi_yy",
+      "period": "2026-07",
+      "value": 2.6,
+      "source_url": "https://www.fhfa.gov/document/d/hpi/fhfa-hpi-monthly-september-2026"
+    },
+    {
+      "family": "us_construction_spending",
+      "fixture": "construction-june.pdf",
+      "edition": "2026-08-03",
+      "indicator": "us_construction_spending_mm",
+      "period": "2026-06",
+      "value": -0.1,
+      "source_url": "https://www.census.gov/construction/c30/pdf/pr202606.pdf"
+    },
+    {
+      "family": "us_construction_spending",
+      "fixture": "construction-current.pdf",
+      "edition": "2026-10-01",
+      "indicator": "us_construction_spending_mm",
+      "period": "2026-08",
+      "value": 0.9,
+      "source_url": "https://www.census.gov/construction/c30/pdf/release.pdf"
+    },
+    {
+      "family": "us_pmms",
+      "fixture": "pmms.html",
+      "edition": "2026-10-15",
+      "indicator": "us_pmms_30y",
+      "period": "2026-10-14",
+      "value": 7.4,
+      "source_url": "https://www.freddiemac.com/pmms/archive"
+    },
+    {
+      "family": "us_pmms",
+      "fixture": "pmms-current.html",
+      "edition": "2026-10-22",
+      "indicator": "us_pmms_30y",
+      "period": "2026-10-21",
+      "value": 7.32,
+      "source_url": "https://www.freddiemac.com/pmms"
+    },
+    {
+      "family": "us_existing_home_sales",
+      "fixture": "nar-existing-sept.html",
+      "edition": "2026-10-13",
+      "indicator": "us_existing_home_sales",
+      "period": "2026-09",
+      "value": 3.99,
+      "source_url": "https://www.nar.realtor/newsroom/existing-home-sales-increased-1-5-in-september-according-to-nar-report"
+    },
+    {
+      "family": "us_existing_home_sales",
+      "fixture": "nar-existing-sept.html",
+      "edition": "2026-10-13",
+      "indicator": "us_existing_home_sales_mm",
+      "period": "2026-09",
+      "value": 1.5,
+      "source_url": "https://www.nar.realtor/newsroom/existing-home-sales-increased-1-5-in-september-according-to-nar-report"
+    },
+    {
+      "family": "us_case_shiller",
+      "fixture": "case-shiller-press-aug.html",
+      "edition": "2026-08-25",
+      "indicator": "us_case_shiller_national_yy",
+      "period": "2026-06",
+      "value": 1.5,
+      "source_url": "https://press.spglobal.com/2026-08-25-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-June-2026"
+    },
+    {
+      "family": "us_case_shiller",
+      "fixture": "case-shiller-press-aug.html",
+      "edition": "2026-08-25",
+      "indicator": "us_case_shiller_20_yy",
+      "period": "2026-06",
+      "value": 2.1,
+      "source_url": "https://press.spglobal.com/2026-08-25-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-June-2026"
+    },
+    {
+      "family": "us_case_shiller",
+      "fixture": "case-shiller-press-sept.html",
+      "edition": "2026-09-29",
+      "indicator": "us_case_shiller_national_yy",
+      "period": "2026-07",
+      "value": 1.9,
+      "source_url": "https://press.spglobal.com/2026-09-29-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-July-2026"
+    },
+    {
+      "family": "us_case_shiller",
+      "fixture": "case-shiller-press-sept.html",
+      "edition": "2026-09-29",
+      "indicator": "us_case_shiller_20_yy",
+      "period": "2026-07",
+      "value": 2.5,
+      "source_url": "https://press.spglobal.com/2026-09-29-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-July-2026"
+    },
+    {
+      "family": "ea_hpi",
+      "fixture": "eurostat-hpi-2026-07-02.html",
+      "edition": "2026-07-02",
+      "indicator": "ea21_hpi_qq",
+      "period": "2026-Q1",
+      "value": 1.0,
+      "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-02072026-bp"
+    },
+    {
+      "family": "ea_hpi",
+      "fixture": "eurostat-hpi-2026-07-02.html",
+      "edition": "2026-07-02",
+      "indicator": "ea21_hpi_yy",
+      "period": "2026-Q1",
+      "value": 4.7,
+      "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-02072026-bp"
+    },
+    {
+      "family": "ea_hpi",
+      "fixture": "eurostat-hpi-2026-10-01.html",
+      "edition": "2026-10-01",
+      "indicator": "ea21_hpi_qq",
+      "period": "2026-Q2",
+      "value": 1.1,
+      "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-01102026-bp"
+    },
+    {
+      "family": "ea_hpi",
+      "fixture": "eurostat-hpi-2026-10-01.html",
+      "edition": "2026-10-01",
+      "indicator": "ea21_hpi_yy",
+      "period": "2026-Q2",
+      "value": 4.0,
+      "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-01102026-bp"
+    },
+    {
+      "family": "ea_house_purchase_loans",
+      "fixture": "ecb-bsi-2026-08-27.pdf",
+      "edition": "2026-08-27",
+      "indicator": "ea_loans_house_purchase_yy",
+      "period": "2026-07",
+      "value": 3.0,
+      "source_url": "https://www.ecb.europa.eu/press/pdf/md/ecb.md2607_annex~b04670b43a.en.pdf"
+    },
+    {
+      "family": "ea_house_purchase_loans",
+      "fixture": "ecb-bsi-2026-09-25.pdf",
+      "edition": "2026-09-25",
+      "indicator": "ea_loans_house_purchase_yy",
+      "period": "2026-08",
+      "value": 3.1,
+      "source_url": "https://www.ecb.europa.eu/press/pdf/md/ecb.md2608_annex~1dd30faa76.en.pdf"
+    },
+    {
+      "family": "ea_house_purchase_cost",
+      "fixture": "ecb-mir-2026-09-02.html",
+      "edition": "2026-09-02",
+      "indicator": "ea_cost_borrow_house",
+      "period": "2026-07",
+      "value": 3.54,
+      "source_url": "https://www.ecb.europa.eu/press/stats/mfi/html/ecb.mir260902~d54675e442.en.html"
+    },
+    {
+      "family": "ea_house_purchase_cost",
+      "fixture": "ecb-mir-2026-10-01.html",
+      "edition": "2026-10-01",
+      "indicator": "ea_cost_borrow_house",
+      "period": "2026-08",
+      "value": 3.6,
+      "source_url": "https://www.ecb.europa.eu/press/stats/mfi/html/ecb.mir2610~8e4898ad10.en.html"
+    },
+    {
+      "family": "uk_hpi",
+      "fixture": "uk-hpi-july2026.html",
+      "edition": "2026-09-16",
+      "indicator": "uk_hpi_yy",
+      "period": "2026-07",
+      "value": 1.4,
+      "source_url": "https://www.gov.uk/government/statistics/uk-house-price-index-for-july-2026/uk-house-price-index-summary-july-2026"
+    },
+    {
+      "family": "uk_hpi",
+      "fixture": "uk-hpi-august2026.html",
+      "edition": "2026-10-21",
+      "indicator": "uk_hpi_yy",
+      "period": "2026-08",
+      "value": 0.9,
+      "source_url": "https://www.gov.uk/government/statistics/uk-house-price-index-for-august-2026/uk-house-price-index-summary-august-2026"
+    },
+    {
+      "family": "uk_mortgage_approvals",
+      "fixture": "boe-money-credit-july2026.html",
+      "edition": "2026-09-01",
+      "indicator": "uk_mortgage_approvals",
+      "period": "2026-07",
+      "value": 56100,
+      "source_url": "https://www.bankofengland.co.uk/statistics/money-and-credit/2026/july-2026"
+    },
+    {
+      "family": "uk_mortgage_approvals",
+      "fixture": "boe-money-credit-august2026.html",
+      "edition": "2026-09-29",
+      "indicator": "uk_mortgage_approvals",
+      "period": "2026-08",
+      "value": 54900,
+      "source_url": "https://www.bankofengland.co.uk/statistics/money-and-credit/2026/august-2026"
+    },
+    {
+      "family": "de_building_permits",
+      "fixture": "destatis-july2026.html",
+      "edition": "2026-09-18",
+      "indicator": "de_building_permits",
+      "period": "2026-07",
+      "value": 22500,
+      "source_url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/09/PD26_330_3111.html"
+    },
+    {
+      "family": "de_building_permits",
+      "fixture": "destatis-july2026.html",
+      "edition": "2026-09-18",
+      "indicator": "de_building_permits_yy",
+      "period": "2026-07",
+      "value": 1.9,
+      "source_url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/09/PD26_330_3111.html"
+    },
+    {
+      "family": "de_building_permits",
+      "fixture": "destatis-august2026.html",
+      "edition": "2026-10-16",
+      "indicator": "de_building_permits",
+      "period": "2026-08",
+      "value": 20600,
+      "source_url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/10/PD26_370_3111.html"
+    },
+    {
+      "family": "de_building_permits",
+      "fixture": "destatis-august2026.html",
+      "edition": "2026-10-16",
+      "indicator": "de_building_permits_yy",
+      "period": "2026-08",
+      "value": 6.8,
+      "source_url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/10/PD26_370_3111.html"
+    },
+    {
+      "family": "ca_housing_starts",
+      "fixture": "cmhc-august2026.html",
+      "edition": "2026-09-16",
+      "indicator": "ca_housing_starts",
+      "period": "2026-08",
+      "value": 229046,
+      "source_url": "https://www.cmhc-schl.gc.ca/media-newsroom/news-releases/2026/housing-starts-construction-data-august-2026"
+    },
+    {
+      "family": "ca_housing_starts",
+      "fixture": "cmhc-september2026.html",
+      "edition": "2026-10-16",
+      "indicator": "ca_housing_starts",
+      "period": "2026-09",
+      "value": 248896,
+      "source_url": "https://www.cmhc-schl.gc.ca/media-newsroom/news-releases/2026/housing-starts-construction-data-september-2026"
+    },
+    {
+      "family": "jp_housing_starts",
+      "fixture": "mlit-july2026.html",
+      "edition": "2026-08-31",
+      "indicator": "jp_housing_starts_yy",
+      "period": "2026-07",
+      "value": 8.2,
+      "source_url": "https://www.mlit.go.jp/report/press/joho04_hh_001390.html"
+    },
+    {
+      "family": "jp_housing_starts",
+      "fixture": "mlit-august2026.html",
+      "edition": "2026-09-30",
+      "indicator": "jp_housing_starts_yy",
+      "period": "2026-08",
+      "value": 6.1,
+      "source_url": "https://www.mlit.go.jp/report/press/joho04_hh_001395.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-august2026-interpretation.html",
+      "edition": "2026-09-15",
+      "indicator": "cn_new_home_prices_tier1_mm",
+      "period": "2026-08",
+      "value": 0.1,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202609/t20260915_1965303.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-august2026-interpretation.html",
+      "edition": "2026-09-15",
+      "indicator": "cn_new_home_prices_tier1_yy",
+      "period": "2026-08",
+      "value": -0.9,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202609/t20260915_1965303.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-august2026-interpretation.html",
+      "edition": "2026-09-15",
+      "indicator": "cn_new_home_prices_tier2_mm",
+      "period": "2026-08",
+      "value": -0.1,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202609/t20260915_1965303.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-august2026-interpretation.html",
+      "edition": "2026-09-15",
+      "indicator": "cn_new_home_prices_tier2_yy",
+      "period": "2026-08",
+      "value": -2.7,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202609/t20260915_1965303.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-august2026-interpretation.html",
+      "edition": "2026-09-15",
+      "indicator": "cn_new_home_prices_tier3_mm",
+      "period": "2026-08",
+      "value": -0.2,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202609/t20260915_1965303.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-august2026-interpretation.html",
+      "edition": "2026-09-15",
+      "indicator": "cn_new_home_prices_tier3_yy",
+      "period": "2026-08",
+      "value": -4.1,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202609/t20260915_1965303.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-september2026-headlines.html",
+      "edition": "2026-10-19",
+      "indicator": "cn_new_home_prices_tier1_mm",
+      "period": "2026-09",
+      "value": 0.1,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202610/t20261019_1965610.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-september2026-headlines.html",
+      "edition": "2026-10-19",
+      "indicator": "cn_new_home_prices_tier1_yy",
+      "period": "2026-09",
+      "value": -0.5,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202610/t20261019_1965610.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-september2026-headlines.html",
+      "edition": "2026-10-19",
+      "indicator": "cn_new_home_prices_tier2_mm",
+      "period": "2026-09",
+      "value": 0.0,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202610/t20261019_1965610.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-september2026-headlines.html",
+      "edition": "2026-10-19",
+      "indicator": "cn_new_home_prices_tier2_yy",
+      "period": "2026-09",
+      "value": -2.4,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202610/t20261019_1965610.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-september2026-headlines.html",
+      "edition": "2026-10-19",
+      "indicator": "cn_new_home_prices_tier3_mm",
+      "period": "2026-09",
+      "value": -0.2,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202610/t20261019_1965610.html"
+    },
+    {
+      "family": "cn_new_home_prices",
+      "fixture": "nbs-september2026-headlines.html",
+      "edition": "2026-10-19",
+      "indicator": "cn_new_home_prices_tier3_yy",
+      "period": "2026-09",
+      "value": -3.9,
+      "source_url": "https://www.stats.gov.cn/sj/sjjd/202610/t20261019_1965610.html"
+    }
+  ]
+}

@@ -21,6 +21,8 @@ MAPPINGS = {
     "us_gdp_qq_saar": ("us_gdp", "A191RL1Q225SBEA", "lin"),
 }
 MAPPINGS.update({
+    "us_case_shiller_national_yy": ("us_case_shiller", "CSUSHPINSA", "pc1"),
+    "us_case_shiller_20_yy": ("us_case_shiller", "SPCS20RNSA", "pc1"),
     "us_retail_sales_mm": ("us_retail_sales", "RSAFS", "pch"),
     "us_retail_sales_ex_auto_mm": ("us_retail_sales", "RSFSXMV", "pch"),
     "us_housing_starts": ("us_housing_starts", "HOUST", "lin"),
@@ -43,6 +45,8 @@ class FREDAdapter:
             if family not in families:
                 continue
             calendar = due(family_editions(family), family=family)
+            if family == "us_case_shiller" and not calendar:
+                continue
             if family in MONTHLY_EDITIONS:
                 # A current-head probe is only a freshness guard. Its values
                 # are never attached to an older reviewed as-of edition.
@@ -77,6 +81,10 @@ class FREDAdapter:
                     start = f"{since[:4]}-{(int(since[5:]) - 1) // 3 * 3 + 1:02d}"
                 elif family in MONTHLY_EDITIONS:
                     start = min(since, shift_month(MONTHLY_EDITIONS[family][edition][0], -2))
+                elif family == "us_case_shiller":
+                    # Optional as-of redistributor history, never issuer prints
+                    # or a BLS revision window. Keep the caller's history cutoff.
+                    start = since
                 else:
                     latest = max(p for p, _, _ in calendar.values())
                     start = revision_start(family, latest, start, edition)
@@ -103,6 +111,11 @@ class FREDAdapter:
         rows = payload.get("observations", [])
         require_complete(payload, rows)
         numeric_months = [r["date"][:7] for r in rows if r["value"] != "."]
+        if family == "us_case_shiller":
+            from .housing_editions import reviewed as housing_reviewed
+            headline, _, _ = housing_reviewed(family, edition)
+            if stage != "regular" or not numeric_months or max(numeric_months) != headline:
+                raise FetchError("FRED Case-Shiller as-of reference period needs review")
         if monthly and (not numeric_months or max(numeric_months) != headline):
             raise FetchError(f"FRED headline/edition metadata needs review: {family} {edition}")
         out = []
