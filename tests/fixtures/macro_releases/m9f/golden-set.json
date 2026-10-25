@@ -143,6 +143,42 @@
       "period": "2026-07",
       "value": 2.5,
       "source_url": "https://press.spglobal.com/2026-09-29-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-July-2026"
+    },
+    {
+      "family": "ea_hpi",
+      "fixture": "eurostat-hpi-2026-07-02.html",
+      "edition": "2026-07-02",
+      "indicator": "ea21_hpi_qq",
+      "period": "2026-Q1",
+      "value": 1.0,
+      "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-02072026-bp"
+    },
+    {
+      "family": "ea_hpi",
+      "fixture": "eurostat-hpi-2026-07-02.html",
+      "edition": "2026-07-02",
+      "indicator": "ea21_hpi_yy",
+      "period": "2026-Q1",
+      "value": 4.7,
+      "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-02072026-bp"
+    },
+    {
+      "family": "ea_hpi",
+      "fixture": "eurostat-hpi-2026-10-01.html",
+      "edition": "2026-10-01",
+      "indicator": "ea21_hpi_qq",
+      "period": "2026-Q2",
+      "value": 1.1,
+      "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-01102026-bp"
+    },
+    {
+      "family": "ea_hpi",
+      "fixture": "eurostat-hpi-2026-10-01.html",
+      "edition": "2026-10-01",
+      "indicator": "ea21_hpi_yy",
+      "period": "2026-Q2",
+      "value": 4.0,
+      "source_url": "https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-01102026-bp"
     }
   ]
 }

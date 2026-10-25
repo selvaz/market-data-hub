@@ -4,6 +4,12 @@ Only listed editions can be certified. Calendars permit a fetch, never prove a
 publication. The saved issuer reports include the FHFA 2026 calendar.
 """
 EDITIONS = {
+    # Eurostat eventsJson plus exact UTC publication metadata. The calendar
+    # is reviewed July–December; the next HPI release is 11 January 2027.
+    "ea_hpi": {
+        "2026-07-02": ("2026-Q1", "regular", "11:00"),
+        "2026-10-01": ("2026-Q2", "regular", "11:00"),
+    },
     # Reviewed against the issuer's last-Tuesday, 09:00 ET rule printed in
     # both saved press releases; dates are enumerated, never forecast at run time.
     "us_case_shiller": {
@@ -71,6 +77,7 @@ EDITIONS = {
     },
 }
 SCHEDULES = {
+    "ea_hpi": "https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar",
     "us_case_shiller": "https://press.spglobal.com/2026-09-29-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-July-2026",
     "us_pending_home_sales": "https://www.nar.realtor/press-releases/nar-releases-2026-statistical-news-release-schedule",
     "us_existing_home_sales": "https://www.nar.realtor/press-releases/nar-releases-2026-statistical-news-release-schedule",
@@ -78,7 +85,8 @@ SCHEDULES = {
     "us_fhfa_hpi": "https://www.fhfa.gov/data/hpi",
     "us_construction_spending": "https://www.census.gov/economic-indicators/calendar-listview-2026.html",
 }
-SOURCES = {"us_case_shiller": ("SPDJI", "private", "M"),
+SOURCES = {"ea_hpi": ("Eurostat", "official", "Q"),
+           "us_case_shiller": ("SPDJI", "private", "M"),
            "us_pending_home_sales": ("NAR", "private", "M"),
            "us_existing_home_sales": ("NAR", "private", "M"),
            "us_pmms": ("FreddieMac", "official", "W"),

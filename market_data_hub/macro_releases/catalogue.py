@@ -135,6 +135,9 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "ea_hpi": [measure("ea21_hpi_" + basis, "Eurostat", "EA21", basis, "NSA",
+        definition="Eurostat EA21 House Price Index, all new and existing residential properties purchased by households; published nominal " + basis + " percent change, not seasonally adjusted",
+        frequency="Q") for basis in ("qq", "yy")],
     "us_case_shiller": [measure("us_case_shiller_" + area + "_yy", "SPDJI", "USA", "yy", "NSA",
         definition="Private S&P Cotality (formerly CoreLogic) Case-Shiller " + label + " public press-release annual headline; NSA repeat-sales single-family house prices, monthly three-month moving average")
         for area, label in (("national", "U.S. National"), ("20", "20-City Composite"))],

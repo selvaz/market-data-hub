@@ -59,6 +59,7 @@ after those checks pass.
 
 | Family | Issuer | Source class | Frequency | Reviewed editions through 31 December 2026 | Golden cases |
 | --- | --- | --- | --- | --- | --- |
+| Euro area HPI, NSA q/q and y/y | Eurostat | Official, free | Quarterly | 2 Jul (Q1), 1 Oct (Q2), 11:00 Europe/Luxembourg; reviewed July–December, next edition 11 Jan 2027 | 4 measurements in 2 distinct issuer publications |
 | US FHFA monthly purchase-only HPI, SA m/m and y/y | FHFA | Official, free | Monthly | 25 Aug, 29 Sep, 27 Oct, 24 Nov, 29 Dec; 09:00 America/New_York | 4 measurements in 2 distinct publications (25 Aug and 29 Sep) |
 | US total construction spending, SA m/m | Census | Official, free | Monthly | 3 Aug, 1 Sep, 1 Oct, 2 Nov, 1 Dec; 10:00 America/New_York | 2 distinct publications: June -0.1% (3 Aug) and August +0.9% (1 Oct) |
 | US PMMS 30-year fixed-rate mortgage average, NSA | Freddie Mac | Official issuer, free | Weekly | 22 editions from 6 Aug to 31 Dec; 12:00 America/New_York; Thanksgiving release 25 Nov | 2 dated editions: 15 Oct archive entry (7.40%) and 22 Oct current publication (7.32%) |
@@ -120,6 +121,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 
 | Family | Reference period | Edition | Issuer release time | Latest official card |
 | --- | --- | --- | --- | --- |
+| Eurostat HPI (EA21) | Q2 2026 | 1 October 2026 | 11:00 CEST / 09:00 UTC | +1.1% q/q; +4.0% y/y, NSA |
 | FHFA | July 2026 | 29 September 2026 | 09:00 EDT / 13:00 UTC | +0.3% m/m; +2.6% y/y, purchase-only SA |
 | Construction spending | August 2026 | 1 October 2026 | 10:00 EDT / 14:00 UTC | +0.9% m/m, total SA |
 | PMMS 30-year mortgage rate | Survey week ending 21 October 2026 | 22 October 2026 | 12:00 EDT / 16:00 UTC | 7.32%, NSA weekly average |
@@ -178,14 +180,71 @@ All writes go to the copy. Reproduce with the project interpreter:
 
 ## Remaining steps, in order
 
-1. Eurostat quarterly HPI, y/y and q/q.
-2. ECB house-purchase loan growth and composite cost of borrowing.
-3. ONS/HM Land Registry UK HPI, y/y.
-4. BoE mortgage approvals for house purchase.
-5. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
+1. ECB house-purchase loan growth and composite cost of borrowing.
+2. ONS/HM Land Registry UK HPI, y/y.
+3. BoE mortgage approvals for house purchase.
+4. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.
+
+## Eurostat HPI step
+
+Family `ea_hpi` publishes `ea21_hpi_qq` and `ea21_hpi_yy`, quarterly nominal
+rates for all newly built and existing residential properties purchased by
+households, **not seasonally adjusted**, fixed **EA21** composition. The issuer's
+printed growth rates are collected directly; ratios from rounded index levels
+and the dataset's `updated` timestamp do not certify releases.
+
+Issuer evidence and golden cases:
+
+- [2 July publication](https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-02072026-bp):
+  Q1 2026 **+1.0% q/q, +4.7% y/y**. This release also prints EA20; only the
+  explicitly labelled EA21 row matches the headline and catalogue identity.
+- [1 October publication](https://ec.europa.eu/eurostat/web/products-euro-indicators/w/2-01102026-bp):
+  Q2 2026 **+1.1% q/q, +4.0% y/y**. Its unnumbered euro-area row is accepted
+  only with the explicit EA21 geographical note. Q1 revisions in the annex
+  remain raw evidence and do not overwrite the July edition's original values.
+- [Release calendar](https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar)
+  and the saved full-2026 `eventsJson` response confirm those two editions in
+  the reviewed July–December window. The next release is **11 January 2027**,
+  outside that window; no extra Q3 edition is invented for December.
+
+All three original bodies, issuer URLs, capture times and SHA-256 hashes are
+saved under `tests/fixtures/macro_releases/m9f`. The four golden cases are in
+`golden-set.json`. The article metadata confirms 09:00 UTC, corresponding to
+11:00 Europe/Luxembourg on both dates. Calendar rows marked `allDay` supply
+dates only; their `11:00Z` fields are not treated as exact UTC release clocks.
+
+The collector gates requests through the shared release-instant path, checks
+the live calendar against reviewed metadata, validates the issuer URL and
+offset-aware article timestamp, and requires agreement between the annual and
+quarterly narrative and the current-period EA21 table cells. Changed titles,
+definitions, adjustment, area, periods, columns, rates, duplicate/missing dates,
+or additional in-horizon editions fail closed. An edition-specific 404 has the
+shared six-hour publication grace, then enters `needs_review`. Collection
+after the reviewed calendar horizon also requires review. Scheduled events
+use only the `regular` stage and the issuer calendar URL, including when the
+FF archive is absent.
+
+The approved v2.1 master has no HPI concept. A strict 19-column `ea_hpi` row is
+therefore proposed in `draft_rows_v2.2.psv`, **pending owner approval**, timing
+**UNKNOWN**. It covers both EA21 measures without changing the approved table.
+No FF title with verified exact HPI measure and geography has been added.
+
+Focused housing, integration, card and generated-doc tests: **391 passed**.
+Repository-wide Ruff and regenerated card/doc freshness checks pass. Current
+strict docs build passes. The full required regression and CI results are
+recorded in the PR alongside this step's pushed commit.
+
+Current schema-v9 production-backup verification passed for **all seven
+implemented families** at `D:\Temp\mdh-m9f-8xjiohnn\verification.json` (database
+copy beside it). Dry run and copy collection returned `ok`; repeat collection
+returned `no_change`. The read API returned all eleven expected latest measures
+with their correct official/private source classes, including both EA21 HPI
+rates at 09:00 UTC on 1 October. SQLite integrity was `ok` and the production
+main file was unchanged. All source reads were stable raw main/WAL bytes;
+all SQLite snapshot, ledger and collection writes stayed under `D:\Temp`.
 
 ## NAR existing-sales step
 
