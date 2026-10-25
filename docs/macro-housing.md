@@ -6,6 +6,37 @@ That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
 remains draft while work is delivered one family at a time. Do not merge it.
 
+## UK HPI verification checkpoint
+
+1491 passed, 1 skipped; 16 focused UK HPI tests passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 verification: `D:\Temp\mdh-m9f-z2g3bdyn\verification.json`. All 1 collected families returned `ok` for dry run and collection, then `no_change`; all 1 latest read-API measures were issuer-certified with correct source classes. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; every verification write stayed under `D:/Temp`.
+
+## UK HPI step
+
+Family `uk_hpi` certifies the HM Land Registry / ONS **UK-wide annual HPI
+change**, all residential properties purchased for market value, including cash
+and mortgage transactions, NSA. It collects the national headline from the
+[dated HM Land Registry summary](https://www.gov.uk/government/statistics/uk-house-price-index-for-august-2026/uk-house-price-index-summary-august-2026),
+cross-checking the economic statement, title and reference period. Regional,
+monthly, rent and buyer/funding subtotals are not substituted. The latest card
+is **August 2026 +0.9% y/y**, first published **21 October 2026 at 09:30:08 BST**
+(08:30:08 UTC). The other saved golden is July **+1.4%**, first published
+16 September at 09:30:03 BST. Later August-publication revisions to July (1.2%)
+do not replace July's original release vintage.
+
+The [issuer calendar](https://www.gov.uk/government/publications/about-the-uk-house-price-index/about-the-uk-house-price-index)
+is reviewed through 31 December: 16 September, 21 October, 18 November and
+16 December, all scheduled at **09:30 Europe/London**. Only the regular stage
+publishes. The first-publication metadata supplies the observed seconds;
+`updated-at` and `public-updated-at` never supply a release clock. Both the
+scheduled instant and observed clock gate actuals. Changed metadata, mismatched
+headlines, missing due reports or calendar expiry fail closed with `needs_review`;
+newly due 404s receive the shared six-hour publication grace.
+
+The new `uk_hpi` row in `draft_rows_v2.3.psv` proposes `cat:uk_hpi_yy`, timing
+`UNKNOWN`, with registration lag/provisional revision caveats in `flag`, the
+issuer URL in its rationale and pending owner approval in draft timing metadata.
+No FF alias has been added without exact-title evidence.
+
 ## ECB mortgage lending and borrowing cost (24 October 2026)
 
 The ECB step adds **two monthly official families** because BSI loan growth and
@@ -191,6 +222,7 @@ after those checks pass.
 
 | Family | Issuer | Source class | Frequency | Reviewed editions through 31 December 2026 | Golden cases |
 | --- | --- | --- | --- | --- | --- |
+| UK HPI, NSA annual change | HM Land Registry / ONS | Official, free | Monthly | 16 Sep, 21 Oct, 18 Nov, 16 Dec; 09:30 Europe/London, observed seconds retained | 2 dated reports: July +1.4%, August +0.9% |
 | Euro area house-purchase loan growth | ECB BSI | Official, free | Monthly | 27 Aug, 25 Sep, 27 Oct, 26 Nov, 30 Dec; 10:00 Europe/Berlin | 2 dated annexes: July 3.0%, August 3.1% |
 | Euro area house-purchase borrowing cost | ECB MIR | Official, free | Monthly | 2 Sep, 1 Oct, 2 Nov, 2 Dec; 10:00 Europe/Berlin; November data publish January 2027 | 2 dated releases: July 3.54%, August 3.60% |
 | Euro area HPI, NSA q/q and y/y | Eurostat | Official, free | Quarterly | 2 Jul (Q1), 1 Oct (Q2), 11:00 Europe/Luxembourg; reviewed July–December, next edition 11 Jan 2027 | 4 measurements in 2 distinct issuer publications |
@@ -255,6 +287,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 
 | Family | Reference period | Edition | Issuer release time | Latest official card |
 | --- | --- | --- | --- | --- |
+| UK HPI | August 2026 | 21 October 2026 | 09:30:08 BST / 08:30:08 UTC | +0.9% y/y, NSA |
 | ECB house-purchase loans | August 2026 | 25 September 2026 | 10:00 CEST / 08:00 UTC | +3.1% y/y, adjusted loans, SCA |
 | ECB house-purchase borrowing cost | August 2026 | 1 October 2026 | 10:00 CEST / 08:00 UTC | 3.60% per annum, new-business composite |
 | Eurostat HPI (EA21) | Q2 2026 | 1 October 2026 | 11:00 CEST / 09:00 UTC | +1.1% q/q; +4.0% y/y, NSA |
@@ -316,9 +349,8 @@ All writes go to the copy. Reproduce with the project interpreter:
 
 ## Remaining steps, in order
 
-1. ONS/HM Land Registry UK HPI, y/y.
-2. BoE mortgage approvals for house purchase.
-3. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
+1. BoE mortgage approvals for house purchase.
+2. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.

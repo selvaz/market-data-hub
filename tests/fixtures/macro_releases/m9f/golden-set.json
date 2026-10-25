@@ -215,6 +215,24 @@
       "period": "2026-08",
       "value": 3.6,
       "source_url": "https://www.ecb.europa.eu/press/stats/mfi/html/ecb.mir2610~8e4898ad10.en.html"
+    },
+    {
+      "family": "uk_hpi",
+      "fixture": "uk-hpi-july2026.html",
+      "edition": "2026-09-16",
+      "indicator": "uk_hpi_yy",
+      "period": "2026-07",
+      "value": 1.4,
+      "source_url": "https://www.gov.uk/government/statistics/uk-house-price-index-for-july-2026/uk-house-price-index-summary-july-2026"
+    },
+    {
+      "family": "uk_hpi",
+      "fixture": "uk-hpi-august2026.html",
+      "edition": "2026-10-21",
+      "indicator": "uk_hpi_yy",
+      "period": "2026-08",
+      "value": 0.9,
+      "source_url": "https://www.gov.uk/government/statistics/uk-house-price-index-for-august-2026/uk-house-price-index-summary-august-2026"
     }
   ]
 }
