@@ -15,7 +15,7 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   - US: FHFA HPI, Census construction spending, Freddie Mac PMMS, and the private-source headlines for NAR existing and pending home sales and for S&P Case-Shiller;
   - euro area: Eurostat EA21 HPI, ECB house-purchase loans and the cost of borrowing;
   - other countries: UK HPI, BoE mortgage approvals, Destatis residential permits, CMHC housing starts, MLIT housing starts and NBS new-home prices by city tier.
-- Twelve housing card drafts in `draft_rows_v2.3.psv` (pending owner approval; `--with-drafts` only).
+- Indicator cards v2.3 (#134): the 12 housing concepts approved by the owner on 2026-10-25 (306 cards). FHFA, Case-Shiller, EA HPI and UK HPI are COIN/DEFINITION; PMMS is CTX; the other seven stay UNKNOWN.
 
 ### Fixed
 - Private-source classification is carried by the resolution itself, so NAR and Case-Shiller are reported as `private`, and FRED/ALFRED mirrors as redistributors, on every read path (cards, history, coverage, CLI, nested previous/revision/consensus fields).
