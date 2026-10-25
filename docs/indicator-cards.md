@@ -187,20 +187,29 @@ configured-id context coverage, not live ingestion or historical completeness.
 | Universe | Measures / ids with approved cards |
 |---|---:|
 | External tier-1 measures | 86 / 86 |
-| Release catalogue | 57 / 65 |
+| Release catalogue | 61 / 82 |
 | Active tier-1 calendar | 65 / 65 |
 | Enabled hub macro series | 107 / 107 |
 
 UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) is covered by the owner-approved
 row `uk_gdp_monthly` (added 18/10/2026, mirroring the US GDP row: COIN by
 definition, HARD, ONS). Main's original certified families remain fully covered.
-Housing adds approved construction and existing-home-sales context, plus five
-new v2.3 proposals for eight measures; those measures remain explicit concept
+Housing adds approved construction, existing-home-sales and ECB cost-of-borrowing
+context, plus twelve v2.3 proposals for 21 measures; those measures remain explicit concept
 gaps in approved coverage. Tier-1 coverage is 86 approved, zero draft resolutions
 and zero unmapped ids, with or without `--with-drafts`; the opt-in separately
-lists all five housing proposals in `draft_cards`. Main's M9b/M9c
+lists all twelve housing proposals in `draft_cards`. Main's M9b/M9c
 aliases and per-card id de-duplication are retained; the shared
 `cat:us_new_home_sales` alias appears once with main's M9b explanation.
+
+M9h adds the U-3 SA unemployment rate and total-private all-employee AHE
+m/m and y/y release measures. They reuse approved `us_unrate` and `us_ahe`
+concepts; `cat:us_avg_hourly_earnings_mm` is an explicit context alias. There
+are no new v2.4 draft rows and no timing changes. FF consensus mapping uses only
+the exact saved USD titles `Unemployment Rate` and `Average Hourly Earnings m/m`.
+ALFRED outage values keep BLS as issuer and `source_class=redistributor`;
+their release resolution stays provisional. Concept-card approval does not
+certify a redistributed value as official.
 
 Catalogue aliases attach **concept context**, never numerical equivalence:
 levels, changes, seasonal adjustments and stages retain their original ids.
