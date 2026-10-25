@@ -140,6 +140,8 @@ class HttpClient:
     def __init__(self, *, rate_directory=None, session=None, before_request=None, persistent_rates=True,
                  max_attempts=3):
         self.session = session or requests.Session()
+        self.public_session = None
+        self.injected_session = session is not None
         self.before_request = before_request
         self.max_attempts = max_attempts
         self.calendar_cache = {}
@@ -149,7 +151,7 @@ class HttpClient:
         self.limiters = {p: RateLimiter(p, rate_directory, interval=15.0 if p == "eurostat" else 1.0,
                                      daily_limit=500 if p == "bls" else None,
                                      persistent=persistent_rates)
-                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich", "fed", "ecb", "boe", "boj", "pboc", "boc", "fhfa", "nar", "spglobal", "freddiemac", "destatis", "cmhc", "mlit", "nbs")}
+                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich", "fed", "ecb", "boe", "boj", "pboc", "boc", "fhfa", "nar", "spglobal", "freddiemac", "destatis", "cmhc", "mlit", "nbs", "fanniemae")}
 
     def request(self, provider, url, *, params=None, payload=None) -> Document:
         safe_url = urlsplit(url)
@@ -166,7 +168,15 @@ class HttpClient:
                 self._backoff(retry_delay(None, attempt))
                 continue
             try:
-                response = self.session.request(
+                session = self.session
+                if provider == "fanniemae" and not self.injected_session:
+                    # The free issuer endpoint requires a browser-compatible TLS
+                    # client. Keep the same quota, lease and bounded retry path.
+                    from curl_cffi import requests as public_requests
+                    if self.public_session is None:
+                        self.public_session = public_requests.Session(impersonate="chrome", trust_env=False)
+                    session = self.public_session
+                response = session.request(
                     "POST" if payload is not None else "GET", url,
                     params=params, json=payload, timeout=(10, 45),
                     verify=certifi.where(), allow_redirects=False,
@@ -181,6 +191,11 @@ class HttpClient:
                 raise FetchError(f"{provider}: transport failed after bounded attempts") from None
             except requests.RequestException:
                 raise FetchError(f"{provider}: non-transient request failure") from None
+            except Exception as exc:
+                from curl_cffi.requests.exceptions import RequestException as PublicRequestException
+                if not isinstance(exc, PublicRequestException):
+                    raise
+                raise FetchError(f"{provider}: public transport failed; needs review") from None
             if response.status_code in (429, 500, 502, 503, 504) and attempt + 1 < self.max_attempts:
                 self._backoff(retry_delay(response, attempt))
                 continue

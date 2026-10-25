@@ -431,6 +431,42 @@
       "period": "2026-09",
       "value": -3.9,
       "source_url": "https://www.stats.gov.cn/sj/sjjd/202610/t20261019_1965610.html"
+    },
+    {
+      "family": "us_fannie_pali",
+      "fixture": "../mortgage_applications/pali-history.xlsx",
+      "edition": "2026-10-20",
+      "indicator": "us_fannie_pali_upb",
+      "period": "2026-10-16",
+      "value": 461.4,
+      "source_url": "https://www.fanniemae.com/mortgage-application-index/download"
+    },
+    {
+      "family": "us_fannie_pali",
+      "fixture": "../mortgage_applications/pali-history.xlsx",
+      "edition": "2026-10-20",
+      "indicator": "us_fannie_pali_count",
+      "period": "2026-10-16",
+      "value": 223.4,
+      "source_url": "https://www.fanniemae.com/mortgage-application-index/download"
+    },
+    {
+      "family": "us_fannie_pali",
+      "fixture": "../mortgage_applications/pali-history.xlsx",
+      "edition": "2026-10-20",
+      "indicator": "us_fannie_pali_upb_ww",
+      "period": "2026-10-16",
+      "value": -7.1,
+      "source_url": "https://www.fanniemae.com/mortgage-application-index/download"
+    },
+    {
+      "family": "us_fannie_pali",
+      "fixture": "../mortgage_applications/pali-history.xlsx",
+      "edition": "2026-10-20",
+      "indicator": "us_fannie_pali_upb_yy",
+      "period": "2026-10-16",
+      "value": -17.4,
+      "source_url": "https://www.fanniemae.com/mortgage-application-index/download"
     }
   ]
 }

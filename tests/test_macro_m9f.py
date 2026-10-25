@@ -69,6 +69,9 @@ def test_every_housing_family_has_two_issuer_golden_cases_and_calendar():
             # Two independently printed headline measures in the saved current
             # release meet the brief's two-case rule without inventing history.
             assert {c["indicator"] for c in cases} == {"us_existing_home_sales", "us_existing_home_sales_mm"}
+        elif family == "us_fannie_pali":
+            # The issuer supplies one revised workbook, not an edition archive.
+            assert {c["indicator"] for c in cases} >= {"us_fannie_pali_upb", "us_fannie_pali_count"}
         else:
             assert len({c["edition"] for c in cases}) >= 2
         assert SCHEDULES[family].startswith("https://")

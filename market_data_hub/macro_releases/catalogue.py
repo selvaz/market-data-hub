@@ -153,6 +153,12 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "us_fannie_pali": [measure("us_fannie_pali_" + kind + suffix, "FannieMae", "USA", transform, "NSA", unit,
+        definition=f"Fannie Mae DU Purchase Application-Level Index, {label}, {description}; 2004-01-09=100; not MBA or raw application volume", frequency="W")
+        for kind, label in (("upb", "unpaid principal balance"), ("count", "application count"))
+        for suffix, transform, unit, description in (("", "level", "index", "published weekly index level"),
+            ("_ww", "change", "%", "published week-over-week percent change"),
+            ("_yy", "yy", "%", "published year-over-year percent change"))],
     "cn_new_home_prices": [measure(f"cn_new_home_prices_tier{tier}_{basis}", "NBS", f"CHN_TIER{tier}", basis, "NSA",
         definition=f"NBS new commercial residential sales prices, city tier {tier} ({count} cities), published {basis} percent change; no national all-70-city average")
         for tier, count in ((1, 4), (2, 31), (3, 35)) for basis in ("mm", "yy")],

@@ -168,3 +168,8 @@ def persist_review(store, batch, family, run_id):
         identity = hashlib.sha256((family + digest + reasons).encode()).hexdigest()
         store.conn.execute("INSERT INTO review_queue VALUES (?,?,?,?,?,?,'pending') ON CONFLICT DO NOTHING",
                            (identity, family, run_id, digest, reasons, now()))
+
+# PALI level units are indices; change units are printed percentages.
+SANITY_BANDS.update({f"us_fannie_pali_{kind}{suffix}": 500 if not suffix else 100
+                     for kind in ("upb", "count") for suffix in ("", "_ww", "_yy")})
+ABSOLUTE_BOUNDS.update({f"us_fannie_pali_{kind}": 10000 for kind in ("upb", "count")})

@@ -4,6 +4,39 @@ Only listed editions can be certified. Calendars permit a fetch, never prove a
 publication. The saved issuer reports include the FHFA 2026 calendar.
 """
 EDITIONS = {
+    # Fannie Mae 2026 issuer calendar; holiday shifts are explicit.
+    "us_fannie_pali": {
+        "2026-06-09": ('2026-06-05', 'regular', '10:00'),
+        "2026-06-16": ('2026-06-12', 'regular', '10:00'),
+        "2026-06-23": ('2026-06-19', 'regular', '10:00'),
+        "2026-06-30": ('2026-06-26', 'regular', '10:00'),
+        "2026-07-07": ('2026-07-03', 'regular', '10:00'),
+        "2026-07-14": ('2026-07-10', 'regular', '10:00'),
+        "2026-07-21": ('2026-07-17', 'regular', '10:00'),
+        "2026-07-28": ('2026-07-24', 'regular', '10:00'),
+        "2026-08-04": ('2026-07-31', 'regular', '10:00'),
+        "2026-08-11": ('2026-08-07', 'regular', '10:00'),
+        "2026-08-18": ('2026-08-14', 'regular', '10:00'),
+        "2026-08-25": ('2026-08-21', 'regular', '10:00'),
+        "2026-09-01": ('2026-08-28', 'regular', '10:00'),
+        "2026-09-09": ('2026-09-04', 'regular', '10:00'),
+        "2026-09-15": ('2026-09-11', 'regular', '10:00'),
+        "2026-09-22": ('2026-09-18', 'regular', '10:00'),
+        "2026-09-29": ('2026-09-25', 'regular', '10:00'),
+        "2026-10-06": ('2026-10-02', 'regular', '10:00'),
+        "2026-10-13": ('2026-10-09', 'regular', '10:00'),
+        "2026-10-20": ('2026-10-16', 'regular', '10:00'),
+        "2026-10-27": ('2026-10-23', 'regular', '10:00'),
+        "2026-11-03": ('2026-10-30', 'regular', '10:00'),
+        "2026-11-10": ('2026-11-06', 'regular', '10:00'),
+        "2026-11-17": ('2026-11-13', 'regular', '10:00'),
+        "2026-11-24": ('2026-11-20', 'regular', '10:00'),
+        "2026-12-01": ('2026-11-27', 'regular', '10:00'),
+        "2026-12-08": ('2026-12-04', 'regular', '10:00'),
+        "2026-12-15": ('2026-12-11', 'regular', '10:00'),
+        "2026-12-22": ('2026-12-18', 'regular', '10:00'),
+        "2026-12-29": ('2026-12-25', 'regular', '10:00'),
+    },
     "cn_new_home_prices": {
         "2026-09-15": ("2026-08", "regular", "09:30"),
         "2026-10-19": ("2026-09", "regular", "09:30"),
@@ -129,6 +162,7 @@ EDITIONS = {
     },
 }
 SCHEDULES = {
+    "us_fannie_pali": "https://www.fanniemae.com/media/document/pdf/fannie-mae-pali-rali-release-calendar.pdf",
     "cn_new_home_prices": "https://www.stats.gov.cn/xw/tjxw/tzgg/202512/t20251224_1962137.html",
     "jp_housing_starts": "https://www.mlit.go.jp/statistics/details/t-other-2_tk_000214.html",
     "ca_housing_starts": "https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/news-releases-reports-calendar",
@@ -146,7 +180,7 @@ SCHEDULES = {
     "us_construction_spending": "https://www.census.gov/economic-indicators/calendar-listview-2026.html",
 }
 ZONES = {"cn_new_home_prices": "Asia/Shanghai", "jp_housing_starts": "Asia/Tokyo", "ca_housing_starts": "America/Toronto", "de_building_permits": "Europe/Berlin", "ea_house_purchase_loans": "Europe/Berlin", "ea_house_purchase_cost": "Europe/Berlin"}
-SOURCES = {"cn_new_home_prices": ("NBS", "official", "M"), "jp_housing_starts": ("MLIT", "official", "M"), "ca_housing_starts": ("CMHC", "official", "M"), "de_building_permits": ("Destatis", "official", "M"), "uk_mortgage_approvals": ("BoE", "official", "M"), "uk_hpi": ("HMLR/ONS", "official", "M"), "ea_house_purchase_loans": ("ECB", "official", "M"),
+SOURCES = {"us_fannie_pali": ("FannieMae", "official", "W"), "cn_new_home_prices": ("NBS", "official", "M"), "jp_housing_starts": ("MLIT", "official", "M"), "ca_housing_starts": ("CMHC", "official", "M"), "de_building_permits": ("Destatis", "official", "M"), "uk_mortgage_approvals": ("BoE", "official", "M"), "uk_hpi": ("HMLR/ONS", "official", "M"), "ea_house_purchase_loans": ("ECB", "official", "M"),
            "ea_house_purchase_cost": ("ECB", "official", "M"),
            "ea_hpi": ("Eurostat", "official", "Q"),
            "us_case_shiller": ("SPDJI", "private", "M"),

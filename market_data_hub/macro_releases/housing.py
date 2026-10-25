@@ -11,7 +11,7 @@ from .http import FetchError
 from .publication_times import local_release
 from .schedule import due, issuer_zone
 from .tier1_publications import publication_text, require
-from . import census_construction, pmms, nar, case_shiller, eurostat_hpi, ecb_housing, uk_hpi, boe_housing, destatis_housing, cmhc_housing, mlit_housing, nbs_housing
+from . import census_construction, pmms, nar, case_shiller, eurostat_hpi, ecb_housing, uk_hpi, boe_housing, destatis_housing, cmhc_housing, mlit_housing, nbs_housing, fannie_pali
 
 FHFA_LIST = "https://www.fhfa.gov/reports/house-price-index"
 FHFA_ARCHIVES = {
@@ -88,6 +88,10 @@ FETCHERS = {"cn_new_home_prices": nbs_housing.fetch, "jp_housing_starts": mlit_h
             "ea_hpi": eurostat_hpi.fetch, "us_fhfa_hpi": fetch_fhfa, "us_construction_spending": census_construction.fetch,
             "us_pmms": pmms.fetch, "us_existing_home_sales": nar.fetch, "us_pending_home_sales": nar.fetch,
             "us_case_shiller": case_shiller.fetch}
+
+
+PARSERS[fannie_pali.FAMILY] = fannie_pali.parse
+FETCHERS[fannie_pali.FAMILY] = fannie_pali.fetch
 
 
 class HousingAdapter:
