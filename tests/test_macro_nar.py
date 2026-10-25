@@ -72,7 +72,7 @@ def test_daily_private_headline_cards_and_idempotence(family, tmp_path, monkeypa
         cards = store.release_cards("2026-10-01", "2026-10-24", indicators=list(expected))["cards"]
         assert {c["indicator_id"]: c["resolution"]["value"] for c in cards} == expected
         assert all(c["source_class"] == "private" and c["issuer_id"] == "NAR" and
-                   c["resolution"]["status"] == "official" and c["reference_period"] == "2026-09" for c in cards)
+                   c["resolution"]["status"] == "private" and c["reference_period"] == "2026-09" for c in cards)
         if family == "us_existing_home_sales":
             level = next(c for c in cards if c["indicator_id"] == family)
             assert level["resolution"]["scale"] == 1000000

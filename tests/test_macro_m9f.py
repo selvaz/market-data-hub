@@ -48,7 +48,8 @@ def test_golden(case, tmp_path):
         persist(store, [row])
         assert store.latest_official(row.indicator_id)[0]["value"] == row.value
         cards = store.release_cards(row.edition, row.edition, indicators=[row.indicator_id])["cards"]
-        assert cards[0]["resolution"]["status"] == "official"
+        from market_data_hub.macro_releases.housing_editions import SOURCES
+        assert cards[0]["resolution"]["status"] == SOURCES[case["family"]][1]
 
 
 def test_unknown_fhfa_date_fails_closed():

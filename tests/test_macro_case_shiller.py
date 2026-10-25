@@ -78,7 +78,7 @@ def test_daily_private_headline_cards_archive_editions_and_idempotence(tmp_path,
         assert {c["indicator_id"]: c["resolution"]["value"] for c in cards} == {
             "us_case_shiller_national_yy": 1.9, "us_case_shiller_20_yy": 2.5}
         assert all(c["issuer_id"] == "SPDJI" and c["source_class"] == "private" and
-                   c["resolution"]["status"] == "official" and c["reference_period"] == "2026-07" and
+                   c["resolution"]["status"] == "private" and c["reference_period"] == "2026-07" and
                    c["released_at"] == "2026-09-29T13:00:00.000000+00:00" for c in cards)
         assert len(store.latest_official("us_case_shiller_national_yy")) == 2
     again = run_daily.execute(db, [cs.FAMILY], 24, False, raw_dir=tmp_path / "none")

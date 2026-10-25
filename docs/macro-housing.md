@@ -6,6 +6,28 @@ That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
 contains all fifteen M9f housing families, with the NBS national-aggregate definition gap explicitly documented. The PR remains unmerged.
 
+## Independent review verification checkpoint
+
+The required local macro/card/docs suite passed: **1,635 passed, 1 skipped**. All **20 new read-path/classification regressions** passed; the earlier focused resolver/NAR/Case-Shiller/housing run passed 206 cases. Tests forbid network and stub `api_key`. Card and generated-doc freshness, repository-wide Ruff and `mkdocs build --strict` passed.
+
+Fresh schema-v9 production-copy verification passed at `D:/Temp/mdh-m9f-3aekqgfq/verification.json`: all fifteen families were `ok` for dry run and collection, then `no_change` on repeat. All 25 latest read-API measures were present with unchanged values: **20 official and 5 private**. The five private measures additionally passed live `resolve`, `first_release`, `latest_official` and `as_known_at` class/status audits. Integrity was `ok`, production main unchanged. Production was read only as stable main/WAL bytes; every verification write stayed under `D:/Temp`. No schema migration or evidence rewrite was needed.
+
+## Independent review fixes and historical-revision limits
+
+The shared resolver now separates verified issuer authority from source ownership. NAR existing/pending sales and SPDJI Case-Shiller resolve with **`status=private`**, `issuer_id` and **`source_class=private` inside the resolution itself**, including nested previous values, consensus and surprise statuses. Official families retain `status=official`. FRED/ALFRED and mirror evidence retain `source_class=redistributor` and cannot acquire official status, even when the value matches an issuer or a stored source role is wrong. The read API takes ownership from the selected resolution, so a FRED-only Case-Shiller card is labelled redistributor rather than private issuer evidence. Coverage counts verified private releases in a separate `private` bucket, not `official`.
+
+The public resolver, release cards, coverage, empty explanations, CLI cards/coverage and M4 history reads share the classification. The legacy method/view name `latest_official` is retained for compatibility with its existing verified-issuer selection; its returned private rows explicitly carry `source_class=private` and `resolution_status=private`, as do `first_release` and `as_known_at`. These names must not be used to infer public-source ownership. No stored evidence or production schema is rewritten; reads apply resolver rule `macro-resolver:m6-v2` to existing databases. Earlier checkpoint notes below used the old issuer-certified `official` terminology and are superseded by this section.
+
+**Prior-period revision limitation (review item 2):** M9f certifies each reviewed edition's current headline only. The `period != head` guard stays fail-closed with `needs review`; no revised prior-period housing vintage is silently inferred. Consequently, the latest stored value for an older reference period can remain its last captured print even when a subsequent publication revises it. Original vintages are retained append-only, but that does not imply complete latest-history coverage.
+
+- Census construction spending prints a revised prior-month **spending level**, while the collected indicator is **m/m percent change**. The level does not provide a revised growth rate; deriving one from rounded levels would violate this family's measure contract.
+- FHFA purchase-only SA historical rate/table rows require a separate edition-specific historical-period parser and validation against revisions and table layouts. The existing parser certifies the two current national rates only; arbitrary historical rows cannot safely pass the headline guard.
+- NAR remains limited to the national **public headline**. Licensed historical tables and inferred prior-month rates are outside scope; the older existing-sales public URL also redirects. Revision collection needs separate explicit public evidence and scope review.
+
+This review does not relax those scopes or add partial routine-revision ingestion. Other housing families' revised comparisons/rolling series likewise do not certify prior-period release vintages unless an adapter explicitly supports them. A follow-up would need saved revised publications, exact measure/period mappings, original-versus-routine vintage tests and as-known-at checks.
+
+**Revision-kind limitation (review item 3):** housing headline observations retain `revision=initial`, including an original dated edition first ingested late. Here `initial` describes the original headline print, not prompt collector arrival. Actual capture lateness is represented by `first_seen_at`/`retrieved_at`, separately from the issuer's `published_at`. This does not assert that earlier periods are unrevised. No revision-kind code change is included because prior-period routine rows are not being added.
+
 ## NBS default-install parser and complete M9f coverage verification checkpoint
 
 1615 passed, 1 skipped; 14 focused NBS tests and the fresh-process no-bs4/no-network credential-stubbed import regression passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 backup verification: `D:\Temp\mdh-m9f-9naoixvr\verification.json`. Dry run and collection returned `ok`, then `no_change` on repeat; 25 latest issuer-certified read-API measures. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; all verification writes stayed under `D:/Temp`.
@@ -398,7 +420,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 
 ## Latest cards verified on a production backup
 
-| Family | Reference period | Edition | Issuer release time | Latest official card |
+| Family | Reference period | Edition | Issuer release time | Latest issuer-certified card |
 | --- | --- | --- | --- | --- |
 | NBS new-home prices (tiers 1 / 2 / 3) | September 2026 | 19 October 2026 | 09:30 CST / 01:30 UTC | m/m +0.1% / 0.0% / -0.2%; y/y -0.5% / -2.4% / -3.9%, NSA |
 | MLIT housing starts | August 2026 | 30 September 2026 | 14:00 JST / 05:00 UTC | +6.1% y/y, NSA |
@@ -540,8 +562,8 @@ key as #125, extends its ids with the headline m/m measure, and keeps timing
 `UNKNOWN` and pending owner approval.
 
 Source ownership is explicit in read-API cards: `issuer_id=NAR`,
-`source_class=private`. Resolution status `official` means verified against
-the issuer; it does not mean a government source. The calendar permits a fetch
+`source_class=private`. Current resolution status is `private`, meaning verified
+against the private issuer; the shared resolver carries that ownership on every read path. The calendar permits a fetch
 at 10:00 ET; the press page's own timestamp is retained (13 October: 10:01 ET).
 Values cannot be released before either the scheduled instant or that page clock.
 

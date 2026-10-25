@@ -693,12 +693,20 @@ and provenance (including every period carried by the release).
 
 | Resolution status | Meaning |
 | --- | --- |
-| `official` | A verified, published copy of the exact issuer edition. A verified issuer publication served by a distributor also qualifies. |
+| `official` | A verified, published copy of the exact official issuer edition. Private issuers and redistributor evidence cannot have this status. |
+| `private` | A verified publication from a reviewed private issuer (NAR or SPDJI). It retains issuer-first authority, with private ownership explicit in the resolution, source and provenance. |
 | `provisional` | Only unverified issuer, mirror, web, or legacy evidence is available. |
 | `disputed` | Compatible values in the same edition disagree between verified issuers, or an unverified issuer HTML/LLM extraction disagrees with structured evidence. |
 | `issuer_pending` | A mirror has a strictly newer publication edition than the captured issuer edition: issuer not yet captured. The displayed value/edition is the mirror's, with the older issuer figure retained as a discrepancy. |
 
-Rules are versioned as `macro-resolver:m6-v1` and documented in `resolve.py`.
+Rules are versioned as `macro-resolver:m6-v2` and documented in `resolve.py`.
+Every resolution includes `issuer_id` and `source_class`; these classify the
+selected source independently of `disputed` or `issuer_pending` status. FRED/ALFRED
+and mirrors are `redistributor`, even when verified or numerically equal to an
+issuer print. Coverage reports verified private releases under `private`.
+Legacy M4 history methods retain their selection and names, but their rows now
+carry `issuer_id`, `source_id`, `source_class` and `resolution_status`; the method
+name `latest_official` alone is not an ownership classification.
 Filter `first_seen_at <= t` before ranking, and never admit a publication dated
 after t. Match exact indicator/period/stage and explicit composition; incompatible
 units and derived/rejected values cannot win. Choose the latest issuer edition,

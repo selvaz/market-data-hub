@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 
 from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
 from .models import utc
+from .source_classes import source_class
 from .resolve import (
     COLLECT_LOG_LIMITATION,
     Snapshot,
@@ -68,7 +69,7 @@ def stale_series(snapshot, indicator, period, released_at):
         e.reference_period
         for e in snapshot.evidence
         if e.indicator_id == successor
-        and e.official
+        and e.verified_issuer
         and e.value is not None
         and e.published_at
         and e.published_at <= released_at
@@ -323,7 +324,7 @@ class ReadAPI:
             if (
                 e.event_id
                 and e.reference_period
-                and e.official
+                and e.verified_issuer
                 and e.reading_kind == "actual"
                 and not malformed_edition(e)
             ):
@@ -542,6 +543,8 @@ class ReadAPI:
                     "time_basis": time_basis,
                     "publication_precision": precision,
                     "resolution": resolution.to_dict(),
+                    "issuer_id": resolution.issuer_id,
+                    "source_class": resolution.source_class,
                     "policy_decision": resolution.policy_decision,
                     "previous": previous,
                     "previous_before_release": previous_before_release,
@@ -579,12 +582,6 @@ class ReadAPI:
                 {(c["release_event_id"], c["indicator_id"]) for c in cards},
             )
         )
-        from .housing_editions import SOURCES
-        for card in cards:
-            if card["family"] in SOURCES:
-                # "official" resolution means issuer-certified evidence; this
-                # separate label preserves private issuer ownership (e.g. NAR).
-                card["issuer_id"], card["source_class"], _ = SOURCES[card["family"]]
         cards.sort(
             key=lambda c: (c["released_at"], c["release_event_id"], c["indicator_id"])
         )
@@ -689,6 +686,8 @@ class ReadAPI:
                     publication_precision=precision,
                     status="scheduled",
                     resolution=None,
+                    issuer_id=info["issuer_id"],
+                    source_class=source_class(info["issuer_id"], info["issuer_id"]),
                     actual=None,
                     surprise=None,
                     actual_missing_reason="issuer_actual_not_available",
@@ -949,7 +948,7 @@ class ReadAPI:
         monthly = [
             e.reference_period
             for e in valid_rows
-            if e.official and re.fullmatch(r"\d{4}-\d{2}", e.reference_period or "")
+            if e.verified_issuer and re.fullmatch(r"\d{4}-\d{2}", e.reference_period or "")
         ]
         if monthly and is_window:
             discontinued = stale_series(
@@ -1108,6 +1107,7 @@ class ReadAPI:
                 "expected": 0,
                 "captured": 0,
                 "official": 0,
+                "private": 0,
                 "provisional": 0,
                 "disputed": 0,
                 "issuer_pending": 0,
@@ -1143,6 +1143,7 @@ class ReadAPI:
                 events.setdefault((family, event), [])
         priorities = {
             "official": 0,
+            "private": 0,
             "provisional": 1,
             "issuer_pending": 2,
             "disputed": 3,
@@ -1154,6 +1155,7 @@ class ReadAPI:
                     "expected": 0,
                     "captured": 0,
                     "official": 0,
+                    "private": 0,
                     "provisional": 0,
                     "disputed": 0,
                     "issuer_pending": 0,

@@ -4,6 +4,7 @@ The production source is read as stable bytes, including its WAL. SQLite opens
 only that private snapshot; all collection writes target a separate backup.
 """
 import argparse
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 import sqlite3
@@ -12,7 +13,7 @@ import tempfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from market_data_hub.macro_releases import open_reader, run_daily
+from market_data_hub.macro_releases import open_reader, resolve, run_daily
 from market_data_hub.macro_releases.catalogue import HOUSING_FAMILIES
 from market_data_hub.macro_releases.housing_editions import SOURCES
 from market_data_hub.macro_releases.run_daily import preview_store
@@ -63,15 +64,31 @@ def verify_copy(args, directory):
         print(label, json.dumps(statuses), flush=True)
         passed &= all(s in ({"no_change"} if label == "idempotence" else {"ok"}) for s in statuses.values())
     report["latest_cards"] = []
+    report["private_read_checks"] = []
     with open_reader(target) as store:
         for family in args.families:
             edition = max(due(family_editions(family), family=family))
             ids = [m.id for m in HOUSING_FAMILIES[family]]
             cards = store.release_cards(edition, edition, indicators=ids)["cards"]
-            passed &= {c["indicator_id"] for c in cards if c["resolution"]["status"] == "official"} == set(ids)
+            expected_class = SOURCES[family][1]
+            passed &= {c["indicator_id"] for c in cards if c["resolution"]["status"] == expected_class} == set(ids)
             for card in cards:
                 r = card["resolution"]
                 passed &= card.get("source_class") == SOURCES[family][1]
+                passed &= r.get("source_class") == expected_class and r.get("issuer_id") == SOURCES[family][0]
+                if expected_class == "private":
+                    resolved = resolve(store, card["indicator_id"], card["reference_period"], card["stage"])
+                    classes = {"resolve": resolved.source_class if resolved else None}
+                    statuses = {"resolve": resolved.status if resolved else None}
+                    for label, rows in (
+                        ("first_release", store.first_release(card["indicator_id"])),
+                        ("latest_official", store.latest_official(card["indicator_id"])),
+                        ("as_known_at", store.as_known_at(datetime.now(timezone.utc).isoformat(), card["indicator_id"]))):
+                        row = next((v for v in rows if v["reference_period"] == card["reference_period"]), {})
+                        classes[label], statuses[label] = row.get("source_class"), row.get("resolution_status")
+                    passed &= set(classes.values()) == set(statuses.values()) == {"private"}
+                    report["private_read_checks"].append(dict(indicator=card["indicator_id"],
+                        source_classes=classes, resolution_statuses=statuses))
                 report["latest_cards"].append(dict(family=family, indicator=card["indicator_id"],
                     issuer=card["issuer_id"], source_class=card["source_class"],
                     period=card["reference_period"], edition=r["edition"], value=r["value"],
