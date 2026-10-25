@@ -365,8 +365,8 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     report = coverage_report()
     print(json.dumps(report, indent=2))
     assert set(report["certified_families"]) == set(FAMILIES)
-    # Main's v2.2 promotions remain approved; housing adds five new proposals.
-    gaps = {"ea_hpi": ["cat:ea21_hpi_qq", "cat:ea21_hpi_yy"],
+    # Main's v2.2 promotions remain approved; housing adds six new proposals.
+    gaps = {"ea_house_purchase_loans": ["cat:ea_loans_house_purchase_yy"], "ea_hpi": ["cat:ea21_hpi_qq", "cat:ea21_hpi_yy"],
             "us_case_shiller": ["cat:us_case_shiller_20_yy", "cat:us_case_shiller_national_yy"],
             "us_pending_home_sales": ["cat:us_pending_home_sales_mm"],
             "us_pmms": ["cat:us_pmms_30y"],
@@ -374,7 +374,7 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     for family in FAMILIES:
         assert report["certified_families"][family]["unmapped"] == gaps.get(family, [])
     assert report["documented_certified_gaps"] == gaps
-    assert report["macro_releases"] == {"mapped": 57, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
+    assert report["macro_releases"] == {"mapped": 58, "total": len(INDICATORS), "unmapped": sorted(i for ids in gaps.values() for i in ids)}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out
@@ -560,14 +560,14 @@ def test_housing_aliases_reuse_the_approved_v22_concepts():
 def test_packaged_m9f_proposals_are_a_separate_pending_generation():
     from market_data_hub.indicator_cards.coverage import DATA_DIR, draft_cards
 
-    expected = {"us_fhfa_hpi", "us_pmms_30y", "us_pending_home_sales", "us_case_shiller", "ea_hpi"}
+    expected = {"us_fhfa_hpi", "us_pmms_30y", "us_pending_home_sales", "us_case_shiller", "ea_hpi", "ea_loans_house_purchase"}
     psv = DATA_DIR / "draft_rows_v2.3.psv"
     metadata = json.loads(psv.with_name("timing_v2.3-draft.json").read_text(encoding="utf-8"))
     assert metadata["classification_version"] == "v2.3-draft"
     assert metadata["approval_status"] == "pending_owner_approval"
     proposals = draft_cards()
     assert {card.key for card in proposals} == expected == set(metadata["rows"])
-    assert len(proposals) == 5 and sum(len(card.ids.cat) for card in proposals) == 8
+    assert len(proposals) == 6 and sum(len(card.ids.cat) for card in proposals) == 9
     for card in proposals:
         assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
         assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None

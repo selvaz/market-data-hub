@@ -26,6 +26,9 @@ def run_date():
 
 
 def issuer_zone(family):
+    from .housing_editions import ZONES as HOUSING_ZONES
+    if family in HOUSING_ZONES:
+        return HOUSING_ZONES[family]
     from .policy_editions import ZONES
     if family in ZONES:
         return ZONES[family]

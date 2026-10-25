@@ -2,7 +2,7 @@
   "classification_version": "v2.3-draft",
   "approval_status": "pending_owner_approval",
   "source": "M9f housing concept proposals; source URLs are in the PSV rationales; no local timing validation.",
-  "source_table_sha256": "43134e727bfc3ce6719cddaf63481aafffd804b4817a2e3d2912e4a1115fcc60",
+  "source_table_sha256": "79ba60b9979318c0195ec355bad2c162f8b44f85bc0831f9b4e3db93b3021a62",
   "rows": {
     "ea_hpi": {
       "descriptive_peak": "not estimated",
@@ -21,6 +21,10 @@
       "predictive_screen": "not tested"
     },
     "us_fhfa_hpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ea_loans_house_purchase": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     }

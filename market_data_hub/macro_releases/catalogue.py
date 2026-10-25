@@ -135,6 +135,10 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "ea_house_purchase_loans": [measure("ea_loans_house_purchase_yy", "ECB", "EA_CHANGING", "yy", "SCA",
+        definition="ECB BSI.M.U2.Y.U.A22T.A.I.U2.2250.Z01.A: adjusted MFI loans to euro area households and NPISH for house purchase; annual growth rate, working day and seasonally adjusted; transfers and notional cash pooling adjusted; changing euro area composition")],
+    "ea_house_purchase_cost": [measure("ea_cost_borrow_house", "ECB", "EA_CHANGING", "level", "not-stated", "% per annum",
+        definition="ECB MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N: composite cost of borrowing for households and NPISH for house purchase, new business, AAR/NDER; volumes weighted with a moving average; euro denominated; changing euro area composition")],
     "ea_hpi": [measure("ea21_hpi_" + basis, "Eurostat", "EA21", basis, "NSA",
         definition="Eurostat EA21 House Price Index, all new and existing residential properties purchased by households; published nominal " + basis + " percent change, not seasonally adjusted",
         frequency="Q") for basis in ("qq", "yy")],

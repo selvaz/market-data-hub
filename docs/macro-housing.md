@@ -6,6 +6,81 @@ That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
 remains draft while work is delivered one family at a time. Do not merge it.
 
+## ECB mortgage lending and borrowing cost (24 October 2026)
+
+The ECB step adds **two monthly official families** because BSI loan growth and
+MIR borrowing cost have different publication dates. Each has only a `regular`
+stage and its own scheduled-event membership. The reviewed calendar ends on
+31 December 2026. Its **10:00 Frankfurt** clock uses `Europe/Berlin`: 08:00 UTC
+in August/September/early October and 09:00 UTC after the October clock change.
+The [ECB statistical calendar](https://www.ecb.europa.eu/press/calendars/statscal/html/index.en.html)
+explicitly states that its times are Frankfurt local time.
+
+- `ea_house_purchase_loans` / `ea_loans_house_purchase_yy` uses
+  [BSI.M.U2.Y.U.A22T.A.I.U2.2250.Z01.A](https://data.ecb.europa.eu/data/datasets/BSI/BSI.M.U2.Y.U.A22T.A.I.U2.2250.Z01.A):
+  adjusted MFI loans to households and NPISH for **house purchase**, annual
+  growth, working day and seasonally adjusted, adjusted for transfers and
+  notional cash pooling, changing euro area composition. The original print
+  comes from row 1.2, final annual-growth column, of the dated release annex.
+  It is distinct from the broader all-household headline.
+- `ea_house_purchase_cost` / `ea_cost_borrow_house` uses
+  [MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N](https://data.ecb.europa.eu/data/datasets/MIR/MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N):
+  the composite cost of borrowing for new euro-denominated house-purchase loans
+  to households and NPISH, percent per annum, changing euro area composition.
+  This is the issuer's weighted AAR/NDER composite, separate from APRC, consumer
+  credit, corporate borrowing and individual fixation buckets. Seasonal
+  adjustment is not stated in this headline and is recorded as `not-stated`.
+
+The live Data Portal CSV must match the exact series key, all key dimensions,
+units, scale, status, latest period and published rate. Only the latest due
+headline is corroborated, at its printed precision. Revised CSV history and
+the portal's update clock never certify earlier release vintages. In particular,
+July mortgage-loan growth was first printed **3.0%**, then revised to **3.1%** in
+September's annex and the rolling series. The July release remains 3.0%.
+
+Both parsers validate issuer URLs, reference periods and publication identities.
+The loans fetch additionally validates the dated press page and its unique annex
+link. A changed calendar, dimension, structure, missing due publication or
+disagreement enters `needs_review`; the six-hour newly due publication grace
+leaves the event pending. Unknown editions and calendar expiry fail closed.
+No FF alias is added: the broader FF household-loan title is not this mortgage
+measure.
+
+Cards: `cat:ea_cost_borrow_house` aliases the already approved `pan_mir` concept
+(`pan:ecb_cost_borrow_house`). The narrower loan-growth concept has a new strict
+19-column **`ea_loans_house_purchase`** row in `draft_rows_v2.3.psv`, with timing
+`UNKNOWN`, source URL in its rationale, real composition/coverage caveats in
+`flag`, and pending owner approval in the matching timing metadata. There are
+now **six proposals / nine measure ids**; approved release-card coverage is
+**58/67**. Main's 294 approved cards and 86/86 approved tier-1 mappings remain.
+
+Saved originals include the [July BSI release](https://www.ecb.europa.eu/press/stats/md/html/ecb.md2607~e7127e7d02.en.html)
+and [annex](https://www.ecb.europa.eu/press/pdf/md/ecb.md2607_annex~b04670b43a.en.pdf),
+the [August BSI release](https://www.ecb.europa.eu/press/stats/md/html/ecb.md2608~406f8d243d.en.html)
+and [annex](https://www.ecb.europa.eu/press/pdf/md/ecb.md2608_annex~1dd30faa76.en.pdf),
+the [July MIR release](https://www.ecb.europa.eu/press/stats/mfi/html/ecb.mir260902~d54675e442.en.html)
+and [August MIR release](https://www.ecb.europa.eu/press/stats/mfi/html/ecb.mir2610~8e4898ad10.en.html),
+both series' CSV and portal metadata, and the general and family calendars.
+Each fixture retains its issuer URL, capture instant and SHA-256. Each family
+has two golden cases in two distinct issuer editions.
+
+ECB-step local validation passed: **1,473 passed, 1 skipped** across all
+`tests/test_macro_*.py`, `tests/test_indicator_cards.py` and
+`tests/test_macro_indicators_docs.py` (398.29 seconds). The 63 focused ECB
+cases, all 15 saved body/URL/hash pairs, generated-card and generated-doc
+freshness, repository-wide Ruff and `mkdocs build --strict` also passed.
+
+Fresh schema-v9 production-copy verification passed at
+`D:\Temp\mdh-m9f-gjw0p4dh\verification.json` (SQLite backup beside it).
+All **nine** families returned `ok` for dry run and collection, then `no_change`
+for the repeat. All **13** latest read-API measure cards were issuer-certified,
+with the correct official/private source classes. The new ECB cards are August
+2026 loan growth **+3.1% y/y**, released 25 September at 08:00 UTC, and August
+borrowing cost **3.60% per annum**, released 1 October at 08:00 UTC. SQLite
+integrity was `ok` and the production main file was unchanged. Production was
+read only as stable main/WAL bytes; all snapshot, database, collection, ledger
+and report writes stayed under `D:\Temp`.
+
 ## Cards v2.2 integration (24 October 2026)
 
 Merged main's owner-approved v2.2 cards (#132, `6109c89`) into the housing
@@ -116,6 +191,8 @@ after those checks pass.
 
 | Family | Issuer | Source class | Frequency | Reviewed editions through 31 December 2026 | Golden cases |
 | --- | --- | --- | --- | --- | --- |
+| Euro area house-purchase loan growth | ECB BSI | Official, free | Monthly | 27 Aug, 25 Sep, 27 Oct, 26 Nov, 30 Dec; 10:00 Europe/Berlin | 2 dated annexes: July 3.0%, August 3.1% |
+| Euro area house-purchase borrowing cost | ECB MIR | Official, free | Monthly | 2 Sep, 1 Oct, 2 Nov, 2 Dec; 10:00 Europe/Berlin; November data publish January 2027 | 2 dated releases: July 3.54%, August 3.60% |
 | Euro area HPI, NSA q/q and y/y | Eurostat | Official, free | Quarterly | 2 Jul (Q1), 1 Oct (Q2), 11:00 Europe/Luxembourg; reviewed July–December, next edition 11 Jan 2027 | 4 measurements in 2 distinct issuer publications |
 | US FHFA monthly purchase-only HPI, SA m/m and y/y | FHFA | Official, free | Monthly | 25 Aug, 29 Sep, 27 Oct, 24 Nov, 29 Dec; 09:00 America/New_York | 4 measurements in 2 distinct publications (25 Aug and 29 Sep) |
 | US total construction spending, SA m/m | Census | Official, free | Monthly | 3 Aug, 1 Sep, 1 Oct, 2 Nov, 1 Dec; 10:00 America/New_York | 2 distinct publications: June -0.1% (3 Aug) and August +0.9% (1 Oct) |
@@ -178,6 +255,8 @@ claims and separately enforces PMMS's reviewed endpoints.
 
 | Family | Reference period | Edition | Issuer release time | Latest official card |
 | --- | --- | --- | --- | --- |
+| ECB house-purchase loans | August 2026 | 25 September 2026 | 10:00 CEST / 08:00 UTC | +3.1% y/y, adjusted loans, SCA |
+| ECB house-purchase borrowing cost | August 2026 | 1 October 2026 | 10:00 CEST / 08:00 UTC | 3.60% per annum, new-business composite |
 | Eurostat HPI (EA21) | Q2 2026 | 1 October 2026 | 11:00 CEST / 09:00 UTC | +1.1% q/q; +4.0% y/y, NSA |
 | FHFA | July 2026 | 29 September 2026 | 09:00 EDT / 13:00 UTC | +0.3% m/m; +2.6% y/y, purchase-only SA |
 | Construction spending | August 2026 | 1 October 2026 | 10:00 EDT / 14:00 UTC | +0.9% m/m, total SA |
@@ -237,10 +316,9 @@ All writes go to the copy. Reproduce with the project interpreter:
 
 ## Remaining steps, in order
 
-1. ECB house-purchase loan growth and composite cost of borrowing.
-2. ONS/HM Land Registry UK HPI, y/y.
-3. BoE mortgage approvals for house purchase.
-4. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
+1. ONS/HM Land Registry UK HPI, y/y.
+2. BoE mortgage approvals for house purchase.
+3. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.

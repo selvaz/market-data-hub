@@ -11,7 +11,7 @@ from .http import FetchError
 from .publication_times import local_release
 from .schedule import due, issuer_zone
 from .tier1_publications import publication_text, require
-from . import census_construction, pmms, nar, case_shiller, eurostat_hpi
+from . import census_construction, pmms, nar, case_shiller, eurostat_hpi, ecb_housing
 
 FHFA_LIST = "https://www.fhfa.gov/reports/house-price-index"
 FHFA_ARCHIVES = {
@@ -80,10 +80,12 @@ def fetch_fhfa(client, family, since):
     return out
 
 
-PARSERS = {"ea_hpi": eurostat_hpi.parse, "us_fhfa_hpi": parse_fhfa, "us_construction_spending": census_construction.parse,
+PARSERS = {ecb_housing.LOANS: ecb_housing.parse, ecb_housing.COST: ecb_housing.parse,
+           "ea_hpi": eurostat_hpi.parse, "us_fhfa_hpi": parse_fhfa, "us_construction_spending": census_construction.parse,
            "us_pmms": pmms.parse, "us_existing_home_sales": nar.parse_existing,
            "us_pending_home_sales": nar.parse_pending, "us_case_shiller": case_shiller.parse}
-FETCHERS = {"ea_hpi": eurostat_hpi.fetch, "us_fhfa_hpi": fetch_fhfa, "us_construction_spending": census_construction.fetch,
+FETCHERS = {ecb_housing.LOANS: ecb_housing.fetch, ecb_housing.COST: ecb_housing.fetch,
+            "ea_hpi": eurostat_hpi.fetch, "us_fhfa_hpi": fetch_fhfa, "us_construction_spending": census_construction.fetch,
             "us_pmms": pmms.fetch, "us_existing_home_sales": nar.fetch, "us_pending_home_sales": nar.fetch,
             "us_case_shiller": case_shiller.fetch}
 

@@ -4,6 +4,21 @@ Only listed editions can be certified. Calendars permit a fetch, never prove a
 publication. The saved issuer reports include the FHFA 2026 calendar.
 """
 EDITIONS = {
+    # ECB statistical calendar: 10:00 Frankfurt, separate BSI/MIR releases.
+    # Earlier saved dated publications supply a second original-print golden.
+    "ea_house_purchase_loans": {
+        "2026-08-27": ("2026-07", "regular", "10:00"),
+        "2026-09-25": ("2026-08", "regular", "10:00"),
+        "2026-10-27": ("2026-09", "regular", "10:00"),
+        "2026-11-26": ("2026-10", "regular", "10:00"),
+        "2026-12-30": ("2026-11", "regular", "10:00"),
+    },
+    "ea_house_purchase_cost": {
+        "2026-09-02": ("2026-07", "regular", "10:00"),
+        "2026-10-01": ("2026-08", "regular", "10:00"),
+        "2026-11-02": ("2026-09", "regular", "10:00"),
+        "2026-12-02": ("2026-10", "regular", "10:00"),
+    },
     # Eurostat eventsJson plus exact UTC publication metadata. The calendar
     # is reviewed July–December; the next HPI release is 11 January 2027.
     "ea_hpi": {
@@ -77,6 +92,8 @@ EDITIONS = {
     },
 }
 SCHEDULES = {
+    "ea_house_purchase_loans": "https://www.ecb.europa.eu/press/calendars/statscal/mfm/html/stprmp.en.html",
+    "ea_house_purchase_cost": "https://www.ecb.europa.eu/press/calendars/statscal/mfm/html/stprmf.en.html",
     "ea_hpi": "https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar",
     "us_case_shiller": "https://press.spglobal.com/2026-09-29-S-P-Cotality-Case-Shiller-Index-Reports-Annual-Gain-in-July-2026",
     "us_pending_home_sales": "https://www.nar.realtor/press-releases/nar-releases-2026-statistical-news-release-schedule",
@@ -85,7 +102,10 @@ SCHEDULES = {
     "us_fhfa_hpi": "https://www.fhfa.gov/data/hpi",
     "us_construction_spending": "https://www.census.gov/economic-indicators/calendar-listview-2026.html",
 }
-SOURCES = {"ea_hpi": ("Eurostat", "official", "Q"),
+ZONES = {"ea_house_purchase_loans": "Europe/Berlin", "ea_house_purchase_cost": "Europe/Berlin"}
+SOURCES = {"ea_house_purchase_loans": ("ECB", "official", "M"),
+           "ea_house_purchase_cost": ("ECB", "official", "M"),
+           "ea_hpi": ("Eurostat", "official", "Q"),
            "us_case_shiller": ("SPDJI", "private", "M"),
            "us_pending_home_sales": ("NAR", "private", "M"),
            "us_existing_home_sales": ("NAR", "private", "M"),

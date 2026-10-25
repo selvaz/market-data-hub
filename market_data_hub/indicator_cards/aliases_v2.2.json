@@ -2,6 +2,7 @@
   "classification_version": "v2.2",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages.",
   "aliases": [
+    {"id": "cat:ea_cost_borrow_house", "key": "pan_mir", "basis": "Same approved ECB MIR house-purchase cost-of-borrowing concept as pan:ecb_cost_borrow_house; euro area U2 monthly headline, not corporations or a fixation bucket. Source: https://data.ecb.europa.eu/data/datasets/MIR/MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N (M9f context only; no FF measure equivalence)."},
     {"id": "cat:boj_policy_rate_decision", "key": "jp_boj", "basis": "Approved BOJ short-term policy rate decision concept; issuer MPM statement and published rate vote (M9c)."},
     {"id": "cat:pboc_lpr_decision", "key": "cn_lpr", "basis": "Approved PBOC/NIFC LPR decision concept; both published tenors retained in the policy card (M9c)."},
     {"id": "cat:boc_overnight_rate_decision", "key": "ca_boc", "basis": "Approved target overnight rate decision concept; issuer fixed-announcement statement at 09:45 ET (M9c)."},
@@ -49,5 +50,5 @@
     {"id": "cat:us_construction_spending_mm", "key": "us_construction_spending", "basis": "Same approved Census total construction put-in-place concept as cal:us_construction_spending_mm; published SA m/m change, public plus private construction (M9f)."},
     {"id": "cat:us_existing_home_sales_mm", "key": "us_existing_home_sales", "basis": "Same approved v2.2 NAR national existing-home sales concept as cat:us_existing_home_sales; published SA monthly headline change. This is concept context, not equivalence with the SAAR level (M9f)."}
   ],
-  "certified_gaps": {"ea_hpi": ["cat:ea21_hpi_qq", "cat:ea21_hpi_yy"], "us_case_shiller": ["cat:us_case_shiller_20_yy", "cat:us_case_shiller_national_yy"], "us_pending_home_sales": ["cat:us_pending_home_sales_mm"], "us_fhfa_hpi": ["cat:us_fhfa_hpi_mm", "cat:us_fhfa_hpi_yy"], "us_pmms": ["cat:us_pmms_30y"]}
+  "certified_gaps": {"ea_house_purchase_loans": ["cat:ea_loans_house_purchase_yy"], "ea_hpi": ["cat:ea21_hpi_qq", "cat:ea21_hpi_yy"], "us_case_shiller": ["cat:us_case_shiller_20_yy", "cat:us_case_shiller_national_yy"], "us_pending_home_sales": ["cat:us_pending_home_sales_mm"], "us_fhfa_hpi": ["cat:us_fhfa_hpi_mm", "cat:us_fhfa_hpi_yy"], "us_pmms": ["cat:us_pmms_30y"]}
 }
