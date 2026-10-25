@@ -4,7 +4,7 @@ Branch `feat/m9f-housing` was cut from `origin/integrate/m2b` at `e301c52`,
 originally stacked on [#128](https://github.com/selvaz/market-data-hub/pull/128).
 That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
-contains all fifteen M9f housing families, with the NBS national-aggregate definition gap explicitly documented. The PR remains unmerged.
+contains all fifteen M9f housing families, with the NBS national-aggregate definition gap explicitly documented. The PR was merged into main at `5e04a4b`.
 
 ## Independent review verification checkpoint
 
@@ -38,16 +38,33 @@ This review does not relax those scopes or add partial routine-revision ingestio
 
 ## Current indicator-card status
 
-Approved v2.2 stays intact: 294 cards and all 86 external tier-1 measures resolve to approved concepts. M9f reuses the approved construction-spending concept (`cat:us_construction_spending_mm`), the approved NAR existing-sales concept (level and m/m), and ECB's approved `pan_mir` borrowing-cost concept (`cat:ea_cost_borrow_house`). Existing main aliases and de-duplication remain. No new FF aliases were inferred for Canada, Japan or China.
+Classification v2.3 contains **306 approved concepts**, retaining all v2.2
+cards and promoting all 12 M9f housing concepts on 2026-10-25 after independent
+Codex review. The generated coverage report shows **79/79 release-catalogue
+measures**, **86/86 external tier-1 measures**, **65/65 active tier-1 calendar
+ids**, and **107/107 enabled macro series**, with no certified concept gaps.
 
-The complete next generation is **twelve proposals / twenty-one measure ids** in `draft_rows_v2.3.psv`, loaded only with `--with-drafts`. Every proposal has timing **UNKNOWN** and approval **pending_owner_approval** in `timing_v2.3-draft.json`; flags hold only real caveats and each rationale contains an issuer URL. This current inventory supersedes the historical per-step counts and v2.1/v2.2 draft references below.
+The four house-price cards (`ea_hpi`, `us_case_shiller`, `us_fhfa_hpi`, `uk_hpi`)
+are **COIN / DEFINITION** against their measured reference periods, with identity
+timing values. `us_pmms_30y` is **CTX** and refers to the **application reference
+week**; the other seven promoted cards remain **UNKNOWN**. All retain HARD / M.
+The approval record and original draft hashes live only in the `promotions`
+block of `timing_v2.3.json`; flags retain real caveats. See
+[Indicator cards](indicator-cards.md) for the exact classification and evidence.
 
-| Draft key | Proposed catalogue ids | Real caveats |
+The following 12 concepts cover **21 catalogue measure ids** and now resolve
+through the approved index. `draft_rows_v2.3.psv` is empty, its matching timing
+metadata has no rows, and `--with-drafts` returns no pending cards. Existing
+construction, NAR existing-sales and ECB borrowing-cost context and aliases
+remain. Historical per-step counts and draft references below describe earlier
+M9f checkpoints and are superseded by this section.
+
+| Approved key | Catalogue ids | Real caveats |
 | --- | --- | --- |
 | `ea_hpi` | cat:ea21_hpi_qq;cat:ea21_hpi_yy | fixed EA21 composition |
 | `us_case_shiller` | cat:us_case_shiller_national_yy;cat:us_case_shiller_20_yy | three-month moving average |
 | `us_pending_home_sales` | cat:us_pending_home_sales_mm | seasonal adjustment not stated in public headline |
-| `us_pmms_30y` | cat:us_pmms_30y | survey week differs from publication date |
+| `us_pmms_30y` | cat:us_pmms_30y | application reference week differs from publication date |
 | `us_fhfa_hpi` | cat:us_fhfa_hpi_mm;cat:us_fhfa_hpi_yy | purchase-only index; excludes all-transactions measures |
 | `ea_loans_house_purchase` | cat:ea_loans_house_purchase_yy | changing euro area composition; excludes consumer and other household lending |
 | `uk_hpi` | cat:uk_hpi_yy | provisional estimates; registration lag and revisions |
@@ -248,7 +265,7 @@ Merged main's owner-approved v2.2 cards (#132, `6109c89`) into the housing
 branch. Main's 294 approved cards, 24 promotion records, master-table and timing
 hashes, 86/86 approved tier-1 mappings and id de-duplication remain intact.
 The card status described in older step notes below is historical; this section
-records the current approved-versus-proposed split.
+records the historical integration split, superseded by the current v2.3 status above.
 
 | Conflict | Resolution |
 | --- | --- |
