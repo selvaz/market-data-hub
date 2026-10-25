@@ -18,6 +18,9 @@ MAPPINGS = {
     "us_cpi_core_mm": ("us_cpi", "CPILFESL", "pch"),
     "us_cpi_core_yy": ("us_cpi", "CPILFENS", "pc1"),
     "us_payrolls_change": ("us_payrolls", "PAYEMS", "chg"),
+    "us_ppi_mm": ("us_ppi", "PPIFIS", "pch"),
+    "us_ppi_yy": ("us_ppi", "PPIFID", "pc1"),
+    "us_jolts_openings": ("us_jolts", "JTSJOL", "lin"),
     "us_gdp_qq_saar": ("us_gdp", "A191RL1Q225SBEA", "lin"),
 }
 MAPPINGS.update({
@@ -139,6 +142,60 @@ class FREDAdapter:
             if family == "us_gdp" and period != GDP_EDITIONS[edition][0]:
                 out[-1] = replace(out[-1], stage="regular", event_stage=stage)
         return out
+
+
+class BLSFallbackAdapter(FREDAdapter):
+    """Edition-bound ALFRED first prints; never a current FRED snapshot.
+
+    A vintage-list entry proves the provider published that day. The as-of
+    response must contain the scheduled headline and the exact vintage date.
+    ALFRED only has daily resolution: the BLS calendar supplies the release
+    instant, not an invented intraday provider availability timestamp.
+    """
+
+    def fetch(self, families, since):
+        out = []
+        for family in families:
+            calendar = due(family_editions(family), family=family)
+            for indicator, (mapped_family, series, units) in MAPPINGS.items():
+                if mapped_family != family:
+                    continue
+                for edition, (headline, stage, clock) in sorted(calendar.items()):
+                    if headline < since:
+                        continue
+                    params = dict(api_key=api_key("FRED_API_KEY"), file_type="json",
+                                  series_id=series, realtime_start=edition, realtime_end=edition)
+                    vintage_doc = self.client.get("fred", "https://api.stlouisfed.org/fred/series/vintagedates",
+                                                  dict(params, limit=10000))
+                    vintages = json_payload(vintage_doc)
+                    require_complete(vintages, vintages.get("vintage_dates", []))
+                    if vintages.get("vintage_dates") != [edition]:
+                        raise FetchError("ALFRED vintage date does not match BLS edition; needs review")
+                    doc = self.client.get("fred", ENDPOINT, dict(params, units=units,
+                        observation_start=headline + "-01", observation_end=headline + "-01", limit=10000))
+                    out.extend(self.parse_first_print(doc, indicator=indicator, edition=edition))
+        return out
+
+    @staticmethod
+    def parse_first_print(document, *, indicator, edition):
+        family, series, units = MAPPINGS[indicator]
+        calendar = family_editions(family)
+        if edition not in due(calendar, family=family):
+            raise FetchError("BLS edition is not released; needs review")
+        headline, stage, clock = calendar[edition]
+        payload = json_payload(document)
+        rows = payload.get("observations", [])
+        require_complete(payload, rows)
+        if (payload.get("units") != units or payload.get("realtime_start") != edition or
+                payload.get("realtime_end") != edition or len(rows) != 1 or
+                rows[0].get("date") != headline + "-01" or rows[0].get("value") in (None, ".") or
+                rows[0].get("realtime_start") != edition or rows[0].get("realtime_end") != edition):
+            raise FetchError("ALFRED first-print vintage/period does not match BLS edition; needs review")
+        row = rows[0]
+        return [Observation(indicator, family, headline, float(row["value"]), row["value"],
+                            series + ":" + units, "ALFRED", document, edition,
+                            **new_york_release(edition, clock), stage=stage,
+                            precision="exact", provider_vintage=edition, revision="initial")]
 
 
 class USRedistributorAdapter(FREDAdapter):

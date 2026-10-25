@@ -375,7 +375,13 @@ def fetch_daily(client, family, since):
             documents.append(doc)
             return doc
     try:
-        batch = strategy(Capture(), family, since)
+        try:
+            batch = strategy(Capture(), family, since)
+        except FetchError:
+            if family not in ("us_cpi", "us_payrolls"):
+                raise
+            from .fred import BLSFallbackAdapter
+            batch = FamilyFetch(observations=BLSFallbackAdapter(Capture()).fetch([family], since))
         batch.documents = documents
         return batch
     except FetchError as exc:

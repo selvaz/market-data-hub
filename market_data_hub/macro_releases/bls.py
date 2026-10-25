@@ -48,6 +48,15 @@ class BLSAdapter:
         self.client = client
 
     def fetch(self, families, since):
+        try:
+            observations = self.fetch_official(families, since)
+        except FetchError:
+            from .fred import BLSFallbackAdapter
+            return BLSFallbackAdapter(self.client).fetch(families, since)
+        from .schedule import due, family_editions
+        return [o for o in observations if o.edition in due(family_editions(o.family), family=o.family)]
+
+    def fetch_official(self, families, since):
         series = [key for key, (indicator, _, _) in SERIES.items() if bls_family(indicator) in families]
         if not series:
             return []

@@ -42,6 +42,7 @@ def offline(monkeypatch, tmp_path):
     # current October clock must not publish those future observations.
     monkeypatch.setattr(run_daily, "datetime", SimpleNamespace(now=lambda tz: datetime(2026, 12, 1, tzinfo=tz)))
     monkeypatch.setattr(discovery, "api_key", lambda _: "fake-key")
+    monkeypatch.setattr("market_data_hub.macro_releases.fred.api_key", lambda _: "fake-key")
 
 
 def changed(doc, body, url=None):

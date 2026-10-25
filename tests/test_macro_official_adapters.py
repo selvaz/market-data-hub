@@ -33,6 +33,7 @@ def no_network(monkeypatch):
     def forbidden(*args, **kwargs):
         raise AssertionError("Network forbidden in offline certification")
     monkeypatch.setattr(requests.Session, "request", forbidden)
+    monkeypatch.setattr("market_data_hub.macro_releases.fred.api_key", lambda _: "fixture-key")
 
 
 def document(relative):
