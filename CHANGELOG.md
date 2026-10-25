@@ -7,6 +7,22 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.8] — 2026-10-25
+
+### Added
+- Indicator cards v2.2 (#132): the 24 tier-1 concepts approved by the owner on 2026-10-24 are now part of the approved dataset; all 86/86 tier-1 measures resolve to approved cards. The approval record is in the `promotions` block of `timing_v2.2.json`; `flag` keeps caveats only.
+- processo-macro M9f (#130): fifteen housing families with issuer-certified editions, calendars and golden cases. They are:
+  - US: FHFA HPI, Census construction spending, Freddie Mac PMMS, and the private-source headlines for NAR existing and pending home sales and for S&P Case-Shiller;
+  - euro area: Eurostat EA21 HPI, ECB house-purchase loans and the cost of borrowing;
+  - other countries: UK HPI, BoE mortgage approvals, Destatis residential permits, CMHC housing starts, MLIT housing starts and NBS new-home prices by city tier.
+- Twelve housing card drafts in `draft_rows_v2.3.psv` (pending owner approval; `--with-drafts` only).
+
+### Fixed
+- Private-source classification is carried by the resolution itself, so NAR and Case-Shiller are reported as `private`, and FRED/ALFRED mirrors as redistributors, on every read path (cards, history, coverage, CLI, nested previous/revision/consensus fields).
+
+### Known limitations
+- Housing prior-period revisions are not yet ingested, so the latest value for an earlier period can stay at its first print. NBS publishes no single national 70-city aggregate. See `docs/macro-housing.md`.
+
 ## [0.3.7] — 2026-10-24
 
 ### Added
