@@ -1,5 +1,5 @@
 {
-  "classification_version": "v2.2",
+  "classification_version": "v2.3",
   "promotions": [
     {
       "approval": "approved v2.2 by owner 2026-10-24",
@@ -32,7 +32,28 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "4c25e1c6ea0a60944de52d1e5e4228dfb2b1983ab2feef5e91e60a6158deb707"
+      "source_table_sha256": "229cd80dd62a4666a789c78b451646848bd4943bb623757215646f77719f9e69"
+    },
+    {
+      "approval": "approved v2.3 by owner 2026-10-25",
+      "draft_source_table_sha256": "b11bac4f17ba604585dcf995b60afa87ccb22555376480f1526eb923b7f8df21",
+      "draft_timing_extract_sha256": "c0dd7a1576e88e4cf5562b8074a1ddb255db3e62cae9aa8bb56909b7a7e7534c",
+      "keys": [
+        "ea_hpi",
+        "us_case_shiller",
+        "us_pending_home_sales",
+        "us_pmms_30y",
+        "us_fhfa_hpi",
+        "ea_loans_house_purchase",
+        "uk_hpi",
+        "uk_mortgage_approvals",
+        "de_building_permits",
+        "ca_housing_starts",
+        "jp_housing_starts",
+        "cn_new_home_prices_tiers"
+      ],
+      "source": "PR #130, M9f housing drafts at 5e04a4b; independent Codex review",
+      "source_table_sha256": "229cd80dd62a4666a789c78b451646848bd4943bb623757215646f77719f9e69"
     }
   ],
   "rows": {
@@ -128,6 +149,10 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "ca_housing_starts": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "ca_lfs": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -196,6 +221,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "cn_new_home_prices_tiers": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "cn_new_loans": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -229,6 +258,10 @@
       "predictive_screen": "not tested"
     },
     "cz_10y": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "de_building_permits": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -328,7 +361,15 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "ea_hpi": {
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
+    },
     "ea_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ea_loans_house_purchase": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -596,6 +637,10 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "jp_housing_starts": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "jp_indpro": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -848,7 +893,15 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "uk_hpi": {
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
+    },
     "uk_lfs_employment": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "uk_mortgage_approvals": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -911,6 +964,10 @@
     "us_capacity_util": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
+    },
+    "us_case_shiller": {
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "us_claims_continuing": {
       "descriptive_peak": "not estimated",
@@ -995,6 +1052,10 @@
     "us_fed_communication": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
+    },
+    "us_fhfa_hpi": {
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "us_fomc_decision": {
       "descriptive_peak": "not estimated",
@@ -1084,11 +1145,19 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "us_pending_home_sales": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "us_personal_income": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
     "us_personal_spending": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_pmms_30y": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -1215,5 +1284,5 @@
   },
   "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "4c25e1c6ea0a60944de52d1e5e4228dfb2b1983ab2feef5e91e60a6158deb707"
+  "source_table_sha256": "229cd80dd62a4666a789c78b451646848bd4943bb623757215646f77719f9e69"
 }

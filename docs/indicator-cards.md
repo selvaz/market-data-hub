@@ -1,9 +1,9 @@
-# Indicator cards (classification v2.2)
+# Indicator cards (classification v2.3)
 
 Indicator cards provide the same owner-approved context to domain recaps and
 LazyCommittee. They describe a concept, theme, nature, timing reference, evidence,
 revision behaviour and caveats. They contain no market views or conclusions.
-The 294 concept rows and their timing evidence ship as versioned package data;
+The 306 concept rows and their timing evidence ship as versioned package data;
 reading cards requires no database or network access. For the method behind the
 classification and a generated table of every concept, its timing class and the
 stores it lives in, see [Macro indicators](macro-indicators.md).
@@ -21,7 +21,7 @@ if card is not None:
 cards = cards_for(["cal:us_nfp", "es:nonfarm_payrolls", "cal:us_claims"])
 assert [c.key for c in cards] == ["us_payrolls", "us_claims_initial"]
 assert unmapped(["cat:unknown"]) == ["cat:unknown"]
-assert dataset().classification_version == "v2.2"
+assert dataset().classification_version == "v2.3"
 ```
 
 Models are strict, immutable Pydantic models; unknown fields and type coercion
@@ -85,29 +85,29 @@ limitations; an empty flag list does not establish absence of failure modes.
 Package resources live under `market_data_hub/indicator_cards/`:
 
 - `master_table_v2.psv`: the owner-approved table (270 existing rows plus the
-  24 tier-1 rows approved on 2026-10-24).
-- `timing_v2.2.json`: existing verbatim columns (a)/(b) from section 3 of the
-  approved `04-classification-v2.md`, plus the 24 promoted timing entries.
+  24 tier-1 rows approved on 2026-10-24 and 12 housing rows approved on 2026-10-25).
+- `timing_v2.3.json`: existing verbatim columns (a)/(b) from section 3 of the
+  approved `04-classification-v2.md`, plus the 24 tier-1 and 12 housing promoted timing entries.
   The original source-guide SHA-256 covers the existing evidence; `promotions`
   records the approval, approved keys and current PSV SHA-256. The original
-  hashes from PR #125 are retained separately as `draft_source_table_sha256`
+  hashes from PR #125 and the M9f housing drafts are retained separately as `draft_source_table_sha256`
   and `draft_timing_extract_sha256`. The build checks each promotion's current
   table hash and requires distinct, existing PSV keys without overlapping
   promotion records. The PSV supplies relationship keys but does not contain
   the numeric horizons or peak estimates.
-- `aliases_v2.2.json`: explicit, explained aliases from current catalogue ids
+- `aliases_v2.3.json`: explicit, explained aliases from current catalogue ids
   to concepts already present in the table, plus documented coverage gaps.
-- `cards_v2.2.json`: generated strict cards, classification/schema versions,
+- `cards_v2.3.json`: generated strict cards, classification/schema versions,
   and SHA-256 hashes of the table, timing extract and aliases.
 - `tier1_v1.json`: the portable snapshot of the 86 external tier-1 measure ids.
 - `draft_rows_v2.2.psv` and `timing_v2.2-draft.json`: empty after promotion,
   retained as the promoted generation. Drafts never enter the approved build.
-- `draft_rows_v2.3.psv` and `timing_v2.3-draft.json`: five new M9f housing
-  proposals, with `approval_status: pending_owner_approval` in timing metadata,
-  timing UNKNOWN and only real caveats in the PSV `flag` column.
+- `draft_rows_v2.3.psv` and `timing_v2.3-draft.json`: empty after promoting
+  all 12 M9f housing concepts covering 21 catalogue measures. The draft
+  mechanism remains available for future proposals.
 
 The JSON filenames follow the existing classification-version convention, so
-timing, aliases and generated cards move together from v2.1 to v2.2. The master
+timing, aliases and generated cards move together from v2.2 to v2.3. The master
 table retains its established `master_table_v2.psv` name: it describes the table
 format rather than the minor classification version. `CLASSIFICATION_VERSION`
 selects the JSON resources; the strict model and build reject mixed versions.
@@ -143,7 +143,7 @@ across operating systems so the provenance hashes remain stable.
 
 All 24 rows from PR #125 ship as approved cards. The approval record
 `approved v2.2 by owner 2026-10-24` lives only in the `promotions` block of
-`timing_v2.2.json`. The `flag` column carries actual caveats, since it feeds
+`timing_v2.3.json`. The `flag` column carries actual caveats, since it feeds
 `known_failure_modes` and the rendered Caveat text. Both promoted PMI rows
 carry `never captured (licensed)`; other flags identify documented issuer-code,
 adjustment-metadata or geography limitations, and are empty where no separate
@@ -168,6 +168,28 @@ twins' exact timing entries: descriptive peak **n.a.** and predictive screen
 predictive screens **not tested** and descriptive peaks **not estimated**.
 Matched turning-point leads remain **not estimated** for every card.
 
+## Owner approval on 2026-10-25
+
+All 12 M9f housing rows ship as approved v2.3 cards after independent Codex
+review. Their approval record lives only in the `promotions` block of
+`timing_v2.3.json`, alongside the retained v2.2 record. Both records bind to the
+current master-table SHA-256; each retains its original draft hashes. Flags keep
+real measurement and data caveats, and rationales retain their `Source:` URLs.
+
+| Promoted keys | Timing class / basis |
+|---|---|
+| `ea_hpi`, `us_case_shiller`, `us_fhfa_hpi`, `uk_hpi` | COIN / DEFINITION, relative to their measured price reference period |
+| `us_pmms_30y` | CTX / no timing basis; mortgage financing conditions |
+| `us_pending_home_sales`, `ea_loans_house_purchase`, `uk_mortgage_approvals`, `de_building_permits`, `ca_housing_starts`, `jp_housing_starts`, `cn_new_home_prices_tiers` | UNKNOWN / no timing basis |
+
+The four price identities retain HARD nature and M measurement evidence, with
+mechanism and timing evidence **n.a.**, descriptive peak **n.a.**, and predictive
+screen **n.a. (reference or measurement identity)**. PMMS uses mechanism evidence
+**n.a.** and local timing evidence **none**; its caveat and rationale identify the
+**application reference week** separately from publication. The other seven rows
+retain their original UNKNOWN classification and caveats. All eight non-identity
+rows retain **not estimated** / **not tested** timing entries.
+
 For future proposals, add a `draft_rows_<version>.psv` with the same 19-column
 header and a matching `timing_<version>-draft.json`. `--with-drafts` discovers
 these pairs, verifies their hashes and pending-approval metadata, and rejects ids
@@ -187,18 +209,19 @@ configured-id context coverage, not live ingestion or historical completeness.
 | Universe | Measures / ids with approved cards |
 |---|---:|
 | External tier-1 measures | 86 / 86 |
-| Release catalogue | 57 / 65 |
+| Release catalogue | 79 / 79 |
 | Active tier-1 calendar | 65 / 65 |
 | Enabled hub macro series | 107 / 107 |
 
 UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) is covered by the owner-approved
 row `uk_gdp_monthly` (added 18/10/2026, mirroring the US GDP row: COIN by
 definition, HARD, ONS). Main's original certified families remain fully covered.
-Housing adds approved construction and existing-home-sales context, plus five
-new v2.3 proposals for eight measures; those measures remain explicit concept
-gaps in approved coverage. Tier-1 coverage is 86 approved, zero draft resolutions
-and zero unmapped ids, with or without `--with-drafts`; the opt-in separately
-lists all five housing proposals in `draft_cards`. Main's M9b/M9c
+Housing now includes all 12 promoted v2.3 concepts covering 21 catalogue measures,
+in addition to construction and existing-home-sales context. The generated coverage
+report shows 306 approved concepts, 79/79 catalogue measures and no certified
+concept gaps. Tier-1 coverage is 86 approved, zero draft resolutions and zero
+unmapped ids, with or without `--with-drafts`; the opt-in returns an empty
+`draft_cards` list. Main's M9b/M9c
 aliases and per-card id de-duplication are retained; the shared
 `cat:us_new_home_sales` alias appears once with main's M9b explanation.
 
