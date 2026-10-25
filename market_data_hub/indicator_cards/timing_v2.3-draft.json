@@ -2,7 +2,7 @@
   "classification_version": "v2.3-draft",
   "approval_status": "pending_owner_approval",
   "source": "M9f housing concept proposals; source URLs are in the PSV rationales; no local timing validation.",
-  "source_table_sha256": "98770a219dd2bf11550badfdd98ae209a770a3b2714c5e9cfeaa9e2c74223545",
+  "source_table_sha256": "d520300cc7ae613e7f76c435f2c2749a21f46075dfc4086f348a9f9203a9fa6a",
   "rows": {
     "ea_hpi": {
       "descriptive_peak": "not estimated",
@@ -37,6 +37,10 @@
       "predictive_screen": "not tested"
     },
     "de_building_permits": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ca_housing_starts": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     }

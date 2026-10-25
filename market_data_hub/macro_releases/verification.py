@@ -46,6 +46,7 @@ def reviewed_anchor(obs):
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
+    "ca_housing_starts": 300000,
     "de_building_permits": 100000, "de_building_permits_yy": 50,
     "boj_policy_rate_decision": 3,
     "pboc_lpr_decision": 3,
@@ -85,6 +86,7 @@ SANITY_BANDS.update({
     "us_initial_jobless_claims": 3000,
 })
 ABSOLUTE_BOUNDS = {
+    "ca_housing_starts": 2000000,
     "de_building_permits": 1000000,"us_jolts_openings": 20000, "us_housing_starts": 5000,
                    "ea_trade_balance": 1000000,
                    "us_new_home_sales": 5000,

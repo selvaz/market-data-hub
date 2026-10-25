@@ -287,6 +287,24 @@
       "period": "2026-08",
       "value": 6.8,
       "source_url": "https://www.destatis.de/DE/Presse/Pressemitteilungen/2026/10/PD26_370_3111.html"
+    },
+    {
+      "family": "ca_housing_starts",
+      "fixture": "cmhc-august2026.html",
+      "edition": "2026-09-16",
+      "indicator": "ca_housing_starts",
+      "period": "2026-08",
+      "value": 229046,
+      "source_url": "https://www.cmhc-schl.gc.ca/media-newsroom/news-releases/2026/housing-starts-construction-data-august-2026"
+    },
+    {
+      "family": "ca_housing_starts",
+      "fixture": "cmhc-september2026.html",
+      "edition": "2026-10-16",
+      "indicator": "ca_housing_starts",
+      "period": "2026-09",
+      "value": 248896,
+      "source_url": "https://www.cmhc-schl.gc.ca/media-newsroom/news-releases/2026/housing-starts-construction-data-september-2026"
     }
   ]
 }

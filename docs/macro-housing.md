@@ -6,6 +6,20 @@ That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
 remains draft while work is delivered one family at a time. Do not merge it.
 
+## CMHC housing starts verification checkpoint
+
+1575 passed, 1 skipped; 49 focused CMHC/HTTP tests passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 backup verification: `D:\Temp\mdh-m9f-iy7jctvk\verification.json`. Dry run and collection returned `ok`, then `no_change` on repeat; 1 latest issuer-certified read-API measures. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; all verification writes stayed under `D:/Temp`.
+
+## Canada CMHC housing starts
+
+CMHC supplies stable, free [dated public releases](https://www.cmhc-schl.gc.ca/media-newsroom/news-releases/2026/housing-starts-construction-data-september-2026). Family `ca_housing_starts` collects the **total monthly seasonally adjusted annual rate for all areas in Canada**, in units. September is **248,896 SAAR**, released 16 October; August's original 16 September print is **229,046**. September later revises August to 242,223; that later value does not overwrite the original release vintage. The six-month trend (September 250,411), urban actual starts, completions and year-to-date counts are separate measures and are not substituted.
+
+The [official 2026 release calendar](https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/news-releases-reports-calendar) explicitly enumerates 16 September, 16 October, 17 November and 15 December. The dated releases state **08:15 AM ET** for the next housing-starts publication; the parser cross-checks its reference month, date and clock against reviewed editions. The shared scheduler uses `America/Toronto`, with regular-stage events only. No holiday dates are forecast at run time. Date, scope, clock, future-calendar or headline changes fail closed with `needs_review`; the shared six-hour newly due 404 grace and 31 December review horizon apply.
+
+CMHC public pages require the browser User-Agent already used for BoE; redirects remain disabled. Document identity normalizes only the named Sitecore render ticks, form verification token and `SearchResourcesProperties_` render identifier only for documents whose source URL has the exact CMHC HTTPS host. Original bytes and raw SHA are retained. Tests vary those transport fields and prove that headline/date changes remain distinct.
+
+The new `ca_housing_starts` v2.3 draft has timing UNKNOWN, volatility/revision caveats in `flag`, the source URL in its rationale and pending owner approval in timing metadata. The approved US starts concept is not reused for Canadian geography. No FF title is inferred.
+
 ## Destatis residential permits verification checkpoint
 
 1524 passed, 1 skipped; 12 focused Destatis tests passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 verification: `D:\Temp\mdh-m9f-9tpkidiy\verification.json`. All 1 collected families returned `ok` for dry run and collection, then `no_change`; all 2 latest read-API measures were issuer-certified with correct source classes. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; every verification write stayed under `D:/Temp`.
@@ -265,6 +279,7 @@ after those checks pass.
 
 | Family | Issuer | Source class | Frequency | Reviewed editions through 31 December 2026 | Golden cases |
 | --- | --- | --- | --- | --- | --- |
+| Canada total housing starts, SAAR | CMHC | Official, free | Monthly | 16 Sep, 16 Oct, 17 Nov, 15 Dec; 08:15 America/Toronto | 2 dated releases: August 229,046; September 248,896 |
 | Germany residential dwellings permitted | Destatis | Official, free | Monthly | 18 Sep, 16 Oct, 18 Nov, 18 Dec; 08:00 Europe/Berlin | 4 measurements in 2 dated publications: July 22,500 / +1.9%; August 20,600 / +6.8% |
 | BoE house-purchase mortgage approvals | Bank of England | Official, free | Monthly | 1 Sep, 29 Sep, 29 Oct, 30 Nov; 09:30 Europe/London; next Jan 2027 | 2 dated publications: July 56,100; August 54,900 |
 | UK HPI, NSA annual change | HM Land Registry / ONS | Official, free | Monthly | 16 Sep, 21 Oct, 18 Nov, 16 Dec; 09:30 Europe/London, observed seconds retained | 2 dated reports: July +1.4%, August +0.9% |
@@ -332,6 +347,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 
 | Family | Reference period | Edition | Issuer release time | Latest official card |
 | --- | --- | --- | --- | --- |
+| CMHC housing starts | September 2026 | 16 October 2026 | 08:15 EDT / 12:15 UTC | 248,896 units, total monthly SAAR |
 | Destatis residential permits | August 2026 | 16 October 2026 | 08:00 CEST / 06:00 UTC | 20,600 dwellings; +6.8% y/y, NSA |
 | BoE house-purchase approvals | August 2026 | 29 September 2026 | 09:30 BST / 08:30 UTC | 54,900 net approvals, SA, rounded headline |
 | UK HPI | August 2026 | 21 October 2026 | 09:30:08 BST / 08:30:08 UTC | +0.9% y/y, NSA |
@@ -396,7 +412,7 @@ All writes go to the copy. Reproduce with the project interpreter:
 
 ## Remaining steps, in order
 
-1. CMHC starts, MLIT starts and NBS 70-city prices: investigate
+1. MLIT starts and NBS 70-city prices: investigate
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.
