@@ -2,7 +2,7 @@
   "classification_version": "v2.3-draft",
   "approval_status": "pending_owner_approval",
   "source": "M9f housing concept proposals; source URLs are in the PSV rationales; no local timing validation.",
-  "source_table_sha256": "62fbccce5d2b72be3593db8a9351761086f789cbf1078bdab14b5cfde10ed251",
+  "source_table_sha256": "f1cc679d373761b6dbe2bdb254440b2181c187f1f6bd06997b5bc4b9c8901024",
   "rows": {
     "ea_hpi": {
       "descriptive_peak": "not estimated",
@@ -29,6 +29,10 @@
       "predictive_screen": "not tested"
     },
     "uk_hpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "uk_mortgage_approvals": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     }

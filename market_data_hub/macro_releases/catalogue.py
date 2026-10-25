@@ -135,6 +135,8 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "uk_mortgage_approvals": [measure("uk_mortgage_approvals", "BoE", "GBR", "level", "SA", "approvals",
+        definition="BoE Money and Credit: net mortgage approvals for house purchase to individuals, seasonally adjusted count; cancellations netted, excludes remortgaging; public release headline rounded to nearest 100, distinct from unrounded LPMVTVX history")],
     "uk_hpi": [measure("uk_hpi_yy", "HMLR/ONS", "GBR", "yy", "NSA",
         definition="UK House Price Index, all residential properties purchased for market value, cash and mortgage transactions; published national annual change; provisional and subject to registration revisions")],
     "ea_house_purchase_loans": [measure("ea_loans_house_purchase_yy", "ECB", "EA_CHANGING", "yy", "SCA",

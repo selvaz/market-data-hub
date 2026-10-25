@@ -90,7 +90,7 @@ ABSOLUTE_BOUNDS = {"us_jolts_openings": 20000, "us_housing_starts": 5000,
                    "us_umich_consumer_sentiment": 150,
                    "us_building_permits": 5000, "us_trade_balance": 1000,
                    "us_initial_jobless_claims": 10000}
-SANITY_BANDS.update({"uk_hpi_yy": 30, "ea_loans_house_purchase_yy": 10, "ea_cost_borrow_house": 3,
+SANITY_BANDS.update({"uk_mortgage_approvals": 50000, "uk_hpi_yy": 30, "ea_loans_house_purchase_yy": 10, "ea_cost_borrow_house": 3,
                      "ea21_hpi_qq": 15, "ea21_hpi_yy": 30,
                      "us_fhfa_hpi_mm": 15, "us_fhfa_hpi_yy": 30,
                      "us_construction_spending_mm": 30, "us_pmms_30y": 3,
@@ -100,6 +100,7 @@ SANITY_BANDS.update({"uk_hpi_yy": 30, "ea_loans_house_purchase_yy": 10, "ea_cost
 ABSOLUTE_BOUNDS["us_existing_home_sales"] = 20
 ABSOLUTE_BOUNDS["us_pmms_30y"] = 25
 ABSOLUTE_BOUNDS["ea_cost_borrow_house"] = 25
+ABSOLUTE_BOUNDS["uk_mortgage_approvals"] = 2000000
 
 
 def configured_bands(overrides=None):

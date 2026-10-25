@@ -6,6 +6,37 @@ That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
 remains draft while work is delivered one family at a time. Do not merge it.
 
+## BoE mortgage approvals verification checkpoint
+
+1508 passed, 1 skipped; 15 focused BoE tests passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 verification: `D:\Temp\mdh-m9f-wjulpyc4\verification.json`. All 1 collected families returned `ok` for dry run and collection, then `no_change`; all 1 latest read-API measures were issuer-certified with correct source classes. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; every verification write stayed under `D:/Temp`.
+
+## BoE mortgage approvals step
+
+Family `uk_mortgage_approvals` collects the **seasonally adjusted net number
+of mortgage approvals for house purchase to individuals**, from the dated
+[Money and Credit release](https://www.bankofengland.co.uk/statistics/money-and-credit/2026/august-2026).
+The August 2026 headline is **54,900**, released **29 September at 09:30 BST**
+(08:30 UTC). The July golden is **56,100**, released 1 September at 09:30 BST.
+The headline and the detailed house-purchase paragraph must agree. These counts
+are rounded by the issuer to the nearest 100, net of cancellations, and exclude
+remortgaging. Lending amounts, remortgaging, all-purpose approvals and later
+revised/unrounded `LPMVTVX` history do not replace the dated headline.
+
+The [Bankstats calendar](https://www.bankofengland.co.uk/statistics/tables)
+confirms 29 October (September data) and 30 November (October data). November
+data release on 5 January 2027: **no December edition is invented**. The
+[BoE statistical code](https://www.bankofengland.co.uk/-/media/boe/files/statistics/statistical-code-of-practice.pdf)
+and the saved current upcoming-events page corroborate the **09:30 London**
+clock. Four reviewed regular editions are seeded, with DST handled by the
+shared release-instant scheduler. A changed date, purpose, adjustment, headline
+or future calendar enters `needs_review`; the shared six-hour newly due 404
+publication grace and year-end review horizon apply.
+
+A new strict `uk_mortgage_approvals` v2.3 draft covers the catalogue id of the
+same name, timing `UNKNOWN`, real rounding/coverage caveats in `flag`, source
+URL in the rationale and pending owner approval in timing metadata. No exact
+FF title was verified, so no consensus alias is inferred.
+
 ## UK HPI verification checkpoint
 
 1491 passed, 1 skipped; 16 focused UK HPI tests passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 verification: `D:\Temp\mdh-m9f-z2g3bdyn\verification.json`. All 1 collected families returned `ok` for dry run and collection, then `no_change`; all 1 latest read-API measures were issuer-certified with correct source classes. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; every verification write stayed under `D:/Temp`.
@@ -222,6 +253,7 @@ after those checks pass.
 
 | Family | Issuer | Source class | Frequency | Reviewed editions through 31 December 2026 | Golden cases |
 | --- | --- | --- | --- | --- | --- |
+| BoE house-purchase mortgage approvals | Bank of England | Official, free | Monthly | 1 Sep, 29 Sep, 29 Oct, 30 Nov; 09:30 Europe/London; next Jan 2027 | 2 dated publications: July 56,100; August 54,900 |
 | UK HPI, NSA annual change | HM Land Registry / ONS | Official, free | Monthly | 16 Sep, 21 Oct, 18 Nov, 16 Dec; 09:30 Europe/London, observed seconds retained | 2 dated reports: July +1.4%, August +0.9% |
 | Euro area house-purchase loan growth | ECB BSI | Official, free | Monthly | 27 Aug, 25 Sep, 27 Oct, 26 Nov, 30 Dec; 10:00 Europe/Berlin | 2 dated annexes: July 3.0%, August 3.1% |
 | Euro area house-purchase borrowing cost | ECB MIR | Official, free | Monthly | 2 Sep, 1 Oct, 2 Nov, 2 Dec; 10:00 Europe/Berlin; November data publish January 2027 | 2 dated releases: July 3.54%, August 3.60% |
@@ -287,6 +319,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 
 | Family | Reference period | Edition | Issuer release time | Latest official card |
 | --- | --- | --- | --- | --- |
+| BoE house-purchase approvals | August 2026 | 29 September 2026 | 09:30 BST / 08:30 UTC | 54,900 net approvals, SA, rounded headline |
 | UK HPI | August 2026 | 21 October 2026 | 09:30:08 BST / 08:30:08 UTC | +0.9% y/y, NSA |
 | ECB house-purchase loans | August 2026 | 25 September 2026 | 10:00 CEST / 08:00 UTC | +3.1% y/y, adjusted loans, SCA |
 | ECB house-purchase borrowing cost | August 2026 | 1 October 2026 | 10:00 CEST / 08:00 UTC | 3.60% per annum, new-business composite |
@@ -349,8 +382,7 @@ All writes go to the copy. Reproduce with the project interpreter:
 
 ## Remaining steps, in order
 
-1. BoE mortgage approvals for house purchase.
-2. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
+1. Destatis permits, CMHC starts, MLIT starts and NBS 70-city prices: investigate
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.

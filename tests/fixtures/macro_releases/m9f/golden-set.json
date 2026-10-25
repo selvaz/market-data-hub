@@ -233,6 +233,24 @@
       "period": "2026-08",
       "value": 0.9,
       "source_url": "https://www.gov.uk/government/statistics/uk-house-price-index-for-august-2026/uk-house-price-index-summary-august-2026"
+    },
+    {
+      "family": "uk_mortgage_approvals",
+      "fixture": "boe-money-credit-july2026.html",
+      "edition": "2026-09-01",
+      "indicator": "uk_mortgage_approvals",
+      "period": "2026-07",
+      "value": 56100,
+      "source_url": "https://www.bankofengland.co.uk/statistics/money-and-credit/2026/july-2026"
+    },
+    {
+      "family": "uk_mortgage_approvals",
+      "fixture": "boe-money-credit-august2026.html",
+      "edition": "2026-09-29",
+      "indicator": "uk_mortgage_approvals",
+      "period": "2026-08",
+      "value": 54900,
+      "source_url": "https://www.bankofengland.co.uk/statistics/money-and-credit/2026/august-2026"
     }
   ]
 }

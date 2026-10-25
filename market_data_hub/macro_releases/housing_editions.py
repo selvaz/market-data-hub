@@ -4,6 +4,12 @@ Only listed editions can be certified. Calendars permit a fetch, never prove a
 publication. The saved issuer reports include the FHFA 2026 calendar.
 """
 EDITIONS = {
+    "uk_mortgage_approvals": {
+        "2026-09-01": ("2026-07", "regular", "09:30"),
+        "2026-09-29": ("2026-08", "regular", "09:30"),
+        "2026-10-29": ("2026-09", "regular", "09:30"),
+        "2026-11-30": ("2026-10", "regular", "09:30"),
+    },
     "uk_hpi": {
         "2026-09-16": ("2026-07", "regular", "09:30"),
         "2026-10-21": ("2026-08", "regular", "09:30"),
@@ -98,6 +104,7 @@ EDITIONS = {
     },
 }
 SCHEDULES = {
+    "uk_mortgage_approvals": "https://www.bankofengland.co.uk/statistics/tables",
     "uk_hpi": "https://www.gov.uk/government/publications/about-the-uk-house-price-index/about-the-uk-house-price-index",
     "ea_house_purchase_loans": "https://www.ecb.europa.eu/press/calendars/statscal/mfm/html/stprmp.en.html",
     "ea_house_purchase_cost": "https://www.ecb.europa.eu/press/calendars/statscal/mfm/html/stprmf.en.html",
@@ -110,7 +117,7 @@ SCHEDULES = {
     "us_construction_spending": "https://www.census.gov/economic-indicators/calendar-listview-2026.html",
 }
 ZONES = {"ea_house_purchase_loans": "Europe/Berlin", "ea_house_purchase_cost": "Europe/Berlin"}
-SOURCES = {"uk_hpi": ("HMLR/ONS", "official", "M"), "ea_house_purchase_loans": ("ECB", "official", "M"),
+SOURCES = {"uk_mortgage_approvals": ("BoE", "official", "M"), "uk_hpi": ("HMLR/ONS", "official", "M"), "ea_house_purchase_loans": ("ECB", "official", "M"),
            "ea_house_purchase_cost": ("ECB", "official", "M"),
            "ea_hpi": ("Eurostat", "official", "Q"),
            "us_case_shiller": ("SPDJI", "private", "M"),
