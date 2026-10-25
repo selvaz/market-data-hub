@@ -314,8 +314,9 @@ def test_cards_use_approved_mir_alias_and_separate_pending_mortgage_growth_draft
     from market_data_hub.indicator_cards import indicator_card
     from market_data_hub.indicator_cards.coverage import DATA_DIR, draft_cards
     assert indicator_card("cat:ea_cost_borrow_house").key == "pan_mir"
-    assert indicator_card("cat:ea_loans_house_purchase_yy") is None
-    card, = [card for card in draft_cards() if card.key == "ea_loans_house_purchase"]
+    card = indicator_card("cat:ea_loans_house_purchase_yy")
+    assert card.key == "ea_loans_house_purchase"
+    assert not [c for c in draft_cards() if c.key == "ea_loans_house_purchase"]
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.ids.cat == ("ea_loans_house_purchase_yy",)
     assert "data.ecb.europa.eu" in card.rationale and "approval" not in card.flag
