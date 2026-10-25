@@ -161,9 +161,9 @@ def verify(store, batch, bands):
 
 def persist_review(store, batch, family, run_id):
     hashes = {put_document(store, doc) for doc in batch.documents}
-    if not batch.issues:
+    if not batch.issues and not batch.review_reasons:
         return
-    reasons = json.dumps(sorted(batch.issues))
+    reasons = json.dumps(sorted(set(batch.issues + batch.review_reasons)))
     for digest in hashes:
         identity = hashlib.sha256((family + digest + reasons).encode()).hexdigest()
         store.conn.execute("INSERT INTO review_queue VALUES (?,?,?,?,?,?,'pending') ON CONFLICT DO NOTHING",

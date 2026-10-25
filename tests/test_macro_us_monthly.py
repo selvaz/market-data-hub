@@ -126,14 +126,21 @@ def test_daily_all_eight_families_official_cards_and_idempotence(tmp_path, monke
     assert all(row["vintages_added"] == 0 for row in second["families"].values())
 
 
-# The BLS outage mappings have their own release-bound replay in M9h; this
-# fixture set covers the original Census/Fed redistributor monthly families.
 @pytest.mark.parametrize("indicator", [i for i, (f, _, _) in MAPPINGS.items()
-                                      if f in US_MONTHLY and f not in ("us_ppi", "us_jolts")])
+                                      if f in US_MONTHLY])
 def test_alfred_edition_units_and_source(indicator):
     family, series, units = MAPPINGS[indicator]
     edition = max(EDITIONS[family])
-    doc = document(series + "-" + edition + ".json")
+    if family in ("us_ppi", "us_jolts"):
+        # Synthetic parser coverage supplements the release-bound fallback
+        # replay; these mappings are excluded from generic history collection.
+        body = json.dumps(dict(units=units, realtime_start=edition, realtime_end=edition,
+                               observations=[dict(date=EDITIONS[family][edition][0] + "-01", value="0.3158",
+                                                  realtime_start=edition, realtime_end=edition)])).encode()
+        doc = Document(body, "https://api.stlouisfed.org/fred/series/observations",
+                       "2026-10-24T20:00:00Z", hashlib.sha256(body).hexdigest())
+    else:
+        doc = document(series + "-" + edition + ".json")
     rows = FREDAdapter.parse(doc, indicator=indicator, edition=edition)
     assert rows and all(o.source == "FRED" and o.provider_vintage == edition for o in rows)
     with pytest.raises(FetchError, match="needs review"):

@@ -3,6 +3,7 @@ from dataclasses import replace
 from datetime import datetime
 import hashlib
 import json
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -123,6 +124,10 @@ def test_successful_bls_validation_failure_cannot_use_older_alfred(tmp_path, mon
     with open_reader(path) as store:
         assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 0
         assert store.conn.execute("SELECT COUNT(*) FROM review_queue").fetchone()[0] > 0
+        reasons = " ".join(r[0] for r in store.conn.execute("SELECT reasons FROM review_queue"))
+        assert ("BLS publication metadata needs review" if mode == "unknown_edition" else
+                "BLS series empty or absent" if family in ("us_unemployment", "us_jolts") else
+                "BLS published calculation absent") in reasons
 
 
 @pytest.mark.parametrize("mode", ["early_list", "late_list", "late_row", "wrong_period", "current_snapshot"])
@@ -204,3 +209,119 @@ def test_employment_card_aliases_reuse_approved_concepts():
     for indicator, key in (("us_unemployment_rate", "us_unrate"),
                            ("us_avg_hourly_earnings_mm", "us_ahe"), ("us_avg_hourly_earnings_yy", "us_ahe")):
         assert indicator_card("cat:" + indicator).key == key
+
+
+@pytest.mark.parametrize("indicator", [i for i, (family, _, units) in fred.MAPPINGS.items()
+                                     if family in FAMILIES and units in ("pch", "pc1")])
+@pytest.mark.parametrize("raw,printed", [("0.3158", "0.3"), ("0.35000", "0.4"), ("-0.35000", "-0.4")])
+def test_fallback_percent_changes_match_bls_published_precision(indicator, raw, printed):
+    family, _, units = fred.MAPPINGS[indicator]
+    edition = max(due(family_editions(family), family=family))
+    headline = family_editions(family)[edition][0]
+    doc = document(dict(units=units, output_type=1, realtime_start=edition, realtime_end=edition,
+                        observations=[dict(date=headline + "-01", value=raw,
+                                           realtime_start=edition, realtime_end=edition)]))
+    obs, = fred.BLSFallbackAdapter.parse_first_print(doc, indicator=indicator, edition=edition)
+    assert (obs.value, obs.printed) == (float(printed), printed)
+    assert obs.document.json()["observations"][0]["value"] == raw
+
+
+def test_rounding_does_not_create_a_fake_official_discrepancy(tmp_path):
+    obs = next(o for o in discovery.fetch_daily(Outage(), "us_ahe", "2026-09").observations
+               if o.indicator_id == "us_avg_hourly_earnings_mm")
+    payload = obs.document.json()
+    payload["observations"][0]["value"] = "0.3158"
+    doc = document(payload)
+    mirror, = fred.BLSFallbackAdapter.parse_first_print(doc, indicator=obs.indicator_id, edition=obs.edition)
+    official = replace(mirror, source="BLS", series_key="CES0500000003:pct_changes:1")
+    with open_writer(tmp_path / "rounded.sqlite") as store:
+        persist(store, [mirror, official])
+        result = resolve(store, obs.indicator_id, obs.period)
+        assert (result.value, result.status, result.source_class) == (0.3, "official", "official")
+
+
+def test_added_bls_mappings_do_not_expand_generic_provider_history():
+    class Forbidden:
+        def get(self, *args, **kwargs):
+            raise AssertionError("Fallback-only mappings cannot create generic FRED provider history")
+    assert fred.FREDAdapter(Forbidden()).fetch(list(fred.BLS_FALLBACK_ONLY), "2026-06") == []
+
+
+@pytest.mark.parametrize("message,allowed", [
+    ("bls: HTTP 503", True), ("bls: HTTP 403", True), ("bls: TLS verification failed", True),
+    ("bls: transport failed after bounded attempts", True), ("bls: non-transient request failure", True),
+    ("BLS publication metadata needs review", False), ("BLS series empty or absent: X", False),
+    ("BLS requested calculation absent: X", False), ("bls: metadata needs review", False),
+    ("Missing credential: BLS_API_KEY", False),
+])
+def test_fallback_only_accepts_controlled_availability_failures(message, allowed):
+    assert bls.unavailable(FetchError(message)) is allowed
+
+
+@pytest.mark.parametrize("family", FAMILIES)
+def test_original_bls_outage_reason_is_audited_without_rejecting_fallback(tmp_path, monkeypatch, family):
+    monkeypatch.setattr(run_daily, "HttpClient", lambda **kwargs: Outage())
+    path = tmp_path / "reason.sqlite"
+    result = run_daily.execute(path, [family], 24, False, raw_dir=tmp_path / "empty")
+    assert result["families"][family]["status"] == "ok"
+    with open_reader(path) as store:
+        rows = store.conn.execute("SELECT reasons FROM review_queue WHERE family=?", (family,)).fetchall()
+        assert rows and all("bls: HTTP 503" in json.loads(r[0]) for r in rows)
+
+
+@pytest.mark.parametrize("family", ["us_ahe", "us_unemployment"])
+def test_empty_initial_list_on_release_day_is_pending_not_review(tmp_path, monkeypatch, family):
+    class NotPosted(Outage):
+        def get(self, *args, **kwargs):
+            doc = super().get(*args, **kwargs)
+            payload = doc.json()
+            if payload["realtime_end"] == "2026-11-06":
+                payload.update(observations=[], count=0)
+            return document(payload)
+    monkeypatch.setattr(run_daily, "datetime", SimpleNamespace(now=lambda tz: datetime(2026, 11, 6, 20, tzinfo=tz)))
+    monkeypatch.setattr(run_daily, "HttpClient", lambda **kwargs: NotPosted())
+    result = run_daily.execute(tmp_path / "pending.sqlite", [family], 24, False, raw_dir=tmp_path / "empty")
+    row = result["families"][family]
+    assert row["status"] == "ok" and not row.get("review_reasons")
+    pending = next(r for r in row["scheduled_editions"] if r["edition"] == "2026-11-06")
+    assert (pending["status"], pending["reason"]) == ("scheduled", "not_yet_published")
+
+
+def test_official_fetch_intentionally_filters_editions_before_the_release_instant(monkeypatch):
+    mirror = bls.BLSAdapter(Outage()).fetch(["us_payrolls"], "2026-09")[0]
+    official = replace(mirror, source="BLS", edition="2026-11-06", period="2026-10")
+    monkeypatch.setattr(bls.BLSAdapter, "fetch_official", lambda *args: [official])
+    token = RUN_INSTANT.set("2026-11-06T13:29:59Z")
+    try:
+        assert bls.BLSAdapter(None).fetch(["us_payrolls"], "2026-09") == []
+        RUN_INSTANT.set("2026-11-06T13:30:00Z")
+        assert bls.BLSAdapter(None).fetch(["us_payrolls"], "2026-09") == [official]
+    finally:
+        RUN_INSTANT.reset(token)
+
+
+@pytest.mark.parametrize("family", ["us_payrolls", "us_ahe"])
+def test_first_vintage_is_selected_from_multi_vintage_multi_observation_fixture(family):
+    fixture = json.loads((Path(__file__).parent / "fixtures/macro_releases/bls_fallback/vintages.json").read_text())
+    class Replay(Outage):
+        def get(self, provider, url, params=None):
+            assert provider == "fred" and params["api_key"] == "stub-key"
+            self.calls.append((url, params))
+            history = fixture[params["series_id"]]
+            assert len({r["date"] for r in history}) > 1
+            assert len({r["realtime_start"] for r in history}) > 1
+            # Replay FRED's server-side date and as-of filters on the full
+            # fixture, which also contains a later revised September print.
+            eligible = [r for r in history if params["observation_start"] <= r["date"] <= params["observation_end"]
+                        and r["realtime_start"] <= params["realtime_end"]]
+            first = params["output_type"] == 4
+            picked = min(eligible, key=lambda r: r["realtime_start"]) if first else max(eligible, key=lambda r: r["realtime_start"])
+            row = dict(date=picked["date"], realtime_start=picked["realtime_start"] if first else params["realtime_start"],
+                       realtime_end=params["realtime_end"], value=picked[params["units"]])
+            return document(dict(units=params["units"], output_type=params["output_type"],
+                                 realtime_start=params["realtime_start"], realtime_end=params["realtime_end"],
+                                 observations=[row], count=1, offset=0))
+    rows = bls.BLSAdapter(Replay()).fetch([family], "2026-09")
+    assert {r.indicator_id: r.value for r in rows} == ({"us_payrolls_change": 29.0} if family == "us_payrolls" else
+            {"us_avg_hourly_earnings_mm": 0.1, "us_avg_hourly_earnings_yy": 3.0})
+    assert all(r.period == "2026-09" and r.provider_vintage == "2026-10-02" for r in rows)

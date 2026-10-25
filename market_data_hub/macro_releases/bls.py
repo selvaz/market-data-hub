@@ -32,11 +32,12 @@ MEASURES = (*SERIES.items(), *EMPLOYMENT_SERIES)
 
 
 def unavailable(error):
-    """Only controlled HTTP/transport/quota or missing-credential failures.
+    """Only controlled HTTP/transport failures, including blocked requests.
 
     Parser and publication-review errors must not be hidden by older mirrors.
     """
-    return str(error).startswith("bls: ") or str(error) == "Missing credential: BLS_API_KEY"
+    return bool(re.fullmatch(r"bls: (?:HTTP [1-5][0-9]{2}|TLS verification failed|"
+                             r"transport failed after bounded attempts|non-transient request failure)", str(error)))
 
 
 def shift_month(period, offset):
@@ -58,10 +59,12 @@ class BLSAdapter:
     def __init__(self, client):
         self.client = client
 
-    def fetch(self, families, since):
+    def fetch(self, families, since, *, fallback=True):
         try:
             observations = self.fetch_official(families, since)
         except FetchError as exc:
+            if not fallback:
+                raise
             if not unavailable(exc):
                 if "needs review" in str(exc):
                     raise
@@ -69,6 +72,8 @@ class BLSAdapter:
             from .fred import BLSFallbackAdapter
             return BLSFallbackAdapter(self.client).fetch(families, since)
         from .schedule import due, family_editions
+        # The manual collector needs the same release-instant gate as daily
+        # discovery, even if BLS exposes a reviewed edition before publication.
         return [o for o in observations if o.edition in due(family_editions(o.family), family=o.family)]
 
     def fetch_official(self, families, since):

@@ -533,7 +533,7 @@ Explicit initial publications and benchmark revisions retain their meaning.
 
 The daily and manual BLS collectors try BLS first for `us_cpi`, `us_payrolls`,
 `us_ppi`, `us_jolts`, `us_unemployment` and `us_ahe`. Only BLS availability errors
-(HTTP, transport, quota or missing BLS credential) invoke the release-bound ALFRED
+(HTTP or transport failures, including blocked requests) invoke the release-bound ALFRED
 adapter. A successful response with an unreviewed edition, missing calculation
 or incompatible structure remains `needs_review`; older mirror prints cannot
 hide the new publication. Contradictory CPI/payroll issuer metadata also remains
@@ -569,10 +569,25 @@ editions within the requested reference-month window:
    remains immutable; corrections and later release editions append history.
    Rerunning an unchanged edition creates no new vintage.
 
+The original controlled BLS failure reason is retained in the append-only review
+queue on both fallback and content-review paths. An availability notice does not
+invalidate an accepted redistributor print. An empty, structurally valid initial
+list on the BLS release day is pending (`scheduled`, `not_yet_published`), rather
+than a metadata review; an empty historical edition still requires review.
+The optional generic FRED history collector excludes PPI, JOLTS, unemployment
+and AHE: their added mappings serve only the release-bound BLS fallback.
+
 ALFRED has daily vintage precision. The recorded BLS release instant comes from
 the issuer calendar; it does not assert that FRED was available at that exact
 intraday instant. FRED transformations use inputs from that same as-of vintage
-and can retain more decimals than the issuer's rounded release headline.
+outside the requested observation output window. A single live `pc1` request
+on 25 October, bounded to September 2026 at the 2 October vintage, returned
+3.02452% for AHE, confirming that the prior-year input need not be in that window.
+CPI, PPI and AHE `pch`/`pc1` prints are rounded to BLS's one-decimal published
+precision (decimal half up) before persistence and surprise/discrepancy comparisons.
+The immutable provider document retains the unrounded value. Payroll `chg` and
+level values are unchanged. The official BLS fetch path intentionally also filters
+reviewed editions against their release instant, including manual collection.
 See the [FRED observations API](https://fred.stlouisfed.org/docs/api/fred/series_observations.html)
 and [ALFRED output formats](https://alfred.stlouisfed.org/help/downloaddata#outputformats).
 
