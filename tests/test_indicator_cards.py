@@ -23,7 +23,7 @@ from market_data_hub.indicator_cards.render import MAX_CARD_CHARS, short_pair
 
 def test_generated_json_freshness_and_provenance():
     assert JSON_PATH.read_text(encoding="utf-8") == build_json()
-    assert dataset().classification_version == "v2.3"
+    assert dataset().classification_version == "v2.4"
     assert dataset().source_table_sha256 == hashlib.sha256(PSV_PATH.read_bytes()).hexdigest()
     assert dataset().timing_extract_sha256 == hashlib.sha256(TIMING_PATH.read_bytes()).hexdigest()
     assert dataset().aliases_sha256 == hashlib.sha256(ALIASES_PATH.read_bytes()).hexdigest()
@@ -32,10 +32,40 @@ def test_generated_json_freshness_and_provenance():
     assert len(timing["source_guide_sha256"]) == 64
 
 
+def test_owner_v24_mortgage_decisions_and_pali_proposal_are_separate():
+    card = indicator_card("us_mba_purchase")
+    assert card.concept == "MBA purchase applications, SA w/w change"
+    assert (card.timing.timing_class, card.timing.basis) == ("UNKNOWN", "HYPOTHESIS")
+    assert (card.evidence.measurement, card.evidence.mechanism, card.evidence.local_timing) == ("M", "mixed", "lit-US")
+    assert card.timing.descriptive_peak is None and card.timing.screen_note == "not tested"
+    assert card.timing.reference == "US existing-home sales (NAR closed sales)"
+    assert "private" in card.source and "Fed 1998" in card.rationale and "NAR" in card.rationale
+    promotion = json.loads(TIMING_PATH.read_text(encoding="utf-8"))["promotions"][-1]
+    assert promotion["approval"] == "approved v2.4 by owner 2026-10-25"
+    assert promotion["keys"] == ["us_mba_purchase"]
+    assert promotion["source_table_sha256"] == hashlib.sha256(PSV_PATH.read_bytes()).hexdigest()
+    assert indicator_card("us_fannie_pali") is None
+    from market_data_hub.indicator_cards.coverage import draft_cards
+    draft, = draft_cards()
+    assert draft.key == "us_fannie_pali" and draft.timing.timing_class == "UNKNOWN"
+    assert len(draft.ids.cat) == 6
+
+
+def test_pmms_v24_changes_only_the_two_owner_approved_timing_fields():
+    previous = json.loads(JSON_PATH.with_name("cards_v2.3.json").read_text(encoding="utf-8"))
+    old = next(c for c in previous["cards"] if c["key"] == "us_pmms_30y")
+    current = indicator_card("us_pmms_30y").model_dump(mode="json", by_alias=True)
+    old["timing"]["descriptive_peak"] = current["timing"]["descriptive_peak"]
+    old["timing"]["screen_note"] = current["timing"]["screen_note"]
+    assert current == old
+    assert current["timing"]["class"] == "CTX" and current["timing"]["basis"] is None
+    assert current["timing"]["predictive_screen"] == []
+
+
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 306
+    assert len(rows) == len(dataset().cards) == 307
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -88,7 +118,8 @@ def test_owner_approved_v23_housing_promotions(key, classification):
     assert card is not None and card in dataset().cards
     assert (card.timing.timing_class, card.timing.basis) == classification
     assert card.nature == "HARD" and card.evidence.measurement == "M"
-    assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
+    assert card.timing.predictive_screen == ()
+    assert (card.timing.descriptive_peak is None) == (key != "us_pmms_30y")
     assert all(indicator_card("cat:" + identity) == card for identity in card.ids.cat)
     timing = json.loads(TIMING_PATH.read_text(encoding="utf-8"))
     if key in HOUSING_REFERENCES:
@@ -98,6 +129,11 @@ def test_owner_approved_v23_housing_promotions(key, classification):
         assert timing["rows"][key] == {
             "descriptive_peak": "n.a.", "predictive_screen": "n.a. (reference or measurement identity)",
         }
+    elif key == "us_pmms_30y":
+        assert card.evidence.local_timing == "none"
+        assert "0.956/0.939" in card.timing.screen_note
+        assert "not a validated lead" in card.timing.descriptive_peak.source_text
+        assert card.evidence.mechanism == "n.a."
     else:
         assert card.evidence.local_timing == "none" and card.timing.screen_note == "not tested"
         assert timing["rows"][key] == {
@@ -111,7 +147,7 @@ def test_owner_approved_v23_housing_promotions(key, classification):
 
 def test_v23_housing_promotion_provenance():
     timing = json.loads(TIMING_PATH.read_text(encoding="utf-8"))
-    promotion = timing["promotions"][-1]
+    promotion = timing["promotions"][1]
     assert set(promotion["keys"]) == set(HOUSING_CLASSES)
     assert len(promotion["keys"]) == 12
     assert promotion["approval"] == "approved v2.3 by owner 2026-10-25"
@@ -177,7 +213,8 @@ def test_owner_approved_v22_promotions(key, classification):
 
 def test_promotion_provenance_covers_exactly_the_24_owner_approved_rows():
     timing = json.loads(TIMING_PATH.read_text(encoding="utf-8"))
-    promotion, housing = timing["promotions"]
+    promotion, housing, mortgage = timing["promotions"]
+    assert mortgage["keys"] == ["us_mba_purchase"]
     assert set(housing["keys"]) == set(HOUSING_CLASSES)
     assert set(promotion["keys"]) == set(PROMOTED_CLASSES)
     assert promotion["approval"] == "approved v2.2 by owner 2026-10-24"
@@ -246,7 +283,7 @@ def test_build_rejects_mixed_classification_versions(tmp_path, resource):
     payload["classification_version"] = "v2.1"
     modified = tmp_path / path.name
     modified.write_text(json.dumps(payload), encoding="utf-8")
-    with pytest.raises(ValueError, match="classification version must be v2.3"):
+    with pytest.raises(ValueError, match="classification version must be v2.4"):
         build_dataset(**{f"{resource}_path": modified})
 
 
@@ -363,7 +400,7 @@ def test_hypothesis_is_said_in_words_and_long_rationale_clipping_is_explicit():
     for c in dataset().cards:
         caveat = " ".join("; ".join(filter(None, (c.flag, c.rationale))).split()).rstrip(".")
         rendered = render_card(c)
-        if c.key in HOUSING_CLASSES and f"Caveat: {caveat}." not in rendered:
+        if c.key in {*HOUSING_CLASSES, "us_mba_purchase"} and f"Caveat: {caveat}." not in rendered:
             # Housing rationales retain long issuer URLs and measurement details.
             # The existing compact renderer marks omitted detail explicitly;
             # the real flag must still survive whole in its preview.
@@ -439,9 +476,17 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     print(json.dumps(report, indent=2))
     assert set(report["certified_families"]) == set(FAMILIES)
     for family in FAMILIES:
-        assert report["certified_families"][family]["unmapped"] == []
-    assert report["documented_certified_gaps"] == {}
-    assert report["macro_releases"] == {"mapped": 82, "total": len(INDICATORS), "unmapped": []}
+        if family == "us_fannie_pali":
+            assert report["certified_families"][family]["mapped"] == 0
+            assert report["certified_families"][family]["total"] == 6
+        else:
+            assert report["certified_families"][family]["unmapped"] == []
+    assert set(report["documented_certified_gaps"]) == {"us_fannie_pali"}
+    assert "v2.5" in report["documented_certified_gaps"]["us_fannie_pali"]
+    pali_ids = sorted("cat:" + key for key in INDICATORS if key.startswith("us_fannie_pali_"))
+    assert report["macro_releases"] == {"mapped": 82, "total": len(INDICATORS), "unmapped": pali_ids}
+    review = coverage_report(with_drafts=True)["macro_releases_with_drafts"]
+    assert review == {"mapped": len(INDICATORS), "total": len(INDICATORS), "unmapped": [], "approved": 82, "draft": 6}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out
@@ -541,7 +586,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 306
+    assert dataset() is shipped and len(shipped.cards) == 307
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -611,7 +656,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
         report = json.loads(capsys.readouterr().out)
         assert report["tier_1_measures"]["mapped"] == report["tier_1_measures"]["approved"] == 86
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 306
+        assert report["cards"] == 307
         assert ("draft_cards" in report) == bool(args)
 
 
@@ -633,10 +678,12 @@ def test_housing_promotions_leave_no_packaged_drafts():
     assert metadata["source_table_sha256"] == hashlib.sha256(psv.read_bytes()).hexdigest()
     with psv.open(encoding="utf-8-sig", newline="") as f:
         assert list(csv.DictReader(f, delimiter="|")) == []
-    assert metadata["rows"] == {} and draft_cards() == ()
+    assert metadata["rows"] == {}
+    assert [c.key for c in draft_cards()] == ["us_fannie_pali"]
     default = coverage_report()
     review = coverage_report(with_drafts=True)
-    assert "draft_cards" not in default and review["draft_cards"] == []
+    assert "draft_cards" not in default
+    assert [c["key"] for c in review["draft_cards"]] == ["us_fannie_pali"]
     for key in ("macro_releases", "certified_families"):
         assert default[key] == review[key]
     assert default["tier_1_measures"]["approved"] == review["tier_1_measures"]["approved"] == 86

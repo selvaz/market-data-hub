@@ -200,6 +200,14 @@ def coverage_report(with_drafts: bool = False) -> dict:
         report["draft_cards"] = [dict(key=card.key, approval_status="pending_owner_approval",
             ids=["cat:" + identity for identity in card.ids.cat], timing_class=card.timing.timing_class,
             flag=card.flag, rationale=card.rationale) for card in draft_cards()]
+        proposed = {"cat:" + identity for card in draft_cards() for identity in card.ids.cat}
+        missing = report["macro_releases"]["unmapped"]
+        remaining = [identity for identity in missing if identity not in proposed]
+        report["macro_releases_with_drafts"] = {
+            "mapped": len(catalogue) - len(remaining), "total": len(catalogue), "unmapped": remaining,
+            "approved": report["macro_releases"]["mapped"],
+            "draft": sum(identity in proposed for identity in missing),
+        }
     return report
 
 

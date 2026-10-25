@@ -32,8 +32,10 @@ def changed(edit):
     lambda sheet: setattr(sheet["B1"], "value", "WK_TOTAL_RALI_$"),
     lambda sheet: setattr(sheet["A3"], "value", "1/17/2004"),
     lambda sheet: setattr(sheet["B3"], "value", -1),
+    lambda sheet: setattr(sheet["B2"], "value", 200),
     lambda sheet: sheet.delete_rows(3),
     lambda sheet: sheet.delete_rows(sheet.max_row),
+    lambda sheet: setattr(sheet.cell(sheet.max_row, 2), "number_format", "0.0"),
     lambda sheet: setattr(sheet.cell(sheet.max_row - 1, 1), "value", "YoY % Change"),
 ])
 def test_pali_format_changes_fail_closed(edit):

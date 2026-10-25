@@ -1,9 +1,9 @@
-# Indicator cards (classification v2.3)
+# Indicator cards (classification v2.4)
 
 Indicator cards provide the same owner-approved context to domain recaps and
 LazyCommittee. They describe a concept, theme, nature, timing reference, evidence,
 revision behaviour and caveats. They contain no market views or conclusions.
-The 306 concept rows and their timing evidence ship as versioned package data;
+The 307 concept rows and their timing evidence ship as versioned package data;
 reading cards requires no database or network access. For the method behind the
 classification and a generated table of every concept, its timing class and the
 stores it lives in, see [Macro indicators](macro-indicators.md).
@@ -21,7 +21,7 @@ if card is not None:
 cards = cards_for(["cal:us_nfp", "es:nonfarm_payrolls", "cal:us_claims"])
 assert [c.key for c in cards] == ["us_payrolls", "us_claims_initial"]
 assert unmapped(["cat:unknown"]) == ["cat:unknown"]
-assert dataset().classification_version == "v2.3"
+assert dataset().classification_version == "v2.4"
 ```
 
 Models are strict, immutable Pydantic models; unknown fields and type coercion
@@ -239,3 +239,28 @@ levels, changes, seasonal adjustments and stages retain their original ids.
 EA20, EA21 and unresolved membership HICP ids share headline HICP context;
 the approved EA19-versus-EA21 geography warning remains in the card. No histories
 are spliced and no membership version is inferred for unresolved placeholders.
+
+## Mortgage decisions approved 2026-10-25 (v2.4)
+
+`us_pmms_30y` remains **CTX**, with no timing basis. Its two timing fields now
+preserve the exact mortgage-study proposal: ML1/ML2 contemporaneous peaks
+r=-0.300/-0.125 and exploratory one-month RMSE ratios 0.956/0.939, mixed
+stability, no approved PRED-PASS. Every other field of the v2.3 card is retained.
+
+`us_mba_purchase` is an **approved v2.4** concept: **MBA purchase applications,
+SA w/w change**, private source, weekly, **UNKNOWN / HYPOTHESIS**, referencing
+NAR existing closed sales, with evidence **M / mixed / lit-US**. Its timing is
+not estimated / not tested. The promotion record cites the owner's approval
+and the original PR #136 proposal; the rationale cites the Fed 1998 Greenbook
+and NAR contract-to-closing methodology. This card does not assert a free MBA
+index level or local validation. The MBA collector awaits the two saved free
+release bodies after HTTP 403 and a rejected elevated download.
+
+`us_fannie_pali` remains separate in **v2.5 drafts**, UNKNOWN with no basis.
+It covers six explicit UPB/count level and published-change measures. The
+full-history exploratory test and proposed classification are in the
+[mortgage study](research/mortgage-lead-study.md). The shipped approved card
+index never resolves these draft ids. `coverage --with-drafts` reports complete
+release-measure coverage separately from approved coverage: **88/88**, with
+**82 approved and six draft**. The external tier-1, calendar and enabled macro
+universes retain complete approved coverage (86/86, 65/65 and 107/107).

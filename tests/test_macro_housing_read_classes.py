@@ -21,7 +21,8 @@ from test_macro_read_api import evidence
 AS_OF = "2026-11-01T00:00:00Z"
 WINDOW = ("2026-08-01", "2026-10-24")
 FAMILIES = [("us_existing_home_sales", "private"), ("us_pending_home_sales", "private"),
-            ("us_case_shiller", "private"), ("us_construction_spending", "official"), ("us_fhfa_hpi", "official")]
+            ("us_case_shiller", "private"), ("us_construction_spending", "official"), ("us_fhfa_hpi", "official"),
+            ("us_fannie_pali", "official")]
 
 
 def publications(family):
@@ -124,7 +125,7 @@ def test_public_cli_carries_private_classes(tmp_path, capsys, family, kind, comm
             assert counts["official"] == 0
 
 
-@pytest.mark.parametrize("family", ["us_pending_home_sales", "us_case_shiller"])
+@pytest.mark.parametrize("family", ["us_pending_home_sales", "us_case_shiller", "us_fannie_pali"])
 def test_matching_fred_history_remains_redistributor_on_every_read_path(tmp_path, capsys, family):
     path = tmp_path / "mirror.sqlite"
     row = publications(family)[-1]

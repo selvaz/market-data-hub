@@ -1,4 +1,33 @@
-# M9f housing release families
+# Housing release families
+
+## Mortgage-application follow-up (2026-10-25)
+
+Fannie Mae PALI is an additional issuer family, **official** consistently with
+Freddie Mac PMMS. It stores the current UPB/count indices and their published
+weekly/annual changes. Latest reference week **2026-10-16**, release
+**2026-10-20 10:00 America/New_York (14:00 UTC)**: UPB **461.4**, **-7.1% w/w**,
+**-17.4% y/y**; count **223.4**, **-6.9% w/w**, **-16.8% y/y**. Both levels are
+NSA indices with 2004-01-09=100, not raw volumes. The release calendar lists
+holiday shifts explicitly; the revised history is research input, not archived
+original prints. See [collection details](macro-releases.md#fannie-mae-pali-2026-10-25).
+
+The production-copy verifier passed at
+`D:/Temp/mdh-m9f-ce49mt_8/verification.json`: dry run/collection ok, repeat
+no_change, six latest measures, integrity ok, production main unchanged.
+Production main/WAL were read only as stable bytes; all verification writes
+were under D:/Temp.
+
+Cards are now classification **v2.4**, with **307 approved concepts**.
+PMMS remains CTX/no basis with only its two timing fields amended; the private
+MBA SA purchase-change card is approved UNKNOWN/HYPOTHESIS. PALI stays UNKNOWN
+in **v2.5 drafts**, pending the owner's decision on the [full-history test](research/mortgage-lead-study.md#pali-follow-up-full-free-history-proposal-only-2026-10-25).
+The combined approved-and-draft release-measure coverage is **88/88**; six
+PALI ids are explicitly draft. All previously approved coverage is retained.
+
+MBA collection is still pending: direct public-release requests returned HTTP
+403 and an elevated download was rejected. The two saved source bodies are
+required for its golden cases and live verification. No licensed history or
+index-level source was accessed.
 
 Branch `feat/m9f-housing` was cut from `origin/integrate/m2b` at `e301c52`,
 originally stacked on [#128](https://github.com/selvaz/market-data-hub/pull/128).

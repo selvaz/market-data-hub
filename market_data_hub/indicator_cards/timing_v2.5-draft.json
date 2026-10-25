@@ -1,0 +1,12 @@
+{
+  "approval_status": "pending_owner_approval",
+  "classification_version": "v2.5-draft",
+  "rows": {
+    "us_fannie_pali": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    }
+  },
+  "source": "Owner request 2026-10-25; PALI proposal only",
+  "source_table_sha256": "a102e1979e3a796868e4e6f939337245dfc1a73072a53c148dc70d7067d1fe10"
+}

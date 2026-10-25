@@ -1303,3 +1303,43 @@ partial-provider failure, rollback, lease fencing/recovery, fake-clock rate
 spacing, bounded transient retries, dry-run immutability and migration of a
 schema v3 fixture with 20,000 legacy readings. No test opens a live database or
 makes a live network request.
+
+## Fannie Mae PALI (2026-10-25)
+
+`us_fannie_pali` collects the free [official weekly workbook](https://www.fanniemae.com/mortgage-application-index/download).
+Issuer id `FannieMae` is labelled **official**, consistently with Freddie Mac
+PMMS: each GSE publishes its own index from its underwriting system. This is
+an issuer-ownership convention, not a claim that it is a federal-statistics
+series. MBA, NAR and S&P remain private; FRED remains a redistributor.
+
+The catalogue distinguishes `us_fannie_pali_upb` and `us_fannie_pali_count`,
+each an NSA index (2004-01-09=100), with `_ww` and `_yy` published percentage
+changes. The workbook footer stores changes as fractions; the parser converts
+them to percent without recomputing them from rounded levels. No RALI values,
+raw loan counts or raw dollars are claimed. The schema's `change` transform
+with weekly frequency explicitly describes w/w changes.
+
+The issuer's [2026 calendar](https://www.fanniemae.com/media/document/pdf/fannie-mae-pali-rali-release-calendar.pdf)
+sets Tuesday 10:00 America/New_York, with explicitly listed holiday Wednesday
+shifts (including 2026-09-09). Reference weeks are Saturday-Friday. Reviewed
+release instants gate collection, including DST; schedules cannot certify
+publication. Calendar seeds use the existing (family, stage) memberships.
+Unknown weeks, stale rolling workbooks, changed columns, missing/duplicate
+weeks, invalid values and changed footer labels fail closed with needs review.
+The free endpoint uses the existing curl_cffi transport with the same provider
+quota, lease callback and bounded request path; no credentials are required.
+
+Only the latest workbook reference week is certified at its reviewed release
+instant. Its historical levels can be revised annually and are never backdated
+as original releases. Golden tests retain the issuer workbook, calendar,
+methodology and dictionary plus retrieval metadata and SHA-256 hashes. The
+PALI card remains a proposal in v2.5 drafts. No FF title was proven exact, so
+there is no PALI FF alias.
+
+Run `scripts/verify_mortgage_applications.py --families us_fannie_pali --source
+<production path> --destination-root D:/Temp` as a single command line. It
+uses the existing stable-byte main/WAL snapshot and SQLite-backup verifier;
+SQLite opens and every verification write stay under D:/Temp. The production
+source is read only as bytes. The 2026-10-25 run passed dry run, collection,
+idempotence and integrity; production main unchanged. Local report:
+`D:/Temp/mdh-m9f-ce49mt_8/verification.json`.

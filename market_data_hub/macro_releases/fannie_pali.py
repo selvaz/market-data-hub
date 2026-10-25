@@ -29,7 +29,10 @@ def workbook(body):
         try:
             if book.sheetnames != ["Sheet1"]:
                 raise ValueError()
-            rows = list(book.active.values)
+            cells = list(book.active.rows)
+            rows = [tuple(cell.value for cell in row) for row in cells]
+            if any(tuple(cell.number_format for cell in row[1:3]) != ("0.0%", "0.0%") for row in cells[-2:]):
+                raise ValueError()
         finally:
             book.close()
         if tuple(rows[0]) != HEADER or len(rows) < 4:
@@ -54,6 +57,8 @@ def workbook(body):
             history.append((day, *values))
         if set(changes) != {"WoW % Change", "YoY % Change"}:
             raise ValueError()
+        if not history or (history[0][0].isoformat(), *history[0][1:]) != ("2004-01-09", 100, 100):
+            raise ValueError()  # The declared base date/value must not drift.
         if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) or v < -1
                for values in changes.values() for v in values):
             raise ValueError()

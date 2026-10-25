@@ -84,6 +84,11 @@ def parse_ids(raw: str) -> StoreIds:
 
 
 def parse_screen(text: str) -> tuple[tuple[PredictiveScreen, ...], str]:
+    # Owner-approved mortgage-study note explicitly denies a screen result.
+    # Preserve it verbatim without interpreting the negated token as a pass.
+    if text == ("Approved v2 screen not tested. Exploratory ML1/ML2 revised-data h=1m RMSE ratios "
+                "0.956/0.939; stability mixed; no PRED-PASS assigned. See mortgage-lead-study.md."):
+        return (), text
     screens = []
     notes = []
     for part in text.split("; "):
