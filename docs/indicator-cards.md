@@ -4,7 +4,9 @@ Indicator cards provide the same owner-approved context to domain recaps and
 LazyCommittee. They describe a concept, theme, nature, timing reference, evidence,
 revision behaviour and caveats. They contain no market views or conclusions.
 The 294 concept rows and their timing evidence ship as versioned package data;
-reading cards requires no database or network access.
+reading cards requires no database or network access. For the method behind the
+classification and a generated table of every concept, its timing class and the
+stores it lives in, see [Macro indicators](macro-indicators.md).
 
 ```python
 from market_data_hub.indicator_cards import (
@@ -111,7 +113,14 @@ python -m market_data_hub.indicator_cards.build
 python -m market_data_hub.indicator_cards.build --check
 python -m market_data_hub.indicator_cards.coverage
 python -m market_data_hub.indicator_cards.coverage --with-drafts
+python -m market_data_hub.indicator_cards.docs          # regenerate Part B of docs/macro-indicators.md
+python -m market_data_hub.indicator_cards.docs --check  # fail when it is stale
 ```
+
+`docs/macro-indicators.md` Part B is rendered from the cards, the certified
+`macro_releases` families, the FF consensus aliases and the edition calendars.
+After merging a branch that adds families or aliases, re-run the generator and
+commit the page; `tests/test_macro_indicators_docs.py` fails while it is stale.
 
 When an approved guide/table changes, refresh the extract before rebuilding:
 
