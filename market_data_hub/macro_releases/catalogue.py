@@ -135,6 +135,9 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "cn_new_home_prices": [measure(f"cn_new_home_prices_tier{tier}_{basis}", "NBS", f"CHN_TIER{tier}", basis, "NSA",
+        definition=f"NBS new commercial residential sales prices, city tier {tier} ({count} cities), published {basis} percent change; no national all-70-city average")
+        for tier, count in ((1, 4), (2, 31), (3, 35)) for basis in ("mm", "yy")],
     "jp_housing_starts": [measure("jp_housing_starts_yy", "MLIT", "JPN", "yy", "NSA",
         definition="MLIT national new residential housing starts, published unadjusted annual percent change; excludes nonresidential starts and the separate SAAR monthly change")],
     "ca_housing_starts": [measure("ca_housing_starts", "CMHC", "CAN", "level", "SA", "units",

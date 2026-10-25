@@ -4,7 +4,42 @@ Branch `feat/m9f-housing` was cut from `origin/integrate/m2b` at `e301c52`,
 originally stacked on [#128](https://github.com/selvaz/market-data-hub/pull/128).
 That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
-remains draft while work is delivered one family at a time. Do not merge it.
+contains all fifteen M9f housing families, with the NBS national-aggregate definition gap explicitly documented. The PR remains unmerged.
+
+## China NBS tiers and complete M9f coverage verification checkpoint
+
+1614 passed, 1 skipped; 477 focused housing/cards tests passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 backup verification: `D:\Temp\mdh-m9f-7bth0_fy\verification.json`. Dry run and collection returned `ok`, then `no_change` on repeat; 25 latest issuer-certified read-API measures. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; all verification writes stayed under `D:/Temp`.
+
+## Current indicator-card status
+
+Approved v2.2 stays intact: 294 cards and all 86 external tier-1 measures resolve to approved concepts. M9f reuses the approved construction-spending concept (`cat:us_construction_spending_mm`), the approved NAR existing-sales concept (level and m/m), and ECB's approved `pan_mir` borrowing-cost concept (`cat:ea_cost_borrow_house`). Existing main aliases and de-duplication remain. No new FF aliases were inferred for Canada, Japan or China.
+
+The complete next generation is **twelve proposals / twenty-one measure ids** in `draft_rows_v2.3.psv`, loaded only with `--with-drafts`. Every proposal has timing **UNKNOWN** and approval **pending_owner_approval** in `timing_v2.3-draft.json`; flags hold only real caveats and each rationale contains an issuer URL. This current inventory supersedes the historical per-step counts and v2.1/v2.2 draft references below.
+
+| Draft key | Proposed catalogue ids | Real caveats |
+| --- | --- | --- |
+| `ea_hpi` | cat:ea21_hpi_qq;cat:ea21_hpi_yy | fixed EA21 composition |
+| `us_case_shiller` | cat:us_case_shiller_national_yy;cat:us_case_shiller_20_yy | three-month moving average |
+| `us_pending_home_sales` | cat:us_pending_home_sales_mm | seasonal adjustment not stated in public headline |
+| `us_pmms_30y` | cat:us_pmms_30y | survey week differs from publication date |
+| `us_fhfa_hpi` | cat:us_fhfa_hpi_mm;cat:us_fhfa_hpi_yy | purchase-only index; excludes all-transactions measures |
+| `ea_loans_house_purchase` | cat:ea_loans_house_purchase_yy | changing euro area composition; excludes consumer and other household lending |
+| `uk_hpi` | cat:uk_hpi_yy | provisional estimates; registration lag and revisions |
+| `uk_mortgage_approvals` | cat:uk_mortgage_approvals | headline rounded to nearest 100; cancellations netted; excludes remortgaging |
+| `de_building_permits` | cat:de_building_permits; cat:de_building_permits_yy | rounded dwelling counts; late permit reports and revisions |
+| `ca_housing_starts` | cat:ca_housing_starts | volatile monthly annualized flow; later revisions; distinct from six-month trend |
+| `jp_housing_starts` | cat:jp_housing_starts_yy | volatile monthly starts; annual change distinct from SAAR monthly change |
+| `cn_new_home_prices_tiers` | cat:cn_new_home_prices_tier1_mm; cat:cn_new_home_prices_tier1_yy; cat:cn_new_home_prices_tier2_mm; cat:cn_new_home_prices_tier2_yy; cat:cn_new_home_prices_tier3_mm; cat:cn_new_home_prices_tier3_yy | 70-city sample split into tiers of 4/31/35 cities; no national all-70 scalar; new homes exclude resales |
+
+## China NBS new-home prices: official tiers and national definition gap
+
+Source assessment: NBS supplies free, machine-readable [dated Chinese interpretations](https://www.stats.gov.cn/sj/sjjd/202610/t20261019_1965610.html) and an [official 2026 calendar](https://www.stats.gov.cn/xw/tjxw/tzgg/202512/t20251224_1962137.html) with a usable **09:30 Asia/Shanghai / 01:30 UTC** release instant. Family `cn_new_home_prices` collects six issuer-published **new commercial residential sales-price** rates, NSA: m/m and y/y separately for tier 1 (4 cities), tier 2 (31 cities), and tier 3 (35 cities). Geography is explicitly `CHN_TIER1`, `CHN_TIER2` and `CHN_TIER3`. September values are **+0.1%, 0.0%, -0.2% m/m**, and **-0.5%, -2.4%, -3.9% y/y**, released 19 October. The August golden is **+0.1%, -0.1%, -0.2% m/m** and **-0.9%, -2.7%, -4.1% y/y**, released 15 September. September's tier-2 wording says the previous decline turned flat; its previous -0.1% is not the current rate.
+
+The four reviewed regular editions are 15 September, 19 October, 16 November and 15 December, each at the published 09:30 clock. Future dated article URLs are discovered by exact official interpretation titles, without guessing resource numbers. Metadata date/clock, reference month, product, city-tier scope, desktop/mobile agreement and calendar changes fail closed with `needs_review`; shared six-hour newly due publication grace and year-end expiry apply. No NBS API credential or HTTP exception is required. Two saved dated publications supply twelve headline golden cases.
+
+**Definition gap:** the [official 70-city tables](https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965629.html) publish individual-city indices, while the interpretation publishes these three city-tier aggregates. Neither source publishes one national all-70-city scalar. No equally weighted average, national proxy, resale series or third-party/FRED value is presented as an official national new-home rate. This narrower gap remains explicit alongside the collected six official tier measures.
+
+One v2.3 proposal, `cn_new_home_prices_tiers`, covers the six explicit tier ids. It retains timing UNKNOWN, sample/tier/product caveats only in `flag`, the issuer source URL in rationale and pending owner approval in draft timing metadata. No FF national-price title is aliased to a city-tier measure.
 
 ## Japan MLIT housing starts verification checkpoint
 
@@ -291,6 +326,7 @@ after those checks pass.
 
 | Family | Issuer | Source class | Frequency | Reviewed editions through 31 December 2026 | Golden cases |
 | --- | --- | --- | --- | --- | --- |
+| China new-home prices, city tiers | NBS | Official, free | Monthly | 15 Sep, 19 Oct, 16 Nov, 15 Dec; 09:30 Asia/Shanghai | 2 dated releases / 12 rates; national all-70 scalar is a definition gap |
 | Japan new residential housing starts | MLIT | Official, free | Monthly | 31 Aug, 30 Sep, 30 Oct, 30 Nov, 25 Dec; 14:00 Asia/Tokyo | 2 dated releases: July +8.2%; August +6.1% y/y |
 | Canada total housing starts, SAAR | CMHC | Official, free | Monthly | 16 Sep, 16 Oct, 17 Nov, 15 Dec; 08:15 America/Toronto | 2 dated releases: August 229,046; September 248,896 |
 | Germany residential dwellings permitted | Destatis | Official, free | Monthly | 18 Sep, 16 Oct, 18 Nov, 18 Dec; 08:00 Europe/Berlin | 4 measurements in 2 dated publications: July 22,500 / +1.9%; August 20,600 / +6.8% |
@@ -360,6 +396,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 
 | Family | Reference period | Edition | Issuer release time | Latest official card |
 | --- | --- | --- | --- | --- |
+| NBS new-home prices (tiers 1 / 2 / 3) | September 2026 | 19 October 2026 | 09:30 CST / 01:30 UTC | m/m +0.1% / 0.0% / -0.2%; y/y -0.5% / -2.4% / -3.9%, NSA |
 | MLIT housing starts | August 2026 | 30 September 2026 | 14:00 JST / 05:00 UTC | +6.1% y/y, NSA |
 | CMHC housing starts | September 2026 | 16 October 2026 | 08:15 EDT / 12:15 UTC | 248,896 units, total monthly SAAR |
 | Destatis residential permits | August 2026 | 16 October 2026 | 08:00 CEST / 06:00 UTC | 20,600 dwellings; +6.8% y/y, NSA |
@@ -424,12 +461,9 @@ All writes go to the copy. Reproduce with the project interpreter:
   Only the exact USD FF titles `Existing Home Sales` (level) and
   `Pending Home Sales m/m` (monthly percent change) are added.
 
-## Remaining steps, in order
+## Coverage completion and remaining definition gap
 
-1. NBS 70-city prices: investigate
-   issuer stability/free availability and either certify or document the gap.
-
-These families are pending implementation, not established source gaps.
+All M9f issuer families are collected, including MLIT national housing starts and NBS's six explicit new-home city-tier rates. The NBS national all-70-city scalar remains a definition gap because the issuer does not publish that aggregate. No in-scope source assessment is pending. The approved v2.2 dataset stays intact; twelve v2.3 proposals cover twenty-one still-unapproved measure ids, all with UNKNOWN timing and pending owner approval.
 
 ## Eurostat HPI step
 
@@ -616,8 +650,8 @@ run and collection `ok`, four headline vintages added across the two issuer
 editions, repeat `no_change`, both latest cards official with private issuer
 labels, integrity `ok`, source backup unchanged.
 
-**Current production-schema limitation:** production advanced to schema 9
-during this step; this feature branch remains on its original schema-8 base.
+**Historical production-schema issue (resolved by the main integration):** production advanced to schema 9
+during the Case-Shiller step; at that time the feature branch still used its original schema-8 base. All current verification checkpoints above use a fresh schema-v9 production byte snapshot and supersede that earlier backup-only result.
 The first attempt to verify a fresh current-production snapshot stopped at the
 schema guard before collection. The proposed upstream `10a7cc0` cherry-pick
 was rejected and was not performed. The successful live issuer run instead

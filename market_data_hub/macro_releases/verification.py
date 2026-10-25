@@ -46,6 +46,7 @@ def reviewed_anchor(obs):
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
+    **{f"cn_new_home_prices_tier{tier}_{basis}": 20 for tier in (1, 2, 3) for basis in ("mm", "yy")},
     "jp_housing_starts_yy": 50,
     "ca_housing_starts": 300000,
     "de_building_permits": 100000, "de_building_permits_yy": 50,
