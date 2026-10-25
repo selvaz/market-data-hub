@@ -4,6 +4,13 @@ Only listed editions can be certified. Calendars permit a fetch, never prove a
 publication. The saved issuer reports include the FHFA 2026 calendar.
 """
 EDITIONS = {
+    "jp_housing_starts": {
+        "2026-08-31": ("2026-07", "regular", "14:00"),
+        "2026-09-30": ("2026-08", "regular", "14:00"),
+        "2026-10-30": ("2026-09", "regular", "14:00"),
+        "2026-11-30": ("2026-10", "regular", "14:00"),
+        "2026-12-25": ("2026-11", "regular", "14:00"),
+    },
     "ca_housing_starts": {
         "2026-09-16": ("2026-08", "regular", "08:15"),
         "2026-10-16": ("2026-09", "regular", "08:15"),
@@ -116,6 +123,7 @@ EDITIONS = {
     },
 }
 SCHEDULES = {
+    "jp_housing_starts": "https://www.mlit.go.jp/statistics/details/t-other-2_tk_000214.html",
     "ca_housing_starts": "https://www.cmhc-schl.gc.ca/professionals/housing-markets-data-and-research/news-releases-reports-calendar",
     "de_building_permits": "https://www.destatis.de/SiteGlobals/Forms/Suche/Termine/EN/Terminsuche_Formular.html?nn=1426424&resourceId=263318&input_=263386&pageLocale=en&templateQueryString=Building+permits",
     "uk_mortgage_approvals": "https://www.bankofengland.co.uk/statistics/tables",
@@ -130,8 +138,8 @@ SCHEDULES = {
     "us_fhfa_hpi": "https://www.fhfa.gov/data/hpi",
     "us_construction_spending": "https://www.census.gov/economic-indicators/calendar-listview-2026.html",
 }
-ZONES = {"ca_housing_starts": "America/Toronto", "de_building_permits": "Europe/Berlin", "ea_house_purchase_loans": "Europe/Berlin", "ea_house_purchase_cost": "Europe/Berlin"}
-SOURCES = {"ca_housing_starts": ("CMHC", "official", "M"), "de_building_permits": ("Destatis", "official", "M"), "uk_mortgage_approvals": ("BoE", "official", "M"), "uk_hpi": ("HMLR/ONS", "official", "M"), "ea_house_purchase_loans": ("ECB", "official", "M"),
+ZONES = {"jp_housing_starts": "Asia/Tokyo", "ca_housing_starts": "America/Toronto", "de_building_permits": "Europe/Berlin", "ea_house_purchase_loans": "Europe/Berlin", "ea_house_purchase_cost": "Europe/Berlin"}
+SOURCES = {"jp_housing_starts": ("MLIT", "official", "M"), "ca_housing_starts": ("CMHC", "official", "M"), "de_building_permits": ("Destatis", "official", "M"), "uk_mortgage_approvals": ("BoE", "official", "M"), "uk_hpi": ("HMLR/ONS", "official", "M"), "ea_house_purchase_loans": ("ECB", "official", "M"),
            "ea_house_purchase_cost": ("ECB", "official", "M"),
            "ea_hpi": ("Eurostat", "official", "Q"),
            "us_case_shiller": ("SPDJI", "private", "M"),

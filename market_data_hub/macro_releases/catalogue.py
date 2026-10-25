@@ -135,6 +135,8 @@ CENTRAL_BANKS = {
 }
 INDICATORS.update((m.id, m) for measures in CENTRAL_BANKS.values() for m in measures)
 HOUSING_FAMILIES = {
+    "jp_housing_starts": [measure("jp_housing_starts_yy", "MLIT", "JPN", "yy", "NSA",
+        definition="MLIT national new residential housing starts, published unadjusted annual percent change; excludes nonresidential starts and the separate SAAR monthly change")],
     "ca_housing_starts": [measure("ca_housing_starts", "CMHC", "CAN", "level", "SA", "units",
         definition="CMHC total monthly housing starts for all areas in Canada, seasonally adjusted annual rate (SAAR); dated public release original print, not the six-month trend or urban actual starts")],
     "de_building_permits": [

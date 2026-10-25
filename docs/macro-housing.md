@@ -6,6 +6,18 @@ That integration is now in main and has been merged into this branch.
 [PR #130](https://github.com/selvaz/market-data-hub/pull/130) targets `main` and
 remains draft while work is delivered one family at a time. Do not merge it.
 
+## Japan MLIT housing starts verification checkpoint
+
+1589 passed, 1 skipped; 464 focused housing/cards tests passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 backup verification: `D:\Temp\mdh-m9f-juvtf_rl\verification.json`. Dry run and collection returned `ok`, then `no_change` on repeat; 1 latest issuer-certified read-API measures. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; all verification writes stayed under `D:/Temp`.
+
+## Japan MLIT housing starts
+
+Source assessment: MLIT provides free, machine-readable [dated Japanese HTML releases](https://www.mlit.go.jp/report/press/joho04_hh_001395.html) and a usable release instant from its [official construction-statistics calendar](https://www.mlit.go.jp/statistics/details/t-other-2_tk_000214.html). Family `jp_housing_starts` collects the national new residential starts **annual percent change, NSA**: **August +6.1%**, released 30 September, and **July +8.2%**, released 31 August. The residential paragraph is selected explicitly. Its separate SAAR monthly change (August -2.7%), owner-occupied/rental subdivisions and nonresidential starts are not substituted. Reiwa dates and fullwidth characters are normalized; no e-Stat API credential is needed.
+
+Five regular editions are reviewed through year-end, all **14:00 Asia/Tokyo / 05:00 UTC**: 31 August, 30 September, 30 October, 30 November and 25 December. December data publish in January 2027 and are not seeded within the horizon. Future press links come from exact report titles in MLIT's edition-month press index; resource numbers are not guessed. Date, clock, period, residential-scope or future-calendar changes fail closed with `needs_review`, with shared newly due publication grace and year-end expiry.
+
+The new `jp_housing_starts` v2.3 proposal covers `cat:jp_housing_starts_yy`: timing UNKNOWN, real annual-versus-SAAR and volatility caveats, issuer URL rationale and pending owner approval in timing metadata. No FF title mapping is inferred.
+
 ## CMHC housing starts verification checkpoint
 
 1575 passed, 1 skipped; 49 focused CMHC/HTTP tests passed. Card/doc freshness, Ruff and `mkdocs build --strict` passed. Fresh schema-v9 backup verification: `D:\Temp\mdh-m9f-iy7jctvk\verification.json`. Dry run and collection returned `ok`, then `no_change` on repeat; 1 latest issuer-certified read-API measures. Integrity `ok`, production main unchanged. Production was read only as stable main/WAL bytes; all verification writes stayed under `D:/Temp`.
@@ -279,6 +291,7 @@ after those checks pass.
 
 | Family | Issuer | Source class | Frequency | Reviewed editions through 31 December 2026 | Golden cases |
 | --- | --- | --- | --- | --- | --- |
+| Japan new residential housing starts | MLIT | Official, free | Monthly | 31 Aug, 30 Sep, 30 Oct, 30 Nov, 25 Dec; 14:00 Asia/Tokyo | 2 dated releases: July +8.2%; August +6.1% y/y |
 | Canada total housing starts, SAAR | CMHC | Official, free | Monthly | 16 Sep, 16 Oct, 17 Nov, 15 Dec; 08:15 America/Toronto | 2 dated releases: August 229,046; September 248,896 |
 | Germany residential dwellings permitted | Destatis | Official, free | Monthly | 18 Sep, 16 Oct, 18 Nov, 18 Dec; 08:00 Europe/Berlin | 4 measurements in 2 dated publications: July 22,500 / +1.9%; August 20,600 / +6.8% |
 | BoE house-purchase mortgage approvals | Bank of England | Official, free | Monthly | 1 Sep, 29 Sep, 29 Oct, 30 Nov; 09:30 Europe/London; next Jan 2027 | 2 dated publications: July 56,100; August 54,900 |
@@ -347,6 +360,7 @@ claims and separately enforces PMMS's reviewed endpoints.
 
 | Family | Reference period | Edition | Issuer release time | Latest official card |
 | --- | --- | --- | --- | --- |
+| MLIT housing starts | August 2026 | 30 September 2026 | 14:00 JST / 05:00 UTC | +6.1% y/y, NSA |
 | CMHC housing starts | September 2026 | 16 October 2026 | 08:15 EDT / 12:15 UTC | 248,896 units, total monthly SAAR |
 | Destatis residential permits | August 2026 | 16 October 2026 | 08:00 CEST / 06:00 UTC | 20,600 dwellings; +6.8% y/y, NSA |
 | BoE house-purchase approvals | August 2026 | 29 September 2026 | 09:30 BST / 08:30 UTC | 54,900 net approvals, SA, rounded headline |
@@ -412,7 +426,7 @@ All writes go to the copy. Reproduce with the project interpreter:
 
 ## Remaining steps, in order
 
-1. MLIT starts and NBS 70-city prices: investigate
+1. NBS 70-city prices: investigate
    issuer stability/free availability and either certify or document the gap.
 
 These families are pending implementation, not established source gaps.
