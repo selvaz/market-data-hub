@@ -197,6 +197,8 @@ HOUSING_FAMILIES = {
 }
 INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
 ASIA_FAMILIES = {
+    "jp_tokyo_cpi": [measure("jp_tokyo_core_cpi_yy", "StatisticsBureauJP", "JPN", "yy", "NSA",
+        definition="Ku-area of Tokyo CPI excluding fresh food, published preliminary 12-month rate; explicit M9d1 brief addition, distinct from national CPI")],
     "jp_cpi": [
         measure("jp_cpi_yy", "StatisticsBureauJP", "JPN", "yy", "NSA",
             definition="National all-items Consumer Price Index, issuer-published 12-month rate of change"),

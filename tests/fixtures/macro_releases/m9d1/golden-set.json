@@ -159,6 +159,26 @@
       "value": 2.1,
       "stage": "final",
       "source_url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040513539&fileKind=4"
+    },
+    {
+      "family": "jp_tokyo_cpi",
+      "fixture": "jp-tokyo-aug.xlsx",
+      "edition": "2026-08-28",
+      "period": "2026-08",
+      "indicator": "jp_tokyo_core_cpi_yy",
+      "value": 1.8,
+      "stage": "preliminary",
+      "source_url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040491317&fileKind=4"
+    },
+    {
+      "family": "jp_tokyo_cpi",
+      "fixture": "jp-tokyo-sep.xlsx",
+      "edition": "2026-10-02",
+      "period": "2026-09",
+      "indicator": "jp_tokyo_core_cpi_yy",
+      "value": 2.7,
+      "stage": "preliminary",
+      "source_url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040501413&fileKind=4"
     }
   ]
 }

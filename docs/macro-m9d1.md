@@ -32,10 +32,17 @@ is not silently assigned the scheduled domestic date.
 | cn_gdp | Real GDP cumulative y/y, NSA, % | NBS original Chinese accounting table / official | Jul 16 (Q2), Oct 20 (Q3); next edition January 2027 | Q2 4.7%, Q3 4.6% |
 | jp_gdp | Real GDP q/q, SA, % | Cabinet Office ESRI English summaries / official | Aug 17 preliminary, Sep 8 revised; Nov 16 preliminary, Dec 8 revised scheduled | Q2 first 0.3%, second 0.4% |
 | jp_cpi | National headline and ex-fresh-food CPI y/y, NSA, % | Statistics Bureau / e-Stat English monthly reports / official | Sep 18, Oct 23; Nov 20, Dec 18 scheduled | Aug and Sep 2026 (4 cases) |
+| jp_tokyo_cpi | Ku-area of Tokyo ex-fresh-food CPI y/y, NSA, % | Statistics Bureau / e-Stat English monthly reports / official | Aug 28, Oct 2 preliminary; Oct 30, Nov 27, Dec 25 scheduled | Aug 1.8%, Sep 2.7% |
+
+Tokyo tables include the next month's mid-month preliminary figure in a report
+listed under the preceding national survey month. The English note explicitly
+labels the latest month preliminary; the parser requires that note and the
+exact Tokyo table header. Tokyo core reuses the approved `jp_tokyo_cpi` concept.
 
 e-Stat CPI files are bound to reviewed monthly-report file IDs. Collection also
 checks the issuer listing's exact geography, monthly table, survey month,
-first-publication counter and calendar-matching date. An update timestamp alone
+reviewed publication counter (national 1, Tokyo preliminary addition 2) and
+calendar-matching date. An update timestamp alone
 does not authorize an edition. Only the explicitly printed annual-change sheet
 is read; no rates are computed from index levels. The 2025-base revision is
 explicit in both the source listing and table headers.
