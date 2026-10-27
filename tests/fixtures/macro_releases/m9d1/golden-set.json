@@ -39,6 +39,46 @@
       "value": 50.1,
       "stage": "final",
       "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261008_1965466.html"
+    },
+    {
+      "family": "cn_activity",
+      "fixture": "cn-economy-aug.html",
+      "edition": "2026-09-15",
+      "period": "2026-08",
+      "indicator": "cn_industrial_production_yy",
+      "value": 5.2,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202609/t20260915_1965305.html"
+    },
+    {
+      "family": "cn_activity",
+      "fixture": "cn-economy-aug.html",
+      "edition": "2026-09-15",
+      "period": "2026-08",
+      "indicator": "cn_retail_sales_yy",
+      "value": 0.4,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202609/t20260915_1965305.html"
+    },
+    {
+      "family": "cn_activity",
+      "fixture": "cn-economy-q3.html",
+      "edition": "2026-10-19",
+      "period": "2026-09",
+      "indicator": "cn_industrial_production_yy",
+      "value": 5.5,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html"
+    },
+    {
+      "family": "cn_activity",
+      "fixture": "cn-economy-q3.html",
+      "edition": "2026-10-19",
+      "period": "2026-09",
+      "indicator": "cn_retail_sales_yy",
+      "value": 1.1,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html"
     }
   ]
 }

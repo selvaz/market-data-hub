@@ -197,6 +197,11 @@ HOUSING_FAMILIES = {
 }
 INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
 ASIA_FAMILIES = {
+    "cn_activity": [
+        measure("cn_industrial_production_yy", "NBS", "CHN", "yy", "NSA",
+            definition="Value-added industrial output above designated size, issuer-published monthly year-over-year percent change"),
+        measure("cn_retail_sales_yy", "NBS", "CHN", "yy", "NSA",
+            definition="Total retail sales of consumer goods, issuer-published monthly year-over-year percent change")],
     "cn_nbs_pmi": [measure("cn_nbs_manufacturing_pmi", "NBS", "CHN", "level", "SA", "index",
         definition="Official NBS manufacturing purchasing managers index, 50 neutral, seasonally adjusted; distinct from private Caixin PMI")],
     "cn_cpi": [measure("cn_cpi_yy", "NBS", "CHN", "yy", "NSA",

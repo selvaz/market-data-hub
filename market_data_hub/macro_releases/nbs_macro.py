@@ -9,6 +9,10 @@ from .nbs_housing import Page
 from .tier1_publications import month, plain, require
 
 ARCHIVES = {
+    "cn_activity": {
+        "2026-09-15": "https://www.stats.gov.cn/english/PressRelease/202609/t20260915_1965305.html",
+        "2026-10-19": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html",
+    },
     "cn_nbs_pmi": {
         "2026-09-01": "https://www.stats.gov.cn/english/PressRelease/202609/t20260901_1965170.html",
         "2026-10-01": "https://www.stats.gov.cn/english/PressRelease/202610/t20261008_1965466.html",
@@ -36,6 +40,20 @@ def metadata(document, family):
 
 def parse(document, family="cn_cpi", since="1900-01"):
     page, edition, period, title = metadata(document, family)
+    if family == "cn_activity":
+        expected = {"2026-08": "National Economy Remained Steady with Innovation-Led and High-Quality Development in August",
+                    "2026-09": "National Economy was Generally Stable with New Achievement Made in High-Quality Development in the First Three Quarters"}
+        if title != expected.get(period):
+            raise FetchError("NBS national economy title needs review")
+        body = plain(document.body.decode("utf-8"))
+        require("National Bureau of Statistics of China", body)
+        require(datetime.strptime(edition, "%Y-%m-%d").strftime("%d %B, %Y").lstrip("0"), body)
+        label = datetime.strptime(period, "%Y-%m").strftime("%B")
+        ip = require(r"In " + label + r", the (?:total )?value added of industrial enterprises above the designated size (grew|went up|increased|decreased) by ([\d.]+) percent year on year", body)
+        retail = require(r"In " + label + r", the total retail sales of consumer goods reached [\d,.]+ billion yuan, (up|down) by ([\d.]+) percent year on year", body)
+        return [observation(document, family, edition, indicator,
+                    ("-" if match[1] in {"decreased", "down"} else "") + match[2])
+                for indicator, match in (("cn_industrial_production_yy", ip), ("cn_retail_sales_yy", retail))] if period >= since else []
     if family == "cn_nbs_pmi":
         if title != "Purchasing Managers’ Index for " + month(period):
             raise FetchError("NBS PMI publication title needs review")
