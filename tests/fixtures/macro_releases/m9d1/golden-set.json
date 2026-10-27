@@ -99,6 +99,26 @@
       "value": 4.6,
       "stage": "preliminary",
       "source_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261020_1965658.html"
+    },
+    {
+      "family": "jp_gdp",
+      "fixture": "jp-gdp-first-summary.pdf",
+      "edition": "2026-08-17",
+      "period": "2026-Q2",
+      "indicator": "jp_gdp_qq",
+      "value": 0.3,
+      "stage": "preliminary",
+      "source_url": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262/pdf/gaiyou2621_e.pdf"
+    },
+    {
+      "family": "jp_gdp",
+      "fixture": "jp-gdp-revised-summary.pdf",
+      "edition": "2026-09-08",
+      "period": "2026-Q2",
+      "indicator": "jp_gdp_qq",
+      "value": 0.4,
+      "stage": "revised",
+      "source_url": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262_2/pdf/gaiyou2622_e.pdf"
     }
   ]
 }

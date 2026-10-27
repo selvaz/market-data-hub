@@ -38,8 +38,8 @@ def document(name):
 
 
 def parser(family):
-    from market_data_hub.macro_releases import nbs_macro
-    return nbs_macro.parse
+    from market_data_hub.macro_releases import nbs_macro, japan_macro
+    return (japan_macro if family.startswith("jp_") else nbs_macro).parse
 
 
 @pytest.mark.parametrize("case", GOLDEN, ids=lambda c: c["family"] + ":" + c["edition"] + ":" + c["indicator"])
@@ -52,7 +52,8 @@ def test_issuer_golden_and_read_card(case, tmp_path):
     assert row.series_key.startswith(row.indicator_id + ":")
     with open_writer(tmp_path / "golden.sqlite") as store:
         persist(store, [row])
-        cards = store.release_cards(row.edition, row.edition, indicators=[row.indicator_id])["cards"]
+        utc_day = row.published_at[:10]
+        cards = store.release_cards(utc_day, utc_day, indicators=[row.indicator_id])["cards"]
         actual = next(c for c in cards if c.get("resolution"))
         assert actual["source_class"] == actual["resolution"]["status"] == "official"
         assert actual["resolution"]["value"] == case["value"]

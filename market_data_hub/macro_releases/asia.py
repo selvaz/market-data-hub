@@ -41,5 +41,6 @@ class AsiaAdapter:
         self.client = client
 
     def fetch(self, families, since):
-        from . import nbs_macro
-        return [row for family in families for row in nbs_macro.fetch(self.client, family, since)]
+        from . import nbs_macro, japan_macro
+        return [row for family in families for row in (
+            japan_macro if family.startswith("jp_") else nbs_macro).fetch(self.client, family, since)]

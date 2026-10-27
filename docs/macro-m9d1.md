@@ -30,6 +30,7 @@ is not silently assigned the scheduled domestic date.
 | cn_nbs_pmi | Official manufacturing PMI, SA, index (50 neutral) | NBS English / official | Sep 1, Oct 1; Oct 31, Nov 30, Dec 31 scheduled | Aug and Sep 2026 |
 | cn_activity | Industrial value-added output and consumer-goods retail sales, monthly y/y, NSA, % | NBS English national economy / official | Sep 15, Oct 19; Nov 16, Dec 15 scheduled | Aug and Sep 2026 (4 cases) |
 | cn_gdp | Real GDP cumulative y/y, NSA, % | NBS original Chinese accounting table / official | Jul 16 (Q2), Oct 20 (Q3); next edition January 2027 | Q2 4.7%, Q3 4.6% |
+| jp_gdp | Real GDP q/q, SA, % | Cabinet Office ESRI English summaries / official | Aug 17 preliminary, Sep 8 revised; Nov 16 preliminary, Dec 8 revised scheduled | Q2 first 0.3%, second 0.4% |
 
 The brief explicitly requests preliminary Q3 GDP. Its stage is `preliminary`,
 correcting the external catalogue's generic `final` stage without changing the
