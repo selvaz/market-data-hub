@@ -27,6 +27,7 @@ is not silently assigned the scheduled domestic date.
 | Family | Collected measure | Issuer / source class | Reviewed editions | Golden publications |
 |---|---|---|---|---|
 | cn_cpi | National CPI y/y, NSA, % | NBS English / official | Sep 10, Oct 15; Nov 9, Dec 9 scheduled | Aug and Sep 2026 |
+| cn_nbs_pmi | Official manufacturing PMI, SA, index (50 neutral) | NBS English / official | Sep 1, Oct 1; Oct 31, Nov 30, Dec 31 scheduled | Aug and Sep 2026 |
 
 Calendar: <https://www.stats.gov.cn/english/PressRelease/ReleaseCalendar/202512/t20251226_1962154.html>.
 Each saved fixture has its issuer URL, retrieval timestamp and SHA-256.

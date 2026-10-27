@@ -19,6 +19,26 @@
       "stage": "final",
       "indicator": "cn_cpi_yy",
       "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261015_1965500.html"
+    },
+    {
+      "family": "cn_nbs_pmi",
+      "fixture": "cn-pmi-aug.html",
+      "edition": "2026-09-01",
+      "period": "2026-08",
+      "indicator": "cn_nbs_manufacturing_pmi",
+      "value": 49.8,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202609/t20260901_1965170.html"
+    },
+    {
+      "family": "cn_nbs_pmi",
+      "fixture": "cn-pmi-sep.html",
+      "edition": "2026-10-01",
+      "period": "2026-09",
+      "indicator": "cn_nbs_manufacturing_pmi",
+      "value": 50.1,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261008_1965466.html"
     }
   ]
 }

@@ -9,6 +9,10 @@ from .nbs_housing import Page
 from .tier1_publications import month, plain, require
 
 ARCHIVES = {
+    "cn_nbs_pmi": {
+        "2026-09-01": "https://www.stats.gov.cn/english/PressRelease/202609/t20260901_1965170.html",
+        "2026-10-01": "https://www.stats.gov.cn/english/PressRelease/202610/t20261008_1965466.html",
+    },
     "cn_cpi": {
         "2026-09-10": "https://www.stats.gov.cn/english/PressRelease/202609/t20260910_1965275.html",
         "2026-10-15": "https://www.stats.gov.cn/english/PressRelease/202610/t20261015_1965500.html",
@@ -32,6 +36,16 @@ def metadata(document, family):
 
 def parse(document, family="cn_cpi", since="1900-01"):
     page, edition, period, title = metadata(document, family)
+    if family == "cn_nbs_pmi":
+        if title != "Purchasing Managers’ Index for " + month(period):
+            raise FetchError("NBS PMI publication title needs review")
+        body = plain(document.body.decode("utf-8"))
+        require(r"Department of Service Statistics of NBS of China China Federation of Logistics & Purchasing \(CFLP\)", body)
+        require(r"China[’']s Manufacturing PMI and Sub-indexes \(Seasonally Adjusted\)", body)
+        require(r"All released indexes have been seasonally adjusted", body)
+        label = datetime.strptime(period, "%Y-%m").strftime("%B")
+        printed = require(r"In " + label + r", the purchasing managers[’'] index \(PMI\) of China[’']s manufacturing industry was ([\d.]+)%", body)[1]
+        return [observation(document, family, edition, "cn_nbs_manufacturing_pmi", printed)] if period >= since else []
     if family != "cn_cpi" or title != "Consumer Price Index in " + month(period):
         raise FetchError("NBS publication title or measure needs review")
     body = plain(document.body.decode("utf-8"))

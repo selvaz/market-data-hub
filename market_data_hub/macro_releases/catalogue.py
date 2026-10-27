@@ -197,6 +197,8 @@ HOUSING_FAMILIES = {
 }
 INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
 ASIA_FAMILIES = {
+    "cn_nbs_pmi": [measure("cn_nbs_manufacturing_pmi", "NBS", "CHN", "level", "SA", "index",
+        definition="Official NBS manufacturing purchasing managers index, 50 neutral, seasonally adjusted; distinct from private Caixin PMI")],
     "cn_cpi": [measure("cn_cpi_yy", "NBS", "CHN", "yy", "NSA",
         definition="National Consumer Price Index, issuer-published 12-month rate of change")],
 }

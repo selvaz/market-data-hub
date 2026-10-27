@@ -6,6 +6,13 @@ are permissions from the issuer calendar and require publication review.
 """
 NBS_CALENDAR = "https://www.stats.gov.cn/english/PressRelease/ReleaseCalendar/202512/t20251226_1962154.html"
 EDITIONS = {
+    "cn_nbs_pmi": {
+        "2026-09-01": ("2026-08", "final", "09:30"),
+        "2026-10-01": ("2026-09", "final", "09:30"),
+        "2026-10-31": ("2026-10", "final", "09:30"),
+        "2026-11-30": ("2026-11", "final", "09:30"),
+        "2026-12-31": ("2026-12", "final", "09:30"),
+    },
     "cn_cpi": {
         "2026-09-10": ("2026-08", "final", "09:30"),
         "2026-10-15": ("2026-09", "final", "09:30"),
@@ -13,8 +20,8 @@ EDITIONS = {
         "2026-12-09": ("2026-11", "final", "09:30"),
     },
 }
-SCHEDULES = {"cn_cpi": NBS_CALENDAR}
-ZONES = {"cn_cpi": "Asia/Shanghai"}
+SCHEDULES = {family: NBS_CALENDAR for family in EDITIONS}
+ZONES = {family: "Asia/Shanghai" for family in EDITIONS}
 
 
 def reviewed(family, edition):
