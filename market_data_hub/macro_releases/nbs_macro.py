@@ -5,10 +5,14 @@ import re
 from .asia import observation, fetch_archives
 from .asia_editions import reviewed
 from .http import FetchError
-from .nbs_housing import Page
+from .nbs_housing import Page, compact
 from .tier1_publications import month, plain, require
 
 ARCHIVES = {
+    "cn_gdp": {
+        "2026-07-16": "https://www.stats.gov.cn/zwfwck/sjfb/202607/t20260716_1964142.html",
+        "2026-10-20": "https://www.stats.gov.cn/sj/zxfb/202610/t20261020_1965658.html",
+    },
     "cn_activity": {
         "2026-09-15": "https://www.stats.gov.cn/english/PressRelease/202609/t20260915_1965305.html",
         "2026-10-19": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html",
@@ -28,18 +32,48 @@ def metadata(document, family):
     page = Page(document.body).root
     stamps = page.find_all("meta", {"name": "PubDate"})
     titles = page.find_all("meta", {"name": "ArticleTitle"})
-    if len(stamps) != 1 or len(titles) != 1:
+    if family == "cn_gdp" and document.url == ARCHIVES[family]["2026-07-16"] and not stamps and not titles:
+        # NBS's older public-service template prints the date in the body.
+        title_nodes = page.find_all("title")
+        if len(title_nodes) != 1:
+            raise FetchError("NBS GDP archive title needs review")
+        stamp = datetime.strptime(require(r"发布时间：\s*(\d{4}-\d{2}-\d{2} \d{2}:\d{2})",
+            plain(document.body.decode("utf-8")))[1], "%Y-%m-%d %H:%M")
+        title = title_nodes[0].text().strip()
+    elif len(stamps) != 1 or len(titles) != 1:
         raise FetchError("NBS publication metadata needs review")
-    stamp = datetime.strptime(stamps[0].get("content"), "%Y/%m/%d %H:%M")
+    else:
+        stamp = datetime.strptime(stamps[0].get("content"), "%Y/%m/%d %H:%M")
+        title = titles[0].get("content")
     edition = stamp.date().isoformat()
     period, _, clock = reviewed(family, edition)
     if stamp.strftime("%H:%M") != clock or document.url != ARCHIVES[family].get(edition):
         raise FetchError("NBS publication clock or issuer URL needs review")
-    return page, edition, period, titles[0].get("content")
+    return page, edition, period, title
 
 
 def parse(document, family="cn_cpi", since="1900-01"):
     page, edition, period, title = metadata(document, family)
+    if family == "cn_gdp":
+        quarter, cumulative = {"2026-Q2": ("二季度", "上半年"), "2026-Q3": ("三季度", "前三季度")}[period]
+        expected_title = "2026年" + ("二季度和上半年" if period.endswith("Q2") else quarter) + "国内生产总值初步核算结果"
+        if title != expected_title:
+            raise FetchError("NBS preliminary GDP title needs review")
+        tables = [t for t in page.find_all("table") if compact(t.text()).startswith(
+            "绝对额(亿元)比上年同期增长(%)" + quarter + cumulative + quarter + cumulative)]
+        values = set()
+        for table in tables:
+            require("增长速度按不变价计算", compact(table.text()))
+            for row in table.find_all("tr"):
+                cells = tuple(compact(c.text()) for c in row.find_all("td"))
+                if len(cells) == 5 and cells[0] == "GDP":
+                    if not all(re.fullmatch(r"[+-]?\d+(?:\.\d+)?", v) for v in cells[1:]):
+                        raise FetchError("NBS GDP numeric cells need review")
+                    values.add(cells)
+        if len(values) != 1:
+            raise FetchError("NBS GDP cumulative column layout needs review")
+        printed = values.pop()[4]  # printed cumulative real growth, not the quarterly rate in column 3
+        return [observation(document, family, edition, "cn_gdp_yy", printed, "html_table")] if period >= since else []
     if family == "cn_activity":
         expected = {"2026-08": "National Economy Remained Steady with Innovation-Led and High-Quality Development in August",
                     "2026-09": "National Economy was Generally Stable with New Achievement Made in High-Quality Development in the First Three Quarters"}

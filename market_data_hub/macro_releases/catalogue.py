@@ -197,6 +197,8 @@ HOUSING_FAMILIES = {
 }
 INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
 ASIA_FAMILIES = {
+    "cn_gdp": [measure("cn_gdp_yy", "NBS", "CHN", "yy", "NSA", frequency="Q",
+        definition="Real GDP, published cumulative year-over-year percent change at constant prices; Q2 is first half, Q3 first three quarters; preliminary accounting stage per explicit M9d1 brief")],
     "cn_activity": [
         measure("cn_industrial_production_yy", "NBS", "CHN", "yy", "NSA",
             definition="Value-added industrial output above designated size, issuer-published monthly year-over-year percent change"),

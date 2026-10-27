@@ -79,6 +79,26 @@
       "value": 1.1,
       "stage": "final",
       "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html"
+    },
+    {
+      "family": "cn_gdp",
+      "fixture": "cn-gdp-native-q2.html",
+      "edition": "2026-07-16",
+      "period": "2026-Q2",
+      "indicator": "cn_gdp_yy",
+      "value": 4.7,
+      "stage": "preliminary",
+      "source_url": "https://www.stats.gov.cn/zwfwck/sjfb/202607/t20260716_1964142.html"
+    },
+    {
+      "family": "cn_gdp",
+      "fixture": "cn-gdp-native-q3.html",
+      "edition": "2026-10-20",
+      "period": "2026-Q3",
+      "indicator": "cn_gdp_yy",
+      "value": 4.6,
+      "stage": "preliminary",
+      "source_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261020_1965658.html"
     }
   ]
 }

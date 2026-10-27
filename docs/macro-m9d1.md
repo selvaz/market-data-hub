@@ -29,6 +29,17 @@ is not silently assigned the scheduled domestic date.
 | cn_cpi | National CPI y/y, NSA, % | NBS English / official | Sep 10, Oct 15; Nov 9, Dec 9 scheduled | Aug and Sep 2026 |
 | cn_nbs_pmi | Official manufacturing PMI, SA, index (50 neutral) | NBS English / official | Sep 1, Oct 1; Oct 31, Nov 30, Dec 31 scheduled | Aug and Sep 2026 |
 | cn_activity | Industrial value-added output and consumer-goods retail sales, monthly y/y, NSA, % | NBS English national economy / official | Sep 15, Oct 19; Nov 16, Dec 15 scheduled | Aug and Sep 2026 (4 cases) |
+| cn_gdp | Real GDP cumulative y/y, NSA, % | NBS original Chinese accounting table / official | Jul 16 (Q2), Oct 20 (Q3); next edition January 2027 | Q2 4.7%, Q3 4.6% |
+
+The brief explicitly requests preliminary Q3 GDP. Its stage is `preliminary`,
+correcting the external catalogue's generic `final` stage without changing the
+indicator identity. The catalogue's **cumulative** definition is preserved:
+Q3's 4.6% is January–September, distinct from standalone Q3's 4.5%.
+The original Chinese GDP table is used to preserve the October 20 edition;
+the English accounting translation is dated October 21. Header mapping:
+`绝对额(亿元)` = current-price levels; `比上年同期增长(%)` = annual growth;
+`三季度` = standalone Q3; `前三季度` = first three quarters; `上半年` = first half.
+Only the last GDP cell (cumulative growth at constant prices) is collected.
 
 Calendar: <https://www.stats.gov.cn/english/PressRelease/ReleaseCalendar/202512/t20251226_1962154.html>.
 Each saved fixture has its issuer URL, retrieval timestamp and SHA-256.

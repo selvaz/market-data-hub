@@ -6,6 +6,11 @@ are permissions from the issuer calendar and require publication review.
 """
 NBS_CALENDAR = "https://www.stats.gov.cn/english/PressRelease/ReleaseCalendar/202512/t20251226_1962154.html"
 EDITIONS = {
+    "cn_gdp": {
+        "2026-07-16": ("2026-Q2", "preliminary", "09:30"),
+        "2026-10-20": ("2026-Q3", "preliminary", "09:30"),
+        # Q4 preliminary accounting is released in January 2027.
+    },
     "cn_activity": {
         "2026-09-15": ("2026-08", "final", "10:00"),
         "2026-10-19": ("2026-09", "final", "10:00"),
