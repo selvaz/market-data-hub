@@ -10,6 +10,10 @@ from .models import utc
 
 
 def reviewed_anchor(obs):
+    from .asia_editions import EDITIONS as ASIA
+    if obs.family in ASIA:
+        return (obs.edition in ASIA[obs.family] and
+                (obs.period, obs.stage) == ASIA[obs.family][obs.edition][:2])
     from .housing_editions import EDITIONS as HOUSING
     if obs.family in HOUSING:
         return obs.edition in HOUSING[obs.family] and obs.stage == HOUSING[obs.family][obs.edition][1]
@@ -46,6 +50,7 @@ def reviewed_anchor(obs):
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
+    "cn_cpi_yy": 10,
     **{f"cn_new_home_prices_tier{tier}_{basis}": 20 for tier in (1, 2, 3) for basis in ("mm", "yy")},
     "jp_housing_starts_yy": 50,
     "ca_housing_starts": 300000,

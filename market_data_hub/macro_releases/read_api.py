@@ -34,6 +34,8 @@ FAMILY_INDICATORS["us_jobless_claims"] = {"us_initial_jobless_claims"}
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in REMAINING_FAMILIES.items()})
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in CENTRAL_BANKS.items()})
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in HOUSING_FAMILIES.items()})
+from .catalogue import ASIA_FAMILIES
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in ASIA_FAMILIES.items()})
 
 
 def indicators_for_stage(family, stage):

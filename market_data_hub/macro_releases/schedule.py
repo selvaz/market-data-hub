@@ -26,6 +26,9 @@ def run_date():
 
 
 def issuer_zone(family):
+    from .asia_editions import ZONES as ASIA_ZONES
+    if family in ASIA_ZONES:
+        return ASIA_ZONES[family]
     from .housing_editions import ZONES as HOUSING_ZONES
     if family in HOUSING_ZONES:
         return HOUSING_ZONES[family]
@@ -104,6 +107,9 @@ def current_edition_allowed(family, edition):
 
 
 def family_editions(family):
+    from .asia_editions import EDITIONS as ASIA
+    if family in ASIA:
+        return ASIA[family]
     from .housing_editions import EDITIONS as HOUSING
     if family in HOUSING:
         return HOUSING[family]

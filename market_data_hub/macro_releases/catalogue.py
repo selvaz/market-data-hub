@@ -196,7 +196,12 @@ HOUSING_FAMILIES = {
         for basis in ("mm", "yy")],
 }
 INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES)
+ASIA_FAMILIES = {
+    "cn_cpi": [measure("cn_cpi_yy", "NBS", "CHN", "yy", "NSA",
+        definition="National Consumer Price Index, issuer-published 12-month rate of change")],
+}
+INDICATORS.update((m.id, m) for measures in ASIA_FAMILIES.values() for m in measures)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES, *ASIA_FAMILIES)
 
 
 def hicp_indicator(period, basis, geography="EA"):

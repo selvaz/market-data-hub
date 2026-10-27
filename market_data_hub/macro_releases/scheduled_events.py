@@ -19,6 +19,9 @@ PARSER_VERSION = "reviewed-calendar:m2b-v1"
 
 
 def calendar_source(family):
+    from .asia_editions import SCHEDULES
+    if family in SCHEDULES:
+        return SCHEDULES[family]
     from . import dol, housing_editions, policy_editions, tier1_editions, us_editions
     from .ons_rates import EDITIONS as UK
     if family in housing_editions.SCHEDULES:
