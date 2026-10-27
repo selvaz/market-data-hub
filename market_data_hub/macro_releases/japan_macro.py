@@ -12,6 +12,10 @@ from .nbs_housing import Page
 from .schedule import due
 
 ARCHIVES = {
+    "jp_trade_balance": {
+        "2026-09-29": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026085e.pdf",
+        "2026-10-21": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026094e.pdf",
+    },
     "jp_tankan": {
         "2026-07-01": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2606.pdf",
         "2026-10-01": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2609.pdf",
@@ -30,7 +34,7 @@ ARCHIVES = {
         "2026-09-08": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262_2/pdf/gaiyou2622_e.pdf",
     },
 }
-PROVIDERS = {"jp_gdp": "esri", "jp_cpi": "statjp", "jp_tokyo_cpi": "statjp", "jp_tankan": "boj"}
+PROVIDERS = {"jp_gdp": "esri", "jp_cpi": "statjp", "jp_tokyo_cpi": "statjp", "jp_tankan": "boj", "jp_trade_balance": "mof"}
 CPI_LISTINGS = {
     "2026-08-28": "https://www.e-stat.go.jp/en/stat-search/files?page=1&layout=datalist&year=20260&month=23070907&toukei=00200573&tstat=000001243876&tclass1=000001243877&cycle=1&tclass2val=0",
     "2026-10-02": "https://www.e-stat.go.jp/en/stat-search/files?page=1&layout=datalist&lid=000001490251",
@@ -137,6 +141,27 @@ def parse_gdp(document, since):
 
 
 def parse(document, family, since="1900-01"):
+    if family == "jp_trade_balance":
+        if not document.body.startswith(b"%PDF"):
+            raise FetchError("MOF trade PDF format needs review")
+        body, method = publication_text(document)
+        body = unicodedata.normalize("NFKC", body)
+        stamp = require(r"(\w+ \d{1,2}, 2026) Value of Exports and Imports", body)[1]
+        edition = datetime.strptime(stamp, "%B %d, %Y").date().isoformat()
+        period, stage, _ = reviewed(family, edition)
+        if document.url != ARCHIVES[family].get(edition):
+            raise FetchError("MOF trade archive URL needs review")
+        require(r"Ministry of Finance Trade Statistics", body)
+        require(r"Unit: millions of YEN,%", body)
+        require(r"seasonally,not adjustedCensus", body)
+        label = datetime.strptime(period, "%Y-%m").strftime("%B %Y")
+        wording = (r"\(Provisional\)" if stage == "preliminary" else
+                   r"\(Exports:Detailed Data;Imports:Provisional\(HS-code Basis\)\)")
+        require(r"Value of Exports and Imports " + label + r" " + wording, body)
+        row = require(r"Grand Total [\d,]+ [+-]?[\d.]+ [\d,]+ [+-]?[\d.]+ ([+-]?[\d,]+) [+-]?[\d.*-]+", body)
+        printed = row[1]
+        return [observation(document, family, edition, "jp_trade_balance", printed, method,
+            value=float(printed.replace(',', '')) / 1000)] if period >= since else []
     if family == "jp_tankan":
         from pypdf import PdfReader
         if not document.body.startswith(b"%PDF"):

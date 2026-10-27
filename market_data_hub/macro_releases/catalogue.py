@@ -197,6 +197,8 @@ HOUSING_FAMILIES = {
 }
 INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
 ASIA_FAMILIES = {
+    "jp_trade_balance": [measure("jp_trade_balance", "MOF", "JPN", "level", "NSA", "JPY", 1e9,
+        definition="Balance of customs-cleared exports and imports, not seasonally adjusted, billions of JPY; published balance converted from millions; detailed exports with provisional imports remain revised, not final")],
     "jp_tankan": [measure("jp_tankan_large_manufacturers_di", "BOJ", "JPN", "level", "not-stated",
         "diffusion index (percentage points)", frequency="Q",
         definition="Tankan large manufacturing enterprises, current business conditions DI; issuer summary prints actual favourable-minus-unfavourable balance, not forecast; adjustment not stated in source table")],

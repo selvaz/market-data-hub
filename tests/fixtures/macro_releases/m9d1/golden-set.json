@@ -199,6 +199,26 @@
       "value": 24.0,
       "stage": "final",
       "source_url": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2609.pdf"
+    },
+    {
+      "family": "jp_trade_balance",
+      "fixture": "trade-aug.pdf",
+      "edition": "2026-09-29",
+      "period": "2026-08",
+      "indicator": "jp_trade_balance",
+      "value": -1111.913,
+      "stage": "revised",
+      "source_url": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026085e.pdf"
+    },
+    {
+      "family": "jp_trade_balance",
+      "fixture": "trade-sep.pdf",
+      "edition": "2026-10-21",
+      "period": "2026-09",
+      "indicator": "jp_trade_balance",
+      "value": -536.558,
+      "stage": "preliminary",
+      "source_url": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026094e.pdf"
     }
   ]
 }

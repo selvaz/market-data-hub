@@ -34,6 +34,14 @@ is not silently assigned the scheduled domestic date.
 | jp_cpi | National headline and ex-fresh-food CPI y/y, NSA, % | Statistics Bureau / e-Stat English monthly reports / official | Sep 18, Oct 23; Nov 20, Dec 18 scheduled | Aug and Sep 2026 (4 cases) |
 | jp_tokyo_cpi | Ku-area of Tokyo ex-fresh-food CPI y/y, NSA, % | Statistics Bureau / e-Stat English monthly reports / official | Aug 28, Oct 2 preliminary; Oct 30, Nov 27, Dec 25 scheduled | Aug 1.8%, Sep 2.7% |
 | jp_tankan | Large manufacturers current business-conditions DI, percentage points | BoJ English summary / official | Jul 1, Oct 1; Dec 14 scheduled | Q2 22, Q3 24 |
+| jp_trade_balance | Customs-cleared goods balance, NSA, billion JPY | MOF / Japan Customs English releases / official | Sep 29 revised, Oct 21 preliminary; Oct 29, Nov 18/27, Dec 16/25 scheduled | Aug -1,111.913; Sep -536.558 |
+
+Customs prints the balance in millions of JPY; division by 1,000 is only a unit
+conversion to the catalogue's billions. Exports minus imports is never computed.
+The September 29 report explicitly says exports detailed / imports provisional
+(HS-code basis), so it is `revised`, not the catalogue's generic `final` stage.
+The calendar's detailed releases receive this same honest stage; fully final
+imports/balances are not certified from a partially provisional publication.
 
 Tankan is an official BoJ survey and is in scope separately from policy
 decisions. The source table does not label seasonal adjustment; its metadata
