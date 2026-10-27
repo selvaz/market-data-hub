@@ -6,6 +6,12 @@ are permissions from the issuer calendar and require publication review.
 """
 NBS_CALENDAR = "https://www.stats.gov.cn/english/PressRelease/ReleaseCalendar/202512/t20251226_1962154.html"
 EDITIONS = {
+    "jp_cpi": {
+        "2026-09-18": ("2026-08", "final", "08:30"),
+        "2026-10-23": ("2026-09", "final", "08:30"),
+        "2026-11-20": ("2026-10", "final", "08:30"),
+        "2026-12-18": ("2026-11", "final", "08:30"),
+    },
     "jp_gdp": {
         "2026-08-17": ("2026-Q2", "preliminary", "08:50"),
         "2026-09-08": ("2026-Q2", "revised", "08:50"),
@@ -39,6 +45,7 @@ EDITIONS = {
 }
 SCHEDULES = {family: NBS_CALENDAR for family in EDITIONS}
 SCHEDULES["jp_gdp"] = "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262/pdf/note_e.pdf"
+SCHEDULES["jp_cpi"] = "https://www.stat.go.jp/english/data/cpi/1582.htm"
 ZONES = {family: "Asia/Tokyo" if family.startswith("jp_") else "Asia/Shanghai" for family in EDITIONS}
 
 

@@ -5,17 +5,84 @@ import re
 import unicodedata
 
 from .asia import observation, fetch_archives
-from .asia_editions import reviewed
+from .asia_editions import EDITIONS, reviewed
 from .http import FetchError
-from .tier1_publications import require, publication_text
+from .tier1_publications import require, publication_text, plain
+from .nbs_housing import Page
+from .schedule import due
 
 ARCHIVES = {
+    "jp_cpi": {
+        "2026-09-18": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040501410&fileKind=4",
+        "2026-10-23": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040513539&fileKind=4",
+    },
     "jp_gdp": {
         "2026-08-17": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262/pdf/gaiyou2621_e.pdf",
         "2026-09-08": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262_2/pdf/gaiyou2622_e.pdf",
     },
 }
-PROVIDERS = {"jp_gdp": "esri"}
+PROVIDERS = {"jp_gdp": "esri", "jp_cpi": "statjp"}
+CPI_LISTINGS = {
+    "2026-09-18": "https://www.e-stat.go.jp/en/stat-search/files?page=1&layout=datalist&lid=000001490251",
+    "2026-10-23": "https://www.e-stat.go.jp/en/stat-search/files?page=1&layout=datalist&lid=000001491870",
+}
+
+
+def cpi_archive_listing(document, family, edition):
+    """Bind the reviewed file ID to the issuer's first monthly report listing."""
+    period, _, _ = reviewed(family, edition)
+    page = Page(document.body).root
+    label = "Subgroup Index for Japan"
+    require("2025-Base Consumer Price Index", plain(document.body.decode("utf-8")))
+    url = ARCHIVES[family][edition]
+    found = []
+    for group in page.find_all("ul"):
+        if group.get("class") != "stat-dataset_list-detail":
+            continue
+        text = plain(group.text())
+        for link in group.find_all("a"):
+            if "https://www.e-stat.go.jp" + link.get("href") != url:
+                continue
+            # A later update cannot establish the original edition.
+            require(re.escape(label) + r" Monthly Survey date " +
+                    datetime.strptime(period, "%Y-%m").strftime("%Y%b.") +
+                    r" Update date " + edition, text)
+            if link.get("data-release_count") != "1":
+                raise FetchError("e-Stat updated report publication needs review")
+            found.append(url)
+    if len(found) != 1:
+        raise FetchError("e-Stat monthly report archive identity needs review")
+
+
+def parse_cpi(document, family, since):
+    from openpyxl import load_workbook
+    editions = [d for d, url in ARCHIVES[family].items() if url == document.url]
+    if len(editions) != 1 or not document.body.startswith(b"PK"):
+        raise FetchError("e-Stat CPI edition or workbook format needs review")
+    edition = editions[0]
+    period, stage, _ = reviewed(family, edition)
+    workbook = load_workbook(BytesIO(document.body), data_only=True, read_only=True)
+    try:
+        sheets = [s for s in workbook if s['H8'].value == 'Monthly, % Change over the year']
+        if len(sheets) != 1:
+            raise FetchError("e-Stat published annual-rate sheet needs review")
+        sheet = sheets[0]
+        if (sheet['I6'].value.strip() != 'Table 1-1 Subgroup Index for Japan' or
+                sheet['I12'].value != 'All items' or sheet['J12'].value != 'All items, less fresh food'):
+            raise FetchError("e-Stat CPI geography or measure headers need review")
+        rows = [r for r in sheet.iter_rows(values_only=True) if len(r) > 9 and
+                str(r[1]).strip() == period.replace('-', '') and str(r[2]).strip() == '03']
+        if len(rows) != 1 or max(str(r[1]).strip() for r in sheet.iter_rows(values_only=True)
+                if len(r) > 2 and re.fullmatch(r'\d{6}', str(r[1]).strip())) != period.replace('-', ''):
+            raise FetchError("e-Stat CPI headline reference period needs review")
+        result = []
+        for indicator, value in zip(('jp_cpi_yy', 'jp_core_cpi_yy'), rows[0][8:10]):
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise FetchError("e-Stat CPI annual rate needs review")
+            result.append(observation(document, family, edition, indicator, str(value), "xlsx_table"))
+        return result if period >= since else []
+    finally:
+        workbook.close()
 
 
 def parse_gdp(document, since):
@@ -48,10 +115,18 @@ def parse_gdp(document, since):
 
 
 def parse(document, family, since="1900-01"):
+    if family == "jp_cpi":
+        return parse_cpi(document, family, since)
     if family == "jp_gdp":
         return parse_gdp(document, since)
     raise FetchError("Japan issuer family needs review")
 
 
 def fetch(client, family, since):
+    if family == "jp_cpi":
+        for edition, (period, _, _) in due(EDITIONS[family], family=family).items():
+            if period >= since:
+                if edition not in CPI_LISTINGS:
+                    raise FetchError("e-Stat due CPI report archive needs review")
+                cpi_archive_listing(client.get("statjp", CPI_LISTINGS[edition]), family, edition)
     return fetch_archives(client, family, since, PROVIDERS[family], ARCHIVES[family], parse)

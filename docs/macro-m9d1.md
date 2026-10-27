@@ -31,6 +31,14 @@ is not silently assigned the scheduled domestic date.
 | cn_activity | Industrial value-added output and consumer-goods retail sales, monthly y/y, NSA, % | NBS English national economy / official | Sep 15, Oct 19; Nov 16, Dec 15 scheduled | Aug and Sep 2026 (4 cases) |
 | cn_gdp | Real GDP cumulative y/y, NSA, % | NBS original Chinese accounting table / official | Jul 16 (Q2), Oct 20 (Q3); next edition January 2027 | Q2 4.7%, Q3 4.6% |
 | jp_gdp | Real GDP q/q, SA, % | Cabinet Office ESRI English summaries / official | Aug 17 preliminary, Sep 8 revised; Nov 16 preliminary, Dec 8 revised scheduled | Q2 first 0.3%, second 0.4% |
+| jp_cpi | National headline and ex-fresh-food CPI y/y, NSA, % | Statistics Bureau / e-Stat English monthly reports / official | Sep 18, Oct 23; Nov 20, Dec 18 scheduled | Aug and Sep 2026 (4 cases) |
+
+e-Stat CPI files are bound to reviewed monthly-report file IDs. Collection also
+checks the issuer listing's exact geography, monthly table, survey month,
+first-publication counter and calendar-matching date. An update timestamp alone
+does not authorize an edition. Only the explicitly printed annual-change sheet
+is read; no rates are computed from index levels. The 2025-base revision is
+explicit in both the source listing and table headers.
 
 The brief explicitly requests preliminary Q3 GDP. Its stage is `preliminary`,
 correcting the external catalogue's generic `final` stage without changing the

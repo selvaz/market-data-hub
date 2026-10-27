@@ -51,6 +51,7 @@ def reviewed_anchor(obs):
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
     "cn_cpi_yy": 10,
+    "jp_cpi_yy": 10, "jp_core_cpi_yy": 10,
     "jp_gdp_qq": 20,
     "cn_gdp_yy": 20,
     "cn_industrial_production_yy": 30, "cn_retail_sales_yy": 30,

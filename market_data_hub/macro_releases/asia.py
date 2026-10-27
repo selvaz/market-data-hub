@@ -1,4 +1,6 @@
 """Edition-bound official Asian publications, using only issuer-printed rates."""
+from dataclasses import replace
+from urllib.parse import parse_qsl, urlsplit, urlunsplit
 from .adapters import Observation
 from .asia_editions import EDITIONS, ZONES, reviewed
 from .catalogue import INDICATORS
@@ -42,5 +44,15 @@ class AsiaAdapter:
 
     def fetch(self, families, since):
         from . import nbs_macro, japan_macro
+        client = self.client
+        class PublicClient:
+            def get(self, provider, url, params=None):
+                requested = url
+                parts = urlsplit(url)
+                if parts.query:
+                    params = dict(parse_qsl(parts.query), **(params or {}))
+                    url = urlunsplit(parts._replace(query=""))
+                doc = client.get(provider, url, params)
+                return replace(doc, url=requested) if parts.query else doc
         return [row for family in families for row in (
-            japan_macro if family.startswith("jp_") else nbs_macro).fetch(self.client, family, since)]
+            japan_macro if family.startswith("jp_") else nbs_macro).fetch(PublicClient(), family, since)]

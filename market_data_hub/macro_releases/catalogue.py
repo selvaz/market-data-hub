@@ -197,6 +197,11 @@ HOUSING_FAMILIES = {
 }
 INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
 ASIA_FAMILIES = {
+    "jp_cpi": [
+        measure("jp_cpi_yy", "StatisticsBureauJP", "JPN", "yy", "NSA",
+            definition="National all-items Consumer Price Index, issuer-published 12-month rate of change"),
+        measure("jp_core_cpi_yy", "StatisticsBureauJP", "JPN", "yy", "NSA",
+            definition="National Consumer Price Index excluding fresh food, issuer-published 12-month rate of change")],
     "jp_gdp": [measure("jp_gdp_qq", "ESRI", "JPN", "qq", "SA", frequency="Q",
         definition="Real GDP, issuer-published quarter-to-quarter percent change, seasonally adjusted; first and second Quarterly Estimates")],
     "cn_gdp": [measure("cn_gdp_yy", "NBS", "CHN", "yy", "NSA", frequency="Q",

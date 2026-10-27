@@ -74,6 +74,9 @@ class Replay:
         self.requests = []
 
     def get(self, provider, url, params=None):
+        if params:
+            from urllib.parse import urlencode
+            url += "?" + urlencode(params)
         self.requests.append(url)
         for path in ROOT.glob("*.meta.json"):
             meta = json.loads(path.read_text())
