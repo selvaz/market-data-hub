@@ -12,9 +12,10 @@ import tempfile
 from uuid import uuid4
 
 from .adapters import persist
+from .asia import AsiaAdapter
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
-from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
+from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES
 from .consensus import DEFAULT_RAW_DIR, ingest
 from .eurostat import EurostatAdapter
 from .fred import USRedistributorAdapter
@@ -48,8 +49,6 @@ ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 DISCOVERY_ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 ADAPTERS.update({f: HousingAdapter for f in HOUSING_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: HousingAdapter for f in HOUSING_FAMILIES})
-from .catalogue import ASIA_FAMILIES
-from .asia import AsiaAdapter
 ADAPTERS.update({f: AsiaAdapter for f in ASIA_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: AsiaAdapter for f in ASIA_FAMILIES})
 
@@ -114,7 +113,7 @@ def safe_error(exc):
         text = str(exc)
         if re.fullmatch(r"Missing credential: (BLS|BEA|FRED)_API_KEY", text):
             message = text
-        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons|dol|census|ecfin|umich): HTTP \d{3}", text):
+        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons|dol|census|ecfin|umich|nbs|boj|esri|statjp|mof): HTTP \d{3}", text):
             message = text
         elif "needs review" in text or "metadata" in text:
             message = "Provider publication metadata/version needs review before this edition can be certified"

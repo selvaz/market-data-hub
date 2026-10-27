@@ -126,3 +126,92 @@ def test_release_instant_and_horizon_fail_closed():
             AsiaAdapter(client).fetch(["cn_cpi"], "2026-01")
     finally:
         RUN_INSTANT.reset(token)
+
+
+@pytest.mark.parametrize("family", ASIA_FAMILIES)
+def test_unreviewed_source_url_fails_closed(family):
+    case = next(c for c in GOLDEN if c["family"] == family)
+    with pytest.raises(FetchError, match="needs review"):
+        parser(family)(replace(document(case["fixture"]), url="https://example.invalid/unreviewed"), family)
+
+
+def test_gdp_cumulative_columns_and_constant_price_basis_are_required():
+    doc = document("cn-gdp-native-q3.html")
+    for before, after in (("前三季度", "三季度"), ("增长速度按不变价计算", "增长速度按现价计算")):
+        raw = doc.body.decode("utf-8")
+        assert before in raw
+        with pytest.raises(FetchError, match="needs review"):
+            parser("cn_gdp")(replace(doc, body=raw.replace(before, after).encode()), "cn_gdp")
+
+
+def test_tokyo_release_date_claim_and_local_release_instant():
+    assert "2026-10-22" not in EDITIONS["jp_tokyo_cpi"]
+    assert EDITIONS["jp_tokyo_cpi"]["2026-10-30"][0] == "2026-10"
+    client = Replay()
+    token = RUN_INSTANT.set("2026-10-29T23:29:59Z")
+    try:
+        assert AsiaAdapter(client).fetch(["jp_tokyo_cpi"], "2026-10") == []
+        assert client.requests == []
+    finally:
+        RUN_INSTANT.reset(token)
+    assert "2026-10-30" in due(EDITIONS["jp_tokyo_cpi"], "2026-10-29T23:30:00Z", family="jp_tokyo_cpi")
+
+
+def test_only_reviewed_stages_have_calendar_membership():
+    from market_data_hub.macro_releases.read_api import indicators_for_stage
+    for family in ASIA_FAMILIES:
+        assert indicators_for_stage(family, "unreviewed-stage") == set()
+    assert indicators_for_stage("jp_trade_balance", "final") == set()
+    assert indicators_for_stage("jp_tokyo_cpi", "final") == set()
+
+
+def test_real_issuer_schedule_evidence_covers_the_reviewed_horizon():
+    from io import BytesIO
+    from openpyxl import load_workbook
+    from market_data_hub.macro_releases.tier1_publications import publication_text
+    files = {json.loads(p.read_text())["url"] for p in ROOT.glob("*.meta.json")}
+    assert set(SCHEDULES.values()).issubset(files)
+    cpi, _ = publication_text(document("cpi-calendar.html"))
+    assert "October 30" in cpi and "December 25" in cpi and "December 18" in cpi
+    nbs, _ = publication_text(document("nbs-calendar.html"))
+    assert "Regular Press Release Calendar of NBS in 2026" in nbs
+    assert "31/Sat 30/Mon 31/Thu" in nbs
+    gdp, _ = publication_text(document("jp-gdp-schedule.pdf"))
+    assert "November 16, 2026" in gdp and "December 8, 2026" in gdp
+    workbook = load_workbook(BytesIO(document("boj-release.xlsx").body), data_only=True)
+    try:
+        rows = [r for r in workbook['Statistics data'].values
+                if r[1] == 'Tankan (Short-Term Economic Survey of Enterprises in Japan) / Summary and Outline']
+        assert rows[0][3] == '8:50 a.m.'
+        assert rows[1][7].date().isoformat() == '2026-10-01'
+        assert rows[1][9].date().isoformat() == '2026-12-14'
+    finally:
+        workbook.close()
+
+
+def test_e_stat_index_sheet_cannot_replace_published_rate_sheet():
+    from io import BytesIO
+    from openpyxl import load_workbook
+    doc = document("jp-cpi-sep.xlsx")
+    workbook = load_workbook(BytesIO(doc.body))
+    try:
+        sheet = next(s for s in workbook if s['H8'].value == 'Monthly, % Change over the year')
+        sheet['H8'] = 'Monthly, Index'
+        stream = BytesIO()
+        workbook.save(stream)
+    finally:
+        workbook.close()
+    with pytest.raises(FetchError, match="needs review"):
+        parser("jp_cpi")(replace(doc, body=stream.getvalue()), "jp_cpi")
+
+
+def test_trade_units_and_provisional_stage_must_match(monkeypatch):
+    from market_data_hub.macro_releases import japan_macro
+    from market_data_hub.macro_releases.tier1_publications import publication_text
+    doc = document("trade-sep.pdf")
+    body, method = publication_text(doc)
+    for before, after in (("millions of YEN", "billions of YEN"), ("(Provisional)", "(Final)")):
+        assert before in body
+        monkeypatch.setattr(japan_macro, "publication_text", lambda _: (body.replace(before, after), method))
+        with pytest.raises(FetchError, match="needs review"):
+            japan_macro.parse(doc, "jp_trade_balance")
