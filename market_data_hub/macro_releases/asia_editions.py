@@ -41,6 +41,7 @@ EDITIONS = {
     },
     "cn_gdp": {
         "2026-07-16": ("2026-Q2", "preliminary", "09:30"),
+        "2026-10-19": ("2026-Q3", "preliminary", "10:00"),
         "2026-10-20": ("2026-Q3", "preliminary", "09:30"),
         # Q4 preliminary accounting is released in January 2027.
     },

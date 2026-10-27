@@ -11,6 +11,7 @@ from .tier1_publications import month, plain, require
 ARCHIVES = {
     "cn_gdp": {
         "2026-07-16": "https://www.stats.gov.cn/zwfwck/sjfb/202607/t20260716_1964142.html",
+        "2026-10-19": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html",
         "2026-10-20": "https://www.stats.gov.cn/sj/zxfb/202610/t20261020_1965658.html",
     },
     "cn_activity": {
@@ -55,6 +56,13 @@ def metadata(document, family):
 def parse(document, family="cn_cpi", since="1900-01"):
     page, edition, period, title = metadata(document, family)
     if family == "cn_gdp":
+        if edition == "2026-10-19":
+            if title != "National Economy was Generally Stable with New Achievement Made in High-Quality Development in the First Three Quarters":
+                raise FetchError("NBS first GDP announcement title needs review")
+            body = plain(document.body.decode("utf-8"))
+            require("National Bureau of Statistics of China 19 October, 2026", body)
+            printed = require(r"According to preliminary estimates, the gross domestic product \(GDP\) in the first three quarters of 2026 reached [\d,.]+ billion yuan, up by ([\d.]+) percent year on year at constant prices", body)[1]
+            return [observation(document, family, edition, "cn_gdp_yy", printed)] if period >= since else []
         quarter, cumulative = {"2026-Q2": ("二季度", "上半年"), "2026-Q3": ("三季度", "前三季度")}[period]
         expected_title = "2026年" + ("二季度和上半年" if period.endswith("Q2") else quarter) + "国内生产总值初步核算结果"
         if title != expected_title:

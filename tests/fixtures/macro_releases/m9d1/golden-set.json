@@ -219,6 +219,16 @@
       "value": -536.558,
       "stage": "preliminary",
       "source_url": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026094e.pdf"
+    },
+    {
+      "family": "cn_gdp",
+      "fixture": "cn-economy-q3.html",
+      "edition": "2026-10-19",
+      "period": "2026-Q3",
+      "indicator": "cn_gdp_yy",
+      "value": 4.6,
+      "stage": "preliminary",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html"
     }
   ]
 }
