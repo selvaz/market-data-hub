@@ -33,6 +33,13 @@ is not silently assigned the scheduled domestic date.
 | jp_gdp | Real GDP q/q, SA, % | Cabinet Office ESRI English summaries / official | Aug 17 preliminary, Sep 8 revised; Nov 16 preliminary, Dec 8 revised scheduled | Q2 first 0.3%, second 0.4% |
 | jp_cpi | National headline and ex-fresh-food CPI y/y, NSA, % | Statistics Bureau / e-Stat English monthly reports / official | Sep 18, Oct 23; Nov 20, Dec 18 scheduled | Aug and Sep 2026 (4 cases) |
 | jp_tokyo_cpi | Ku-area of Tokyo ex-fresh-food CPI y/y, NSA, % | Statistics Bureau / e-Stat English monthly reports / official | Aug 28, Oct 2 preliminary; Oct 30, Nov 27, Dec 25 scheduled | Aug 1.8%, Sep 2.7% |
+| jp_tankan | Large manufacturers current business-conditions DI, percentage points | BoJ English summary / official | Jul 1, Oct 1; Dec 14 scheduled | Q2 22, Q3 24 |
+
+Tankan is an official BoJ survey and is in scope separately from policy
+decisions. The source table does not label seasonal adjustment; its metadata
+therefore says `not-stated`, rather than certifying the catalogue's unconfirmed
+`SA` flag. The printed actual DI is collected directly, never the forecast or
+the change column. This source/catalogue metadata difference is explicit.
 
 Tokyo tables include the next month's mid-month preliminary figure in a report
 listed under the preceding national survey month. The English note explicitly

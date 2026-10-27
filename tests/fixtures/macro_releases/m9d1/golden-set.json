@@ -179,6 +179,26 @@
       "value": 2.7,
       "stage": "preliminary",
       "source_url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040501413&fileKind=4"
+    },
+    {
+      "family": "jp_tankan",
+      "fixture": "tankan-jun.pdf",
+      "edition": "2026-07-01",
+      "period": "2026-Q2",
+      "indicator": "jp_tankan_large_manufacturers_di",
+      "value": 22.0,
+      "stage": "final",
+      "source_url": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2606.pdf"
+    },
+    {
+      "family": "jp_tankan",
+      "fixture": "tankan-sep.pdf",
+      "edition": "2026-10-01",
+      "period": "2026-Q3",
+      "indicator": "jp_tankan_large_manufacturers_di",
+      "value": 24.0,
+      "stage": "final",
+      "source_url": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2609.pdf"
     }
   ]
 }

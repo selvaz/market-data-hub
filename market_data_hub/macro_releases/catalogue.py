@@ -197,6 +197,9 @@ HOUSING_FAMILIES = {
 }
 INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
 ASIA_FAMILIES = {
+    "jp_tankan": [measure("jp_tankan_large_manufacturers_di", "BOJ", "JPN", "level", "not-stated",
+        "diffusion index (percentage points)", frequency="Q",
+        definition="Tankan large manufacturing enterprises, current business conditions DI; issuer summary prints actual favourable-minus-unfavourable balance, not forecast; adjustment not stated in source table")],
     "jp_tokyo_cpi": [measure("jp_tokyo_core_cpi_yy", "StatisticsBureauJP", "JPN", "yy", "NSA",
         definition="Ku-area of Tokyo CPI excluding fresh food, published preliminary 12-month rate; explicit M9d1 brief addition, distinct from national CPI")],
     "jp_cpi": [

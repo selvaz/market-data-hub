@@ -12,6 +12,11 @@ from .nbs_housing import Page
 from .schedule import due
 
 ARCHIVES = {
+    "jp_tankan": {
+        "2026-07-01": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2606.pdf",
+        "2026-10-01": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2609.pdf",
+        "2026-12-14": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2612.pdf",
+    },
     "jp_tokyo_cpi": {
         "2026-08-28": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040491317&fileKind=4",
         "2026-10-02": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040501413&fileKind=4",
@@ -25,7 +30,7 @@ ARCHIVES = {
         "2026-09-08": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262_2/pdf/gaiyou2622_e.pdf",
     },
 }
-PROVIDERS = {"jp_gdp": "esri", "jp_cpi": "statjp", "jp_tokyo_cpi": "statjp"}
+PROVIDERS = {"jp_gdp": "esri", "jp_cpi": "statjp", "jp_tokyo_cpi": "statjp", "jp_tankan": "boj"}
 CPI_LISTINGS = {
     "2026-08-28": "https://www.e-stat.go.jp/en/stat-search/files?page=1&layout=datalist&year=20260&month=23070907&toukei=00200573&tstat=000001243876&tclass1=000001243877&cycle=1&tclass2val=0",
     "2026-10-02": "https://www.e-stat.go.jp/en/stat-search/files?page=1&layout=datalist&lid=000001490251",
@@ -132,6 +137,21 @@ def parse_gdp(document, since):
 
 
 def parse(document, family, since="1900-01"):
+    if family == "jp_tankan":
+        from pypdf import PdfReader
+        if not document.body.startswith(b"%PDF"):
+            raise FetchError("BOJ Tankan PDF format needs review")
+        body = re.sub(r"\s+", " ", PdfReader(BytesIO(document.body)).pages[0].extract_text())
+        stamp = require(r"Tankan Summary \((June|September|December) 2026\) \d+th Short-Term Economic Survey of Enterprises in Japan (\w+ \d{1,2}, 2026)", body)
+        edition = datetime.strptime(stamp[2], "%B %d, %Y").date().isoformat()
+        period, _, _ = reviewed(family, edition)
+        if document.url != ARCHIVES[family].get(edition) or stamp[1] != {"Q2": "June", "Q3": "September", "Q4": "December"}[period[-2:]]:
+            raise FetchError("BOJ Tankan survey period or URL needs review")
+        require(r'1\. Business Conditions DI \("favorable" - "unfavorable"\), % points Large Enterprises Medium-sized Enterprises Small Enterprises', body)
+        # Large enterprises occupy the first six columns: previous actual,
+        # previous forecast, current actual, change, forecast, change.
+        row = require(r"Changes Changes Changes Changes Changes Changes Manufacturing ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+)", body)
+        return [observation(document, family, edition, "jp_tankan_large_manufacturers_di", row[3], "pdf_table")] if period >= since else []
     if family in {"jp_cpi", "jp_tokyo_cpi"}:
         return parse_cpi(document, family, since)
     if family == "jp_gdp":
