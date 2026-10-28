@@ -98,3 +98,12 @@ returned `ok` for all three LatAm and both reused policy families: eight new
 vintages, zero on repetition, integrity `ok`, original source files and existing
 vintages unchanged. Its full report remains at
 `D:\Temp\mdh-m9i-review-live-20261028-01\mdh-m9i-mt6x8rcm\verification.json`.
+
+CI's only three failures at `4f0dd86` were the generated-document freshness
+checks: Part B still displayed the previous date-only Copom calendar entry.
+Regenerating `macro-indicators.md` changed its single release-time cell to
+`18:30 America/Sao_Paulo`. The failing docs file reproduced three failures
+before generation and passed all 16 tests afterward, using fresh
+`D:\Temp\mdh-m9i-review-docs-before-20261028-01` and
+`D:\Temp\mdh-m9i-review-docs-after-20261028-01` directories. Collector code and
+the verified live-check result were unchanged by this documentation correction.

@@ -754,7 +754,7 @@ How to read the tables:
 | IPCA-15 (`br_ipca15`) | Inflation | COIN vs IPCA [DEFINITION]<br>HARD | n.a. | cal: `br_ipca15_mm`, `br_ipca15_yy` | issuer: IBGE | M | — | no | no | — |
 | NTN-F 2033 yield (`br_ntnf_2033`) | Monetary policy & rates | CTX<br>MARKET | none | ms: `CB_BR_NTNF_2033` | issuer: Tesouro Nacional | D | — | no | no | — |
 | NTN-F 2037 yield (`br_ntnf_2037`) | Monetary policy & rates | CTX<br>MARKET | none | ms: `CB_BR_NTNF_2037` | issuer: Tesouro Nacional | D | — | no | no | — |
-| Selic (Copom) (`br_selic`) | Monetary policy & rates | CTX vs current policy state<br>POLICY | none | **macro_releases** `bcb_policy` (`bcb_selic_rate_decision`)<br>cal: `br_selic`<br>cat: `bcb_selic_rate_decision` | issuer: BCB<br>certified issuer: BCB<br>calendar agency: BCB (Copom) | E | date only | yes | no | T1 |
+| Selic (Copom) (`br_selic`) | Monetary policy & rates | CTX vs current policy state<br>POLICY | none | **macro_releases** `bcb_policy` (`bcb_selic_rate_decision`)<br>cal: `br_selic`<br>cat: `bcb_selic_rate_decision` | issuer: BCB<br>certified issuer: BCB<br>calendar agency: BCB (Copom) | E | 18:30 America/Sao_Paulo | yes | no | T1 |
 
 ### ESP (Spain)
 
