@@ -254,9 +254,16 @@
       "id": "cat:banxico_overnight_rate_decision",
       "key": "mx_banxico",
       "basis": "Same approved Banxico overnight interbank target decision concept; public issuer statement (M9i)."
+    },
+    {
+      "id": "cat:mx_cpi_yy",
+      "key": "mx_cpi",
+      "basis": "Same approved Mexican monthly headline INPC concept; issuer-printed annual rate (M9i)."
     }
   ],
-  "certified_gaps": {},
+  "certified_gaps": {
+    "mx_core_cpi_yy": "No approved Mexican core INPC card; do not alias core inflation to the headline card (M9i)."
+  },
   "classification_version": "v2.3",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages."
 }

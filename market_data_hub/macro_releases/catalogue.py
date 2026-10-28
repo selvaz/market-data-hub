@@ -225,6 +225,10 @@ ASIA_FAMILIES = {
 }
 INDICATORS.update((m.id, m) for measures in ASIA_FAMILIES.values() for m in measures)
 LATAM_FAMILIES = {
+    "mx_cpi": [measure("mx_cpi_yy", "INEGI", "MEX", "yy", "NSA",
+        definition="Monthly all-items INPC, issuer-printed annual percent change"),
+        measure("mx_core_cpi_yy", "INEGI", "MEX", "yy", "NSA",
+        definition="Monthly subyacente INPC, issuer-printed annual percent change; excludes volatile or non-market prices")],
     "banxico_policy": [measure("banxico_overnight_rate_decision", "Banxico", "MEX", "level", "n/a",
         definition="Banco de México target for the overnight interbank interest rate, issuer decision", frequency="E")],
     "bcb_policy": [measure("bcb_selic_rate_decision", "BCB", "BRA", "level", "n/a",

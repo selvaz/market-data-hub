@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "33bbd0c5d407914e6ec54fc5c11200e52e7cd7c74079911c5b5259589387e631",
+  "aliases_sha256": "e7c78773c336b662d18c8a42ed59a9187a24a1f84759c78412895ac29b6ce4b8",
   "cards": [
     {
       "concept": "Real GDP",
@@ -9880,7 +9880,9 @@
           "mx_cpi_mm",
           "mx_cpi_yy"
         ],
-        "cat": [],
+        "cat": [
+          "mx_cpi_yy"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
