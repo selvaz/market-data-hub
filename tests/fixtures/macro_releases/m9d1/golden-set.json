@@ -3,7 +3,7 @@
     {
       "family": "cn_cpi",
       "fixture": "cn-cpi-aug.html",
-      "edition": "2026-09-10",
+      "edition": "2026-09-09",
       "period": "2026-08",
       "value": 0.8,
       "stage": "final",
@@ -13,7 +13,7 @@
     {
       "family": "cn_cpi",
       "fixture": "cn-cpi-sep.html",
-      "edition": "2026-10-15",
+      "edition": "2026-10-14",
       "period": "2026-09",
       "value": 0.9,
       "stage": "final",
@@ -23,7 +23,7 @@
     {
       "family": "cn_nbs_pmi",
       "fixture": "cn-pmi-aug.html",
-      "edition": "2026-09-01",
+      "edition": "2026-08-31",
       "period": "2026-08",
       "indicator": "cn_nbs_manufacturing_pmi",
       "value": 49.8,
@@ -33,7 +33,7 @@
     {
       "family": "cn_nbs_pmi",
       "fixture": "cn-pmi-sep.html",
-      "edition": "2026-10-01",
+      "edition": "2026-09-30",
       "period": "2026-09",
       "indicator": "cn_nbs_manufacturing_pmi",
       "value": 50.1,

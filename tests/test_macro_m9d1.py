@@ -114,7 +114,7 @@ def test_cpi_unknown_date_clock_measure_and_disagreement_fail_closed():
 
 def test_release_instant_and_horizon_fail_closed():
     client = Replay()
-    token = RUN_INSTANT.set("2026-09-10T01:29:59Z")
+    token = RUN_INSTANT.set("2026-09-09T01:29:59Z")
     try:
         assert AsiaAdapter(client).fetch(["cn_cpi"], "2026-01") == []
         assert client.requests == []
@@ -318,7 +318,7 @@ def test_trade_discovers_a_published_url_without_reviewed_archive(monkeypatch):
 
 
 @pytest.mark.parametrize("family,edition,count", [
-    ("jp_cpi", "2026-10-23", 4), ("cn_nbs_pmi", "2026-10-01", 2),
+    ("jp_cpi", "2026-10-23", 4), ("cn_nbs_pmi", "2026-09-30", 2),
 ])
 def test_e_stat_and_nbs_discover_non_hardcoded_publication(monkeypatch, family, edition, count):
     from market_data_hub.macro_releases import japan_macro, nbs_macro
@@ -403,3 +403,54 @@ def test_quarterly_month_window_and_mof_stylesheet_binding():
         parser("jp_trade_balance")(replace(doc, body=doc.body.replace(b"d1201e.xsl", b"other.xsl")), "jp_trade_balance")
     for family, name in (("jp_gdp", "jp-gdp-first.csv"), ("cn_gdp", "cn-gdp-native-q3.html")):
         assert parser(family)(document(name), family, since="2026-12") == []
+
+
+@pytest.mark.parametrize("family,fixture,past,future,english", [
+    ("cn_cpi", "cn-cpi-sep.html", "2026-10-14", "2026-11-09", "2026-11-10"),
+    ("cn_nbs_pmi", "cn-pmi-sep.html", "2026-09-30", "2026-10-31", "2026-11-01"),
+])
+def test_nbs_past_and_future_use_first_calendar_publication(family, fixture, past, future, english):
+    original = document(fixture)
+    past_row = parser(family)(original, family)[0]
+    assert past_row.edition == past
+    assert past_row.published_at.startswith(past + "T01:30:")
+    # Future-format replay of a saved issuer page: the later English PubDate
+    # is evidence of translation lag, never a new economic edition date.
+    old_stamp = b"2026/10/15" if family == "cn_cpi" else b"2026/10/01"
+    body = original.body.replace(old_stamp, english.replace('-', '/').encode()).replace(
+        b"September 2026", b"October 2026").replace(b"In September,", b"In October,")
+    url = "https://www.stats.gov.cn/english/PressRelease/202611/t" + english.replace('-', '') + "_9999999.html"
+    doc = replace(original, body=body, url=url, document_hash=hashlib.sha256(body).hexdigest())
+    row = parser(family)(doc, family, archives={future: url})[0]
+    assert row.edition == future
+    assert row.published_at.startswith(future + "T01:30:")
+    assert row.period == "2026-10"
+    assert english.replace('-', '/').encode() in row.document.body
+    from market_data_hub.macro_releases.asia_discovery import NBS_INDEX, nbs_link
+    title = "Consumer Price Index in October 2026" if family == "cn_cpi" else "Purchasing Managers’ Index for October 2026"
+    listing = replace(doc, url=NBS_INDEX, body=(
+        '<li><a title="' + title + '" href="' + url + '">' + title + '</a><span>' + english + '</span></li>').encode())
+    assert nbs_link(listing, family, future) == url
+
+
+def test_nbs_calendar_anchors_match_past_and_future_dates():
+    from market_data_hub.macro_releases.nbs_housing import Page
+    from market_data_hub.macro_releases.tier1_publications import plain
+    page = Page(document("nbs-calendar.html").body).root
+    for family, label in (("cn_cpi", "Monthly Report on Consumer Price Index (CPI)"),
+                          ("cn_nbs_pmi", "Monthly Report on Purchasing Managers’ Index (PMI)")):
+        rows = [r for r in page.find_all("tr") if len(r.find_all("td")) == 14 and
+                plain(r.find_all("td")[1].text()) == label]
+        assert len(rows) == 1
+        cells = [plain(c.text()) for c in rows[0].find_all("td")]
+        assert set(plain(c.text()) for c in rows[0].next_sibling("tr").find_all("td")) == {"9:30"}
+        for edition, (_, _, clock) in EDITIONS[family].items():
+            assert cells[int(edition[5:7]) + 1].startswith(str(int(edition[-2:])) + "/")
+            assert clock == "09:30"
+
+
+@pytest.mark.parametrize("stamp", [b"2026/10/13", b"2026/10/16"])
+def test_nbs_unreviewed_translation_lag_is_rejected(stamp):
+    doc = document("cn-cpi-sep.html")
+    with pytest.raises(FetchError, match="needs review"):
+        parser("cn_cpi")(replace(doc, body=doc.body.replace(b"2026/10/15", stamp)), "cn_cpi")

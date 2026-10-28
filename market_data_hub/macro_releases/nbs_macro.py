@@ -1,9 +1,9 @@
-"""NBS public English headlines; translated publication dates stay explicit."""
+"""NBS headlines dated at first official publication, with English-lag checks."""
 from datetime import datetime
 import re
 
 from .asia import observation, fetch_archives, in_window
-from .asia_editions import reviewed
+from .asia_editions import reviewed, publication_date_allowed
 from .http import FetchError
 from .nbs_housing import Page, compact
 from .tier1_publications import month, plain, require
@@ -19,12 +19,12 @@ ARCHIVES = {
         "2026-10-19": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html",
     },
     "cn_nbs_pmi": {
-        "2026-09-01": "https://www.stats.gov.cn/english/PressRelease/202609/t20260901_1965170.html",
-        "2026-10-01": "https://www.stats.gov.cn/english/PressRelease/202610/t20261008_1965466.html",
+        "2026-08-31": "https://www.stats.gov.cn/english/PressRelease/202609/t20260901_1965170.html",
+        "2026-09-30": "https://www.stats.gov.cn/english/PressRelease/202610/t20261008_1965466.html",
     },
     "cn_cpi": {
-        "2026-09-10": "https://www.stats.gov.cn/english/PressRelease/202609/t20260910_1965275.html",
-        "2026-10-15": "https://www.stats.gov.cn/english/PressRelease/202610/t20261015_1965500.html",
+        "2026-09-09": "https://www.stats.gov.cn/english/PressRelease/202609/t20260910_1965275.html",
+        "2026-10-14": "https://www.stats.gov.cn/english/PressRelease/202610/t20261015_1965500.html",
     },
 }
 
@@ -46,10 +46,14 @@ def metadata(document, family, archives):
     else:
         stamp = datetime.strptime(stamps[0].get("content"), "%Y/%m/%d %H:%M")
         title = titles[0].get("content")
-    edition = stamp.date().isoformat()
+    editions = [d for d, url in archives.items() if url == document.url]
+    if len(editions) != 1:
+        raise FetchError("NBS issuer archive edition needs review")
+    edition = editions[0]
     period, _, clock = reviewed(family, edition)
-    if stamp.strftime("%H:%M") != clock or document.url != archives.get(edition):
-        raise FetchError("NBS publication clock or issuer URL needs review")
+    if (stamp.strftime("%H:%M") != clock or not publication_date_allowed(
+            edition, stamp.date().isoformat(), english="/english/" in document.url)):
+        raise FetchError("NBS publication lag or clock needs review")
     return page, edition, period, title
 
 

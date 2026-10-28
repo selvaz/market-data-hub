@@ -3,7 +3,7 @@ from datetime import datetime
 import re
 from urllib.parse import parse_qs, urljoin, urlsplit
 
-from .asia_editions import reviewed
+from .asia_editions import reviewed, publication_date_allowed
 from .http import FetchError
 from .nbs_housing import Page
 from .tier1_publications import plain, require
@@ -151,7 +151,7 @@ def nbs_link(document, family, edition):
             if not activity and (expected is None or title != expected):
                 continue
             stamps = [plain(s.text()) for s in row.find_all("span")]
-            if edition not in stamps:
+            if not any(publication_date_allowed(edition, stamp) for stamp in stamps):
                 continue
             url = urljoin(NBS_INDEX, link.get("href"))
             if not re.fullmatch(r"https://www\.stats\.gov\.cn/english/PressRelease/\d{6}/t\d{8}_\d+\.html", url):
