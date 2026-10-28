@@ -1,12 +1,18 @@
 """Edition-bound official Asian publications, using only issuer-printed rates."""
 from dataclasses import replace
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
+from zipfile import BadZipFile
 from .adapters import Observation
 from .asia_editions import EDITIONS, ZONES, reviewed
 from .catalogue import INDICATORS
 from .http import FetchError
 from .publication_times import local_release
-from .schedule import due, get_edition, run_date
+from .schedule import due, get_edition, mark_pending, publication_grace, run_date
+
+
+def in_window(period, since):
+    end = period[:4] + "-" + f"{int(period[-1]) * 3:02d}" if "-Q" in period else period
+    return end >= since
 
 
 def observation(doc, family, edition, indicator, printed, method="html", *, value=None):
@@ -23,17 +29,33 @@ def fetch_archives(client, family, since, provider, archives, parse):
     if run_date() > "2026-12-31":
         raise FetchError("Asia issuer reviewed horizon exhausted; needs review")
     out = []
+    urls = dict(archives)
+    cache = {}
+    from .asia_discovery import publication_url
     for edition, (period, _, _) in due(EDITIONS[family], family=family).items():
-        if period < since:
+        if not in_window(period, since):
             continue
-        if edition not in archives:
-            raise FetchError("Asia due publication archive missing; needs review")
-        doc = get_edition(client, provider, archives[edition], family, edition)
-        if doc is None:
+        try:
+            url = publication_url(client, family, edition, urls.get(edition), cache)
+            if url is None:
+                mark_pending(family, edition, "not_yet_published" if publication_grace(family, edition)
+                             else "scheduled_unreviewed")
+                continue
+            urls[edition] = url
+            doc = get_edition(client, provider, url, family, edition)
+            if doc is None:
+                continue
+            rows = parse(doc, family, since, archives=urls)
+            if not rows or {r.edition for r in rows} != {edition}:
+                raise FetchError("Asia requested publication edition needs review")
+        except (FetchError, ValueError, KeyError, TypeError, IndexError, BadZipFile) as exc:
+            # Reject this edition without losing successfully validated editions.
+            # Transport/authentication failures still stop the issuer family.
+            if isinstance(exc, FetchError) and str(exc).startswith(provider + ": ") and str(exc) != provider + ": HTTP 404":
+                raise
+            mark_pending(family, edition, "not_yet_published" if
+                str(exc) == provider + ": HTTP 404" and publication_grace(family, edition) else "needs_review")
             continue
-        rows = parse(doc, family, since)
-        if not rows or {r.edition for r in rows} != {edition}:
-            raise FetchError("Asia requested publication edition needs review")
         out.extend(rows)
     return out
 

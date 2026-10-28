@@ -18,16 +18,19 @@ All data are issuer-printed levels or rates, with stages separate from measure
 identities. Unknown dates, source URLs, columns, clocks and titles fail closed
 with `needs review`. Reviewed calendars end on 2026-12-31.
 
-NBS English translations can post after the domestic release. Saved English
-publications retain their own publication dates and clocks. The domestic
-calendar supplies future permissions, which still require exact issuer
-publication metadata before certification; a delayed unreviewed English edition
-is not silently assigned the scheduled domestic date.
+NBS economic release editions and `published_at` use the first official
+publication date and time in China Standard Time (`Asia/Shanghai`). For the
+calendar-covered monthly series this is the official NBS release calendar,
+consistently for past and future releases. English translations may carry a
+PubDate on that date or one day later; both are validated against the same
+calendar edition and clock. Earlier or more delayed pages require review.
+The original English PubDate remains in the saved source document; retrieval
+time and URL filenames never establish the economic release date.
 
 | Family | Collected measure | Issuer / source class | Reviewed editions | Golden publications |
 |---|---|---|---|---|
-| cn_cpi | National CPI y/y, NSA, % | NBS English / official | Sep 10, Oct 15; Nov 9, Dec 9 scheduled | Aug and Sep 2026 |
-| cn_nbs_pmi | Official manufacturing PMI, SA, index (50 neutral) | NBS English / official | Sep 1, Oct 1; Oct 31, Nov 30, Dec 31 scheduled | Aug and Sep 2026 |
+| cn_cpi | National CPI y/y, NSA, % | NBS English / official | Sep 9, Oct 14; Nov 9, Dec 9 scheduled | Aug and Sep 2026 |
+| cn_nbs_pmi | Official manufacturing PMI, SA, index (50 neutral) | NBS English / official | Aug 31, Sep 30; Oct 31, Nov 30, Dec 31 scheduled | Aug and Sep 2026 |
 | cn_activity | Industrial value-added output and consumer-goods retail sales, monthly y/y, NSA, % | NBS English national economy / official | Sep 15, Oct 19; Nov 16, Dec 15 scheduled | Aug and Sep 2026 (4 cases) |
 | cn_gdp | Real GDP cumulative y/y, NSA, % | NBS English national economy and original Chinese accounting tables / official | Jul 16 (Q2), Oct 19 first Q3 announcement, Oct 20 Q3 accounting; next edition January 2027 | Q2 4.7%, Q3 4.6% on both Oct 19 and 20 (3 cases) |
 | jp_gdp | Real GDP q/q, SA, % | Cabinet Office ESRI bilingual rate CSV / official | Aug 17 preliminary, Sep 8 revised; Nov 16 preliminary, Dec 8 revised scheduled | Q2 first 0.3%, second 0.4% |
@@ -123,5 +126,41 @@ October 22 23:30 UTC; it is national CPI, separate from Tokyo preliminary CPI.
 Approved-card coverage is 93/93, with `unmapped: []` and no card gaps. The
 blocked METI collection and absent catalogue rows above remain explicit scope
 limitations. Future permissions extend through December 31; any as-yet
-unreviewed archive ID, rescheduled translation date or table format stops with
-`needs review`, even if a calendar date has arrived.
+unreviewed table format is rejected even if a calendar date has arrived.
+
+## Edition discovery and run outcomes (review P2-2)
+
+New publication IDs are discovered from issuer listings: MOF's dated English
+press-release rows, e-Stat's monthly-report index and file listing, ESRI's dated
+annual archive and English CSV menu, and the NBS English release listing.
+Discovery never guesses an ID or uses a calendar as numeric evidence. Links
+must remain on the expected issuer path and carry the expected period, stage
+and format. The publication parser independently validates the actual table.
+Runtime URL bindings are local to the fetch; reviewed registries are unchanged.
+
+A missing listing entry during the six hours after the scheduled release is
+reported as `scheduled` with reason `not_yet_published`. The same grace applies
+when a discovered edition-specific URL returns HTTP 404. Beyond grace, an
+edition whose URL cannot be discovered is `scheduled_unreviewed`; a discovered
+publication with invalid metadata/format, or an expired 404, is `needs_review`.
+These edition outcomes appear in the run report's `scheduled_editions` list.
+Rejected editions produce no observations, while valid editions in the same
+family are still persisted. Transport/authentication failures still stop the
+affected issuer family. Unknown NBS native GDP templates remain unreviewed;
+the next quarterly edition is outside the 2026 calendar horizon.
+
+Quarterly `since` comparisons use the quarter's ending month. MOF XML must
+reference the same `d1201e.xsl` stylesheet whose units and NSA basis are checked.
+
+## NBS publication convention (review P2-1)
+
+The reviewed CPI releases are September 9 and October 14 at 09:30 CST; their
+English PubDates are September 10 and October 15. Manufacturing PMI releases
+are August 31 and September 30 at 09:30 CST; their English PubDates are
+September 1 and October 1. All four now use the calendar dates as their
+edition and `published_at` (01:30 UTC). The November/December CPI and
+October–December PMI permissions use the identical rule. A one-day English
+listing/page lag is accepted only with matching period, measure and clock;
+the parser never treats that lag as an additional vintage/edition. Native GDP
+accounting publications retain their separately printed first-publication
+dates and clocks, distinct from the national-economy announcement edition.

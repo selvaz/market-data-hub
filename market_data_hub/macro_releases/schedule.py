@@ -74,10 +74,10 @@ def publication_grace(family, edition):
     return timedelta(0) <= age < timedelta(hours=6)
 
 
-def mark_pending(family, edition):
+def mark_pending(family, edition, reason="not_yet_published"):
     pending = PENDING_EDITIONS.get()
     if pending is not None:
-        pending[family, edition] = "not_yet_published"
+        pending[family, edition] = reason
 
 
 def get_edition(client, provider, url, family, edition, params=None):
