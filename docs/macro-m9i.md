@@ -54,3 +54,9 @@ collection and repeat-run checks affect the backup. Reports check source
 fingerprints, existing-vintage fingerprints, integrity, official latest cards
 and the October 1–27 window. The report explicitly lists blocked IBGE families
 and the approved-card gap, so `ok` does not certify excluded families.
+
+On resume, the committed files passed the focused read-API regression file
+(65 tests) and indicator-card regression file (414 tests, including generated
+JSON freshness and provenance). The interrupted failure did not reproduce with
+stable generated files. The final permitted selection is recorded separately
+with complete logs and JUnit results under a fresh `D:\Temp` directory.
