@@ -1,0 +1,163 @@
+  
+Technical Note and Announcement: 
+Quarterly Estimates of GDP for April-June 2026 
+(First Preliminary Estimates) 
+Technical Note: 
+ 
+(1) Major Factors of the Revision from the First Preliminary Estimates to the 
+Second Preliminary Estimates 
+The regular revision through incorporating newl y available source st atistics replaces the 
+first preliminary estimates by th e second preliminary estimates and its major factors are as 
+follows. 
+Quarterly Estimates of GDP for April-June  2026 (Second Prelimin ary Estimates) will 
+incorporate Consumer Price I ndex along with the benchmark y ear revision from 2020 to 2025 
+which was published in August 2026. 
+ 
+ 
+<Original Series> 
+ Private Non-Residential Investment 
+First Preliminary: Estimates for the latest quar ter are based on supply-side source statistics. 
+Second Preliminary: Estimates fo r the latest quarter integrat e supply-side and demand-side 
+source statistics, since demand-side statistics such as Quarterly Financial 
+Statements Statistic s of Corporations  by Industry  (Ministry of Finance) 
+etc. have become available. The supply-side estimates are also revised 
+due to addition and revision of source statistics. 
+ 
+ Change in Private Inventories 
+First Preliminary: Estimates of “Materials a nd Supplies (excluding crude oil and natural 
+gas)” and “Work-in-Progress (exclu ding petroleum products)” (nominal 
+and real original series) for the latest quarter are provided by time-series 
+projection with the ARIMA model used in the seasonal adjustment. 
+Second Preliminary: Estimates of “Materials a nd Supplies” and “Work-in-Progress” for the 
+latest quarter incorporate Quarterly Financial Stat ements Statistics of 
+Corporations by Industry etc . Estimates of “Finished Goods” and 
+“Wholesale and Retail Trades” are also revised due to revision of source 
+statistics etc. 
+ 
+ Other addition and revision of source statistics  
+First Preliminary: If any source statistics are not yet available for any months in the latest 
+quarter, extrapolation is conducted. If preliminary figu res are available 
+but final figures are not, the former are incorporated. Estimates 
+incorporate source statistics which are available on the day Balance of 
+Payments (Preliminary) for the third month of the latest quarter are 
+released. 
+Second Preliminary: If some sour ce statistics have become available or been replaced by fixed 
+  
+estimates or revised for some re ason, they are upd ated. Estimates 
+incorporate source statistics wh ich are available on the day Quarterly 
+Financial Statements Statistics of Corporations  by Industry for the latest 
+quarter are released.  
+<Seasonally Adjusted Series> 
+Seasonally adjusted series are revised from January-March 1994 (bot h nominal and real), 
+since the seasonal adjustment is co nducted with the latest estimate s of original series updated as 
+above.  
+ 
+(Note) Mean absolute revision from the first preliminary estima tes to the second preliminary 
+estimates 
+The mean absolute revision of Quarterly Real GDP Growth Rate (Seasonally Adjusted Series) 
+from the first preliminary estimates to the seco nd preliminary estimates is 0.19 % points for the 
+quarters from April-June 2010* to January-March 2026 (0.75 % points for annualized rate**). 
+* Since the first preliminary estimates for this quarter, the method for extrapolation of the demand-side estimates in the estimation 
+process of Private Non-Residential Investment has been changed to the current one. 
+**The annualized rate is the annual growth rate under the assumption such that the quart erly growth rate in the quarter repeats  
+itself for four quarters. 
+ 
+ 
+ (2) Other Issues  
+ Incorporation of the retroactive revision of source statistics 
+In addition to the regular revision of source  statistics, the first preliminary estimates 
+incorporate the following revision in source statistics. 
+ 
+Source Statistics Revised Periods of Incorporation  Released Revised Estimates 
+Quick Estimate of 
+Construction Investment From January-March 2021 June 
+2026 
+Supply-side estimates 
+Public investment 
+estimates etc. 
+Flow of Funds From April-June 2024 June 
+2026 FISIM estimates 
+Index Numbers of Commodity 
+Prices in Agriculture From January-March 2025 July 
+2026 
+Supply-side estimates 
+Deflator estimates 
+ 
+ Seasonal Adjustment 
+ 
+With regard to the outlier in the prel iminary estimates (fro m January-March 2025), 
+provisional dummies are set in case that the estim ated value is out of the forecast range of 
+X-12-ARIMA. More specifically, in each period from January-March 2025, additive outlier 
+(AO) is applied on the period if the estimated va lue of original series falls outside the 99% 
+confidence interval of the forecast series starting from the previous period. 
+ 
+The methodology of the first preliminary estimates, including the above, is changed based 
+on the following announcement. 
+https://www.esri.cao.go.jp/jp/sna/data/reference1/siryou/2026/pdf/announce_20260728.pdf 
+  
+ 
+ Estimates of Change in Private Inventories by four categories in Quarterly Estimates of GDP 
+for April-June 2026 (First Preliminary Estimates) 
+Estimates of Change in Private Inventories by four categories in Quarterly Estimates 
+of GDP for April-June 2026 (First Preliminary Estimates) are as follows (real seasonally 
+adjusted series, annualized): 
+                      （Billions of Chained (2020) Yen）   
+ 2025/ 
+4-6 
+ 
+7-9 
+ 
+10-12 
+2026/ 
+1-3 
+ 
+4-6 
+Contributions to 
+Change in Real GDP 
+at 2026/4-6 (%pt) 
+Change in Private Inventories 1,286.6 517.8 -1,411.3 -1,819.6 -436.7 0.3 
+ Materials and Supplies  543.5  -94.1 217.5 202.0 68.2 -0.0 
+ Work-in-Progress  989.7  216.8 -500.0 -561.5 -133.8 0.1 
+ Finished Goods -694.0  340.0 -298.2 -1,109.0 24.2 0.2 
+ Wholesale and Retail Trade 420.9  104.0 -984.1 -472.7 -435.4 0.0 
+ 
+ Supply-side and demand-side estimates in the estimation proce ss of Private Non-Residential 
+Investment in Quarterly Estimates of GDP for April-June 2026 (First Preliminary Estimates) 
+In the estimation process of Private Non-Resi dential Investment for April-June 2026 in 
+Quarterly Estimates of GDP for April-J une 2026 (First Preliminary Estimates), the 
+supply-side estimate of quarter-t o-quarter percent change is - 9.1% (nominal original series) 
+based on supply-side source stat istics and the demand-side est imate of quarter-to-quarter 
+percent change is -31.5% (nomin al original series) based on a tentative extrapolation with 
+the information from supply-side estimates. 
+ 
+ 
+  
+Announcement: 
+ 
+Release Schedule of the Quarterly Estimates of GDP 
+ 
+ 
+Second Preliminary Estimates for April-June 2026: 
+8:50 A.M. JST, Tuesday, September 8, 2026. 
+ 
+First Preliminary Estimates for July-September 2026: 
+8:50 A.M. JST, Monday, November 16, 2026. 
+ 
+Second Preliminary Estimates for July-September 2026: 
+8:50 A.M. JST, Tuesday, December 8, 2026. 
+ 
+First Preliminary Estimates for October-December 2026: 
+8:50 A.M. JST, Monday, February 15, 2027. 
+ 
+Second Preliminary Estimates for October-December 2026: 
+8:50 A.M. JST, Tuesday, March 9, 2027. 
+ 
+ 
+ 
+ 
+ 
+The above schedule may be changed due to ch anges in the release schedule of source 
+statistics etc.  
+ 
+ 
+ 

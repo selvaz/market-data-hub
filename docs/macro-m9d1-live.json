@@ -241,6 +241,12 @@
   "integrity": "ok",
   "existing_vintages_unchanged": true,
   "source_files_unchanged": true,
+  "verified_at": "2026-10-28T01:31:25.849202+00:00",
+  "audit_report": "D:\\Temp\\mdh-m9d1-formats-live-20261027\\mdh-m9d1-ie3hvmmo\\verification.json",
+  "publication_formats": {
+    "jp_gdp": "official bilingual CSV with dated English archive and menu",
+    "jp_trade_balance": "official English XML with publisher unit/basis stylesheet"
+  },
   "collection_statuses": {
     "dry_run": {
       "jp_trade_balance": {

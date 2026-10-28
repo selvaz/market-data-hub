@@ -176,7 +176,10 @@ def test_real_issuer_schedule_evidence_covers_the_reviewed_horizon():
     nbs, _ = publication_text(document("nbs-calendar.html"))
     assert "Regular Press Release Calendar of NBS in 2026" in nbs
     assert "31/Sat 30/Mon 31/Thu" in nbs
-    gdp, _ = publication_text(document("jp-gdp-schedule.pdf"))
+    schedule_pdf = document("jp-gdp-schedule.pdf")
+    schedule_meta = json.loads((ROOT / "jp-gdp-schedule.txt.meta.json").read_text())
+    assert schedule_meta["source_document_hash"] == schedule_pdf.document_hash
+    gdp = document("jp-gdp-schedule.txt").body.decode("utf-8")
     assert "November 16, 2026" in gdp and "December 8, 2026" in gdp
     workbook = load_workbook(BytesIO(document("boj-release.xlsx").body), data_only=True)
     try:
@@ -205,13 +208,55 @@ def test_e_stat_index_sheet_cannot_replace_published_rate_sheet():
         parser("jp_cpi")(replace(doc, body=stream.getvalue()), "jp_cpi")
 
 
-def test_trade_units_and_provisional_stage_must_match(monkeypatch):
+def test_trade_units_and_provisional_stage_must_match():
     from market_data_hub.macro_releases import japan_macro
-    from market_data_hub.macro_releases.tier1_publications import publication_text
-    doc = document("trade-sep.pdf")
-    body, method = publication_text(doc)
-    for before, after in (("millions of YEN", "billions of YEN"), ("(Provisional)", "(Final)")):
-        assert before in body
-        monkeypatch.setattr(japan_macro, "publication_text", lambda _: (body.replace(before, after), method))
+    style = document("trade-table.xsl")
+    for before, after in ((b"millions of YEN", b"billions of YEN"),
+                          (b"not seasonally adjusted", b"seasonally adjusted")):
+        assert before in style.body
         with pytest.raises(FetchError, match="needs review"):
-            japan_macro.parse(doc, "jp_trade_balance")
+            japan_macro.trade_stylesheet(replace(style, body=style.body.replace(before, after)))
+    doc = document("trade-sep.xml")
+    for before, after in ((b"(Provisional)", b"(Final)"),
+                          (b"<sashihikikagakue>-536,558", b"<sashihikikagakue>-536,559"),
+                          (b"<chiikikuni>Grand Total", b"<chiikikuni>ASIA")):
+        assert before in doc.body
+        with pytest.raises(FetchError, match="needs review"):
+            japan_macro.parse(replace(doc, body=doc.body.replace(before, after)), "jp_trade_balance")
+
+
+def test_esri_csv_requires_printed_rate_headers_and_latest_quarter():
+    doc = document("jp-gdp-first.csv")
+    for before, after in ((b"Quarter-to-Quarter Percent Change", b"Annualized Percent Change"),
+                          (b"GDP(Expenditure Approach)", b"PrivateConsumption"),
+                          (b"2026/ 1- 3.", b"2027/ 1- 3.")):
+        assert before in doc.body
+        with pytest.raises(FetchError, match="needs review"):
+            parser("jp_gdp")(replace(doc, body=doc.body.replace(before, after)), "jp_gdp")
+    for body in (b",\n" * 10, b"invalid encoding: \x81"):
+        with pytest.raises(FetchError, match="needs review"):
+            parser("jp_gdp")(replace(doc, body=body), "jp_gdp")
+
+
+def test_esri_csv_release_date_is_bound_to_the_official_archive():
+    from market_data_hub.macro_releases.japan_macro import gdp_archive_listing
+    archive = document("jp-gdp-archive.html")
+    menu = document("jp-gdp-first-menu.html")
+    gdp_archive_listing(archive, menu, "2026-08-17")
+    for before, after in ((b"Aug  17, 2026", b"Aug  18, 2026"),
+                          (b"First preliminary Estimates", b"Second preliminary Estimates")):
+        assert before in archive.body
+        with pytest.raises(FetchError, match="needs review"):
+            gdp_archive_listing(replace(archive, body=archive.body.replace(before, after)), menu, "2026-08-17")
+
+
+def test_japan_adapters_do_not_require_optional_pdf_aes(monkeypatch):
+    # Minimal installations omit both pypdf AES backends. Only Tankan's
+    # unencrypted PDF should reach PdfReader in the revised adapters.
+    import pypdf
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Encrypted PDF is not a runtime dependency")
+    monkeypatch.setattr(pypdf, "PdfReader", forbidden)
+    for family in ("jp_gdp", "jp_trade_balance"):
+        rows = AsiaAdapter(Replay()).fetch([family], "2026-01")
+        assert len(rows) == 2

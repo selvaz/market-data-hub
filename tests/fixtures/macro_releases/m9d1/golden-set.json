@@ -102,23 +102,23 @@
     },
     {
       "family": "jp_gdp",
-      "fixture": "jp-gdp-first-summary.pdf",
+      "fixture": "jp-gdp-first.csv",
       "edition": "2026-08-17",
       "period": "2026-Q2",
       "indicator": "jp_gdp_qq",
       "value": 0.3,
       "stage": "preliminary",
-      "source_url": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262/pdf/gaiyou2621_e.pdf"
+      "source_url": "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe262/tables/ritu-jk2621.csv"
     },
     {
       "family": "jp_gdp",
-      "fixture": "jp-gdp-revised-summary.pdf",
+      "fixture": "jp-gdp-revised.csv",
       "edition": "2026-09-08",
       "period": "2026-Q2",
       "indicator": "jp_gdp_qq",
       "value": 0.4,
       "stage": "revised",
-      "source_url": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262_2/pdf/gaiyou2622_e.pdf"
+      "source_url": "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe262_2/tables/ritu-jk2622.csv"
     },
     {
       "family": "jp_cpi",
@@ -202,23 +202,23 @@
     },
     {
       "family": "jp_trade_balance",
-      "fixture": "trade-aug.pdf",
+      "fixture": "trade-aug.xml",
       "edition": "2026-09-29",
       "period": "2026-08",
       "indicator": "jp_trade_balance",
       "value": -1111.913,
       "stage": "revised",
-      "source_url": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026085e.pdf"
+      "source_url": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026085e.xml"
     },
     {
       "family": "jp_trade_balance",
-      "fixture": "trade-sep.pdf",
+      "fixture": "trade-sep.xml",
       "edition": "2026-10-21",
       "period": "2026-09",
       "indicator": "jp_trade_balance",
       "value": -536.558,
       "stage": "preliminary",
-      "source_url": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026094e.pdf"
+      "source_url": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026094e.xml"
     },
     {
       "family": "cn_gdp",

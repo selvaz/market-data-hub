@@ -30,11 +30,11 @@ is not silently assigned the scheduled domestic date.
 | cn_nbs_pmi | Official manufacturing PMI, SA, index (50 neutral) | NBS English / official | Sep 1, Oct 1; Oct 31, Nov 30, Dec 31 scheduled | Aug and Sep 2026 |
 | cn_activity | Industrial value-added output and consumer-goods retail sales, monthly y/y, NSA, % | NBS English national economy / official | Sep 15, Oct 19; Nov 16, Dec 15 scheduled | Aug and Sep 2026 (4 cases) |
 | cn_gdp | Real GDP cumulative y/y, NSA, % | NBS English national economy and original Chinese accounting tables / official | Jul 16 (Q2), Oct 19 first Q3 announcement, Oct 20 Q3 accounting; next edition January 2027 | Q2 4.7%, Q3 4.6% on both Oct 19 and 20 (3 cases) |
-| jp_gdp | Real GDP q/q, SA, % | Cabinet Office ESRI English summaries / official | Aug 17 preliminary, Sep 8 revised; Nov 16 preliminary, Dec 8 revised scheduled | Q2 first 0.3%, second 0.4% |
+| jp_gdp | Real GDP q/q, SA, % | Cabinet Office ESRI bilingual rate CSV / official | Aug 17 preliminary, Sep 8 revised; Nov 16 preliminary, Dec 8 revised scheduled | Q2 first 0.3%, second 0.4% |
 | jp_cpi | National headline and ex-fresh-food CPI y/y, NSA, % | Statistics Bureau / e-Stat English monthly reports / official | Sep 18, Oct 23; Nov 20, Dec 18 scheduled | Aug and Sep 2026 (4 cases) |
 | jp_tokyo_cpi | Ku-area of Tokyo ex-fresh-food CPI y/y, NSA, % | Statistics Bureau / e-Stat English monthly reports / official | Aug 28, Oct 2 preliminary; Oct 30, Nov 27, Dec 25 scheduled | Aug 1.8%, Sep 2.7% |
 | jp_tankan | Large manufacturers current business-conditions DI, percentage points | BoJ English summary / official | Jul 1, Oct 1; Dec 14 scheduled | Q2 22, Q3 24 |
-| jp_trade_balance | Customs-cleared goods balance, NSA, billion JPY | MOF / Japan Customs English releases / official | Sep 29 revised, Oct 21 preliminary; Oct 29, Nov 18/27, Dec 16/25 scheduled | Aug -1,111.913; Sep -536.558 |
+| jp_trade_balance | Customs-cleared goods balance, NSA, billion JPY | MOF / Japan Customs English XML releases / official | Sep 29 revised, Oct 21 preliminary; Oct 29, Nov 18/27, Dec 16/25 scheduled | Aug -1,111.913; Sep -536.558 |
 
 Customs prints the balance in millions of JPY; division by 1,000 is only a unit
 conversion to the catalogue's billions. Exports minus imports is never computed.
@@ -42,6 +42,23 @@ The September 29 report explicitly says exports detailed / imports provisional
 (HS-code basis), so it is `revised`, not the catalogue's generic `final` stage.
 The calendar's detailed releases receive this same honest stage; fully final
 imports/balances are not certified from a partially provisional publication.
+
+The official XML and CSV formats avoid the optional AES backend required by
+the issuers' encrypted PDF editions. ESRI's CSV has English measure headers;
+its exact link is checked against the English edition menu, which is bound to
+the date and stage in the issuer's annual release archive. The CSV must print
+real, seasonally adjusted, non-annualized quarter-on-quarter growth, and its
+last quarter must match the reviewed edition. No rate is calculated.
+
+MOF's English XML retains the printed release date, reference month and stage.
+Its native tag names map `sashihiki/sogakutonen` to the current headline balance
+and `chiikikunisogakuinfo/sashihikikagakue` to each area's balance. The parser
+requires the unique `Grand Total` row (area code `0`) and agreement with the
+headline balance; the triangle deficit sign is normalized to minus. The
+publisher's linked `d1201e.xsl` stylesheet is separately checked for millions
+of JPY and the non-seasonally-adjusted Census basis. The schedule PDF remains
+saved with a hashed text transcript linked to its original SHA-256, allowing
+offline calendar checks without an optional PDF decryption dependency.
 
 Tankan is an official BoJ survey and is in scope separately from policy
 decisions. The source table does not label seasonal adjustment; its metadata
@@ -91,7 +108,7 @@ Calendar: <https://www.stat.go.jp/english/data/cpi/1582.htm>.
 ## Verification on 2026-10-27
 
 `scripts/verify_macro_m9d1.py` returned `ok` on a stable production-byte snapshot
-and SQLite backup under `D:\Temp\mdh-m9d1-resume-live-20261027\mdh-m9d1-ym00zx9f`.
+and SQLite backup under `D:\Temp\mdh-m9d1-formats-live-20261027\mdh-m9d1-ie3hvmmo`.
 It added 23 vintages across all nine families; the second collection added zero.
 The source main/WAL/SHM fingerprints and all pre-existing vintage fingerprints
 were unchanged; the copy's SQLite integrity check returned `ok`.
