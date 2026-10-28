@@ -13,8 +13,11 @@ already implemented by M9c; M9i reuses those collectors and adds no duplicate id
 | IPCA / IPCA-15 | IBGE SIDRA responds; required publication-calendar pages deny access | blocked, excluded from certified families | Needs review; no publication certified | None; stopped under the brief's access rule |
 
 BCB exposes decision dates without actual publication clocks. Cards retain
-date-only precision; 18:30 is a lower bound in the calendar, not an asserted
-publication time. The Selic rate is the target stated by Copom, not the daily
+date-only precision. The calendar's 18:30 America/Sao_Paulo lower bound gates
+collection and starts the six-hour publication-delay grace; it is not an
+asserted observation of the publication clock. The [BCB permanent release rule](https://www.bcb.gov.br/detalhenoticia/17291/nota)
+confirms that statements are published from 18:30 after the meeting.
+The Selic rate is the target stated by Copom, not the daily
 realized SGS rate. Changes compare consecutive issuer statements. Banxico
 uses its printed target, change and unanimous vote. Its SIE API needs a token;
 the public statement PDFs need none. INEGI's indicator API also needs a token;

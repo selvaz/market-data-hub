@@ -34,6 +34,9 @@ def fetch_editions(family, since, provider, load):
 
 def observation(doc, family, edition, indicator, printed, *, method, policy=None):
     period, stage, clock = reviewed(family, edition)
+    if family == "bcb_policy":
+        # Its calendar clock gates fetching; the API still prints only a date.
+        clock = None
     measure = INDICATORS[indicator]
     timing = local_release(edition, clock or "00:00", ZONES[family])
     if policy is not None:

@@ -148,6 +148,95 @@ def test_daily_reports_banxico_pending_without_losing_other_family(tmp_path, mon
     assert pending["status"] == pending["reason"] == "scheduled_unreviewed"
 
 
+@pytest.mark.parametrize("family,provider,edition,inside,outside,remaining", [
+    ("bcb_policy", "bcb", "2026-09-16", "2026-09-16T21:30:00Z", "2026-09-17T03:30:00Z", 1),
+    ("banxico_policy", "banxico", "2026-09-24", "2026-09-24T19:00:00Z", "2026-09-25T01:00:00Z", 1),
+    ("mx_cpi", "inegi", "2026-10-08", "2026-10-08T12:00:00Z", "2026-10-08T18:00:00Z", 2),
+])
+@pytest.mark.parametrize("mode", ["404_inside", "404_outside", "malformed"])
+def test_daily_bad_edition_preserves_other_editions_and_families(
+        family, provider, edition, inside, outside, remaining, mode, tmp_path, monkeypatch):
+    case = next(c for c in GOLDEN if c["family"] == family and c["edition"] == edition)
+    target_url = case["source_url"]
+    class Client(Replay):
+        def get(self, requested_provider, url, params=None):
+            from urllib.parse import urlencode
+            requested = url + "?" + urlencode(params) if params else url
+            if requested == target_url:
+                if mode.startswith("404"):
+                    raise FetchError(provider + ": HTTP 404")
+                return replace(document(case["fixture"]), body=b"unknown format")
+            return super().get(requested_provider, url, params)
+    instant = inside if mode == "404_inside" else outside
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime.fromisoformat(instant.replace("Z", "+00:00"))
+    monkeypatch.setattr(run_daily, "HttpClient", Client)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
+    target = tmp_path / "isolated.sqlite"
+    result = run_daily.execute(target, list(LATAM_FAMILIES), 24, False, raw_dir=tmp_path / "none")
+    rejected = result["families"][family]
+    reason = "not_yet_published" if mode == "404_inside" else "needs_review"
+    assert rejected["status"] == ("ok" if mode == "404_inside" else "needs_review"), result
+    assert rejected["vintages_added"] == remaining
+    notice = next(e for e in rejected["scheduled_editions"] if e["edition"] == edition)
+    assert notice["reason"] == reason
+    assert notice["status"] == ("scheduled" if mode == "404_inside" else "needs_review")
+    for other in set(LATAM_FAMILIES) - {family}:
+        assert result["families"][other]["status"] == "ok", result
+        assert result["families"][other]["vintages_added"] > 0
+    with open_writer(target) as store:
+        cards = store.release_cards("2026-08-01", "2026-10-27")["cards"]
+        official = [c for c in cards if c.get("resolution")]
+        assert len([c for c in official if c["family"] == family]) == remaining
+        assert all(c["resolution"]["status"] == "official" for c in official)
+
+
+@pytest.mark.parametrize("instant,reason", [
+    ("2026-08-05T21:30:00Z", "not_yet_published"),
+    ("2026-10-27T18:00:00Z", "needs_review"),
+])
+def test_bcb_missing_preceding_statement_only_marks_affected_edition(monkeypatch, instant, reason):
+    from market_data_hub.macro_releases import bcb_policy
+    original = bcb_policy.get_edition
+    def get(client, provider, url, family, edition, params=None):
+        return None if edition == "2026-06-17" else original(client, provider, url, family, edition, params)
+    monkeypatch.setattr(bcb_policy, "get_edition", get)
+    with run_at(instant) as notices:
+        rows = LatamAdapter(Replay()).fetch(["bcb_policy"], "2026-08")
+        assert [r.edition for r in rows] == ([] if reason == "not_yet_published" else ["2026-09-16"])
+        assert notices == {("bcb_policy", "2026-08-05"): reason}
+
+
+def test_bcb_meeting_day_before_statement_is_scheduled_in_daily_report(tmp_path, monkeypatch):
+    client = Replay()
+    with run_at("2026-08-05T21:29:59Z"):
+        assert LatamAdapter(client).fetch(["bcb_policy"], "2026-08") == []
+        assert client.requests == []
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 8, 5, 21, 29, 59, tzinfo=timezone.utc)
+    monkeypatch.setattr(run_daily, "HttpClient", Replay)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
+    result = run_daily.execute(tmp_path / "before.sqlite", ["bcb_policy"], 24, False,
+                               raw_dir=tmp_path / "none")
+    family = result["families"]["bcb_policy"]
+    assert family["status"] == "no_change", result
+    assert family["vintages_added"] == 0
+    event = next(e for e in family["scheduled_editions"] if e["edition"] == "2026-08-05")
+    assert (event["time"], event["status"]) == ("18:30", "scheduled")
+
+
+def test_bcb_schedule_clock_does_not_invent_observed_publication_time():
+    case = next(c for c in GOLDEN if c["family"] == "bcb_policy")
+    row, = parse(case)
+    assert row.precision == "date_only"
+    assert row.policy_decision["published_at"] is None
+    assert row.policy_decision["publication_precision"] == "date_only"
+
+
 @pytest.mark.parametrize("family", LATAM_FAMILIES)
 def test_daily_and_idempotence(family, tmp_path, monkeypatch):
     monkeypatch.setattr(run_daily, "HttpClient", Replay)

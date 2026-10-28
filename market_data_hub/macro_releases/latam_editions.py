@@ -6,9 +6,12 @@ SCHEDULES = {
 }
 ZONES = {"bcb_policy": "America/Sao_Paulo", "banxico_policy": "America/Mexico_City",
          "mx_cpi": "America/Mexico_City"}
+# BCB's permanent release rule: statements from 18:30 after the meeting.
+# https://www.bcb.gov.br/detalhenoticia/17291/nota
+# This is the collection gate/grace anchor, not an observed publication clock.
 EDITIONS = {
     # BCB specifies publication after the meeting, from 18:30, not an exact clock.
-    "bcb_policy": {d: (d, "final", None) for d in (
+    "bcb_policy": {d: (d, "final", "18:30") for d in (
         "2026-08-05", "2026-09-16", "2026-11-04", "2026-12-09")},
     "banxico_policy": {d: (d, "final", "13:00") for d in (
         "2026-08-06", "2026-09-24", "2026-11-05", "2026-12-17")},

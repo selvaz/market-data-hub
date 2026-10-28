@@ -5,9 +5,9 @@ The first-half edition is not in the supplied tier-1 catalogue and is excluded.
 """
 from .banxico_policy import MONTHS, spanish_date
 from .http import FetchError
-from .latam import observation
+from .latam import fetch_editions, observation
 from .latam_editions import EDITIONS, reviewed
-from .schedule import due, get_edition
+from .schedule import get_edition
 from .tier1_publications import publication_text, require
 
 BASE = "https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2026/inpc/"
@@ -45,14 +45,7 @@ def parse(doc, family="mx_cpi", since="1900-01"):
 
 
 def fetch(client, family, since):
-    out = []
-    for edition, (period, _, _) in due(EDITIONS[family], family=family).items():
-        if period < since:
-            continue
+    def load(edition):
         doc = get_edition(client, "inegi", ARCHIVES[edition], family, edition)
-        if doc is not None:
-            rows = parse(doc, family, since)
-            if {r.edition for r in rows} != {edition}:
-                raise FetchError("INEGI requested publication edition needs review")
-            out.extend(rows)
-    return out
+        return parse(doc, family, since) if doc is not None else None
+    return fetch_editions(family, since, "inegi", load)

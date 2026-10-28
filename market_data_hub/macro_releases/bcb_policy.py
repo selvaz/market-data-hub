@@ -1,10 +1,10 @@
 """BCB's documented public Copom statement API, distinct from daily SGS rates."""
 from urllib.parse import parse_qs, urlsplit
 from .http import FetchError
-from .latam import observation
-from .latam_editions import EDITIONS, reviewed
+from .latam import fetch_editions, observation
+from .latam_editions import reviewed
 from .policy import change
-from .schedule import due, get_edition
+from .schedule import get_edition, mark_pending, publication_grace
 from .tier1_publications import plain, require
 
 ENDPOINT = "https://www.bcb.gov.br/api/servico/sitebcb/copom/comunicados_detalhes"
@@ -57,17 +57,14 @@ def fetch(client, family, since):
             doc = get_edition(client, "bcb", ENDPOINT, family, edition, {"nro_reuniao": meeting})
             cache[edition] = replace(doc, url=ENDPOINT + "?nro_reuniao=" + str(meeting)) if doc else None
         return cache[edition]
-    out = []
-    for edition in due(EDITIONS[family], family=family):
-        if edition < since:
-            continue
+    def load(edition):
         doc = get(edition)
-        if doc is not None:
-            prior = get(max(d for d in MEETINGS if d < edition))
-            if prior is None:
-                raise FetchError("BCB preceding statement missing; needs review")
-            rows = parse(doc, prior, family, since)
-            if {r.edition for r in rows} != {edition}:
-                raise FetchError("BCB requested edition needs review")
-            out.extend(rows)
-    return out
+        if doc is None:
+            return None
+        prior = get(max(d for d in MEETINGS if d < edition))
+        if prior is None:
+            mark_pending(family, edition, "not_yet_published" if publication_grace(family, edition)
+                         else "needs_review")
+            return None
+        return parse(doc, prior, family, since)
+    return fetch_editions(family, since, "bcb", load)
