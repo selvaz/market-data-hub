@@ -53,7 +53,8 @@ def fetch_archives(client, family, since, provider, archives, parse):
             # Transport/authentication failures still stop the issuer family.
             if isinstance(exc, FetchError) and str(exc).startswith(provider + ": ") and str(exc) != provider + ": HTTP 404":
                 raise
-            mark_pending(family, edition, "needs_review")
+            mark_pending(family, edition, "not_yet_published" if
+                str(exc) == provider + ": HTTP 404" and publication_grace(family, edition) else "needs_review")
             continue
         out.extend(rows)
     return out

@@ -397,6 +397,46 @@ def test_missing_url_also_uses_publication_delay_grace():
         RUN_INSTANT.reset(clock)
 
 
+def test_new_listing_404_retains_grace_without_aborting_other_editions():
+    from market_data_hub.macro_releases.asia_discovery import MOF_INDEX
+    from market_data_hub.macro_releases.schedule import PENDING_EDITIONS
+    class Client(ListingReplay):
+        def get(self, provider, url, params=None):
+            if url == MOF_INDEX:
+                raise FetchError("mof: HTTP 404")
+            return super().get(provider, url, params)
+    clock = RUN_INSTANT.set("2026-10-29T01:00:00Z")
+    notices = {}
+    token = PENDING_EDITIONS.set(notices)
+    try:
+        assert len(AsiaAdapter(Client()).fetch(["jp_trade_balance"], "2026-01")) == 2
+        assert notices["jp_trade_balance", "2026-10-29"] == "not_yet_published"
+    finally:
+        PENDING_EDITIONS.reset(token)
+        RUN_INSTANT.reset(clock)
+
+
+def test_daily_rejected_discovery_preserves_valid_editions_and_other_families(tmp_path, monkeypatch):
+    class Client(NewTradeReplay):
+        mode = "wrong_metadata"
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 10, 29, 1, tzinfo=timezone.utc)
+    monkeypatch.setattr(run_daily, "HttpClient", Client)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
+    result = run_daily.execute(tmp_path / "rejected.sqlite", ["jp_trade_balance", "cn_cpi"], 24, False,
+                               raw_dir=tmp_path / "none")
+    assert result["status"] == "ok"
+    trade = result["families"]["jp_trade_balance"]
+    assert trade["status"] == "needs_review" and trade["vintages_added"] == 2
+    assert any(e["edition"] == "2026-10-29" and e["status"] == "needs_review" for e in trade["scheduled_editions"])
+    assert result["families"]["cn_cpi"]["status"] == "ok"
+    with open_writer(tmp_path / "rejected.sqlite") as store:
+        cards = store.release_cards("2026-09-01", "2026-10-29", indicators=["jp_trade_balance"])["cards"]
+        assert len([c for c in cards if c.get("resolution")]) == 2
+
+
 def test_quarterly_month_window_and_mof_stylesheet_binding():
     doc = document("trade-sep.xml")
     with pytest.raises(FetchError, match="needs review"):
