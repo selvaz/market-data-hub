@@ -260,3 +260,146 @@ def test_japan_adapters_do_not_require_optional_pdf_aes(monkeypatch):
     for family in ("jp_gdp", "jp_trade_balance"):
         rows = AsiaAdapter(Replay()).fetch([family], "2026-01")
         assert len(rows) == 2
+
+
+class ListingReplay(Replay):
+    def get(self, provider, url, params=None):
+        from market_data_hub.macro_releases.asia_discovery import CPI_INDEX
+        # The saved index links to this exact issuer month listing.
+        if url.startswith(CPI_INDEX.split('?')[0]) and 'month=23070909' in url:
+            return replace(document("cpi-month-listing.html"), url=url)
+        return super().get(provider, url, params)
+
+
+@pytest.mark.parametrize("family,edition", [
+    ("jp_trade_balance", "2026-10-29"), ("jp_tokyo_cpi", "2026-10-30"),
+    ("jp_cpi", "2026-11-20"), ("jp_gdp", "2026-11-16"),
+    ("cn_nbs_pmi", "2026-10-31"), ("cn_cpi", "2026-11-09"),
+    ("cn_activity", "2026-11-16"),
+])
+def test_due_unlisted_edition_preserves_other_editions(family, edition):
+    from market_data_hub.macro_releases.schedule import PENDING_EDITIONS
+    instant = RUN_INSTANT.set(edition + "T18:00:00Z")
+    notices = {}
+    token = PENDING_EDITIONS.set(notices)
+    try:
+        rows = AsiaAdapter(ListingReplay()).fetch([family], "2026-01")
+        assert len(rows) >= 2
+        assert all(r.edition < edition for r in rows)
+        assert notices[family, edition] == "scheduled_unreviewed"
+    finally:
+        PENDING_EDITIONS.reset(token)
+        RUN_INSTANT.reset(instant)
+
+
+def test_daily_reports_unreviewed_editions_without_losing_families(tmp_path, monkeypatch):
+    monkeypatch.setattr(run_daily, "HttpClient", ListingReplay)
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 10, 31, 18, tzinfo=timezone.utc)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
+    result = run_daily.execute(tmp_path / "future.sqlite", ["jp_trade_balance", "cn_nbs_pmi"], 24, False,
+                               raw_dir=tmp_path / "none")
+    assert result["status"] == "ok"
+    for family in result["families"].values():
+        assert family["status"] == "ok"
+        assert family["vintages_added"] == 2
+        assert any(e["status"] == "scheduled_unreviewed" for e in family["scheduled_editions"])
+
+
+def test_trade_discovers_a_published_url_without_reviewed_archive(monkeypatch):
+    from market_data_hub.macro_releases import japan_macro
+    registry = dict(japan_macro.ARCHIVES["jp_trade_balance"])
+    del registry["2026-10-21"]
+    monkeypatch.setitem(japan_macro.ARCHIVES, "jp_trade_balance", registry)
+    rows = AsiaAdapter(ListingReplay()).fetch(["jp_trade_balance"], "2026-01")
+    assert [(r.edition, r.value) for r in rows] == [("2026-09-29", -1111.913), ("2026-10-21", -536.558)]
+
+
+@pytest.mark.parametrize("family,edition,count", [
+    ("jp_cpi", "2026-10-23", 4), ("cn_nbs_pmi", "2026-10-01", 2),
+])
+def test_e_stat_and_nbs_discover_non_hardcoded_publication(monkeypatch, family, edition, count):
+    from market_data_hub.macro_releases import japan_macro, nbs_macro
+    from market_data_hub.macro_releases.asia_discovery import NBS_INDEX
+    module = japan_macro if family.startswith("jp_") else nbs_macro
+    registry = dict(module.ARCHIVES[family])
+    del registry[edition]
+    monkeypatch.setitem(module.ARCHIVES, family, registry)
+    class Client(ListingReplay):
+        def get(self, provider, url, params=None):
+            if url == NBS_INDEX:
+                return replace(document("nbs-prev.html"), url=url)
+            return super().get(provider, url, params)
+    rows = AsiaAdapter(Client()).fetch([family], "2026-01")
+    assert len(rows) == count
+    assert any(r.edition == edition for r in rows)
+
+
+class NewTradeReplay(ListingReplay):
+    mode = "ok"
+
+    def get(self, provider, url, params=None):
+        from market_data_hub.macro_releases.asia_discovery import MOF_INDEX
+        if url == MOF_INDEX:
+            doc = document("trade-listing.html")
+            body = doc.body.replace(b"Oct.21.2026(", b"Oct.29.2026(").replace(
+                b"<span>Prov.</span>", b"<span>D&amp;P</span>").replace(
+                b"2026094e.xml", b"2026095e.xml")
+            return replace(doc, body=body, document_hash=hashlib.sha256(body).hexdigest())
+        if url.endswith("2026095e.xml"):
+            if self.mode == "404":
+                raise FetchError("mof: HTTP 404")
+            doc = document("trade-sep.xml")
+            body = doc.body.replace(b"October 21, 2026", b"October 29, 2026").replace(b"(Provisional)",
+                b"(Exports:Detailed Data;Imports:Provisional(HS-code Basis))")
+            if self.mode == "wrong_metadata":
+                body = body.replace(b"September 2026", b"August 2026")
+            return replace(doc, url=url, body=body, document_hash=hashlib.sha256(body).hexdigest())
+        return super().get(provider, url, params)
+
+
+@pytest.mark.parametrize("mode,instant,notice", [
+    ("ok", "2026-10-29T01:00:00Z", None),
+    ("wrong_metadata", "2026-10-29T01:00:00Z", "needs_review"),
+    ("404", "2026-10-29T01:00:00Z", "not_yet_published"),
+    ("404", "2026-10-29T06:30:00Z", "needs_review"),
+])
+def test_discovered_trade_validates_metadata_and_retains_404_grace(mode, instant, notice):
+    from market_data_hub.macro_releases.schedule import PENDING_EDITIONS
+    client = NewTradeReplay()
+    client.mode = mode
+    clock = RUN_INSTANT.set(instant)
+    notices = {}
+    token = PENDING_EDITIONS.set(notices)
+    try:
+        rows = AsiaAdapter(client).fetch(["jp_trade_balance"], "2026-01")
+        assert len(rows) == (3 if notice is None else 2)
+        assert notices.get(("jp_trade_balance", "2026-10-29")) == notice
+        if notice is None:
+            assert rows[-1].edition == "2026-10-29" and rows[-1].stage == "revised"
+    finally:
+        PENDING_EDITIONS.reset(token)
+        RUN_INSTANT.reset(clock)
+
+
+def test_missing_url_also_uses_publication_delay_grace():
+    from market_data_hub.macro_releases.schedule import PENDING_EDITIONS
+    clock = RUN_INSTANT.set("2026-10-29T01:00:00Z")
+    notices = {}
+    token = PENDING_EDITIONS.set(notices)
+    try:
+        assert len(AsiaAdapter(ListingReplay()).fetch(["jp_trade_balance"], "2026-01")) == 2
+        assert notices["jp_trade_balance", "2026-10-29"] == "not_yet_published"
+    finally:
+        PENDING_EDITIONS.reset(token)
+        RUN_INSTANT.reset(clock)
+
+
+def test_quarterly_month_window_and_mof_stylesheet_binding():
+    doc = document("trade-sep.xml")
+    with pytest.raises(FetchError, match="needs review"):
+        parser("jp_trade_balance")(replace(doc, body=doc.body.replace(b"d1201e.xsl", b"other.xsl")), "jp_trade_balance")
+    for family, name in (("jp_gdp", "jp-gdp-first.csv"), ("cn_gdp", "cn-gdp-native-q3.html")):
+        assert parser(family)(document(name), family, since="2026-12") == []

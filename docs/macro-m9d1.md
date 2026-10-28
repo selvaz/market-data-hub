@@ -123,5 +123,28 @@ October 22 23:30 UTC; it is national CPI, separate from Tokyo preliminary CPI.
 Approved-card coverage is 93/93, with `unmapped: []` and no card gaps. The
 blocked METI collection and absent catalogue rows above remain explicit scope
 limitations. Future permissions extend through December 31; any as-yet
-unreviewed archive ID, rescheduled translation date or table format stops with
-`needs review`, even if a calendar date has arrived.
+unreviewed table format is rejected even if a calendar date has arrived.
+
+## Edition discovery and run outcomes (review P2-2)
+
+New publication IDs are discovered from issuer listings: MOF's dated English
+press-release rows, e-Stat's monthly-report index and file listing, ESRI's dated
+annual archive and English CSV menu, and the NBS English release listing.
+Discovery never guesses an ID or uses a calendar as numeric evidence. Links
+must remain on the expected issuer path and carry the expected period, stage
+and format. The publication parser independently validates the actual table.
+Runtime URL bindings are local to the fetch; reviewed registries are unchanged.
+
+A missing listing entry during the six hours after the scheduled release is
+reported as `scheduled` with reason `not_yet_published`. The same grace applies
+when a discovered edition-specific URL returns HTTP 404. Beyond grace, an
+edition whose URL cannot be discovered is `scheduled_unreviewed`; a discovered
+publication with invalid metadata/format, or an expired 404, is `needs_review`.
+These edition outcomes appear in the run report's `scheduled_editions` list.
+Rejected editions produce no observations, while valid editions in the same
+family are still persisted. Transport/authentication failures still stop the
+affected issuer family. Unknown NBS native GDP templates remain unreviewed;
+the next quarterly edition is outside the 2026 calendar horizon.
+
+Quarterly `since` comparisons use the quarter's ending month. MOF XML must
+reference the same `d1201e.xsl` stylesheet whose units and NSA basis are checked.

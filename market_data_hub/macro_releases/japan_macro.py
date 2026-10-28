@@ -5,12 +5,11 @@ import csv
 from xml.etree import ElementTree
 import re
 
-from .asia import observation, fetch_archives
-from .asia_editions import EDITIONS, reviewed
+from .asia import observation, fetch_archives, in_window
+from .asia_editions import reviewed
 from .http import FetchError
 from .tier1_publications import require, plain
 from .nbs_housing import Page
-from .schedule import due
 
 ARCHIVES = {
     "jp_trade_balance": {
@@ -75,9 +74,9 @@ def cpi_archive_listing(document, family, edition):
         raise FetchError("e-Stat monthly report archive identity needs review")
 
 
-def parse_cpi(document, family, since):
+def parse_cpi(document, family, since, archives):
     from openpyxl import load_workbook
-    editions = [d for d, url in ARCHIVES[family].items() if url == document.url]
+    editions = [d for d, url in archives.items() if url == document.url]
     if len(editions) != 1 or not document.body.startswith(b"PK"):
         raise FetchError("e-Stat CPI edition or workbook format needs review")
     edition = editions[0]
@@ -107,7 +106,7 @@ def parse_cpi(document, family, since):
             if isinstance(value, bool) or not isinstance(value, (int, float)):
                 raise FetchError("e-Stat CPI annual rate needs review")
             result.append(observation(document, family, edition, indicator, str(value), "xlsx_table"))
-        return result if period >= since else []
+        return result if in_window(period, since) else []
     finally:
         workbook.close()
 
@@ -147,8 +146,8 @@ def gdp_archive_listing(archive, menu, edition):
         raise FetchError("ESRI GDP published-rate CSV link needs review")
 
 
-def parse_gdp(document, since):
-    editions = [d for d, url in ARCHIVES["jp_gdp"].items() if url == document.url]
+def parse_gdp(document, since, archives):
+    editions = [d for d, url in archives.items() if url == document.url]
     if len(editions) != 1:
         raise FetchError("ESRI GDP CSV archive URL needs review")
     edition = editions[0]
@@ -178,7 +177,7 @@ def parse_gdp(document, since):
         rates[key] = row[1].strip()
     if not rates or max(rates) != period or not re.fullmatch(r"[+-]?\d+\.\d+", rates[period]):
         raise FetchError("ESRI GDP current quarter rate needs review")
-    return [observation(document, "jp_gdp", edition, "jp_gdp_qq", rates[period], "csv")] if period >= since else []
+    return [observation(document, "jp_gdp", edition, "jp_gdp_qq", rates[period], "csv")] if in_window(period, since) else []
 
 
 def trade_stylesheet(document):
@@ -191,7 +190,10 @@ def trade_stylesheet(document):
     require(r"\(Unit: millions of YEN, % \)", text)
 
 
-def parse_trade(document, since):
+def parse_trade(document, since, archives):
+    styles = re.findall(rb'<\?xml-stylesheet\s+([^?]+)\?>', document.body)
+    if len(styles) != 1 or not re.search(rb'href=["\']d1201e\.xsl["\']', styles[0]):
+        raise FetchError("MOF trade XML stylesheet needs review")
     if b"<!DOCTYPE" in document.body or b"<!ENTITY" in document.body:
         raise FetchError("MOF trade XML format needs review")
     try:
@@ -207,7 +209,7 @@ def parse_trade(document, since):
     except ValueError as exc:
         raise FetchError("MOF trade publication date needs review") from exc
     period, stage, _ = reviewed("jp_trade_balance", edition)
-    if document.url != ARCHIVES["jp_trade_balance"].get(edition):
+    if document.url != archives.get(edition):
         raise FetchError("MOF trade XML archive URL needs review")
     label = datetime.strptime(period, "%Y-%m").strftime("%B %Y")
     wording = "(Provisional)" if stage == "preliminary" else "(Exports:Detailed Data;Imports:Provisional(HS-code Basis))"
@@ -224,12 +226,13 @@ def parse_trade(document, since):
     if not re.fullmatch(r"[+-]?[\d,]+", printed) or printed != headline:
         raise FetchError("MOF trade printed balance disagreement needs review")
     return [observation(document, "jp_trade_balance", edition, "jp_trade_balance", printed, "structured",
-                        value=float(printed.replace(',', '')) / 1000)] if period >= since else []
+                        value=float(printed.replace(',', '')) / 1000)] if in_window(period, since) else []
 
 
-def parse(document, family, since="1900-01"):
+def parse(document, family, since="1900-01", *, archives=None):
+    archives = ARCHIVES[family] if archives is None else archives
     if family == "jp_trade_balance":
-        return parse_trade(document, since)
+        return parse_trade(document, since, archives)
     if family == "jp_tankan":
         from pypdf import PdfReader
         if not document.body.startswith(b"%PDF"):
@@ -238,35 +241,19 @@ def parse(document, family, since="1900-01"):
         stamp = require(r"Tankan Summary \((June|September|December) 2026\) \d+th Short-Term Economic Survey of Enterprises in Japan (\w+ \d{1,2}, 2026)", body)
         edition = datetime.strptime(stamp[2], "%B %d, %Y").date().isoformat()
         period, _, _ = reviewed(family, edition)
-        if document.url != ARCHIVES[family].get(edition) or stamp[1] != {"Q2": "June", "Q3": "September", "Q4": "December"}[period[-2:]]:
+        if document.url != archives.get(edition) or stamp[1] != {"Q2": "June", "Q3": "September", "Q4": "December"}[period[-2:]]:
             raise FetchError("BOJ Tankan survey period or URL needs review")
         require(r'1\. Business Conditions DI \("favorable" - "unfavorable"\), % points Large Enterprises Medium-sized Enterprises Small Enterprises', body)
         # Large enterprises occupy the first six columns: previous actual,
         # previous forecast, current actual, change, forecast, change.
         row = require(r"Changes Changes Changes Changes Changes Changes Manufacturing ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+)", body)
-        return [observation(document, family, edition, "jp_tankan_large_manufacturers_di", row[3], "pdf_table")] if period >= since else []
+        return [observation(document, family, edition, "jp_tankan_large_manufacturers_di", row[3], "pdf_table")] if in_window(period, since) else []
     if family in {"jp_cpi", "jp_tokyo_cpi"}:
-        return parse_cpi(document, family, since)
+        return parse_cpi(document, family, since, archives)
     if family == "jp_gdp":
-        return parse_gdp(document, since)
+        return parse_gdp(document, since, archives)
     raise FetchError("Japan issuer family needs review")
 
 
 def fetch(client, family, since):
-    if family == "jp_gdp":
-        archive = None
-        for edition, (period, _, _) in due(EDITIONS[family], family=family).items():
-            if period >= since:
-                if edition not in GDP_MENUS:
-                    raise FetchError("ESRI GDP due archive listing needs review")
-                archive = archive or client.get("esri", GDP_ARCHIVE)
-                gdp_archive_listing(archive, client.get("esri", GDP_MENUS[edition]), edition)
-    if family == "jp_trade_balance" and any(period >= since for period, _, _ in due(EDITIONS[family], family=family).values()):
-        trade_stylesheet(client.get("mof", TRADE_STYLE))
-    if family in {"jp_cpi", "jp_tokyo_cpi"}:
-        for edition, (period, _, _) in due(EDITIONS[family], family=family).items():
-            if period >= since:
-                if edition not in CPI_LISTINGS:
-                    raise FetchError("e-Stat due CPI report archive needs review")
-                cpi_archive_listing(client.get("statjp", CPI_LISTINGS[edition]), family, edition)
     return fetch_archives(client, family, since, PROVIDERS[family], ARCHIVES[family], parse)

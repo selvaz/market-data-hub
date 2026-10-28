@@ -2,7 +2,7 @@
 from datetime import datetime
 import re
 
-from .asia import observation, fetch_archives
+from .asia import observation, fetch_archives, in_window
 from .asia_editions import reviewed
 from .http import FetchError
 from .nbs_housing import Page, compact
@@ -29,7 +29,7 @@ ARCHIVES = {
 }
 
 
-def metadata(document, family):
+def metadata(document, family, archives):
     page = Page(document.body).root
     stamps = page.find_all("meta", {"name": "PubDate"})
     titles = page.find_all("meta", {"name": "ArticleTitle"})
@@ -48,13 +48,14 @@ def metadata(document, family):
         title = titles[0].get("content")
     edition = stamp.date().isoformat()
     period, _, clock = reviewed(family, edition)
-    if stamp.strftime("%H:%M") != clock or document.url != ARCHIVES[family].get(edition):
+    if stamp.strftime("%H:%M") != clock or document.url != archives.get(edition):
         raise FetchError("NBS publication clock or issuer URL needs review")
     return page, edition, period, title
 
 
-def parse(document, family="cn_cpi", since="1900-01"):
-    page, edition, period, title = metadata(document, family)
+def parse(document, family="cn_cpi", since="1900-01", *, archives=None):
+    archives = ARCHIVES[family] if archives is None else archives
+    page, edition, period, title = metadata(document, family, archives)
     if family == "cn_gdp":
         if edition == "2026-10-19":
             if title != "National Economy was Generally Stable with New Achievement Made in High-Quality Development in the First Three Quarters":
@@ -62,7 +63,7 @@ def parse(document, family="cn_cpi", since="1900-01"):
             body = plain(document.body.decode("utf-8"))
             require("National Bureau of Statistics of China 19 October, 2026", body)
             printed = require(r"According to preliminary estimates, the gross domestic product \(GDP\) in the first three quarters of 2026 reached [\d,.]+ billion yuan, up by ([\d.]+) percent year on year at constant prices", body)[1]
-            return [observation(document, family, edition, "cn_gdp_yy", printed)] if period >= since else []
+            return [observation(document, family, edition, "cn_gdp_yy", printed)] if in_window(period, since) else []
         quarter, cumulative = {"2026-Q2": ("二季度", "上半年"), "2026-Q3": ("三季度", "前三季度")}[period]
         expected_title = "2026年" + ("二季度和上半年" if period.endswith("Q2") else quarter) + "国内生产总值初步核算结果"
         if title != expected_title:
@@ -81,12 +82,16 @@ def parse(document, family="cn_cpi", since="1900-01"):
         if len(values) != 1:
             raise FetchError("NBS GDP cumulative column layout needs review")
         printed = values.pop()[4]  # printed cumulative real growth, not the quarterly rate in column 3
-        return [observation(document, family, edition, "cn_gdp_yy", printed, "html_table")] if period >= since else []
+        return [observation(document, family, edition, "cn_gdp_yy", printed, "html_table")] if in_window(period, since) else []
     if family == "cn_activity":
         expected = {"2026-08": "National Economy Remained Steady with Innovation-Led and High-Quality Development in August",
                     "2026-09": "National Economy was Generally Stable with New Achievement Made in High-Quality Development in the First Three Quarters"}
-        if title != expected.get(period):
-            raise FetchError("NBS national economy title needs review")
+        if period in expected:
+            if title != expected[period]:
+                raise FetchError("NBS national economy title needs review")
+        else:
+            require(r"^National Economy .*(?:in |in the )" +
+                    datetime.strptime(period, "%Y-%m").strftime("%B") + r"(?: 2026)?$", title)
         body = plain(document.body.decode("utf-8"))
         require("National Bureau of Statistics of China", body)
         require(datetime.strptime(edition, "%Y-%m-%d").strftime("%d %B, %Y").lstrip("0"), body)
@@ -95,7 +100,7 @@ def parse(document, family="cn_cpi", since="1900-01"):
         retail = require(r"In " + label + r", the total retail sales of consumer goods reached [\d,.]+ billion yuan, (up|down) by ([\d.]+) percent year on year", body)
         return [observation(document, family, edition, indicator,
                     ("-" if match[1] in {"decreased", "down"} else "") + match[2])
-                for indicator, match in (("cn_industrial_production_yy", ip), ("cn_retail_sales_yy", retail))] if period >= since else []
+                for indicator, match in (("cn_industrial_production_yy", ip), ("cn_retail_sales_yy", retail))] if in_window(period, since) else []
     if family == "cn_nbs_pmi":
         if title != "Purchasing Managers’ Index for " + month(period):
             raise FetchError("NBS PMI publication title needs review")
@@ -105,7 +110,7 @@ def parse(document, family="cn_cpi", since="1900-01"):
         require(r"All released indexes have been seasonally adjusted", body)
         label = datetime.strptime(period, "%Y-%m").strftime("%B")
         printed = require(r"In " + label + r", the purchasing managers[’'] index \(PMI\) of China[’']s manufacturing industry was ([\d.]+)%", body)[1]
-        return [observation(document, family, edition, "cn_nbs_manufacturing_pmi", printed)] if period >= since else []
+        return [observation(document, family, edition, "cn_nbs_manufacturing_pmi", printed)] if in_window(period, since) else []
     if family != "cn_cpi" or title != "Consumer Price Index in " + month(period):
         raise FetchError("NBS publication title or measure needs review")
     body = plain(document.body.decode("utf-8"))
@@ -115,7 +120,7 @@ def parse(document, family="cn_cpi", since="1900-01"):
     table = require(r"Consumer Price Indexes in " + month(period) + r" Growth Rate M/M \(%\) Growth Rate Y/Y \(%\) Jan-\w+ Growth Rate Y/Y \(%\) Consumer Price Index ([+-]?[\d.]+) ([+-]?[\d.]+) ([+-]?[\d.]+)", body)
     if float(table[2]) != float(printed):
         raise FetchError("NBS headline and annual table disagree; needs review")
-    return [observation(document, family, edition, "cn_cpi_yy", printed)] if period >= since else []
+    return [observation(document, family, edition, "cn_cpi_yy", printed)] if in_window(period, since) else []
 
 
 def fetch(client, family, since):
