@@ -57,6 +57,10 @@ and the approved-card gap, so `ok` does not certify excluded families.
 
 On resume, the committed files passed the focused read-API regression file
 (65 tests) and indicator-card regression file (414 tests, including generated
-JSON freshness and provenance). The interrupted failure did not reproduce with
-stable generated files. The final permitted selection is recorded separately
-with complete logs and JUnit results under a fresh `D:\Temp` directory.
+JSON freshness and provenance). CI then located the original regression in
+`test_macro_m9d1.py`: the M9i registration edit had omitted the Asia entries
+from `DISCOVERY_ADAPTERS`, causing all nine Asia daily collectors to fail with
+a missing registry key. Restoring those entries preserves the inherited
+Japan/China collection path and removes duplicate registration statements.
+The previously failing file passed all 53 tests after this fix, before the
+final permitted selection. Each run uses a fresh `D:\Temp` basetemp.

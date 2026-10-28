@@ -54,10 +54,7 @@ ADAPTERS.update({f: LatamAdapter for f in LATAM_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: LatamAdapter for f in LATAM_FAMILIES})
 
 ADAPTERS.update({f: AsiaAdapter for f in ASIA_FAMILIES})
-DISCOVERY_ADAPTERS.update({f: LatamAdapter for f in LATAM_FAMILIES})
-DISCOVERY_ADAPTERS.update({f: LatamAdapter for f in LATAM_FAMILIES})
-
-ADAPTERS.update({f: AsiaAdapter for f in ASIA_FAMILIES})
+DISCOVERY_ADAPTERS.update({f: AsiaAdapter for f in ASIA_FAMILIES})
 
 
 def fetch_windows(families, lookback, today):
