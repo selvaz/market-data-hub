@@ -1,0 +1,154 @@
+
+# ===================================== M9i LATAM =====================================
+
+[[measure]]
+id = "br_ipca_mm"
+name = "Brazil IPCA, m/m"
+geography = "BRA"
+issuer = "IBGE"
+measure_definition = "Monthly all-items IPCA, issuer-printed monthly percent change"
+transform = "mm"
+seasonal_adjustment = "NSA"
+unit = "%"
+frequency = "monthly"
+stages = ["final"]
+release_family = "IBGE IPCA"
+typical_release_time_local = "09:00"
+timezone = "America/Sao_Paulo"
+issuer_source = { api = "SIDRA API (no key)", series_or_dataset = "1737, variable 63", url = "https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/63/p/last/1", verified = false }
+redistributor_sources = []
+needs_press_release_parsing = false
+notes = "Definition only: publication-calendar access returned HTTP 403 on this server; family stopped under M9i access rule."
+
+[[measure]]
+id = "br_ipca_yy"
+name = "Brazil IPCA, y/y"
+geography = "BRA"
+issuer = "IBGE"
+measure_definition = "Monthly all-items IPCA, issuer-printed cumulative change over 12 months"
+transform = "yy"
+seasonal_adjustment = "NSA"
+unit = "%"
+frequency = "monthly"
+stages = ["final"]
+release_family = "IBGE IPCA"
+typical_release_time_local = "09:00"
+timezone = "America/Sao_Paulo"
+issuer_source = { api = "SIDRA API (no key)", series_or_dataset = "1737, variable 2265", url = "https://apisidra.ibge.gov.br/values/t/1737/n1/all/v/2265/p/last/1", verified = false }
+redistributor_sources = []
+needs_press_release_parsing = false
+notes = "Definition only: publication-calendar access returned HTTP 403 on this server; family stopped under M9i access rule."
+
+[[measure]]
+id = "br_ipca15_mm"
+name = "Brazil IPCA-15, m/m"
+geography = "BRA"
+issuer = "IBGE"
+measure_definition = "IPCA-15, issuer-printed monthly percent change; distinct collection window and coverage from IPCA, not a preliminary IPCA stage"
+transform = "mm"
+seasonal_adjustment = "NSA"
+unit = "%"
+frequency = "monthly"
+stages = ["final"]
+release_family = "IBGE IPCA-15"
+typical_release_time_local = "09:00"
+timezone = "America/Sao_Paulo"
+issuer_source = { api = "SIDRA API (no key)", series_or_dataset = "3065, variable 355", url = "https://apisidra.ibge.gov.br/values/t/3065/n1/all/v/355/p/last/1", verified = false }
+redistributor_sources = []
+needs_press_release_parsing = false
+notes = "Definition only: publication-calendar access returned HTTP 403 on this server; family stopped under M9i access rule."
+
+[[measure]]
+id = "br_ipca15_yy"
+name = "Brazil IPCA-15, y/y"
+geography = "BRA"
+issuer = "IBGE"
+measure_definition = "IPCA-15, issuer-printed cumulative change over 12 months; distinct from IPCA"
+transform = "yy"
+seasonal_adjustment = "NSA"
+unit = "%"
+frequency = "monthly"
+stages = ["final"]
+release_family = "IBGE IPCA-15"
+typical_release_time_local = "09:00"
+timezone = "America/Sao_Paulo"
+issuer_source = { api = "SIDRA API (no key)", series_or_dataset = "3065, variable 1118", url = "https://apisidra.ibge.gov.br/values/t/3065/n1/all/v/1118/p/last/1", verified = false }
+redistributor_sources = []
+needs_press_release_parsing = false
+notes = "Definition only: publication-calendar access returned HTTP 403 on this server; family stopped under M9i access rule."
+
+[[measure]]
+id = "bcb_selic_rate_decision"
+name = "Brazil Copom Selic target decision"
+geography = "BRA"
+issuer = "Banco Central do Brasil (BCB)"
+measure_definition = "Copom target for the Selic interest rate, percent per annum; not the realized overnight Selic rate"
+transform = "level"
+seasonal_adjustment = "n/a"
+unit = "%"
+frequency = "8x/year"
+stages = ["final"]
+release_family = "BCB Copom decisions"
+typical_release_time_local = "after meeting, from 18:30; actual clock absent in public statement API"
+timezone = "America/Sao_Paulo"
+issuer_source = { api = "BCB public Copom API (no key)", series_or_dataset = "comunicados_detalhes, nro_reuniao", url = "https://www.bcb.gov.br/conteudo/dadosabertos/BCBDeinf/elements_copom.html", verified = true }
+redistributor_sources = []
+needs_press_release_parsing = false
+notes = "Statement date retained with date-only precision; rate changes compare consecutive issuer statements."
+
+[[measure]]
+id = "banxico_overnight_rate_decision"
+name = "Mexico overnight interbank target decision"
+geography = "MEX"
+issuer = "Banco de México (Banxico)"
+measure_definition = "Target for the overnight interbank interest rate, as announced by the Governing Board"
+transform = "level"
+seasonal_adjustment = "n/a"
+unit = "%"
+frequency = "8x/year"
+stages = ["final"]
+release_family = "Banxico monetary-policy decisions"
+typical_release_time_local = "13:00"
+timezone = "America/Mexico_City"
+issuer_source = { api = "public statement PDFs (no key); SIE API requires token", series_or_dataset = "Anuncio de Política Monetaria", url = "https://www.banxico.org.mx/publicaciones-y-prensa/anuncios-de-las-decisiones-de-politica-monetaria/anuncios-politica-monetaria-t.html", verified = true }
+redistributor_sources = []
+needs_press_release_parsing = true
+notes = "Public issuer statements used; no SIE token or credentials in code."
+
+[[measure]]
+id = "mx_cpi_yy"
+name = "Mexico headline INPC, y/y"
+geography = "MEX"
+issuer = "INEGI"
+measure_definition = "Monthly all-items Índice Nacional de Precios al Consumidor, issuer-printed annual percent change"
+transform = "yy"
+seasonal_adjustment = "NSA"
+unit = "%"
+frequency = "monthly"
+stages = ["final"]
+release_family = "INEGI monthly INPC"
+typical_release_time_local = "06:00"
+timezone = "America/Mexico_City"
+issuer_source = { api = "public indicator bulletin PDFs (no key); indicator API requires token", series_or_dataset = "Monthly INPC, Cuadro 1, INPC row, current annual rate", url = "https://www.inegi.org.mx/app/saladeprensa/noticia/11265", verified = true }
+redistributor_sources = []
+needs_press_release_parsing = true
+notes = "Monthly edition only. No first-half INPC row exists in the supplied catalogue; conditional M9i first-half scope not activated."
+
+[[measure]]
+id = "mx_core_cpi_yy"
+name = "Mexico core INPC, y/y"
+geography = "MEX"
+issuer = "INEGI"
+measure_definition = "Monthly subyacente INPC, issuer-printed annual percent change; excludes volatile or non-market prices"
+transform = "yy"
+seasonal_adjustment = "NSA"
+unit = "%"
+frequency = "monthly"
+stages = ["final"]
+release_family = "INEGI monthly INPC"
+typical_release_time_local = "06:00"
+timezone = "America/Mexico_City"
+issuer_source = { api = "public indicator bulletin PDFs (no key); indicator API requires token", series_or_dataset = "Monthly INPC, Cuadro 1, Subyacente row, current annual rate", url = "https://www.inegi.org.mx/app/saladeprensa/noticia/11265", verified = true }
+redistributor_sources = []
+needs_press_release_parsing = true
+notes = "Official data supported; no approved core INPC concept card exists, retained as an explicit card mapping gap."
