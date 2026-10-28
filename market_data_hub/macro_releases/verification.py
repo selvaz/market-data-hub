@@ -10,6 +10,10 @@ from .models import utc
 
 
 def reviewed_anchor(obs):
+    from .latam_editions import EDITIONS as LATAM
+    if obs.family in LATAM:
+        return (obs.edition in LATAM[obs.family] and
+                (obs.period, obs.stage) == LATAM[obs.family][obs.edition][:2])
     from .asia_editions import EDITIONS as ASIA
     if obs.family in ASIA:
         return (obs.edition in ASIA[obs.family] and
@@ -50,6 +54,9 @@ def reviewed_anchor(obs):
 
 # Changes are in the indicator's declared printed units (payroll: thousands).
 SANITY_BANDS = {
+    "bcb_selic_rate_decision": 5,
+    "banxico_overnight_rate_decision": 5,
+    "mx_cpi_yy": 10, "mx_core_cpi_yy": 10,
     "cn_cpi_yy": 10,
     "jp_trade_balance": 10000,
     "jp_tankan_large_manufacturers_di": 40,

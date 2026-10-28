@@ -224,7 +224,18 @@ ASIA_FAMILIES = {
         definition="National Consumer Price Index, issuer-published 12-month rate of change")],
 }
 INDICATORS.update((m.id, m) for measures in ASIA_FAMILIES.values() for m in measures)
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES, *ASIA_FAMILIES)
+LATAM_FAMILIES = {
+    "mx_cpi": [measure("mx_cpi_yy", "INEGI", "MEX", "yy", "NSA",
+        definition="Monthly all-items INPC, issuer-printed annual percent change"),
+        measure("mx_core_cpi_yy", "INEGI", "MEX", "yy", "NSA",
+        definition="Monthly subyacente INPC, issuer-printed annual percent change; excludes volatile or non-market prices")],
+    "banxico_policy": [measure("banxico_overnight_rate_decision", "Banxico", "MEX", "level", "n/a",
+        definition="Banco de México target for the overnight interbank interest rate, issuer decision", frequency="E")],
+    "bcb_policy": [measure("bcb_selic_rate_decision", "BCB", "BRA", "level", "n/a",
+        definition="Copom Selic target, percent per annum, from the decision statement; not the realized overnight rate", frequency="E")],
+}
+INDICATORS.update((m.id, m) for measures in LATAM_FAMILIES.values() for m in measures)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES, *ASIA_FAMILIES, *LATAM_FAMILIES)
 
 
 def hicp_indicator(period, basis, geography="EA"):

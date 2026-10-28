@@ -1,5 +1,8 @@
 {
   "aliases": [
+    {"basis": "Same approved Copom Selic target concept; issuer decision, not realized overnight rates (M9i).", "id": "cat:bcb_selic_rate_decision", "key": "br_selic"},
+    {"basis": "Same approved Banxico overnight interbank target decision concept; public issuer statement (M9i).", "id": "cat:banxico_overnight_rate_decision", "key": "mx_banxico"},
+    {"basis": "Same approved Mexican monthly headline INPC concept; issuer-printed annual rate (M9i).", "id": "cat:mx_cpi_yy", "key": "mx_cpi"},
     {"basis": "M9d1 explicit Tokyo ex-fresh-food CPI y/y addition; same approved Tokyo CPI concept as cal:jp_tokyo_core_cpi. National CPI remains separate.", "id": "cat:jp_tokyo_core_cpi_yy", "key": "jp_tokyo_cpi"},
     {
       "basis": "Same approved ECB MIR house-purchase cost-of-borrowing concept as pan:ecb_cost_borrow_house; euro area U2 monthly headline, not corporations or a fixation bucket. Source: https://data.ecb.europa.eu/data/datasets/MIR/MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N (M9f context only; no FF measure equivalence).",
@@ -242,7 +245,7 @@
       "key": "us_ahe"
     }
   ],
-  "certified_gaps": {},
+  "certified_gaps": {"mx_core_cpi_yy": "No approved Mexican core INPC card; do not alias core inflation to the headline card (M9i)."},
   "classification_version": "v2.3",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages."
 }

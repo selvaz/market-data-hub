@@ -439,9 +439,9 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     print(json.dumps(report, indent=2))
     assert set(report["certified_families"]) == set(FAMILIES)
     for family in FAMILIES:
-        assert report["certified_families"][family]["unmapped"] == []
-    assert report["documented_certified_gaps"] == {}
-    assert report["macro_releases"] == {"mapped": 93, "total": len(INDICATORS), "unmapped": []}
+        assert report["certified_families"][family]["unmapped"] == (["cat:mx_core_cpi_yy"] if family == "mx_cpi" else [])
+    assert set(report["documented_certified_gaps"]) == {"mx_core_cpi_yy"}
+    assert report["macro_releases"] == {"mapped": 96, "total": len(INDICATORS), "unmapped": ["cat:mx_core_cpi_yy"]}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
     assert "macro_releases" in capsys.readouterr().out
