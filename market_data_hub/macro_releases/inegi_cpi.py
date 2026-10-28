@@ -3,7 +3,6 @@
 INEGI's indicator API requires a token. These public indicator bulletins do not.
 The first-half edition is not in the supplied tier-1 catalogue and is excluded.
 """
-import re
 from .banxico_policy import MONTHS, spanish_date
 from .http import FetchError
 from .latam import observation

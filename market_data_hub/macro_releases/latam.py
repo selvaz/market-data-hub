@@ -2,9 +2,9 @@
 from .adapters import Observation
 from .catalogue import INDICATORS
 from .http import FetchError
-from .latam_editions import EDITIONS, ZONES, reviewed
+from .latam_editions import ZONES, reviewed
 from .publication_times import local_release
-from .schedule import due, run_date
+from .schedule import run_date
 
 
 def observation(doc, family, edition, indicator, printed, *, method, policy=None):

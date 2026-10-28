@@ -1,6 +1,5 @@
 """BCB's documented public Copom statement API, distinct from daily SGS rates."""
 from urllib.parse import parse_qs, urlsplit
-import re
 from .http import FetchError
 from .latam import observation
 from .latam_editions import EDITIONS, reviewed

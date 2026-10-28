@@ -116,3 +116,56 @@ def test_horizon_fail_closed():
             LatamAdapter(Replay()).fetch(list(LATAM_FAMILIES), "2026-01")
     finally:
         RUN_INSTANT.reset(token)
+
+
+def test_bcb_statement_meeting_and_rate_disagreement_fail_closed():
+    case = next(c for c in GOLDEN if c["family"] == "bcb_policy" and c["edition"] == "2026-09-16")
+    doc = document(case["fixture"])
+    for before, after in ((b'"nro_reuniao":281', b'"nro_reuniao":280'),
+                          (b'"dataReferencia":"2026-09-16"', b'"dataReferencia":"2026-09-17"')):
+        # The JSON title and body must agree; changing just one is rejected.
+        assert before in doc.body
+        with pytest.raises(FetchError, match="needs review"):
+            parse(case, replace(doc, body=doc.body.replace(before, after, 1)))
+    payload = doc.json()
+    payload["conteudo"][0]["titulo"] = payload["conteudo"][0]["titulo"].replace("13,75", "99,75")
+    with pytest.raises(FetchError, match="needs review"):
+        parse(case, replace(doc, body=json.dumps(payload).encode()))
+
+
+def test_inegi_column_order_period_and_monthly_edition_fail_closed(monkeypatch):
+    from market_data_hub.macro_releases import inegi_cpi
+    from market_data_hub.macro_releases.tier1_publications import publication_text
+    case = next(c for c in GOLDEN if c["indicator"] == "mx_cpi_yy" and c["period"] == "2026-09")
+    doc = document(case["fixture"])
+    text, method = publication_text(doc)
+    for before, after in (("mensual anual mensual anual 2024", "anual mensual mensual anual 2024"),
+                          ("3.45 % en septiembre", "3.45 % en agosto"),
+                          ("8 de octubre de 2026 Página 1/6", "9 de octubre de 2026 Página 1/6"),
+                          ("INPC 0.05 0.23 0.42 4.58 3.76 3.45", "INPC 0.05 0.23 0.42 4.58 3.76 9.45")):
+        assert before in text
+        monkeypatch.setattr(inegi_cpi, "publication_text", lambda doc, changed=text.replace(before, after): (changed, method))
+        with pytest.raises(FetchError, match="needs review"):
+            inegi_cpi.parse(doc)
+
+
+def test_same_day_release_gate_and_future_schedules(tmp_path):
+    from market_data_hub.macro_releases.scheduled_events import calendar_source, persist_scheduled_events
+    token = RUN_INSTANT.set("2026-08-06T17:59:59Z")
+    try:
+        client = Replay()
+        assert LatamAdapter(client).fetch(["banxico_policy"], "2026-08") == []
+        assert client.requests == []
+    finally:
+        RUN_INSTANT.reset(token)
+    with open_writer(tmp_path / "calendar.sqlite") as store:
+        persist_scheduled_events(store, recorded_at="2026-10-27T18:00:00Z")
+        assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 0
+        for family in LATAM_FAMILIES:
+            assert calendar_source(family) == SCHEDULES[family]
+        cards = store.release_cards("2026-11-01", "2026-12-31", indicators=[
+            m.id for measures in LATAM_FAMILIES.values() for m in measures])["cards"]
+        for family in LATAM_FAMILIES:
+            events = {r[0] for r in store.conn.execute("SELECT edition FROM release_events WHERE family=?", (family,))}
+            assert {d for d in EDITIONS[family] if d >= "2026-11-01"} <= events
+        assert not any((c.get("resolution") or {}).get("status") == "official" for c in cards)

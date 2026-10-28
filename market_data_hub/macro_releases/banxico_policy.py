@@ -1,7 +1,5 @@
 """Banxico public monetary-policy statements; SIE's token API is unnecessary."""
 from datetime import date
-from urllib.parse import urlsplit
-import re
 from .http import FetchError
 from .latam import observation
 from .latam_editions import EDITIONS, reviewed
