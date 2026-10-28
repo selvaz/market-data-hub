@@ -249,6 +249,11 @@
       "id": "cat:bcb_selic_rate_decision",
       "key": "br_selic",
       "basis": "Same approved Copom Selic target concept; issuer decision, not realized overnight rates (M9i)."
+    },
+    {
+      "id": "cat:banxico_overnight_rate_decision",
+      "key": "mx_banxico",
+      "basis": "Same approved Banxico overnight interbank target decision concept; public issuer statement (M9i)."
     }
   ],
   "certified_gaps": {},

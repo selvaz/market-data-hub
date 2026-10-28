@@ -21,6 +21,26 @@
       "fixture": "bcb-sep.json",
       "previous": "bcb-aug.json",
       "source_url": "https://www.bcb.gov.br/api/servico/sitebcb/copom/comunicados_detalhes?nro_reuniao=281"
+    },
+    {
+      "family": "banxico_policy",
+      "edition": "2026-08-06",
+      "period": "2026-08-06",
+      "indicator": "banxico_overnight_rate_decision",
+      "value": 6.5,
+      "stage": "final",
+      "fixture": "banxico-aug.pdf",
+      "source_url": "https://www.banxico.org.mx/publicaciones-y-prensa/anuncios-de-las-decisiones-de-politica-monetaria/{8DA3F519-341F-480E-1D4E-1AEE71DD08DA}.pdf"
+    },
+    {
+      "family": "banxico_policy",
+      "edition": "2026-09-24",
+      "period": "2026-09-24",
+      "indicator": "banxico_overnight_rate_decision",
+      "value": 6.5,
+      "stage": "final",
+      "fixture": "banxico-sep.pdf",
+      "source_url": "https://www.banxico.org.mx/publicaciones-y-prensa/anuncios-de-las-decisiones-de-politica-monetaria/{7D0BDB6E-E519-9C69-04AA-ABD4D31E4850}.pdf"
     }
   ]
 }

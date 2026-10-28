@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "7f286ad7f3a5f6c5d51f28ce06efb1b02760f7d8a5f4a0d1045b594e8bf799e4",
+  "aliases_sha256": "33bbd0c5d407914e6ec54fc5c11200e52e7cd7c74079911c5b5259589387e631",
   "cards": [
     {
       "concept": "Real GDP",
@@ -10064,7 +10064,9 @@
         "cal": [
           "mx_banxico"
         ],
-        "cat": [],
+        "cat": [
+          "banxico_overnight_rate_decision"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],

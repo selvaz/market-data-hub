@@ -225,6 +225,8 @@ ASIA_FAMILIES = {
 }
 INDICATORS.update((m.id, m) for measures in ASIA_FAMILIES.values() for m in measures)
 LATAM_FAMILIES = {
+    "banxico_policy": [measure("banxico_overnight_rate_decision", "Banxico", "MEX", "level", "n/a",
+        definition="Banco de México target for the overnight interbank interest rate, issuer decision", frequency="E")],
     "bcb_policy": [measure("bcb_selic_rate_decision", "BCB", "BRA", "level", "n/a",
         definition="Copom Selic target, percent per annum, from the decision statement; not the realized overnight rate", frequency="E")],
 }
