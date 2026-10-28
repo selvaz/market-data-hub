@@ -89,3 +89,12 @@ Regression coverage includes the real Banxico boundary (18:59:59Z versus
 edition, listing/statement 404s at both grace boundaries, malformed editions
 in each family, missing BCB preceding statements, and Copom before 18:30 local.
 Daily tests assert the resulting statuses and the surviving official read cards.
+
+The complete offline M9i file passed all 46 tests at `61e022b` (seed 20261028,
+fresh `D:\Temp\mdh-m9i-review-f3-20261028-01`). Both broader local selection
+commands were rejected before pytest started; neither was executed.
+The [fresh private-backup live check](macro-m9i-review-verification.json)
+returned `ok` for all three LatAm and both reused policy families: eight new
+vintages, zero on repetition, integrity `ok`, original source files and existing
+vintages unchanged. Its full report remains at
+`D:\Temp\mdh-m9i-review-live-20261028-01\mdh-m9i-mt6x8rcm\verification.json`.
