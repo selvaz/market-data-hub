@@ -119,6 +119,38 @@ def test_banxico_discovers_missing_archive_from_real_listing(monkeypatch):
         assert notices == {}
 
 
+@pytest.mark.parametrize("instant,reason", [
+    ("2026-11-05T19:00:00Z", "not_yet_published"),
+    ("2026-11-06T01:00:00Z", "needs_review"),
+])
+def test_banxico_listing_404_only_marks_the_requested_edition(instant, reason):
+    from market_data_hub.macro_releases.banxico_policy import INDEX
+    class Client(Replay):
+        def get(self, provider, url, params=None):
+            if url == INDEX:
+                raise FetchError("banxico: HTTP 404")
+            return super().get(provider, url, params)
+    with run_at(instant) as notices:
+        rows = LatamAdapter(Client()).fetch(["banxico_policy"], "2026-08")
+        assert [r.edition for r in rows] == ["2026-08-06", "2026-09-24"]
+        assert notices == {("banxico_policy", "2026-11-05"): reason}
+
+
+def test_discovered_banxico_pdf_must_match_the_listing_edition(monkeypatch):
+    from market_data_hub.macro_releases import banxico_policy
+    url = banxico_policy.ARCHIVES["2026-09-24"]
+    monkeypatch.delitem(banxico_policy.ARCHIVES, "2026-09-24")
+    class Client(Replay):
+        def get(self, provider, requested, params=None):
+            if requested == url:
+                return replace(document("banxico-aug.pdf"), url=url)
+            return super().get(provider, requested, params)
+    with run_at("2026-10-27T18:00:00Z") as notices:
+        rows = LatamAdapter(Client()).fetch(["banxico_policy"], "2026-08")
+        assert [r.edition for r in rows] == ["2026-08-06"]
+        assert notices == {("banxico_policy", "2026-09-24"): "needs_review"}
+
+
 def test_banxico_discovery_rejects_foreign_and_ambiguous_links():
     from market_data_hub.macro_releases import banxico_policy
     doc = document("banxico-listing.html")
@@ -303,13 +335,18 @@ def test_inegi_column_order_period_and_monthly_edition_fail_closed(monkeypatch):
 
 def test_same_day_release_gate_and_future_schedules(tmp_path):
     from market_data_hub.macro_releases.scheduled_events import calendar_source, persist_scheduled_events
-    token = RUN_INSTANT.set("2026-08-06T17:59:59Z")
+    token = RUN_INSTANT.set("2026-08-06T18:59:59Z")
     try:
         client = Replay()
         assert LatamAdapter(client).fetch(["banxico_policy"], "2026-08") == []
         assert client.requests == []
     finally:
         RUN_INSTANT.reset(token)
+    with run_at("2026-08-06T19:00:00Z"):
+        client = Replay()
+        rows = LatamAdapter(client).fetch(["banxico_policy"], "2026-08")
+        assert [r.edition for r in rows] == ["2026-08-06"]
+        assert len(client.requests) == 1
     with open_writer(tmp_path / "calendar.sqlite") as store:
         persist_scheduled_events(store, recorded_at="2026-10-27T18:00:00Z")
         assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 0

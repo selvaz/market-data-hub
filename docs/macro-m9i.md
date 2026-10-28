@@ -67,3 +67,25 @@ a missing registry key. Restoring those entries preserves the inherited
 Japan/China collection path and removes duplicate registration statements.
 The previously failing file passed all 53 tests after this fix, before the
 final permitted selection. Each run uses a fresh `D:\Temp` basetemp.
+
+## Review fixes
+
+Banxico discovers missing archive URLs from its own dated statement listing.
+The listing date, issuer host/path, unique PDF link and PDF's printed date must
+agree. A missing link retains earlier cards and records `not_yet_published`
+during the six-hour grace, then `scheduled_unreviewed`. No guessed document
+identifiers or alternate hosts are accepted. The saved real listing has its
+issuer URL, retrieval time and SHA-256 alongside the original bytes.
+
+All three LatAm collectors isolate edition-specific schema/parse failures and
+HTTP 404s. A 404 inside grace is pending; outside grace it records `needs_review`
+for that edition. Missing Copom preceding statements follow the same policy.
+Validated editions and other families still persist, and `scheduled_editions`
+in the daily run report exposes each pending/review reason. Transport and
+authentication failures retain Asia's issuer-family stopping behavior.
+
+Regression coverage includes the real Banxico boundary (18:59:59Z versus
+19:00:00Z), missing and discovered links, a discovered PDF with a different
+edition, listing/statement 404s at both grace boundaries, malformed editions
+in each family, missing BCB preceding statements, and Copom before 18:30 local.
+Daily tests assert the resulting statuses and the surviving official read cards.
