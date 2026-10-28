@@ -68,6 +68,30 @@ def test_coverage_ignores_live_rows(tmp_db):
     assert pd.Timestamp(row[0]).date() == stale     # live row ignored
 
 
+def _eod(symbol, last, n=5):
+    return pd.DataFrame([{
+        "date": last - dt.timedelta(days=i), "symbol": symbol, "open": 1,
+        "high": 2, "low": 0.5, "close": 1.5, "adj_close": 1.4, "volume": 100,
+        "source": "yahoo", "is_live": False} for i in range(n)])
+
+
+def test_coverage_marks_unconfigured_symbols_unscheduled(tmp_db):
+    """A symbol no longer in tickers.yaml keeps its history but is not
+    downloaded, so it must not be reported as a stalled feed."""
+    con = get_conn()
+    stale = dt.date(2024, 1, 10)
+    upsert(con, "prices_daily", _eod("SPY", stale))            # configured
+    upsert(con, "prices_daily", _eod("NOT_IN_CONFIG", stale))  # retired
+    rebuild_coverage(con, "testrun")
+    rows = dict((s, (st, stalled)) for s, st, stalled in con.execute(
+        "SELECT symbol, status, stalled FROM coverage_report").fetchall())
+    in_view = {r[0] for r in con.execute("SELECT symbol FROM v_stalled").fetchall()}
+    con.close()
+    assert rows["SPY"] == ("stalled", True)
+    assert rows["NOT_IN_CONFIG"] == ("unscheduled", False)
+    assert in_view == {"SPY"}
+
+
 # --- P2 #8: yahoo_workers config is honored -----------------------------------
 def test_yahoo_batch_forwards_workers(monkeypatch):
     captured = {}

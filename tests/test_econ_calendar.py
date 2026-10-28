@@ -1275,20 +1275,26 @@ def test_day_only_stays_day_when_nobody_knows_the_minute(con):
         "SELECT release_precision FROM calendar_events").fetchone()[0] == "day"
 
 
-def test_surprise_view_withholds_a_disputed_point(con):
-    """consensus_disputed exists to stop a fabricated surprise; the view that
-    publishes surprises has to honour it, or the flag protects nothing."""
-    upsert_indicators(con, load_catalog_rows())
-    ingest_observations(con, [
-        _obs("forexfactory", actual="3.4%", consensus="2.7%"),
-        _obs("nasdaq", actual="3.4%", consensus="3.4%"),
-    ])
-    r = con.execute(
-        "SELECT consensus_disputed, surprise, surprise_rel, consensus_low, "
-        "consensus_high FROM v_calendar_surprise").fetchone()
-    assert r[0] is True
-    assert r[1] is None and r[2] is None       # no point surprise
-    assert r[3] == 2.7 and r[4] == 3.4         # but the range is still there
+def test_retired_calendar_views_are_gone(con):
+    """The EconCalendar job was retired; its read views served data frozen
+    on 25/09/2026, so schema v28 drops them (the tables stay as history)."""
+    views = {r[0] for r in con.execute(
+        "SELECT view_name FROM duckdb_views() WHERE NOT internal").fetchall()}
+    assert not views & {"v_calendar_surprise", "v_calendar_upcoming"}
+    assert con.execute("SELECT count(*) FROM calendar_events").fetchone() == (0,)
+
+
+def test_v27_database_loses_the_calendar_views_on_migrate():
+    c = duckdb.connect(":memory:")
+    cx.migrate(c)
+    c.execute("CREATE VIEW v_calendar_upcoming AS SELECT * FROM calendar_events")
+    c.execute("CREATE VIEW v_calendar_surprise AS SELECT * FROM calendar_events")
+    c.execute("UPDATE schema_meta SET value = '27' WHERE key = 'schema_version'")
+    assert cx.migrate(c) == cx.SCHEMA_VERSION
+    views = {r[0] for r in c.execute(
+        "SELECT view_name FROM duckdb_views() WHERE NOT internal").fetchall()}
+    c.close()
+    assert not views & {"v_calendar_surprise", "v_calendar_upcoming"}
 
 
 def test_ingestion_enforces_the_alias_decisions(con):

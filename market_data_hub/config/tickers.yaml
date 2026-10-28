@@ -194,11 +194,6 @@ yahoo:
   area: China
   name: EQUITY | China | KraneShares CSI China Internet
   priority: 1
-- symbol: KBUY
-  asset_class: EQUITY
-  area: China
-  name: EQUITY | China | KraneShares China Consumer Leaders
-  priority: 1
 - symbol: KURE
   asset_class: EQUITY
   area: China

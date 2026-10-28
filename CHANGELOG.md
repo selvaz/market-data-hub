@@ -7,6 +7,14 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Fixed
+- Stalled thresholds for monthly and quarterly series are now 95 and 230 days. FRED dates a period at its start, so the old 45/120 flagged every on-time release (UNRATE, PCE, M2, GDP) and buried the series that had really stopped.
+- `coverage_report` marks price symbols that are no longer in `tickers.yaml` as `unscheduled` instead of `stalled` (MSFT, GOOGL, AMZN, HYXU and older retired ETFs).
+
+### Removed
+- KBUY, delisted: Yahoo has returned no data since 18/09/2026.
+- Schema v28 drops `v_calendar_upcoming` and `v_calendar_surprise`. The EconCalendar job was retired and `calendar_events` has not been written since 25/09/2026, so the views served month-old "upcoming" releases. The calendar tables stay as history.
+
 ## [0.3.9] — 2026-10-25
 
 ### Added
