@@ -169,3 +169,23 @@ def test_same_day_release_gate_and_future_schedules(tmp_path):
             events = {r[0] for r in store.conn.execute("SELECT edition FROM release_events WHERE family=?", (family,))}
             assert {d for d in EDITIONS[family] if d >= "2026-11-01"} <= events
         assert not any((c.get("resolution") or {}).get("status") == "official" for c in cards)
+
+
+def test_manual_collection_captures_each_latam_family_and_is_idempotent(tmp_path, monkeypatch, capsys):
+    from market_data_hub.macro_releases import collect, open_reader
+    monkeypatch.setattr(collect, "HttpClient", Replay)
+    target = tmp_path / "manual.sqlite"
+    args = ["--db", str(target), "--families", ",".join(LATAM_FAMILIES), "--since", "2026-08"]
+    expected = sum(1 for case in GOLDEN)
+    for new, reused in ((expected, 0), (0, expected)):
+        assert collect.main(args) == 0
+        result = json.loads(capsys.readouterr().out)
+        assert result["failures"] == result["family_failures"] == {}
+        assert result["families"]["LatamAdapter"] == dict(
+            families=list(LATAM_FAMILIES), observations=expected,
+            new_vintages=new, reused_vintages=reused, unavailable=[])
+    with open_reader(target) as store:
+        cards = store.release_cards("2026-08-01", "2026-10-27")["cards"]
+        assert len(cards) == expected
+        assert {c["family"] for c in cards} == set(LATAM_FAMILIES)
+        assert all(c["source_class"] == c["resolution"]["status"] == "official" for c in cards)
