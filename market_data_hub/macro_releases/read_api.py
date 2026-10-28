@@ -8,7 +8,7 @@ from decimal import Decimal
 import re
 from zoneinfo import ZoneInfo
 
-from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, EMPLOYMENT_FAMILIES, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
+from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, EMPLOYMENT_FAMILIES, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES
 from .models import utc
 from .source_classes import source_class
 from .resolve import (
@@ -34,10 +34,14 @@ FAMILY_INDICATORS["us_jobless_claims"] = {"us_initial_jobless_claims"}
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in REMAINING_FAMILIES.items()})
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in CENTRAL_BANKS.items()})
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in HOUSING_FAMILIES.items()})
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in ASIA_FAMILIES.items()})
 
 
 def indicators_for_stage(family, stage):
     """Only measures actually published by this family's edition stage."""
+    if family in ASIA_FAMILIES:
+        from .asia_editions import EDITIONS
+        return FAMILY_INDICATORS[family] if stage in {m[1] for m in EDITIONS[family].values()} else set()
     if family in HOUSING_FAMILIES:
         from .housing_editions import EDITIONS
         stages = {metadata[1] for metadata in EDITIONS[family].values()}

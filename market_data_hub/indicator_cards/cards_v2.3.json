@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "dda6b25b478a181c7f32da14f744e122d5288afe42ecc74d0a680fa2852f3ed0",
+  "aliases_sha256": "a496111b043cfbe3b292b6df182ce9cd70531792e96dbadc95aabd70fe96bed2",
   "cards": [
     {
       "concept": "Real GDP",
@@ -7491,7 +7491,9 @@
           "jp_tokyo_cpi",
           "jp_tokyo_core_cpi"
         ],
-        "cat": [],
+        "cat": [
+          "jp_tokyo_core_cpi_yy"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],

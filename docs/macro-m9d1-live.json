@@ -1,0 +1,393 @@
+{
+  "status": "ok",
+  "backup_method": "SQLite backup from stable private main/WAL bytes",
+  "source_schema": 9,
+  "families": [
+    "jp_trade_balance",
+    "jp_tankan",
+    "jp_tokyo_cpi",
+    "jp_cpi",
+    "jp_gdp",
+    "cn_gdp",
+    "cn_activity",
+    "cn_nbs_pmi",
+    "cn_cpi"
+  ],
+  "latest_cards": [
+    {
+      "family": "jp_trade_balance",
+      "indicator": "jp_trade_balance",
+      "edition": "2026-10-21",
+      "stage": "preliminary",
+      "period": "2026-09",
+      "value": -536.558,
+      "unit": "JPY",
+      "scale": 1000000000.0,
+      "issuer": "MOF",
+      "source_class": "official",
+      "released_at": "2026-10-20T23:50:00.000000+00:00"
+    },
+    {
+      "family": "jp_tankan",
+      "indicator": "jp_tankan_large_manufacturers_di",
+      "edition": "2026-10-01",
+      "stage": "final",
+      "period": "2026-Q3",
+      "value": 24.0,
+      "unit": "diffusion index (percentage points)",
+      "scale": 1.0,
+      "issuer": "BOJ",
+      "source_class": "official",
+      "released_at": "2026-09-30T23:50:00.000000+00:00"
+    },
+    {
+      "family": "jp_tokyo_cpi",
+      "indicator": "jp_tokyo_core_cpi_yy",
+      "edition": "2026-10-02",
+      "stage": "preliminary",
+      "period": "2026-09",
+      "value": 2.7,
+      "unit": "%",
+      "scale": 1.0,
+      "issuer": "StatisticsBureauJP",
+      "source_class": "official",
+      "released_at": "2026-10-01T23:30:00.000000+00:00"
+    },
+    {
+      "family": "jp_cpi",
+      "indicator": "jp_core_cpi_yy",
+      "edition": "2026-10-23",
+      "stage": "final",
+      "period": "2026-09",
+      "value": 2.1,
+      "unit": "%",
+      "scale": 1.0,
+      "issuer": "StatisticsBureauJP",
+      "source_class": "official",
+      "released_at": "2026-10-22T23:30:00.000000+00:00"
+    },
+    {
+      "family": "jp_cpi",
+      "indicator": "jp_cpi_yy",
+      "edition": "2026-10-23",
+      "stage": "final",
+      "period": "2026-09",
+      "value": 2.1,
+      "unit": "%",
+      "scale": 1.0,
+      "issuer": "StatisticsBureauJP",
+      "source_class": "official",
+      "released_at": "2026-10-22T23:30:00.000000+00:00"
+    },
+    {
+      "family": "jp_gdp",
+      "indicator": "jp_gdp_qq",
+      "edition": "2026-09-08",
+      "stage": "revised",
+      "period": "2026-Q2",
+      "value": 0.4,
+      "unit": "%",
+      "scale": 1.0,
+      "issuer": "ESRI",
+      "source_class": "official",
+      "released_at": "2026-09-07T23:50:00.000000+00:00"
+    },
+    {
+      "family": "cn_gdp",
+      "indicator": "cn_gdp_yy",
+      "edition": "2026-10-20",
+      "stage": "preliminary",
+      "period": "2026-Q3",
+      "value": 4.6,
+      "unit": "%",
+      "scale": 1.0,
+      "issuer": "NBS",
+      "source_class": "official",
+      "released_at": "2026-10-20T01:30:00.000000+00:00"
+    },
+    {
+      "family": "cn_activity",
+      "indicator": "cn_industrial_production_yy",
+      "edition": "2026-10-19",
+      "stage": "final",
+      "period": "2026-09",
+      "value": 5.5,
+      "unit": "%",
+      "scale": 1.0,
+      "issuer": "NBS",
+      "source_class": "official",
+      "released_at": "2026-10-19T02:00:00.000000+00:00"
+    },
+    {
+      "family": "cn_activity",
+      "indicator": "cn_retail_sales_yy",
+      "edition": "2026-10-19",
+      "stage": "final",
+      "period": "2026-09",
+      "value": 1.1,
+      "unit": "%",
+      "scale": 1.0,
+      "issuer": "NBS",
+      "source_class": "official",
+      "released_at": "2026-10-19T02:00:00.000000+00:00"
+    },
+    {
+      "family": "cn_nbs_pmi",
+      "indicator": "cn_nbs_manufacturing_pmi",
+      "edition": "2026-10-01",
+      "stage": "final",
+      "period": "2026-09",
+      "value": 50.1,
+      "unit": "index",
+      "scale": 1.0,
+      "issuer": "NBS",
+      "source_class": "official",
+      "released_at": "2026-10-01T01:30:00.000000+00:00"
+    },
+    {
+      "family": "cn_cpi",
+      "indicator": "cn_cpi_yy",
+      "edition": "2026-10-15",
+      "stage": "final",
+      "period": "2026-09",
+      "value": 0.9,
+      "unit": "%",
+      "scale": 1.0,
+      "issuer": "NBS",
+      "source_class": "official",
+      "released_at": "2026-10-15T01:30:00.000000+00:00"
+    }
+  ],
+  "window_cards": [
+    {
+      "family": "cn_activity",
+      "indicator": "cn_industrial_production_yy",
+      "edition": "2026-10-19",
+      "stage": "final",
+      "period": "2026-09",
+      "value": 5.5,
+      "source_class": "official",
+      "released_at": "2026-10-19T02:00:00.000000+00:00"
+    },
+    {
+      "family": "cn_activity",
+      "indicator": "cn_retail_sales_yy",
+      "edition": "2026-10-19",
+      "stage": "final",
+      "period": "2026-09",
+      "value": 1.1,
+      "source_class": "official",
+      "released_at": "2026-10-19T02:00:00.000000+00:00"
+    },
+    {
+      "family": "cn_gdp",
+      "indicator": "cn_gdp_yy",
+      "edition": "2026-10-19",
+      "stage": "preliminary",
+      "period": "2026-Q3",
+      "value": 4.6,
+      "source_class": "official",
+      "released_at": "2026-10-19T02:00:00.000000+00:00"
+    },
+    {
+      "family": "cn_gdp",
+      "indicator": "cn_gdp_yy",
+      "edition": "2026-10-20",
+      "stage": "preliminary",
+      "period": "2026-Q3",
+      "value": 4.6,
+      "source_class": "official",
+      "released_at": "2026-10-20T01:30:00.000000+00:00"
+    },
+    {
+      "family": "jp_trade_balance",
+      "indicator": "jp_trade_balance",
+      "edition": "2026-10-21",
+      "stage": "preliminary",
+      "period": "2026-09",
+      "value": -536.558,
+      "source_class": "official",
+      "released_at": "2026-10-20T23:50:00.000000+00:00"
+    },
+    {
+      "family": "jp_cpi",
+      "indicator": "jp_core_cpi_yy",
+      "edition": "2026-10-23",
+      "stage": "final",
+      "period": "2026-09",
+      "value": 2.1,
+      "source_class": "official",
+      "released_at": "2026-10-22T23:30:00.000000+00:00"
+    },
+    {
+      "family": "jp_cpi",
+      "indicator": "jp_cpi_yy",
+      "edition": "2026-10-23",
+      "stage": "final",
+      "period": "2026-09",
+      "value": 2.1,
+      "source_class": "official",
+      "released_at": "2026-10-22T23:30:00.000000+00:00"
+    }
+  ],
+  "tokyo_claim_review": {
+    "claimed_edition": "2026-10-22",
+    "supported": false,
+    "issuer_schedule": "https://www.stat.go.jp/english/data/cpi/1582.htm",
+    "last_edition": "2026-10-02",
+    "next_edition": "2026-10-30",
+    "reason": "No October 22 edition in the official issuer calendar"
+  },
+  "integrity": "ok",
+  "existing_vintages_unchanged": true,
+  "source_files_unchanged": true,
+  "verified_at": "2026-10-28T01:31:25.849202+00:00",
+  "audit_report": "D:\\Temp\\mdh-m9d1-formats-live-20261027\\mdh-m9d1-ie3hvmmo\\verification.json",
+  "publication_formats": {
+    "jp_gdp": "official bilingual CSV with dated English archive and menu",
+    "jp_trade_balance": "official English XML with publisher unit/basis stylesheet"
+  },
+  "collection_statuses": {
+    "dry_run": {
+      "jp_trade_balance": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "jp_tankan": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "jp_tokyo_cpi": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "jp_cpi": {
+        "status": "ok",
+        "vintages_added": 4,
+        "readings_added": 4
+      },
+      "jp_gdp": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "cn_gdp": {
+        "status": "ok",
+        "vintages_added": 3,
+        "readings_added": 3
+      },
+      "cn_activity": {
+        "status": "ok",
+        "vintages_added": 4,
+        "readings_added": 4
+      },
+      "cn_nbs_pmi": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "cn_cpi": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      }
+    },
+    "copy_collection": {
+      "jp_trade_balance": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "jp_tankan": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "jp_tokyo_cpi": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "jp_cpi": {
+        "status": "ok",
+        "vintages_added": 4,
+        "readings_added": 4
+      },
+      "jp_gdp": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "cn_gdp": {
+        "status": "ok",
+        "vintages_added": 3,
+        "readings_added": 3
+      },
+      "cn_activity": {
+        "status": "ok",
+        "vintages_added": 4,
+        "readings_added": 4
+      },
+      "cn_nbs_pmi": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      },
+      "cn_cpi": {
+        "status": "ok",
+        "vintages_added": 2,
+        "readings_added": 2
+      }
+    },
+    "idempotence": {
+      "jp_trade_balance": {
+        "status": "no_change",
+        "vintages_added": 0,
+        "readings_added": 0
+      },
+      "jp_tankan": {
+        "status": "no_change",
+        "vintages_added": 0,
+        "readings_added": 0
+      },
+      "jp_tokyo_cpi": {
+        "status": "no_change",
+        "vintages_added": 0,
+        "readings_added": 0
+      },
+      "jp_cpi": {
+        "status": "no_change",
+        "vintages_added": 0,
+        "readings_added": 0
+      },
+      "jp_gdp": {
+        "status": "no_change",
+        "vintages_added": 0,
+        "readings_added": 0
+      },
+      "cn_gdp": {
+        "status": "no_change",
+        "vintages_added": 0,
+        "readings_added": 0
+      },
+      "cn_activity": {
+        "status": "no_change",
+        "vintages_added": 0,
+        "readings_added": 0
+      },
+      "cn_nbs_pmi": {
+        "status": "no_change",
+        "vintages_added": 0,
+        "readings_added": 0
+      },
+      "cn_cpi": {
+        "status": "no_change",
+        "vintages_added": 0,
+        "readings_added": 0
+      }
+    }
+  }
+}

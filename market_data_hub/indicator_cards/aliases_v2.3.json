@@ -1,5 +1,6 @@
 {
   "aliases": [
+    {"basis": "M9d1 explicit Tokyo ex-fresh-food CPI y/y addition; same approved Tokyo CPI concept as cal:jp_tokyo_core_cpi. National CPI remains separate.", "id": "cat:jp_tokyo_core_cpi_yy", "key": "jp_tokyo_cpi"},
     {
       "basis": "Same approved ECB MIR house-purchase cost-of-borrowing concept as pan:ecb_cost_borrow_house; euro area U2 monthly headline, not corporations or a fixation bucket. Source: https://data.ecb.europa.eu/data/datasets/MIR/MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N (M9f context only; no FF measure equivalence).",
       "id": "cat:ea_cost_borrow_house",

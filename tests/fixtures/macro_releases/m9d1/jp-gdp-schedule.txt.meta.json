@@ -1,0 +1,7 @@
+{
+  "url": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262/pdf/note_e.pdf",
+  "retrieved_at": "2026-10-27T22:47:33.794621+00:00",
+  "document_hash": "e3cea89ccdd37fb53bad9f6bafd9c45d2daa3c88db3b06bcf3219e0edfc45e18",
+  "source_document_hash": "8f79ef1606e9f1e78aca626f6d0ec315f086534ad16cb000833f44918bb3151b",
+  "extraction_method": "pypdf text extraction from saved issuer PDF; reviewed calendar evidence only"
+}

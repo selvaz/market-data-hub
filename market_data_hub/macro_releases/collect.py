@@ -56,6 +56,9 @@ def main(argv=None):
     adapters.append((Tier1Adapter(client), [f for f in families if f in REMAINING_FAMILIES]))
     adapters.append((PolicyAdapter(client), [f for f in families if f in CENTRAL_BANKS]))
     adapters.append((HousingAdapter(client), [f for f in families if f in HOUSING_FAMILIES]))
+    from .catalogue import ASIA_FAMILIES
+    from .asia import AsiaAdapter
+    adapters.append((AsiaAdapter(client), [f for f in families if f in ASIA_FAMILIES]))
     for adapter, selected in adapters:
         if not selected:
             continue

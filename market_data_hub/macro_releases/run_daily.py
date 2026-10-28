@@ -12,9 +12,10 @@ import tempfile
 from uuid import uuid4
 
 from .adapters import persist
+from .asia import AsiaAdapter
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
-from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES
+from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES
 from .consensus import DEFAULT_RAW_DIR, ingest
 from .eurostat import EurostatAdapter
 from .fred import USRedistributorAdapter
@@ -48,6 +49,8 @@ ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 DISCOVERY_ADAPTERS.update({f: PolicyAdapter for f in CENTRAL_BANKS})
 ADAPTERS.update({f: HousingAdapter for f in HOUSING_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: HousingAdapter for f in HOUSING_FAMILIES})
+ADAPTERS.update({f: AsiaAdapter for f in ASIA_FAMILIES})
+DISCOVERY_ADAPTERS.update({f: AsiaAdapter for f in ASIA_FAMILIES})
 
 
 def fetch_windows(families, lookback, today):
@@ -110,7 +113,7 @@ def safe_error(exc):
         text = str(exc)
         if re.fullmatch(r"Missing credential: (BLS|BEA|FRED)_API_KEY", text):
             message = text
-        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons|dol|census|ecfin|umich): HTTP \d{3}", text):
+        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons|dol|census|ecfin|umich|nbs|boj|esri|statjp|mof): HTTP \d{3}", text):
             message = text
         elif "needs review" in text or "metadata" in text:
             message = "Provider publication metadata/version needs review before this edition can be certified"
@@ -233,8 +236,11 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
                      else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
             calendar = family_editions(family)
             if calendar:
-                result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t, status="scheduled",
-                    **({"reason": "not_yet_published"} if (family, d) in PENDING_EDITIONS.get() else {}))
+                pending = PENDING_EDITIONS.get()
+                result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t,
+                    status=pending.get((family, d)) if pending.get((family, d)) in
+                        {"scheduled_unreviewed", "needs_review"} else "scheduled",
+                    **({"reason": pending[family, d]} if (family, d) in pending else {}))
                     for d, (p, s, t) in calendar.items()
                     if edition_status(d, metadata=(p, s, t), family=family) == "scheduled"]
             # An endpoint exposing a reviewed edition early does not make it due.
@@ -257,9 +263,13 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
             with store.batch():
                 persist_review(store, batch, family, None if dry_run else run_id)
                 result.update(persist_counts(store, observations))
-                result["status"] = "needs_review" if batch.issues else "ok" if result["vintages_added"] else "no_change"
+                edition_reviews = ["edition_needs_review:" + e["edition"] for e in
+                    result.get("scheduled_editions", []) if e["status"] == "needs_review"]
+                result["status"] = "needs_review" if batch.issues or edition_reviews else "ok" if result["vintages_added"] else "no_change"
                 if batch.issues:
                     result["review_reasons"] = batch.issues
+                if edition_reviews:
+                    result["review_reasons"] = result.get("review_reasons", []) + edition_reviews
                 if not dry_run:
                     run_log.family_result(store, run_id, family, result)
     except Exception as exc:

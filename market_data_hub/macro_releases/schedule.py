@@ -26,6 +26,9 @@ def run_date():
 
 
 def issuer_zone(family):
+    from .asia_editions import ZONES as ASIA_ZONES
+    if family in ASIA_ZONES:
+        return ASIA_ZONES[family]
     from .housing_editions import ZONES as HOUSING_ZONES
     if family in HOUSING_ZONES:
         return HOUSING_ZONES[family]
@@ -68,10 +71,10 @@ def publication_grace(family, edition):
     return timedelta(0) <= age < timedelta(hours=6)
 
 
-def mark_pending(family, edition):
+def mark_pending(family, edition, reason="not_yet_published"):
     pending = PENDING_EDITIONS.get()
     if pending is not None:
-        pending[family, edition] = "not_yet_published"
+        pending[family, edition] = reason
 
 
 def get_edition(client, provider, url, family, edition, params=None):
@@ -104,6 +107,9 @@ def current_edition_allowed(family, edition):
 
 
 def family_editions(family):
+    from .asia_editions import EDITIONS as ASIA
+    if family in ASIA:
+        return ASIA[family]
     from .housing_editions import EDITIONS as HOUSING
     if family in HOUSING:
         return HOUSING[family]

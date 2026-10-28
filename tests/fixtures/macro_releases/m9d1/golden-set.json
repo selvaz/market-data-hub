@@ -1,0 +1,234 @@
+{
+  "cases": [
+    {
+      "family": "cn_cpi",
+      "fixture": "cn-cpi-aug.html",
+      "edition": "2026-09-09",
+      "period": "2026-08",
+      "value": 0.8,
+      "stage": "final",
+      "indicator": "cn_cpi_yy",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202609/t20260910_1965275.html"
+    },
+    {
+      "family": "cn_cpi",
+      "fixture": "cn-cpi-sep.html",
+      "edition": "2026-10-14",
+      "period": "2026-09",
+      "value": 0.9,
+      "stage": "final",
+      "indicator": "cn_cpi_yy",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261015_1965500.html"
+    },
+    {
+      "family": "cn_nbs_pmi",
+      "fixture": "cn-pmi-aug.html",
+      "edition": "2026-08-31",
+      "period": "2026-08",
+      "indicator": "cn_nbs_manufacturing_pmi",
+      "value": 49.8,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202609/t20260901_1965170.html"
+    },
+    {
+      "family": "cn_nbs_pmi",
+      "fixture": "cn-pmi-sep.html",
+      "edition": "2026-09-30",
+      "period": "2026-09",
+      "indicator": "cn_nbs_manufacturing_pmi",
+      "value": 50.1,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261008_1965466.html"
+    },
+    {
+      "family": "cn_activity",
+      "fixture": "cn-economy-aug.html",
+      "edition": "2026-09-15",
+      "period": "2026-08",
+      "indicator": "cn_industrial_production_yy",
+      "value": 5.2,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202609/t20260915_1965305.html"
+    },
+    {
+      "family": "cn_activity",
+      "fixture": "cn-economy-aug.html",
+      "edition": "2026-09-15",
+      "period": "2026-08",
+      "indicator": "cn_retail_sales_yy",
+      "value": 0.4,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202609/t20260915_1965305.html"
+    },
+    {
+      "family": "cn_activity",
+      "fixture": "cn-economy-q3.html",
+      "edition": "2026-10-19",
+      "period": "2026-09",
+      "indicator": "cn_industrial_production_yy",
+      "value": 5.5,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html"
+    },
+    {
+      "family": "cn_activity",
+      "fixture": "cn-economy-q3.html",
+      "edition": "2026-10-19",
+      "period": "2026-09",
+      "indicator": "cn_retail_sales_yy",
+      "value": 1.1,
+      "stage": "final",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html"
+    },
+    {
+      "family": "cn_gdp",
+      "fixture": "cn-gdp-native-q2.html",
+      "edition": "2026-07-16",
+      "period": "2026-Q2",
+      "indicator": "cn_gdp_yy",
+      "value": 4.7,
+      "stage": "preliminary",
+      "source_url": "https://www.stats.gov.cn/zwfwck/sjfb/202607/t20260716_1964142.html"
+    },
+    {
+      "family": "cn_gdp",
+      "fixture": "cn-gdp-native-q3.html",
+      "edition": "2026-10-20",
+      "period": "2026-Q3",
+      "indicator": "cn_gdp_yy",
+      "value": 4.6,
+      "stage": "preliminary",
+      "source_url": "https://www.stats.gov.cn/sj/zxfb/202610/t20261020_1965658.html"
+    },
+    {
+      "family": "jp_gdp",
+      "fixture": "jp-gdp-first.csv",
+      "edition": "2026-08-17",
+      "period": "2026-Q2",
+      "indicator": "jp_gdp_qq",
+      "value": 0.3,
+      "stage": "preliminary",
+      "source_url": "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe262/tables/ritu-jk2621.csv"
+    },
+    {
+      "family": "jp_gdp",
+      "fixture": "jp-gdp-revised.csv",
+      "edition": "2026-09-08",
+      "period": "2026-Q2",
+      "indicator": "jp_gdp_qq",
+      "value": 0.4,
+      "stage": "revised",
+      "source_url": "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe262_2/tables/ritu-jk2622.csv"
+    },
+    {
+      "family": "jp_cpi",
+      "fixture": "jp-cpi-aug.xlsx",
+      "edition": "2026-09-18",
+      "period": "2026-08",
+      "indicator": "jp_cpi_yy",
+      "value": 1.9,
+      "stage": "final",
+      "source_url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040501410&fileKind=4"
+    },
+    {
+      "family": "jp_cpi",
+      "fixture": "jp-cpi-aug.xlsx",
+      "edition": "2026-09-18",
+      "period": "2026-08",
+      "indicator": "jp_core_cpi_yy",
+      "value": 1.7,
+      "stage": "final",
+      "source_url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040501410&fileKind=4"
+    },
+    {
+      "family": "jp_cpi",
+      "fixture": "jp-cpi-sep.xlsx",
+      "edition": "2026-10-23",
+      "period": "2026-09",
+      "indicator": "jp_cpi_yy",
+      "value": 2.1,
+      "stage": "final",
+      "source_url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040513539&fileKind=4"
+    },
+    {
+      "family": "jp_cpi",
+      "fixture": "jp-cpi-sep.xlsx",
+      "edition": "2026-10-23",
+      "period": "2026-09",
+      "indicator": "jp_core_cpi_yy",
+      "value": 2.1,
+      "stage": "final",
+      "source_url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040513539&fileKind=4"
+    },
+    {
+      "family": "jp_tokyo_cpi",
+      "fixture": "jp-tokyo-aug.xlsx",
+      "edition": "2026-08-28",
+      "period": "2026-08",
+      "indicator": "jp_tokyo_core_cpi_yy",
+      "value": 1.8,
+      "stage": "preliminary",
+      "source_url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040491317&fileKind=4"
+    },
+    {
+      "family": "jp_tokyo_cpi",
+      "fixture": "jp-tokyo-sep.xlsx",
+      "edition": "2026-10-02",
+      "period": "2026-09",
+      "indicator": "jp_tokyo_core_cpi_yy",
+      "value": 2.7,
+      "stage": "preliminary",
+      "source_url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040501413&fileKind=4"
+    },
+    {
+      "family": "jp_tankan",
+      "fixture": "tankan-jun.pdf",
+      "edition": "2026-07-01",
+      "period": "2026-Q2",
+      "indicator": "jp_tankan_large_manufacturers_di",
+      "value": 22.0,
+      "stage": "final",
+      "source_url": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2606.pdf"
+    },
+    {
+      "family": "jp_tankan",
+      "fixture": "tankan-sep.pdf",
+      "edition": "2026-10-01",
+      "period": "2026-Q3",
+      "indicator": "jp_tankan_large_manufacturers_di",
+      "value": 24.0,
+      "stage": "final",
+      "source_url": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2609.pdf"
+    },
+    {
+      "family": "jp_trade_balance",
+      "fixture": "trade-aug.xml",
+      "edition": "2026-09-29",
+      "period": "2026-08",
+      "indicator": "jp_trade_balance",
+      "value": -1111.913,
+      "stage": "revised",
+      "source_url": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026085e.xml"
+    },
+    {
+      "family": "jp_trade_balance",
+      "fixture": "trade-sep.xml",
+      "edition": "2026-10-21",
+      "period": "2026-09",
+      "indicator": "jp_trade_balance",
+      "value": -536.558,
+      "stage": "preliminary",
+      "source_url": "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/2026094e.xml"
+    },
+    {
+      "family": "cn_gdp",
+      "fixture": "cn-economy-q3.html",
+      "edition": "2026-10-19",
+      "period": "2026-Q3",
+      "indicator": "cn_gdp_yy",
+      "value": 4.6,
+      "stage": "preliminary",
+      "source_url": "https://www.stats.gov.cn/english/PressRelease/202610/t20261019_1965619.html"
+    }
+  ]
+}

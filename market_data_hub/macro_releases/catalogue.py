@@ -196,7 +196,35 @@ HOUSING_FAMILIES = {
         for basis in ("mm", "yy")],
 }
 INDICATORS.update((m.id, m) for measures in HOUSING_FAMILIES.values() for m in measures)
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES)
+ASIA_FAMILIES = {
+    "jp_trade_balance": [measure("jp_trade_balance", "MOF", "JPN", "level", "NSA", "JPY", 1e9,
+        definition="Balance of customs-cleared exports and imports, not seasonally adjusted, billions of JPY; published balance converted from millions; detailed exports with provisional imports remain revised, not final")],
+    "jp_tankan": [measure("jp_tankan_large_manufacturers_di", "BOJ", "JPN", "level", "not-stated",
+        "diffusion index (percentage points)", frequency="Q",
+        definition="Tankan large manufacturing enterprises, current business conditions DI; issuer summary prints actual favourable-minus-unfavourable balance, not forecast; adjustment not stated in source table")],
+    "jp_tokyo_cpi": [measure("jp_tokyo_core_cpi_yy", "StatisticsBureauJP", "JPN", "yy", "NSA",
+        definition="Ku-area of Tokyo CPI excluding fresh food, published preliminary 12-month rate; explicit M9d1 brief addition, distinct from national CPI")],
+    "jp_cpi": [
+        measure("jp_cpi_yy", "StatisticsBureauJP", "JPN", "yy", "NSA",
+            definition="National all-items Consumer Price Index, issuer-published 12-month rate of change"),
+        measure("jp_core_cpi_yy", "StatisticsBureauJP", "JPN", "yy", "NSA",
+            definition="National Consumer Price Index excluding fresh food, issuer-published 12-month rate of change")],
+    "jp_gdp": [measure("jp_gdp_qq", "ESRI", "JPN", "qq", "SA", frequency="Q",
+        definition="Real GDP, issuer-published quarter-to-quarter percent change, seasonally adjusted; first and second Quarterly Estimates")],
+    "cn_gdp": [measure("cn_gdp_yy", "NBS", "CHN", "yy", "NSA", frequency="Q",
+        definition="Real GDP, published cumulative year-over-year percent change at constant prices; Q2 is first half, Q3 first three quarters; preliminary accounting stage per explicit M9d1 brief")],
+    "cn_activity": [
+        measure("cn_industrial_production_yy", "NBS", "CHN", "yy", "NSA",
+            definition="Value-added industrial output above designated size, issuer-published monthly year-over-year percent change"),
+        measure("cn_retail_sales_yy", "NBS", "CHN", "yy", "NSA",
+            definition="Total retail sales of consumer goods, issuer-published monthly year-over-year percent change")],
+    "cn_nbs_pmi": [measure("cn_nbs_manufacturing_pmi", "NBS", "CHN", "level", "SA", "index",
+        definition="Official NBS manufacturing purchasing managers index, 50 neutral, seasonally adjusted; distinct from private Caixin PMI")],
+    "cn_cpi": [measure("cn_cpi_yy", "NBS", "CHN", "yy", "NSA",
+        definition="National Consumer Price Index, issuer-published 12-month rate of change")],
+}
+INDICATORS.update((m.id, m) for measures in ASIA_FAMILIES.values() for m in measures)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES, *ASIA_FAMILIES)
 
 
 def hicp_indicator(period, basis, geography="EA"):
