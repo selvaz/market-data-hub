@@ -7,6 +7,26 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.10] — 2026-10-28
+
+### Added
+- processo-macro M9d-1 (#139): official Japan and China tier-1 release cards. They cover:
+  - Japan: Cabinet Office GDP, national and Tokyo CPI, the BoJ Tankan and the MOF trade balance;
+  - China: NBS GDP, CPI, official PMI and monthly activity.
+
+  Editions are discovered from the issuer's own listings. A due edition without a reviewed URL is reported as `scheduled_unreviewed` instead of aborting the family. NBS editions are dated at the first official CST publication.
+- processo-macro M9i (#140): official Latin American policy and inflation cards. They cover:
+  - BCB Copom Selic decisions, gated at 18:30 São Paulo;
+  - Banxico policy-rate decisions, with statements discovered from Banxico's listing;
+  - INEGI monthly INPC, headline and core.
+
+  Each edition is isolated, so a parse failure, a 404 or a missing preceding statement affects only that edition.
+
+### Known gaps
+- IBGE IPCA and IPCA-15 are not collected, because IBGE returns 403 to this server.
+- METI industrial production is not collected (403).
+- `mx_core_cpi_yy` has no approved indicator card.
+
 ## [0.3.9] — 2026-10-25
 
 ### Added
