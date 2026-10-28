@@ -4,7 +4,32 @@ from .catalogue import INDICATORS
 from .http import FetchError
 from .latam_editions import ZONES, reviewed
 from .publication_times import local_release
-from .schedule import run_date
+from .schedule import due, mark_pending, publication_grace, run_date
+
+
+def fetch_editions(family, since, provider, load):
+    """Keep validated editions when another publication is missing or malformed."""
+    from .latam_editions import EDITIONS
+    out = []
+    for edition, (period, _, _) in due(EDITIONS[family], family=family).items():
+        if period < since:
+            continue
+        try:
+            rows = load(edition)
+            if rows is None:  # The loader has recorded a publication-delay notice.
+                continue
+            if not rows or {r.edition for r in rows} != {edition}:
+                raise FetchError("Latin American requested publication edition needs review")
+        except (FetchError, ValueError, KeyError, TypeError, IndexError) as exc:
+            # Match Asia's contract: transport/auth failures stop the issuer;
+            # edition-specific 404s and schema failures retain other editions.
+            if isinstance(exc, FetchError) and str(exc).startswith(provider + ": ") and str(exc) != provider + ": HTTP 404":
+                raise
+            mark_pending(family, edition, "not_yet_published" if
+                str(exc) == provider + ": HTTP 404" and publication_grace(family, edition) else "needs_review")
+            continue
+        out.extend(rows)
+    return out
 
 
 def observation(doc, family, edition, indicator, printed, *, method, policy=None):

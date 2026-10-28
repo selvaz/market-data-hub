@@ -1,5 +1,6 @@
 """Offline real-publication and official read-card checks for M9i."""
 from dataclasses import replace
+from contextlib import contextmanager
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -12,7 +13,7 @@ from market_data_hub.macro_releases.catalogue import LATAM_FAMILIES
 from market_data_hub.macro_releases.http import Document, FetchError
 from market_data_hub.macro_releases.latam import LatamAdapter
 from market_data_hub.macro_releases.latam_editions import EDITIONS, SCHEDULES
-from market_data_hub.macro_releases.schedule import RUN_INSTANT
+from market_data_hub.macro_releases.schedule import RUN_INSTANT, PENDING_EDITIONS
 
 ROOT = Path(__file__).parent / "fixtures/macro_releases/m9i"
 GOLDEN = json.loads((ROOT / "golden-set.json").read_text())["cases"]
@@ -83,6 +84,68 @@ class Replay:
             if json.loads(path.read_text())["url"] == url:
                 return document(path.name.removesuffix(".meta.json"))
         raise AssertionError("Unrecorded issuer URL: " + url)
+
+
+@contextmanager
+def run_at(instant):
+    clock = RUN_INSTANT.set(instant)
+    notices = {}
+    token = PENDING_EDITIONS.set(notices)
+    try:
+        yield notices
+    finally:
+        PENDING_EDITIONS.reset(token)
+        RUN_INSTANT.reset(clock)
+
+
+@pytest.mark.parametrize("instant,reason", [
+    ("2026-11-05T19:00:00Z", "not_yet_published"),
+    ("2026-11-06T01:00:00Z", "scheduled_unreviewed"),
+])
+def test_due_banxico_without_url_preserves_reviewed_editions(instant, reason):
+    with run_at(instant) as notices:
+        rows = LatamAdapter(Replay()).fetch(["banxico_policy"], "2026-08")
+        assert [r.edition for r in rows] == ["2026-08-06", "2026-09-24"]
+        assert notices == {("banxico_policy", "2026-11-05"): reason}
+
+
+def test_banxico_discovers_missing_archive_from_real_listing(monkeypatch):
+    from market_data_hub.macro_releases import banxico_policy
+    monkeypatch.delitem(banxico_policy.ARCHIVES, "2026-09-24")
+    with run_at("2026-10-27T18:00:00Z") as notices:
+        rows = LatamAdapter(Replay()).fetch(["banxico_policy"], "2026-08")
+        assert [r.edition for r in rows] == ["2026-08-06", "2026-09-24"]
+        assert rows[-1].value == 6.5
+        assert notices == {}
+
+
+def test_banxico_discovery_rejects_foreign_and_ambiguous_links():
+    from market_data_hub.macro_releases import banxico_policy
+    doc = document("banxico-listing.html")
+    original = banxico_policy.ARCHIVES["2026-09-24"]
+    relative = original.removeprefix(banxico_policy.HOST)
+    for replacement in ("https://example.invalid/statement.pdf", relative + '">Texto completo</a><a href="' +
+                        relative.replace("7D0BDB6E", "AAAAAAAA")):
+        changed = replace(doc, body=doc.body.replace(relative.encode(), replacement.encode()))
+        with pytest.raises(FetchError, match="needs review"):
+            banxico_policy.publication_url(changed, "2026-09-24")
+
+
+def test_daily_reports_banxico_pending_without_losing_other_family(tmp_path, monkeypatch):
+    monkeypatch.setattr(run_daily, "HttpClient", Replay)
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 11, 6, 1, tzinfo=timezone.utc)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
+    result = run_daily.execute(tmp_path / "pending.sqlite", ["banxico_policy", "mx_cpi"], 24, False,
+                               raw_dir=tmp_path / "none")
+    assert result["status"] == "ok", result
+    assert result["families"]["banxico_policy"]["vintages_added"] == 2
+    assert result["families"]["mx_cpi"]["vintages_added"] == 4
+    pending = next(e for e in result["families"]["banxico_policy"]["scheduled_editions"]
+                   if e["edition"] == "2026-11-05")
+    assert pending["status"] == pending["reason"] == "scheduled_unreviewed"
 
 
 @pytest.mark.parametrize("family", LATAM_FAMILIES)

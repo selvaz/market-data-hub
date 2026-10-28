@@ -1,13 +1,17 @@
 """Banxico public monetary-policy statements; SIE's token API is unnecessary."""
 from datetime import date
+import re
+from urllib.parse import urljoin
 from .http import FetchError
-from .latam import observation
-from .latam_editions import EDITIONS, reviewed
-from .schedule import due, get_edition
-from .tier1_publications import publication_text, require
+from .latam import fetch_editions, observation
+from .latam_editions import reviewed
+from .nbs_housing import Page
+from .schedule import get_edition, mark_pending, publication_grace
+from .tier1_publications import plain, publication_text, require
 
 HOST = "https://www.banxico.org.mx"
 PATH = "/publicaciones-y-prensa/anuncios-de-las-decisiones-de-politica-monetaria/"
+INDEX = HOST + PATH + "anuncios-politica-monetaria-t.html"
 ARCHIVES = {
     "2026-08-06": HOST + PATH + "{8DA3F519-341F-480E-1D4E-1AEE71DD08DA}.pdf",
     "2026-09-24": HOST + PATH + "{7D0BDB6E-E519-9C69-04AA-ABD4D31E4850}.pdf",
@@ -23,8 +27,37 @@ def spanish_date(day, month, year):
         raise FetchError("Spanish publication date needs review") from None
 
 
-def parse(doc, family="banxico_policy", since="1900-01"):
-    if doc.url not in ARCHIVES.values() or not doc.body.startswith(b"%PDF"):
+def publication_url(document, edition):
+    """Bind a public statement link to the listing's printed edition date."""
+    if document.url != INDEX:
+        raise FetchError("Banxico listing origin needs review")
+    # The issuer page mixes UTF-8 comments and Latin-1 content. All fields used
+    # here (numeric date, class names and 'Texto completo') are ASCII.
+    tables = [t for t in Page(document.body.decode("latin-1").encode("utf-8")).root.find_all("table")
+              if "bmtableview" in t.get("class", "").split()]
+    if len(tables) != 1:
+        raise FetchError("Banxico listing format needs review")
+    stamp = date.fromisoformat(edition).strftime("%d/%m/%y")
+    urls = set()
+    for row in tables[0].find_all("tr"):
+        cells = row.find_all("td", {"class": "bmdateview"})
+        if len(cells) != 1 or plain(cells[0].text()) != stamp:
+            continue
+        for link in row.find_all("a"):
+            if plain(link.text()) != "Texto completo":
+                continue
+            url = urljoin(INDEX, link.get("href"))
+            if not re.fullmatch(re.escape(HOST + PATH) + r"\{[0-9A-Fa-f]{8}(?:-[0-9A-Fa-f]{4}){3}-[0-9A-Fa-f]{12}\}\.pdf", url):
+                raise FetchError("Banxico listing statement URL needs review")
+            urls.add(url)
+    if len(urls) > 1:
+        raise FetchError("Banxico listing edition links disagree; needs review")
+    return next(iter(urls), None)
+
+
+def parse(doc, family="banxico_policy", since="1900-01", *, archives=None):
+    archives = ARCHIVES if archives is None else archives
+    if doc.url not in archives.values() or not doc.body.startswith(b"%PDF"):
         raise FetchError("Banxico statement origin/format needs review")
     try:
         text, method = publication_text(doc)
@@ -33,7 +66,7 @@ def parse(doc, family="banxico_policy", since="1900-01"):
     stamp = require(r"Anuncio de Política Monetaria Comunicado de Prensa (\d+) de (\w+) de (2026)", text)
     edition = spanish_date(*stamp.groups())
     reviewed(family, edition)
-    if ARCHIVES.get(edition) != doc.url:
+    if archives.get(edition) != doc.url:
         raise FetchError("Banxico URL/edition needs review")
     decision = require(r"La Junta de Gobierno del Banco de México decidió "
         r"(mantener|disminuir|incrementar)(?: en (\d+) puntos base)? el objetivo para la Tasa de Interés "
@@ -54,16 +87,19 @@ def parse(doc, family="banxico_policy", since="1900-01"):
 
 
 def fetch(client, family, since):
-    out = []
-    for edition in due(EDITIONS[family], family=family):
-        if edition < since:
-            continue
-        if edition not in ARCHIVES:
-            raise FetchError("Banxico due statement archive needs review")
-        doc = get_edition(client, "banxico", ARCHIVES[edition], family, edition)
-        if doc is not None:
-            rows = parse(doc, family, since)
-            if {r.edition for r in rows} != {edition}:
-                raise FetchError("Banxico requested publication edition needs review")
-            out.extend(rows)
-    return out
+    urls = dict(ARCHIVES)
+    listing = None
+    def load(edition):
+        nonlocal listing
+        if edition not in urls:
+            if listing is None:
+                listing = client.get("banxico", INDEX)
+            url = publication_url(listing, edition)
+            if url is None:
+                mark_pending(family, edition, "not_yet_published" if publication_grace(family, edition)
+                             else "scheduled_unreviewed")
+                return None
+            urls[edition] = url
+        doc = get_edition(client, "banxico", urls[edition], family, edition)
+        return parse(doc, family, since, archives=urls) if doc is not None else None
+    return fetch_editions(family, since, "banxico", load)
