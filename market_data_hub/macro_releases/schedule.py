@@ -26,6 +26,9 @@ def run_date():
 
 
 def issuer_zone(family):
+    from .latam_editions import ZONES as LATAM_ZONES
+    if family in LATAM_ZONES:
+        return LATAM_ZONES[family]
     from .asia_editions import ZONES as ASIA_ZONES
     if family in ASIA_ZONES:
         return ASIA_ZONES[family]
@@ -107,6 +110,9 @@ def current_edition_allowed(family, edition):
 
 
 def family_editions(family):
+    from .latam_editions import EDITIONS as LATAM
+    if family in LATAM:
+        return LATAM[family]
     from .asia_editions import EDITIONS as ASIA
     if family in ASIA:
         return ASIA[family]

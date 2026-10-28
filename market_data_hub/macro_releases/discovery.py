@@ -361,7 +361,7 @@ def _ons(client, family, since):
 
 def fetch_daily(client, family, since):
     from .us_editions import EDITIONS
-    from .catalogue import REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES
+    from .catalogue import REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES
     strategy = {"us_cpi": _bls, "us_payrolls": _bls, "us_gdp": _bea,
                 "us_unemployment": _employment, "us_ahe": _employment,
                 "ea_hicp": _eurostat, "uk_gdp": _ons, "uk_cpi": _ons_rates,
@@ -370,7 +370,8 @@ def fetch_daily(client, family, since):
                 **{f: _remaining for f in REMAINING_FAMILIES},
                 **{f: _policy for f in CENTRAL_BANKS},
                 **{f: _housing for f in HOUSING_FAMILIES},
-                **{f: _asia for f in ASIA_FAMILIES}}[family]
+                **{f: _asia for f in ASIA_FAMILIES},
+                **{f: _latam for f in LATAM_FAMILIES}}[family]
     documents = []
     reasons = []
     class Capture:
@@ -431,6 +432,11 @@ def _employment(client, family, since):
 def _remaining(client, family, since):
     from .tier1_publications import Tier1Adapter
     return FamilyFetch(observations=Tier1Adapter(client).fetch([family], since))
+
+
+def _latam(client, family, since):
+    from .latam import LatamAdapter
+    return FamilyFetch(observations=LatamAdapter(client).fetch([family], since))
 
 
 def _asia(client, family, since):

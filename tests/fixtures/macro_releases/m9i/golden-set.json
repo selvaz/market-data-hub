@@ -1,0 +1,26 @@
+{
+  "cases": [
+    {
+      "family": "bcb_policy",
+      "edition": "2026-08-05",
+      "period": "2026-08-05",
+      "indicator": "bcb_selic_rate_decision",
+      "value": 14,
+      "stage": "final",
+      "fixture": "bcb-aug.json",
+      "previous": "bcb-jun.json",
+      "source_url": "https://www.bcb.gov.br/api/servico/sitebcb/copom/comunicados_detalhes?nro_reuniao=280"
+    },
+    {
+      "family": "bcb_policy",
+      "edition": "2026-09-16",
+      "period": "2026-09-16",
+      "indicator": "bcb_selic_rate_decision",
+      "value": 13.75,
+      "stage": "final",
+      "fixture": "bcb-sep.json",
+      "previous": "bcb-aug.json",
+      "source_url": "https://www.bcb.gov.br/api/servico/sitebcb/copom/comunicados_detalhes?nro_reuniao=281"
+    }
+  ]
+}
