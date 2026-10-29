@@ -7,6 +7,9 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Five Yahoo symbols for the LazyCommittee morning data (prompt-askb P4), each checked live on 29/10/2026: 1321.T (Nikkei 225, Tokyo) and 2800.HK (Hang Seng, Hong Kong), so the Asian session is in the data before the US open; GOVT (aggregate US Treasury); AGGG.L (Global Aggregate, USD unhedged); SYBA.DE (Bloomberg Euro Aggregate).
+
 ### Fixed
 - Stalled thresholds for monthly and quarterly series are now 95 and 230 days. FRED dates a period at its start, so the old 45/120 flagged every on-time release (UNRATE, PCE, M2, GDP) and buried the series that had really stopped.
 - `coverage_report` marks price symbols that are no longer in `tickers.yaml` as `unscheduled` instead of `stalled` (MSFT, GOOGL, AMZN, HYXU and older retired ETFs).
@@ -14,6 +17,26 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 ### Removed
 - KBUY, delisted: Yahoo has returned no data since 18/09/2026.
 - Schema v28 drops `v_calendar_upcoming` and `v_calendar_surprise`. The EconCalendar job was retired and `calendar_events` has not been written since 25/09/2026, so the views served month-old "upcoming" releases. The calendar tables stay as history.
+
+## [0.3.10] — 2026-10-28
+
+### Added
+- processo-macro M9d-1 (#139): official Japan and China tier-1 release cards. They cover:
+  - Japan: Cabinet Office GDP, national and Tokyo CPI, the BoJ Tankan and the MOF trade balance;
+  - China: NBS GDP, CPI, official PMI and monthly activity.
+
+  Editions are discovered from the issuer's own listings. A due edition without a reviewed URL is reported as `scheduled_unreviewed` instead of aborting the family. NBS editions are dated at the first official CST publication.
+- processo-macro M9i (#140): official Latin American policy and inflation cards. They cover:
+  - BCB Copom Selic decisions, gated at 18:30 São Paulo;
+  - Banxico policy-rate decisions, with statements discovered from Banxico's listing;
+  - INEGI monthly INPC, headline and core.
+
+  Each edition is isolated, so a parse failure, a 404 or a missing preceding statement affects only that edition.
+
+### Known gaps
+- IBGE IPCA and IPCA-15 are not collected, because IBGE returns 403 to this server.
+- METI industrial production is not collected (403).
+- `mx_core_cpi_yy` has no approved indicator card.
 
 ## [0.3.9] — 2026-10-25
 
