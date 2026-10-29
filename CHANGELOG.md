@@ -14,6 +14,9 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   previous values, explicitly labelled FF forecasts (never surprise eligible),
   and the latest family collection issues. Telegram is opt-in through the existing
   hub helper; empty windows still write a report and return exit code 3.
+- Each daily macro release now carries its approved indicator card beneath the
+  figure, with the full card and key in JSON. Unmapped releases explicitly show
+  `no card yet` and are counted in the report summary without invented context.
 
 ## [0.3.10] — 2026-10-28
 

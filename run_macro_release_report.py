@@ -33,6 +33,7 @@ def main(argv=None):
         report = collect_report(args.db, since_hours=args.since_hours)
         html_path, json_path = write_report(report, out_dir)
         print(report["message"])
+        print(report["indicator_card_summary"])
         print(f"Saved report: {html_path}\nSaved JSON: {json_path}")
         if args.telegram:
             token = os.environ.get("TELEGRAM_BOT_TOKEN")

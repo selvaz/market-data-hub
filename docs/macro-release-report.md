@@ -64,6 +64,18 @@ Pre-release Forex Factory readings accepted by the read API appear as **FF
 forecast**, with `kind: ff_forecast` and `surprise_eligible: false` in JSON.
 They are never presented as consensus or used to calculate a surprise.
 
+Each figure is followed by its compact [indicator card](indicator-cards.md),
+resolved with `indicator_card("cat:" + indicator_id)` using the same catalogue
+lookup as other consumers. The package's `render_card` preserves the approved
+timing class, reference and evidence caveats; all card text is HTML-escaped.
+JSON stores the full card under `indicator_card` (including `key`, `timing.class`,
+rationale and reference notes) and its compact text under `indicator_card_text`.
+An unmapped release stores null for both fields and displays **no card yet**.
+The summary includes `indicator_card_count`, `missing_indicator_card_count` and
+`missing_indicator_card_ids`. Counts are per release, even if releases share a
+concept card; the missing-id list is sorted and unique. No replacement context
+is inferred for missing cards.
+
 The **Needs review / failed** section lists the latest saved
 `collect_run_families` outcome per family at the knowledge cutoff, with status,
 time and recorded reason. A later successful result clears an earlier failure.
@@ -98,7 +110,7 @@ codes 0 and 3. Rewiring and deploying this command are separate production steps
 ## Offline validation
 
 ```powershell
-& C:\ProgramData\spyder-6\python.exe -m pytest tests/test_macro_release_report.py tests/test_macro_read_api.py --basetemp=D:/Temp/mdh-relreport -q
+& C:\ProgramData\spyder-6\python.exe -m pytest tests/test_macro_release_report.py tests/test_macro_read_api.py tests/test_indicator_cards.py --basetemp=D:/Temp/mdh-relreport -q
 & C:\ProgramData\spyder-6\python.exe -m ruff check .
 ```
 

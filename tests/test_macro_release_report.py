@@ -11,6 +11,8 @@ from types import SimpleNamespace
 import pytest
 
 import run_macro_release_report as cli
+from market_data_hub.indicator_cards import indicator_card, render_card
+from market_data_hub.macro_releases import report as report_module
 from market_data_hub.macro_releases import open_reader, open_writer, run_log
 from market_data_hub.macro_releases.adapters import Observation, persist
 from market_data_hub.macro_releases.catalogue import INDICATORS
@@ -231,3 +233,67 @@ def test_deterministic_html_and_json(db, tmp_path):
     html_path, json_path = write_report(report, tmp_path)
     assert html_path.read_text(encoding="utf-8") == render_html(report)
     assert json.loads(json_path.read_text(encoding="utf-8")) == report
+
+
+def test_release_indicator_card_class_description_and_json(db, tmp_path):
+    report = collect_report(db, now=NOW)
+    row, = releases(report)
+    expected = indicator_card("cat:" + row["indicator_id"])
+    assert expected is not None
+    assert row["indicator_card"] == expected.model_dump(mode="json", by_alias=True)
+    assert row["indicator_card_text"] == render_card(expected)
+    assert report["indicator_card_count"] == 1
+    assert report["missing_indicator_card_count"] == 0
+    html = render_html(report)
+    assert expected.timing.timing_class in html
+    assert expected.rationale in html
+    assert html.index("Official value:") < html.index('class="indicator-card"') < html.index("Previous:")
+    _, json_path = write_report(report, tmp_path)
+    saved = releases(json.loads(json_path.read_text(encoding="utf-8")))[0]["indicator_card"]
+    assert saved["key"] == expected.key
+    assert saved["timing"]["class"] == expected.timing.timing_class
+    assert saved["rationale"] == expected.rationale
+
+
+def test_missing_indicator_card_is_explicit_and_counted_per_release(db):
+    assert indicator_card("cat:mx_core_cpi_yy") is None
+    with open_writer(db) as store:
+        persist(store, [
+            obs("mx_core_cpi_yy", "mx_cpi", period=period, published=published, seen=seen)
+            for period, published, seen in (
+                ("2026-08", "2026-09-09T12:00:00Z", "2026-10-29T14:00:00Z"),
+                ("2026-09", "2026-10-09T12:00:00Z", "2026-10-29T14:01:00Z"),
+            )
+        ])
+    report = collect_report(db, now=NOW)
+    missing = [r for r in releases(report) if r["indicator_id"] == "mx_core_cpi_yy"]
+    assert len(missing) == 2
+    assert all(r["indicator_card"] is None and r["indicator_card_text"] is None for r in missing)
+    assert report["indicator_card_count"] == 1
+    assert report["missing_indicator_card_count"] == 2
+    assert report["missing_indicator_card_ids"] == ["mx_core_cpi_yy"]
+    assert report["indicator_card_summary"] == "Indicator cards: 1 of 3; 2 no card yet."
+    html = render_html(report)
+    assert "Indicator cards: 1 of 3; 2 no card yet." in html
+    assert html.count("<b>Indicator card:</b> no card yet") == 2
+
+
+def test_indicator_card_text_and_key_are_html_escaped(db, monkeypatch):
+    original = indicator_card("cat:ecb_deposit_facility_rate_decision")
+    malicious = original.model_copy(update={
+        "key": '<key "unsafe">', "concept": '<script>alert("card")</script>',
+        "rationale": "Measures <rates> & policy.",
+    })
+
+    def lookup(identity):
+        assert identity == "cat:ecb_deposit_facility_rate_decision"
+        return malicious
+
+    monkeypatch.setattr(report_module, "indicator_card", lookup)
+    report = collect_report(db, now=NOW)
+    assert releases(report)[0]["indicator_card"]["rationale"] == malicious.rationale
+    html = render_html(report)
+    assert '<script>' not in html and '<rates>' not in html
+    assert '&lt;script&gt;alert(&quot;card&quot;)&lt;/script&gt;' in html
+    assert '&lt;key &quot;unsafe&quot;&gt;' in html
+    assert 'Measures &lt;rates&gt; &amp; policy.' in html

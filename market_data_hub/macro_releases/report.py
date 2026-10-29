@@ -8,6 +8,8 @@ import math
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from market_data_hub.indicator_cards import indicator_card, render_card
+
 from .catalogue import CENTRAL_BANKS, INDICATORS, LATAM_FAMILIES
 from .models import utc
 from .read_api import ReadAPI
@@ -60,6 +62,7 @@ def collect_report(db_path, *, since_hours=24, now=None):
             and p["content_hash"] == selected["content_hash"]
         ), None)
         info = INDICATORS.get(card["indicator_id"])
+        context = indicator_card(f'cat:{card["indicator_id"]}')
         forecasts = [
             dict(label="FF forecast", kind="ff_forecast", surprise_eligible=False,
                  value=f["normalized_value"], unit=resolution["unit"], scale=resolution["scale"],
@@ -77,13 +80,21 @@ def collect_report(db_path, *, since_hours=24, now=None):
             published_at=card["released_at"], publication_precision=card["publication_precision"],
             time_basis=card["time_basis"], first_official_seen_at=card["first_official_seen_at"],
             issuer=card["issuer_id"], document_url=document_url, ff_forecasts=forecasts,
+            indicator_card=context.model_dump(mode="json", by_alias=True) if context else None,
+            indicator_card_text=render_card(context) if context else None,
         )
         groups[release_group(card)].append(release)
     count = sum(map(len, groups.values()))
+    missing_cards = [r["indicator_id"] for rows in groups.values() for r in rows
+                     if r["indicator_card"] is None]
+    card_count = count - len(missing_cards)
     return dict(
         title=TITLE, generated_at=end, since=start, until=end,
         window_basis=result["window_basis"], window_bounds="[since, until)",
         release_count=count, message=f"{count} release(s) first seen in this window." if count else EMPTY_MESSAGE,
+        indicator_card_count=card_count, missing_indicator_card_count=len(missing_cards),
+        missing_indicator_card_ids=sorted(set(missing_cards)),
+        indicator_card_summary=f"Indicator cards: {card_count} of {count}; {len(missing_cards)} no card yet.",
         groups=[dict(name=label, releases=rows) for label, rows in groups.items() if rows],
         collection_issues=result["collection_issues"], limitations=result["limitations"],
     )
@@ -104,6 +115,17 @@ def _document_link(url):
     if url and urlsplit(url).scheme.lower() in {"http", "https"}:
         return f'<a href="{_text(url)}">Issuer document</a>'
     return "Issuer document unavailable"
+
+
+def _indicator_card_html(row):
+    card = row["indicator_card"]
+    if card is None:
+        return '<div class="indicator-card"><p><b>Indicator card:</b> no card yet</p></div>'
+    return (
+        '<div class="indicator-card"><p><b>Indicator card</b> '
+        f'<span class="meta">{_text(card["key"])}</span></p>'
+        f'<p>{_text(row["indicator_card_text"])}</p></div>'
+    )
 
 
 def render_html(report):
@@ -130,6 +152,7 @@ def render_html(report):
                 f'{_text(row["source_class"])} issuer</p>'
                 f'<p><b>Reference period:</b> {_text(row["reference_period"])} · {_text(row["stage"])}</p>'
                 f'<p><b>Official value:</b> {_text(_value(row["official_value"], row["unit"], row["scale"]))}</p>'
+                f'{_indicator_card_html(row)}'
                 f'<p><b>Previous:</b> {_text(previous_text)}</p>{forecasts}'
                 f'<p><b>Published:</b> {_text(publication)} · <b>Issuer:</b> {_text(row["issuer"])}</p>'
                 f'<p>{_document_link(row["document_url"])}</p>'
@@ -151,6 +174,7 @@ h1{{font-size:20px;border-bottom:3px solid #1d4ed8;padding-bottom:8px}}
 h2{{font-size:16px;margin-top:24px;color:#1d4ed8;border-bottom:1px solid #e0e0e0;padding-bottom:6px}}
 h3{{font-size:15px;margin:0 0 8px}} p{{margin:7px 0;overflow-wrap:anywhere}}
 article{{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin:12px 0}}
+.indicator-card{{background:#fff;border-left:3px solid #1d4ed8;padding:6px 10px;margin:8px 0;font-size:12px;line-height:1.5}}
 .meta{{color:#666;font-size:12px}} .summary{{background:#eff6ff;padding:12px;border-radius:8px}}
 li{{margin:8px 0;overflow-wrap:anywhere}} a{{color:#1d4ed8}}
 </style></head><body>
@@ -158,6 +182,7 @@ li{{margin:8px 0;overflow-wrap:anywhere}} a{{color:#1d4ed8}}
 <p class="meta">Generated: {_text(report["generated_at"])}</p>
 <p>First seen window (UTC): [{_text(report["since"])}, {_text(report["until"])})</p>
 <p class="summary">{_text(report["message"])}</p>
+<p class="summary">{_text(report["indicator_card_summary"])}</p>
 {"".join(sections)}
 <h2>Needs review / failed</h2>
 {f"<ul>{issues}</ul>" if issues else "<p>No collection issues in the latest family outcomes.</p>"}
