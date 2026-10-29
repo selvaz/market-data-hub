@@ -76,6 +76,29 @@ The summary includes `indicator_card_count`, `missing_indicator_card_count` and
 concept card; the missing-id list is sorted and unique. No replacement context
 is inferred for missing cards.
 
+The self-contained HTML uses the Economic Release Monitor's grey canvas, white
+card grid, pill filters, typography and positive/negative change colours. It
+retains central banks first, followed by geography. Numeric changes compare the
+official figure with the previous value only when units are explicitly
+compatible, accounting for stored scales; rate differences are percentage
+points. Colours indicate numerical direction, not whether a release is good or
+bad. Missing or incompatible previous values show “Change unavailable”.
+
+The four tabs filter the existing content without fetching any data:
+
+| Tab | Shows |
+| --- | --- |
+| All | All releases in the window, plus the latest collection issues |
+| New today | Releases first seen in the report's rolling window; every release in this report already qualifies |
+| Tier 1 | Releases with an explicit T1 classification in the indicator catalogue |
+| Errors | Collection outcomes needing review or reporting failure |
+
+Search filters names, issuers and other displayed card text within the selected
+tab. Empty groups are hidden as filters change. All report content is rendered
+in the HTML before filtering, so it remains readable with JavaScript disabled.
+CSS and JavaScript are inline; no external assets are loaded. Presentation and
+filter metadata do not change the JSON payload.
+
 The **Needs review / failed** section lists the latest saved
 `collect_run_families` outcome per family at the knowledge cutoff, with status,
 time and recorded reason. A later successful result clears an earlier failure.

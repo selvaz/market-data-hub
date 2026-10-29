@@ -18,6 +18,12 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   figure, with the full card and key in JSON. Unmapped releases explicitly show
   `no card yet` and are counted in the report summary without invented context.
 
+### Changed
+- Restyled the daily macro HTML with the Economic Release Monitor's header,
+  colours, typography, indicator-card grid, signed-change colouring and four
+  local filters (All / New today / Tier 1 / Errors). All current content and the
+  JSON contract are preserved; CSS and JavaScript remain self-contained.
+
 ## [0.3.10] — 2026-10-28
 
 ### Added

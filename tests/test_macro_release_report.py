@@ -1,10 +1,14 @@
 """Daily report contract against a real offline SQLite fixture."""
 from dataclasses import replace
+from copy import deepcopy
 from datetime import datetime, timezone
 import hashlib
+from html.parser import HTMLParser
 import json
+import shutil
 import socket
 import sqlite3
+import subprocess
 import sys
 from types import SimpleNamespace
 
@@ -167,7 +171,7 @@ def test_html_escaping_and_unsafe_links(db):
     row["reference_period"] = "<period>"
     row["issuer"] = "<issuer> & bank"
     html = render_html(report)
-    assert '<script>' not in html and '&lt;script&gt;alert(&quot;x&quot;)' in html
+    assert html.count('<script>') == 1 and '&lt;script&gt;alert(&quot;x&quot;)' in html
     assert "&lt;period&gt;" in html and "&lt;issuer&gt; &amp; bank" in html
     assert 'href="https://issuer.example/decision?a=1&amp;b=&quot;two&quot;"' in html
     row["document_url"] = "javascript:alert(1)"
@@ -293,7 +297,139 @@ def test_indicator_card_text_and_key_are_html_escaped(db, monkeypatch):
     report = collect_report(db, now=NOW)
     assert releases(report)[0]["indicator_card"]["rationale"] == malicious.rationale
     html = render_html(report)
-    assert '<script>' not in html and '<rates>' not in html
+    assert html.count('<script>') == 1 and '<rates>' not in html
     assert '&lt;script&gt;alert(&quot;card&quot;)&lt;/script&gt;' in html
     assert '&lt;key &quot;unsafe&quot;&gt;' in html
     assert 'Measures &lt;rates&gt; &amp; policy.' in html
+
+
+class FilterDOM(HTMLParser):
+    """Read actual rendered items and scripts for the dependency-free Node DOM harness."""
+    def __init__(self, html):
+        super().__init__()
+        self.items, self.buttons, self.groups, self.scripts = [], [], [], []
+        self.group = self.item = self.button = None
+        self.in_script = False
+        self.feed(html)
+
+    def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if "data-release-group" in attrs:
+            self.group = len(self.groups)
+            self.groups.append(self.group)
+        if "data-report-item" in attrs:
+            self.item = dict(attrs=attrs, group=self.group, text="")
+            self.items.append(self.item)
+        if tag == "button" and "data-v" in attrs:
+            self.button = dict(attrs=attrs, text="")
+            self.buttons.append(self.button)
+        if tag == "script":
+            self.in_script = True
+            self.scripts.append("")
+
+    def handle_endtag(self, tag):
+        if tag == "article":
+            self.item = None
+        if tag == "section":
+            self.group = None
+        if tag == "button":
+            self.button = None
+        if tag == "script":
+            self.in_script = False
+
+    def handle_data(self, data):
+        if self.item is not None:
+            self.item["text"] += data
+        if self.button is not None:
+            self.button["text"] += data
+        if self.in_script:
+            self.scripts[-1] += data
+
+
+@pytest.mark.skipif(shutil.which("node") is None, reason="Node required to execute the inline tab JavaScript")
+def test_four_tabs_filter_actual_rendered_items(db, monkeypatch):
+    with open_writer(db) as store:
+        persist(store, [
+            obs("us_cpi_headline_yy", "us_cpi", period="2026-09"),
+            obs("us_gdp_qq_saar", "us_gdp", period="2026-Q3"),
+        ])
+        log_outcome(store, monkeypatch, "tab-issue", "uk_gdp", "failed", "2026-10-29T15:00:00Z")
+    monkeypatch.setattr(report_module, "INDICATORS", dict(
+        INDICATORS, us_cpi_headline_yy=INDICATORS["us_cpi_headline_yy"].model_copy(update={"tier": "T2"})))
+    report = collect_report(db, now=NOW)
+    # The renderer must honour first-seen bounds independently of publication date.
+    next(r for r in releases(report) if r["indicator_id"] == "us_gdp_qq_saar")["first_official_seen_at"] = report["until"]
+    before = deepcopy(report)
+    dom = FilterDOM(render_html(report))
+    assert report == before  # styling/filtering never mutates the JSON payload
+    assert [(b["attrs"]["data-v"], b["text"]) for b in dom.buttons] == [
+        ("all", "All"), ("new", "New today"), ("tier1", "Tier 1"), ("error", "Errors"),
+    ]
+    assert len(dom.scripts) == 1
+    harness = r'''
+const fs = require('fs'), vm = require('vm');
+const input = JSON.parse(fs.readFileSync(0, 'utf8'));
+function element(record = {attrs: {}, text: ''}) {
+  return {
+    dataset: Object.fromEntries(Object.entries(record.attrs).filter(([k]) => k.startsWith('data-'))
+      .map(([k,v]) => [k.slice(5).replace(/-([a-z])/g, (_,c) => c.toUpperCase()), v])),
+    textContent: record.text, hidden: false, value: '', handlers: {}, attrs: record.attrs,
+    classList: {toggle() {}},
+    setAttribute(k,v) {this.attrs[k] = v;},
+    addEventListener(k,fn) {this.handlers[k] = fn;}
+  };
+}
+const items = input.items.map(element), buttons = input.buttons.map(element);
+const groups = input.groups.map(n => ({hidden:false, querySelectorAll() {
+  return items.filter((_,i) => input.items[i].group === n);
+}}));
+const ids = Object.fromEntries(['issues-section','search','filter-note','filter-empty'].map(id => [id,element()]));
+const document = {
+  getElementById(id) {return ids[id];},
+  querySelectorAll(s) {return {'[data-report-item]':items,'[data-release-group]':groups,'#view-toggle button':buttons}[s];}
+};
+vm.runInNewContext(input.script, {document});
+const result = {};
+for (const button of buttons) {
+  button.handlers.click();
+  result[button.dataset.v] = {
+    visible:items.filter(i => !i.hidden).map(i => i.dataset.indicatorId || i.dataset.family).sort(),
+    groups:groups.filter(g => !g.hidden).length, issues:!ids['issues-section'].hidden,
+    selected:buttons.filter(b => b.attrs['aria-selected'] === 'true').map(b => b.dataset.v)
+  };
+}
+buttons[0].handlers.click();
+ids.search.value = 'ECB'; ids.search.handlers.input();
+result.search = items.filter(i => !i.hidden).map(i => i.dataset.indicatorId || i.dataset.family);
+ids.search.value = 'no-such-indicator'; ids.search.handlers.input();
+result.empty = !ids['filter-empty'].hidden;
+process.stdout.write(JSON.stringify(result));
+'''
+    run = subprocess.run([shutil.which("node"), "-e", harness], input=json.dumps(dict(
+        items=dom.items, buttons=dom.buttons, groups=dom.groups, script=dom.scripts[0],
+    )), text=True, capture_output=True, check=True, timeout=15)
+    results = json.loads(run.stdout)
+    ecb, cpi, gdp, issue = "ecb_deposit_facility_rate_decision", "us_cpi_headline_yy", "us_gdp_qq_saar", "uk_gdp"
+    assert results["all"]["visible"] == sorted([ecb, cpi, gdp, issue])
+    assert results["new"]["visible"] == sorted([ecb, cpi])
+    assert results["tier1"]["visible"] == sorted([ecb, gdp])
+    assert results["error"]["visible"] == [issue]
+    assert results["error"]["groups"] == 0 and results["error"]["issues"]
+    assert not results["new"]["issues"] and not results["tier1"]["issues"]
+    assert all(results[view]["selected"] == [view] for view in ("all", "new", "tier1", "error"))
+    assert results["search"] == [ecb] and results["empty"]
+
+
+@pytest.mark.parametrize("current,prior,unit,prior_unit,scale,prior_scale,expected", [
+    (3.4, 3.8, "%", "%", 1, 1, 'class="release-change neg" title="Change versus previous">-0.4 pp'),
+    (2.5, 2, "% per annum", "% per annum", 1, 1, 'class="release-change pos" title="Change versus previous">+0.5 pp'),
+    (2.5, 2.5, "%", "percent", 1, 1, 'class="release-change" title="Change versus previous">0 pp'),
+    (2500, 2, "persons", "persons", 1, 1000, 'class="release-change pos" title="Change versus previous">+500 persons'),
+    (2.5, 2, "%", "persons", 1, 1, 'class="release-change">Change unavailable'),
+])
+def test_change_sign_colouring_and_units(db, current, prior, unit, prior_unit, scale, prior_scale, expected):
+    report = collect_report(db, now=NOW)
+    row, = releases(report)
+    row.update(official_value=current, unit=unit, scale=scale,
+               previous=dict(value=prior, unit=prior_unit, scale=prior_scale, reference_period="2026-09-10"))
+    assert expected in render_html(report)

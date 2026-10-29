@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from html import escape
 import json
 import math
@@ -13,6 +14,8 @@ from market_data_hub.indicator_cards import indicator_card, render_card
 from .catalogue import CENTRAL_BANKS, INDICATORS, LATAM_FAMILIES
 from .models import utc
 from .read_api import ReadAPI
+from .report_style import REPORT_CSS, REPORT_SCRIPT
+from .resolve import canonical_unit
 from .store import open_reader
 
 TITLE = "market_data_hub — Daily macro release report"
@@ -128,69 +131,113 @@ def _indicator_card_html(row):
     )
 
 
+def _change_html(row):
+    """Colour numerical direction only, comparing explicitly compatible units."""
+    previous = row["previous"]
+    if not previous or canonical_unit(previous["unit"]) != canonical_unit(row["unit"]):
+        return '<span class="release-change">Change unavailable</span>'
+    prior = Decimal(str(previous["value"])) * Decimal(str(previous["scale"])) / Decimal(str(row["scale"]))
+    change = Decimal(str(row["official_value"])) - prior
+    direction = " pos" if change > 0 else " neg" if change < 0 else ""
+    number = format(change.normalize(), "+f") if change else "0"
+    unit = canonical_unit(row["unit"])
+    label = f"{number} pp" if unit == "%" or unit.startswith("% ") else (
+        number + (f' × {row["scale"]:g}' if row["scale"] != 1 else "") + " " + unit
+    )
+    return f'<span class="release-change{direction}" title="Change versus previous">{_text(label)}</span>'
+
+
+def _release_html(row, report):
+    # Tier is display metadata, deliberately not added to the JSON contract.
+    info = INDICATORS.get(row["indicator_id"])
+    tier = info.tier if info else None
+    tier_number = tier[1:] if tier else ""
+    badge_class = "tier1" if tier == "T1" else "tier2" if tier else "unknown"
+    badge_label = f"Tier {tier_number}" if tier else "Tier unclassified"
+    first_seen = utc(row["first_official_seen_at"])
+    is_new = str(utc(report["since"]) <= first_seen < utc(report["until"])).lower()
+    previous = row["previous"]
+    previous_text = (
+        _value(previous["value"], previous["unit"], previous["scale"])
+        + f' ({previous["reference_period"]})'
+        if previous else f'Unavailable — {row["previous_missing_reason"]}'
+    )
+    forecasts = "".join(
+        f'<p><b>FF forecast:</b> {_text(_value(f["value"], f["unit"], f["scale"]))}</p>'
+        for f in row["ff_forecasts"]
+    )
+    publication = row["published_at"] if row["publication_precision"] == "exact" else (
+        row["published_at"][:10] + " (date only)"
+    )
+    return (
+        f'<article class="release-card" data-report-item data-kind="release" data-new="{is_new}" '
+        f'data-tier="{_text(tier_number)}" data-indicator-id="{_text(row["indicator_id"])}">'
+        '<div class="release-top"><div>'
+        f'<h3 class="release-name">{_text(row["indicator_name"])}</h3>'
+        f'<p class="release-agency">{_text(row["issuer"])} · {_text(row["geography"])} · '
+        f'{_text(row["source_class"])} issuer</p></div>'
+        f'<span class="badge {badge_class}">{badge_label}</span></div>'
+        '<div><span class="figure-label">Official value:</span><div class="release-figures">'
+        f'<span class="release-value">{_text(_value(row["official_value"], row["unit"], row["scale"]))}</span>'
+        f'{_change_html(row)}</div></div>'
+        f'<p class="release-period"><b>Reference period:</b> {_text(row["reference_period"])} · {_text(row["stage"])}</p>'
+        f'{_indicator_card_html(row)}'
+        f'<div class="release-details"><p><b>Previous:</b> {_text(previous_text)}</p>{forecasts}'
+        f'<p><b>Published:</b> {_text(publication)} · <b>Issuer:</b> {_text(row["issuer"])}</p></div>'
+        f'<div class="commentary"><p>{_document_link(row["document_url"])}</p>'
+        f'<p class="meta">{_text(row["indicator_id"])}</p>'
+        f'<p class="meta">First seen: {_text(row["first_official_seen_at"])}</p></div></article>'
+    )
+
+
 def render_html(report):
-    sections = []
-    for group in report["groups"]:
-        cards = []
-        for row in group["releases"]:
-            previous = row["previous"]
-            previous_text = (
-                _value(previous["value"], previous["unit"], previous["scale"])
-                + f' ({previous["reference_period"]})'
-                if previous else f'Unavailable — {row["previous_missing_reason"]}'
-            )
-            forecasts = "".join(
-                f'<p><b>FF forecast:</b> {_text(_value(f["value"], f["unit"], f["scale"]))}</p>'
-                for f in row["ff_forecasts"]
-            )
-            publication = row["published_at"] if row["publication_precision"] == "exact" else (
-                row["published_at"][:10] + " (date only)"
-            )
-            cards.append(
-                f'<article><h3>{_text(row["indicator_name"])}</h3>'
-                f'<p class="meta">{_text(row["geography"])} · {_text(row["indicator_id"])} · '
-                f'{_text(row["source_class"])} issuer</p>'
-                f'<p><b>Reference period:</b> {_text(row["reference_period"])} · {_text(row["stage"])}</p>'
-                f'<p><b>Official value:</b> {_text(_value(row["official_value"], row["unit"], row["scale"]))}</p>'
-                f'{_indicator_card_html(row)}'
-                f'<p><b>Previous:</b> {_text(previous_text)}</p>{forecasts}'
-                f'<p><b>Published:</b> {_text(publication)} · <b>Issuer:</b> {_text(row["issuer"])}</p>'
-                f'<p>{_document_link(row["document_url"])}</p>'
-                f'<p class="meta">First seen: {_text(row["first_official_seen_at"])}</p></article>'
-            )
-        sections.append(f'<h2>{_text(group["name"])}</h2>' + "".join(cards))
+    """Self-contained legacy monitor styling; input and JSON remain untouched."""
+    sections = "".join(
+        f'<section data-release-group><h2>{_text(group["name"])}</h2><div class="release-grid">'
+        + "".join(_release_html(row, report) for row in group["releases"]) + "</div></section>"
+        for group in report["groups"]
+    )
     issues = "".join(
-        f'<li><b>{_text(r["family"])}</b> — {_text(r["status"])}: '
-        f'{_text(r["error_type"] or "")}: {_text(r["error_message"] or "No reason recorded")}'
-        f' <span class="meta">({_text(r["finished_at"])})</span></li>'
+        f'<article class="status-row error" data-report-item data-kind="issue" data-family="{_text(r["family"])}">'
+        f'<div class="status-name"><span class="n">{_text(r["family"])}</span>'
+        f'<span class="a">{_text(r["status"])}</span></div><p class="status-reason">'
+        f'{_text(r["error_type"] + ": " if r["error_type"] else "")}{_text(r["error_message"] or "No reason recorded")}</p>'
+        f'<p class="meta mono">{_text(r["finished_at"])}</p></article>'
         for r in report["collection_issues"]
     )
     return f'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{_text(report["title"])}</title>
-<style>
-body{{font-family:-apple-system,Segoe UI,Arial,sans-serif;color:#1a1a2e;max-width:820px;margin:0 auto;padding:18px;font-size:14px}}
-h1{{font-size:20px;border-bottom:3px solid #1d4ed8;padding-bottom:8px}}
-h2{{font-size:16px;margin-top:24px;color:#1d4ed8;border-bottom:1px solid #e0e0e0;padding-bottom:6px}}
-h3{{font-size:15px;margin:0 0 8px}} p{{margin:7px 0;overflow-wrap:anywhere}}
-article{{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;margin:12px 0}}
-.indicator-card{{background:#fff;border-left:3px solid #1d4ed8;padding:6px 10px;margin:8px 0;font-size:12px;line-height:1.5}}
-.meta{{color:#666;font-size:12px}} .summary{{background:#eff6ff;padding:12px;border-radius:8px}}
-li{{margin:8px 0;overflow-wrap:anywhere}} a{{color:#1d4ed8}}
-</style></head><body>
-<h1>{_text(report["title"])}</h1>
-<p class="meta">Generated: {_text(report["generated_at"])}</p>
-<p>First seen window (UTC): [{_text(report["since"])}, {_text(report["until"])})</p>
+<title>{_text(report["title"])}</title><style>{REPORT_CSS}</style></head><body>
+<header><div><p class="eyebrow">official sources only &middot; scheduled artifact</p>
+<h1>Economic Release Monitor</h1><p class="subtitle">Daily macro release report · all geographies</p></div>
+<div class="meta-grid mono">
+<div class="meta-item"><span class="k">As of · UTC</span><span class="v">{_text(report["generated_at"][:10])}</span></div>
+<div class="meta-item"><span class="k">Releases</span><span class="v">{_text(report["release_count"])}</span></div>
+<div class="meta-item"><span class="k">Cards</span><span class="v">{_text(report["indicator_card_count"])}/{_text(report["release_count"])}</span></div>
+<div class="meta-item"><span class="k">Collection issues</span><span class="v">{len(report["collection_issues"])}</span></div>
+</div></header>
 <p class="summary">{_text(report["message"])}</p>
 <p class="summary">{_text(report["indicator_card_summary"])}</p>
-{"".join(sections)}
-<h2>Needs review / failed</h2>
-{f"<ul>{issues}</ul>" if issues else "<p>No collection issues in the latest family outcomes.</p>"}
+<p class="window mono">First seen window (UTC): [{_text(report["since"])}, {_text(report["until"])})</p>
+<div class="filter-bar"><input type="search" id="search" aria-label="Filter by name or agency" placeholder="Filter by name or agency...">
+<div class="toggle-group" id="view-toggle" role="tablist" aria-label="Report filters">
+<button type="button" role="tab" data-v="all" class="active" aria-selected="true" aria-controls="report-content">All</button>
+<button type="button" role="tab" data-v="new" aria-selected="false" aria-controls="report-content">New today</button>
+<button type="button" role="tab" data-v="tier1" aria-selected="false" aria-controls="report-content">Tier 1</button>
+<button type="button" role="tab" data-v="error" aria-selected="false" aria-controls="report-content">Errors</button>
+</div></div>
+<p class="filter-note" id="filter-note" role="status">All releases in the window, with latest collection issues.</p>
+<main id="report-content">{sections}
+<section id="issues-section"><h2>Needs review / failed</h2>
+{f'<div class="status-grid">{issues}</div>' if issues else '<p class="empty-note">No collection issues in the latest family outcomes.</p>'}
 <p class="meta">Collection outcomes describe attempted fetches, not proof that a release was due.
-No-change outcomes are healthy. Missing values are never inferred.</p>
-<details><summary>Read API limitations</summary><ul>{"".join(f"<li>{_text(x)}</li>" for x in report["limitations"])}</ul></details>
-<p class="meta">market_data_hub · automatic report · official macro_releases store</p>
-</body></html>
+No-change outcomes are healthy. Missing values are never inferred.</p></section>
+<p class="empty-note" id="filter-empty" hidden>No items match this filter.</p></main>
+<details class="limitations"><summary>Read API limitations</summary><ul>{"".join(f"<li>{_text(x)}</li>" for x in report["limitations"])}</ul></details>
+<footer><span><b>Produced by</b> market_data_hub</span><span><b>Cadence</b> daily</span>
+<span><b>Sources</b> official macro_releases store</span><span><b>Generated</b> {_text(report["generated_at"])}</span>
+<span>{_text(report["title"])}</span></footer>
+<script>{REPORT_SCRIPT}</script></body></html>
 '''
 
 
