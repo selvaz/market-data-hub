@@ -251,6 +251,17 @@ class Store:
         from .read_api import ReadAPI
         return ReadAPI(self).explain_empty(indicator, period_or_window, as_known_at=as_known_at)
 
+    def release_documents(self, release_event_id=None, *, indicator=None, reference_period=None,
+                          as_known_at=None, max_chars=20000):
+        from .read_api import ReadAPI
+        return ReadAPI(self).release_documents(
+            release_event_id, indicator=indicator, reference_period=reference_period,
+            as_known_at=as_known_at, max_chars=max_chars)
+
+    def decision_history(self, indicator, *, as_known_at=None, limit=100):
+        from .read_api import ReadAPI
+        return ReadAPI(self).decision_history(indicator, as_known_at=as_known_at, limit=limit)
+
     def coverage(self, since, until, *, as_known_at=None):
         from .read_api import ReadAPI
         return ReadAPI(self).coverage(since, until, as_known_at=as_known_at)

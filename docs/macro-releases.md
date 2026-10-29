@@ -42,6 +42,98 @@ create files. They read the live WAL normally (`immutable=1` is deliberately not
 used). Query methods materialize their result and finish the read statement
 before returning. Opening a missing file or unsupported schema fails explicitly.
 
+### Saved issuer documents and decision history
+
+Both methods are public on `ReadAPI(reader)` and directly on the `Store` returned
+by `open_reader`. Signatures (including defaults):
+
+```python
+release_documents(self, release_event_id=None, *, indicator=None,
+                  reference_period=None, as_known_at=None, max_chars=20000)
+decision_history(self, indicator, *, as_known_at=None, limit=100)
+```
+
+```python
+from itertools import takewhile
+from market_data_hub.macro_releases import open_reader
+
+with open_reader("scratch/macro_releases.sqlite") as reader:
+    documents = reader.release_documents(
+        "BEA:us_gdp:advance:2026-10-29",
+        as_known_at="2026-10-30T00:00:00Z", max_chars=12000,
+    )
+    # Alternative selector includes every saved edition/stage for the period.
+    same_period = reader.release_documents(
+        indicator="us_gdp_qq_saar", reference_period="2026-Q3",
+        as_known_at="2026-10-30T00:00:00Z", max_chars=12000,
+    )
+    history = reader.decision_history(
+        "fed_funds_rate_decision", as_known_at="2026-10-30T00:00:00Z", limit=100,
+    )
+    decisions = history["decisions"]  # newest decision date first
+    stored_hold_streak = len(list(takewhile(lambda d: d["change_bp"] == 0, decisions)))
+    last_stored_change = next((d["decision_date"] for d in decisions if d["change_bp"]), None)
+    changes_12m = [d["change_bp"] for d in decisions if d["decision_date"] >= "2025-10-30"]
+    stored_change_12m = sum(changes_12m) if all(c is not None for c in changes_12m) else None
+```
+
+`release_documents` returns `{documents, empty, limitations, as_known_at, ...}`.
+Supply exactly one selector: an event id, or both `indicator` and
+`reference_period`. Documents are joined through the saved issuer evidence's
+content hash, never guessed from a URL or fetched again. Mirror evidence is
+excluded. Both the evidence link and document retrieval must be known by the
+cutoff (inclusive); uncertain date-only retrievals become available only after
+that entire UTC day. With no cutoff, both APIs use the current UTC time.
+
+Each document includes `url`, `retrieved_at`, `document_hash`, `content_type`,
+`text`, `text_chars` (full extracted length), `truncated`, and
+`text_missing_reason`. The store retains original bytes without extracted-text
+columns or HTTP content-type headers: text is extracted on demand using the
+same `tier1_publications.publication_text` helper used by housing and EC survey
+parsers (pypdf for PDFs, HTML tag removal/entity decoding otherwise). Content
+types are inferred from saved bytes and labelled with
+`content_type_basis="inferred_from_saved_body"`; JSON API bodies remain text.
+`max_chars` is a positive integer shared across the entire result, allocated in
+retrieval/hash order. Later documents retain metadata when the budget runs out.
+Unreadable/empty bodies retain metadata with `text_extraction_failed` or
+`no_extractable_text`. No matching saved body produces
+`empty=[{"reason": "document_not_found", "detail": ...}]`, including when only
+later retrievals, unlinked bodies or mirror documents exist. On older compatible
+stores without `documents`, this also returns an explained empty result.
+
+`decision_history` returns `{decisions, empty, limitations, has_more,
+as_known_at, limit, indicator_id}`. It uses the same knowledge-filtered resolver
+as release cards, selects the latest official vintage of each decision and
+excludes future publications, mirrors and unresolved/disputed values. Each row
+contains `release_event_id`, `decision_date`, `rate`, `unit`, `change_bp`,
+`vote_split` (null when not stored), `rates` (the complete named rates/ranges),
+`published_at`, `first_seen_at`, `policy_decision` and resolution provenance.
+Rates are percentages; the Fed headline is the upper target-range bound, ECB
+the deposit facility rate, and PBOC the 1-year LPR. `change_bp` comes from the
+issuer decision facts, including on the oldest returned row; it is never
+calculated by subtracting adjacent collected rates. `limit` must be a positive
+integer; `has_more` reports truncation. Empty supported histories use
+`decision_history_not_found`; unsupported indicators use `not_covered`.
+
+Supported ids: `fed_funds_rate_decision`,
+`ecb_deposit_facility_rate_decision`, `boe_bank_rate_decision`,
+`boj_policy_rate_decision`, `boc_overnight_rate_decision`, `pboc_lpr_decision`,
+`banxico_overnight_rate_decision`, and `bcb_selic_rate_decision`.
+
+These are stored histories, not a guarantee of complete meeting coverage.
+Check `has_more`, `empty`, and `limitations` before treating a stored hold streak,
+last change or 12-month sum as complete. Missing policy facts are reported in
+limitations and omitted rather than reconstructed through FRED. No schema
+change or migration is needed: documents exist from v5 and policy facts from v8.
+
+The [2026-10-29 verification report](macro-read-api-verification.json) records
+these calls against a SQLite backup of the live store in
+`D:\Temp\mdh-readdocs\macro_releases.sqlite`, opened with `open_reader`.
+It confirms `query_only=ON` and an unchanged copy hash. The Q3 GDP advance event
+links to the saved BEA NIPA JSON payload (70,887 text characters; 12,000 returned),
+with no linked narrative bulletin in that snapshot. Fed, ECB and BoC each
+returned seven dated decisions, including stored changes and votes where present.
+
 `migrations.migrate` uses `PRAGMA user_version`, rejects newer schemas, and applies
 DDL and version changes in one transaction. `schema.sql` is included in wheels.
 Append-only triggers protect publication events, schedules, vintages, readings,
