@@ -1,0 +1,9 @@
+{
+  "url": "https://api.bls.gov/publicAPI/v2/timeseries/data/",
+  "retrieved_at": "2026-10-29T13:31:37.986746+00:00",
+  "sha256": "7375ccc57b776ffb5062da8f76d3bb4e174c723775a6c826c19f613cf401c7b5",
+  "original_document_hash": "7375ccc57b776ffb5062da8f76d3bb4e174c723775a6c826c19f613cf401c7b5",
+  "original_raw_hash": "7375ccc57b776ffb5062da8f76d3bb4e174c723775a6c826c19f613cf401c7b5",
+  "capture": "Saved issuer response from offline production DB copy; PDF pages retained unchanged or HTML links/rows only",
+  "pages": null
+}

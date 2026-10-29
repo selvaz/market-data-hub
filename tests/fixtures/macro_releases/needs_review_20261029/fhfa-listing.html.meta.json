@@ -1,0 +1,9 @@
+{
+  "url": "https://www.fhfa.gov/reports/house-price-index",
+  "retrieved_at": "2026-10-29T13:39:03.937457+00:00",
+  "sha256": "bfc491194df5977f1d549d5246af926f6526c1d43bfad67eb7ceb33067bb5b26",
+  "original_document_hash": "aeee51a2dd71ded9301ae7b3a9d9b222d4b22a4cdef08beb5b20308376424c55",
+  "original_raw_hash": "aeee51a2dd71ded9301ae7b3a9d9b222d4b22a4cdef08beb5b20308376424c55",
+  "capture": "Saved issuer response from offline production DB copy; PDF pages retained unchanged or HTML links/rows only",
+  "pages": null
+}
