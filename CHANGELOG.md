@@ -7,6 +7,9 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Fixed
+- Freeze the M9a-2 saved-publication replay clock via an injectable daily collection clock, so later system dates do not make fixture editions stale; due editions without reviewed publications still require review.
+
 ## [0.3.10] — 2026-10-28
 
 ### Added
