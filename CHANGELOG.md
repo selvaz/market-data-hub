@@ -7,6 +7,14 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Daily macro release report (`run_macro_release_report.py`): deterministic HTML
+  and JSON from the read-only official macro store, covering all stored geographies
+  and central banks. Uses a rolling first-official-seen window, issuer documents,
+  previous values, explicitly labelled FF forecasts (never surprise eligible),
+  and the latest family collection issues. Telegram is opt-in through the existing
+  hub helper; empty windows still write a report and return exit code 3.
+
 ## [0.3.10] — 2026-10-28
 
 ### Added

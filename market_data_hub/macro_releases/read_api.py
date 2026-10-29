@@ -313,7 +313,31 @@ class ReadAPI:
         snapshot = Snapshot.load(self.store, cutoff)
         return self._cards(snapshot, start, end, indicators, geography)
 
-    def _cards(self, snapshot, start, end, indicators=None, geography=None):
+    def first_seen_release_cards(self, since, until, *, as_known_at=None):
+        """Issuer actuals first captured in [since, until), known at the cutoff.
+
+        Reuse publication-card resolution, previous values and forecast policy.
+        Repeated fetches/corrections of an already captured headline do not make
+        it a new release. Private issuers retain their explicit private status;
+        redistributors, provisional and disputed readings are excluded.
+        Collection issues are the latest saved outcome per family at the cutoff,
+        independent of publication/fetch windows. No-change is a healthy outcome.
+        """
+        start, end = window(since, until)
+        cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
+        snapshot = Snapshot.load(self.store, cutoff)
+        result = self._cards(snapshot, start, end, first_seen_window=True)
+        latest = {}
+        for row in snapshot.collect_families:
+            latest.setdefault(row["family"], row)
+        result["collection_issues"] = [
+            latest[family] for family in sorted(latest)
+            if latest[family]["status"] not in {"ok", "no_change"}
+        ]
+        result["window_basis"] = "first_official_seen_at"
+        return result
+
+    def _cards(self, snapshot, start, end, indicators=None, geography=None, *, first_seen_window=False):
         requested = (
             [indicators]
             if isinstance(indicators, str)
@@ -369,6 +393,15 @@ class ReadAPI:
                 if stage in {e.stage for e in headline}
                 else sorted({e.stage for e in headline})[-1]
             )
+            first_official_seen = min((
+                e.first_seen_at for e in headline
+                if e.verified_issuer and e.value is not None
+                and e.reading_kind == "actual" and e.stage == stage
+            ), default=None)
+            if first_seen_window and (
+                first_official_seen is None or not start <= first_official_seen < end
+            ):
+                continue
             resolution = resolve_evidence(
                 snapshot, indicator, period, stage, event_id=event_id
             )
@@ -399,10 +432,13 @@ class ReadAPI:
             released_at, precision, time_basis = event_timing(
                 snapshot, event_id, selected
             )
+            window_time = first_official_seen if first_seen_window else released_at
             if (
                 released_at is None
-                or not start <= released_at < end
+                or window_time is None
+                or not start <= window_time < end
                 or released_at > snapshot.cutoff
+                or first_seen_window and resolution.status not in {"official", "private"}
             ):
                 continue
             if stale_series(snapshot, indicator, period, released_at):
@@ -545,6 +581,7 @@ class ReadAPI:
                     "reference_period": period,
                     "stage": stage,
                     "released_at": released_at,
+                    **({"first_official_seen_at": first_official_seen} if first_seen_window else {}),
                     "time_basis": time_basis,
                     "publication_precision": precision,
                     "resolution": resolution.to_dict(),
@@ -577,22 +614,23 @@ class ReadAPI:
                     ),
                 }
             )
-        cards.extend(
-            self._scheduled_cards(
-                snapshot,
-                start,
-                end,
-                requested,
-                geography,
-                {(c["release_event_id"], c["indicator_id"]) for c in cards},
+        if not first_seen_window:
+            cards.extend(
+                self._scheduled_cards(
+                    snapshot,
+                    start,
+                    end,
+                    requested,
+                    geography,
+                    {(c["release_event_id"], c["indicator_id"]) for c in cards},
+                )
             )
-        )
         cards.sort(
             key=lambda c: (c["released_at"], c["release_event_id"], c["indicator_id"])
         )
         empty = [
             self._explain(snapshot, i, (start, end), geography=geography)
-            for i in requested
+            for i in (requested if not first_seen_window else [])
             if not any(c["indicator_id"] == i for c in cards)
         ]
         if not requested:

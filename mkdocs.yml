@@ -54,6 +54,7 @@ nav:
   - Extraction & agent tools: EXTRACTION.md
   - lazydatacore contract: LAZYDATACORE.md
   - Macro release contracts: macro-releases.md
+  - Daily macro release report: macro-release-report.md
   - Indicator cards: indicator-cards.md
   - Macro indicators: macro-indicators.md
   - ALFRED vintage backfill: alfred-backfill.md
