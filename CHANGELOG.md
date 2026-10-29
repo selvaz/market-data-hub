@@ -7,6 +7,9 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Read-only `econ_calendar.archive_forecasts.read_archived_forecasts`: literal ForexFactory forecasts with manifest/SHA-256 provenance, latest qualifying capture, UTC release windows and national EUR jurisdiction rules. No database or network access; FF forecasts remain ineligible for surprises.
+
 ## [0.3.10] — 2026-10-28
 
 ### Added
