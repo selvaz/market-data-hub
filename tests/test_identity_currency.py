@@ -31,6 +31,15 @@ def test_euro_bond_ucits_overrides_return_eur() -> None:
     assert currency_for_symbol("IEAC.AS") == "EUR"
 
 
+def test_prompt_askb_listings_carry_their_quote_currency() -> None:
+    """1321.T, 2800.HK and SYBA.DE are in tickers.yaml, so without an override
+    the curated-universe default would store them as USD."""
+    assert currency_for_symbol("1321.T") == "JPY"
+    assert currency_for_symbol("2800.HK") == "HKD"
+    assert currency_for_symbol("SYBA.DE") == "EUR"
+    assert currency_for_symbol("AGGG.L") == "USD"
+
+
 def test_eem_override_returns_usd_despite_not_being_in_tickers_yaml() -> None:
     """EEM isn't in the curated universe, so without an override it would
     fall through to unknown (None) -- the explicit override bypasses that

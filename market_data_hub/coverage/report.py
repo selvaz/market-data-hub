@@ -103,8 +103,14 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
     if not pdf.empty:
         for symbol, g in pdf.groupby("symbol"):
             src = g["source"].iloc[0] if "source" in g else "yahoo"
-            rows.append(_row_for(symbol, src or "yahoo", g, "date",
-                                 meta.get(symbol, {}), run_id))
+            row = _row_for(symbol, src or "yahoo", g, "date",
+                           meta.get(symbol, {}), run_id)
+            # Symbols no longer in tickers.yaml (retired, or fetched once on
+            # demand) keep their history but are not downloaded any more, so
+            # their age is expected and must not feed the stalled alert.
+            if symbol not in meta:
+                row.update(stalled=False, status="unscheduled")
+            rows.append(row)
 
     # --- macro_series (FRED + NY Fed ACM + sovereign yields) ---
     mdf = con.execute(
