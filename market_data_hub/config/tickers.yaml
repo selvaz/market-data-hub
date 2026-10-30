@@ -164,6 +164,11 @@ yahoo:
   area: Japan
   name: EQUITY | Japan | iShares MSCI Japan
   priority: 1
+- symbol: 1321.T
+  asset_class: EQUITY
+  area: Japan
+  name: EQUITY | Japan | NEXT FUNDS Nikkei 225 (Tokyo-listed, same-day Asian session)
+  priority: 1
 - symbol: EWC
   asset_class: EQUITY
   area: Canada
@@ -184,6 +189,11 @@ yahoo:
   area: China
   name: EQUITY | China | iShares China Large-Cap
   priority: 1
+- symbol: 2800.HK
+  asset_class: EQUITY
+  area: Hong Kong
+  name: EQUITY | Hong Kong | Tracker Fund of Hong Kong (Hang Seng, HK-listed)
+  priority: 1
 - symbol: MCHI
   asset_class: EQUITY
   area: China
@@ -193,11 +203,6 @@ yahoo:
   asset_class: EQUITY
   area: China
   name: EQUITY | China | KraneShares CSI China Internet
-  priority: 1
-- symbol: KBUY
-  asset_class: EQUITY
-  area: China
-  name: EQUITY | China | KraneShares China Consumer Leaders
   priority: 1
 - symbol: KURE
   asset_class: EQUITY
@@ -293,6 +298,21 @@ yahoo:
   asset_class: FIXED_INCOME
   area: Global ex-US
   name: FI | Global | Vanguard Total International Bond (hedged)
+  priority: 1
+- symbol: GOVT
+  asset_class: FIXED_INCOME
+  area: US
+  name: FI | US | iShares U.S. Treasury Bond (aggregate Treasury)
+  priority: 1
+- symbol: AGGG.L
+  asset_class: FIXED_INCOME
+  area: Global
+  name: FI | Global | iShares Core Global Aggregate Bond UCITS ETF USD (Dist)
+  priority: 1
+- symbol: SYBA.DE
+  asset_class: FIXED_INCOME
+  area: Europe
+  name: FI | Europe | SPDR Bloomberg Euro Aggregate Bond UCITS ETF
   priority: 1
 - symbol: BWX
   asset_class: FIXED_INCOME

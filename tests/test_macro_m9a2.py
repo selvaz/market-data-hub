@@ -1,5 +1,6 @@
 """Offline certification against saved real issuer publications and exact editions."""
 from dataclasses import replace
+from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
@@ -17,10 +18,35 @@ from market_data_hub.macro_releases.ons_rates import SERIES, EDITIONS as UK_EDIT
 
 ROOT = Path(__file__).parent / "fixtures/macro_releases/m9a2"
 GOLDEN = json.loads((ROOT / "golden-set.json").read_text())["cases"]
+# Saved issuer publications were retrieved on October 24; later editions are
+# deliberately absent from Replay and must remain scheduled in these tests.
+FIXTURE_RUN_AT = datetime(2026, 10, 24, 12, 30, tzinfo=timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def frozen_clock(monkeypatch):
+    monkeypatch.setattr(run_daily, "now", lambda: FIXTURE_RUN_AT)
+
+
+@pytest.fixture(params=[2026, 2027], ids=["fixture_year", "system_date_one_year_later"])
+def system_clock(request, monkeypatch):
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return FIXTURE_RUN_AT.replace(year=request.param).astimezone(tz)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
+    assert run_daily.datetime.now(timezone.utc).year == request.param
 
 
 @pytest.fixture(autouse=True)
 def offline(monkeypatch):
+    # The replay's latest claims PDF is the 22 October edition. Keep the
+    # collection clock at capture time so later Thursdays cannot make it stale.
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 10, 24, 18, tzinfo=timezone.utc)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
     def forbidden(*args, **kwargs):
         raise AssertionError("Network forbidden in M9a-2 tests")
     monkeypatch.setattr(requests.Session, "request", forbidden)
@@ -176,13 +202,14 @@ def test_gdp_unknown_calendar_edition_and_membership_fail_closed():
         EurostatAdapter.parse_gdp_publication(replace(doc, body=doc.body.replace(b"Euro area (EA21)", b"Euro area (EA22)")))
 
 
-def test_weekly_claims_official_card_revisions_and_idempotence(tmp_path, monkeypatch):
+def test_weekly_claims_official_card_revisions_and_idempotence(tmp_path, monkeypatch, system_clock):
     from market_data_hub.macro_releases.catalogue import INDICATORS
     from market_data_hub.macro_releases.read_api import prior_period
     monkeypatch.setattr(run_daily, "HttpClient", Replay)
     db = tmp_path / "claims.sqlite"
     result = run_daily.execute(db, ["us_jobless_claims"], 24, False, raw_dir=tmp_path / "none")
     assert result["families"]["us_jobless_claims"]["status"] == "ok", result
+    assert result["families"]["us_jobless_claims"]["fetch_until"] == "2026-10-24"
     assert INDICATORS["us_initial_jobless_claims"].frequency == "W"
     assert INDICATORS["us_initial_jobless_claims"].scale == 1000
     assert prior_period("2026-10-17", "W") == "2026-10-10"
@@ -218,14 +245,26 @@ def test_claims_unknown_edition_reference_week_and_format_fail_closed():
     assert EDITIONS["2026-12-31"][0] == "2026-12-26"
 
 
-def test_all_new_families_replay_together(tmp_path, monkeypatch):
+def test_all_new_families_replay_together(tmp_path, monkeypatch, system_clock):
     monkeypatch.setattr(run_daily, "HttpClient", Replay)
     result = run_daily.execute(tmp_path / "new.sqlite", [*UK_EDITIONS, "ea_gdp", "us_jobless_claims"],
                                24, False, raw_dir=tmp_path / "none")
     assert result["status"] == "ok", result
+    assert all(r["fetch_until"] == "2026-10-24" for r in result["families"].values())
     assert all(r["vintages_added"] > 0 for r in result["families"].values())
     assert all(all(d["status"] == "scheduled" and d["edition"] > "2026-10-24"
                    for d in r["scheduled_editions"]) for r in result["families"].values())
+
+
+def test_claims_stale_replay_still_needs_review(tmp_path, monkeypatch):
+    monkeypatch.setattr(run_daily, "HttpClient", Replay)
+    monkeypatch.setattr(run_daily, "now", lambda: FIXTURE_RUN_AT.replace(year=2027))
+    result = run_daily.execute(tmp_path / "stale.sqlite", ["us_jobless_claims"],
+                               24, True, raw_dir=tmp_path / "none")
+    family = result["families"]["us_jobless_claims"]
+    assert family["fetch_until"] == "2027-10-24"
+    assert family["status"] == "needs_review", result
+    assert family["vintages_added"] == 0
 
 
 def test_full_m3_final_has_durable_rate_not_all_manufacturing_ex_transport(tmp_path):

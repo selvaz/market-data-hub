@@ -73,3 +73,39 @@ register or modify any scheduled task. Configure the operator's task to invoke
 the command above directly with this checkout as its working directory.
 
 The scheduled time will move to 14:30 Pacific, so the snapshot precedes the next day's Asia, Europe and US releases; the operator makes that change, not this repo.
+
+## Reading archived forecasts
+
+```python
+from datetime import datetime, timezone
+from market_data_hub.econ_calendar.archive_forecasts import read_archived_forecasts
+
+forecasts = read_archived_forecasts(
+    "path/to/raw",
+    known_at=datetime(2026, 10, 29, 12, tzinfo=timezone.utc),
+    release_from=datetime(2026, 10, 29, tzinfo=timezone.utc),
+    release_to=datetime(2026, 10, 30, tzinfo=timezone.utc),
+)
+```
+
+The function returns frozen `ArchivedForecast` records with `provider`
+(`"ff_forecast"`), `jurisdiction`, exact `title`, UTC `release_at`, literal
+`forecast_raw`, UTC `captured_at`, `snapshot_path` and `snapshot_sha256`.
+All query datetimes must be timezone-aware; release bounds are inclusive.
+Only hash-verified `written`/`unchanged` manifest captures qualify, with
+`captured_at <= known_at` and `captured_at < release_at`. The latest nonblank
+forecast per `(jurisdiction, title, release_at)` wins, including a later
+`unchanged` capture. Missing archives/manifests return an empty list. Files
+without a manifest record, bad hashes, malformed snapshots and releases
+without an explicit timestamp offset are ignored. No time is inferred from
+filenames, mtimes or the host timezone.
+
+Currencies map to ISO-3 jurisdictions. EUR titles starting with German,
+French, Italian, Spanish or Belgian prefixes map to the national jurisdiction;
+other EUR titles map to EMU. `All` maps to GLOBAL; unknown currencies are
+ignored. Results sort by release time, jurisdiction and title; equal capture
+times prefer the lexicographically first filename. The reader only reads
+local files and opens no database or network connection. Display these
+literals as **ForexFactory forecast**, with capture time. They remain
+ineligible for surprise calculations (`surprise_eligible=False` in the hub's
+provider policy); the record does not add a consensus or surprise field.

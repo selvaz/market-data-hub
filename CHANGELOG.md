@@ -15,6 +15,45 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   indicators. Both APIs filter knowledge before selection and explain empty
   results; no downloads, FRED mapping or schema migration are required.
 
+- Daily macro release report (`run_macro_release_report.py`): deterministic HTML
+  and JSON from the read-only official macro store, covering all stored geographies
+  and central banks. Uses a rolling first-official-seen window, issuer documents,
+  previous values, explicitly labelled FF forecasts (never surprise eligible),
+  and the latest family collection issues. Telegram is opt-in through the existing
+  hub helper; empty windows still write a report and return exit code 3.
+- Each daily macro release now carries its approved indicator card beneath the
+  figure, with the full card and key in JSON. Unmapped releases explicitly show
+  `no card yet` and are counted in the report summary without invented context.
+
+### Changed
+- Restyled the daily macro HTML with the Economic Release Monitor's header,
+  colours, typography, indicator-card grid, signed-change colouring and four
+  local filters (All / New today / Tier 1 / Errors). All current content and the
+  JSON contract are preserved; CSS and JavaScript remain self-contained.
+
+### Fixed
+- FHFA HPI: parse the split release-year glyph in the October 2026 PDF and check the monthly cover against the reviewed edition and reference period. The published purchase-only, seasonally adjusted U.S. changes remain the source of both headline values.
+- EC surveys: accept the October ESI wording that explicitly prints the same level for the EU and euro area; retain the separately dated statistical-annex checks for final consumer confidence and revisions.
+- JOLTS: route explicit BLS failed-request envelopes without results through the existing release-bound ALFRED fallback. Values retain redistributor provenance and the first-vintage/edition checks; unverifiable editions and successful-response content failures stay in review.
+- Freeze the M9a-2 replay clock at its fixture capture date so later weekly claims editions do not make the saved publications stale during tests.
+
+### Added
+- Read-only `econ_calendar.archive_forecasts.read_archived_forecasts`: literal ForexFactory forecasts with manifest/SHA-256 provenance, latest qualifying capture, UTC release windows and national EUR jurisdiction rules. No database or network access; FF forecasts remain ineligible for surprises.
+
+- Five Yahoo symbols for the LazyCommittee morning data (prompt-askb P4), each checked live on 29/10/2026: 1321.T (Nikkei 225, Tokyo) and 2800.HK (Hang Seng, Hong Kong), so the Asian session is in the data before the US open; GOVT (aggregate US Treasury); AGGG.L (Global Aggregate, USD unhedged); SYBA.DE (Bloomberg Euro Aggregate).
+
+### Fixed
+- Stalled thresholds for monthly and quarterly series are now 95 and 230 days. FRED dates a period at its start, so the old 45/120 flagged every on-time release (UNRATE, PCE, M2, GDP) and buried the series that had really stopped.
+- `coverage_report` marks price symbols that are no longer in `tickers.yaml` as `unscheduled` instead of `stalled` (MSFT, GOOGL, AMZN, HYXU and older retired ETFs).
+
+### Removed
+- KBUY, delisted: Yahoo has returned no data since 18/09/2026.
+- Schema v28 drops `v_calendar_upcoming` and `v_calendar_surprise`. The EconCalendar job was retired and `calendar_events` has not been written since 25/09/2026, so the views served month-old "upcoming" releases. The calendar tables stay as history.
+
+### Fixed
+- Freeze the M9a-2 saved-publication replay clock via an injectable daily collection clock, so later system dates do not make fixture editions stale; due editions without reviewed publications still require review.
+- Freeze consensus ingestion test clocks for link journals, snapshot checkpoints, reviewed calendars, read cutoffs, daily runs and leases, so fixed historical knowledge cutoffs remain valid after the system date advances.
+
 ## [0.3.10] — 2026-10-28
 
 ### Added

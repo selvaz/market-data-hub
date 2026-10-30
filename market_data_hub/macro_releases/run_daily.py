@@ -148,10 +148,15 @@ def persist_counts(store, observations):
             "readings_skipped": len(observations) - added["readings"]}
 
 
+def now():
+    """UTC collection clock, replaceable for saved-publication replays."""
+    return datetime.now(timezone.utc)
+
+
 def execute(
     target, families, lookback, dry_run, *, bands=None, raw_dir=DEFAULT_RAW_DIR
 ):
-    run_at = datetime.now(timezone.utc)
+    run_at = now()
     since, windows = fetch_windows(families, lookback, run_at.date())
     run_id = uuid4().hex
     summary = {"run_id": run_id, "db": str(target), "dry_run": dry_run,

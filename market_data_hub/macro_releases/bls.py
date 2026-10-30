@@ -31,12 +31,16 @@ SERIES = dict(BLS_SERIES, **NEW_BLS_SERIES)
 MEASURES = (*SERIES.items(), *EMPLOYMENT_SERIES)
 
 
+class BLSRequestRejected(FetchError):
+    """An explicit failed-request envelope, carrying no issuer observations."""
+
+
 def unavailable(error):
-    """Only controlled HTTP/transport failures, including blocked requests.
+    """Only controlled transport failures or explicit empty request rejections.
 
     Parser and publication-review errors must not be hidden by older mirrors.
     """
-    return bool(re.fullmatch(r"bls: (?:HTTP [1-5][0-9]{2}|TLS verification failed|"
+    return isinstance(error, BLSRequestRejected) or bool(re.fullmatch(r"bls: (?:HTTP [1-5][0-9]{2}|TLS verification failed|"
                              r"transport failed after bounded attempts|non-transient request failure)", str(error)))
 
 
@@ -95,6 +99,10 @@ class BLSAdapter:
     def parse(self, document, families, since, *, editions=None):
         payload = json_payload(document)
         if payload.get("status") != "REQUEST_SUCCEEDED":
+            if (payload.get("status") == "REQUEST_FAILED" and payload.get("Results") is None and
+                    isinstance(payload.get("message"), list) and payload["message"] and
+                    all(isinstance(message, str) and message for message in payload["message"])):
+                raise BLSRequestRejected("BLS rejected request")
             raise FetchError("BLS rejected request")
         series = {s["seriesID"]: s for s in payload.get("Results", {}).get("series", [])}
         observations = []
