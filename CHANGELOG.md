@@ -7,7 +7,7 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
-## [0.3.11] - 2026-10-30
+## [0.3.11] — 2026-10-30
 
 ### Added
 - Public read-only `ReadAPI.release_documents` and `ReadAPI.decision_history`
