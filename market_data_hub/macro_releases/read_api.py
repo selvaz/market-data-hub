@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 
 from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, EMPLOYMENT_FAMILIES, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES
 from .models import utc
+from .read_times import stored_rows
 from .source_classes import source_class
 from .resolve import (
     COLLECT_LOG_LIMITATION,
@@ -297,6 +298,120 @@ def latest_period(snapshot, indicator, period):
 class ReadAPI:
     def __init__(self, store):
         self.store = store
+
+    def release_documents(
+        self, release_event_id=None, *, indicator=None, reference_period=None,
+        as_known_at=None, max_chars=20000,
+    ):
+        """Saved issuer bodies linked by content hash; never fetch a URL.
+
+        Supply an event id OR an indicator and reference period. The latter
+        includes all captured estimate stages/editions for that period.
+        max_chars is a shared text budget across documents, oldest retrieval
+        first. Content types are inferred: the collector stores no HTTP headers.
+        """
+        if (release_event_id is not None) == (indicator is not None or reference_period is not None):
+            raise ValueError("supply release_event_id OR indicator and reference_period")
+        if release_event_id is None and (indicator is None or reference_period is None):
+            raise ValueError("indicator and reference_period are both required")
+        if type(max_chars) is not int or max_chars < 1:
+            raise ValueError("max_chars must be a positive integer")
+        cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
+        conn = self.store.conn
+        owns_transaction = not conn.in_transaction
+        if owns_transaction:
+            conn.execute("BEGIN")
+        try:
+            snapshot = Snapshot.load(self.store, cutoff)
+            hashes = {
+                e.content_hash for e in snapshot.evidence
+                if e.role == "issuer" and e.source_class != "redistributor"
+                and (e.event_id == release_event_id if release_event_id is not None else
+                     e.indicator_id == indicator and e.reference_period == reference_period)
+            }
+            rows = []
+            if conn.execute("SELECT 1 FROM sqlite_master WHERE name='documents' AND type='table'").fetchone():
+                for digest in sorted(hashes):
+                    row = conn.execute("SELECT * FROM documents WHERE document_hash=?", (digest,)).fetchone()
+                    if row is not None:
+                        rows.append(dict(row))
+        finally:
+            if owns_transaction:
+                conn.execute("ROLLBACK")
+        limitations = list(snapshot.limitations)
+        rows = stored_rows(rows, {"retrieved_at": None}, known_at="retrieved_at",
+                           cutoff=cutoff, limitations=limitations, table="documents")
+        documents = []
+        remaining = max_chars
+        from .documents import extract_document_text
+        for row in sorted(rows, key=lambda r: (r["retrieved_at"], r["document_hash"])):
+            text, content_type, reason = extract_document_text(row)
+            documents.append({
+                "url": row["url"], "retrieved_at": row["retrieved_at"],
+                "document_hash": row["document_hash"], "content_type": content_type,
+                "content_type_basis": "inferred_from_saved_body",
+                "text": text[:remaining], "text_chars": len(text),
+                "truncated": len(text) > remaining, "text_missing_reason": reason,
+                "timestamp_precisions": row["timestamp_precisions"],
+            })
+            remaining -= len(documents[-1]["text"])
+        return {
+            "release_event_id": release_event_id, "indicator_id": indicator,
+            "reference_period": reference_period, "as_known_at": cutoff,
+            "max_chars": max_chars, "documents": documents,
+            "empty": [] if documents else [{
+                "reason": "document_not_found",
+                "detail": "no linked saved issuer document was available at as_known_at; later retrievals and mirror documents are excluded",
+            }],
+            "limitations": limitations,
+        }
+
+    def decision_history(self, indicator, *, as_known_at=None, limit=100):
+        """Latest official vintage per decision, newest decision date first.
+
+        Rates are percent levels (Fed scalar: upper bound); change_bp is the
+        stored issuer decision change, never a difference across collected rows.
+        Full rates preserve ranges and multi-rate decisions. No FRED mapping.
+        """
+        if type(limit) is not int or limit < 1:
+            raise ValueError("limit must be a positive integer")
+        cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
+        snapshot = Snapshot.load(self.store, cutoff)
+        result = {"indicator_id": indicator, "as_known_at": cutoff, "limit": limit,
+                  "decisions": [], "empty": [], "has_more": False,
+                  "limitations": [*snapshot.limitations,
+                      "Stored decisions only; missing meetings or a truncated history cannot establish a complete hold streak or 12-month total."]}
+        if indicator not in INDICATORS or not indicator.endswith("_decision"):
+            result["empty"] = [{"reason": "not_covered", "detail": "indicator is not a supported policy decision"}]
+            return result
+        groups = {(e.event_id, e.reference_period, e.stage) for e in snapshot.evidence
+                  if e.indicator_id == indicator and e.event_id and e.reference_period}
+        decisions = []
+        for event_id, period, stage in sorted(groups):
+            resolution = resolve_evidence(snapshot, indicator, period, stage, event_id=event_id)
+            if resolution is None or resolution.status != "official":
+                continue
+            facts = resolution.policy_decision
+            if not facts or not facts.get("rates"):
+                result["limitations"].append(f"Skipped {event_id}: stored policy facts are missing.")
+                continue
+            headline = next(iter(facts["rates"].values()))
+            decisions.append({
+                "release_event_id": event_id, "decision_date": facts["decision_date"],
+                "rate": resolution.value, "unit": resolution.unit,
+                "change_bp": headline.get("change_bp"), "rates": facts["rates"],
+                "vote_split": facts.get("vote_split"),
+                "published_at": resolution.published_at,
+                "first_seen_at": resolution.first_seen_at,
+                "policy_decision": facts, "resolution": resolution.to_dict(),
+            })
+        decisions.sort(key=lambda d: (d["decision_date"], d["published_at"] or "", d["release_event_id"]), reverse=True)
+        result["decisions"] = decisions[:limit]
+        result["has_more"] = len(decisions) > limit
+        if not decisions:
+            result["empty"] = [{"reason": "decision_history_not_found",
+                                "detail": "no official resolved decision with stored policy facts was available at as_known_at"}]
+        return result
 
     def release_cards(
         self, since, until, indicators=None, geography=None, as_known_at=None

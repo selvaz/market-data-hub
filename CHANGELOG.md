@@ -8,6 +8,13 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 ## [Unreleased]
 
 ### Added
+- Public read-only `ReadAPI.release_documents` and `ReadAPI.decision_history`
+  (also available on `open_reader` handles). Consumers can retrieve saved issuer
+  PDF/HTML text with a shared character budget and inspect dated policy rates,
+  stored basis-point changes and votes for all eight central-bank decision
+  indicators. Both APIs filter knowledge before selection and explain empty
+  results; no downloads, FRED mapping or schema migration are required.
+
 - Daily macro release report (`run_macro_release_report.py`): deterministic HTML
   and JSON from the read-only official macro store, covering all stored geographies
   and central banks. Uses a rolling first-official-seen window, issuer documents,

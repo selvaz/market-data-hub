@@ -1,0 +1,239 @@
+{
+  "source": "C:\\ProgramData\\InvestmentCommittee\\live\\db\\macro_releases.sqlite",
+  "copy": "D:\\Temp\\mdh-readdocs\\macro_releases.sqlite",
+  "as_known_at": "2026-10-29T23:57:44.876177+00:00",
+  "query_only": true,
+  "gdp_document": {
+    "release_event_id": "BEA:us_gdp:advance:2026-10-29",
+    "period_selector_document_hashes": [
+      "ea02fdb9af0cf115362090a5c50a0fe62afd98265084cf1fdff7588db65958c3"
+    ],
+    "documents": [
+      {
+        "url": "https://apps.bea.gov/api/data/",
+        "retrieved_at": "2026-10-29T13:30:39.637628+00:00",
+        "document_hash": "ea02fdb9af0cf115362090a5c50a0fe62afd98265084cf1fdff7588db65958c3",
+        "content_type": "application/json",
+        "content_type_basis": "inferred_from_saved_body",
+        "text_chars": 70887,
+        "truncated": true,
+        "text_missing_reason": null,
+        "timestamp_precisions": {
+          "retrieved_at": "exact"
+        },
+        "returned_chars": 12000,
+        "text_excerpt": "{\"BEAAPI\":{\"Request\":{\"RequestParam\":[{\"ParameterName\":\"USERID\",\"ParameterValue\":\"REDACTED\"},{\"ParameterName\":\"METHOD\",\"ParameterValue\":\"GETDATA\"},{\"ParameterName\":\"DATASETNAME\",\"ParameterValue\":\"NIPA\"},{\"ParameterName\":\"TABLENAME\",\"ParameterValue\":\"T10101\"},{\"ParameterName\":\"FREQUENCY\",\"ParameterValue\":\"Q\"},{\"ParameterName\":\"YEAR\",\"ParameterValue\""
+      }
+    ],
+    "empty": [],
+    "limitations": []
+  },
+  "decision_histories": {
+    "Fed": {
+      "indicator_id": "fed_funds_rate_decision",
+      "has_more": false,
+      "decisions": [
+        {
+          "decision_date": "2026-10-28",
+          "rate": 4.0,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": {
+            "for": 10,
+            "against": 2
+          }
+        },
+        {
+          "decision_date": "2026-09-16",
+          "rate": 4.0,
+          "unit": "%",
+          "change_bp": 25.0,
+          "vote_split": {
+            "for": 12,
+            "against": 0
+          }
+        },
+        {
+          "decision_date": "2026-07-29",
+          "rate": 3.75,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": {
+            "for": 9,
+            "against": 3
+          }
+        },
+        {
+          "decision_date": "2026-06-17",
+          "rate": 3.75,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": {
+            "for": 12,
+            "against": 0
+          }
+        },
+        {
+          "decision_date": "2026-04-29",
+          "rate": 3.75,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": {
+            "for": 8,
+            "against": 4
+          }
+        },
+        {
+          "decision_date": "2026-03-18",
+          "rate": 3.75,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": {
+            "for": 11,
+            "against": 1
+          }
+        },
+        {
+          "decision_date": "2026-01-28",
+          "rate": 3.75,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": {
+            "for": 10,
+            "against": 2
+          }
+        }
+      ],
+      "stored_hold_streak": 1,
+      "last_stored_change": "2026-09-16",
+      "empty": [],
+      "limitations": [
+        "Stored decisions only; missing meetings or a truncated history cannot establish a complete hold streak or 12-month total."
+      ]
+    },
+    "ECB": {
+      "indicator_id": "ecb_deposit_facility_rate_decision",
+      "has_more": false,
+      "decisions": [
+        {
+          "decision_date": "2026-10-29",
+          "rate": 2.5,
+          "unit": "% per annum",
+          "change_bp": 0,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-09-10",
+          "rate": 2.5,
+          "unit": "% per annum",
+          "change_bp": 25,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-07-23",
+          "rate": 2.25,
+          "unit": "% per annum",
+          "change_bp": 0,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-06-11",
+          "rate": 2.25,
+          "unit": "% per annum",
+          "change_bp": 25,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-04-30",
+          "rate": 2.0,
+          "unit": "% per annum",
+          "change_bp": 0,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-03-19",
+          "rate": 2.0,
+          "unit": "% per annum",
+          "change_bp": 0,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-02-05",
+          "rate": 2.0,
+          "unit": "% per annum",
+          "change_bp": 0,
+          "vote_split": null
+        }
+      ],
+      "stored_hold_streak": 1,
+      "last_stored_change": "2026-09-10",
+      "empty": [],
+      "limitations": [
+        "Stored decisions only; missing meetings or a truncated history cannot establish a complete hold streak or 12-month total."
+      ]
+    },
+    "BoC": {
+      "indicator_id": "boc_overnight_rate_decision",
+      "has_more": false,
+      "decisions": [
+        {
+          "decision_date": "2026-10-28",
+          "rate": 2.5,
+          "unit": "%",
+          "change_bp": 25,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-09-02",
+          "rate": 2.25,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-07-15",
+          "rate": 2.25,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-06-10",
+          "rate": 2.25,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-04-29",
+          "rate": 2.25,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-03-18",
+          "rate": 2.25,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": null
+        },
+        {
+          "decision_date": "2026-01-28",
+          "rate": 2.25,
+          "unit": "%",
+          "change_bp": 0,
+          "vote_split": null
+        }
+      ],
+      "stored_hold_streak": 0,
+      "last_stored_change": "2026-10-28",
+      "empty": [],
+      "limitations": [
+        "Stored decisions only; missing meetings or a truncated history cannot establish a complete hold streak or 12-month total."
+      ]
+    }
+  },
+  "copy_sha256": "2d55caf58825086c5d2e35bf83220bedb9e85ba3e7523590ec4081f072f9bcdd",
+  "copy_unchanged": true
+}
