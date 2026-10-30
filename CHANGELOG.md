@@ -7,6 +7,17 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Five Yahoo symbols for the LazyCommittee morning data (prompt-askb P4), each checked live on 29/10/2026: 1321.T (Nikkei 225, Tokyo) and 2800.HK (Hang Seng, Hong Kong), so the Asian session is in the data before the US open; GOVT (aggregate US Treasury); AGGG.L (Global Aggregate, USD unhedged); SYBA.DE (Bloomberg Euro Aggregate).
+
+### Fixed
+- Stalled thresholds for monthly and quarterly series are now 95 and 230 days. FRED dates a period at its start, so the old 45/120 flagged every on-time release (UNRATE, PCE, M2, GDP) and buried the series that had really stopped.
+- `coverage_report` marks price symbols that are no longer in `tickers.yaml` as `unscheduled` instead of `stalled` (MSFT, GOOGL, AMZN, HYXU and older retired ETFs).
+
+### Removed
+- KBUY, delisted: Yahoo has returned no data since 18/09/2026.
+- Schema v28 drops `v_calendar_upcoming` and `v_calendar_surprise`. The EconCalendar job was retired and `calendar_events` has not been written since 25/09/2026, so the views served month-old "upcoming" releases. The calendar tables stay as history.
+
 ### Fixed
 - Freeze the M9a-2 saved-publication replay clock via an injectable daily collection clock, so later system dates do not make fixture editions stale; due editions without reviewed publications still require review.
 - Freeze consensus ingestion test clocks for link journals, snapshot checkpoints, reviewed calendars, read cutoffs, daily runs and leases, so fixed historical knowledge cutoffs remain valid after the system date advances.

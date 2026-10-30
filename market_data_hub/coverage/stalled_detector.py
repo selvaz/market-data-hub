@@ -17,11 +17,16 @@ import numpy as np
 
 # Tolerance thresholds before flagging "stalled" (days), per frequency.
 # Daily 3d covers a long weekend + holidays. Aligned with checks1_improved.py.
+# M and Q are counted from the observation date, which FRED stamps at the START
+# of the period: September's UNRATE is dated 09-01 and is still the latest value
+# until early November, August's PCE until the end of October (~90 days), and
+# Q2 GDP (04-01) until the Q3 advance estimate at the end of October (~212
+# days). The old 45/120 flagged every on-time monthly and quarterly release.
 STALLED_THRESHOLD_DAYS = {
     "D": 3,
     "W": 10,
-    "M": 45,
-    "Q": 120,
+    "M": 95,
+    "Q": 230,
     "A": 550,      # WDI/WGI publish with ~18 months of lag (World Bank)
     "UNKNOWN": 30,
 }

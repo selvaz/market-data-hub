@@ -42,6 +42,10 @@ _CURRENCY_OVERRIDES = {
     "DBXP.DE": "EUR",
     "IBCL.DE": "EUR",
     "IEAC.AS": "EUR",
+    "SYBA.DE": "EUR",
+    "1321.T": "JPY",
+    "2800.HK": "HKD",
+    "AGGG.L": "USD",  # USD-denominated share class on the LSE
     "EEM": "USD",
     "TTF=F": "EUR",  # Dutch TTF continuous futures quote in EUR per MWh
 }
