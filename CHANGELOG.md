@@ -18,6 +18,10 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 - KBUY, delisted: Yahoo has returned no data since 18/09/2026.
 - Schema v28 drops `v_calendar_upcoming` and `v_calendar_surprise`. The EconCalendar job was retired and `calendar_events` has not been written since 25/09/2026, so the views served month-old "upcoming" releases. The calendar tables stay as history.
 
+### Fixed
+- Freeze the M9a-2 saved-publication replay clock via an injectable daily collection clock, so later system dates do not make fixture editions stale; due editions without reviewed publications still require review.
+- Freeze consensus ingestion test clocks for link journals, snapshot checkpoints, reviewed calendars, read cutoffs, daily runs and leases, so fixed historical knowledge cutoffs remain valid after the system date advances.
+
 ## [0.3.10] — 2026-10-28
 
 ### Added

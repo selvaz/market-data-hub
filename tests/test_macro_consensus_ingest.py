@@ -1,6 +1,8 @@
 """Offline archive-to-card contracts, conservative skips and daily isolation."""
 
 from dataclasses import replace
+from datetime import datetime, timezone
+from functools import partial
 import hashlib
 import json
 from pathlib import Path
@@ -10,7 +12,14 @@ import pytest
 import requests
 
 from market_data_hub.macro_releases import open_reader, open_writer
-from market_data_hub.macro_releases import consensus, migrations, run_daily
+from market_data_hub.macro_releases import (
+    consensus,
+    migrations,
+    read_api,
+    run_daily,
+    run_log,
+    scheduled_events,
+)
 from market_data_hub.macro_releases.adapters import persist
 from market_data_hub.macro_releases.catalogue import INDICATORS
 from market_data_hub.macro_releases.models import (
@@ -22,6 +31,34 @@ from market_data_hub.macro_releases.models import (
 )
 from market_data_hub.macro_releases.resolve import Snapshot
 from test_macro_read_api import observation
+
+
+# After the fixture captures and schedule moves, before the October 30 knowledge
+# cutoff. Real ingestion must still timestamp corrections when they are learned.
+FIXTURE_RUN_AT = datetime(2026, 10, 24, 12, 30, tzinfo=timezone.utc)
+
+
+@pytest.fixture(autouse=True)
+def frozen_clock(monkeypatch):
+    class Clock(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            if tz is None:
+                return FIXTURE_RUN_AT.replace(tzinfo=None)
+            return FIXTURE_RUN_AT.astimezone(tz)
+
+    # Keep datetime parsing intact while pinning direct clock reads: link
+    # journals, snapshot checkpoints, seeded calendars and default read cutoffs.
+    for module in (consensus, scheduled_events, read_api):
+        monkeypatch.setattr(module, "datetime", Clock)
+    monkeypatch.setattr(run_daily, "now", lambda: FIXTURE_RUN_AT)
+    monkeypatch.setattr(run_log, "now", lambda: FIXTURE_RUN_AT.isoformat(timespec="microseconds"))
+    # RunLease captured time.time as a default argument at import.
+    monkeypatch.setattr(
+        run_daily,
+        "RunLease",
+        partial(run_daily.RunLease, clock=lambda: FIXTURE_RUN_AT.timestamp()),
+    )
 
 
 @pytest.fixture(autouse=True)
