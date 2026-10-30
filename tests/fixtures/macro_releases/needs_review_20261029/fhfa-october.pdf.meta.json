@@ -1,0 +1,13 @@
+{
+  "url": "https://www.fhfa.gov/document/d/hpi/fhfa-hpi-monthly-october-2026",
+  "retrieved_at": "2026-10-27T13:39:02.948007+00:00",
+  "sha256": "8643770aa10d16d356fa9100a598337fcd352d010f666ba580067a18d2c9a1f0",
+  "original_document_hash": "25588e480ddc194f07fa4b5fce82b585219ccde11c096a31629f4ef79a883c6f",
+  "original_raw_hash": "25588e480ddc194f07fa4b5fce82b585219ccde11c096a31629f4ef79a883c6f",
+  "capture": "Saved issuer response from offline production DB copy; PDF pages retained unchanged or HTML links/rows only",
+  "pages": [
+    1,
+    3,
+    5
+  ]
+}

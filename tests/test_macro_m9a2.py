@@ -40,6 +40,13 @@ def system_clock(request, monkeypatch):
 
 @pytest.fixture(autouse=True)
 def offline(monkeypatch):
+    # The replay's latest claims PDF is the 22 October edition. Keep the
+    # collection clock at capture time so later Thursdays cannot make it stale.
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 10, 24, 18, tzinfo=timezone.utc)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
     def forbidden(*args, **kwargs):
         raise AssertionError("Network forbidden in M9a-2 tests")
     monkeypatch.setattr(requests.Session, "request", forbidden)

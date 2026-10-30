@@ -67,7 +67,17 @@ def parse(document, family="ea_ec_surveys", since="1900-01"):
         return [observation(document, family, edition, "ea_consumer_confidence", head, printed, method)] if head >= since else []
     if "Business and consumer survey results for " + month(head) not in body:
         raise FetchError("EC final period needs review")
-    printed = require(r"Economic Sentiment Indicator \(ESI\).*?euro area \([+-]?[\d.]+ points to ([\d.]+)\)", body)[1]
+    # October 2026 prints a single level explicitly shared by EU and EA.
+    # Stay within the ESI introduction, before the separate EEI measure.
+    introduction = body.split("Employment Expectations Indicator", 1)[0]
+    values = re.findall(r"Economic Sentiment Indicator \(ESI\).*?euro area \([+-]?[\d.]+ points to ([\d.]+)\)", introduction)
+    values += re.findall(
+        r"Economic Sentiment Indicator \(ESI\) declined for the second consecutive month "
+        r"in both the EU and the euro area, falling by [\d.]+ points to ([\d.]+) in both areas\.",
+        introduction)
+    if len(values) != 1:
+        raise FetchError("EC ESI headline needs review")
+    printed = values[0]
     return [observation(document, family, edition, "ea_economic_sentiment_indicator", head, printed, method)] if head >= since else []
 
 

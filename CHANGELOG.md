@@ -7,6 +7,12 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Fixed
+- FHFA HPI: parse the split release-year glyph in the October 2026 PDF and check the monthly cover against the reviewed edition and reference period. The published purchase-only, seasonally adjusted U.S. changes remain the source of both headline values.
+- EC surveys: accept the October ESI wording that explicitly prints the same level for the EU and euro area; retain the separately dated statistical-annex checks for final consumer confidence and revisions.
+- JOLTS: route explicit BLS failed-request envelopes without results through the existing release-bound ALFRED fallback. Values retain redistributor provenance and the first-vintage/edition checks; unverifiable editions and successful-response content failures stay in review.
+- Freeze the M9a-2 replay clock at its fixture capture date so later weekly claims editions do not make the saved publications stale during tests.
+
 ### Added
 - Read-only `econ_calendar.archive_forecasts.read_archived_forecasts`: literal ForexFactory forecasts with manifest/SHA-256 provenance, latest qualifying capture, UTC release windows and national EUR jurisdiction rules. No database or network access; FF forecasts remain ineligible for surprises.
 

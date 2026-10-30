@@ -36,9 +36,16 @@ def observation(doc, family, edition, indicator, printed, method="html", *, peri
 
 def parse_fhfa(doc, family="us_fhfa_hpi", since="1900-01"):
     body, method = publication_text(doc)
-    stamp = require(r"For Immediate Release.*?(\w+ \d{1,2}, \d{4})", body)[1]
+    # October's PDF splits the last year glyph ("202 6"). Normalize only
+    # digits inside the explicitly printed release year, never figure tokens.
+    date_match = require(r"For Immediate Release.*?(\w+ \d{1,2}, )(\d(?:\s*\d){3})(?!\d)", body)
+    stamp = date_match[1] + re.sub(r"\s+", "", date_match[2])
     edition = datetime.strptime(stamp, "%B %d, %Y").date().isoformat()
     head, _, _ = reviewed(family, edition)
+    cover = re.search(r"Monthly Report Data through (\w+ \d{4}) Released on (\w+ \d{1,2}, \d{4})", body)
+    if cover and (datetime.strptime(cover[1], "%B %Y").strftime("%Y-%m") != head or
+                  datetime.strptime(cover[2], "%B %d, %Y").date().isoformat() != edition):
+        raise FetchError("FHFA cover period or edition needs review")
     from io import BytesIO
     from pypdf import PdfReader
     tables = [p.extract_text() for p in PdfReader(BytesIO(doc.body)).pages
