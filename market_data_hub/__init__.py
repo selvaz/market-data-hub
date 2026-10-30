@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """market_data_hub — unified market data downloader with a DuckDB database."""
-__version__ = "0.3.10"
+__version__ = "0.3.11"
 
 # Configure SSL verification (networks with corporate MITM/proxy) before any
 # import of curl_cffi/requests in the submodules.
