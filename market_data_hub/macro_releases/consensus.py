@@ -448,6 +448,15 @@ def manifest_hashes(directory):
     return result
 
 
+def _snapshot_bytes(path, *, captured_at, hashes):
+    """Read snapshot bytes and verify the manifest hash when capture is proven."""
+    body = path.read_bytes()
+    digest = hashlib.sha256(body).hexdigest()
+    if captured_at and hashes.get((path.name, captured_at)) != digest:
+        raise ValueError("manifest hash mismatch")
+    return body, digest
+
+
 def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=False):
     """Backfill once, then atomically checkpoint each new snapshot with its rows.
 
@@ -491,10 +500,7 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
             else None
         )
         try:
-            body = path.read_bytes()
-            digest = hashlib.sha256(body).hexdigest()
-            if captured_at and hashes.get((path.name, captured_at)) != digest:
-                raise ValueError("manifest hash mismatch")
+            body, digest = _snapshot_bytes(path, captured_at=captured_at, hashes=hashes)
             key = (path.name, captured_at or "", digest, catalogue.version)
             if (
                 not reprocess

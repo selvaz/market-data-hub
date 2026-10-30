@@ -9,7 +9,7 @@ import pytest
 import requests
 
 from market_data_hub import sovereign_refresh as job
-from market_data_hub.db.connection import get_conn, migrate
+from market_data_hub.db.connection import SCHEMA_VERSION, get_conn, migrate
 from market_data_hub.db.upsert import upsert
 from market_data_hub.sources import sovereign_layers as feeds
 from market_data_hub.sources.sovereign_yields import SourceUnavailable
@@ -187,7 +187,7 @@ def test_divergence_exact_date_threshold_and_report(tmp_db, monkeypatch):
 def test_migration_is_idempotent_and_config_has_no_splice(tmp_db):
     with get_conn(tmp_db) as con:
         con.execute("UPDATE schema_meta SET value='26' WHERE key='schema_version'")
-        assert migrate(con) == 27 and migrate(con) == 27
+        assert migrate(con) == SCHEMA_VERSION and migrate(con) == SCHEMA_VERSION
     entries = job.catalogue()['series']
     assert len({e['symbol'] for e in entries}) == len(entries)
     assert all(e['unit'] == '%' and e['publication_lag'] and e['convention'] for e in entries)

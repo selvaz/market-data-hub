@@ -6,7 +6,7 @@ import pytest
 
 import make_report
 from market_data_hub import sovereign_refresh as job
-from market_data_hub.db.connection import get_conn
+from market_data_hub.db.connection import SCHEMA_VERSION, get_conn
 from market_data_hub.sources import sovereign_layers as feeds
 from test_sovereign_layers import spec
 
@@ -98,7 +98,9 @@ def test_standalone_read_only_report_supports_pre_v27_database(monkeypatch, tmp_
         assert ('BOC_10Y' in content) == (version == 27)
     with get_conn(tmp_db, read_only=True) as con:
         assert con.execute('SHOW TABLES').fetchall() == before
-        assert con.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == str(version)
+        # The 27 case is a current database: it carries whatever version is current.
+        expected = version if version == 26 else SCHEMA_VERSION
+        assert con.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == str(expected)
         report = make_report.collect(con)
         assert report['last_run']['added'] == 7
         assert report['last_run']['updated'] == 2

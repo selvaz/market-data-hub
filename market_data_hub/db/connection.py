@@ -22,7 +22,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 27
+SCHEMA_VERSION = 28
 
 
 class DatabaseNotConfigured(RuntimeError):
@@ -458,6 +458,13 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # v27 adds sovereign catalogue, snapshot budget and comparisons.
         # All three are new tables, created idempotently by apply_schema().
         current = 27
+    if current < 28:
+        # v28 drops the two read views over the retired EconCalendar tables:
+        # nothing has written calendar_events since 25/09/2026, so they served
+        # month-old "upcoming" releases. The tables stay as history.
+        con.execute("DROP VIEW IF EXISTS v_calendar_surprise")
+        con.execute("DROP VIEW IF EXISTS v_calendar_upcoming")
+        current = 28
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

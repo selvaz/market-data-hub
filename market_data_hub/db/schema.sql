@@ -285,7 +285,7 @@ CREATE TABLE IF NOT EXISTS coverage_report (
     coverage_score DOUBLE,             -- 0-100, freq-aware
     has_zero_price BOOLEAN,
     has_negative   BOOLEAN,
-    status         VARCHAR,            -- 'ok' | 'stalled' | 'error' | 'empty'
+    status         VARCHAR,            -- 'ok' | 'stalled' | 'error' | 'empty' | 'unscheduled' | 'unavailable'
     error_msg      VARCHAR,
     last_run_id    VARCHAR,
     updated_at     TIMESTAMP,
@@ -1006,39 +1006,10 @@ CREATE TABLE IF NOT EXISTS calendar_event_notes (
 
 CREATE INDEX IF NOT EXISTS idx_cal_notes_event ON calendar_event_notes (event_id);
 
--- The surprise only means something if the consensus was captured BEFORE the
--- release: some sources overwrite it with the printed value. consensus_source
--- stays exposed so the reader knows which provider the expectation came from.
-CREATE OR REPLACE VIEW v_calendar_surprise AS
-SELECT  e.event_id, e.indicator_key, i.area, i.name AS indicator_name,
-        i.criticality, e.release_utc, e.reference_date,
-        e.actual_num, e.consensus_num,
-        -- Null where the sources disagree on what was expected. The point
-        -- surprise is the number this view exists to publish, and quoting one
-        -- against a consensus that was never agreed is precisely the fabricated
-        -- surprise consensus_disputed was added to prevent. The range is
-        -- carried alongside so a caller can still say how wide the doubt was.
-        CASE WHEN NOT e.consensus_disputed
-             THEN e.actual_num - e.consensus_num END AS surprise,
-        CASE WHEN NOT e.consensus_disputed
-              AND e.consensus_num IS NOT NULL AND abs(e.consensus_num) > 1e-9
-             THEN (e.actual_num - e.consensus_num) / abs(e.consensus_num)
-        END AS surprise_rel,
-        e.consensus_disputed, e.consensus_low, e.consensus_high, e.consensus_n,
-        e.consensus_source, e.actual_provenance
-FROM    calendar_events e
-JOIN    calendar_indicators i USING (indicator_key)
-WHERE   e.status = 'released'
-  AND   e.actual_num IS NOT NULL AND e.consensus_num IS NOT NULL;
-
--- The "what to watch" for the Investment Committee: scheduled releases ordered
--- by criticality, with the reason the indicator matters in that country.
-CREATE OR REPLACE VIEW v_calendar_upcoming AS
-SELECT  e.release_utc, i.area, i.country_iso3, i.name, i.criticality, i.nature,
-        e.reference_period, e.previous, e.consensus, i.rationale
-FROM    calendar_events e
-JOIN    calendar_indicators i USING (indicator_key)
-WHERE   e.status = 'scheduled';
+-- v_calendar_surprise and v_calendar_upcoming were dropped in schema v28: the
+-- EconCalendar job that fed calendar_events was retired (processo-macro M10),
+-- so the views kept answering "what is upcoming" from data frozen on
+-- 25/09/2026. Use macro_releases or the LazyCommittee calendar instead.
 
 -- The point-in-time bridge: for every macro_panel value, when it became
 -- public. Without it a backtest uses data not yet known at the time.

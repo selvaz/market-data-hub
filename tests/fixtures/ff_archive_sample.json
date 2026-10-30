@@ -1,0 +1,42 @@
+[
+  {
+    "title": "German ifo Business Climate",
+    "country": "EUR",
+    "date": "2026-10-26T05:00:00-04:00",
+    "impact": "Low",
+    "forecast": "90.0",
+    "previous": "89.9"
+  },
+  {
+    "title": "M3 Money Supply y/y",
+    "country": "EUR",
+    "date": "2026-10-27T05:00:00-04:00",
+    "impact": "Low",
+    "forecast": "3.5%",
+    "previous": "3.5%"
+  },
+  {
+    "title": "FOMC Statement",
+    "country": "USD",
+    "date": "2026-10-28T14:00:00-04:00",
+    "impact": "High",
+    "forecast": "",
+    "previous": ""
+  },
+  {
+    "title": "Unemployment Claims",
+    "country": "USD",
+    "date": "2026-10-29T08:30:00-04:00",
+    "impact": "Medium",
+    "forecast": "198K",
+    "previous": "194K"
+  },
+  {
+    "title": "BOJ Policy Rate",
+    "country": "JPY",
+    "date": "2026-10-29T22:30:00-04:00",
+    "impact": "High",
+    "forecast": "<1.25%",
+    "previous": "<1.25%"
+  }
+]
