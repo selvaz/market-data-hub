@@ -24,7 +24,7 @@ from `docs/` by the `docs` workflow on every push to `main`).
 
 | Source | What | Table | Frequency |
 |----------|------|---------|-----------|
-| Yahoo Finance | 154 symbols (ETFs, equity, FX, VIX indices, daily crypto, [continuous commodity futures](docs/free-sources.md#yahoo-continuous-futures)) — OHLCV + adj_close | `prices_daily` | daily |
+| Yahoo Finance | 153 symbols (ETFs, equity, FX, VIX indices, daily crypto, [continuous commodity futures](docs/free-sources.md#yahoo-continuous-futures)) — OHLCV + adj_close | `prices_daily` | daily |
 | Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
 | FRED | 106 macro series (US/EA rates, real yields, CPI, GDP, credit spreads, financial-conditions & liquidity, cross-country 10Y yields, [23 daily H.10 FX rates](docs/fred-fx.md), [F05 term premium, EM OAS, wages and diesel](docs/free-sources.md)) | `macro_series` | D/W/M/Q |
 | NY Fed ACM | [Ten-year monthly term premium](docs/free-sources.md#ny-fed-acm-official-monthly-csv), official public chart CSV | `macro_series` | M |

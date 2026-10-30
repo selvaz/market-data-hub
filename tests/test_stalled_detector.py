@@ -43,6 +43,21 @@ def test_default_threshold_boundaries_are_unchanged(freq, threshold):
     assert detector.is_stalled(FRIDAY, freq, FRIDAY + timedelta(days=threshold + 1)) is True
 
 
+@pytest.mark.parametrize("last,as_of,freq", [
+    # FRED dates a period at its start: these are the latest values on the
+    # day before the next release, so they must not count as stalled.
+    (date(2026, 9, 1), date(2026, 11, 5), "M"),    # UNRATE Sep, until Oct payrolls
+    (date(2026, 8, 1), date(2026, 10, 29), "M"),   # PCE Aug, until Sep PCE
+    (date(2026, 4, 1), date(2026, 10, 29), "Q"),   # GDP Q2, until Q3 advance
+])
+def test_on_time_period_start_releases_are_not_stalled(last, as_of, freq):
+    assert detector.is_stalled(last, freq, as_of) is False
+
+
+def test_discontinued_monthly_series_is_still_stalled():
+    assert detector.is_stalled(date(2023, 1, 1), "M", date(2026, 10, 28)) is True
+
+
 def test_publication_override_does_not_hide_missing_data():
     assert detector.is_stalled(None, "D", FRIDAY, max_lag_days=10) is True
 

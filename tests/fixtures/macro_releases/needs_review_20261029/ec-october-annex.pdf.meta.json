@@ -1,0 +1,12 @@
+{
+  "url": "https://economy-finance.ec.europa.eu/document/download/f8c1c72e-0c56-4dac-812e-36abbd651e35_en",
+  "retrieved_at": "2026-10-29T13:34:16.616735+00:00",
+  "sha256": "948c9aa082735e99a1aac6aa981e5364ce0500686a48768a9fac7a5384754c3e",
+  "original_document_hash": "b4225536debc3ba3fcfd0678ec9d7037048a644ddd2829371c84f8c328535140",
+  "original_raw_hash": "b4225536debc3ba3fcfd0678ec9d7037048a644ddd2829371c84f8c328535140",
+  "capture": "Saved issuer response from offline production DB copy; PDF pages retained unchanged or HTML links/rows only",
+  "pages": [
+    1,
+    2
+  ]
+}

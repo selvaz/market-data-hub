@@ -6,7 +6,7 @@
 > *query* this catalogue programmatically (by asset class, area, sector, pillar)
 > and pull analysis-ready series, see [EXTRACTION.md](EXTRACTION.md).
 
-Totals: **154 Yahoo symbols** + **106 FRED series** + **1 NY Fed ACM monthly series** + **6 crypto × 3 timeframes**.
+Totals: **153 Yahoo symbols** + **106 FRED series** + **1 NY Fed ACM monthly series** + **6 crypto × 3 timeframes**.
 
 The [F05 free sources](free-sources.md) include term premia, EM corporate OAS,
 hourly earnings, retail/spot diesel and continuous commodity futures, with
@@ -76,7 +76,6 @@ point normally is on a healthy day.
 | | FXI | iShares China Large-Cap |
 | | MCHI | iShares MSCI China |
 | | KWEB | KraneShares CSI China Internet |
-| | KBUY | KraneShares China Consumer Leaders |
 | | KURE | KraneShares MSCI China Health Care |
 | | CQQQ | Invesco China Technology |
 | | INDA | iShares MSCI India |
