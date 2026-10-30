@@ -8,6 +8,8 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 ## [Unreleased]
 
 ### Added
+- Read-only `econ_calendar.archive_forecasts.read_archived_forecasts`: literal ForexFactory forecasts with manifest/SHA-256 provenance, latest qualifying capture, UTC release windows and national EUR jurisdiction rules. No database or network access; FF forecasts remain ineligible for surprises.
+
 - Five Yahoo symbols for the LazyCommittee morning data (prompt-askb P4), each checked live on 29/10/2026: 1321.T (Nikkei 225, Tokyo) and 2800.HK (Hang Seng, Hong Kong), so the Asian session is in the data before the US open; GOVT (aggregate US Treasury); AGGG.L (Global Aggregate, USD unhedged); SYBA.DE (Bloomberg Euro Aggregate).
 
 ### Fixed
