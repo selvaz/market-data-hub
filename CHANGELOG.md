@@ -7,6 +7,23 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Daily macro release report (`run_macro_release_report.py`): deterministic HTML
+  and JSON from the read-only official macro store, covering all stored geographies
+  and central banks. Uses a rolling first-official-seen window, issuer documents,
+  previous values, explicitly labelled FF forecasts (never surprise eligible),
+  and the latest family collection issues. Telegram is opt-in through the existing
+  hub helper; empty windows still write a report and return exit code 3.
+- Each daily macro release now carries its approved indicator card beneath the
+  figure, with the full card and key in JSON. Unmapped releases explicitly show
+  `no card yet` and are counted in the report summary without invented context.
+
+### Changed
+- Restyled the daily macro HTML with the Economic Release Monitor's header,
+  colours, typography, indicator-card grid, signed-change colouring and four
+  local filters (All / New today / Tier 1 / Errors). All current content and the
+  JSON contract are preserved; CSS and JavaScript remain self-contained.
+
 ### Fixed
 - FHFA HPI: parse the split release-year glyph in the October 2026 PDF and check the monthly cover against the reviewed edition and reference period. The published purchase-only, seasonally adjusted U.S. changes remain the source of both headline values.
 - EC surveys: accept the October ESI wording that explicitly prints the same level for the EU and euro area; retain the separately dated statistical-annex checks for final consumer confidence and revisions.
