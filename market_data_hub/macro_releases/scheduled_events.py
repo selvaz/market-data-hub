@@ -10,6 +10,7 @@ import hashlib
 import json
 
 from .catalogue import FAMILIES, INDICATORS, hicp_indicator
+from .adapters import source_lag_seconds
 from .models import Reading, ReleaseEvent, ScheduleVersion, SourceSeries, utc
 from .read_api import indicators_for_stage
 from .publication_times import local_release
@@ -103,7 +104,8 @@ def persist_scheduled_events(store, *, recorded_at=None):
                     series_key = "reviewed-calendar:" + measure.id
                     store.put(SourceSeries(id=issuer + ":" + series_key,
                         indicator_id=measure.id, source_id=issuer, issuer_id=issuer,
-                        distributor_id=issuer, source_key=series_key, evidence_role="issuer"))
+                        distributor_id=issuer, source_key=series_key, evidence_role="issuer",
+                        expected_lag_seconds=source_lag_seconds(store, issuer + ":" + series_key, family)))
                     store.put(Reading(indicator_id=measure.id, release_event_id=event_id,
                         source_id=issuer, series_key=series_key,
                         period_key=period, reference_period=period, edition=edition,

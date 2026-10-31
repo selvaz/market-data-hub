@@ -7,6 +7,13 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Generate the complete data catalogue and JSON inventory from collector
+  configuration and both stores' schemas, including migrated macro tables.
+  Declare expected availability lags, preserve frozen calendar documentation,
+  and gate catalogue completeness/freshness in CI. Optional read-only live
+  inventory reports observed history and lag where availability is retained.
+
 ### Fixed
 - Collect the UK GDP index from ONS ECY2 (MGDP), using the UK publication
   date from each monthly update. Keep rounded ECY2 evidence separate from

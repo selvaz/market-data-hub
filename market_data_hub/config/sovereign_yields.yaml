@@ -7,6 +7,7 @@ defaults: &daily
   frequency: D
   asset_class: MACRO
   priority: 1
+  expected_lag_days: 3  # declared availability estimate, not live-measured
   max_lag_days: 3
   lag_calendar: business
   # Optional explicit national market closures: holidays: [YYYY-MM-DD, ...]

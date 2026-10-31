@@ -53,11 +53,13 @@ fred_api_key: ""
 
 # — Binance crypto ---
 crypto:
+  expected_lag_days: 1  # declared, from candle close; subdaily candles usually arrive sooner
   symbols: ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "ADAUSDT", "XRPUSDT"]
   timeframes: ["1h", "4h", "1d"]
 
 # — Fama-French factors (Ken French Data Library) ---
 factors:
+  expected_lag_days: 30  # declared; daily factor returns are published in batches
   enabled: true
   datasets: ["FF5_daily", "MOM_daily"]   # keys from sources/factors.py CATALOG
 
@@ -72,3 +74,10 @@ live:
   # only these asset classes receive the intraday update (liquid markets)
   asset_classes: ["EQUITY", "ALTERNATIVES", "FIXED_INCOME", "COMMODITIES", "REAL_ESTATE", "FX"]
 
+
+# Catalogue metadata: declared availability estimates, not measured latency.
+collection_metadata:
+  cftc_cot:
+    expected_lag_days: 3
+  treasury_fiscal:
+    expected_lag_days: 1

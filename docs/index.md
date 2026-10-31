@@ -21,6 +21,12 @@ df, meta = extract.extract_returns(["SPY", "TLT", "^VIX"],
 # df: weekly log-returns, ready for LazyHMM; meta: coverage & quality per symbol
 ```
 
+The [generated data catalogue](DATA_CATALOG.md) documents every configured
+series and indicator and every table in the hub DuckDB and separate macro
+release SQLite store, with declared lag, history floors, jobs and vintage
+semantics. A matching [JSON inventory](data-catalog.json) is checked in CI;
+regenerate both with `python -m market_data_hub.catalog_docs --write`.
+
 ## What it downloads
 
 | Source | What | Table | Frequency |

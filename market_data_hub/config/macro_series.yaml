@@ -1,5 +1,7 @@
 nyfed_acm:
 - symbol: NYFED_ACM_TP10_MONTHLY
+  expected_lag_days: 30
+  issuer: "NY Fed (model)"
   source: nyfed_acm
   asset_class: MACRO
   area: USA
@@ -15,6 +17,8 @@ fred:
 # F05: published metadata verified in tests/fixtures/fred_f05_series_metadata.json.
 # Daily observations can be published weekly; lag limits are calendar days.
 - symbol: THREEFYTP10
+  expected_lag_days: 7
+  issuer: "Fed Board (model)"
   asset_class: MACRO
   area: USA
   name: RATES | US | Kim-Wright 10-Year Zero-Coupon Term Premium
@@ -26,6 +30,8 @@ fred:
   max_lag_days: 10
   notes: Daily model estimates updated weekly; percent, not basis points.
 - symbol: BAMLEMCBPIOAS
+  expected_lag_days: 2
+  issuer: "ICE"
   asset_class: MACRO
   area: Emerging Markets
   name: CREDIT | EM | ICE BofA Corporate Plus Option-Adjusted Spread
@@ -36,6 +42,8 @@ fred:
   seasonal_adjustment: Not Seasonally Adjusted
   notes: EM non-sovereign corporate/quasi-government debt; FRED/ICE history limited to 3 years from April 2026. Percent, not basis points.
 - symbol: BAMLEMHBHYCRPIOAS
+  expected_lag_days: 2
+  issuer: "ICE"
   asset_class: MACRO
   area: Emerging Markets
   name: CREDIT | EM | ICE BofA High Yield Corporate Plus Option-Adjusted Spread
@@ -46,6 +54,8 @@ fred:
   seasonal_adjustment: Not Seasonally Adjusted
   notes: High-yield subset of EM Corporate Plus; FRED/ICE history limited to 3 years from April 2026. Percent, not basis points.
 - symbol: CES0500000003
+  expected_lag_days: 7
+  issuer: "BLS CES"
   asset_class: MACRO
   area: USA
   name: LABOR | US | Average Hourly Earnings of All Employees Total Private
@@ -57,6 +67,8 @@ fred:
   max_lag_days: 70
   notes: Monthly level indexed to month start; allows the reference month plus the following monthly release cycle. Not a wage growth rate.
 - symbol: GASDESW
+  expected_lag_days: 7
+  issuer: "EIA"
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Energy | US Retail Diesel Sales Price
@@ -68,6 +80,8 @@ fred:
   max_lag_days: 10
   notes: Weekly ending Monday; EIA retail diesel survey, distinct from NY Harbor spot.
 - symbol: DDFUELNYH
+  expected_lag_days: 4
+  issuer: "EIA"
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Energy | NY Harbor Ultra-Low-Sulfur No. 2 Diesel Spot Price
@@ -79,264 +93,396 @@ fred:
   max_lag_days: 10
   notes: Daily EIA spot observations with weekly publication; distinct from GASDESW retail survey.
 - symbol: DCOILBRENTEU
+  expected_lag_days: 4
+  frequency: D
+  issuer: "EIA"
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Energy | Brent Spot Price
   priority: 2
   country: US
 - symbol: DCOILWTICO
+  expected_lag_days: 4
+  frequency: D
+  issuer: "EIA"
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Energy | WTI Spot Price (Cushing OK)
   priority: 2
   country: US
 - symbol: VIXCLS
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Cboe"
   asset_class: ALTERNATIVES
   area: USA
   name: VOL | US | CBOE Volatility Index (VIX) Close
   priority: 1
   country: US
 - symbol: DGS10
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board H.15; OECD MEI"
   asset_class: MACRO
   area: USA
   name: RATES | US | 10-Year Treasury Constant Maturity
   priority: 2
   country: US
 - symbol: DGS2
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board H.15"
   asset_class: MACRO
   area: USA
   name: RATES | US | 2-Year Treasury Constant Maturity
   priority: 2
   country: US
 - symbol: DGS30
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board H.15"
   asset_class: MACRO
   area: USA
   name: RATES | US | 30-Year Treasury Constant Maturity
   priority: 2
   country: US
 - symbol: DGS3MO
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board H.15"
   asset_class: MACRO
   area: USA
   name: RATES | US | 3-Month Treasury Constant Maturity
   priority: 2
   country: US
 - symbol: T10Y2Y
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Federal Reserve Bank of St. Louis"
   asset_class: MACRO
   area: USA
   name: RATES | US | 10Y minus 2Y Treasury Spread
   priority: 2
   country: US
 - symbol: EFFR
+  expected_lag_days: 2
+  frequency: D
+  issuer: "NY Fed"
   asset_class: MACRO
   area: USA
   name: RATES | US | Effective Federal Funds Rate
   priority: 2
   country: US
 - symbol: ECBDFR
+  expected_lag_days: 2
+  frequency: D
+  issuer: "ECB"
   asset_class: MACRO
   area: Euro Area
   name: RATES | ECB | Deposit Facility Rate
   priority: 2
   country: EA
 - symbol: ECBMRRFR
+  expected_lag_days: 2
+  frequency: D
+  issuer: "ECB"
   asset_class: MACRO
   area: Euro Area
   name: RATES | ECB | Main Refinancing Operations Rate (fixed rate tenders)
   priority: 2
   country: EA
 - symbol: ECBMLFR
+  expected_lag_days: 2
+  frequency: D
+  issuer: "ECB"
   asset_class: MACRO
   area: Euro Area
   name: RATES | ECB | Marginal Lending Facility Rate
   priority: 2
   country: EA
 - symbol: T10YIE
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board"
   asset_class: MACRO
   area: USA
   name: RATES | US | 10-Year Breakeven Inflation Rate
   priority: 2
   country: US
 - symbol: T5YIE
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board"
   asset_class: MACRO
   area: USA
   name: RATES | US | 5-Year Breakeven Inflation Rate
   priority: 2
   country: US
 - symbol: CPIAUCSL
+  expected_lag_days: 14
+  frequency: M
+  issuer: "BLS"
   asset_class: MACRO
   area: USA
   name: MACRO | US | CPI-U All items (SA)
   priority: 2
   country: US
 - symbol: CPILFESL
+  expected_lag_days: 14
+  frequency: M
+  issuer: "BLS"
   asset_class: MACRO
   area: USA
   name: MACRO | US | Core CPI (CPI ex Food & Energy SA)
   priority: 2
   country: US
 - symbol: PCEPI
+  expected_lag_days: 29
+  frequency: M
+  issuer: "BEA"
   asset_class: MACRO
   area: USA
   name: MACRO | US | PCE Price Index
   priority: 2
   country: US
 - symbol: PCEPILFE
+  expected_lag_days: 29
+  frequency: M
+  issuer: "BEA"
   asset_class: MACRO
   area: USA
   name: MACRO | US | Core PCE Price Index
   priority: 2
   country: US
 - symbol: CP0000EZ19M086NEST
+  expected_lag_days: 17
+  frequency: M
+  issuer: "Eurostat"
   asset_class: MACRO
   area: EA19
   name: MACRO | EA | HICP All items (Index 2015=100)
   priority: 2
   country: EA
 - symbol: GDP
+  expected_lag_days: 29
+  frequency: Q
+  issuer: "BEA"
   asset_class: MACRO
   area: USA
   name: MACRO | US | GDP (current $)
   priority: 2
   country: US
 - symbol: GDPC1
+  expected_lag_days: 29
+  frequency: Q
+  issuer: "BEA"
   asset_class: MACRO
   area: USA
   name: MACRO | US | Real GDP (SAAR chained 2017$)
   priority: 2
   country: US
 - symbol: INDPRO
+  expected_lag_days: 16
+  frequency: M
+  issuer: "Fed Board"
   asset_class: MACRO
   area: USA
   name: MACRO | US | Industrial Production Index
   priority: 2
   country: US
 - symbol: CLVMEURSCAB1GQEA19
+  expected_lag_days: 30
+  frequency: Q
+  issuer: "Eurostat"
   asset_class: MACRO
   area: EA19
   name: MACRO | EA | Real GDP (chained 2010 EUR)
   priority: 2
   country: EA
 - symbol: EUNNGDP
+  expected_lag_days: 30
+  frequency: Q
+  issuer: "Eurostat"
   asset_class: MACRO
   area: EA19
   name: MACRO | EA | GDP (EUR/ECU series nominal)
   priority: 2
   country: EA
 - symbol: UNRATE
+  expected_lag_days: 7
+  frequency: M
+  issuer: "BLS CPS"
   asset_class: MACRO
   area: USA
   name: MACRO | US | Unemployment Rate
   priority: 2
   country: US
 - symbol: PAYEMS
+  expected_lag_days: 7
+  frequency: M
+  issuer: "BLS CES"
   asset_class: MACRO
   area: USA
   name: MACRO | US | Nonfarm Payrolls (Total)
   priority: 2
   country: US
 - symbol: M2SL
+  expected_lag_days: 30
+  frequency: M
+  issuer: "Fed H.6"
   asset_class: MACRO
   area: USA
   name: MACRO | US | M2 Money Stock
   priority: 2
   country: US
 - symbol: WALCL
+  expected_lag_days: 7
+  frequency: W
+  issuer: "Fed H.4.1"
   asset_class: MACRO
   area: USA
   name: MACRO | US | Fed Total Assets
   priority: 2
   country: US
 - symbol: BAMLC0A0CM
+  expected_lag_days: 2
+  frequency: D
+  issuer: "ICE"
   asset_class: MACRO
   area: USA
   name: CREDIT | US | ICE BofA US Corporate Master OAS
   priority: 2
   country: US
 - symbol: BAMLH0A0HYM2
+  expected_lag_days: 2
+  frequency: D
+  issuer: "ICE"
   asset_class: MACRO
   area: USA
   name: CREDIT | US | ICE BofA US High Yield OAS
   priority: 2
   country: US
 - symbol: AAA
+  expected_lag_days: 30
+  frequency: M
+  issuer: "Moody's"
   asset_class: MACRO
   area: USA
   name: CREDIT | US | Moody's Seasoned Aaa Corporate Bond Yield
   priority: 2
   country: US
 - symbol: BAA
+  expected_lag_days: 30
+  frequency: M
+  issuer: "Moody's"
   asset_class: MACRO
   area: USA
   name: CREDIT | US | Moody's Seasoned Baa Corporate Bond Yield
   priority: 2
   country: US
 - symbol: NFCI
+  expected_lag_days: 7
+  frequency: W
+  issuer: "Chicago Fed"
   asset_class: MACRO
   area: USA
   name: RISK | US | Chicago Fed National Financial Conditions Index
   priority: 2
   country: US
 - symbol: STLFSI4
+  expected_lag_days: 7
+  frequency: W
+  issuer: "St. Louis Fed"
   asset_class: MACRO
   area: USA
   name: RISK | US | St. Louis Fed Financial Stress Index
   priority: 2
   country: US
 - symbol: HOUST
+  expected_lag_days: 20
+  frequency: M
+  issuer: "Census"
   asset_class: MACRO
   area: USA
   name: MACRO | US | Housing Starts
   priority: 2
   country: US
 - symbol: RSAFS
+  expected_lag_days: 15
+  frequency: M
+  issuer: "Census"
   asset_class: MACRO
   area: USA
   name: MACRO | US | Retail Sales (Total)
   priority: 2
   country: US
 - symbol: DTWEXBGS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: USA
   name: 'FX | USD | Trade Weighted US Dollar Index: Broad'
   priority: 2
   country: US
 - symbol: DFII10
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board H.15"
   asset_class: MACRO
   area: USA
   name: RATES | US | 10-Year TIPS Real Yield
   priority: 2
   country: US
 - symbol: DFII5
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board H.15"
   asset_class: MACRO
   area: USA
   name: RATES | US | 5-Year TIPS Real Yield
   priority: 2
   country: US
 - symbol: T5YIFR
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board"
   asset_class: MACRO
   area: USA
   name: RATES | US | 5Y5Y Forward Inflation Expectation
   priority: 2
   country: US
 - symbol: WTREGEN
+  expected_lag_days: 7
+  frequency: W
+  issuer: "Treasury; Fed H.4.1"
   asset_class: MACRO
   area: USA
   name: LIQ | US | Treasury General Account (net liquidity)
   priority: 2
   country: US
 - symbol: RRPONTSYD
+  expected_lag_days: 2
+  frequency: D
+  issuer: "NY Fed"
   asset_class: MACRO
   area: USA
   name: LIQ | US | Overnight Reverse Repo (RRP, net liquidity)
   priority: 2
   country: US
 - symbol: BAMLC0A4CBBB
+  expected_lag_days: 2
+  frequency: D
+  issuer: "ICE"
   asset_class: MACRO
   area: USA
   name: CREDIT | US | ICE BofA BBB Corporate OAS
   priority: 2
   country: US
 - symbol: BAMLH0A3HYC
+  expected_lag_days: 2
+  frequency: D
+  issuer: "ICE"
   asset_class: MACRO
   area: USA
   name: CREDIT | US | ICE BofA CCC & Lower HY OAS
@@ -347,192 +493,288 @@ fred:
 #     Single FRED series each (like DGS10); country = ISO3 so the
 #     v_macro_panel_ext view can map them into panel shape for the Dalio layer.
 - symbol: IRLTLT01USM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: USA
   name: RATES | USA | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: USA
 - symbol: IRLTLT01JPM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Japan
   name: RATES | JPN | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: JPN
 - symbol: IRLTLT01DEM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Germany
   name: RATES | DEU | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: DEU
 - symbol: IRLTLT01GBM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: United Kingdom
   name: RATES | GBR | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: GBR
 - symbol: IRLTLT01FRM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: France
   name: RATES | FRA | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: FRA
 - symbol: IRLTLT01ITM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Italy
   name: RATES | ITA | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: ITA
 - symbol: IRLTLT01CAM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Canada
   name: RATES | CAN | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: CAN
 - symbol: IRLTLT01KRM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Korea
   name: RATES | KOR | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: KOR
 - symbol: IRLTLT01AUM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Australia
   name: RATES | AUS | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: AUS
 - symbol: IRLTLT01MXM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Mexico
   name: RATES | MEX | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: MEX
 - symbol: IRLTLT01ZAM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: South Africa
   name: RATES | ZAF | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: ZAF
 - symbol: IRLTLT01CHM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Switzerland
   name: RATES | CHE | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: CHE
 - symbol: IRLTLT01NLM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Netherlands
   name: RATES | NLD | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: NLD
 - symbol: IRLTLT01SEM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Sweden
   name: RATES | SWE | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: SWE
 - symbol: IRLTLT01NOM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Norway
   name: RATES | NOR | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: NOR
 - symbol: IRLTLT01DKM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Denmark
   name: RATES | DNK | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: DNK
 - symbol: IRLTLT01FIM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Finland
   name: RATES | FIN | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: FIN
 - symbol: IRLTLT01BEM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Belgium
   name: RATES | BEL | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: BEL
 - symbol: IRLTLT01ATM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Austria
   name: RATES | AUT | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: AUT
 - symbol: IRLTLT01IEM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Ireland
   name: RATES | IRL | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: IRL
 - symbol: IRLTLT01PTM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Portugal
   name: RATES | PRT | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: PRT
 - symbol: IRLTLT01ESM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Spain
   name: RATES | ESP | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: ESP
 - symbol: IRLTLT01GRM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Greece
   name: RATES | GRC | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: GRC
 - symbol: IRLTLT01NZM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: New Zealand
   name: RATES | NZL | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: NZL
 - symbol: IRLTLT01ILM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Israel
   name: RATES | ISR | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: ISR
 - symbol: IRLTLT01LUM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Luxembourg
   name: RATES | LUX | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: LUX
 - symbol: IRLTLT01PLM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Poland
   name: RATES | POL | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: POL
 - symbol: IRLTLT01CZM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Czechia
   name: RATES | CZE | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: CZE
 - symbol: IRLTLT01HUM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Hungary
   name: RATES | HUN | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: HUN
 - symbol: IRLTLT01SKM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Slovak Republic
   name: RATES | SVK | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: SVK
 - symbol: IRLTLT01SIM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Slovenia
   name: RATES | SVN | 10-Year Government Bond Yield (OECD via FRED)
   priority: 2
   country: SVN
 - symbol: IRLTLT01CLM156N
+  expected_lag_days: 60
+  frequency: M
+  issuer: "OECD Main Economic Indicators (national source agencies)"
   asset_class: MACRO
   area: Chile
   name: RATES | CHL | 10-Year Government Bond Yield (OECD via FRED)
@@ -547,6 +789,9 @@ fred:
 # through get_fred_series(). Positive oriented log changes = currency stronger.
 # See docs/fred-fx.md for normalization, coverage gaps and publication lag.
 - symbol: DEXMXUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Mexico
   name: FX | MXN | H.10 Spot Exchange Rate (MXN per USD)
@@ -558,6 +803,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXBZUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Brazil
   name: FX | BRL | H.10 Spot Exchange Rate (BRL per USD)
@@ -569,6 +817,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXINUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: India
   name: FX | INR | H.10 Spot Exchange Rate (INR per USD)
@@ -580,6 +831,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXCHUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: China
   name: FX | CNY | H.10 Spot Exchange Rate (CNY per USD)
@@ -591,6 +845,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXKOUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: South Korea
   name: FX | KRW | H.10 Spot Exchange Rate (KRW per USD)
@@ -602,6 +859,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXJPUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Japan
   name: FX | JPY | H.10 Spot Exchange Rate (JPY per USD)
@@ -613,6 +873,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXSZUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Switzerland
   name: FX | CHF | H.10 Spot Exchange Rate (CHF per USD)
@@ -624,6 +887,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXCAUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Canada
   name: FX | CAD | H.10 Spot Exchange Rate (CAD per USD)
@@ -635,6 +901,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXUSUK
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: United Kingdom
   name: FX | GBP | H.10 Spot Exchange Rate (USD per GBP)
@@ -646,6 +915,9 @@ fred:
   currency_strength_orientation: 1
   max_lag_days: 10
 - symbol: DEXUSEU
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Euro Area
   name: FX | EUR | H.10 Spot Exchange Rate (USD per EUR)
@@ -657,6 +929,9 @@ fred:
   currency_strength_orientation: 1
   max_lag_days: 10
 - symbol: DEXUSAL
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Australia
   name: FX | AUD | H.10 Spot Exchange Rate (USD per AUD)
@@ -668,6 +943,9 @@ fred:
   currency_strength_orientation: 1
   max_lag_days: 10
 - symbol: DEXSFUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: South Africa
   name: FX | ZAR | H.10 Spot Exchange Rate (ZAR per USD)
@@ -679,6 +957,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXTAUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Taiwan
   name: FX | TWD | H.10 Spot Exchange Rate (TWD per USD)
@@ -690,6 +971,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXHKUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Hong Kong
   name: FX | HKD | H.10 Spot Exchange Rate (HKD per USD)
@@ -701,6 +985,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXMAUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Malaysia
   name: FX | MYR | H.10 Spot Exchange Rate (MYR per USD)
@@ -712,6 +999,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXTHUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Thailand
   name: FX | THB | H.10 Spot Exchange Rate (THB per USD)
@@ -723,6 +1013,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXSIUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Singapore
   name: FX | SGD | H.10 Spot Exchange Rate (SGD per USD)
@@ -734,6 +1027,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXNOUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Norway
   name: FX | NOK | H.10 Spot Exchange Rate (NOK per USD)
@@ -745,6 +1041,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXSDUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Sweden
   name: FX | SEK | H.10 Spot Exchange Rate (SEK per USD)
@@ -756,6 +1055,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXDNUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Denmark
   name: FX | DKK | H.10 Spot Exchange Rate (DKK per USD)
@@ -767,6 +1069,9 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXUSNZ
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: New Zealand
   name: FX | NZD | H.10 Spot Exchange Rate (USD per NZD)
@@ -778,6 +1083,9 @@ fred:
   currency_strength_orientation: 1
   max_lag_days: 10
 - symbol: DEXVZUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Venezuela
   name: FX | VES | H.10 Spot Exchange Rate (VES per USD)
@@ -790,6 +1098,9 @@ fred:
   max_lag_days: 10
   notes: FRED redenomination break on 2021-10-04; see series notes before computing returns across this date.
 - symbol: DEXSLUS
+  expected_lag_days: 7
+  frequency: D
+  issuer: "Fed H.10"
   asset_class: FX
   area: Sri Lanka
   name: FX | LKR | H.10 Spot Exchange Rate (LKR per USD)

@@ -20,6 +20,12 @@ from `docs/` by the `docs` workflow on every push to `main`).
   group, frequency, typical lag and history depth; plus the proposed
   cross-country WDI/WEO/WGI/BIS panel extension.
 
+Adding an external source means adding its collector configuration and running
+`python -m market_data_hub.catalog_docs --write` to regenerate the complete
+[data catalogue](docs/DATA_CATALOG.md) and [JSON inventory](docs/data-catalog.json).
+The CI catalogue gate checks every configured series and both stores' schemas;
+`python -m market_data_hub.catalog_docs --check` fails if either file is stale.
+
 ## What it downloads
 
 | Source | What | Table | Frequency |

@@ -1,5 +1,6 @@
 indicators:
 - id: real_gdp_growth
+  expected_lag_days: 300
   name: Real GDP growth
   pillar: growth
   priority: 1
@@ -11,6 +12,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: gdp_current_usd
+  expected_lag_days: 300
   name: GDP current USD
   pillar: growth
   priority: 1
@@ -22,6 +24,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: gdp_per_capita_growth
+  expected_lag_days: 300
   name: GDP per capita growth
   pillar: growth
   priority: 1
@@ -33,6 +36,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: unemployment_rate
+  expected_lag_days: 300
   name: Unemployment (ILO modeled)
   pillar: growth
   priority: 1
@@ -44,6 +48,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: investment_gdp
+  expected_lag_days: 300
   name: Gross capital formation %GDP
   pillar: growth
   priority: 1
@@ -55,6 +60,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: gross_savings_gdp
+  expected_lag_days: 300
   name: Gross savings %GDP
   pillar: growth
   priority: 1
@@ -66,6 +72,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: labor_productivity_level
+  expected_lag_days: 300
   name: GDP per person employed (const 2021 PPP $)
   pillar: growth
   priority: 2
@@ -77,6 +84,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: high_tech_exports_share
+  expected_lag_days: 300
   name: High-tech exports %manufactured
   pillar: growth
   priority: 2
@@ -88,6 +96,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: rnd_expenditure_gdp
+  expected_lag_days: 300
   name: R&D expenditure %GDP
   pillar: growth
   priority: 2
@@ -99,6 +108,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: population_growth
+  expected_lag_days: 300
   name: Population growth
   pillar: growth
   priority: 3
@@ -110,6 +120,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: dependency_ratio
+  expected_lag_days: 300
   name: Age dependency ratio
   pillar: growth
   priority: 3
@@ -121,6 +132,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: inflation_cpi
+  expected_lag_days: 300
   name: CPI inflation
   pillar: liquidity
   priority: 1
@@ -132,6 +144,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: real_interest_rate
+  expected_lag_days: 300
   name: Real interest rate
   pillar: liquidity
   priority: 1
@@ -143,6 +156,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: lending_interest_rate
+  expected_lag_days: 300
   name: Lending interest rate
   pillar: liquidity
   priority: 2
@@ -154,6 +168,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: broad_money_gdp
+  expected_lag_days: 300
   name: Broad money %GDP
   pillar: liquidity
   priority: 2
@@ -165,6 +180,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: current_account_gdp
+  expected_lag_days: 300
   name: Current account balance %GDP
   pillar: external
   priority: 1
@@ -180,6 +196,7 @@ indicators:
     code: BN.CAB.XOKA.GD.ZS
     api_source_id: 2
 - id: fx_reserves_usd
+  expected_lag_days: 300
   name: Total reserves incl. gold (USD)
   pillar: external
   priority: 1
@@ -191,6 +208,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: fx_reserves_months_imports
+  expected_lag_days: 300
   name: Reserves in months of imports
   pillar: external
   priority: 1
@@ -202,6 +220,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: official_fx_rate
+  expected_lag_days: 300
   name: Official exchange rate (LCU/USD)
   pillar: external
   priority: 1
@@ -213,6 +232,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: exports_gdp
+  expected_lag_days: 300
   name: Exports %GDP
   pillar: external
   priority: 1
@@ -224,6 +244,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: imports_gdp
+  expected_lag_days: 300
   name: Imports %GDP
   pillar: external
   priority: 1
@@ -235,6 +256,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: fdi_inflows_gdp
+  expected_lag_days: 300
   name: FDI net inflows %GDP
   pillar: external
   priority: 2
@@ -246,6 +268,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: private_credit_gdp
+  expected_lag_days: 300
   name: Domestic credit to private sector %GDP
   pillar: debt_cycle
   priority: 1
@@ -257,6 +280,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: public_debt_gdp
+  expected_lag_days: 300
   name: Govt gross debt %GDP
   pillar: sovereign
   priority: 1
@@ -272,6 +296,7 @@ indicators:
     code: GC.DOD.TOTL.GD.ZS
     api_source_id: 2
 - id: fiscal_balance_gdp
+  expected_lag_days: 300
   name: Govt net lending/borrowing %GDP
   pillar: sovereign
   priority: 1
@@ -287,6 +312,7 @@ indicators:
     code: GC.NLD.TOTL.GD.ZS
     api_source_id: 2
 - id: primary_balance_gdp
+  expected_lag_days: 300
   name: Govt primary balance %GDP
   pillar: sovereign
   priority: 2
@@ -297,6 +323,7 @@ indicators:
   code: pb
   orientation: 1
 - id: government_revenue_gdp
+  expected_lag_days: 300
   name: Govt revenue %GDP
   pillar: sovereign
   priority: 2
@@ -312,6 +339,7 @@ indicators:
     code: GC.REV.XGRT.GD.ZS
     api_source_id: 2
 - id: government_expenditure_gdp
+  expected_lag_days: 300
   name: Govt expenditure %GDP
   pillar: sovereign
   priority: 2
@@ -327,6 +355,7 @@ indicators:
     code: GC.XPN.TOTL.GD.ZS
     api_source_id: 2
 - id: npl_ratio
+  expected_lag_days: 300
   name: Bank NPLs %gross loans
   pillar: banking
   priority: 1
@@ -338,6 +367,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: bank_capital_ratio
+  expected_lag_days: 300
   name: Bank capital to assets ratio
   pillar: banking
   priority: 2
@@ -349,6 +379,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: wgi_voice_accountability
+  expected_lag_days: 300
   name: Voice & accountability
   pillar: governance
   priority: 1
@@ -360,6 +391,7 @@ indicators:
   orientation: 1
   api_source_id: 3
 - id: wgi_political_stability
+  expected_lag_days: 300
   name: Political stability
   pillar: governance
   priority: 1
@@ -371,6 +403,7 @@ indicators:
   orientation: 1
   api_source_id: 3
 - id: wgi_government_effectiveness
+  expected_lag_days: 300
   name: Government effectiveness
   pillar: governance
   priority: 1
@@ -382,6 +415,7 @@ indicators:
   orientation: 1
   api_source_id: 3
 - id: wgi_regulatory_quality
+  expected_lag_days: 300
   name: Regulatory quality
   pillar: governance
   priority: 1
@@ -393,6 +427,7 @@ indicators:
   orientation: 1
   api_source_id: 3
 - id: wgi_rule_of_law
+  expected_lag_days: 300
   name: Rule of law
   pillar: governance
   priority: 1
@@ -404,6 +439,7 @@ indicators:
   orientation: 1
   api_source_id: 3
 - id: wgi_control_corruption
+  expected_lag_days: 300
   name: Control of corruption
   pillar: governance
   priority: 1
@@ -415,6 +451,7 @@ indicators:
   orientation: 1
   api_source_id: 3
 - id: trade_openness
+  expected_lag_days: 300
   name: Trade %GDP
   pillar: geopolitical
   priority: 1
@@ -426,6 +463,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: natural_resource_rents_gdp
+  expected_lag_days: 300
   discontinued: World Bank discontinued this series; observations end in 2021.
   name: Natural resource rents %GDP
   pillar: geopolitical
@@ -438,6 +476,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: military_expenditure_gdp
+  expected_lag_days: 300
   name: Military expenditure %GDP
   pillar: geopolitical
   priority: 3
@@ -449,6 +488,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: gdp_growth_weo
+  expected_lag_days: 300
   name: Real GDP growth (WEO, incl. forecast)
   pillar: growth
   priority: 1
@@ -459,6 +499,7 @@ indicators:
   code: NGDP_RPCH
   orientation: 1
 - id: gdp_usd_weo
+  expected_lag_days: 300
   name: GDP current USD (WEO)
   pillar: growth
   priority: 2
@@ -469,6 +510,7 @@ indicators:
   code: NGDPD
   orientation: 0
 - id: gdp_per_capita_usd
+  expected_lag_days: 300
   name: GDP per capita current USD
   pillar: growth
   priority: 2
@@ -479,6 +521,7 @@ indicators:
   code: NGDPDPC
   orientation: 1
 - id: gdp_ppp
+  expected_lag_days: 300
   name: GDP PPP (current intl $)
   pillar: growth
   priority: 3
@@ -489,6 +532,7 @@ indicators:
   code: PPPGDP
   orientation: 0
 - id: gdp_per_capita_ppp
+  expected_lag_days: 300
   name: GDP per capita PPP
   pillar: growth
   priority: 2
@@ -499,6 +543,7 @@ indicators:
   code: PPPPC
   orientation: 1
 - id: gdp_ppp_world_share
+  expected_lag_days: 300
   name: GDP PPP share of world
   pillar: geopolitical
   priority: 3
@@ -509,6 +554,7 @@ indicators:
   code: PPPSH
   orientation: 0
 - id: ppp_conversion_rate
+  expected_lag_days: 300
   name: Implied PPP conversion rate
   pillar: external
   priority: 3
@@ -519,6 +565,7 @@ indicators:
   code: PPPEX
   orientation: 0
 - id: inflation_avg_weo
+  expected_lag_days: 300
   name: Inflation avg CPI (WEO, incl. forecast)
   pillar: liquidity
   priority: 1
@@ -529,6 +576,7 @@ indicators:
   code: PCPIPCH
   orientation: -1
 - id: inflation_eop_weo
+  expected_lag_days: 300
   name: Inflation end-of-period CPI (WEO)
   pillar: liquidity
   priority: 2
@@ -539,6 +587,7 @@ indicators:
   code: PCPIEPCH
   orientation: -1
 - id: population
+  expected_lag_days: 300
   name: Population (millions)
   pillar: growth
   priority: 3
@@ -549,6 +598,7 @@ indicators:
   code: LP
   orientation: 0
 - id: current_account_usd
+  expected_lag_days: 300
   name: Current account balance (USD)
   pillar: external
   priority: 2
@@ -559,6 +609,7 @@ indicators:
   code: BCA
   orientation: 0
 - id: unemployment_weo
+  expected_lag_days: 300
   name: Unemployment rate (WEO, incl. forecast)
   pillar: growth
   priority: 1
@@ -569,6 +620,7 @@ indicators:
   code: LUR
   orientation: -1
 - id: remittances_gdp
+  expected_lag_days: 300
   name: Personal remittances received %GDP
   pillar: external
   priority: 2
@@ -580,6 +632,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: total_external_debt_usd
+  expected_lag_days: 300
   name: Total external debt stocks (USD)
   pillar: sovereign
   priority: 1
@@ -591,6 +644,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: external_debt_gni
+  expected_lag_days: 300
   name: External debt stocks %GNI
   pillar: sovereign
   priority: 1
@@ -602,6 +656,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: ppg_external_debt_usd
+  expected_lag_days: 300
   name: PPG external debt (USD)
   pillar: sovereign
   priority: 2
@@ -613,6 +668,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: short_term_debt_usd
+  expected_lag_days: 300
   name: Short-term external debt (USD)
   pillar: external
   priority: 2
@@ -624,6 +680,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: short_term_debt_reserves
+  expected_lag_days: 300
   name: Short-term debt %reserves
   pillar: external
   priority: 1
@@ -635,6 +692,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: debt_service_exports
+  expected_lag_days: 300
   name: Total debt service %exports
   pillar: sovereign
   priority: 1
@@ -646,6 +704,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: interest_revenue
+  expected_lag_days: 300
   name: Interest payments %revenue
   pillar: sovereign
   priority: 1
@@ -657,6 +716,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: tourism_receipts_usd
+  expected_lag_days: 300
   discontinued: World Bank discontinued this series; observations end in 2020.
   name: Intl tourism receipts (USD)
   pillar: external
@@ -669,6 +729,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: tourism_exports_share
+  expected_lag_days: 300
   discontinued: World Bank discontinued this series; observations end in 2020.
   name: Tourism receipts %exports
   pillar: external
@@ -681,6 +742,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: food_imports_share
+  expected_lag_days: 300
   name: Food imports %merch imports
   pillar: external
   priority: 3
@@ -692,6 +754,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: fuel_imports_share
+  expected_lag_days: 300
   name: Fuel imports %merch imports
   pillar: external
   priority: 2
@@ -703,6 +766,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: food_exports_share
+  expected_lag_days: 300
   name: Food exports %merch exports
   pillar: geopolitical
   priority: 3
@@ -714,6 +778,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: fuel_exports_share
+  expected_lag_days: 300
   name: Fuel exports %merch exports
   pillar: geopolitical
   priority: 2
@@ -725,6 +790,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: metals_exports_share
+  expected_lag_days: 300
   name: Ores & metals exports %merch exports
   pillar: geopolitical
   priority: 3
@@ -736,6 +802,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: bis_dsr_private
+  expected_lag_days: 214
   name: Debt service ratio - private (BIS)
   pillar: debt_cycle
   priority: 1
@@ -747,6 +814,7 @@ indicators:
   orientation: -1
   dalio_role: 'Debt-cycle phase: DSR peak = top/depression'
 - id: bis_credit_gap
+  expected_lag_days: 214
   name: Credit-to-GDP gap - private (BIS, HP)
   pillar: debt_cycle
   priority: 1
@@ -758,6 +826,7 @@ indicators:
   orientation: -1
   dalio_role: Bubble if > +10pp (Dalio archetypal threshold)
 - id: bis_policy_rate
+  expected_lag_days: 31
   name: Central bank policy rate (BIS)
   pillar: liquidity
   priority: 1
@@ -771,6 +840,7 @@ indicators:
   dalio_role: Nominal rate (nom_growth vs nom_rate); ~0 = pushing on a string
   euro_aggregate: XM
 - id: reer_broad
+  expected_lag_days: 31
   name: Real effective exchange rate - broad (BIS)
   pillar: markets
   priority: 2
@@ -787,6 +857,7 @@ indicators:
 #     countries). Staged on the unweighted 'markets' pillar so composites are
 #     unchanged until explicitly wired into the methodology.
 - id: interest_on_debt_gdp
+  expected_lag_days: 300
   name: Interest paid on public debt (% GDP, IMF)
   pillar: markets
   priority: 1
@@ -799,6 +870,7 @@ indicators:
   dalio_role: Effective cost of the sovereign debt stock; feeds implied_interest_rate
     (interest %GDP ÷ debt %GDP) — the r in Dalio's nominal-growth-vs-r test.
 - id: real_long_rate
+  expected_lag_days: 300
   name: Real long-term govt bond yield (% , IMF)
   pillar: markets
   priority: 1
@@ -811,6 +883,7 @@ indicators:
   dalio_role: Real cost of long-term borrowing; fills the ~13 EM that lack a FRED
     10Y (nominal). Real, not nominal — pair with inflation for the nominal rate.
 - id: corporate_debt_gdp
+  expected_lag_days: 300
   name: Nonfinancial corporate debt, loans & securities (% GDP, IMF GDD)
   pillar: markets
   priority: 2
@@ -828,6 +901,7 @@ indicators:
 #     indicators = the ECB's own cross-country comparable bank lending rates.
 #     Staged on the unweighted 'markets' pillar.
 - id: ecb_cost_borrow_nfc
+  expected_lag_days: 61
   name: Cost of borrowing, corporations (ECB MIR)
   pillar: markets
   priority: 1
@@ -841,6 +915,7 @@ indicators:
   dalio_role: Bank lending cost to firms in the euro area/EU (the missing rate
     side for ~16 euro members); official ECB composite, comparable cross-country.
 - id: ecb_cost_borrow_house
+  expected_lag_days: 61
   name: Cost of borrowing, households for house purchase (ECB MIR)
   pillar: markets
   priority: 2
@@ -855,6 +930,7 @@ indicators:
 # --- IMF Global Debt Database + WEO/WDI: full private-credit breakdown (fills
 #     the 21 EM without a BIS credit gap) + net public debt + inequality.
 - id: private_debt_gdp
+  expected_lag_days: 300
   name: Private debt, total (households + corporates), loans & securities (% GDP, IMF GDD)
   pillar: markets
   priority: 1
@@ -868,6 +944,7 @@ indicators:
     BIS credit-to-GDP gap. 64/64 → lets us COMPUTE a credit gap for the 21 EM
     that lack the BIS gap (unlocks BUBBLE/LATE_LEVERAGING detection).
 - id: household_debt_gdp
+  expected_lag_days: 300
   name: Household debt, loans & securities (% GDP, IMF GDD)
   pillar: markets
   priority: 2
@@ -879,6 +956,7 @@ indicators:
   orientation: -1
   dalio_role: Household leverage %GDP.
 - id: govt_net_debt_gdp
+  expected_lag_days: 300
   name: General government NET debt (% GDP, IMF WEO)
   pillar: markets
   priority: 1
@@ -891,6 +969,7 @@ indicators:
   dalio_role: Net (not gross) public debt — corrects the gross-vs-net caveat for
     asset-backed sovereigns (Norway; SGP not reported). Complements public_debt_gdp.
 - id: gini
+  expected_lag_days: 300
   name: Gini index (World Bank)
   pillar: social
   priority: 2
@@ -908,6 +987,7 @@ indicators:
 # --- IMF SDMX 3.0 (api.imf.org, per-country, no wildcards). Fills the EM policy
 #     rates the BIS does not carry. Key = full SDMX key with {iso3}.
 - id: imf_policy_rate
+  expected_lag_days: 61
   name: Monetary policy-related rate (IMF MFS)
   pillar: markets
   priority: 2
@@ -920,6 +1000,7 @@ indicators:
   dalio_role: Official policy rate for the EM the BIS series miss (BGD, BGR, EGY,
     NGA, QAT) — supplements bis_policy_rate.
 - id: iip_net_position
+  expected_lag_days: 300
   name: Net international investment position (USD, IMF IIP)
   pillar: markets
   priority: 2
@@ -932,6 +1013,7 @@ indicators:
   dalio_role: Net external creditor/debtor position (USD level). Negative = the
     country is a net debtor to the world. Broad DM+EM coverage.
 - id: ext_debt_nonres_usd
+  expected_lag_days: 300
   name: Debt liabilities to non-residents, total (USD, IMF IIPCC)
   pillar: markets
   priority: 2
@@ -944,6 +1026,7 @@ indicators:
   dalio_role: Total sovereign+economy debt owed to non-residents; denominator for
     the FX-denominated share. Official IMF IIPCC (~19 major economies).
 - id: fx_debt_usd
+  expected_lag_days: 300
   name: Debt liabilities to non-residents, foreign currency (USD, IMF IIPCC)
   pillar: markets
   priority: 2

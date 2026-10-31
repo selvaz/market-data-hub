@@ -1,771 +1,925 @@
 yahoo:
 - symbol: ACWI
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Global
   name: EQUITY | Global | MSCI ACWI
   priority: 1
 - symbol: VEA
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Developed Markets
   name: EQUITY | DM | Vanguard FTSE Developed Markets
   priority: 1
 - symbol: IEMG
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Emerging Markets
   name: EQUITY | EM | iShares Core MSCI Emerging Markets
   priority: 1
 - symbol: EMXC
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Emerging Markets
   name: EQUITY | EM | iShares MSCI EM ex China
   priority: 1
 - symbol: SPY
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | S&P 500
   priority: 1
 - symbol: QQQ
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Nasdaq 100
   priority: 1
 - symbol: IWM
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Russell 2000
   priority: 1
 - symbol: VUG
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Vanguard Growth
   priority: 1
 - symbol: VTV
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Vanguard Value
   priority: 1
 - symbol: VGT
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Vanguard Information Technology
   priority: 1
 - symbol: XLV
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Health Care Select Sector SPDR
   priority: 1
 - symbol: XLF
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Financial Select Sector SPDR
   priority: 1
 - symbol: XLY
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Consumer Discretionary Select Sector SPDR
   priority: 1
 - symbol: XLC
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Communication Services Select Sector SPDR
   priority: 1
 - symbol: XLI
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Industrial Select Sector SPDR
   priority: 1
 - symbol: XLP
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Consumer Staples Select Sector SPDR
   priority: 1
 - symbol: XLE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Energy Select Sector SPDR
   priority: 1
 - symbol: XLU
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Utilities Select Sector SPDR
   priority: 1
 - symbol: XLB
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Materials Select Sector SPDR
   priority: 1
 - symbol: XLRE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Real Estate Select Sector SPDR
   priority: 1
 - symbol: EXSA.DE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Europe
   name: EQUITY | Europe | STOXX Europe 600
   priority: 1
 - symbol: VGK
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Europe
   name: EQUITY | Europe | Vanguard FTSE Europe
   priority: 1
 - symbol: EXV1.DE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Europe
   name: EQUITY | Europe | STOXX Europe 600 Banks
   priority: 1
 - symbol: EXV3.DE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Europe
   name: EQUITY | Europe | STOXX Europe 600 Technology
   priority: 1
 - symbol: EXV4.DE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Europe
   name: EQUITY | Europe | STOXX Europe 600 Health Care
   priority: 1
 - symbol: EXH4.DE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Europe
   name: EQUITY | Europe | STOXX Europe 600 Industrials
   priority: 1
 - symbol: EXH1.DE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Europe
   name: EQUITY | Europe | STOXX Europe 600 Oil & Gas
   priority: 1
 - symbol: EXH9.DE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Europe
   name: EQUITY | Europe | STOXX Europe 600 Utilities
   priority: 1
 - symbol: EWU
+  expected_lag_days: 1
   asset_class: EQUITY
   area: United Kingdom
   name: EQUITY | Europe | iShares MSCI United Kingdom
   priority: 1
 - symbol: EWG
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Germany
   name: EQUITY | Europe | iShares MSCI Germany
   priority: 1
 - symbol: EWQ
+  expected_lag_days: 1
   asset_class: EQUITY
   area: France
   name: EQUITY | Europe | iShares MSCI France
   priority: 1
 - symbol: EWI
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Italy
   name: EQUITY | Europe | iShares MSCI Italy
   priority: 1
 - symbol: EWJ
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Japan
   name: EQUITY | Japan | iShares MSCI Japan
   priority: 1
 - symbol: 1321.T
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Japan
   name: EQUITY | Japan | NEXT FUNDS Nikkei 225 (Tokyo-listed, same-day Asian session)
   priority: 1
 - symbol: EWC
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Canada
   name: EQUITY | Canada | iShares MSCI Canada
   priority: 1
 - symbol: EWA
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Australia
   name: EQUITY | Australia | iShares MSCI Australia
   priority: 1
 - symbol: AAXJ
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Asia-Pacific
   name: EQUITY | Asia-Pac | iShares MSCI All Country Asia ex Japan
   priority: 1
 - symbol: FXI
+  expected_lag_days: 1
   asset_class: EQUITY
   area: China
   name: EQUITY | China | iShares China Large-Cap
   priority: 1
 - symbol: 2800.HK
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Hong Kong
   name: EQUITY | Hong Kong | Tracker Fund of Hong Kong (Hang Seng, HK-listed)
   priority: 1
 - symbol: MCHI
+  expected_lag_days: 1
   asset_class: EQUITY
   area: China
   name: EQUITY | China | iShares MSCI China
   priority: 1
 - symbol: KWEB
+  expected_lag_days: 1
   asset_class: EQUITY
   area: China
   name: EQUITY | China | KraneShares CSI China Internet
   priority: 1
 - symbol: KURE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: China
   name: EQUITY | China | KraneShares MSCI China Health Care
   priority: 1
 - symbol: CQQQ
+  expected_lag_days: 1
   asset_class: EQUITY
   area: China
   name: EQUITY | China | Invesco China Technology
   priority: 1
 - symbol: INDA
+  expected_lag_days: 1
   asset_class: EQUITY
   area: India
   name: EQUITY | India | iShares MSCI India
   priority: 1
 - symbol: EWY
+  expected_lag_days: 1
   asset_class: EQUITY
   area: South Korea
   name: EQUITY | South Korea | iShares MSCI South Korea
   priority: 1
 - symbol: EWT
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Taiwan
   name: EQUITY | Taiwan | iShares MSCI Taiwan
   priority: 1
 - symbol: EWZ
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Brazil
   name: EQUITY | Brazil | iShares MSCI Brazil
   priority: 1
 - symbol: EWW
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Mexico
   name: EQUITY | Mexico | iShares MSCI Mexico
   priority: 1
 - symbol: EZA
+  expected_lag_days: 1
   asset_class: EQUITY
   area: South Africa
   name: EQUITY | South Africa | iShares MSCI South Africa
   priority: 1
 - symbol: KSA
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Saudi Arabia
   name: EQUITY | Saudi Arabia | iShares MSCI Saudi Arabia
   priority: 1
 - symbol: ILF
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Latin America
   name: EQUITY | Latin America | iShares Latin America 40
   priority: 1
 - symbol: AGG
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | iShares Core US Aggregate Bond
   priority: 1
 - symbol: SHY
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | iShares 1-3 Year Treasury Bond
   priority: 1
 - symbol: IEI
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | iShares 3-7 Year Treasury Bond
   priority: 1
 - symbol: IEF
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | iShares 7-10 Year Treasury Bond
   priority: 1
 - symbol: TLT
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | iShares 20+ Year Treasury Bond
   priority: 1
 - symbol: BIL
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | SPDR Bloomberg 1-3 Month T-Bill
   priority: 1
 - symbol: SHV
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | iShares Short Treasury Bond
   priority: 1
 - symbol: TIP
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | iShares TIPS Bond
   priority: 1
 - symbol: BNDX
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Global ex-US
   name: FI | Global | Vanguard Total International Bond (hedged)
   priority: 1
 - symbol: GOVT
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: US
   name: FI | US | iShares U.S. Treasury Bond (aggregate Treasury)
   priority: 1
 - symbol: AGGG.L
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Global
   name: FI | Global | iShares Core Global Aggregate Bond UCITS ETF USD (Dist)
   priority: 1
 - symbol: SYBA.DE
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Europe
   name: FI | Europe | SPDR Bloomberg Euro Aggregate Bond UCITS ETF
   priority: 1
 - symbol: BWX
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Global
   name: FI | Global | SPDR Bloomberg International Treasury
   priority: 1
 - symbol: LQD
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | iShares iBoxx $ Investment Grade Corporate
   priority: 1
 - symbol: VCSH
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | Vanguard Short-Term Corporate
   priority: 1
 - symbol: HYG
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | iShares iBoxx $ High Yield Corporate
   priority: 1
 - symbol: EUHY
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Europe
   name: FI | Europe | iShares € High Yield Corporate
   priority: 1
 - symbol: DBXP.DE
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Europe
   name: FI | Europe | Xtrackers II Eurozone Govt Bond 1-3yr UCITS ETF 1C
   priority: 1
 - symbol: IBCL.DE
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Europe
   name: FI | Europe | iShares € Govt Bond 15-30yr UCITS ETF EUR (Dist)
   priority: 1
 - symbol: IEAC.AS
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Europe
   name: FI | Europe | iShares Core € Corp Bond UCITS ETF EUR (Dist)
   priority: 1
 - symbol: IHY
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Global
   name: FI | Global ex-US | VanEck International High Yield Bond
   priority: 1
 - symbol: EMB
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Emerging Markets
   name: FI | EM | iShares JP Morgan USD Emerging Markets Bond
   priority: 1
 - symbol: EMLC
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Emerging Markets
   name: FI | EM | VanEck Emerging Markets Local Currency Bond
   priority: 1
 - symbol: CEMB
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Emerging Markets
   name: FI | EM | iShares Emerging Markets Corporate Bond
   priority: 1
 - symbol: HYEM
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Emerging Markets
   name: FI | EM | VanEck Emerging Markets High Yield Bond
   priority: 1
 - symbol: MUB
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | iShares National Muni Bond
   priority: 1
 - symbol: HYD
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | VanEck High Yield Muni
   priority: 1
 - symbol: BCI
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: COMMODITIES | Broad | abrdn Bloomberg All Commodity Strategy K-1 Free ETF
   priority: 2
 - symbol: DBC
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Broad | Invesco DB Commodity Index Tracking
   priority: 2
 - symbol: PDBC
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Broad | Invesco Optimum Yield Diversified Commodity
   priority: 2
 - symbol: USO
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Energy | United States Oil Fund
   priority: 2
 - symbol: UNG
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Energy | United States Natural Gas Fund
   priority: 2
 - symbol: UGA
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Energy | United States Gasoline Fund
   priority: 2
 - symbol: GLD
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Metals | SPDR Gold Trust
   priority: 2
 - symbol: SLV
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Metals | iShares Silver Trust
   priority: 2
 - symbol: PPLT
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Metals | abrdn Physical Platinum Shares
   priority: 2
 - symbol: PALL
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Metals | abrdn Physical Palladium Shares
   priority: 2
 - symbol: DBB
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Metals | Invesco DB Base Metals Fund
   priority: 2
 - symbol: CPER
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Metals | United States Copper Index Fund
   priority: 2
 - symbol: DBA
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Agriculture | Invesco DB Agriculture Fund
   priority: 2
 - symbol: CORN
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Agriculture | Teucrium Corn Fund
   priority: 2
 - symbol: WEAT
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Agriculture | Teucrium Wheat Fund
   priority: 2
 - symbol: SOYB
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Agriculture | Teucrium Soybean Fund
   priority: 2
 - symbol: VNQ
+  expected_lag_days: 1
   asset_class: REAL_ESTATE
   area: USA
   name: RE | US | Vanguard Real Estate
   priority: 3
 - symbol: VNQI
+  expected_lag_days: 1
   asset_class: REAL_ESTATE
   area: Global
   name: RE | Global | Vanguard Global ex-US Real Estate
   priority: 3
 - symbol: BTC-USD
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: Global
   name: CRYPTO | Bitcoin | BTC-USD
   priority: 1
 - symbol: IBIT
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: USA
   name: CRYPTO | Bitcoin | iShares Bitcoin Trust
   priority: 1
 - symbol: ETH-USD
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: Global
   name: CRYPTO | Ethereum | ETH-USD
   priority: 1
 - symbol: ETHA
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: USA
   name: CRYPTO | Ethereum | iShares Ethereum Trust
   priority: 1
 - symbol: SOL-USD
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: Global
   name: CRYPTO | Solana | SOL-USD
   priority: 1
 - symbol: VIXY
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: USA
   name: VOL | US | ProShares VIX Short-Term Futures
   priority: 1
 - symbol: IGF
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: Global
   name: ALT | Infrastructure | iShares Global Infrastructure
   priority: 1
 - symbol: IFRA
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: USA
   name: ALT | Infrastructure | iShares US Infrastructure
   priority: 1
 - symbol: EURUSD=X
+  expected_lag_days: 1
   asset_class: FX
   area: Global
   name: FX | Yahoo | EUR/USD
   priority: 2
 - symbol: GBPUSD=X
+  expected_lag_days: 1
   asset_class: FX
   area: Global
   name: FX | Yahoo | GBP/USD
   priority: 2
 - symbol: USDJPY=X
+  expected_lag_days: 1
   asset_class: FX
   area: Global
   name: FX | Yahoo | USD/JPY
   priority: 2
 - symbol: AUDUSD=X
+  expected_lag_days: 1
   asset_class: FX
   area: Global
   name: FX | Yahoo | AUD/USD
   priority: 2
 - symbol: USDCAD=X
+  expected_lag_days: 1
   asset_class: FX
   area: Global
   name: FX | Yahoo | USD/CAD
   priority: 2
 - symbol: USDCHF=X
+  expected_lag_days: 1
   asset_class: FX
   area: Global
   name: FX | Yahoo | USD/CHF
   priority: 2
 - symbol: EURGBP=X
+  expected_lag_days: 1
   asset_class: FX
   area: Global
   name: FX | Yahoo | EUR/GBP
   priority: 2
 - symbol: EURJPY=X
+  expected_lag_days: 1
   asset_class: FX
   area: Global
   name: FX | Yahoo | EUR/JPY
   priority: 2
 - symbol: EURCHF=X
+  expected_lag_days: 1
   asset_class: FX
   area: Global
   name: FX | Yahoo | EUR/CHF
   priority: 2
 - symbol: ^VIX
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: US
   name: VIX term structure ^VIX
   priority: 1
 - symbol: ^VIX9D
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: US
   name: VIX term structure ^VIX9D
   priority: 1
 - symbol: ^VIX3M
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: US
   name: VIX term structure ^VIX3M
   priority: 1
 - symbol: ^VIX6M
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: US
   name: VIX term structure ^VIX6M
   priority: 1
 - symbol: ^VVIX
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: US
   name: VIX term structure ^VVIX
   priority: 1
 - symbol: ^VXN
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: US
   name: VIX term structure ^VXN
   priority: 1
 - symbol: FEZ
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Europe
   name: EQUITY | Europe | SPDR EURO STOXX 50
   priority: 1
 - symbol: UUP
+  expected_lag_days: 1
   asset_class: FX
   area: USD
   name: FX | USD | Invesco DB US Dollar Index Bullish Fund
   priority: 2
 - symbol: VWO
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Emerging Markets
   name: EQUITY | EM | Vanguard FTSE Emerging Markets
   priority: 1
 - symbol: EFV
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Developed Markets
   name: EQUITY | DM | iShares MSCI EAFE Value
   priority: 1
 - symbol: EFG
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Developed Markets
   name: EQUITY | DM | iShares MSCI EAFE Growth
   priority: 1
 - symbol: SCZ
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Developed Markets
   name: EQUITY | DM | iShares MSCI EAFE Small-Cap
   priority: 1
 - symbol: ECH
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Chile
   name: EQUITY | EM | iShares MSCI Chile
   priority: 1
 - symbol: EPHE
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Philippines
   name: EQUITY | EM | iShares MSCI Philippines
   priority: 1
 - symbol: THD
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Thailand
   name: EQUITY | EM | iShares MSCI Thailand
   priority: 1
 - symbol: EIDO
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Indonesia
   name: EQUITY | EM | iShares MSCI Indonesia
   priority: 1
 - symbol: EPU
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Peru
   name: EQUITY | EM | iShares MSCI Peru and Global Exposure
   priority: 1
 - symbol: TUR
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Türkiye
   name: EQUITY | EM | iShares MSCI Turkey
   priority: 1
 - symbol: ARGT
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Argentina
   name: EQUITY | EM | Global X MSCI Argentina
   priority: 1
 - symbol: IGOV
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Developed ex-US
   name: FI | Developed ex-US | iShares International Treasury Bond
   priority: 1
 - symbol: ISHG
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Developed ex-US
   name: FI | Developed ex-US | iShares 1-3 Year International Treasury Bond
   priority: 1
 - symbol: PICB
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: Developed ex-US
   name: FI | Developed ex-US | Invesco International Corporate Bond
   priority: 1
 - symbol: VCIT
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | Vanguard Intermediate-Term Corporate Bond
   priority: 1
 - symbol: VCLT
+  expected_lag_days: 1
   asset_class: FIXED_INCOME
   area: USA
   name: FI | US | Vanguard Long-Term Corporate Bond
   priority: 1
 - symbol: BNO
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Energy | United States Brent Oil Fund
   priority: 2
 - symbol: USL
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Energy | United States 12 Month Oil Fund
   priority: 2
 - symbol: QAI
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: Global
   name: ALT | Multi-Strategy | IQ Hedge Multi-Strategy Tracker
   priority: 1
 - symbol: WTMF
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: Global
   name: ALT | Managed Futures | WisdomTree Managed Futures Strategy
   priority: 1
 - symbol: MNA
+  expected_lag_days: 1
   asset_class: ALTERNATIVES
   area: Global
   name: ALT | Merger Arbitrage | IQ Merger Arbitrage ETF
   priority: 1
 - symbol: EEM
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Emerging Markets
   name: EQUITY | EM | iShares MSCI Emerging Markets
   priority: 1
 - symbol: ACWX
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Global ex-US
   name: EQUITY | Global ex-US | iShares MSCI ACWI ex U.S.
   priority: 1
 - symbol: EFA
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Developed Markets
   name: EQUITY | DM | iShares MSCI EAFE
   priority: 1
 - symbol: EWD
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Sweden
   name: EQUITY | Europe | iShares MSCI Sweden
   priority: 1
 - symbol: EWH
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Hong Kong
   name: EQUITY | Hong Kong | iShares MSCI Hong Kong
   priority: 1
 - symbol: EWL
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Switzerland
   name: EQUITY | Europe | iShares MSCI Switzerland
   priority: 1
 - symbol: EWN
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Netherlands
   name: EQUITY | Europe | iShares MSCI Netherlands
   priority: 1
 - symbol: EWP
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Spain
   name: EQUITY | Europe | iShares MSCI Spain
   priority: 1
 - symbol: EPOL
+  expected_lag_days: 1
   asset_class: EQUITY
   area: Poland
   name: EQUITY | Europe | iShares MSCI Poland
   priority: 1
 - symbol: XLK
+  expected_lag_days: 1
   asset_class: EQUITY
   area: USA
   name: EQUITY | US | Technology Select Sector SPDR
   priority: 1
 - symbol: DX-Y.NYB
+  expected_lag_days: 1
   asset_class: FX
   area: USD
   name: FX | USD | US Dollar Index (DXY)
   priority: 2
 # F05: provider-selected front-month continuous aliases, not fixed contracts.
 - symbol: BZ=F
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Energy | Brent Futures Continuous
@@ -776,6 +930,7 @@ yahoo:
   frequency: D
   notes: Yahoo front-month alias; contract rolls can cause price jumps. Not a back-adjusted or total-return series.
 - symbol: CL=F
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Energy | WTI Crude Oil Futures Continuous
@@ -786,6 +941,7 @@ yahoo:
   frequency: D
   notes: Yahoo front-month alias; contract rolls can cause price jumps. Not a back-adjusted or total-return series.
 - symbol: GC=F
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Global
   name: CMDTY | Metals | Gold Futures Continuous
@@ -796,6 +952,7 @@ yahoo:
   frequency: D
   notes: Yahoo front-month alias; contract rolls can cause price jumps. Not a back-adjusted or total-return series.
 - symbol: TTF=F
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: Europe
   name: CMDTY | Energy | Dutch TTF Natural Gas Futures Continuous
@@ -806,6 +963,7 @@ yahoo:
   frequency: D
   notes: Yahoo front-month alias; contract rolls can cause price jumps. Not a back-adjusted or total-return series.
 - symbol: NG=F
+  expected_lag_days: 1
   asset_class: COMMODITIES
   area: USA
   name: CMDTY | Energy | Henry Hub Natural Gas Futures Continuous

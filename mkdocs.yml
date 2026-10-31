@@ -50,7 +50,7 @@ nav:
   - Home: index.md
   - Quick start: quickstart.md
   - Architecture & process: ARCHITECTURE.md
-  - Data catalogue: DATA_CATALOG.md
+  - Generated data catalogue: DATA_CATALOG.md
   - Extraction & agent tools: EXTRACTION.md
   - lazydatacore contract: LAZYDATACORE.md
   - Macro release contracts: macro-releases.md
