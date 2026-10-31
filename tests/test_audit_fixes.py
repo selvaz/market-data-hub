@@ -92,6 +92,33 @@ def test_coverage_marks_unconfigured_symbols_unscheduled(tmp_db):
     assert in_view == {"SPY"}
 
 
+def test_coverage_marks_unconfigured_macro_series_unscheduled(tmp_db):
+    """Same policy for macro_series (31/10): a retired FRED series or a
+    disabled sovereign keeps its history and must not feed the stalled alert."""
+    con = get_conn()
+    stale = dt.date(2023, 1, 1)
+    rows = [{"date": stale - dt.timedelta(days=31 * i), "series_id": sid, "value": 1.0,
+             "source": "fred"} for sid in ("UNRATE", "LRHUTTTTEZM156S") for i in range(5)]
+    upsert(con, "macro_series", pd.DataFrame(rows))
+    rebuild_coverage(con, "testrun")
+    got = dict((s, (st, stalled)) for s, st, stalled in con.execute(
+        "SELECT symbol, status, stalled FROM coverage_report").fetchall())
+    con.close()
+    assert got["UNRATE"] == ("stalled", True)
+    assert got["LRHUTTTTEZM156S"] == ("unscheduled", False)
+
+
+def test_weekly_published_daily_series_carry_their_publication_limit():
+    """EIA oil and the H.10 broad dollar publish weekly: the 3-day daily
+    default flagged on-time data; CB_IT_10Y arrives in monthly batches."""
+    from market_data_hub.config_loader import get_macro_series, get_sovereign_yields
+    limits = {e["symbol"]: e.get("max_lag_days") for e in get_macro_series()}
+    assert {limits[s] for s in ("DCOILBRENTEU", "DCOILWTICO", "DTWEXBGS")} == {10}
+    (it,) = [e for e in get_sovereign_yields() if e["symbol"] == "CB_IT_10Y"]
+    assert it["role"] == "history" and it["max_lag_days"] == 35
+    assert it["lag_calendar"] == "business"
+
+
 # --- P2 #8: yahoo_workers config is honored -----------------------------------
 def test_yahoo_batch_forwards_workers(monkeypatch):
     captured = {}

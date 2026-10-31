@@ -121,9 +121,14 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
             # Rows are date-ordered: keep the latest recorded publisher for all
             # macro providers, ignoring null sources in older/newer rows.
             source = g.source.dropna().iloc[-1] if g.source.notna().any() else "fred"
-            rows.append(_row_for(sid, source, g, "date",
-                                 meta.get(sid, {"asset_class": "MACRO",
-                                                "priority": 2}), run_id))
+            row = _row_for(sid, source, g, "date",
+                           meta.get(sid, {"asset_class": "MACRO", "priority": 2}), run_id)
+            # Same policy as prices: a series no longer configured or disabled
+            # (retired LRHUTTTTEZM156S, SNB 2y) keeps its history but is not
+            # fetched any more, so its age must not feed the stalled alert.
+            if sid not in meta:
+                row.update(stalled=False, status="unscheduled")
+            rows.append(row)
 
     # Requested daily feeds must remain visible even before their first success.
     present = set(mdf.series_id) if not mdf.empty else set()
