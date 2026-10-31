@@ -27,14 +27,17 @@ CATALOG: Dict[str, Dict[str, str]] = {
     "FF5_daily": {
         "url": f"{_BASE}/F-F_Research_Data_5_Factors_2x3_daily_CSV.zip",
         "frequency": "D",
+        "factors": "Mkt-RF SMB HML RMW CMA RF",
     },
     "MOM_daily": {
         "url": f"{_BASE}/F-F_Momentum_Factor_daily_CSV.zip",
         "frequency": "D",
+        "factors": "Mom",
     },
     "FF5_monthly": {
         "url": f"{_BASE}/F-F_Research_Data_5_Factors_2x3_CSV.zip",
         "frequency": "M",
+        "factors": "Mkt-RF SMB HML RMW CMA RF",
     },
 }
 

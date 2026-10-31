@@ -254,6 +254,7 @@ archetypes:
   methodology: 'Highly seasonal: January and July are months of heavy tax receipts and the balance can turn positive. Relevant to expectations for gilt issuance.'
 indicators:
 - key: us_nfp
+  expected_lag_days: 7
   country_iso2: US
   area: US
   name: Non-Farm Payrolls
@@ -271,6 +272,7 @@ indicators:
   match_excludes: adp|private|revision|government|manufacturing
   macro_indicator_id: null
 - key: us_unemp
+  expected_lag_days: 30
   country_iso2: US
   area: US
   name: Unemployment Rate
@@ -294,6 +296,7 @@ indicators:
   # us_unemp del 04/09 (periodo Ago 2026) actual 4.1%, UNRATE 2026-08-01 = 4.1.
   macro_series_id: UNRATE
 - key: us_earnings
+  expected_lag_days: 30
   country_iso2: US
   area: US
   name: 'Average Hourly Earnings y/y'
@@ -311,6 +314,7 @@ indicators:
   match_excludes: 'unit labour|unit labor|real|weekly|mm'
   macro_indicator_id: null
 - key: us_claims
+  expected_lag_days: 5
   country_iso2: US
   area: US
   name: Initial Jobless Claims
@@ -328,6 +332,7 @@ indicators:
   match_excludes: continuing|cont|4wk|4 week|averag
   macro_indicator_id: null
 - key: us_jolts
+  expected_lag_days: 29
   country_iso2: US
   area: US
   name: JOLTS Job Openings
@@ -345,6 +350,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: us_adp
+  expected_lag_days: 30
   country_iso2: US
   area: US
   name: ADP Non-Farm Employment Change
@@ -362,6 +368,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: us_cpi_yy
+  expected_lag_days: 14
   country_iso2: US
   area: US
   name: CPI y/y
@@ -379,6 +386,7 @@ indicators:
   match_excludes: core|ex|food|energy|prelim|cleveland|median|trimmed|n s a
   macro_indicator_id: null
 - key: us_cpi_mm
+  expected_lag_days: 14
   country_iso2: US
   area: US
   name: CPI m/m
@@ -396,6 +404,7 @@ indicators:
   match_excludes: core|ex|food|energy|prelim|cleveland|median|trimmed|n s a
   macro_indicator_id: null
 - key: us_core_cpi_yy
+  expected_lag_days: 14
   country_iso2: US
   area: US
   name: Core CPI y/y
@@ -413,6 +422,7 @@ indicators:
   match_excludes: n s a|cleveland|median|trimmed
   macro_indicator_id: null
 - key: us_core_cpi_mm
+  expected_lag_days: 14
   country_iso2: US
   area: US
   name: Core CPI m/m
@@ -430,6 +440,7 @@ indicators:
   match_excludes: n s a|cleveland|median|trimmed
   macro_indicator_id: null
 - key: us_ppi_yy
+  expected_lag_days: 15
   country_iso2: US
   area: US
   name: PPI y/y
@@ -447,6 +458,7 @@ indicators:
   match_excludes: core|ex
   macro_indicator_id: null
 - key: us_core_pce
+  expected_lag_days: 29
   country_iso2: US
   area: US
   name: 'Core PCE Price Index m/m'
@@ -464,6 +476,7 @@ indicators:
   match_excludes: 'qq|fnal|yy'
   macro_indicator_id: null
 - key: us_retail
+  expected_lag_days: 15
   country_iso2: US
   area: US
   name: Retail Sales m/m
@@ -481,6 +494,7 @@ indicators:
   match_excludes: 'ex|excl|control|redbook|core'
   macro_indicator_id: null
 - key: us_ism_mfg
+  expected_lag_days: 0
   country_iso2: US
   area: US
   name: ISM Manufacturing PMI
@@ -498,6 +512,7 @@ indicators:
   match_excludes: non|n mfg|employment|new orders|price|inventories|deliveries|backlog|s p global
   macro_indicator_id: null
 - key: us_ism_svc
+  expected_lag_days: 0
   country_iso2: US
   area: US
   name: ISM Services PMI
@@ -515,6 +530,7 @@ indicators:
   match_excludes: 'employment|new orders|price|inventories|deliveries|backlog|s p global|business activity|bus act'
   macro_indicator_id: null
 - key: us_ism_prices
+  expected_lag_days: 30
   country_iso2: US
   area: US
   name: ISM Manufacturing Prices
@@ -542,6 +558,7 @@ indicators:
   match_excludes: 'non|services|s p global'
   macro_indicator_id: null
 - key: us_pmi_mfg
+  expected_lag_days: 0
   country_iso2: US
   area: US
   name: S&P Global Manufacturing PMI
@@ -559,6 +576,7 @@ indicators:
   match_excludes: 'ism|services|composite|non'
   macro_indicator_id: null
 - key: us_pmi_svc
+  expected_lag_days: 0
   country_iso2: US
   area: US
   name: S&P Global Services PMI
@@ -576,6 +594,7 @@ indicators:
   match_excludes: 'ism|mfg|manufacturing|composite|non'
   macro_indicator_id: null
 - key: us_indprod
+  expected_lag_days: 16
   country_iso2: US
   area: US
   name: Industrial Production m/m
@@ -593,6 +612,7 @@ indicators:
   match_excludes: capacity
   macro_indicator_id: null
 - key: us_gdp
+  expected_lag_days: 45
   country_iso2: US
   area: US
   name: GDP q/q annualizzato
@@ -610,6 +630,7 @@ indicators:
   match_excludes: deflator|price|sales|cons spending|implicit|final
   macro_indicator_id: null
 - key: us_umich
+  expected_lag_days: 30
   country_iso2: US
   area: US
   name: U. Michigan Sentiment
@@ -627,6 +648,7 @@ indicators:
   match_excludes: conditions|expectation|inf
   macro_indicator_id: null
 - key: us_fomc
+  expected_lag_days: 0
   country_iso2: US
   area: US
   name: Fed Funds Rate Decision
@@ -644,6 +666,7 @@ indicators:
   match_excludes: 'dallas|cleveland|kc |philly|richmond|chicago|atlanta|empire|budget|speak|speech|member|minutes|balance|cpi|pce|survey|capacity|utilization|utilisation'
   macro_indicator_id: bis_policy_rate
 - key: us_durable
+  expected_lag_days: 27
   country_iso2: US
   area: US
   name: Durable Goods Orders
@@ -661,6 +684,7 @@ indicators:
   match_excludes: 'ex |ex-|r mm|revised|shipment|nondef|non def|core'
   macro_indicator_id: null
 - key: us_factory
+  expected_lag_days: 30
   country_iso2: US
   area: US
   name: Factory Orders m/m
@@ -678,6 +702,7 @@ indicators:
   match_excludes: 'german|yy'
   macro_indicator_id: null
 - key: us_housing
+  expected_lag_days: 20
   country_iso2: US
   area: US
   name: Housing Starts
@@ -695,6 +720,7 @@ indicators:
   match_excludes: permit
   macro_indicator_id: null
 - key: us_trade
+  expected_lag_days: 36
   country_iso2: US
   area: US
   name: Trade Balance
@@ -717,6 +743,7 @@ indicators:
   match_excludes: goods
   macro_indicator_id: null
 - key: cn_cpi_yy
+  expected_lag_days: 14
   country_iso2: CN
   area: CN
   name: CPI y/y
@@ -734,6 +761,7 @@ indicators:
   match_excludes: core|ppi
   macro_indicator_id: null
 - key: cn_ppi_yy
+  expected_lag_days: 15
   country_iso2: CN
   area: CN
   name: PPI y/y
@@ -751,6 +779,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: cn_gdp
+  expected_lag_days: 45
   country_iso2: CN
   area: CN
   name: GDP y/y
@@ -768,6 +797,7 @@ indicators:
   match_excludes: 'qq|ytd'
   macro_indicator_id: null
 - key: cn_indprod
+  expected_lag_days: 45
   country_iso2: CN
   area: CN
   name: Industrial Production y/y
@@ -785,6 +815,7 @@ indicators:
   match_excludes: 'profit|ytd'
   macro_indicator_id: null
 - key: cn_retail
+  expected_lag_days: 36
   country_iso2: CN
   area: CN
   name: Retail Sales y/y
@@ -802,6 +833,7 @@ indicators:
   match_excludes: 'mm|ytd'
   macro_indicator_id: null
 - key: cn_fai
+  expected_lag_days: 30
   country_iso2: CN
   area: CN
   name: Fixed Asset Investment
@@ -819,6 +851,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: cn_trade
+  expected_lag_days: 36
   country_iso2: CN
   area: CN
   name: Trade Balance
@@ -836,6 +869,7 @@ indicators:
   match_excludes: 'yuan|cny|rmb'
   macro_indicator_id: null
 - key: cn_exports
+  expected_lag_days: 30
   country_iso2: CN
   area: CN
   name: Exports y/y
@@ -853,6 +887,7 @@ indicators:
   match_excludes: order
   macro_indicator_id: null
 - key: cn_imports
+  expected_lag_days: 30
   country_iso2: CN
   area: CN
   name: Imports y/y
@@ -870,6 +905,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: cn_pmi_caixin_mfg
+  expected_lag_days: 0
   country_iso2: CN
   area: CN
   name: Caixin/RatingDog Manufacturing PMI
@@ -892,6 +928,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: cn_pmi_caixin_svc
+  expected_lag_days: 0
   country_iso2: CN
   area: CN
   name: Caixin/RatingDog Services PMI
@@ -909,6 +946,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: cn_pmi_nbs_mfg
+  expected_lag_days: 0
   country_iso2: CN
   area: CN
   name: NBS Manufacturing PMI
@@ -930,6 +968,7 @@ indicators:
   match_excludes: 'ratingdog|caixin|markit|global|private|non manufacturing'
   macro_indicator_id: null
 - key: cn_pmi_nbs_svc
+  expected_lag_days: 0
   country_iso2: CN
   area: CN
   name: NBS Non-Manufacturing PMI
@@ -947,6 +986,7 @@ indicators:
   match_excludes: 'ratingdog|caixin|markit|global|private'
   macro_indicator_id: null
 - key: cn_loans
+  expected_lag_days: 30
   country_iso2: CN
   area: CN
   name: New Yuan Loans
@@ -964,6 +1004,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: cn_m2
+  expected_lag_days: 30
   country_iso2: CN
   area: CN
   name: M2 Money Supply y/y
@@ -981,6 +1022,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: cn_lpr
+  expected_lag_days: 30
   country_iso2: CN
   area: CN
   name: Loan Prime Rate 1y
@@ -998,6 +1040,7 @@ indicators:
   match_excludes: '5y|5 y'
   macro_indicator_id: bis_policy_rate
 - key: ez_hicp_yy
+  expected_lag_days: 30
   country_iso2: EU
   area: EZ
   name: HICP y/y (flash)
@@ -1015,6 +1058,7 @@ indicators:
   match_excludes: 'core|x f|x t|tobacco|german|french|italian|spanish|ex|hesse|hessen|saxony|sachsen|bavaria|bayern|brandenburg|baden|wuerttemberg|wurttemberg|westphalia|westfalen|niedersachsen|thuringia|thueringen|berlin|hamburg|bremen|rhineland|schleswig|mecklenburg|saarland|nordrhein'
   macro_indicator_id: null
 - key: ez_core_hicp
+  expected_lag_days: 30
   country_iso2: EU
   area: EZ
   name: Core HICP y/y
@@ -1032,6 +1076,7 @@ indicators:
   match_excludes: german|french|italian|spanish
   macro_indicator_id: null
 - key: ez_gdp
+  expected_lag_days: 45
   country_iso2: EU
   area: EZ
   name: GDP q/q
@@ -1049,6 +1094,7 @@ indicators:
   match_excludes: german|french|italian|spanish
   macro_indicator_id: null
 - key: ez_unemp
+  expected_lag_days: 30
   country_iso2: EU
   area: EZ
   name: Unemployment Rate
@@ -1069,6 +1115,7 @@ indicators:
   # ea_unemployment_rate in the macro release store.
   macro_series_id: null
 - key: ez_employment
+  expected_lag_days: 45
   country_iso2: EU
   area: EZ
   name: Employment Change q/q
@@ -1086,6 +1133,7 @@ indicators:
   match_excludes: 'german|french|italian|spanish|yy'
   macro_indicator_id: null
 - key: ez_pmi_mfg
+  expected_lag_days: 0
   country_iso2: EU
   area: EZ
   name: Manufacturing PMI
@@ -1103,6 +1151,7 @@ indicators:
   match_excludes: german|french|italian|spanish|services|composite
   macro_indicator_id: null
 - key: ez_pmi_svc
+  expected_lag_days: 0
   country_iso2: EU
   area: EZ
   name: Services PMI
@@ -1120,6 +1169,7 @@ indicators:
   match_excludes: german|french|italian|spanish|mfg|manufacturing
   macro_indicator_id: null
 - key: ez_indprod
+  expected_lag_days: 45
   country_iso2: EU
   area: EZ
   name: Industrial Production m/m
@@ -1137,6 +1187,7 @@ indicators:
   match_excludes: german|french|italian|spanish
   macro_indicator_id: null
 - key: ez_retail
+  expected_lag_days: 36
   country_iso2: EU
   area: EZ
   name: Retail Sales m/m
@@ -1154,6 +1205,7 @@ indicators:
   match_excludes: german|french|italian|spanish|yy
   macro_indicator_id: null
 - key: ez_ecb
+  expected_lag_days: 0
   country_iso2: EU
   area: EZ
   name: ECB Rate Decision
@@ -1171,6 +1223,7 @@ indicators:
   match_excludes: 'speak|speech|president|bulletin|account|marginal|lending|deposit'
   macro_indicator_id: null
 - key: ez_sentix
+  expected_lag_days: 30
   country_iso2: EU
   area: EZ
   name: Sentix Investor Confidence
@@ -1188,6 +1241,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: de_zew
+  expected_lag_days: 30
   country_iso2: DE
   area: EZ
   name: ZEW Economic Sentiment (DE)
@@ -1205,6 +1259,7 @@ indicators:
   match_excludes: current|condition
   macro_indicator_id: null
 - key: de_ifo
+  expected_lag_days: 30
   country_iso2: DE
   area: EZ
   name: Ifo Business Climate (DE)
@@ -1222,6 +1277,7 @@ indicators:
   match_excludes: expectation|current|assessment
   macro_indicator_id: null
 - key: de_cpi_yy
+  expected_lag_days: 14
   country_iso2: DE
   area: EZ
   name: German CPI y/y
@@ -1239,6 +1295,7 @@ indicators:
   match_excludes: hicp|core|baden wuerttemberg|hesse|bavaria|brandenburg|north rhine westphalia|nordrhein-westfalen|westfalen|saxony
   macro_indicator_id: null
 - key: de_cpi_mm
+  expected_lag_days: 14
   country_iso2: DE
   area: EZ
   name: German CPI m/m
@@ -1261,6 +1318,7 @@ indicators:
   match_excludes: hicp|core|baden wuerttemberg|hesse|bavaria|brandenburg|north rhine westphalia|nordrhein-westfalen|westfalen|saxony
   macro_indicator_id: null
 - key: de_factory
+  expected_lag_days: 30
   country_iso2: DE
   area: EZ
   name: German Factory Orders m/m
@@ -1278,6 +1336,7 @@ indicators:
   match_excludes: 'yy'
   macro_indicator_id: null
 - key: de_indprod
+  expected_lag_days: 45
   country_iso2: DE
   area: EZ
   name: German Industrial Production m/m
@@ -1295,6 +1354,7 @@ indicators:
   match_excludes: orders
   macro_indicator_id: null
 - key: de_pmi_mfg
+  expected_lag_days: 0
   country_iso2: DE
   area: EZ
   name: German Manufacturing PMI
@@ -1312,6 +1372,7 @@ indicators:
   match_excludes: 'services|composite'
   macro_indicator_id: null
 - key: de_pmi_svc
+  expected_lag_days: 0
   country_iso2: DE
   area: EZ
   name: German Services PMI
@@ -1329,6 +1390,7 @@ indicators:
   match_excludes: 'mfg|manufacturing|composite'
   macro_indicator_id: null
 - key: de_retail
+  expected_lag_days: 36
   country_iso2: DE
   area: EZ
   name: German Retail Sales m/m
@@ -1346,6 +1408,7 @@ indicators:
   match_excludes: 'yy'
   macro_indicator_id: null
 - key: uk_cpi_yy
+  expected_lag_days: 21
   country_iso2: GB
   area: UK
   name: CPI y/y
@@ -1363,6 +1426,7 @@ indicators:
   match_excludes: cpih|core|ppi|rpi|hpi
   macro_indicator_id: null
 - key: uk_core_cpi
+  expected_lag_days: 21
   country_iso2: GB
   area: UK
   name: Core CPI y/y
@@ -1380,6 +1444,7 @@ indicators:
   match_excludes: cpih|ppi|rpi
   macro_indicator_id: null
 - key: uk_gdp_mm
+  expected_lag_days: 30
   country_iso2: GB
   area: UK
   name: GDP m/m
@@ -1397,6 +1462,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: uk_gdp_qq
+  expected_lag_days: 45
   country_iso2: GB
   area: UK
   name: GDP q/q
@@ -1414,6 +1480,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: uk_unemp
+  expected_lag_days: 30
   country_iso2: GB
   area: UK
   name: ILO Unemployment Rate
@@ -1431,6 +1498,7 @@ indicators:
   match_excludes: claimant
   macro_indicator_id: null
 - key: uk_claimant
+  expected_lag_days: 30
   country_iso2: GB
   area: UK
   name: Claimant Count Change
@@ -1448,6 +1516,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: uk_earnings
+  expected_lag_days: 30
   country_iso2: GB
   area: UK
   name: Average Earnings
@@ -1465,6 +1534,7 @@ indicators:
   match_excludes: 'excl|ex-bonus|ex bonus|regular'
   macro_indicator_id: null
 - key: uk_retail
+  expected_lag_days: 23
   country_iso2: GB
   area: UK
   name: Retail Sales m/m
@@ -1482,6 +1552,7 @@ indicators:
   match_excludes: 'brc|cbi|core|ex fuel'
   macro_indicator_id: null
 - key: uk_pmi_mfg
+  expected_lag_days: 0
   country_iso2: GB
   area: UK
   name: Manufacturing PMI
@@ -1499,6 +1570,7 @@ indicators:
   match_excludes: services|composite|construction
   macro_indicator_id: null
 - key: uk_pmi_svc
+  expected_lag_days: 0
   country_iso2: GB
   area: UK
   name: Services PMI
@@ -1516,6 +1588,7 @@ indicators:
   match_excludes: mfg|manufacturing|composite
   macro_indicator_id: null
 - key: uk_boe
+  expected_lag_days: 0
   country_iso2: GB
   area: UK
   name: BoE Bank Rate Decision
@@ -1533,6 +1606,7 @@ indicators:
   match_excludes: speak|speech|governor|minutes|report
   macro_indicator_id: bis_policy_rate
 - key: uk_psnb
+  expected_lag_days: 30
   country_iso2: GB
   area: UK
   name: Public Sector Net Borrowing
@@ -1550,6 +1624,7 @@ indicators:
   match_excludes: 'cash requirement|ex banks'
   macro_indicator_id: null
 - key: jp_cpi_yy
+  expected_lag_days: 22
   country_iso2: JP
   area: JP
   name: National CPI y/y
@@ -1567,6 +1642,7 @@ indicators:
   match_excludes: 'tokyo|core|corp|goods|service|trimmed|weighted|median|excl|ex food'
   macro_indicator_id: null
 - key: jp_core_cpi
+  expected_lag_days: 22
   country_iso2: JP
   area: JP
   name: National Core CPI y/y
@@ -1584,6 +1660,7 @@ indicators:
   match_excludes: tokyo|trimmed|weighted|median|core core
   macro_indicator_id: null
 - key: jp_tokyo_cpi
+  expected_lag_days: 22
   country_iso2: JP
   area: JP
   name: Tokyo CPI y/y
@@ -1601,6 +1678,7 @@ indicators:
   match_excludes: 'core|excl|ex '
   macro_indicator_id: null
 - key: jp_gdp
+  expected_lag_days: 45
   country_iso2: JP
   area: JP
   name: GDP q/q
@@ -1618,6 +1696,7 @@ indicators:
   match_excludes: 'deflator|price|capital|external|consmp|consumption|expend|contribution|net export|yy|cap ex'
   macro_indicator_id: null
 - key: jp_tankan
+  expected_lag_days: 45
   country_iso2: JP
   area: JP
   name: Tankan Large Manufacturers
@@ -1635,6 +1714,7 @@ indicators:
   match_excludes: non|small|service|reuters
   macro_indicator_id: null
 - key: jp_indprod
+  expected_lag_days: 45
   country_iso2: JP
   area: JP
   name: Industrial Production m/m
@@ -1652,6 +1732,7 @@ indicators:
   match_excludes: 'forecast|projection'
   macro_indicator_id: null
 - key: jp_retail
+  expected_lag_days: 36
   country_iso2: JP
   area: JP
   name: Retail Sales y/y
@@ -1669,6 +1750,7 @@ indicators:
   match_excludes: 'mm|large'
   macro_indicator_id: null
 - key: jp_trade
+  expected_lag_days: 36
   country_iso2: JP
   area: JP
   name: Trade Balance
@@ -1686,6 +1768,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: jp_unemp
+  expected_lag_days: 30
   country_iso2: JP
   area: JP
   name: Unemployment Rate
@@ -1703,6 +1786,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: jp_earnings
+  expected_lag_days: 30
   country_iso2: JP
   area: JP
   name: Average Cash Earnings y/y
@@ -1722,6 +1806,7 @@ indicators:
   match_excludes: 'real'
   macro_indicator_id: null
 - key: jp_boj
+  expected_lag_days: 0
   country_iso2: JP
   area: JP
   name: BoJ Rate Decision
@@ -1739,6 +1824,7 @@ indicators:
   match_excludes: speak|speech|governor|opinion|minutes|price
   macro_indicator_id: bis_policy_rate
 - key: jp_machinery
+  expected_lag_days: 30
   country_iso2: JP
   area: JP
   name: 'Core Machinery Orders m/m'
@@ -1756,6 +1842,7 @@ indicators:
   match_excludes: 'tool|yy'
   macro_indicator_id: null
 - key: jp_pmi_mfg
+  expected_lag_days: 0
   country_iso2: JP
   area: JP
   name: Manufacturing PMI
@@ -1773,6 +1860,7 @@ indicators:
   match_excludes: services|composite
   macro_indicator_id: null
 - key: in_cpi_yy
+  expected_lag_days: 14
   country_iso2: IN
   area: IN
   name: CPI y/y
@@ -1790,6 +1878,7 @@ indicators:
   match_excludes: wpi
   macro_indicator_id: null
 - key: in_wpi_yy
+  expected_lag_days: 30
   country_iso2: IN
   area: IN
   name: WPI y/y
@@ -1807,6 +1896,7 @@ indicators:
   match_excludes: fuel|food|manufactur
   macro_indicator_id: null
 - key: in_indprod
+  expected_lag_days: 45
   country_iso2: IN
   area: IN
   name: Industrial Production y/y
@@ -1824,6 +1914,7 @@ indicators:
   match_excludes: 'fytd|cumulative'
   macro_indicator_id: null
 - key: in_gdp
+  expected_lag_days: 45
   country_iso2: IN
   area: IN
   name: GDP y/y
@@ -1841,6 +1932,7 @@ indicators:
   match_excludes: 'annual|fy'
   macro_indicator_id: null
 - key: in_rbi
+  expected_lag_days: 30
   country_iso2: IN
   area: IN
   name: RBI Repo Rate
@@ -1858,6 +1950,7 @@ indicators:
   match_excludes: reverse
   macro_indicator_id: bis_policy_rate
 - key: in_trade
+  expected_lag_days: 36
   country_iso2: IN
   area: IN
   name: Trade Balance
@@ -1875,6 +1968,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: in_exports
+  expected_lag_days: 30
   country_iso2: IN
   area: IN
   name: Exports
@@ -1892,6 +1986,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: in_imports
+  expected_lag_days: 30
   country_iso2: IN
   area: IN
   name: Imports
@@ -1909,6 +2004,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: in_pmi_mfg
+  expected_lag_days: 0
   country_iso2: IN
   area: IN
   name: Manufacturing PMI
@@ -1926,6 +2022,7 @@ indicators:
   match_excludes: services|composite
   macro_indicator_id: null
 - key: in_pmi_svc
+  expected_lag_days: 0
   country_iso2: IN
   area: IN
   name: Services PMI
@@ -1943,6 +2040,7 @@ indicators:
   match_excludes: mfg|manufacturing|composite
   macro_indicator_id: null
 - key: mx_cpi_yy
+  expected_lag_days: 8
   country_iso2: MX
   area: MX
   name: CPI y/y
@@ -1960,6 +2058,7 @@ indicators:
   match_excludes: 'half|1st|first|quincena|core'
   macro_indicator_id: null
 - key: mx_core_cpi
+  expected_lag_days: 8
   country_iso2: MX
   area: MX
   name: Core CPI y/y
@@ -1977,6 +2076,7 @@ indicators:
   match_excludes: 'half|1st|first|quincena'
   macro_indicator_id: null
 - key: mx_gdp
+  expected_lag_days: 45
   country_iso2: MX
   area: MX
   name: GDP y/y
@@ -1994,6 +2094,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: mx_gdp_qq
+  expected_lag_days: 45
   country_iso2: MX
   area: MX
   name: GDP q/q
@@ -2011,6 +2112,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: mx_banxico
+  expected_lag_days: 0
   country_iso2: MX
   area: MX
   name: Banxico Rate Decision
@@ -2028,6 +2130,7 @@ indicators:
   match_excludes: minutes|report
   macro_indicator_id: bis_policy_rate
 - key: mx_indprod
+  expected_lag_days: 45
   country_iso2: MX
   area: MX
   name: Industrial Production y/y
@@ -2045,6 +2148,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: mx_retail
+  expected_lag_days: 36
   country_iso2: MX
   area: MX
   name: Retail Sales y/y
@@ -2062,6 +2166,7 @@ indicators:
   match_excludes: mm
   macro_indicator_id: null
 - key: mx_trade
+  expected_lag_days: 36
   country_iso2: MX
   area: MX
   name: Trade Balance
@@ -2079,6 +2184,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: mx_unemp
+  expected_lag_days: 30
   country_iso2: MX
   area: MX
   name: Unemployment Rate
@@ -2096,6 +2202,7 @@ indicators:
   match_excludes: s a|n s a
   macro_indicator_id: null
 - key: mx_remit
+  expected_lag_days: 30
   country_iso2: MX
   area: MX
   name: Remittances
@@ -2113,6 +2220,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: br_ipca_yy
+  expected_lag_days: 30
   country_iso2: BR
   area: BR
   name: IPCA y/y
@@ -2130,6 +2238,7 @@ indicators:
   match_excludes: 'igp|core|15|mid|fipe'
   macro_indicator_id: null
 - key: br_ipca_mm
+  expected_lag_days: 30
   country_iso2: BR
   area: BR
   name: IPCA m/m
@@ -2147,6 +2256,7 @@ indicators:
   match_excludes: igp|core|15|fipe|mid month|s a
   macro_indicator_id: null
 - key: br_gdp
+  expected_lag_days: 45
   country_iso2: BR
   area: BR
   name: GDP q/q
@@ -2164,6 +2274,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: br_selic
+  expected_lag_days: 30
   country_iso2: BR
   area: BR
   name: Selic Rate (Copom)
@@ -2181,6 +2292,7 @@ indicators:
   match_excludes: minutes|focus|tjlp
   macro_indicator_id: bis_policy_rate
 - key: br_indprod
+  expected_lag_days: 45
   country_iso2: BR
   area: BR
   name: Industrial Production m/m
@@ -2198,6 +2310,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: br_retail
+  expected_lag_days: 36
   country_iso2: BR
   area: BR
   name: Retail Sales m/m
@@ -2215,6 +2328,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: br_unemp
+  expected_lag_days: 30
   country_iso2: BR
   area: BR
   name: Unemployment Rate
@@ -2232,6 +2346,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: br_trade
+  expected_lag_days: 36
   country_iso2: BR
   area: BR
   name: Trade Balance
@@ -2249,6 +2364,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: br_igpm
+  expected_lag_days: 30
   country_iso2: BR
   area: BR
   name: IGP-M
@@ -2266,6 +2382,7 @@ indicators:
   match_excludes: 'igp-di|igp di|igp-10|igp 10|igp10|igpdi'
   macro_indicator_id: null
 - key: ca_cpi_yy
+  expected_lag_days: 14
   country_iso2: CA
   area: CA
   name: CPI y/y
@@ -2283,6 +2400,7 @@ indicators:
   match_excludes: core|median|trim|common
   macro_indicator_id: null
 - key: ca_core_cpi
+  expected_lag_days: 14
   country_iso2: CA
   area: CA
   name: Core CPI y/y
@@ -2300,6 +2418,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: ca_gdp_mm
+  expected_lag_days: 30
   country_iso2: CA
   area: CA
   name: GDP m/m
@@ -2317,6 +2436,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: ca_employment
+  expected_lag_days: 30
   country_iso2: CA
   area: CA
   name: Employment Change
@@ -2334,6 +2454,7 @@ indicators:
   match_excludes: 'full time|part time|unemployment|full'
   macro_indicator_id: null
 - key: ca_unemp
+  expected_lag_days: 30
   country_iso2: CA
   area: CA
   name: Unemployment Rate
@@ -2351,6 +2472,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: ca_boc
+  expected_lag_days: 0
   country_iso2: CA
   area: CA
   name: BoC Rate Decision
@@ -2368,6 +2490,7 @@ indicators:
   match_excludes: speak|speech|summary|minutes|review
   macro_indicator_id: bis_policy_rate
 - key: ca_retail
+  expected_lag_days: 36
   country_iso2: CA
   area: CA
   name: Retail Sales m/m
@@ -2385,6 +2508,7 @@ indicators:
   match_excludes: 'ex|excl|core|yy'
   macro_indicator_id: null
 - key: ca_ivey
+  expected_lag_days: 0
   country_iso2: CA
   area: CA
   name: Ivey PMI
@@ -2402,6 +2526,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: ca_pmi_mfg
+  expected_lag_days: 0
   country_iso2: CA
   area: CA
   name: Manufacturing PMI
@@ -2419,6 +2544,7 @@ indicators:
   match_excludes: 'services|composite|ivey'
   macro_indicator_id: null
 - key: ca_trade
+  expected_lag_days: 36
   country_iso2: CA
   area: CA
   name: Trade Balance
@@ -2436,6 +2562,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: ca_housing
+  expected_lag_days: 20
   country_iso2: CA
   area: CA
   name: Housing Starts
@@ -2453,6 +2580,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: ca_mfg_sales
+  expected_lag_days: 30
   country_iso2: CA
   area: CA
   name: Manufacturing Sales m/m
@@ -2470,6 +2598,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: au_cpi_qq
+  expected_lag_days: 14
   country_iso2: AU
   area: AU
   name: CPI q/q
@@ -2487,6 +2616,7 @@ indicators:
   match_excludes: 'trimmed|weighted|weightd|medn|median|rba|monthly'
   macro_indicator_id: null
 - key: au_cpi_yy
+  expected_lag_days: 14
   country_iso2: AU
   area: AU
   name: CPI y/y
@@ -2504,6 +2634,7 @@ indicators:
   match_excludes: 'trimmed|weighted|weightd|medn|median|rba'
   macro_indicator_id: null
 - key: au_employment
+  expected_lag_days: 30
   country_iso2: AU
   area: AU
   name: Employment Change
@@ -2521,6 +2652,7 @@ indicators:
   match_excludes: 'full time|part time|unemployment|full'
   macro_indicator_id: null
 - key: au_unemp
+  expected_lag_days: 30
   country_iso2: AU
   area: AU
   name: Unemployment Rate
@@ -2538,6 +2670,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: au_rba
+  expected_lag_days: 0
   country_iso2: AU
   area: AU
   name: RBA Rate Decision
@@ -2555,6 +2688,7 @@ indicators:
   match_excludes: speak|speech|governor|minutes|statement|bulletin
   macro_indicator_id: bis_policy_rate
 - key: au_retail
+  expected_lag_days: 36
   country_iso2: AU
   area: AU
   name: Retail Sales m/m
@@ -2572,6 +2706,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: au_gdp
+  expected_lag_days: 45
   country_iso2: AU
   area: AU
   name: GDP q/q
@@ -2589,6 +2724,7 @@ indicators:
   match_excludes: 'consumption|chain|capital|expenditure'
   macro_indicator_id: null
 - key: au_trade
+  expected_lag_days: 36
   country_iso2: AU
   area: AU
   name: Trade Balance
@@ -2606,6 +2742,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: au_building
+  expected_lag_days: 30
   country_iso2: AU
   area: AU
   name: Building Approvals m/m
@@ -2623,6 +2760,7 @@ indicators:
   match_excludes: approvals total
   macro_indicator_id: null
 - key: au_wages
+  expected_lag_days: 45
   country_iso2: AU
   area: AU
   name: Wage Price Index q/q
@@ -2640,6 +2778,7 @@ indicators:
   match_excludes: 'yy'
   macro_indicator_id: null
 - key: kr_cpi_yy
+  expected_lag_days: 14
   country_iso2: KR
   area: KR
   name: CPI y/y
@@ -2657,6 +2796,7 @@ indicators:
   match_excludes: core|ppi
   macro_indicator_id: null
 - key: kr_gdp
+  expected_lag_days: 45
   country_iso2: KR
   area: KR
   name: GDP q/q
@@ -2674,6 +2814,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: kr_bok
+  expected_lag_days: 30
   country_iso2: KR
   area: KR
   name: BoK Base Rate
@@ -2691,6 +2832,7 @@ indicators:
   match_excludes: minutes|speak|m2|bsi
   macro_indicator_id: bis_policy_rate
 - key: kr_indprod
+  expected_lag_days: 45
   country_iso2: KR
   area: KR
   name: Industrial Production y/y
@@ -2708,6 +2850,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: kr_exports
+  expected_lag_days: 30
   country_iso2: KR
   area: KR
   name: Exports y/y
@@ -2725,6 +2868,7 @@ indicators:
   match_excludes: 20 day|first 20|price
   macro_indicator_id: null
 - key: kr_exports20
+  expected_lag_days: 30
   country_iso2: KR
   area: KR
   name: Exports First 20 Days
@@ -2742,6 +2886,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: kr_trade
+  expected_lag_days: 36
   country_iso2: KR
   area: KR
   name: Trade Balance
@@ -2759,6 +2904,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: kr_unemp
+  expected_lag_days: 30
   country_iso2: KR
   area: KR
   name: Unemployment Rate
@@ -2776,6 +2922,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: tw_cpi_yy
+  expected_lag_days: 14
   country_iso2: TW
   area: TW
   name: CPI y/y
@@ -2793,6 +2940,7 @@ indicators:
   match_excludes: ppi|wpi
   macro_indicator_id: null
 - key: tw_gdp
+  expected_lag_days: 45
   country_iso2: TW
   area: TW
   name: GDP y/y
@@ -2810,6 +2958,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: tw_export_orders
+  expected_lag_days: 30
   country_iso2: TW
   area: TW
   name: Export Orders y/y
@@ -2827,6 +2976,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: tw_exports
+  expected_lag_days: 30
   country_iso2: TW
   area: TW
   name: Exports y/y
@@ -2844,6 +2994,7 @@ indicators:
   match_excludes: order
   macro_indicator_id: null
 - key: tw_indprod
+  expected_lag_days: 45
   country_iso2: TW
   area: TW
   name: Industrial Production y/y
@@ -2861,6 +3012,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: tw_cbc
+  expected_lag_days: 45
   country_iso2: TW
   area: TW
   name: CBC Discount Rate
@@ -2878,6 +3030,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: tw_unemp
+  expected_lag_days: 30
   country_iso2: TW
   area: TW
   name: Unemployment Rate
@@ -2895,6 +3048,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: tw_trade
+  expected_lag_days: 36
   country_iso2: TW
   area: TW
   name: Trade Balance
@@ -2912,6 +3066,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: ch_cpi_mm
+  expected_lag_days: 14
   country_iso2: CH
   area: CH
   name: CPI m/m
@@ -2929,6 +3084,7 @@ indicators:
   match_excludes: core
   macro_indicator_id: null
 - key: ch_cpi_yy
+  expected_lag_days: 14
   country_iso2: CH
   area: CH
   name: CPI y/y
@@ -2946,6 +3102,7 @@ indicators:
   match_excludes: core
   macro_indicator_id: null
 - key: ch_gdp
+  expected_lag_days: 45
   country_iso2: CH
   area: CH
   name: GDP q/q
@@ -2963,6 +3120,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: ch_unemp
+  expected_lag_days: 30
   country_iso2: CH
   area: CH
   name: Unemployment Rate
@@ -2980,6 +3138,7 @@ indicators:
   match_excludes: ''
   macro_indicator_id: null
 - key: ch_pmi_mfg
+  expected_lag_days: 0
   country_iso2: CH
   area: CH
   name: Manufacturing PMI
@@ -2997,6 +3156,7 @@ indicators:
   match_excludes: 'services|composite'
   macro_indicator_id: null
 - key: nz_rbnz
+  expected_lag_days: 30
   country_iso2: NZ
   area: NZ
   name: RBNZ Official Cash Rate
