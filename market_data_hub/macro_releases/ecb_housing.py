@@ -50,8 +50,11 @@ def calendar_editions(document, family):
     raw = document.body.decode("utf-8")
     require(r"All times are local to Frankfurt am Main\.", plain(raw))
     found = {}
+    window = []
     flow = SERIES[family].split(".")[0]
     for stamp, content in re.findall(r"<dt\b[^>]*>(.*?)</dt>\s*<dd\b[^>]*>(.*?)</dd>", raw, re.S):
+        window.append(datetime.strptime(require(r"^(\d{2}/\d{2}/\d{4} \d{2}:\d{2})", plain(stamp))[1],
+                                        "%d/%m/%Y %H:%M").date().isoformat())
         body = plain(content)
         if not body.startswith(TITLES[family]):
             continue
@@ -66,9 +69,12 @@ def calendar_editions(document, family):
             raise FetchError("ECB housing calendar edition needs review")
         found[edition] = metadata
     eligible = due(EDITIONS[family], family=family)
-    # The live calendar is a moving window. Historical archive editions retain
-    # their reviewed dates; the latest due and every future edition must remain.
-    required = {d for d in EDITIONS[family] if not eligible or d >= max(eligible)}
+    if not window:
+        raise FetchError("ECB housing calendar window missing; needs review")
+    # The issuer removes completed releases from this forward calendar. Require
+    # every future edition and all reviewed dates within its visible window.
+    # Older due editions still need their independently dated publication below.
+    required = {d for d in EDITIONS[family] if d not in eligible or d >= min(window)}
     if not required.issubset(found):
         raise FetchError("ECB housing calendar edition missing; needs review")
     return found

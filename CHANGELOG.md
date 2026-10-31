@@ -7,6 +7,17 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Fixed
+- Capture the 30 October BoJ policy decision when the issuer puts the rate vote
+  in the money-market guideline heading, separately from the ETF decision.
+- Use Eurostat's reviewed `-bp` URL for the 30 October unemployment release;
+  the guessed `-ap` URL redirects to a login page.
+- Validate ECB mortgage releases against the visible forward calendar window
+  and their dated publications after completed entries roll off the calendar.
+  Future calendar metadata and exact SDMX corroboration remain required.
+- Replay all six 30 October collection issues with saved issuer evidence,
+  including the EC-survey and FHFA formats already corrected in v0.3.11.
+
 ## [0.3.11] — 2026-10-30
 
 ### Added
