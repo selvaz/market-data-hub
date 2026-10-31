@@ -68,7 +68,7 @@ FRED_MEANING = {
  "EUNNGDP": "Euro-area nominal GDP.",
  "UNRATE": "US unemployment rate: health of the labor market, part of the Fed's mandate.",
  "PAYEMS": "US nonfarm payrolls: a key labor-market indicator.",
- "LRHUTTTTEZM156S": "Euro-area harmonized unemployment.",
+ "LRHUTTTTEZM156S": "Retired on 2026-10-31; current EA unemployment is Eurostat ea_unemployment_rate in the macro release store.",
  "M2SL": "US M2 money supply: liquidity in the system, a medium-term inflationary signal.",
  "WALCL": "Fed total assets: size of the balance sheet (QE/QT), base liquidity.",
  "BAMLC0A0CM": "US Investment Grade corporate OAS: the IG credit risk premium.",

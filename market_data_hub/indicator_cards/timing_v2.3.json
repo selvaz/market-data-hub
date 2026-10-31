@@ -32,7 +32,7 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "229cd80dd62a4666a789c78b451646848bd4943bb623757215646f77719f9e69"
+      "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82"
     },
     {
       "approval": "approved v2.3 by owner 2026-10-25",
@@ -53,7 +53,7 @@
         "cn_new_home_prices_tiers"
       ],
       "source": "PR #130, M9f housing drafts at 5e04a4b; independent Codex review",
-      "source_table_sha256": "229cd80dd62a4666a789c78b451646848bd4943bb623757215646f77719f9e69"
+      "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82"
     }
   ],
   "rows": {
@@ -1284,5 +1284,5 @@
   },
   "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "229cd80dd62a4666a789c78b451646848bd4943bb623757215646f77719f9e69"
+  "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82"
 }

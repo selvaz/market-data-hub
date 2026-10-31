@@ -211,7 +211,7 @@ configured-id context coverage, not live ingestion or historical completeness.
 | External tier-1 measures | 86 / 86 |
 | Release catalogue | 82 / 82 |
 | Active tier-1 calendar | 65 / 65 |
-| Enabled hub macro series | 107 / 107 |
+| Enabled hub macro series | 106 / 106 |
 
 UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) is covered by the owner-approved
 row `uk_gdp_monthly` (added 18/10/2026, mirroring the US GDP row: COIN by

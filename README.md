@@ -26,7 +26,7 @@ from `docs/` by the `docs` workflow on every push to `main`).
 |----------|------|---------|-----------|
 | Yahoo Finance | 153 symbols (ETFs, equity, FX, VIX indices, daily crypto, [continuous commodity futures](docs/free-sources.md#yahoo-continuous-futures)) — OHLCV + adj_close | `prices_daily` | daily |
 | Binance | 6 crypto symbols × {1h, 4h, 1d} — extended OHLCV | `crypto_ohlcv` | intraday |
-| FRED | 106 macro series (US/EA rates, real yields, CPI, GDP, credit spreads, financial-conditions & liquidity, cross-country 10Y yields, [23 daily H.10 FX rates](docs/fred-fx.md), [F05 term premium, EM OAS, wages and diesel](docs/free-sources.md)) | `macro_series` | D/W/M/Q |
+| FRED | 105 macro series (US/EA rates, real yields, CPI, GDP, credit spreads, financial-conditions & liquidity, cross-country 10Y yields, [23 daily H.10 FX rates](docs/fred-fx.md), [F05 term premium, EM OAS, wages and diesel](docs/free-sources.md)) | `macro_series` | D/W/M/Q |
 | NY Fed ACM | [Ten-year monthly term premium](docs/free-sources.md#ny-fed-acm-official-monthly-csv), official public chart CSV | `macro_series` | M |
 | World Bank + IMF + BIS + ECB | 83 cross-country indicators (WDI/WGI/WEO/BIS/IMF SDMX/ECB) × 64 countries | `macro_panel` | annual |
 | Ken French Data Library | Fama-French 5 factors + momentum (Mkt-RF, SMB, HML, RMW, CMA, Mom, RF) | `factor_returns` | D/M |
@@ -80,8 +80,11 @@ needed if you used this script.
 # the database location is required (no implicit default)
 export MARKET_DATA_DB="$HOME/data/market_data.duckdb"   # PowerShell: $env:MARKET_DATA_DB = '...'
 
-# initial historical load (Yahoo 2010, FRED 2000, Binance 2018)
+# initial historical load (Yahoo 2010, FRED earliest available, Binance 2018)
 python run_backfill.py
+
+# one-off expansion of existing FRED series to all available history
+python run_backfill.py --sources fred
 
 # incremental daily download (yahoo + fred + binance + live)
 python run_daily.py

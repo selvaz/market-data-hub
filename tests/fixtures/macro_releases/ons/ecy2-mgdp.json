@@ -1,0 +1,86 @@
+{
+  "years": [],
+  "quarters": [],
+  "months": [
+    {
+      "date": "2026 MAY",
+      "value": "102.2",
+      "label": "2026 MAY",
+      "year": "2026",
+      "month": "May",
+      "quarter": "",
+      "sourceDataset": "MGDP",
+      "updateDate": "2026-10-14T23:00:00.000Z"
+    },
+    {
+      "date": "2026 JUN",
+      "value": "102.6",
+      "label": "2026 JUN",
+      "year": "2026",
+      "month": "June",
+      "quarter": "",
+      "sourceDataset": "MGDP",
+      "updateDate": "2026-10-14T23:00:00.000Z"
+    },
+    {
+      "date": "2026 JUL",
+      "value": "103.0",
+      "label": "2026 JUL",
+      "year": "2026",
+      "month": "July",
+      "quarter": "",
+      "sourceDataset": "MGDP",
+      "updateDate": "2026-10-14T23:00:00.000Z"
+    },
+    {
+      "date": "2026 AUG",
+      "value": "103.1",
+      "label": "2026 AUG",
+      "year": "2026",
+      "month": "August",
+      "quarter": "",
+      "sourceDataset": "MGDP",
+      "updateDate": "2026-10-14T23:00:00.000Z"
+    }
+  ],
+  "sourceDatasets": [],
+  "relatedDatasets": [
+    {
+      "uri": "/economy/grossdomesticproductgdp/datasets/gdpmonthlyestimateuktimeseriesdataset"
+    }
+  ],
+  "relatedDocuments": [
+    {
+      "uri": "/economy/grossdomesticproductgdp/bulletins/gdpmonthlyestimateuk/latest"
+    }
+  ],
+  "versions": [
+    {
+      "uri": "/economy/grossdomesticproductgdp/timeseries/ecy2/mgdp/previous/v99",
+      "updateDate": "2026-10-15T06:00:00.000Z",
+      "correctionNotice": "",
+      "label": "v99"
+    }
+  ],
+  "type": "timeseries",
+  "uri": "/economy/grossdomesticproductgdp/timeseries/ecy2/mgdp",
+  "description": {
+    "title": "Gross Value Added - Monthly (Index 1dp) :CVM SA",
+    "contact": {
+      "email": "gdp@ons.gov.uk",
+      "name": "Gross Domestic Product team",
+      "telephone": "+44 1633 455284"
+    },
+    "releaseDate": "2026-10-14T23:00:00.000Z",
+    "nextRelease": "12 November 2026",
+    "datasetId": "MGDP",
+    "datasetUri": "/economy/grossdomesticproductgdp/datasets/gdpmonthlyestimateuktimeseriesdataset",
+    "cdid": "ECY2",
+    "unit": "",
+    "preUnit": "",
+    "source": "",
+    "date": "2026 AUG",
+    "number": "103.1",
+    "sampleSize": "0"
+  }
+}

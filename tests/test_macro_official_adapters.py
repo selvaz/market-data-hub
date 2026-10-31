@@ -307,15 +307,12 @@ def test_cli_replay_and_partial_failure(tmp_path, monkeypatch, capsys):
         def get(self, provider, url, params=None):
             if provider == "bea":
                 raise FetchError("BEA fixture failure")
-            if "gdp-to-four" in url:
-                if url.endswith("/time-series"):
-                    return document("ons/current-edition.response.json")
-                return document("ons/gdp69-csv.csv" if url.endswith(".csv") else "ons/gdp69.json")
             if provider == "ons":
+                assert "gdp-to-four" not in url
+                if url.endswith("/ecy2/mgdp/data"):
+                    return document("ons/ecy2-mgdp.json")
                 if url.endswith("previousreleases"):
                     return document("ons/current-bulletins.response.json")
-                if url.endswith("june2026"):
-                    return document("ons/june-content.response.json")
                 return document("ons/" + ("july" if url.endswith("july2026") else "august") + "-content.html")
             assert params["geo"] == "EA"
             return document("eurostat/headline-" + ("flash" if url.endswith("prc_hicp_fpd") else "final") + "-rates.response.json")

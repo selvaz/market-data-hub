@@ -49,6 +49,7 @@ class Observation:
     needs_review: bool = False
     unit: Optional[str] = None
     policy_decision: Optional[dict] = None
+    parser_version: str = PARSER_VERSION
 
 
 class Adapter(Protocol):
@@ -67,12 +68,15 @@ def revision_kind(store, obs, issuer):
     """
     if obs.revision not in ("routine", "backfill") or obs.published_at is None:
         return obs.revision
+    # ECY2's rounded index is a separate source series from the retired 4dp API.
+    source_filter = " AND s.source_key=?" if obs.series_key == "MGDP:ECY2:index-1dp" else ""
+    params = (obs.indicator_id, obs.period, utc(obs.published_at), issuer, issuer)
     prior = store.conn.execute(
         "SELECT 1 FROM value_vintages v JOIN source_series s ON s.id=v.source_series_id "
         "WHERE v.indicator_id=? AND v.reference_period=? AND v.issuer_published_at<=? "
         "AND s.issuer_id=? AND s.source_id=? AND s.evidence_role='issuer' "
-        "AND s.is_published=1 LIMIT 1",
-        (obs.indicator_id, obs.period, utc(obs.published_at), issuer, issuer),
+        "AND s.is_published=1" + source_filter + " LIMIT 1",
+        params + ((obs.series_key,) if source_filter else ()),
     ).fetchone()
     if prior:
         return "routine"
@@ -127,7 +131,7 @@ def persist(store, observations):
             evidence_origin_id=f"{obs.source}:{obs.series_key}", published_at=obs.published_at,
             publication_precision=obs.precision, first_seen_at=obs.document.retrieved_at,
             retrieved_at=obs.document.retrieved_at, content_hash=identity,
-            parser_version=PARSER_VERSION, extraction_method=obs.method,
+            parser_version=obs.parser_version, extraction_method=obs.method,
             verification_status="verified" if verified and obs.value is not None else "unverified", url=obs.document.url,
             reading_kind="unavailable" if obs.value is None else ("actual" if obs.published else "derived"),
             raw_payload_json=json.dumps({"provider_vintage": obs.provider_vintage,
@@ -145,7 +149,7 @@ def persist(store, observations):
             revision_kind=revision, issuer_published_at=obs.published_at,
             publication_precision=obs.precision, provider_vintage_id=obs.provider_vintage,
             first_seen_at=obs.document.retrieved_at, retrieved_at=obs.document.retrieved_at,
-            document_hash=identity, parser_version=PARSER_VERSION,
+            document_hash=identity, parser_version=obs.parser_version,
             extraction_method=obs.method, verification_status="verified" if verified else "unverified",
             derived_from_json=json.dumps(obs.inputs), formula_version=obs.formula,
             composition_id=obs.composition_id, issuer_local_time=obs.issuer_local_time,

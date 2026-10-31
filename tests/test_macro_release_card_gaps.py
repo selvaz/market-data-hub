@@ -87,14 +87,14 @@ def test_ons_missing_dataset_release_date_fails_explicitly(release_date):
                                publication=document("ons/june-content.response.json"))
 
 
-def test_ons_daily_discovery_records_missing_release_date_reason():
+def test_ons_daily_discovery_records_missing_update_date_reason():
     client = Replay("uk_gdp")
-    meta = client.docs["meta"].json()
-    meta.pop("release_date")
+    meta = client.docs["index"].json()
+    meta["months"][0].pop("updateDate")
     body = json.dumps(meta).encode()
-    client.docs["meta"] = replace(client.docs["meta"], body=body, document_hash=hashlib.sha256(body).hexdigest())
+    client.docs["index"] = replace(client.docs["index"], body=body, document_hash=hashlib.sha256(body).hexdigest())
     batch = fetch_daily(client, "uk_gdp", "2026-06")
-    assert "index_not_tier1_resolvable_missing_release_date" in batch.issues
+    assert "index_series_or_json_shape_changed" in batch.issues
     assert not any(o.indicator_id == "uk_gdp_index" for o in batch.observations)
     assert any(o.indicator_id == "uk_gdp_mm" for o in batch.observations)
 

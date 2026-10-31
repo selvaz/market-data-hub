@@ -626,6 +626,7 @@ class ReadAPI:
                     if e.event_id != event_id
                     and event_orders[e.id]
                     and event_orders[e.id] < released_at
+                    and (indicator != "uk_gdp_index" or e.series_key == selected.series_key)
                 ),
             )
             revisions = []
@@ -1088,7 +1089,7 @@ class ReadAPI:
             return dict(
                 base,
                 reason="invalid_publication_edition",
-                detail="ONS index time-series version is not a publication edition; recollect using dataset release_date (v69: 2026-08-24), not the GDP bulletin date",
+                detail="ONS index time-series version is not a publication edition; recollect ECY2 using the UK calendar date of updateDate",
             )
         if indicator == "uk_gdp_index" and is_window and valid_rows:
             published = [e for e in valid_rows if e.published_at]
@@ -1101,7 +1102,7 @@ class ReadAPI:
                     reason="no_release_in_window",
                     last_published_at=latest.published_at,
                     last_reference_period=latest.reference_period,
-                    detail="ONS index dataset has no publication in this window; monthly GDP bulletin releases do not publish this dataset",
+                    detail="ONS index has no publication in this window; ECY2 editions use the UK calendar date of updateDate",
                 )
         monthly = [
             e.reference_period

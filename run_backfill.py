@@ -3,7 +3,7 @@
 run_backfill.py — initial historical load.
 
 Thin CLI over ``runner.run(mode="backfill")``: forces the download from the
-backfill_start dates in settings.yaml (Yahoo 2010, FRED 2000, Binance 2018)
+backfill_start dates in settings.yaml (Yahoo 2010, FRED earliest available, Binance 2018)
 instead of the incremental logic. Running through the runner also means the
 backfill takes the writer lock (it cannot corrupt a concurrent scheduled run)
 and rebuilds both coverage tables. Idempotent: the upsert replaces any rows

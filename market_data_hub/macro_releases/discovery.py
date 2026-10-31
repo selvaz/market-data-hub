@@ -296,15 +296,13 @@ def _eurostat(client, family, since):
 
 def _ons(client, family, since):
     batch = FamilyFetch()
-    edition = batch.get(client, "ons", ons.EDITION_URL).json()
     index = batch.get(client, "ons", ons.BULLETIN_INDEX_URL)
-    version = int(edition.get("links", {}).get("latest_version", {}).get("id", 0))
-    if version <= 0:
-        batch.issue("dataset_version_identity_missing")
-        return batch
-    batch.anchors = version == ons.VERSION
-    metadata = batch.get(client, "ons", ons.EDITION_URL + f"/versions/{version}").json()
-    csv_doc = batch.get(client, "ons", f"https://static.ons.gov.uk/datasets/gdp-to-four-decimal-places-time-series-v{version}.csv")
+    index_doc = batch.get(client, "ons", ons.INDEX_URL)
+    try:
+        batch.observations.extend(ons.ONSAdapter.parse_index(index_doc, since))
+    except FetchError:
+        batch.issue("index_series_or_json_shape_changed")
+    batch.anchors = False
     slugs = set(re.findall(r'/gdpmonthlyestimateuk/([a-z]+\d{4})(?:["?#/])', index.body.decode()))
     slugs = sorted(slugs, key=lambda slug: datetime.strptime(slug, "%B%Y"))
     dates = {}
@@ -316,17 +314,7 @@ def _ons(client, family, since):
     if not slugs:
         batch.issue("issuer_bulletin_listing_empty")
         return batch
-    # The level dataset's release_date is independent of the GDP bulletin.
-    # Still review the linked reference month and the latest bulletin shapes.
-    import csv
-    from io import StringIO
-    rows = list(csv.DictReader(StringIO(csv_doc.body.decode("utf-8-sig"))))
-    periods = [datetime.strptime(r["mmm-yy"], "%b-%y") for r in rows if r.get("sic-unofficial") == "A--T"]
-    level_slug = max(periods).strftime("%B%Y").lower() if periods else None
-    for slug in dict.fromkeys([level_slug, *slugs[-2:]]):
-        if slug is None or slug not in slugs:
-            batch.issue("level_period_missing_from_bulletin_listing")
-            continue
+    for slug in slugs[-2:]:
         doc = batch.get(client, "ons", ons.BULLETIN_BASE + slug)
         try:
             if slug in dates and ons.bulletin_date(doc) != dates[slug]:
@@ -343,19 +331,6 @@ def _ons(client, family, since):
                 batch.anchors &= slug in ons.BULLETINS
         except (FetchError, ValueError, KeyError, TypeError):
             batch.issue("bulletin_structure_changed")
-    try:
-        batch.observations.extend(ons.ONSAdapter.parse_levels(csv_doc, metadata, since, version=version))
-    except FetchError as exc:
-        batch.issue("index_not_tier1_resolvable_missing_release_date" if "release_date" in str(exc)
-                    else "dataset_series_units_or_periods_changed")
-    except (ValueError, KeyError, TypeError):
-        batch.issue("dataset_series_units_or_periods_changed")
-    if metadata.get("version") != version or metadata.get("edition") != "time-series":
-        batch.issue("dataset_version_identity_changed")
-    if metadata.get("links", {}).get("dataset", {}).get("id") != "gdp-to-four-decimal-places":
-        batch.issue("dataset_identity_changed")
-    if {d.get("id") for d in metadata.get("dimensions", [])} != {"mmm-yy", "uk-only", "sic-unofficial"}:
-        batch.issue("dataset_dimensions_changed")
     return batch
 
 

@@ -395,10 +395,17 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
     logic guarantees data even when IMF is temporarily blocked (World Bank
     fallback).
     """
+    today = _today()
+    # Delete only future panel keys; the vintage audit history remains intact.
+    con.execute(
+        "DELETE FROM macro_panel USING "
+        "(SELECT date, country_iso3, indicator_id FROM macro_panel WHERE date > ?::DATE) f "
+        "WHERE macro_panel.date=f.date AND macro_panel.country_iso3=f.country_iso3 "
+        "AND macro_panel.indicator_id=f.indicator_id", [today])
     specs = get_macro_panel_specs()
     countries = get_countries()
     http = cfg["http"]
-    sy = start_year or int(cfg["backfill_start"]["fred"][:4])
+    sy = start_year or int(cfg["backfill_start"].get("macro_panel", "2000-01-01")[:4])
     imf_sleep = cfg.get("parallelism", {}).get("imf_sleep", 0.5)
     wb_workers = cfg.get("parallelism", {}).get("wb_workers", 5)
     select_best = cfg.get("macro_panel", {}).get("select_best_source", False)
@@ -414,6 +421,8 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
 
     def _upsert_result(spec, df, status, st, dl_sec):
         nonlocal n_ok, n_fb, n_empty
+        if df is not None and not df.empty:
+            df = df.loc[pd.to_datetime(df["date"]) <= pd.Timestamp(today)].copy()
         if df is None or df.empty:
             n_empty += 1
             log_run(con, run_id=run_id, started_at=st, source="macro_panel",
@@ -422,7 +431,7 @@ def run_macro_panel(con, cfg: dict, run_id: str, *,
                     duration_sec=dl_sec)
             return
         added, updated = upsert(con, "macro_panel", df)
-        record_vintage(con, "macro_panel", df, _today(), run_id=run_id)
+        record_vintage(con, "macro_panel", df, today, run_id=run_id)
         if status == "fallback":
             n_fb += 1
         else:
@@ -634,7 +643,7 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
             if "binance" in active:
                 run_binance(con, cfg, run_id, start_override=_start("binance"), end=end)
             if "macro_panel" in active:
-                sy = _start("fred")
+                sy = _start("macro_panel")
                 run_macro_panel(con, cfg, run_id,
                                 start_year=int(sy[:4]) if sy else None)
             if "factors" in active:

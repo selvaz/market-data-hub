@@ -1065,14 +1065,9 @@ indicators:
   match_rules: unemployment|jobless;rate
   match_excludes: german|french|italian|spanish
   macro_indicator_id: null
-  # FRED LRHUTTTTEZM156S, 'MACRO | EA | Harmonised Unemployment Rate (Total
-  # monthly)': stessa definizione armonizzata che Eurostat pubblica per l'area
-  # euro, mensile, in punti percentuali, nessuna trasformazione. Il ponte e'
-  # corretto ma oggi inerte: la serie nell'hub si ferma a gennaio 2023, quindi
-  # nessun evento recente trova un'osservazione nel proprio periodo e il
-  # riempimento non scatta. Resta dichiarato perche' e' l'identita' della serie,
-  # non una promessa che ci siano dati.
-  macro_series_id: LRHUTTTTEZM156S
+  # FRED bridge retired on 2026-10-31; current source is Eurostat
+  # ea_unemployment_rate in the macro release store.
+  macro_series_id: null
 - key: ez_employment
   country_iso2: EU
   area: EZ

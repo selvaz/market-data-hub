@@ -111,14 +111,17 @@ def next_documents(family, mode="ok"):
             docs[stage] = changed(doc, payload)
         docs["listing"] = document("discovery/eurostat-events.response.json")
     else:
-        meta = document("ons/gdp69.json")
+        meta = document("ons/ecy2-mgdp.json")
         payload = meta.json()
-        payload["version"] = 70
-        docs["meta"] = changed(meta, payload)
-        edition = document("ons/current-edition.response.json")
-        payload = edition.json()
-        payload["links"]["latest_version"]["id"] = "70"
-        docs["edition"] = changed(edition, payload)
+        for row in payload["months"]:
+            row["date"] = datetime.strptime(row["date"], "%Y %b").strftime("%Y-%m")
+            row["date"] = datetime.strptime(discovery.bls.shift_month(row["date"], 1), "%Y-%m").strftime("%Y %b").upper()
+            row["updateDate"] = "2026-11-12T00:00:00.000Z"
+        if mode == "structure":
+            payload["description"]["cdid"] = "OTHER"
+        if mode == "band":
+            payload["months"][-1]["value"] = "180.0"
+        docs["index"] = changed(meta, payload)
         docs["listing"] = changed(meta, ''.join(f'<a href="{discovery.ons.BULLETIN_BASE}{slug}">{slug}</a>'
             for slug in ("july2026", "august2026", "september2026")), discovery.ons.BULLETIN_INDEX_URL)
         for slug in ("july", "august"):
@@ -129,20 +132,6 @@ def next_documents(family, mode="ok"):
         if mode == "band":
             body = re.sub(r"(Monthly GDP grew by )[-\d.]+%", r"\g<1>80%", body)
         docs["september"] = changed(doc, body, discovery.ons.BULLETIN_BASE + "september2026")
-        doc = document("ons/gdp69-csv.csv")
-        # Keep a small valid CSV whose latest reference month advances to July.
-        import csv
-        from io import StringIO
-        rows = list(csv.DictReader(StringIO(doc.body.decode("utf-8-sig"))))
-        fields = list(rows[0])
-        rows = [r for r in rows if r["mmm-yy"] in ("May-26", "Jun-26") and r["sic-unofficial"] == "A--T"]
-        for row in rows:
-            row["mmm-yy"] = {"May-26": "Jun-26", "Jun-26": "Jul-26"}[row["mmm-yy"]]
-        output = StringIO()
-        writer = csv.DictWriter(output, fields)
-        writer.writeheader()
-        writer.writerows(rows)
-        docs["csv"] = changed(doc, output.getvalue().replace("v4_0", "v5_0") if mode == "structure" else output.getvalue())
     return docs
 
 
@@ -164,14 +153,10 @@ class Replay:
             return self.docs["listing" if url in (discovery.BEA_LISTING, *discovery.BLS_FEEDS.values()) else "data"]
         if provider == "eurostat":
             return self.docs["listing" if url == discovery.EUROSTAT_CALENDAR else "flash" if url.endswith("prc_hicp_fpd") else "final"]
-        if url == discovery.ons.EDITION_URL:
-            return self.docs["edition"]
+        if url == discovery.ons.INDEX_URL:
+            return self.docs["index"]
         if url == discovery.ons.BULLETIN_INDEX_URL:
             return self.docs["listing"]
-        if url.endswith(".csv"):
-            return self.docs["csv"]
-        if "/versions/" in url:
-            return self.docs["meta"]
         return self.docs[url.rsplit("/", 1)[-1].replace("2026", "")]
 
 

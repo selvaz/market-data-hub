@@ -1,9 +1,4 @@
-"""Pinned ONS GDP index version and issuer-published monthly growth.
-
-The four-decimal API contains levels, not the published rounded growth rate.
-Keep them separate. Certified archived bulletins supply the published transform;
-their HTML extraction is explicit and never labelled API.
-"""
+"""ONS ECY2 monthly index and the separately published bulletin growth rate."""
 from __future__ import annotations
 
 import csv
@@ -11,22 +6,24 @@ from datetime import datetime
 from html.parser import HTMLParser
 from io import StringIO
 import re
+from zoneinfo import ZoneInfo
 
 from .adapters import Observation
 from .http import FetchError, json_payload
 from .ons_rates import fetch_rates, parse_rate
 from .models import utc
 
+# Archive-only identities/parser retained for replaying existing v69 evidence.
 VERSION = 69
-VERSION_URL = ("https://api.beta.ons.gov.uk/v1/datasets/gdp-to-four-decimal-places/"
-               "editions/time-series/versions/69")
 CSV_URL = "https://static.ons.gov.uk/datasets/gdp-to-four-decimal-places-time-series-v69.csv"
 BULLETIN_BASE = "https://www.ons.gov.uk/economy/grossdomesticproductgdp/bulletins/gdpmonthlyestimateuk/"
 # Reviewed editions, not current-date arithmetic. Each also covers revised months.
 BULLETINS = ("july2026", "august2026")
-EDITION_URL = VERSION_URL.rsplit("/versions/", 1)[0]
 BULLETIN_INDEX_URL = BULLETIN_BASE + "previousreleases"
-LEVEL_BULLETIN = "june2026"
+INDEX_PATH = "/economy/grossdomesticproductgdp/timeseries/ecy2/mgdp"
+INDEX_URL = "https://www.ons.gov.uk" + INDEX_PATH + "/data"
+INDEX_KEY = "MGDP:ECY2:index-1dp"
+INDEX_PARSER = "official-adapters:ons-ecy2-v1"
 
 
 def bulletin_date(document):
@@ -37,9 +34,7 @@ def bulletin_date(document):
     return match[1].replace("/", "-")
 
 
-def check_freshness(edition, bulletins):
-    if str(json_payload(edition).get("links", {}).get("latest_version", {}).get("id")) != str(VERSION):
-        raise FetchError("ONS latest dataset version needs review")
+def check_freshness(bulletins):
     slugs = re.findall(r'/gdpmonthlyestimateuk/([a-z]+\d{4})(?:["?#/])',
                        bulletins.body.decode("utf-8"))
     try:
@@ -82,17 +77,45 @@ class ONSAdapter:
         rates = fetch_rates(self.client, families, since)
         if "uk_gdp" not in families:
             return rates
-        check_freshness(self.client.get("ons", EDITION_URL), self.client.get("ons", BULLETIN_INDEX_URL))
-        meta = self.client.get("ons", VERSION_URL)
-        payload = json_payload(meta)
-        if payload.get("version") != VERSION or payload.get("edition") != "time-series":
-            raise FetchError("ONS pinned dataset version changed")
-        levels = self.client.get("ons", CSV_URL)
-        out = self.parse_levels(levels, payload, since)
+        check_freshness(self.client.get("ons", BULLETIN_INDEX_URL))
+        out = self.parse_index(self.client.get("ons", INDEX_URL), since)
         for edition in BULLETINS:
             doc = self.client.get("ons", BULLETIN_BASE + edition)
             out.extend(self.parse_bulletin(doc, since))
         return rates + out
+
+    @staticmethod
+    def parse_index(document, since="1900-01"):
+        payload = json_payload(document)
+        try:
+            meta = payload["description"]
+            if (payload["type"] != "timeseries" or payload["uri"] != INDEX_PATH or
+                    meta["cdid"] != "ECY2" or meta["datasetId"] != "MGDP" or
+                    meta["title"] != "Gross Value Added - Monthly (Index 1dp) :CVM SA" or
+                    meta["unit"] != ""):
+                raise ValueError("series identity")
+            rows = payload["months"]
+            if not isinstance(rows, list) or not rows:
+                raise ValueError("months")
+            out, periods = [], set()
+            for row in rows:
+                period = datetime.strptime(row["date"], "%Y %b").strftime("%Y-%m")
+                printed = row["value"]
+                if (row["sourceDataset"] != "MGDP" or period in periods or
+                        not re.fullmatch(r"\d+\.\d", printed)):
+                    raise ValueError("monthly series")
+                periods.add(period)
+                stamp = datetime.fromisoformat(row["updateDate"].replace("Z", "+00:00"))
+                if stamp.tzinfo is None:
+                    raise ValueError("updateDate timezone")
+                edition = stamp.astimezone(ZoneInfo("Europe/London")).date().isoformat()
+                if period >= since:
+                    out.append(Observation("uk_gdp_index", "uk_gdp", period, float(printed), printed,
+                        INDEX_KEY, "ONS", document, edition, edition + "T00:00:00Z",
+                        provider_vintage=edition, revision="routine", method="json", parser_version=INDEX_PARSER))
+            return out
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            raise FetchError("ONS ECY2 series identity or monthly JSON shape changed") from exc
 
     @staticmethod
     def parse_levels(document, metadata, since="1900-01", *, publication=None, version=VERSION):

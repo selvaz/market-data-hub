@@ -4762,9 +4762,7 @@
         "derived_ms": [],
         "es": [],
         "hub": [],
-        "ms": [
-          "LRHUTTTTEZM156S"
-        ],
+        "ms": [],
         "notes": [],
         "pan": []
       },
@@ -4773,11 +4771,11 @@
         "defect D4"
       ],
       "nature": "HARD",
-      "rationale": "Series stale since 2023-01; replace with Eurostat une_rt_m, geography EA21 (review §5.2).",
-      "raw_ids": "ms:LRHUTTTTEZM156S; cal:ez_unemp; cat:ea_unemployment_rate",
+      "rationale": "Current source: Eurostat ea_unemployment_rate in the macro release store. FRED bridge retired on 2026-10-31.",
+      "raw_ids": "cal:ez_unemp; cat:ea_unemployment_rate",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
-      "source": "OECD MEI via FRED",
+      "source": "Eurostat",
       "theme": "Labour",
       "timing": {
         "basis": "HYPOTHESIS",
@@ -14742,6 +14740,6 @@
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "229cd80dd62a4666a789c78b451646848bd4943bb623757215646f77719f9e69",
-  "timing_extract_sha256": "2ace8e4ee3669f3c1262766b4e1f75b25b8d2e04a997dec192fe02b1b9ee39b2"
+  "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82",
+  "timing_extract_sha256": "1e79a3b22a42a7a47df3ca8953573203df96caf7070c95210c3344a454d4e41d"
 }

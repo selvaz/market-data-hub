@@ -443,7 +443,7 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     assert set(report["documented_certified_gaps"]) == {"mx_core_cpi_yy"}
     assert report["macro_releases"] == {"mapped": 96, "total": len(INDICATORS), "unmapped": ["cat:mx_core_cpi_yy"]}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
-    assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 107
+    assert report["macro_series"]["mapped"] == report["macro_series"]["total"] == 106
     assert "macro_releases" in capsys.readouterr().out
 
 

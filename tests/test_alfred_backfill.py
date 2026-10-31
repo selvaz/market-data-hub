@@ -295,3 +295,18 @@ def test_cli_and_config(monkeypatch, tmp_path):
                      "--dry-run"]) == 3
     with pytest.raises(SystemExit):
         job.main(["--db", "unused", "--series", "UNKNOWN"])
+
+
+@pytest.mark.parametrize("incremental,empty_code", [(False, 3), (True, 0)])
+def test_incremental_exit_codes(tmp_db, incremental, empty_code):
+    assert run(tmp_db, Session(), incremental=incremental)[0] == 0
+    assert run(tmp_db, Session(), incremental=incremental)[0] == empty_code
+    assert run(tmp_db, Session(), incremental=incremental, max_requests=0)[0] == 1
+
+
+def test_incremental_cli_noop_success(monkeypatch, tmp_path):
+    fake = client(Session())
+    monkeypatch.setattr(job, "Client", lambda **kwargs: fake)
+    args = ["--db", str(tmp_path / "hub.duckdb"), "--series", "PAYEMS", "--incremental"]
+    assert job.main(args) == 0
+    assert job.main(args) == 0
