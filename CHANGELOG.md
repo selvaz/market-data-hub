@@ -7,6 +7,8 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.13] — 2026-10-31
+
 ### Added
 - Generate the complete data catalogue and JSON inventory from collector
   configuration and both stores' schemas, including migrated macro tables.
