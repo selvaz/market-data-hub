@@ -112,8 +112,12 @@ def _observe_hub(conn, catalog):
         ).fetchall()
         by_id = {r[0]: r[1:] for r in values}
         for row in catalog["series"]:
-            if row["table"] == "alfred_vintage_observations" and row["id"] in by_id:
+            if row["table"] == "alfred_vintage_observations" and row["id"] in by_id and row.get("observed"):
                 reference, available = by_id[row["id"]]
+                # A trailing vendor "." (NULL) makes the bounds end later than
+                # the latest valued period: leave the lag unavailable (Codex P2).
+                if str(reference) != row["observed"]["last_date"]:
+                    continue
                 row["observed"].update(lag_days=_lag(reference, available, row["frequency"]),
                                        lag_basis="Earliest stored vendor as_of for latest period; not hub first-seen")
 

@@ -235,6 +235,25 @@ def test_live_uses_readonly_files_and_period_end_lag(tmp_path, catalog):
     assert "observed" not in catalog["series"][0]
 
 
+def test_live_alfred_lag_is_unavailable_when_the_latest_period_is_missing(tmp_path, catalog):
+    # Codex P2 on #152: a trailing vendor "." (NULL) must not lend an older
+    # period's lag to the reported last date.
+    hub = tmp_path / "hub.duckdb"
+    conn = duckdb.connect(str(hub))
+    conn.execute("CREATE TABLE alfred_vintage_observations "
+                 "(series_id VARCHAR, date DATE, as_of DATE, realtime_end DATE, value DOUBLE)")
+    conn.execute("INSERT INTO alfred_vintage_observations VALUES "
+                 "('CPIAUCSL', '2026-08-01', '2026-09-11', '9999-12-31', 1), "
+                 "('CPIAUCSL', '2026-09-01', '2026-10-14', '9999-12-31', NULL)")
+    conn.close()
+    live = deepcopy(catalog)
+    observe(live, [hub])
+    row = next(r for r in live["series"]
+               if r["table"] == "alfred_vintage_observations" and r["id"] == "CPIAUCSL")
+    assert row["observed"]["last_date"] == "2026-09-01"
+    assert row["observed"].get("lag_days") is None
+
+
 def test_live_does_not_create_missing_db_or_overwrite_canonical(tmp_path):
     missing = tmp_path / "missing.sqlite"
     with pytest.raises(FileNotFoundError):
