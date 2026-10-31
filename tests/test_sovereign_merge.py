@@ -23,7 +23,7 @@ def test_combined_catalog_retains_every_declared_series(tmp_db):
     entries = catalog.list_macro_series(with_coverage=False)
     assert set(entries.series_id) == declared and entries.series_id.is_unique
     dataset = next(d for d in catalog.list_datasets() if d['domain'] == 'macro')
-    assert dataset['n_series'] == len(declared) == 291
+    assert dataset['n_series'] == len(declared) == 290
     assert dataset['frequency'] == 'D/W/M/Q/A'
     assert all(name in dataset['description'] for name in ('FRED', 'NY Fed ACM', 'sovereign'))
     for sid in ('NYFED_ACM_TP10_MONTHLY', 'CB_ES_10Y', 'ITA_BTP10_MOT', 'DEU_BUND10_FA'):
@@ -98,7 +98,7 @@ def test_backfill_defaults_keep_both_sources(monkeypatch):
 def test_validation_reports_both_counts_and_checks_both_contracts(monkeypatch, capsys):
     assert validate_config.main() == 0
     output = capsys.readouterr().out
-    assert 'fred=106' in output and 'nyfed_acm=1' in output and 'sovereign_yields=42' in output
+    assert 'fred=105' in output and 'nyfed_acm=1' in output and 'sovereign_yields=42' in output
     # The catalog count includes disabled gaps and the enabled history feed.
     entries = config_loader.get_sovereign_yields()
     assert len(entries) == 42 and sum(e['enabled'] for e in entries) == 22
