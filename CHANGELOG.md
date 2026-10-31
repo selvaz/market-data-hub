@@ -7,6 +7,18 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.14] — 2026-10-31
+
+### Fixed
+- Coverage report: six false stalled alerts. Macro series no longer configured
+  or disabled (retired LRHUTTTTEZM156S, SNB 2y) are `unscheduled`, as prices
+  already were; EIA oil and the H.10 broad dollar carry a 10-day publication
+  limit like the DEX* rates; CB_IT_10Y (monthly batches) 35 business days.
+
+### Changed
+- Data catalogue intro states the collector rule refined on 31/10: structured
+  data in the hub, news in LazyCrawler, never in applications.
+
 ## [0.3.13] — 2026-10-31
 
 ### Added
