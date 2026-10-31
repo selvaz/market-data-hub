@@ -17,7 +17,9 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 20 was already 95% used on main (3.10 took 18m57s on 31/10) before the
+    # data-catalogue gate added ~2 min; a timeout that tight cancels at random.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:

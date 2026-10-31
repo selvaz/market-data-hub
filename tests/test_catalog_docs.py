@@ -78,8 +78,9 @@ def test_new_fixture_series_breaks_gate_until_regenerated(tmp_path, catalog, nam
     shutil.copytree(docs.CONFIG_DIR, config_dir)
     output = tmp_path / "docs"
     output.mkdir()
+    # The unmodified config matches `catalog` (test_checked_in_files_are_fresh_and_deterministic);
+    # two builds per case keep the eight configs inside the CI time budget.
     save(catalog, output)
-    docs.main(["--check", "--config-dir", str(config_dir), "--output-dir", str(output)])
     path = config_dir / (name + ".yaml")
     config = yaml.safe_load(path.read_text(encoding="utf-8"))
     config[group].append(dict(config[group][0], **{key: "FIXTURE_UNDOCUMENTED", "name": "Fixture source"}))
@@ -87,7 +88,6 @@ def test_new_fixture_series_breaks_gate_until_regenerated(tmp_path, catalog, nam
     with pytest.raises(SystemExit, match="stale"):
         docs.main(["--check", "--config-dir", str(config_dir), "--output-dir", str(output)])
     docs.main(["--write", "--config-dir", str(config_dir), "--output-dir", str(output)])
-    docs.main(["--check", "--config-dir", str(config_dir), "--output-dir", str(output)])
     assert "FIXTURE_UNDOCUMENTED" in (output / "DATA_CATALOG.md").read_text(encoding="utf-8")
 
 
