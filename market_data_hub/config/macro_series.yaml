@@ -101,6 +101,7 @@ fred:
   name: CMDTY | Energy | Brent Spot Price
   priority: 2
   country: US
+  max_lag_days: 10  # EIA publishes daily spot prices weekly; the 3-day daily default flagged on-time data (31/10)
 - symbol: DCOILWTICO
   expected_lag_days: 4
   frequency: D
@@ -110,6 +111,7 @@ fred:
   name: CMDTY | Energy | WTI Spot Price (Cushing OK)
   priority: 2
   country: US
+  max_lag_days: 10  # EIA publishes daily spot prices weekly; the 3-day daily default flagged on-time data (31/10)
 - symbol: VIXCLS
   expected_lag_days: 2
   frequency: D
@@ -425,6 +427,7 @@ fred:
   name: 'FX | USD | Trade Weighted US Dollar Index: Broad'
   priority: 2
   country: US
+  max_lag_days: 10  # H.10 publishes weekly, like the DEX* rates; the 3-day daily default flagged on-time data (31/10)
 - symbol: DFII10
   expected_lag_days: 2
   frequency: D

@@ -104,7 +104,12 @@ series:
     # Monthly batch of daily observations (Mercato finanziario, mid-month):
     # official history, not the current reading (ITA_BTP10_MOT is).
     role: history
-    history_reason: Daily BMK0200 observations are released in monthly batches; ITA_BTP10_MOT supplies the current yield. Freshness is still flagged after three business days.
+    history_reason: Daily BMK0200 observations are released in monthly batches; ITA_BTP10_MOT supplies the current yield.
+    # The mid-month batch carries the previous month, so the latest date is up
+    # to ~45 calendar days old on a normal cycle. A 3-business-day limit flagged
+    # it as stalled permanently (31/10); 35 business days (~50 calendar) still
+    # alerts if a batch is missed.
+    max_lag_days: 35
     name: 10y BTP benchmark gross yield to maturity
     provider_code: MFN_BMK.D.020.922.0.EUR.210
     endpoint: https://a2a.bancaditalia.it/infostat/dataservices/export/IT/CSV/DATA/CUBE/BANKITALIA/DIFF/BMK0200

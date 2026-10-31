@@ -40,7 +40,9 @@ def test_known_gaps_are_disabled_for_collection():
 def test_banca_d_italia_is_explicit_documented_history_with_real_freshness():
     (bdi,) = [e for e in get_sovereign_yields() if e["symbol"] == "CB_IT_10Y"]
     assert bdi["enabled"] is True and bdi["role"] == "history"
-    assert bdi["max_lag_days"] == 3 and bdi["lag_calendar"] == "business"
+    # Monthly batches: the latest date is up to ~45 calendar days old on a
+    # normal cycle, so 3 business days was a permanent stall (31/10).
+    assert bdi["max_lag_days"] == 35 and bdi["lag_calendar"] == "business"
     assert bdi["history_reason"].strip()
     assert spec("ITA_BTP10_MOT").get("role", "current") == "current"
 
