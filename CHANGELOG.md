@@ -7,6 +7,8 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.12] — 2026-10-31
+
 ### Fixed
 - Capture the 30 October BoJ policy decision when the issuer puts the rate vote
   in the money-market guideline heading, separately from the ETF decision.
