@@ -70,6 +70,12 @@ jobs:
       - name: Validate config catalogs
         run: python validate_config.py
 
+      - name: Check generated indicator cards
+        run: python -m market_data_hub.indicator_cards.docs --check
+
+      - name: Check generated data catalogue
+        run: python -m market_data_hub.catalog_docs --check
+
       - name: Byte-compile all modules
         run: python -m compileall -q market_data_hub *.py
 

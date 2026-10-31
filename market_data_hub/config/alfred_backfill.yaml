@@ -8,126 +8,249 @@ sources:
   hub: market_data_hub/config/macro_series.yaml fred (macro_series FRED universe)
 series:
   - series_id: PAYEMS
+    expected_lag_days: 7
+    frequency: M
+    issuer: "BLS CES"
     sources: [pilot, v2, hub]
     reason: Payroll input and activity target; monthly and benchmark revisions.
   - series_id: UNRATE
+    expected_lag_days: 7
+    frequency: M
+    issuer: "BLS CPS"
     sources: [pilot, v2, hub]
     reason: Labour input and recession detector; seasonal revisions.
   - series_id: AWHMAN
+    expected_lag_days: 7
+    frequency: M
+    issuer: "BLS CES"
     sources: [pilot, v2]
     reason: Manufacturing hours lead; monthly and benchmark revisions.
   - series_id: ICSA
+    expected_lag_days: 5
+    frequency: W
+    issuer: "US Department of Labor / ETA"
     sources: [pilot, v2]
     reason: Weekly initial claims aggregated monthly; weekly and seasonal revisions.
   - series_id: JTSJOL
+    expected_lag_days: 29
+    frequency: M
+    issuer: "BLS JOLTS"
     sources: [pilot]
     reason: JOLTS openings input; monthly and annual revisions.
   - series_id: INDPRO
+    expected_lag_days: 16
+    frequency: M
+    issuer: "Fed Board"
     sources: [pilot, v2, hub]
     reason: Industrial output input and lead/lag target; extensive benchmark revisions.
   - series_id: RSAFS
+    expected_lag_days: 15
+    frequency: M
+    issuer: "Census"
     sources: [pilot, v2, hub]
     reason: Retail sales input; use vendor vintages to avoid the documented mixed hub vintage.
   - series_id: CMRMTSPL
+    expected_lag_days: 45
+    frequency: M
+    issuer: "Federal Reserve Bank of St. Louis (Census sales / BEA deflators)"
     sources: [pilot]
     reason: Real manufacturing and trade sales coincident input; revised deflators and sales.
   - series_id: W875RX1
+    expected_lag_days: 29
+    frequency: M
+    issuer: "BEA"
     sources: [pilot]
     reason: Real personal income excluding transfers; revised BEA income and deflators.
   - series_id: NEWORDER
+    expected_lag_days: 27
+    frequency: M
+    issuer: "US Census Bureau"
     sources: [pilot, v2]
     reason: Nondefense capital goods orders lead; monthly and benchmark revisions.
   - series_id: HOUST
+    expected_lag_days: 20
+    frequency: M
+    issuer: "Census"
     sources: [pilot, v2, hub]
     reason: Housing starts input and lead; monthly and seasonal revisions.
   - series_id: PERMIT
+    expected_lag_days: 20
+    frequency: M
+    issuer: "US Census Bureau"
     sources: [pilot, v2]
     reason: Building permits lead; monthly and seasonal revisions.
   - series_id: UMCSENT
+    expected_lag_days: 0
+    frequency: M
+    issuer: "University of Michigan"
     sources: [pilot]
     reason: Soft sentiment input; preliminary/final estimates.
   - series_id: GACDFSA066MSFRBPHI
+    expected_lag_days: 0
+    frequency: M
+    issuer: "Federal Reserve Bank of Philadelphia"
     sources: [pilot]
     reason: Philadelphia Fed soft activity input; preserve actual archived depth without inventing early vintages.
   - series_id: CPIAUCSL
+    expected_lag_days: 14
+    frequency: M
+    issuer: "BLS"
     sources: [pilot, v2, hub]
     reason: Seasonally adjusted price control and inflation target; seasonal revisions.
   - series_id: PCEPI
+    expected_lag_days: 29
+    frequency: M
+    issuer: "BEA"
     sources: [pilot, hub]
     reason: PCE price control; monthly and BEA benchmark revisions.
   - series_id: NFCI
+    expected_lag_days: 7
+    frequency: W
+    issuer: "Chicago Fed"
     sources: [pilot, v2, hub]
     reason: Financial conditions input; historical index estimates are revised.
   - series_id: GDPC1
+    expected_lag_days: 29
+    frequency: Q
+    issuer: "BEA"
     sources: [pilot, hub]
     reason: Real GDP quarterly target; advance, second, third and benchmark estimates.
   - series_id: GDP
+    expected_lag_days: 29
+    frequency: Q
+    issuer: "BEA"
     sources: [hub]
     reason: Nominal GDP; successive BEA estimates and benchmark revisions.
   - series_id: GDPNOW
+    expected_lag_days: 0
+    frequency: D
+    issuer: "Federal Reserve Bank of Atlanta"
     sources: [pilot]
     reason: GDPNow external benchmark; preserve successive within-quarter nowcasts.
   - series_id: STLENI
+    expected_lag_days: 7
+    frequency: W
+    issuer: "Federal Reserve Bank of St. Louis"
     sources: [pilot]
     reason: St. Louis economic news index descriptive benchmark; evolving estimates.
   - series_id: USREC
+    expected_lag_days: 300
+    frequency: M
+    issuer: "NBER (recession chronology distributed by St. Louis Fed)"
     sources: [v2, probit]
     reason: NBER recession labels are assigned retrospectively; avoid hindsight labels.
   - series_id: SAHMREALTIME
+    expected_lag_days: 30
+    frequency: M
+    issuer: "Federal Reserve Bank of St. Louis"
     sources: [v2]
     reason: Published real-time Sahm detector; archive actual publication availability.
   - series_id: SAHMCURRENT
+    expected_lag_days: 30
+    frequency: M
+    issuer: "Federal Reserve Bank of St. Louis"
     sources: [v2]
     reason: Revised Sahm comparator built from revised unemployment history.
   - series_id: BUSLOANS
+    expected_lag_days: 7
+    frequency: W
+    issuer: "Federal Reserve Board H.8"
     sources: [v2]
     reason: Commercial and industrial loans lead; revised bank aggregates and seasonal factors.
   - series_id: DRTSCILM
+    expected_lag_days: 45
+    frequency: Q
+    issuer: "Federal Reserve Board SLOOS"
     sources: [v2]
     reason: Quarterly lending standards lead from SLOOS; retain vendor publication history.
   - series_id: CCSA
+    expected_lag_days: 5
+    frequency: W
+    issuer: "US Department of Labor / ETA"
     sources: [v2]
     reason: Continuing claims download in scripts/data; weekly and seasonal revisions.
   - series_id: PPIFIS
+    expected_lag_days: 15
+    frequency: M
+    issuer: "BLS"
     sources: [v2]
     reason: Final demand PPI control; preliminary and seasonal revisions. Source download is PPIFIS.csv.
   - series_id: WPSFD49207
+    expected_lag_days: 15
+    frequency: M
+    issuer: "BLS"
     sources: [v2]
     reason: Final demand goods PPI control in scripts/data; monthly and seasonal revisions.
   - series_id: CPILFESL
+    expected_lag_days: 14
+    frequency: M
+    issuer: "BLS"
     sources: [v2, hub]
     reason: Core CPI target; seasonal factor revisions.
   - series_id: PCEPILFE
+    expected_lag_days: 29
+    frequency: M
+    issuer: "BEA"
     sources: [v2, hub]
     reason: Core PCE target; monthly and benchmark revisions.
   - series_id: CES0500000003
+    expected_lag_days: 7
+    frequency: M
+    issuer: "BLS CES"
     sources: [v2, hub]
     reason: Average hourly earnings target; payroll benchmark and monthly revisions.
   - series_id: M2SL
+    expected_lag_days: 30
+    frequency: M
+    issuer: "Fed H.6"
     sources: [v2, hub]
     reason: Money stock lead; seasonal and source revisions.
   - series_id: CP0000EZ19M086NEST
+    expected_lag_days: 17
+    frequency: M
+    issuer: "Eurostat"
     sources: [hub]
     reason: Euro area HICP; preserve source revisions and discontinued aggregate vintages.
   - series_id: CLVMEURSCAB1GQEA19
+    expected_lag_days: 30
+    frequency: Q
+    issuer: "Eurostat"
     sources: [hub]
     reason: Euro area real GDP; national accounts revisions, including discontinued aggregate history.
   - series_id: EUNNGDP
+    expected_lag_days: 30
+    frequency: Q
+    issuer: "Eurostat"
     sources: [hub]
     reason: Euro area nominal GDP; national accounts revisions.
   - series_id: WALCL
+    expected_lag_days: 7
+    frequency: W
+    issuer: "Fed H.4.1"
     sources: [hub]
     reason: Fed balance sheet weekly aggregate; H.4.1 accounting revisions.
   - series_id: WTREGEN
+    expected_lag_days: 7
+    frequency: W
+    issuer: "Treasury; Fed H.4.1"
     sources: [hub]
     reason: Treasury General Account weekly balance; H.4.1 accounting revisions.
   - series_id: STLFSI4
+    expected_lag_days: 7
+    frequency: W
+    issuer: "St. Louis Fed"
     sources: [hub]
     reason: Financial stress index estimates; historical normalization and input revisions.
   - series_id: THREEFYTP10
+    expected_lag_days: 7
+    frequency: D
+    issuer: "Fed Board (model)"
     sources: [hub]
     reason: Kim-Wright model term premium; reestimated model history, rather than observed market yield.
   - series_id: DTWEXBGS
+    expected_lag_days: 7
+    frequency: D
+    issuer: "Fed H.10"
     sources: [v2, hub]
     reason: Broad trade-weighted dollar index; revised trade weights affect historical index values.
 excluded:

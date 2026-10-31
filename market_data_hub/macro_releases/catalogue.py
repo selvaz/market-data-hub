@@ -237,6 +237,37 @@ LATAM_FAMILIES = {
 INDICATORS.update((m.id, m) for measures in LATAM_FAMILIES.values() for m in measures)
 FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES, *ASIA_FAMILIES, *LATAM_FAMILIES)
 
+# Declared days from reference-period end to hub availability, initialized from
+# the owner's 2026-10-31 release inventory. Estimates, never live measurements.
+# Payrolls can arrive 2-7 days after month end; 7 is the declared upper estimate.
+# Flash/survey releases can precede period end: zero is the nonnegative bound.
+# Policy decisions use the decision day as their reference period.
+EXPECTED_LAG_DAYS = {
+    "us_cpi": 14, "us_payrolls": 7, "us_gdp": 29, "ea_hicp": 2, "uk_gdp": 45,
+    "us_ppi": 15, "us_jolts": 29, "us_pce": 29, "us_retail_sales": 15,
+    "us_housing_starts": 20, "us_durable_goods": 27, "us_industrial_production": 16,
+    "us_trade_balance": 36, "us_unemployment": 7, "us_ahe": 7, "uk_cpi": 21,
+    "uk_labour_market": 50, "ea_gdp": 30, "us_jobless_claims": 5,
+    "us_umich_sentiment": 0, "ea_ec_surveys": 0, "uk_total_pay": 50,
+    "ea_core_hicp": 2, "us_new_home_sales": 27, "uk_retail_sales": 23,
+    "ea_trade_balance": 45, "ea_industrial_production": 45, "ea_retail_sales": 36,
+    "ea_unemployment": 30, "boj_policy": 0, "pboc_lpr": 0, "boc_policy": 0,
+    "boe_policy": 0, "ecb_policy": 0, "fomc": 0, "cn_new_home_prices": 19,
+    "jp_housing_starts": 31, "ca_housing_starts": 17, "de_building_permits": 50,
+    "uk_mortgage_approvals": 31, "uk_hpi": 51, "ea_house_purchase_loans": 30,
+    "ea_house_purchase_cost": 36, "ea_hpi": 93, "us_case_shiller": 57,
+    "us_pending_home_sales": 29, "us_existing_home_sales": 23, "us_pmms": 1,
+    "us_construction_spending": 36, "us_fhfa_hpi": 57, "jp_trade_balance": 20,
+    "jp_tankan": 1, "jp_tokyo_cpi": 0, "jp_cpi": 22, "jp_gdp": 47,
+    "cn_gdp": 19, "cn_activity": 19, "cn_nbs_pmi": 0, "cn_cpi": 14,
+    "mx_cpi": 8, "banxico_policy": 0, "bcb_policy": 0,
+}
+
+
+def expected_lag_seconds(family):
+    """Declared release lag for source_series; unknown families fail closed."""
+    return EXPECTED_LAG_DAYS[family] * 86400
+
 
 def hicp_indicator(period, basis, geography="EA"):
     """Resolve headline membership by period; preserve fixed EA20 golden identity."""

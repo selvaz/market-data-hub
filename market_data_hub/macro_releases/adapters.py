@@ -7,7 +7,7 @@ import json
 from datetime import date
 from typing import Optional, Protocol
 
-from .catalogue import INDICATORS
+from .catalogue import INDICATORS, expected_lag_seconds
 from .http import Document
 from .documents import put_document
 from .models import Discrepancy, Reading, ReleaseEvent, SourceSeries, ValueVintage, utc
@@ -83,6 +83,19 @@ def revision_kind(store, obs, issuer):
     return "backfill"
 
 
+def source_lag_seconds(store, series_id, family):
+    """Declare lag on new identities, preserving immutable existing metadata.
+
+    Older source_series can contain NULL or an earlier declaration. Re-reading
+    their evidence must not conflict solely because lag documentation changed.
+    No historical metadata backfill or schema migration is performed here.
+    """
+    existing = store.conn.execute(
+        "SELECT expected_lag_seconds FROM source_series WHERE id=?", (series_id,)
+    ).fetchone()
+    return existing[0] if existing is not None else expected_lag_seconds(family)
+
+
 def persist(store, observations):
     """Mirror differences attach to the exact official edition, never replace it.
 
@@ -118,6 +131,7 @@ def persist(store, observations):
         store.put(SourceSeries(id=series_id, indicator_id=indicator.id,
                                source_id=obs.source, issuer_id=issuer,
                                distributor_id=obs.source, source_key=obs.series_key,
+                               expected_lag_seconds=source_lag_seconds(store, series_id, obs.family),
                                is_published=obs.published,
                                evidence_role="mirror" if mirror else "issuer"))
         with store.transaction():
