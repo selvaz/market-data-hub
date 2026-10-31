@@ -37,7 +37,8 @@ def calendar_editions(document, family):
 
 
 def publication_url(family, edition):
-    suffix = "bp" if (family, edition) in (("ea_unemployment", "2026-09-01"), ("ea_trade_balance", "2026-10-16")) else "ap"
+    suffix = "bp" if (family, edition) in (("ea_unemployment", "2026-09-01"),
+        ("ea_unemployment", "2026-10-30"), ("ea_trade_balance", "2026-10-16")) else "ap"
     return ("https://ec.europa.eu/eurostat/web/products-euro-indicators/w/" + SPECS[family][2] + "-" +
             datetime.strptime(edition, "%Y-%m-%d").strftime("%d%m%Y") + "-" + suffix)
 

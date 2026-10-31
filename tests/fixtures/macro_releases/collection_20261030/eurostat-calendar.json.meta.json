@@ -1,0 +1,9 @@
+{
+  "url": "https://ec.europa.eu/eurostat/o/calendars/eventsJson",
+  "retrieved_at": "2026-10-31T11:31:41.606972+00:00",
+  "sha256": "749145192e28ca5cd8eec663eaea03bafa9ce5a1b5f3241375fde65eb8872f94",
+  "params": {
+    "start": "2026-09-01T00:00:00Z",
+    "end": "2027-01-01T00:00:00Z"
+  }
+}

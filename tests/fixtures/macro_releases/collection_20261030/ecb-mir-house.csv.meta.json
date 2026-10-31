@@ -1,0 +1,9 @@
+{
+  "url": "https://data-api.ecb.europa.eu/service/data/MIR/M.U2.B.A2C.AM.R.A.2250.EUR.N",
+  "retrieved_at": "2026-10-31T11:31:42.371066+00:00",
+  "sha256": "847d0d4d026889ac2fd6ccdf8271488e38484884c94204fe26a12bc637d24f0c",
+  "params": {
+    "startPeriod": "2026-08",
+    "format": "csvdata"
+  }
+}

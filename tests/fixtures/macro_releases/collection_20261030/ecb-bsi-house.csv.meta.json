@@ -1,0 +1,9 @@
+{
+  "url": "https://data-api.ecb.europa.eu/service/data/BSI/M.U2.Y.U.A22T.A.I.U2.2250.Z01.A",
+  "retrieved_at": "2026-10-31T11:31:42.116513+00:00",
+  "sha256": "ab063729d6f305a4fa6379454065e20e40415ece94e89a3034bc4757517345a3",
+  "params": {
+    "startPeriod": "2026-09",
+    "format": "csvdata"
+  }
+}

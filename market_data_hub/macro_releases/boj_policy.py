@@ -30,8 +30,16 @@ def statement(document):
     date = require(r"([A-Z][a-z]+ \d{1,2})\s*,\s*(20\d{2})\s+Bank of Japan", text)
     edition = datetime.strptime(date[1] + ", " + date[2], "%B %d, %Y").date().isoformat()
     require(r"Statement on Monetary Policy|Change in the Guideline for Money Market Operations", text)
-    vote = require(r"Policy Board of the Bank of Japan decided, by (?:an? (\d+)-(\d+) majority vote|a unanimous vote), "
-                   r"to set the following guideline", text)
+    votes = r"(?:an? (\d+)-(\d+) majority vote|a unanimous vote)"
+    if re.search(r"1\. Guideline for money market operations", text):
+        # October's multi-decision statement puts the rate vote in heading 1.
+        # Heading 2 has a separate ETF vote; dissenting proposals follow later.
+        text = require(r"1\. Guideline for money market operations (.*?) 2\. ", text)[1]
+        vote = require(r"^\(" + votes + r"\) \[Note\] At the Monetary Policy Meeting \(MPM\) held today, "
+                       r"the Policy Board of the Bank of Japan decided to set the following guideline", text)
+    else:
+        vote = require(r"Policy Board of the Bank of Japan decided, by " + votes + r", "
+                       r"to set the following guideline", text)
     rate = require(r"The Bank will encourage the uncollateralized o\s*vernight ca\s*ll rate to remain at around (\d+(?:\.\s*\d+)?) percent", text)
     return edition, float(rate[1].replace(" ", "")), {"for": int(vote[1] or 9), "against": int(vote[2] or 0)}, method
 
