@@ -43,6 +43,7 @@ JOBS = {
 # Descriptions are table semantics, not another list of series. A new schema
 # table must receive an explicit description; silently inventing one hides drift.
 HUB_TABLES = {
+    "etf_carry_snapshots": "Append-only ETF carry observations by capture date, symbol and field, with provider field and retrieval time.",
     "schema_meta": "Warehouse schema version and migration metadata.",
     "prices_daily": "Daily OHLCV and adjusted closes by listing; is_live marks provisional intraday prices.",
     "crypto_ohlcv": "Binance candles by symbol and timeframe; ts is the UTC candle opening time.",
@@ -203,6 +204,15 @@ def build_rows(config_dir=CONFIG_DIR):
             rows.append(_row(e, id=e["symbol"], table="prices_daily", distributor="Yahoo Finance",
                              issuer="Market venues / benchmark publishers (not declared per symbol)",
                              job=["daily_eu18", "daily_usclose"], history=floors["yahoo"], frequency="D"))
+    from .etf_carry import FIELDS, universe
+    for e in universe(load_config(config_dir, "tickers.yaml")["yahoo"]):
+        for field, lag in FIELDS.items():
+            row = _row(dict(name=f"{e['symbol']} {field}", expected_lag_days=lag,
+                            notes="Point-in-time from first capture; no backfill. Missing values are absent."),
+                       id=f"{e['symbol']}/{field}", table="etf_carry_snapshots",
+                       distributor="Yahoo Finance quote and quoteSummary", issuer="Fund provider via Yahoo",
+                       job=["daily_eu18", "daily_usclose"], history="Point-in-time from first capture; no backfill", frequency="D")
+            rows.append(row)
     for group, distributor in (("fred", "FRED"), ("nyfed_acm", "NY Fed direct")):
         for e in macro[group]:
             row = _row(e, id=e["symbol"], table="macro_series", distributor=distributor,
@@ -292,7 +302,9 @@ def _table_details(store, name):
         return MACRO_TABLES[name], doc, pit
     doc = "ARCHITECTURE.md"
     pit = "Current state/upserted data; no historical as-known-at reconstruction from this table alone."
-    if name.startswith("calendar_"):
+    if name == "etf_carry_snapshots":
+        pit = "Point-in-time from first capture; no backfill. Filter retrieved_at by cutoff; missing fields have no row. Same-day first capture is immutable."
+    elif name.startswith("calendar_"):
         doc = "macro-indicators.md"
         pit = "Frozen since 2026-09-25. Observations retain provider + vintage_date; filter vintage_date <= cutoff before choosing the latest per event/provider. Event metadata and aliases are current state."
     elif name.startswith("alfred_"):

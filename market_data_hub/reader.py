@@ -33,6 +33,23 @@ def _con(db_path: Optional[str]):
     return get_conn(db_path, read_only=True)
 
 
+def read_etf_carry(symbols: Union[str, List[str]], *, as_of: str,
+                   db_path: Optional[str] = None) -> pd.DataFrame:
+    """Read captured rows known by the UTC timestamp `as_of`, with provenance."""
+    symbols = [symbols] if isinstance(symbols, str) else list(symbols)
+    if not symbols:
+        return pd.DataFrame(columns=["date", "symbol", "field", "value", "source", "retrieved_at", "raw_field"])
+    placeholders = ",".join("?" for _ in symbols)
+    con = _con(db_path)
+    try:
+        return con.execute(
+            f"SELECT * FROM etf_carry_snapshots WHERE symbol IN ({placeholders}) "
+            "AND retrieved_at <= ? ORDER BY date, symbol, field", [*symbols, as_of]
+        ).fetch_df()
+    finally:
+        con.close()
+
+
 def _asof_query(table: str, part_keys: List[str], filters: dict, asof: str,
                 start: Optional[str], end: Optional[str]):
     """Build the (sql, params) for a point-in-time read of a *_vintage table:

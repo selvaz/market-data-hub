@@ -98,6 +98,16 @@ def collect(con) -> dict:
     # coverage
     cov = con.execute("SELECT * FROM coverage_report").fetch_df()
     d["coverage_n"] = len(cov)
+    from market_data_hub.etf_carry import FIELDS
+    has_carry = con.execute("SELECT 1 FROM information_schema.tables WHERE table_name='etf_carry_snapshots'").fetchone()
+    carry_counts = dict(con.execute(
+        "SELECT field, count(DISTINCT symbol) FROM etf_carry_snapshots "
+        "WHERE date = (SELECT max(date) FROM etf_carry_snapshots) GROUP BY field"
+    ).fetchall()) if has_carry else {}
+    d["etf_carry_date"] = (con.execute("SELECT max(date) FROM etf_carry_snapshots").fetchone()[0]
+                           if has_carry else None)
+    d["etf_carry_coverage"] = pd.DataFrame(
+        [{"field": field, "symbols": carry_counts.get(field, 0)} for field in FIELDS])
     d["stalled"] = cov[cov["stalled"] == True] if not cov.empty else pd.DataFrame()  # noqa: E712
     d["score_avg"] = round(cov["coverage_score"].mean(), 1) if not cov.empty else 0
     d["score_by_class"] = (cov.groupby("asset_class")
@@ -197,6 +207,10 @@ def render_html(d: dict) -> str:
 <h2>Coverage per asset class</h2>
 {_df_html(d['score_by_class'].round(1) if not d['score_by_class'].empty else d['score_by_class'])}
 
+<h2>ETF carry coverage on latest capture date</h2>
+<p>Capture date: {d.get('etf_carry_date') or 'none'}</p>
+{_df_html(d.get('etf_carry_coverage', pd.DataFrame()))}
+
 <h2>15 series with the lowest coverage</h2>
 {_df_html(d['worst'])}
 
@@ -235,6 +249,10 @@ def render_md(d: dict) -> str:
         except Exception:
             lines.append(d["by_source"].to_string(index=False))
     divergences = d.get('sovereign_divergences', pd.DataFrame())
+    lines += ['', '## ETF carry coverage on latest capture date', '',
+              f"Capture date: {d.get('etf_carry_date') or 'none'}", '']
+    for row in d.get('etf_carry_coverage', pd.DataFrame()).to_dict('records'):
+        lines.append(f"- {row['field']}: {row['symbols']} symbols")
     lines += ['', '## Sovereign yield divergence (basis points)', '']
     if divergences.empty:
         lines.append('No flagged comparable pairs.')

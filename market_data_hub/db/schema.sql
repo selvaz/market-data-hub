@@ -14,6 +14,17 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     value VARCHAR
 );
 
+CREATE TABLE IF NOT EXISTS etf_carry_snapshots (
+    date DATE NOT NULL,
+    symbol VARCHAR NOT NULL,
+    field VARCHAR NOT NULL,
+    value DOUBLE NOT NULL,
+    source VARCHAR NOT NULL,
+    retrieved_at TIMESTAMP NOT NULL,
+    raw_field VARCHAR NOT NULL,
+    PRIMARY KEY (date, symbol, field)
+);
+
 -- ----------------------------------------------------------------------------
 -- 1. prices_daily — daily OHLCV (equity, ETF, FX, VIX indices, crypto daily)
 -- ----------------------------------------------------------------------------

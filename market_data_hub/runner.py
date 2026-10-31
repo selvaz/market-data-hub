@@ -76,7 +76,7 @@ def _last_crypto(con) -> Dict[tuple, pd.Timestamp]:
 
 # --------------------------------------------------------------- YAHOO
 def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None,
-              end: Optional[str] = None) -> None:
+              end: Optional[str] = None, backfill: bool = False) -> None:
     end = end or _today()
     tickers = get_yahoo_tickers()
     # Register the full configured universe before the provider call. This
@@ -93,12 +93,16 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
     tail = cfg["incremental"]["tail_refresh_days"]
     gstart = cfg["backfill_start"]["yahoo"]
     last = _last_prices(con)
+    first = dict(con.execute("SELECT symbol, min(date) FROM prices_daily WHERE NOT coalesce(is_live, false) GROUP BY symbol").fetchall())
 
     # group by effective_start (efficient batching)
     groups: Dict[str, List[str]] = {}
     for e in tickers:
         sym = e["symbol"]
-        s = start_override or yh.effective_start(last.get(sym), gstart, tail)
+        floor = e.get("history_start", gstart)
+        needs_history = e.get("history_start") and (sym not in first or str(first[sym]) > floor)
+        s = (start_override or (floor if backfill or needs_history else
+                                yh.effective_start(last.get(sym), floor, tail)))
         groups.setdefault(s, []).append(sym)
 
     workers = cfg.get("parallelism", {}).get("yahoo_workers", 5)
@@ -611,7 +615,11 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
                 return start_override or bstart.get(src)
 
             if "yahoo" in active:
-                run_yahoo(con, cfg, run_id, start_override=_start("yahoo"), end=end)
+                run_yahoo(con, cfg, run_id, start_override=start_override, end=end,
+                          backfill=mode == "backfill")
+                if mode == "full":
+                    from market_data_hub.etf_carry import collect
+                    collect(con, get_yahoo_tickers(), log=_log)
             if "fred" in active:
                 run_fred(con, cfg, run_id, start_override=_start("fred"), end=end)
             if "nyfed_acm" in active:
