@@ -18,7 +18,7 @@ def test_live_config_is_valid():
 def test_catalog_counts():
     # Yahoo list (FRED IDs filtered out by get_yahoo_tickers)
     assert len(get_yahoo_tickers()) == 158  # +5 F05 commodity futures, -1 KBUY, +5 prompt-askb P4 (1321.T, 2800.HK, GOVT, AGGG.L, SYBA.DE)
-    assert len(get_fred_series()) == 106  # +6 F05 term premium, EM OAS, wages and diesel
+    assert len(get_fred_series()) == 105  # +6 F05 term premium, EM OAS, wages and diesel; -1 LRHUTTTTEZM156S retired 31/10
     assert len(get_macro_panel_specs()) == 83   # ...+imf_policy_rate +iip_net/ext_debt_nonres/fx_debt (IMF SDMX)
     assert len(get_countries()) == 64
 

@@ -78,8 +78,7 @@ def test_the_catalogue_declares_only_level_to_level_bridges():
     out, not slip in."""
     dichiarati = {r["indicator_key"]: r["macro_series_id"]
                   for r in load_catalog_rows() if r["macro_series_id"]}
-    assert dichiarati == {"us_unemp": "UNRATE",
-                          "ez_unemp": "LRHUTTTTEZM156S"}
+    assert dichiarati == {"us_unemp": "UNRATE"}
     per_chiave = {r["indicator_key"]: r for r in load_catalog_rows()}
     for chiave in dichiarati:
         assert per_chiave[chiave]["value_type"] == "%"

@@ -31,6 +31,11 @@ HTTP attempt, including metadata and retries. Reaching it is deliberately an
 incomplete run, not a successful full backfill. A metadata-only dry run returns
 3 on success and creates neither a database, its directory, nor a lock file.
 
+For a daily trigger, add `--incremental` to the same command. It uses the same
+per-series checkpoint and pending-page resume logic, but returns **0** when
+nothing is new (including a successful metadata-only dry run). Incomplete or
+failed work still returns **1**. No scheduler configuration is changed here.
+
 ## Request strategy, rate limit, and resume
 
 The job paginates the complete [vintage-date endpoint](https://fred.stlouisfed.org/docs/api/fred/series_vintagedates.html),

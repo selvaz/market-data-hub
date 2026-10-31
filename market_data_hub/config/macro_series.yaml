@@ -234,12 +234,6 @@ fred:
   name: MACRO | US | Nonfarm Payrolls (Total)
   priority: 2
   country: US
-- symbol: LRHUTTTTEZM156S
-  asset_class: MACRO
-  area: EA19
-  name: MACRO | EA | Harmonised Unemployment Rate (Total monthly)
-  priority: 2
-  country: EA
 - symbol: M2SL
   asset_class: MACRO
   area: USA

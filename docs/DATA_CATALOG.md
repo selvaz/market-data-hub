@@ -305,7 +305,6 @@ H.10 daily observations are published weekly for the preceding business week.
 | CP0000EZ19M086NEST | HICP All items (Index 2015=100) | monthly |
 | CLVMEURSCAB1GQEA19 | Real GDP (chained 2010 EUR) | quarterly |
 | EUNNGDP | GDP (EUR/ECU series, nominal) | quarterly |
-| LRHUTTTTEZM156S | Harmonised Unemployment Rate (Total, monthly) | monthly |
 
 ### Cross-country 10Y government bond yields (OECD long-term rates via FRED) — monthly
 

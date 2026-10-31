@@ -16,7 +16,8 @@ reports:
 # — historical backfill dates ---
 backfill_start:
   yahoo: "2010-01-01"
-  fred:  "2000-01-01"
+  fred:  "1776-07-04"  # FRED API minimum; providers return their available history
+  macro_panel: "2000-01-01"  # independent of the single-series FRED history floor
   nyfed_acm: "1961-01-01"  # official ten-year monthly chart CSV
   binance: "2018-01-01"
   factors: "1990-01-01"   # Fama-French (Ken French) history start

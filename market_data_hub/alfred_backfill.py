@@ -219,8 +219,8 @@ def _write(db_path, series_id, since, observations, completed=None, pending=None
     return added
 
 
-def run(db_path, series, *, since=EARLIEST, dry_run=False, client=None, emit=print):
-    """Return 0 for new rows, 3 for no new rows, 1 for incomplete/failed work."""
+def run(db_path, series, *, since=EARLIEST, dry_run=False, incremental=False, client=None, emit=print):
+    """Return 0 for new work (or incremental no-op), 3 for no new work, 1 for failure."""
     db_path = resolve_db_path(str(db_path))
     client = client or Client()
     failed, total_added, total_vintages = False, 0, 0
@@ -282,7 +282,7 @@ def run(db_path, series, *, since=EARLIEST, dry_run=False, client=None, emit=pri
         emit(json.dumps(summary, sort_keys=True))
         if failed:
             break
-    return 1 if failed else (0 if total_added or total_vintages else 3)
+    return 1 if failed else (0 if total_added or total_vintages or incremental else 3)
 
 
 def main(argv=None):
@@ -291,6 +291,8 @@ def main(argv=None):
     parser.add_argument("--series", nargs="+", help="Configured FRED IDs (spaces or commas)")
     parser.add_argument("--since-vintage", default=EARLIEST, type=lambda s: date.fromisoformat(s).isoformat())
     parser.add_argument("--dry-run", action="store_true", help="Metadata and resume plan only; no DB writes")
+    parser.add_argument("--incremental", action="store_true",
+                        help="Scheduled refresh: return 0 also when no vintages are new")
     parser.add_argument("--max-requests", type=int)
     args = parser.parse_args(argv)
     if args.max_requests is not None and args.max_requests < 0:
@@ -301,7 +303,7 @@ def main(argv=None):
         parser.error("--series must contain configured series IDs")
     try:
         with requests.Session() as session:
-            return run(args.db, selected, since=args.since_vintage, dry_run=args.dry_run,
+            return run(args.db, selected, since=args.since_vintage, dry_run=args.dry_run, incremental=args.incremental,
                        client=Client(max_requests=args.max_requests, session=session))
     except (Exception, KeyboardInterrupt) as exc:
         print(json.dumps({"status": "error", "error": type(exc).__name__}))

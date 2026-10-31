@@ -312,7 +312,7 @@ CREATE TABLE IF NOT EXISTS macro_panel_coverage (
     lag_days          INTEGER,
     stalled           BOOLEAN,
     obs_count         INTEGER,
-    status            VARCHAR,            -- 'ok' | 'stalled' | 'empty'
+    status            VARCHAR,            -- 'ok' | 'stalled' | 'discontinued' | 'empty'
     last_run_id       VARCHAR,
     updated_at        TIMESTAMP,
     PRIMARY KEY (indicator_id)

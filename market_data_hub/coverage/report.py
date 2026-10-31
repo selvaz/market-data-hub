@@ -15,7 +15,7 @@ import duckdb
 import pandas as pd
 
 from market_data_hub.config_loader import get_yahoo_tickers, get_macro_series, get_sovereign_yields
-from market_data_hub.config_loader import get_sovereign_layer_series
+from market_data_hub.config_loader import get_sovereign_layer_series, get_macro_panel_specs
 from market_data_hub.coverage.freq_detector import detect_frequency
 from market_data_hub.coverage.stalled_detector import lag_days, is_stalled
 from market_data_hub.coverage.gap_detector import missing_pct, gap_count, date_span
@@ -184,11 +184,14 @@ def rebuild_macro_panel_coverage(con: duckdb.DuckDBPyConnection, run_id: str,
     """
     df = con.execute(
         "SELECT date, country_iso3, indicator_id, pillar, source, frequency "
-        "FROM macro_panel WHERE value IS NOT NULL"
+        "FROM macro_panel WHERE value IS NOT NULL AND date <= ?::DATE",
+        [datetime.now(timezone.utc).date().isoformat()]
     ).fetch_df()
     if df.empty:
+        con.execute("DELETE FROM macro_panel_coverage")
         return 0
 
+    discontinued = {s["id"] for s in get_macro_panel_specs() if s.get("discontinued")}
     now = datetime.now(timezone.utc)
     rows = []
     for iid, g in df.groupby("indicator_id"):
@@ -198,8 +201,8 @@ def rebuild_macro_panel_coverage(con: duckdb.DuckDBPyConnection, run_id: str,
         densest = g.groupby("country_iso3").size().idxmax()
         freq_detected = detect_frequency(g.loc[g["country_iso3"] == densest, "date"])
         n_countries = int(g["country_iso3"].nunique())
-        stalled = is_stalled(last, declared or freq_detected)
-        status = "stalled" if stalled else "ok"
+        stalled = iid not in discontinued and is_stalled(last, declared or freq_detected)
+        status = "discontinued" if iid in discontinued else "stalled" if stalled else "ok"
         rows.append({
             "indicator_id": iid,
             "pillar": g["pillar"].iloc[0],

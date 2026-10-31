@@ -426,6 +426,7 @@ indicators:
   orientation: 0
   api_source_id: 2
 - id: natural_resource_rents_gdp
+  discontinued: World Bank discontinued this series; observations end in 2021.
   name: Natural resource rents %GDP
   pillar: geopolitical
   priority: 2
@@ -656,6 +657,7 @@ indicators:
   orientation: -1
   api_source_id: 2
 - id: tourism_receipts_usd
+  discontinued: World Bank discontinued this series; observations end in 2020.
   name: Intl tourism receipts (USD)
   pillar: external
   priority: 3
@@ -667,6 +669,7 @@ indicators:
   orientation: 1
   api_source_id: 2
 - id: tourism_exports_share
+  discontinued: World Bank discontinued this series; observations end in 2020.
   name: Tourism receipts %exports
   pillar: external
   priority: 3

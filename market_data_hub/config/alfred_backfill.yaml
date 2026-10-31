@@ -115,9 +115,6 @@ series:
   - series_id: EUNNGDP
     sources: [hub]
     reason: Euro area nominal GDP; national accounts revisions.
-  - series_id: LRHUTTTTEZM156S
-    sources: [hub]
-    reason: Euro area harmonised unemployment; seasonal and source revisions, including stale history.
   - series_id: WALCL
     sources: [hub]
     reason: Fed balance sheet weekly aggregate; H.4.1 accounting revisions.

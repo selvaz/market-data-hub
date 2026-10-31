@@ -7,6 +7,21 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Fixed
+- Collect the UK GDP index from ONS ECY2 (MGDP), using the UK publication
+  date from each monthly update. Keep rounded ECY2 evidence separate from
+  archived four-decimal v69 history and preserve first-release semantics.
+- Retire the dead EA unemployment FRED/ALFRED configuration and calendar
+  bridge; indicator cards now point to Eurostat in the macro release store.
+- Exclude future panel periods for every provider, remove existing future
+  panel keys on the next panel run, and preserve vintage audit history.
+  Coverage excludes projections and marks the three discontinued World Bank
+  tourism/resource-rent indicators explicitly.
+- Allow FRED history from its earliest available date through the existing
+  one-off backfill command; subsequent daily refreshes retain their revision tail.
+- Add ALFRED `--incremental` for scheduled refreshes: no new vintages exits 0,
+  while incomplete or failed runs still exit 1.
+
 ## [0.3.12] — 2026-10-31
 
 ### Fixed

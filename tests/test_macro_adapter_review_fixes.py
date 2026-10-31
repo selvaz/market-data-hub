@@ -225,19 +225,12 @@ def test_later_publication_does_not_revise_an_older_archive(tmp_path):
         assert store.first_release()[0]["estimate_stage"] == "advance"
 
 
-@pytest.mark.parametrize("changed", ["version", "bulletin", "empty"])
+@pytest.mark.parametrize("changed", ["bulletin", "empty"])
 def test_ons_new_publications_fail_before_values(changed):
     calls = []
     class Replay:
         def get(self, provider, url):
             calls.append(url)
-            if url == ons.EDITION_URL:
-                doc = document("ons/current-edition.response.json")
-                if changed == "version":
-                    payload = doc.json()
-                    payload["links"]["latest_version"]["id"] = "70"
-                    doc = replace(doc, body=json.dumps(payload).encode())
-                return doc
             assert url == ons.BULLETIN_INDEX_URL
             doc = document("ons/current-bulletins.response.json")
             if changed == "bulletin":
@@ -247,11 +240,11 @@ def test_ons_new_publications_fail_before_values(changed):
             return doc
     with pytest.raises(FetchError, match="needs review"):
         ons.ONSAdapter(Replay()).fetch(["uk_gdp"], "2026-06")
-    assert calls == [ons.EDITION_URL, ons.BULLETIN_INDEX_URL]
+    assert calls == [ons.BULLETIN_INDEX_URL]
 
 
 def test_ons_publication_date_and_csv_no_redirect_capture(tmp_path):
-    ons.check_freshness(document("ons/current-edition.response.json"), document("ons/current-bulletins.response.json"))
+    ons.check_freshness(document("ons/current-bulletins.response.json"))
     rows = ons.ONSAdapter.parse_levels(document("ons/gdp69-csv.csv"), document("ons/gdp69.json").json(),
                                      "2026-06", publication=document("ons/june-content.response.json"))
     assert {o.published_at for o in rows} == {utc("2026-08-24T00:00:00Z")}
