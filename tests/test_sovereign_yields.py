@@ -134,6 +134,8 @@ def test_japan_combines_history_and_current_inclusive_range(cb, monkeypatch):
         return response((FIX / ("jgb_history.csv" if "historical" in url
                                 else "jgb_current.csv")).read_bytes())
     monkeypatch.setattr(cb, "_request", request)
+    # The current export covers the calendar month of "today": pin it to the fixture's.
+    monkeypatch.setattr(cb, "_utc_today", lambda: pd.Timestamp("2026-10-09"))
     df = cb.fetch_yield(spec("CB_JP_10Y"), "2023-01-01", "2026-10-08")
     assert len(calls) == 2
     assert df.date.min().year == 2023
