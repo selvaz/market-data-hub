@@ -1,4 +1,45 @@
 yahoo:
+- symbol: VEIEX
+  expected_lag_days: 1
+  asset_class: EQUITY
+  area: Emerging Markets
+  name: Vanguard Emerging Markets Stock Index Fund (history proxy)
+  priority: 2
+  instrument_type: history_proxy
+  history_start: '1994-05-04'
+- symbol: VUSTX
+  expected_lag_days: 1
+  asset_class: FIXED_INCOME
+  area: USA
+  name: Vanguard Long-Term Treasury Fund (history proxy)
+  priority: 2
+  instrument_type: history_proxy
+  history_start: '1986-05-19'
+- symbol: VWEHX
+  expected_lag_days: 1
+  asset_class: FIXED_INCOME
+  area: USA
+  name: Vanguard High-Yield Corporate Fund (history proxy)
+  priority: 2
+  instrument_type: history_proxy
+  history_start: '1980-01-02'
+- symbol: VFINX
+  expected_lag_days: 1
+  asset_class: EQUITY
+  area: USA
+  name: Vanguard 500 Index Fund (history proxy)
+  priority: 2
+  instrument_type: history_proxy
+  history_start: '1980-01-02'
+- symbol: ^SPGSCI
+  expected_lag_days: 1
+  asset_class: COMMODITIES
+  area: Global
+  name: S&P GSCI index (history proxy)
+  priority: 2
+  instrument_type: history_proxy
+  history_start: '1984-01-03'
+  notes: Price index; spot versus excess-return convention requires verification.
 - symbol: ACWI
   expected_lag_days: 1
   asset_class: EQUITY
@@ -947,6 +988,7 @@ yahoo:
   name: CMDTY | Metals | Gold Futures Continuous
   priority: 2
   instrument_type: futures_continuous
+  history_start: '2000-08-30'
   currency: USD
   unit: USD per troy ounce
   frequency: D

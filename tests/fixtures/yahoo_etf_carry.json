@@ -1,0 +1,12 @@
+{
+  "quote": {
+    "symbol": "TLT",
+    "quoteType": "ETF",
+    "trailingAnnualDividendYield": 0.026408149,
+    "netExpenseRatio": 0.15,
+    "dividendYield": 5.0
+  },
+  "summary": {
+    "topHoldings": {"bondHoldings": {"duration": {"raw": 3.62, "fmt": "3.62"}, "maturity": {"raw": 7.288}}}
+  }
+}

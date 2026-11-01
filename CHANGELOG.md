@@ -7,6 +7,10 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Yahoo long-history fund and commodity proxies, with per-series history floors.
+- Daily append-only ETF carry snapshots, with field coverage and no backfill.
+
 ## [0.3.14] — 2026-10-31
 
 ### Fixed
