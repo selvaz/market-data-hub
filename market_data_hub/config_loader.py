@@ -40,7 +40,10 @@ def get_settings() -> Dict[str, Any]:
 @lru_cache(maxsize=1)
 def get_yahoo_tickers() -> List[Dict[str, Any]]:
     fred_symbols = {e["symbol"] for e in _load_yaml("macro_series.yaml").get("fred", [])}
-    return [e for e in _load_yaml("tickers.yaml").get("yahoo", [])
+    # Yahoo prices are daily bars; consumers that check publication freshness
+    # (LazyCommittee V2 anchors) need the frequency declared, not inferred.
+    return [{**e, "frequency": e.get("frequency", "D")}
+            for e in _load_yaml("tickers.yaml").get("yahoo", [])
             if e["symbol"] not in fred_symbols]
 
 
