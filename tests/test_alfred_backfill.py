@@ -61,6 +61,9 @@ class Session:
         start, end = params["realtime_start"], params["realtime_end"]
         if "vintagedates" in url:
             dates = [v for v in self.vintages if start <= v <= end]
+            if not dates:
+                # Real ALFRED behaviour (seen 01/11/2026): an empty window is an HTTP 500.
+                return Response({"error_code": 500}, status=500)
             offset, limit = params["offset"], params["limit"]
             return Response({"vintage_dates": dates[offset:offset + limit], "count": len(dates)})
         rows = [{**r, "realtime_start": max(start, r["realtime_start"]),
@@ -147,7 +150,10 @@ def test_completed_batch_resumes_at_next_vintage(tmp_db, monkeypatch):
     assert checkpoint.isoformat() == first.vintages[0]
     second = Session(db_path=tmp_db)
     assert run(tmp_db, second)[0] == 0
-    assert second.calls[0][1]["realtime_start"] > checkpoint.isoformat()
+    # The vintage query includes the checkpoint (an empty ALFRED window is a 500);
+    # the checkpoint vintage itself is dropped, so only one observation query runs.
+    assert second.calls[0][1]["realtime_start"] == checkpoint.isoformat()
+    assert sum("vintagedates" not in url for url, _ in second.calls) == len(first.vintages) - 1
     assert second.calls[1][1]["realtime_start"] == checkpoint.isoformat()
 
 
@@ -310,3 +316,32 @@ def test_incremental_cli_noop_success(monkeypatch, tmp_path):
     args = ["--db", str(tmp_path / "hub.duckdb"), "--series", "PAYEMS", "--incremental"]
     assert job.main(args) == 0
     assert job.main(args) == 0
+
+
+def test_vendor_error_on_one_series_does_not_stop_the_rest(tmp_db):
+    # 31/10/2026: a transient HTTP 500 on the first series stopped the whole run.
+    session = Session(db_path=tmp_db)
+    good = session.get
+    def get(url, *, params, **kwargs):
+        if params.get("series_id") == "AWHMAN":
+            return Response(status=500)
+        return good(url, params=params, **kwargs)
+    session.get = get
+    summaries = []
+    code = job.run(tmp_db, ["AWHMAN", "PAYEMS"], client=client(session),
+                   emit=lambda s: summaries.append(json.loads(s)))
+    assert code == 1
+    assert [s["status"] for s in summaries] == ["error", "ok"]
+    assert summaries[0]["error"] == "ALFRED HTTP 500 after 5 attempts"
+    assert summaries[1]["rows_added"] > 0
+
+
+def test_write_failure_still_stops_the_run(tmp_db, monkeypatch):
+    def broken(*args, **kwargs):
+        raise RuntimeError("simulated disk error")
+    monkeypatch.setattr(job, "upsert", broken)
+    summaries = []
+    code = job.run(tmp_db, ["PAYEMS", "UNRATE"], client=client(Session()),
+                   emit=lambda s: summaries.append(json.loads(s)))
+    assert code == 1
+    assert [s["series_id"] for s in summaries] == ["PAYEMS"]
