@@ -7,6 +7,14 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.16] — 2026-11-01
+
+### Fixed
+- ALFRED incremental backfill: ALFRED answers HTTP 500 for a vintage window with
+  no releases, so every series without a new release failed. Vintages are now
+  queried from the checkpoint itself. A vendor error on one series no longer
+  stops the run; the exit code stays 1.
+
 ## [0.3.15] — 2026-10-31
 
 ### Added
