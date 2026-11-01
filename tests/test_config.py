@@ -77,3 +77,11 @@ def test_validator_detects_a_fred_leak(monkeypatch):
     monkeypatch.setattr(V, "_y", fake)
     errs = V.validate()
     assert any("FRED series IDs in the Yahoo list" in e for e in errs)
+
+
+def test_yahoo_tickers_declare_daily_frequency_by_default():
+    # LazyCommittee V2 anchors refuse a factor without a declared frequency
+    # (factor_frequency_unavailable:VEIEX for 5 EM ETFs on 01/11/2026).
+    tickers = get_yahoo_tickers()
+    assert all(t["frequency"] for t in tickers)
+    assert {t["symbol"]: t["frequency"] for t in tickers}["VEIEX"] == "D"
