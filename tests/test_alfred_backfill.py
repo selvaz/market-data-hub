@@ -61,6 +61,9 @@ class Session:
         start, end = params["realtime_start"], params["realtime_end"]
         if "vintagedates" in url:
             dates = [v for v in self.vintages if start <= v <= end]
+            if not dates:
+                # Real ALFRED behaviour (seen 01/11/2026): an empty window is an HTTP 500.
+                return Response({"error_code": 500}, status=500)
             offset, limit = params["offset"], params["limit"]
             return Response({"vintage_dates": dates[offset:offset + limit], "count": len(dates)})
         rows = [{**r, "realtime_start": max(start, r["realtime_start"]),
@@ -147,7 +150,10 @@ def test_completed_batch_resumes_at_next_vintage(tmp_db, monkeypatch):
     assert checkpoint.isoformat() == first.vintages[0]
     second = Session(db_path=tmp_db)
     assert run(tmp_db, second)[0] == 0
-    assert second.calls[0][1]["realtime_start"] > checkpoint.isoformat()
+    # The vintage query includes the checkpoint (an empty ALFRED window is a 500);
+    # the checkpoint vintage itself is dropped, so only one observation query runs.
+    assert second.calls[0][1]["realtime_start"] == checkpoint.isoformat()
+    assert sum("vintagedates" not in url for url, _ in second.calls) == len(first.vintages) - 1
     assert second.calls[1][1]["realtime_start"] == checkpoint.isoformat()
 
 

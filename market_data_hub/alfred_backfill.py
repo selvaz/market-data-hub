@@ -175,9 +175,12 @@ def _frame(series_id, observations):
 
 
 def _plans(client, sid, since, checkpoint, until):
-    start = max(since, (date.fromisoformat(checkpoint) + timedelta(days=1)
-                        ).isoformat()) if checkpoint else since
+    # ALFRED answers HTTP 500, not an empty list, for a window with no
+    # vintages. Query from the checkpoint itself (always a vintage) and drop it.
+    start = max(since, checkpoint) if checkpoint else since
     vintages = client.vintages(sid, start, until) if start <= until else []
+    if checkpoint:
+        vintages = [v for v in vintages if v > checkpoint]
     plans = []
     for offset in range(0, len(vintages), VINTAGE_BATCH):
         batch = vintages[offset:offset + VINTAGE_BATCH]
