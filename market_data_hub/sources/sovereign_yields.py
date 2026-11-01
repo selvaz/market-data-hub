@@ -35,6 +35,11 @@ class SourceUnavailable(RuntimeError):
     """Missing credentials, rejected/changed response, or unresolved endpoint."""
 
 
+
+def _utc_today() -> pd.Timestamp:
+    """Today (UTC, midnight); one seam so tests can pin the calendar month."""
+    return pd.Timestamp.now(tz="UTC").tz_localize(None).normalize()
+
 def _request(url: str, *, params: Optional[dict] = None,
              headers: Optional[dict] = None, timeout: int = 30,
              retries: int = 3, base_sleep: float = 1.0) -> requests.Response:
@@ -382,7 +387,7 @@ def fetch_yield(meta: dict, start: str, end: str, *, timeout: int = 30,
         bodies = []
         # The current export contains this month, irrespective of the requested
         # end date. Even a short range within a historical month needs the archive.
-        current_month = pd.Timestamp.now(tz="UTC").tz_localize(None).normalize().replace(day=1)
+        current_month = _utc_today().replace(day=1)
         if first < current_month:
             bodies.append(get(meta["history_endpoint"]))
         if last >= current_month:
