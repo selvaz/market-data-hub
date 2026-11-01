@@ -32,6 +32,10 @@ class RequestLimit(RuntimeError):
     """The explicit HTTP-attempt budget has been consumed."""
 
 
+class VendorError(RuntimeError):
+    """ALFRED failed for one series; the run moves on to the next series."""
+
+
 class RateLimiter:
     """One shared, evenly spaced 90/minute limiter, including retry attempts."""
 
@@ -70,13 +74,13 @@ class Client:
                     timeout=60, headers={"User-Agent": "market-data-hub/alfred-backfill"})
             except (requests.ConnectionError, requests.Timeout):
                 if attempt == 4:
-                    raise RuntimeError("ALFRED transport failed after 5 attempts") from None
+                    raise VendorError("ALFRED transport failed after 5 attempts") from None
                 self.sleep(2 ** attempt)
                 continue
             status = response.status_code
             if status == 429 or 500 <= status < 600:
                 if attempt == 4:
-                    raise RuntimeError(f"ALFRED HTTP {status} after 5 attempts")
+                    raise VendorError(f"ALFRED HTTP {status} after 5 attempts")
                 try:
                     delay = float(response.headers.get("Retry-After", 0))
                 except ValueError:
@@ -85,11 +89,11 @@ class Client:
                 continue
             if status != 200:
                 # requests.raise_for_status includes the URL (and API key).
-                raise RuntimeError(f"ALFRED HTTP {status}; request not retried")
+                raise VendorError(f"ALFRED HTTP {status}; request not retried")
             try:
                 return response.json()
             except ValueError:
-                raise RuntimeError("ALFRED returned invalid JSON") from None
+                raise VendorError("ALFRED returned invalid JSON") from None
         raise RuntimeError("ALFRED exhausted retries")  # pragma: no cover
 
     def vintages(self, series_id, since, until):
@@ -104,7 +108,7 @@ class Client:
             if offset >= int(payload["count"]):
                 return sorted(set(dates))
             if not page:
-                raise RuntimeError("ALFRED vintage pagination stopped before count")
+                raise VendorError("ALFRED vintage pagination stopped before count")
 
     def observations(self, series_id, start, end, offset=0):
         while True:
@@ -116,7 +120,7 @@ class Client:
             offset += len(page)
             final = offset >= int(payload["count"])
             if not page and not final:
-                raise RuntimeError("ALFRED observation pagination stopped before count")
+                raise VendorError("ALFRED observation pagination stopped before count")
             yield page, final
             if final:
                 return
@@ -229,6 +233,7 @@ def run(db_path, series, *, since=EARLIEST, dry_run=False, incremental=False, cl
         summary = {"series_id": sid, "vintages_added": 0, "rows_added": 0,
                    "status": "ok"}
         before = client.requests
+        stop = False
         try:
             checkpoint = _checkpoint(db_path, sid, since)
             pending = _pending(db_path, sid, since)
@@ -276,11 +281,14 @@ def run(db_path, series, *, since=EARLIEST, dry_run=False, incremental=False, cl
             summary["status"] = "incomplete" if isinstance(exc, (RequestLimit, KeyboardInterrupt)) else "error"
             # Only our own sanitized transport errors are exposed; unexpected
             # exception messages could contain a request URL with credentials.
-            summary["error"] = (str(exc) if type(exc) in (RuntimeError, RequestLimit)
+            summary["error"] = (str(exc) if type(exc) in (RuntimeError, RequestLimit, VendorError)
                                 else type(exc).__name__)
+            # A vendor error on one series (e.g. a transient HTTP 500) must not
+            # starve the rest; budget, interrupt and write failures stop the run.
+            stop = not isinstance(exc, VendorError)
         summary["requests"] = client.requests - before
         emit(json.dumps(summary, sort_keys=True))
-        if failed:
+        if stop:
             break
     return 1 if failed else (0 if total_added or total_vintages or incremental else 3)
 
