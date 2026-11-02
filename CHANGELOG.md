@@ -7,6 +7,13 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.17] — 2026-11-02
+
+### Fixed
+- Catalogue: Yahoo tickers without an explicit `frequency` now declare daily
+  (`D`), so consumers that filter the catalogue by frequency (LazyCommittee V2
+  ETF anchors) no longer drop them (#161).
+
 ## [0.3.16] — 2026-11-01
 
 ### Fixed
