@@ -13,6 +13,8 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 - Catalogue: Yahoo tickers without an explicit `frequency` now declare daily
   (`D`), so consumers that filter the catalogue by frequency (LazyCommittee V2
   ETF anchors) no longer drop them (#161).
+- Tests: the ECB housing changed-SDMX test pins its clock to 2026-10-24, like
+  its neighbour; from November a new edition is due and the check was skipped.
 
 ## [0.3.16] — 2026-11-01
 

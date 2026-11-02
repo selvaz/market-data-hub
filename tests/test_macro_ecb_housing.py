@@ -301,7 +301,12 @@ def test_changed_sdmx_retains_evidence_without_partial_certification(tmp_path, m
                 assert body != doc.body
                 return replace(doc, body=body, document_hash=hashlib.sha256(body).hexdigest())
             return doc
+    class Clock:
+        @staticmethod
+        def now(tz):
+            return datetime(2026, 10, 24, 18, tzinfo=timezone.utc)
     monkeypatch.setattr(run_daily, "HttpClient", Changed)
+    monkeypatch.setattr(run_daily, "datetime", Clock)
     target = tmp_path / "review.sqlite"
     result = run_daily.execute(target, [ecb.COST], 24, False, raw_dir=tmp_path / "raw")
     assert result["families"][ecb.COST]["status"] == "needs_review", result
