@@ -30,6 +30,17 @@ def _y(name: str) -> dict:
     return yaml.safe_load((CFG / name).read_text(encoding="utf-8")) or {}
 
 
+# physical: bullion trusts and funds that do not say full or sampled.
+REPLICATION_METHODS = (
+    None,
+    "physical",
+    "physical_full",
+    "physical_sampling",
+    "synthetic",
+    "futures",
+)
+
+
 def validate_etf_index_map(data) -> list[str]:
     """Validate structure and make uncertainty explicit."""
     errors = []
@@ -79,7 +90,7 @@ def validate_etf_index_map(data) -> list[str]:
             errors.append(
                 f"etf_index_map.yaml: {symbol} unhedged cannot have hedge_currency"
             )
-        if row["replication"] not in (None, "physical", "synthetic"):
+        if row["replication"] not in REPLICATION_METHODS:
             errors.append(f"etf_index_map.yaml: {symbol} invalid replication")
         if (
             any(row[k] is None for k in required - {"hedge_currency", "note"})

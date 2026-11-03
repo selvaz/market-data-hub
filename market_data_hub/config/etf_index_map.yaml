@@ -1,444 +1,496 @@
 funds:
 - symbol: ACWI
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI ACWI Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.blackrock.com/americas-offshore/en/literature/summary-prospectus/sp-ishares-msci-acwi-etf-7-31.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2025-11-28. Sampling inferred from the stated policy that the fund may
+    hold securities outside the index; exact words 'representative sampling' not seen.
 - symbol: AGG
-  issuer: BlackRock
+  issuer: iShares (BlackRock)
   underlying_index: Bloomberg U.S. Aggregate Bond Index
   index_provider: Bloomberg
   index_currency: USD
   share_class_currency: USD
   hedged: false
   hedge_currency: null
-  source_url: https://www.sec.gov/Archives/edgar/data/70858/000191870425013562/form424b2.htm
-  replication: null
+  source_url: https://www.ishares.com/us/literature/summary-prospectus/sp-ishares-core-us-aggregate-bond-etf-2-28.pdf
+  replication: physical_sampling
   verified_date: '2026-11-03'
-  note: Replication not verified.
+  note: Representative sampling confirmed in the fund summary prospectus. The original source_url was
+    a third-party structured-note filing (424B2, BofA Finance) and was replaced with the fund's own summary
+    prospectus.
 - symbol: BCI
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: abrdn
+  underlying_index: Bloomberg Commodity Index Total Return
+  index_provider: Bloomberg
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/0001597934/000199937126020973/bci-497k_092126.htm
+  replication: futures
+  verified_date: '2026-11-03'
+  note: abrdn Bloomberg All Commodity Strategy K-1 Free ETF. Objective is to track the Bloomberg Commodity
+    Index Total Return. Exposure via commodity futures and swaps held through a Cayman subsidiary (K-1
+    free). The ticker is not a Bloomberg Commodity Index ETN. Summary prospectus dated 2026-05-01, amended
+    2026-09-21; the amendment content was not read.
 - symbol: BIL
-  issuer: State Street
+  issuer: State Street (SSGA)
   underlying_index: Bloomberg 1-3 Month U.S. Treasury Bill Index
   index_provider: Bloomberg
   index_currency: USD
   share_class_currency: USD
   hedged: false
   hedge_currency: null
-  source_url: https://www.ssga.com/us/en/individual/etfs/state-street-spdr-bloomberg-1-3-month-t-bill-etf-bil
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-bloomberg-1-3-month-t-bill-etf-bil
   replication: null
   verified_date: '2026-11-03'
-  note: Replication not verified.
+  note: Index and administrator (Bloomberg Index Services Limited) confirmed on the fund page. Replication
+    method is not stated on the page (33 fund holdings vs 17 index issues).
 - symbol: BNDX
   issuer: Vanguard
-  underlying_index: Bloomberg Global Aggregate ex-USD Float Adjusted RIC Capped Index
-    (Hedged)
+  underlying_index: Bloomberg Global Aggregate ex-USD Float Adjusted RIC Capped Index (USD Hedged)
   index_provider: Bloomberg
-  index_currency: null
+  index_currency: multi
   share_class_currency: USD
   hedged: true
   hedge_currency: USD
-  source_url: https://workplace.vanguard.com/assets/corp/fund_communications/pdf_publish/us-products/fact-sheet/F3711.pdf
-  replication: null
+  source_url: https://fund-docs.vanguard.com/p3711.pdf
+  replication: physical_sampling
   verified_date: '2026-11-03'
-  note: Replication not verified. The underlying portfolio spans multiple currencies;
-    a single index currency is not asserted.
+  note: Prospectus dated 2026-02-27. Index is the USD-hedged version, so it is calculated in USD; the
+    underlying bonds are in many non-USD currencies. Currency risk is hedged mainly with FX forwards.
+    Sampling confirmed in the prospectus. Original fact-sheet PDF was unreadable by the fetch tool. index_currency
+    is the currency of the underlying bonds; the index is hedged to USD.
 - symbol: BWX
-  issuer: State Street
+  issuer: State Street (SSGA)
   underlying_index: Bloomberg Global Treasury ex-US Capped Index
   index_provider: Bloomberg
-  index_currency: null
+  index_currency: multi
   share_class_currency: USD
   hedged: false
   hedge_currency: null
-  source_url: https://www.ssga.com/us/en/individual/etfs/state-street-spdr-bloomberg-international-treasury-bond-etf-bwx
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-bloomberg-international-treasury-bond-etf-bwx
   replication: null
   verified_date: '2026-11-03'
-  note: Replication not verified. The underlying portfolio spans multiple currencies;
-    a single index currency is not asserted.
+  note: Index name confirmed on the fund page. Index holds non-US government bonds in many currencies,
+    unhedged; returns are reported in USD. Replication method not stated on the page.
 - symbol: CEMB
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: J.P. Morgan CEMBI Broad Diversified Core Index
+  index_provider: J.P. Morgan
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.blackrock.com/us/individual/literature/summary-prospectus/sp-ishares-jp-morgan-em-corporate-bond-etf-10-31.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2026-02-27. USD-denominated EM corporate bonds. Fund holds at least 80%
+    in index components; sampling assumed, exact wording not seen.
 - symbol: CORN
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Teucrium
+  underlying_index: Teucrium Corn Index (TCORN)
+  index_provider: Teucrium (fund sponsor)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://teucrium.com/hubfs/CORN_Prospectus.pdf?hsLang=en
+  replication: futures
+  verified_date: '2026-11-03'
+  note: No external index. The 'Benchmark' is a sponsor-defined index of three CBOT corn futures contracts
+    (35% second-to-expire, 30% third-to-expire, 35% following December contract). It does not track spot
+    corn. Benchmark excludes fees and interest.
 - symbol: CPER
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: USCF (United States Commodity Funds)
+  underlying_index: SummerHaven Copper Index Total Return
+  index_provider: SummerHaven Index Management (calculated and published by NYSE Arca)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/0001479247/000207187626000122/i26205_cper-424b3.htm
+  replication: futures
+  verified_date: '2026-11-03'
+  note: United States Copper Index Fund. Holds one or three COMEX copper futures contracts selected monthly
+    by the index rules. Prospectus dated 2026-04-24.
 - symbol: DBA
-  issuer: null
+  issuer: Invesco
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: Deutsche Bank AG / DWS Investment Management Americas (DBIQ)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
+  source_url: https://www.sec.gov/Archives/edgar/data/1367306/000119312520233218/d913379d424b3.htm
+  replication: futures
   verified_date: null
-  note: Index and share-class metadata not yet verified.
+  note: 'Invesco DB Agriculture Fund. Index name taken from the 2020 prospectus, the latest fund document
+    found. Deutsche Bank changed the index methodology effective 2025-11-10 (stated in a notice for the
+    sister fund PDBA); the current DBA prospectus was not read, so the name is not confirmed for 2026.
+    Candidate index (unconfirmed): DBIQ Diversified Agriculture Index Excess Return.'
 - symbol: DBB
-  issuer: null
+  issuer: Invesco
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: Deutsche Bank AG / DWS Investment Management Americas (DBIQ)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
+  source_url: https://www.sec.gov/Archives/edgar/data/1383084/000119312520233237/d913376d424b3.htm
+  replication: futures
   verified_date: null
-  note: Index and share-class metadata not yet verified.
+  note: 'Invesco DB Base Metals Fund. Name taken from the 2020 prospectus. Index overhaul effective 2025-11-10:
+    universe widened to COMEX copper, lead and nickel, thin contracts dropped, weights set by annual review.
+    Index name after the overhaul not confirmed; current prospectus not read. Candidate index (unconfirmed):
+    DBIQ Optimum Yield Industrial Metals Index Excess Return.'
 - symbol: DBC
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Invesco
+  underlying_index: DBIQ Optimum Yield Diversified Commodity Index Excess Return
+  index_provider: Deutsche Bank AG / DWS Investment Management Americas (DBIQ)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/1328237/000119312526368455/d105975d424b3.htm
+  replication: futures
+  verified_date: '2026-11-03'
+  note: Invesco DB Commodity Index Tracking Fund. Prospectus 424B3 dated 2026-08-26 names the index. Excess
+    return (unfunded) basis, 14 futures contracts; index changes effective 2025-11-10. The fund adds T-bill
+    income on top of the excess return index. Commodity pool, not a 1940 Act fund.
 - symbol: DBXP.DE
-  issuer: DWS
+  issuer: DWS (Xtrackers)
   underlying_index: Markit iBoxx EUR Eurozone (DE ES FR IT NL) 1-3 Index
-  index_provider: Markit
+  index_provider: S&P Dow Jones Indices (iBoxx family; DWS still labels it Markit)
   index_currency: EUR
   share_class_currency: EUR
   hedged: false
   hedge_currency: null
   source_url: https://etf.dws.com/download/asset/a3c073ff-e495-4163-b745-7eeb24badf62
-  replication: null
+  replication: physical_sampling
   verified_date: '2026-11-03'
-  note: Replication not verified.
+  note: Xtrackers II Eurozone Government Bond 1-3 UCITS ETF 1C (LU0290356871), accumulating. Index name
+    confirmed by DWS product text via search; optimized sampling per search result. The provider column
+    was 'Markit' in the original; iBoxx moved to S&P DJI after the IHS Markit merger (S&P DJI is named
+    iBoxx provider in the 2026 iShares HYG/LQD prospectuses). Original source URL not re-read.
 - symbol: EEM
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI Emerging Markets Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/us/literature/summary-prospectus/sp-ishares-msci-emerging-markets-etf-8-31.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus states the fund may or may not hold all index components (sampling).
 - symbol: EMB
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: J.P. Morgan Emerging Markets Bond Index Global Diversified Core
+  index_provider: J.P. Morgan
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/us/literature/summary-prospectus/sp-ishares-jp-morgan-usd-emerging-markets-bond-etf-10-31.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Index renamed effective 2026-07-10 (was J.P. Morgan EMBI Global Core Index). The PDF at the source
+    URL still shows the old name in its body but carries the July 2026 supplement. Sampling assumed; exact
+    wording not seen.
 - symbol: EMLC
   issuer: VanEck
   underlying_index: J.P. Morgan GBI-EM Global Core Index
   index_provider: J.P. Morgan
-  index_currency: null
+  index_currency: multi
   share_class_currency: USD
   hedged: false
   hedge_currency: null
   source_url: https://www.vaneck.com/us/en/investments/jp-morgan-em-local-currency-bond-etf-emlc/
   replication: null
   verified_date: '2026-11-03'
-  note: Replication not verified. The underlying portfolio spans multiple currencies;
-    a single index currency is not asserted.
+  note: Index name kept from the original (VanEck page). A search of the 2026 VanEck 485BPOS filings shows
+    'Emerging Markets Global Core Index' with J.P. Morgan as provider, consistent with GBI-EM Global Core.
+    Local-currency bonds, unhedged; returns in USD. Replication not stated. VanEck pages return redirect
+    errors to the fetch tool, so the page was not re-read directly.
 - symbol: EUHY
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
-  hedge_currency: null
-  source_url: null
+  issuer: iShares (BlackRock)
+  underlying_index: Bloomberg Pan-European High Yield (Euro) TR Index Hedged USD
+  index_provider: Bloomberg
+  index_currency: EUR
+  share_class_currency: USD
+  hedged: true
+  hedge_currency: USD
+  source_url: https://www.blackrock.com/us/individual/literature/fact-sheet/euhy-ishares-euro-high-yield-corporate-bond-usd-hedged-etf-fund-fact-sheet-en-us.pdf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: 'iShares Euro High Yield Corporate Bond USD Hedged ETF (US, Cboe BZX, ISIN US4642862100). Index
+    switched on 2025-11-03; before that it tracked a Markit iBoxx Global Developed Markets ex-US High
+    Yield index. Euro bonds hedged monthly to USD. Ambiguous ticker: a Goldman Sachs EUR High Yield UCITS
+    ETF is also listed as EUHY in Milan. This row refers to the US iShares fund. Replication not seen.
+    index_currency is the currency of the underlying bonds; the index is hedged to USD.'
 - symbol: EWA
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI Australia Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.blackrock.com/americas-offshore/en/literature/summary-prospectus/sp-ishares-msci-australia-etf-8-31.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2025-12-30; representative sampling stated in the prospectus family.
 - symbol: EWC
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI Canada Custom Capped Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/products/239615/ishares-msci-canada-etf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Fund page lists benchmark MSCI Canada Custom Capped Index (Net); tracked since 2017-09-01. Replication
+    not stated in the sources read.
 - symbol: EWG
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI Germany Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/products/239650/ishares-msci-germany-etf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Current benchmark MSCI Germany Index (Net). Board-approved change to the MSCI Germany 25/50 Index
+    effective on or around 2026-12-01 (supplement dated 2026-10-23). Update the row after that date. Replication
+    not stated in the sources read.
 - symbol: EWI
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI Italy 25/50 Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/products/239664/ishares-msci-italy-capped-etf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Benchmark MSCI Italy 25/50 Index (Net) since 2013-02-12. Replication not stated in the sources
+    read.
 - symbol: EWJ
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI Japan Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/products/239665/ishares-msci-japan-etf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Fund page lists benchmark MSCI Japan Index (Net). Not the currency-hedged HEWJ and not EWJV. Replication
+    not stated in the sources read.
 - symbol: EWQ
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI France Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/us/literature/summary-prospectus/sp-ishares-msci-france-etf-8-31.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Representative sampling stated in the summary prospectus.
 - symbol: EWT
-  issuer: null
+  issuer: iShares (BlackRock)
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
+  source_url: https://www.sec.gov/Archives/edgar/data/930667/000119312522314560/d269755d497k.htm
+  replication: physical_sampling
   verified_date: null
-  note: Index and share-class metadata not yet verified.
+  note: 'Latest fund document found is the December 2022 summary prospectus (MSCI Taiwan 25/50 Index since
+    2016-12-01). iShares announced 25/50 index changes for EWG and EWY in late 2026, so EWT was not confirmed
+    for 2026; check the current fact sheet. Candidate index (unconfirmed): MSCI Taiwan 25/50 Index.'
 - symbol: EWU
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI United Kingdom Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/us/literature/summary-prospectus/sp-ishares-msci-united-kingdom-etf-8-31.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Representative sampling stated in the summary prospectus.
 - symbol: EWW
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI Mexico IMI 25/50 Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/literature/fact-sheet/eww-ishares-msci-mexico-etf-fund-fact-sheet-en-us.pdf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Fact sheet as of 2026-09-30 lists MSCI Mexico IMI 25/50 Index (Net) since 2013-02-12. Replication
+    not stated in the sources read.
 - symbol: EWY
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI Korea 25/50 Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/products/239681/ishares-msci-south-korea-capped-etf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Current benchmark MSCI Korea 25/50 Index (Net). Announced change to the MSCI Korea 25/50 Daily
+    25 Capped Index effective on or around 2026-11-09. Update the row after that date. Replication not
+    stated in the sources read.
 - symbol: EWZ
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI Brazil 25/50 Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/products/239612/ishares-msci-brazil-etf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Benchmark MSCI Brazil 25/50 Index (Net) since 2013-02-12. Replication not stated in the sources
+    read.
 - symbol: EXH1.DE
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: STOXX Europe 600 Oil & Gas (Capped) TR
+  index_provider: STOXX
+  index_currency: EUR
+  share_class_currency: EUR
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/uk/individual/en/products/251954/ishares-stoxx-europe-600-oil-gas-ucits-etf-de-fund
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: 'iShares STOXX Europe 600 Oil & Gas UCITS ETF (DE), German-domiciled, EUR distributing. Per iShares
+    page: replicated, at least 95% of assets held in index weights.'
 - symbol: EXH4.DE
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: STOXX Europe 600 Industrial Goods & Services (Capped) TR
+  index_provider: STOXX
+  index_currency: EUR
+  share_class_currency: EUR
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/uk/individual/en/products/251948
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: iShares STOXX Europe 600 Industrial Goods & Services UCITS ETF (DE), ISIN DE000A0H08J9, EUR distributing.
+    Physically replicated per fact sheet.
 - symbol: EXH9.DE
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: STOXX Europe 600 Utilities (Capped) TR
+  index_provider: STOXX
+  index_currency: EUR
+  share_class_currency: EUR
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.blackrock.com/uk/individual/products/251967/ishares-stoxx-europe-600-utilities-ucits-etf-de
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: iShares STOXX Europe 600 Utilities UCITS ETF (DE), ISIN DE000A0Q4R02, EUR distributing. Full replication
+    per fact sheet (2026-09-30).
 - symbol: EXV1.DE
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: STOXX Europe 600 Banks (Capped)
+  index_provider: STOXX
+  index_currency: EUR
+  share_class_currency: EUR
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/uk/individual/en/products/251934/ishares-stoxx-europe-600-banks-ucits-etf-de-fund
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: iShares STOXX Europe 600 Banks UCITS ETF (DE), EUR distributing. The fund page lists the benchmark
+    as 'STOXX Europe 600 Banks (Capped) NET'; the net vs gross suffix differs between page versions, so
+    the suffix is left out. Full physical replication.
 - symbol: EXV3.DE
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: STOXX Europe 600 Technology (Capped) TR
+  index_provider: STOXX
+  index_currency: EUR
+  share_class_currency: EUR
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/uk/individual/en/products/251961/ishares-stoxx-europe-600-technology-ucits-etf-de-fund
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: iShares STOXX Europe 600 Technology UCITS ETF (DE), EUR distributing. Benchmark ticker SX8R on
+    BlackRock pages. Replication assumed physical full like the other (DE) sector funds; not stated in
+    the result read.
 - symbol: EXV4.DE
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: STOXX Europe 600 Health Care (Capped) TR
+  index_provider: STOXX
+  index_currency: EUR
+  share_class_currency: EUR
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/uk/individual/en/products/251946
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: iShares STOXX Europe 600 Health Care UCITS ETF (DE), ISIN DE000A0Q4R36, EUR distributing. Replicated
+    per the fund page.
 - symbol: EZA
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI South Africa 25/50 Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/products/239680/ishares-msci-south-africa-etf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Benchmark MSCI South Africa 25/50 Index (Net) since 2017-09-01. The London UCITS fund uses a different
+    index (20/35). Replication not stated in the sources read.
 - symbol: GLD
-  issuer: null
+  issuer: State Street (SSGA)
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: LBMA / ICE Benchmark Administration (LBMA Gold Price PM)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/spdr-gold-shares-gld
+  replication: physical
+  verified_date: '2026-11-03'
+  note: No index. SPDR Gold Shares is a grantor trust holding gold bullion; NAV is set from the LBMA Gold
+    Price PM. Sponsor World Gold Trust Services LLC, trustee BNY Mellon, marketing agent SSGA. Gross expense
+    ratio 0.40%. Not a 1940 Act fund.
 - symbol: HYEM
   issuer: VanEck
-  underlying_index: ICE BofA Diversified High Yield US Emerging Markets Corporate
-    Plus Index
+  underlying_index: ICE BofA Diversified High Yield US Emerging Markets Corporate Plus Index
   index_provider: ICE
   index_currency: USD
   share_class_currency: USD
@@ -447,605 +499,689 @@ funds:
   source_url: https://www.vaneck.com/us/en/investments/emerging-markets-high-yield-bond-etf-hyem/
   replication: null
   verified_date: '2026-11-03'
-  note: Replication not verified.
+  note: Index ticker EMLH. Name confirmed from VanEck search results and the older summary prospectus.
+    Replication not stated; fund seeks to replicate as closely as possible and holds a subset of bonds.
 - symbol: HYG
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: iBoxx USD Liquid High Yield Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/0001100663/000119312526287950/d128451d497k.htm
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2026-06-29. Index was named 'Markit iBoxx USD Liquid High Yield Index'
+    with Markit as provider in filings up to 2022; now iBoxx USD Liquid High Yield Index, provider S&P
+    DJI. 3% issuer cap.
 - symbol: IBCL.DE
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: Bloomberg Euro Government Bond 30 Year Term Index
+  index_provider: Bloomberg
+  index_currency: EUR
+  share_class_currency: EUR
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/ch/individual/en/products/251735/ishares-euro-government-bond-1530yr-ucits-etf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: iShares EUR Govt Bond 15-30yr UCITS ETF (Dist), ISIN IE00B1FZS913, Irish UCITS. The Xetra symbol
+    IBCL to ISIN link comes from third-party listing pages, not an iShares document. Fact sheets show
+    'Sampled'. The accumulating class (IGBY) is a different listing.
 - symbol: IEAC.AS
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: Bloomberg Euro Corporate Index
+  index_provider: Bloomberg
+  index_currency: EUR
+  share_class_currency: EUR
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/uk/individual/en/products/251726/ishares-euro-corporate-bond-ucits-etf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: iShares Core EUR Corp Bond UCITS ETF (Dist), ISIN IE00B3F81R35, Irish UCITS. Fact sheet shows
+    the benchmark as 'BBG Euro Corporate Index (EUR)' (ticker LECPTREU); the formal index name is shortened.
+    The Amsterdam listing currency (EUR) and the dist class were not confirmed on an iShares Amsterdam
+    page. Replication not seen.
 - symbol: IEF
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: ICE U.S. Treasury 7-10 Year Bond Index
+  index_provider: ICE Data Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/0001100663/000119312526287945/d127751d497k.htm
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2026-06-29 (iShares 7-10 Year Treasury Bond ETF). Representative sampling.
 - symbol: IEI
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: ICE U.S. Treasury 3-7 Year Bond Index
+  index_provider: ICE Data Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/0001100663/000119312526287943/d127689d497k.htm
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2026-06-29 (iShares 3-7 Year Treasury Bond ETF). Representative sampling.
 - symbol: IGF
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: S&P Global Infrastructure Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/literature/summary-prospectus/sp-ishares-global-infrastructure-etf-3-31.pdf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2026-03. Index covers utilities, energy and transportation infrastructure
+    in developed and emerging markets. Replication not seen.
 - symbol: IHY
   issuer: VanEck
   underlying_index: ICE BofA Global ex-US Issuers High Yield Constrained Index
   index_provider: ICE
-  index_currency: null
+  index_currency: multi
   share_class_currency: USD
   hedged: false
   hedge_currency: null
-  source_url: https://www.vaneck.com/us/en/investments/international-high-yield-bond-etf-ihy/overview/
+  source_url: https://www.vaneck.com/us/en/investments/international-high-yield-bond-etf-ihy/
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Index ticker HXUS. Index holds below-investment-grade bonds of non-US issuers in USD, CAD, GBP
+    and EUR; unhedged. Fund holds at least 80% in index securities and does not buy all of them (sampling).
+    Source URL changed to the page without '/overview/' that VanEck returns in search.
+- symbol: INDA
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI India Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.ishares.com/us/products/239659/ishares-msci-india-etf
   replication: null
   verified_date: '2026-11-03'
-  note: Replication not verified. The underlying portfolio spans multiple currencies;
-    a single index currency is not asserted.
-- symbol: INDA
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
-  hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  note: Fund page and fact sheet (2026-09-30) list MSCI India Index (Net). Replication not stated in the
+    sources read.
 - symbol: IWM
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: Russell 2000 Index
+  index_provider: FTSE Russell
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/products/239710/ishares-russell-2000-etf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Fund page lists benchmark Russell 2000 Index (Bloomberg ticker RU20INTR). Provider confirmed from
+    index-licence text in SEC filings by third parties, not from the fund. Replication not stated in the
+    sources read.
 - symbol: KSA
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI Saudi Arabia IMI 25/50 Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ishares.com/us/products/271542/ishares-msci-saudi-arabia-capped-etf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: US fund iShares MSCI Saudi Arabia ETF (not the UCITS fund, which tracks the MSCI Saudi Arabia
+    20/35 Index). At least 80% of assets in index components.
 - symbol: LQD
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: iBoxx USD Liquid Investment Grade Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/0001100663/000119312526287952/d128812d497k.htm
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2026-06-29. Renamed from 'Markit iBoxx USD Liquid Investment Grade Index';
+    some 2026 fact sheets still show the old Markit name.
 - symbol: MCHI
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: MSCI China Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/us/literature/summary-prospectus/sp-ishares-msci-china-etf-8-31.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2025-12-30. Includes A-shares, H-shares, Red chips, P chips and foreign
+    listings. Fund may or may not hold all index securities.
 - symbol: MNA
-  issuer: null
+  issuer: New York Life Investments (NYLI / IndexIQ)
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: New York Life Investment Management (fund advisor)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.sec.gov/Archives/edgar/data/1415995/000199937125012190/mna-497k_082825.htm
   replication: null
   verified_date: null
-  note: Index and share-class metadata not yet verified.
+  note: 'Name from the 2025-08-28 summary prospectus (formerly IQ Merger Arbitrage Index). The sister
+    fund QAI shows a rename from NYLI to NYLIM on 2026-08-28, and the 2026 MNA prospectus was not found,
+    so the current name is not confirmed. Index holds deal targets and short exposure; fund invests at
+    least 80% in index components. Replication not stated. Candidate index (unconfirmed): NYLI Merger
+    Arbitrage Index.'
 - symbol: MUB
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: ICE AMT-Free US National Municipal Index
+  index_provider: ICE Data Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.ishares.com/us/literature/summary-prospectus/sp-ishares-national-muni-bond-etf-2-28.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: ICE index replaced the S&P National AMT-Free Municipal Bond Index on 2021-09-15. Sampling assumed
+    (standard iShares muni approach); wording not seen.
 - symbol: PALL
-  issuer: null
+  issuer: abrdn
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: LBMA / ICE Benchmark Administration (LBMA Palladium Price PM)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/1459862/000199937126004881/pall-10k_123125.htm
+  replication: physical
+  verified_date: '2026-11-03'
+  note: 'abrdn Physical Palladium Shares ETF: grantor trust holding palladium bullion, no index. Benchmark
+    price is the LBMA Palladium Price PM (AM as fallback; other public price allowed since the 2024-06-18
+    trust amendment). Administration of the price was reported to pass to IBA effective 2026-07-01 (sentence
+    cut off; not confirmed).'
 - symbol: PDBC
-  issuer: null
+  issuer: Invesco
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: Deutsche Bank AG / DWS Investment Management Americas (DBIQ)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/1595386/000119312526079092/d67468d497k.htm
+  replication: futures
+  verified_date: '2026-11-03'
+  note: 'actively managed. Invesco Optimum Yield Diversified Commodity Strategy No K-1 ETF. Benchmark
+    (not tracked): DBIQ Optimum Yield Diversified Commodity Index Excess Return (DBLCDBCE). Holds futures
+    and swaps through a Cayman subsidiary plus a cash/T-bill portfolio. Index overhaul effective 2025-11-10.
+    Prospectus dated 2026-02-27.'
 - symbol: PPLT
-  issuer: null
+  issuer: abrdn
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: LBMA / ICE Benchmark Administration (LBMA Platinum Price PM)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.aberdeeninvestments.com/en-us/institutional/funds/view-all-funds/abrdn-physical-platinum-shares-etf-us0032601066
+  replication: physical
+  verified_date: '2026-11-03'
+  note: 'abrdn Physical Platinum Shares ETF: grantor trust holding platinum bullion, no index. Benchmark
+    LBMA Platinum Price PM (Bloomberg PLTMLNPM); the fund page lists the benchmark. Total expense ratio
+    0.60%. The older prospectus names the LME as price administrator; check the current administrator
+    if it matters.'
 - symbol: QAI
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: New York Life Investments (NYLIM / IndexIQ)
+  underlying_index: NYLIM Hedge Multi-Strategy Index
+  index_provider: New York Life Investment Management (fund advisor)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.sec.gov/Archives/edgar/data/0001415995/000199937126019093/qai-497k_082826.htm
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Fund renamed from NYLI Hedge Multi-Strategy Tracker ETF to NYLIM Hedge Multi-Strategy Tracker
+    ETF on 2026-08-28 (earlier IQ Hedge Multi-Strategy Tracker). The index replicates hedge-fund 'beta'
+    through index components (ETFs and derivatives), not hedge funds. Fund holds at least 80% in components.
+    Replication not stated as full or sampling.
 - symbol: QQQ
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Invesco
+  underlying_index: Nasdaq-100 Index
+  index_provider: Nasdaq, Inc.
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/1067839/000110465925123275/tm2529177d5_497k.htm
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: Invesco QQQ Trust, Series 1 (unit investment trust). Summary prospectus dated 2025-12-22 states
+    full replication. The provider name (Nasdaq, Inc.) is not spelled out in the snippet read; it is the
+    standard Nasdaq-100 sponsor.
 - symbol: SHY
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: iShares (BlackRock)
+  underlying_index: ICE U.S. Treasury 1-3 Year Bond Index
+  index_provider: ICE Data Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/0001100663/000119312526287941/d126827d497k.htm
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2026-06-29 (iShares 1-3 Year Treasury Bond ETF). Representative sampling.
 - symbol: SLV
-  issuer: null
+  issuer: iShares (BlackRock)
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: LBMA / ICE Benchmark Administration (LBMA Silver Price)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.blackrock.com/us/individual/products/239855/ishares-silver-trust-fund
+  replication: physical
+  verified_date: '2026-11-03'
+  note: 'iShares Silver Trust: grantor trust holding silver bullion (custodian JPMorgan London, trustee
+    BNY Mellon, sponsor iShares Delaware Trust Sponsor LLC). Benchmark is the LBMA Silver Price since
+    2014-08-15. Sponsor fee 0.50%.'
 - symbol: SOYB
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Teucrium
+  underlying_index: Teucrium Soybean Index (TSOYB)
+  index_provider: Teucrium (fund sponsor)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://teucrium.com/hubfs/SOYB_Prospectus%20(1).pdf?hsLang=en
+  replication: futures
+  verified_date: '2026-11-03'
+  note: Sponsor-defined benchmark of three CBOT soybean futures (35% second-to-expire, 30% third-to-expire,
+    35% following November contract). Does not track spot.
 - symbol: SPAB
-  issuer: State Street
+  issuer: State Street (SSGA)
   underlying_index: Bloomberg U.S. Aggregate Bond Index
   index_provider: Bloomberg
   index_currency: USD
   share_class_currency: USD
   hedged: false
   hedge_currency: null
-  source_url: https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-aggregate-bond-index-etf-spab
-  replication: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-aggregate-bond-etf-spab
+  replication: physical_sampling
   verified_date: '2026-11-03'
-  note: Replication not verified.
+  note: State Street SPDR Portfolio Aggregate Bond ETF. The fund page states that the fund invests by
+    sampling the index. The fund page URL in the original file was replaced with the one the fetch tool
+    could read.
 - symbol: SPY
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
-  hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
-- symbol: TIP
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
-  hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
-- symbol: TLT
-  issuer: BlackRock
-  underlying_index: ICE U.S. Treasury 20+ Year Bond Index
-  index_provider: ICE
+  issuer: State Street (SSGA)
+  underlying_index: S&P 500 Index
+  index_provider: S&P Dow Jones Indices
   index_currency: USD
   share_class_currency: USD
   hedged: false
   hedge_currency: null
-  source_url: https://www.sec.gov/Archives/edgar/data/1419828/000114036118037497/form424b2.htm
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/spdr-sp-500-etf-trust-spy
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: 'SPDR S&P 500 ETF Trust: unit investment trust (sponsor PDR Services, trustee State Street, distributor
+    ALPS). The page does not state the replication method; 504 holdings vs 503 index names indicates full
+    replication.'
+- symbol: TIP
+  issuer: iShares (BlackRock)
+  underlying_index: ICE U.S. Treasury Inflation Linked Bond Index
+  index_provider: ICE Data Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.ishares.com/us/products/239467/ishares-tips-bond-etf
   replication: null
   verified_date: '2026-11-03'
-  note: Replication not verified.
+  note: Fund page and fact sheet (2026-09-30) list the ICE U.S. Treasury Inflation Linked Bond Index.
+    Before that the fund tracked a Barclays/Bloomberg TIPS Index (Series-L). Replication not seen.
+- symbol: TLT
+  issuer: iShares (BlackRock)
+  underlying_index: ICE U.S. Treasury 20+ Year Bond Index
+  index_provider: ICE Data Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.sec.gov/Archives/edgar/data/1100663/000119312526287948/d128154d497k.htm
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2026-06-29; representative sampling. The original source_url was a third-party
+    structured-note filing (424B2) from 2018 and was replaced with the fund's own 497K. Before 2016-04-01
+    the fund tracked a Barclays index.
 - symbol: UGA
-  issuer: null
+  issuer: USCF (United States Commodity Funds)
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: NYMEX / CME (benchmark futures contract)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/1396878/000110465926021515/uga-20251231x10k.htm
+  replication: futures
+  verified_date: '2026-11-03'
+  note: 'No index. United States Gasoline Fund tracks the near-month NYMEX RBOB gasoline futures contract
+    (''Benchmark Futures Contract''); rolls when the near month is within two weeks of expiry. Target:
+    30-day average daily NAV change within 10% of the benchmark.'
 - symbol: UNG
-  issuer: null
+  issuer: USCF (United States Commodity Funds)
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: NYMEX / CME (benchmark futures contract)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/1376227/000117120025000205/i25174_ung-424b3.htm
+  replication: futures
+  verified_date: '2026-11-03'
+  note: No index. United States Natural Gas Fund holds near-month NYMEX Henry Hub natural gas futures;
+    the roll blends near and next months over the roll period. Objective is to reflect daily changes in
+    the spot Henry Hub price, not futures. Source is the 2025 prospectus (2026 version not found).
 - symbol: USO
-  issuer: null
+  issuer: USCF (United States Commodity Funds)
   underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_provider: NYMEX / CME (benchmark futures contract)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/1327068/000117120025000209/i25178_uso-424b3.htm
+  replication: futures
+  verified_date: '2026-11-03'
+  note: No index. United States Oil Fund tracks the near-month NYMEX WTI light sweet crude futures contract
+    at Cushing ('Benchmark Oil Futures Contract'), rolled over ten days. Source is the 2025 prospectus;
+    the 2025 10-K for FY2025 repeats the benchmark.
 - symbol: VCSH
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Vanguard
+  underlying_index: Bloomberg U.S. 1-5 Year Corporate Bond Index
+  index_provider: Bloomberg
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://fund-docs.vanguard.com/F3145.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Vanguard Short-Term Corporate Bond ETF. Index sampling confirmed. Index was 'Bloomberg Barclays
+    U.S. 1-5 Year Corporate Bond Index' until the 2021 documents.
 - symbol: VEA
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Vanguard
+  underlying_index: FTSE Developed All Cap ex US Index
+  index_provider: FTSE Russell
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://fund-docs.vanguard.com/p936.pdf
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: Prospectus dated 2026-04-28. Full replication stated. ETF share class of Vanguard Developed Markets
+    Index Fund.
 - symbol: VGK
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Vanguard
+  underlying_index: FTSE Developed Europe All Cap Index
+  index_provider: FTSE Russell
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://fund-docs.vanguard.com/p963.pdf
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: Prospectus dated 2026-02-27. Index holds 1,209 stocks (2025-10-31), 17 developed European countries.
+    Replication stated as holding about the same stocks in about the same proportions.
 - symbol: VGT
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Vanguard
+  underlying_index: MSCI US Investable Market Information Technology 25/50 Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://fund-docs.vanguard.com/F0958.pdf
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: Benchmark ticker M5US5ITI. Full replication stated when possible.
 - symbol: VNQ
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Vanguard
+  underlying_index: MSCI US Investable Market Real Estate 25/50 Index
+  index_provider: MSCI
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://fund-docs.vanguard.com/F0986.pdf
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: Tracks this index since July 2018 (before that MSCI US REIT Index). Replication assumed full per
+    standard Vanguard language; not stated in the result read.
 - symbol: VNQI
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Vanguard
+  underlying_index: S&P Global ex-U.S. Property Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.sec.gov/Archives/edgar/data/857489/000168386325001472/f40788d1.htm
+  replication: physical_full
+  verified_date: '2026-11-03'
+  note: Summary prospectus dated 2025-02-28 (2026 version not found); full replication stated. Index holds
+    developed and emerging market REITs and real estate companies; unhedged, calculated in USD.
 - symbol: VTV
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Vanguard
+  underlying_index: Morningstar US Large Cap Value Index
+  index_provider: Morningstar (formerly CRSP)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://fund-docs.vanguard.com/F0966.pdf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: 'Vanguard is rebranding CRSP index names to Morningstar names (index ticker CRSPLCVT unchanged)
+    and fund names now read ''Vanguard Morningstar Value ETF''. A 2026-09-16 supplement still refers to
+    the CRSP name next to the new one. Former name: CRSP US Large Cap Value Index. Replication not read.'
 - symbol: VUG
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Vanguard
+  underlying_index: Morningstar US Large Cap Growth Index
+  index_provider: Morningstar (formerly CRSP)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://personal1.vanguard.com/pub/Pdf/sp967.pdf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Rebrand as for VTV (index ticker CRSPLCGT; former name CRSP US Large Cap Growth Index). Replication
+    not read.
 - symbol: VWO
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Vanguard
+  underlying_index: FTSE Emerging Markets All Cap China A Inclusion Index
+  index_provider: FTSE Russell
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://fund-docs.vanguard.com/F0964.pdf
+  replication: physical_sampling
+  verified_date: '2026-11-03'
+  note: Index sampling stated; fund holds substantially all assets in index stocks. Prospectus dated 2026-02-27
+    (shared with VGK/VPL).
 - symbol: WEAT
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: Teucrium
+  underlying_index: Teucrium Wheat Index (TWEAT)
+  index_provider: Teucrium (fund sponsor)
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://teucrium.com/hubfs/Teucrium%20WEAT%20Fund%20Factsheet.pdf?hsLang=en
+  replication: futures
+  verified_date: '2026-11-03'
+  note: Sponsor-defined benchmark of three CBOT wheat futures with the same 35/30/35 weighting scheme
+    as CORN and SOYB. Does not track spot.
 - symbol: WTMF
-  issuer: null
+  issuer: WisdomTree
   underlying_index: null
   index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
-  replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  source_url: https://www.wisdomtree.com/us/media/wisdomtree-factsheet-wtmf
+  replication: futures
+  verified_date: '2026-11-03'
+  note: actively managed. WisdomTree Managed Futures Strategy Fund; stopped tracking an index (the former
+    WisdomTree Managed Futures Index / DTI) in June 2021. Fact sheet compares it with the ICE BofA US
+    3-Month Treasury Bill Index and a 60% S&P 500 / 40% Bloomberg U.S. Aggregate composite. No tracked
+    index. Fact sheet not read directly; details from search excerpts of WisdomTree documents.
 - symbol: XLB
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: State Street (SSGA)
+  underlying_index: Materials Select Sector Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/the-materials-select-sector-spdr-fund-xlb
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Index name confirmed on the fund page. The page does not name the index provider (Select Sector
+    indices are drawn from the S&P 500; S&P DJI named for the S&P 500) and does not state the replication
+    method.
 - symbol: XLC
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: State Street (SSGA)
+  underlying_index: Communication Services Select Sector Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/the-communication-services-select-sector-spdr-fund-xlc
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Index name confirmed on the fund page. The page does not name the index provider (Select Sector
+    indices are drawn from the S&P 500; S&P DJI named for the S&P 500) and does not state the replication
+    method.
 - symbol: XLE
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: State Street (SSGA)
+  underlying_index: Energy Select Sector Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/the-energy-select-sector-spdr-fund-xle
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Index name confirmed on the fund page. The page does not name the index provider (Select Sector
+    indices are drawn from the S&P 500; S&P DJI named for the S&P 500) and does not state the replication
+    method.
 - symbol: XLF
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: State Street (SSGA)
+  underlying_index: Financial Select Sector Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/the-financial-select-sector-spdr-fund-xlf
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Index name confirmed on the fund page. The page does not name the index provider (Select Sector
+    indices are drawn from the S&P 500; S&P DJI named for the S&P 500) and does not state the replication
+    method.
 - symbol: XLI
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: State Street (SSGA)
+  underlying_index: Industrial Select Sector Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/the-industrial-select-sector-spdr-fund-xli
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Index name confirmed on the fund page. The page does not name the index provider (Select Sector
+    indices are drawn from the S&P 500; S&P DJI named for the S&P 500) and does not state the replication
+    method.
 - symbol: XLP
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: State Street (SSGA)
+  underlying_index: Consumer Staples Select Sector Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/the-consumer-staples-select-sector-spdr-fund-xlp
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Index name confirmed on the fund page. The page does not name the index provider (Select Sector
+    indices are drawn from the S&P 500; S&P DJI named for the S&P 500) and does not state the replication
+    method.
 - symbol: XLRE
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: State Street (SSGA)
+  underlying_index: Real Estate Select Sector Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/the-real-estate-select-sector-spdr-fund-xlre
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Index name confirmed on the fund page. The page does not name the index provider (Select Sector
+    indices are drawn from the S&P 500; S&P DJI named for the S&P 500) and does not state the replication
+    method.
 - symbol: XLU
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: State Street (SSGA)
+  underlying_index: Utilities Select Sector Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/the-utilities-select-sector-spdr-fund-xlu
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Index name confirmed on the fund page. The page does not name the index provider (Select Sector
+    indices are drawn from the S&P 500; S&P DJI named for the S&P 500) and does not state the replication
+    method.
 - symbol: XLV
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: State Street (SSGA)
+  underlying_index: Health Care Select Sector Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/the-health-care-select-sector-spdr-fund-xlv
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Index name confirmed on the fund page. The page does not name the index provider (Select Sector
+    indices are drawn from the S&P 500; S&P DJI named for the S&P 500) and does not state the replication
+    method.
 - symbol: XLY
-  issuer: null
-  underlying_index: null
-  index_provider: null
-  index_currency: null
-  share_class_currency: null
-  hedged: null
+  issuer: State Street (SSGA)
+  underlying_index: Consumer Discretionary Select Sector Index
+  index_provider: S&P Dow Jones Indices
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
   hedge_currency: null
-  source_url: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/the-consumer-discretionary-select-sector-spdr-fund-xly
   replication: null
-  verified_date: null
-  note: Index and share-class metadata not yet verified.
+  verified_date: '2026-11-03'
+  note: Index name confirmed on the fund page. The page does not name the index provider (Select Sector
+    indices are drawn from the S&P 500; S&P DJI named for the S&P 500) and does not state the replication
+    method.
