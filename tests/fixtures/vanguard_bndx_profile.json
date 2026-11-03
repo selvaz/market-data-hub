@@ -1,0 +1,1384 @@
+{
+  "overview": {
+    "cusip": "92203J407",
+    "marketPrice": "$47.35",
+    "riskLevel": "2",
+    "ytdMarketReturns": "0.34%",
+    "assetClass": "Taxable Bond",
+    "ytdMarketReturnsAsOfDate": "11/02/2026",
+    "expenseRatioAsOfDate": "02/27/2026",
+    "navPriceAsOfDate": "11/02/2026",
+    "navPrice": "$47.29",
+    "inceptionDate": "05/31/2013",
+    "managementStyle": "Index",
+    "marketPriceChangePct": "-0.08%",
+    "marketPriceAsOfDate": "11/02/2026",
+    "navChange": "-$0.04",
+    "navChangePct": "-0.08%",
+    "marketPriceChange": "-$0.04",
+    "marketPriceChangeAsOfDate": "11/02/2026",
+    "iovTickerSymbol": "BNDX.OQ",
+    "fundId": "3711",
+    "investmentMinimum": "$1.00",
+    "expenseRatio": "0.07%",
+    "navChangeAsOfDate": "11/02/2026",
+    "ytdReturnsAsOfDate": "11/02/2026",
+    "ytdReturns": "0.20%",
+    "category": "Intermediate-Term Bond"
+  },
+  "performancefees": {
+    "investmentMinimums": "$1.00",
+    "totalReturns": {
+      "summary": {
+        "monthEnd": {
+          "sinceInceptionAsOfDate": "05/31/2013",
+          "benchmarkReturn": {
+            "fiveYrPct": "0.39%",
+            "tenYrPct": "1.68%",
+            "oneYrPct": "-0.45%",
+            "sinceInceptionPct": "2.45%",
+            "calendarYTDPct": "0.02%",
+            "threeMonthPct": "-0.20%",
+            "threeYrPct": "4.41%",
+            "prevMonthPct": "1.33%"
+          },
+          "benchmarkShortName": "Bloomberg GA ex-USD FlAdjRIC Cp Hgd",
+          "fundReturn": {
+            "fiveYrPct": "0.33%",
+            "tenYrPct": "1.58%",
+            "oneYrPct": "-0.49%",
+            "sinceInceptionPct": "2.29%",
+            "calendarYTDPct": "0.03%",
+            "threeMonthPct": "-0.07%",
+            "threeYrPct": "4.42%",
+            "prevMonthPct": "1.47%"
+          },
+          "fundShortName": "Tot Intl Bond ETF",
+          "marketPriceFundReturn": {
+            "fiveYrPct": "0.31%",
+            "tenYrPct": "1.55%",
+            "oneYrPct": "-0.53%",
+            "sinceInceptionPct": "2.30%",
+            "calendarYTDPct": "0.17%",
+            "threeMonthPct": "-0.05%",
+            "threeYrPct": "4.44%",
+            "prevMonthPct": "1.36%"
+          },
+          "asOfDate": "10/31/2026"
+        },
+        "quarterEndAnnualReturn": {
+          "sinceInceptionAsOfDate": "05/31/2013",
+          "benchmarkReturn": {
+            "fiveYrPct": "0.01%",
+            "tenYrPct": "1.42%",
+            "oneYrPct": "-0.82%",
+            "sinceInceptionPct": "2.36%",
+            "calendarYTDPct": "-1.29%",
+            "threeMonthPct": "-2.65%",
+            "threeYrPct": "3.94%",
+            "prevMonthPct": "-1.26%"
+          },
+          "benchmarkShortName": "Bloomberg GA ex-USD FlAdjRIC Cp Hgd",
+          "fundReturn": {
+            "fiveYrPct": "-0.06%",
+            "tenYrPct": "1.30%",
+            "oneYrPct": "-0.92%",
+            "sinceInceptionPct": "2.20%",
+            "calendarYTDPct": "-1.42%",
+            "threeMonthPct": "-2.64%",
+            "threeYrPct": "3.90%",
+            "prevMonthPct": "-1.31%"
+          },
+          "fundShortName": "Tot Intl Bond ETF",
+          "marketPriceFundReturn": {
+            "fiveYrPct": "-0.05%",
+            "tenYrPct": "1.28%",
+            "oneYrPct": "-0.88%",
+            "sinceInceptionPct": "2.21%",
+            "calendarYTDPct": "-1.17%",
+            "threeMonthPct": "-2.51%",
+            "threeYrPct": "3.92%",
+            "prevMonthPct": "-1.18%"
+          },
+          "asOfDate": "09/30/2026"
+        }
+      },
+      "annualReturn": {
+        "benchmarkShortName": "Bloomberg GA ex-USD FlAdjRIC Cp Hgd",
+        "fundShortName": "Tot Intl Bond ETF",
+        "annualReturns": [
+          {
+            "item": [
+              {
+                "benchmarkTotalRtn": "3.03%",
+                "year": "2025",
+                "capitalRtn": "-1.37%",
+                "incomeRtn": "4.37%",
+                "marketPriceTotalRtn": "2.86%",
+                "totalRtn": "3.00%"
+              },
+              {
+                "benchmarkTotalRtn": "3.79%",
+                "year": "2024",
+                "capitalRtn": "-0.53%",
+                "incomeRtn": "4.21%",
+                "marketPriceTotalRtn": "3.58%",
+                "totalRtn": "3.68%"
+              },
+              {
+                "benchmarkTotalRtn": "8.75%",
+                "year": "2023",
+                "capitalRtn": "4.17%",
+                "incomeRtn": "4.71%",
+                "marketPriceTotalRtn": "8.75%",
+                "totalRtn": "8.87%"
+              },
+              {
+                "benchmarkTotalRtn": "-12.72%",
+                "year": "2022",
+                "capitalRtn": "-14.13%",
+                "incomeRtn": "1.25%",
+                "marketPriceTotalRtn": "-12.75%",
+                "totalRtn": "-12.87%"
+              },
+              {
+                "benchmarkTotalRtn": "-2.10%",
+                "year": "2021",
+                "capitalRtn": "-5.09%",
+                "incomeRtn": "2.89%",
+                "marketPriceTotalRtn": "-2.28%",
+                "totalRtn": "-2.20%"
+              },
+              {
+                "benchmarkTotalRtn": "4.75%",
+                "year": "2020",
+                "capitalRtn": "3.59%",
+                "incomeRtn": "1.01%",
+                "marketPriceTotalRtn": "4.63%",
+                "totalRtn": "4.60%"
+              },
+              {
+                "benchmarkTotalRtn": "8.06%",
+                "year": "2019",
+                "capitalRtn": "4.30%",
+                "incomeRtn": "3.58%",
+                "marketPriceTotalRtn": "7.91%",
+                "totalRtn": "7.88%"
+              },
+              {
+                "benchmarkTotalRtn": "3.16%",
+                "year": "2018",
+                "capitalRtn": "-0.09%",
+                "incomeRtn": "3.04%",
+                "marketPriceTotalRtn": "2.85%",
+                "totalRtn": "2.94%"
+              },
+              {
+                "benchmarkTotalRtn": "2.57%",
+                "year": "2017",
+                "capitalRtn": "0.15%",
+                "incomeRtn": "2.25%",
+                "marketPriceTotalRtn": "2.37%",
+                "totalRtn": "2.40%"
+              },
+              {
+                "benchmarkTotalRtn": "4.90%",
+                "year": "2016",
+                "capitalRtn": "2.71%",
+                "incomeRtn": "1.95%",
+                "marketPriceTotalRtn": "4.63%",
+                "totalRtn": "4.67%"
+              },
+              {
+                "benchmarkTotalRtn": "1.34%",
+                "year": "2015",
+                "capitalRtn": "-0.55%",
+                "incomeRtn": "1.63%",
+                "marketPriceTotalRtn": "1.13%",
+                "totalRtn": "1.08%"
+              },
+              {
+                "benchmarkTotalRtn": "9.14%",
+                "year": "2014",
+                "capitalRtn": "7.12%",
+                "incomeRtn": "1.71%",
+                "marketPriceTotalRtn": "8.76%",
+                "totalRtn": "8.83%"
+              },
+              {
+                "year": "2013",
+                "capitalRtn": "-0.98%",
+                "incomeRtn": "0.86%",
+                "marketPriceTotalRtn": "0.21%",
+                "totalRtn": "-0.12%"
+              }
+            ]
+          }
+        ],
+        "asOfDate": "12/31/2025"
+      },
+      "quarterlyAfterTaxReturns": {
+        "sinceInceptionAsOfDate": "05/31/2013",
+        "marketPrice": {
+          "afterTaxOnDistributionFundShares": {
+            "fiveYrPct": "-0.65%",
+            "tenYrPct": "0.46%",
+            "oneYrPct": "-0.50%",
+            "name": "Returns after taxes on distributions and sale of fund shares",
+            "sinceInceptionPct": "1.24%",
+            "asOfDate": "09/30/2026",
+            "threeYrPct": "2.22%"
+          },
+          "beforeTax": {
+            "fiveYrPct": "-0.05%",
+            "tenYrPct": "1.28%",
+            "oneYrPct": "-0.88%",
+            "name": "Returns before taxes",
+            "sinceInceptionPct": "2.21%",
+            "asOfDate": "09/30/2026",
+            "calendarYTDPct": "-1.17%",
+            "threeMonthPct": "-2.51%",
+            "threeYrPct": "3.92%",
+            "prevMonthPct": "-1.18%"
+          },
+          "afterTaxOnDistribution": {
+            "fiveYrPct": "-1.57%",
+            "tenYrPct": "0.04%",
+            "oneYrPct": "-2.67%",
+            "name": "Returns after taxes on distributions",
+            "sinceInceptionPct": "1.11%",
+            "asOfDate": "09/30/2026",
+            "calendarYTDPct": "-1.92%",
+            "threeMonthPct": "-2.80%",
+            "threeYrPct": "2.03%",
+            "prevMonthPct": "-1.28%"
+          }
+        },
+        "benchmarkShortName": "Bloomberg GA ex-USD FlAdjRIC Cp Hgd",
+        "fundShortName": "Tot Intl Bond ETF",
+        "asOfDate": "09/30/2026",
+        "regular": {
+          "afterTaxOnDistributionFundShares": {
+            "fiveYrPct": "-0.67%",
+            "tenYrPct": "0.48%",
+            "oneYrPct": "-0.53%",
+            "name": "Returns after taxes on distributions and sale of fund shares",
+            "sinceInceptionPct": "1.23%",
+            "asOfDate": "09/30/2026",
+            "threeYrPct": "2.20%"
+          },
+          "beforeTax": {
+            "fiveYrPct": "-0.06%",
+            "tenYrPct": "1.30%",
+            "oneYrPct": "-0.92%",
+            "name": "Returns before taxes",
+            "sinceInceptionPct": "2.20%",
+            "asOfDate": "09/30/2026",
+            "calendarYTDPct": "-1.42%",
+            "threeMonthPct": "-2.64%",
+            "threeYrPct": "3.90%",
+            "prevMonthPct": "-1.31%"
+          },
+          "afterTaxOnDistribution": {
+            "fiveYrPct": "-1.59%",
+            "tenYrPct": "0.06%",
+            "oneYrPct": "-2.72%",
+            "name": "Returns after taxes on distributions",
+            "sinceInceptionPct": "1.10%",
+            "asOfDate": "09/30/2026",
+            "calendarYTDPct": "-2.17%",
+            "threeMonthPct": "-2.93%",
+            "threeYrPct": "2.01%",
+            "prevMonthPct": "-1.41%"
+          }
+        },
+        "benchmark": {
+          "beforeTax": {
+            "fiveYrPct": "0.01%",
+            "tenYrPct": "1.42%",
+            "oneYrPct": "-0.82%",
+            "name": "Benchmark",
+            "sinceInceptionPct": "2.36%",
+            "asOfDate": "09/30/2026",
+            "calendarYTDPct": "-1.29%",
+            "threeMonthPct": "-2.65%",
+            "threeYrPct": "3.94%",
+            "prevMonthPct": "-1.26%"
+          }
+        }
+      },
+      "quarterly": {
+        "nav": [
+          {
+            "item": [
+              {
+                "year": "2026",
+                "thirdQuarterReturn": "-2.64%",
+                "firstQuarterReturn": "-0.44%",
+                "secondQuarterReturn": "1.70%"
+              },
+              {
+                "benchmarkYearEndReturn": "3.03%",
+                "year": "2025",
+                "fourthQuarterReturn": "0.50%",
+                "thirdQuarterReturn": "0.61%",
+                "firstQuarterReturn": "-0.15%",
+                "yearEndReturn": "3.00%",
+                "secondQuarterReturn": "2.01%"
+              },
+              {
+                "benchmarkYearEndReturn": "3.79%",
+                "year": "2024",
+                "fourthQuarterReturn": "0.11%",
+                "thirdQuarterReturn": "4.10%",
+                "firstQuarterReturn": "0.09%",
+                "yearEndReturn": "3.68%",
+                "secondQuarterReturn": "-0.60%"
+              },
+              {
+                "benchmarkYearEndReturn": "8.75%",
+                "year": "2023",
+                "fourthQuarterReturn": "6.53%",
+                "thirdQuarterReturn": "-1.47%",
+                "firstQuarterReturn": "3.54%",
+                "yearEndReturn": "8.87%",
+                "secondQuarterReturn": "0.17%"
+              },
+              {
+                "benchmarkYearEndReturn": "-12.72%",
+                "year": "2022",
+                "fourthQuarterReturn": "-0.03%",
+                "thirdQuarterReturn": "-3.27%",
+                "firstQuarterReturn": "-5.00%",
+                "yearEndReturn": "-12.87%",
+                "secondQuarterReturn": "-5.16%"
+              },
+              {
+                "benchmarkYearEndReturn": "-2.10%",
+                "year": "2021",
+                "fourthQuarterReturn": "-0.19%",
+                "thirdQuarterReturn": "0.04%",
+                "firstQuarterReturn": "-2.33%",
+                "yearEndReturn": "-2.20%",
+                "secondQuarterReturn": "0.28%"
+              },
+              {
+                "benchmarkYearEndReturn": "4.75%",
+                "year": "2020",
+                "fourthQuarterReturn": "1.04%",
+                "thirdQuarterReturn": "1.15%",
+                "firstQuarterReturn": "0.17%",
+                "yearEndReturn": "4.60%",
+                "secondQuarterReturn": "2.17%"
+              },
+              {
+                "benchmarkYearEndReturn": "8.06%",
+                "year": "2019",
+                "fourthQuarterReturn": "-1.27%",
+                "thirdQuarterReturn": "2.98%",
+                "firstQuarterReturn": "3.09%",
+                "yearEndReturn": "7.88%",
+                "secondQuarterReturn": "2.93%"
+              },
+              {
+                "benchmarkYearEndReturn": "3.16%",
+                "year": "2018",
+                "fourthQuarterReturn": "1.85%",
+                "thirdQuarterReturn": "-0.19%",
+                "firstQuarterReturn": "0.91%",
+                "yearEndReturn": "2.94%",
+                "secondQuarterReturn": "0.35%"
+              },
+              {
+                "benchmarkYearEndReturn": "2.57%",
+                "year": "2017",
+                "fourthQuarterReturn": "1.15%",
+                "thirdQuarterReturn": "0.66%",
+                "firstQuarterReturn": "-0.03%",
+                "yearEndReturn": "2.40%",
+                "secondQuarterReturn": "0.61%"
+              },
+              {
+                "benchmarkYearEndReturn": "4.90%",
+                "year": "2016",
+                "fourthQuarterReturn": "-2.03%",
+                "yearEndReturn": "4.67%"
+              }
+            ]
+          }
+        ],
+        "marketPrice": [
+          {
+            "item": [
+              {
+                "year": "2026",
+                "thirdQuarterReturn": "-2.51%",
+                "firstQuarterReturn": "-0.12%",
+                "secondQuarterReturn": "1.50%"
+              },
+              {
+                "benchmarkYearEndReturn": "3.03%",
+                "year": "2025",
+                "fourthQuarterReturn": "0.29%",
+                "thirdQuarterReturn": "0.55%",
+                "firstQuarterReturn": "-0.07%",
+                "yearEndReturn": "2.86%",
+                "secondQuarterReturn": "2.07%"
+              },
+              {
+                "benchmarkYearEndReturn": "3.79%",
+                "year": "2024",
+                "fourthQuarterReturn": "0.15%",
+                "thirdQuarterReturn": "3.94%",
+                "firstQuarterReturn": "0.00%",
+                "yearEndReturn": "3.58%",
+                "secondQuarterReturn": "-0.49%"
+              },
+              {
+                "benchmarkYearEndReturn": "8.75%",
+                "year": "2023",
+                "fourthQuarterReturn": "6.56%",
+                "thirdQuarterReturn": "-1.65%",
+                "firstQuarterReturn": "3.41%",
+                "yearEndReturn": "8.75%",
+                "secondQuarterReturn": "0.34%"
+              },
+              {
+                "benchmarkYearEndReturn": "-12.72%",
+                "year": "2022",
+                "fourthQuarterReturn": "0.23%",
+                "thirdQuarterReturn": "-3.42%",
+                "firstQuarterReturn": "-4.79%",
+                "yearEndReturn": "-12.75%",
+                "secondQuarterReturn": "-5.33%"
+              },
+              {
+                "benchmarkYearEndReturn": "-2.10%",
+                "year": "2021",
+                "fourthQuarterReturn": "-0.17%",
+                "thirdQuarterReturn": "-0.02%",
+                "firstQuarterReturn": "-2.29%",
+                "yearEndReturn": "-2.28%",
+                "secondQuarterReturn": "0.19%"
+              },
+              {
+                "benchmarkYearEndReturn": "4.75%",
+                "year": "2020",
+                "fourthQuarterReturn": "1.09%",
+                "thirdQuarterReturn": "1.04%",
+                "firstQuarterReturn": "-0.41%",
+                "yearEndReturn": "4.63%",
+                "secondQuarterReturn": "2.86%"
+              },
+              {
+                "benchmarkYearEndReturn": "8.06%",
+                "year": "2019",
+                "fourthQuarterReturn": "-1.22%",
+                "thirdQuarterReturn": "2.89%",
+                "firstQuarterReturn": "3.08%",
+                "yearEndReturn": "7.91%",
+                "secondQuarterReturn": "3.00%"
+              },
+              {
+                "benchmarkYearEndReturn": "3.16%",
+                "year": "2018",
+                "fourthQuarterReturn": "1.75%",
+                "thirdQuarterReturn": "-0.08%",
+                "firstQuarterReturn": "0.89%",
+                "yearEndReturn": "2.85%",
+                "secondQuarterReturn": "0.26%"
+              },
+              {
+                "benchmarkYearEndReturn": "2.57%",
+                "year": "2017",
+                "fourthQuarterReturn": "1.11%",
+                "thirdQuarterReturn": "0.69%",
+                "firstQuarterReturn": "-0.06%",
+                "yearEndReturn": "2.37%",
+                "secondQuarterReturn": "0.61%"
+              },
+              {
+                "benchmarkYearEndReturn": "4.90%",
+                "year": "2016",
+                "fourthQuarterReturn": "-2.15%",
+                "yearEndReturn": "4.63%"
+              }
+            ]
+          }
+        ],
+        "benchmarkShortName": "Bloomberg GA ex-USD FlAdjRIC Cp Hgd",
+        "fundShortName": "Tot Intl Bond ETF",
+        "asOfDate": "09/30/2026"
+      },
+      "cumulative": {
+        "sinceInceptionAsOfDate": "05/31/2013",
+        "benchmarkReturn": {
+          "fiveYrPct": "1.98%",
+          "tenYrPct": "18.16%",
+          "oneYrPct": "-0.45%",
+          "sinceInceptionPct": "38.31%",
+          "asOfDate": "10/31/2026",
+          "calendarYTDPct": "0.02%",
+          "threeMonthPct": "-0.20%",
+          "threeYrPct": "13.83%",
+          "prevMonthPct": "1.33%"
+        },
+        "benchmarkShortName": "Bloomberg GA ex-USD FlAdjRIC Cp Hgd",
+        "fundReturn": {
+          "fiveYrPct": "1.68%",
+          "tenYrPct": "16.93%",
+          "oneYrPct": "-0.49%",
+          "sinceInceptionPct": "35.57%",
+          "asOfDate": "10/31/2026",
+          "calendarYTDPct": "0.03%",
+          "threeMonthPct": "-0.07%",
+          "threeYrPct": "13.85%",
+          "prevMonthPct": "1.47%"
+        },
+        "fundShortName": "Tot Intl Bond ETF",
+        "marketPriceFundReturn": {
+          "fiveYrPct": "1.58%",
+          "tenYrPct": "16.62%",
+          "oneYrPct": "-0.53%",
+          "sinceInceptionPct": "35.65%",
+          "asOfDate": "10/31/2026",
+          "calendarYTDPct": "0.17%",
+          "threeMonthPct": "-0.05%",
+          "threeYrPct": "13.91%",
+          "prevMonthPct": "1.36%"
+        },
+        "asOfDate": "10/31/2026"
+      }
+    },
+    "ticker": "BNDX",
+    "fundId": "3711",
+    "historicalVolatilityMeasure": {
+      "volatilityMeasure": [
+        {
+          "rsquared": "0.99",
+          "benchmarkShortName": "Bloomberg GA ex-USD FlAdjRIC Cp Hgd",
+          "rSquared": "0.99",
+          "beta": "1.02"
+        },
+        {
+          "rsquared": "0.56",
+          "benchmarkShortName": "Bloomberg Global Agg Index ex USD",
+          "rSquared": "0.56",
+          "beta": "0.38"
+        }
+      ],
+      "asOfDate": "09/30/2026"
+    },
+    "fundSpecificFees": {
+      "fundFamilyRedemptionFee": "None",
+      "transactionFee": "None",
+      "load": "None",
+      "purchaseFee": "None",
+      "12b-1Fee": "None"
+    }
+  },
+  "price": {
+    "marketPriceChangePct": "-0.08%",
+    "historicalPrice": {
+      "ticker": "BNDX",
+      "1m": {
+        "nav": [
+          {
+            "price": "$46.74",
+            "asOfDate": "10/05/2026"
+          },
+          {
+            "price": "$46.79",
+            "asOfDate": "10/06/2026"
+          },
+          {
+            "price": "$46.78",
+            "asOfDate": "10/07/2026"
+          },
+          {
+            "price": "$46.88",
+            "asOfDate": "10/08/2026"
+          },
+          {
+            "price": "$46.88",
+            "asOfDate": "10/09/2026"
+          },
+          {
+            "price": "$46.89",
+            "asOfDate": "10/12/2026"
+          },
+          {
+            "price": "$46.94",
+            "asOfDate": "10/13/2026"
+          },
+          {
+            "price": "$46.99",
+            "asOfDate": "10/14/2026"
+          },
+          {
+            "price": "$47.10",
+            "asOfDate": "10/15/2026"
+          },
+          {
+            "price": "$47.11",
+            "asOfDate": "10/16/2026"
+          },
+          {
+            "price": "$46.97",
+            "asOfDate": "10/19/2026"
+          },
+          {
+            "price": "$47.03",
+            "asOfDate": "10/20/2026"
+          },
+          {
+            "price": "$47.03",
+            "asOfDate": "10/21/2026"
+          },
+          {
+            "price": "$47.17",
+            "asOfDate": "10/22/2026"
+          },
+          {
+            "price": "$47.12",
+            "asOfDate": "10/23/2026"
+          },
+          {
+            "price": "$47.19",
+            "asOfDate": "10/26/2026"
+          },
+          {
+            "price": "$47.20",
+            "asOfDate": "10/27/2026"
+          },
+          {
+            "price": "$47.17",
+            "asOfDate": "10/28/2026"
+          },
+          {
+            "price": "$47.25",
+            "asOfDate": "10/29/2026"
+          },
+          {
+            "price": "$47.33",
+            "asOfDate": "10/30/2026"
+          },
+          {
+            "price": "$47.29",
+            "asOfDate": "11/02/2026"
+          }
+        ]
+      }
+    },
+    "marketPrice": "$47.35",
+    "52WeekLowDate": "10/02/2026",
+    "marketPriceAsOfDate": "11/02/2026",
+    "premiumDiscount": "$0.06",
+    "yieldNote": [
+      {
+        "secDay": "30",
+        "footNoteCode": "A",
+        "footNoteText": "BASED ON HOLDINGS' YIELD TO MATURITY FOR PRIOR 30 DAYS;DISTRIBUTION MAY DIFFER"
+      }
+    ],
+    "navChange": "-$0.04",
+    "thirtyDayMedianBidAskSpread": "0.021%",
+    "marketPriceChange": "-$0.04",
+    "navChangePct": "-0.08%",
+    "marketPriceChangeAsOfDate": "11/02/2026",
+    "52WeekHighDate": "11/12/2025",
+    "secYieldAsOfDate": "10/30/2026",
+    "52WeekDiffPct": "6.23%",
+    "navPriceAsOfDate": "11/02/2026",
+    "navPrice": "$47.29",
+    "premiumDiscountPct": "0.13%",
+    "navChangeAsOfDate": "11/02/2026",
+    "52WeekLow": "$46.72",
+    "52WeekDiff": "$2.91",
+    "52WeekHigh": "$49.63",
+    "secYield": "3.90%"
+  },
+  "dashboard": {
+    "ticker": "BNDX",
+    "marketPrice": "$47.35",
+    "marketPriceAsOfDate": "11/02/2026",
+    "riskLevel": "2",
+    "yieldNote": [
+      {
+        "secDay": "30",
+        "footNoteCode": "A",
+        "footNoteText": "BASED ON HOLDINGS' YIELD TO MATURITY FOR PRIOR 30 DAYS;DISTRIBUTION MAY DIFFER"
+      }
+    ],
+    "assetClass": "Taxable Bond",
+    "expenseRatioAsOfDate": "02/27/2026",
+    "secYieldAsOfDate": "10/30/2026",
+    "associatedFundIds": {
+      "isAdmiralShare": false,
+      "isAdmiralFund": false,
+      "admiralFundId": "0511",
+      "isInstitutionalShare": false,
+      "isInvestorShare": false,
+      "investorFundId": "1231",
+      "etfFundId": "3711",
+      "institutionalFundId": "2011"
+    },
+    "navPriceAsOfDate": "11/02/2026",
+    "navPrice": "$47.29",
+    "fundId": "3711",
+    "investmentMinimum": "$1.00",
+    "expenseRatio": "0.07%",
+    "ytdReturnsAsOfDate": "11/02/2026",
+    "fundFullName": "Vanguard Total International Bond ETF",
+    "ytdReturns": "0.20%",
+    "category": "Intermediate-Term Bond",
+    "managementStyle": "Index",
+    "secYield": "3.90%"
+  },
+  "content": {
+    "firmAdvisor": "<p><strong>Vanguard Fixed Income Group</strong></p><p><strong><em>Firm Description</em></strong></p><p>Launched in 1975, The Vanguard Group, Malvern, Pennsylvania, is among the world\u2019s largest equity and fixed income managers. Sara Devereux, chief investment officer, Vanguard Capital Management, and global head of fixed income, has direct oversight responsibility for all money market, bond, and stable value portfolios managed by the Fixed Income Group. The Fixed Income Group offers actively managed investments in U.S. Treasury, corporate, and tax-exempt securities, as well as passively managed index portfolios. Since 1981, it has refined techniques in total-return management, credit research, and index sampling to seek to deliver consistent performance with transparency and risk control. The group has advised Vanguard Total International Bond ETF since 2013.</p><p><strong><em>Investment Manager Biographies</em></strong></p><p>Joshua C. Barrickman, CFA, Principal, Co-Head of Fixed Income Indexing Americas</p><ul><li>Portfolio manager.</li><li>Advised the fund since 2013.</li><li>Worked in investment management since 1999.</li><li>B.S., Ohio Northern University.</li><li>M.B.A., Lehigh University.</li></ul><p>Tara Talone, CFA</p><ul><li>Portfolio manager.</li><li>Advised the fund since 2022.</li><li>Worked in investment management since 2008.</li><li>B.S., Saint Joseph's University.</li><li>M.B.A., The Wharton School of the University of Pennsylvania.</li></ul>",
+    "creditQualityFootnote": "<p>Credit-quality ratings are measured on a scale that generally ranges from AAA (highest) to D (lowest). \u201cNR\u201d is used to classify securities for which a rating is not available. NR securities may include internal money market funds, derivatives, and futures. U.S. Treasury, U.S. agency, and U.S. agency mortgage-backed securities appear under \u201cU.S. Government.\u201d Credit-quality ratings for each issue are either obtained from Bloomberg using ratings derived from Moody\u2019s Investors Service (Moody\u2019s), Fitch Ratings (Fitch), and Standard & Poor\u2019s (S&P), or directly from Moody\u2019s and S&P. Credit-quality ratings obtained from Bloomberg use the following methodologies: When ratings from all three agencies are available, the median rating is used; when ratings from only two of the agencies are available, the lower rating is used; and when one rating is available, that rating is used. Credit-quality ratings obtained directly from Moody\u2019s and S&P use the higher rating for each issue.\u00a0Exposures are calculated using investment book of record positions, which is based on when transactions occur, not when they settle, which can lead to the appearance of temporary negative cash balances or gross exposures greater than 100%.</p>",
+    "overview": "<p>Vanguard Total International Bond ETF seeks to track the performance of a benchmark index that measures the investment return of investment-grade bonds issued outside of the United States.</p>",
+    "riskLevel": "2",
+    "advisorNames": [
+      "Vanguard Fixed Income Group"
+    ],
+    "benchmarkFootnote": "<p>Includes government, government agency, corporate, and securitized non-U.S. investment grade fixed-income investments, all issued in currencies other than the U.S. dollar and with maturities of more than one year.</p>",
+    "aboutTheStrategy": "<p><strong>Strategy Details:</strong></p><p><strong>Long/Short Commodities</strong></p><ul><li>Seeks to capture the risk premium associated with inventory levels in commodities.</li><li>Hold long positions in commodity futures expected to increase in price (backwardation), while taking short positions in commodity futures expected decline in price (contango).</li></ul><p><strong>Merger Arbitrage</strong></p><ul><li>Seeks to capture the risk premium associated with M&A deal failure risk.</li><li>Holds long positions in the stocks of companies being acquired and may take short positions in the stocks of the acquiring companies.</li></ul><p><strong>Long/Short Equities</strong></p><ul><li>Seeks to capture the higher risk-adjusted performance of low-volatility stocks.</li><li>Holds long positions in low-volatility stocks, while taking short positions in high volatility-stocks.</li></ul><p><strong>Long/Short Foreign Exchange</strong></p><ul><li>Seeks to capture carry premium in the form of interest rate spreads in currencies.</li><li>Holds long positions in higher yielding foreign currencies, while taking short positions in lower yielding foreign currencies.</li></ul><p><strong>Fixed Income</strong></p><ul><li>Seeks to exploit the steepness in the treasury yield curve created by investors\u2019 desire to hold the short end of the curve.</li><li>Holds long positions in treasury futures diversified across multiple points on the yield curve.</li></ul><p><strong>Long/Short Equity Index</strong></p><ul><li>Seeks to collect the carry differential between high-carry and low-carry countries.</li><li>Holds long positions in higher yielding equity index futures, while shorting lower yielding equity index futures.</li></ul>",
+    "riskLevelDesc": "<p>Vanguard funds classified as conservative to moderate are subject to low-to-moderate fluctuations in share prices. In general, such funds are appropriate for investors with medium-term investment horizons (4 to 10 years), for those seeking an investment that emphasizes income rather than growth, and for investors who have a low tolerance for the risk of short-term price fluctuations.</p>",
+    "firm": "<p><strong><em>Firm Description</em></strong></p><p>Launched in 1975, The Vanguard Group, Malvern, Pennsylvania, is among the world\u2019s largest equity and fixed income managers. Sara Devereux, chief investment officer, Vanguard Capital Management, and global head of fixed income, has direct oversight responsibility for all money market, bond, and stable value portfolios managed by the Fixed Income Group. The Fixed Income Group offers actively managed investments in U.S. Treasury, corporate, and tax-exempt securities, as well as passively managed index portfolios. Since 1981, it has refined techniques in total-return management, credit research, and index sampling to seek to deliver consistent performance with transparency and risk control. The group has advised Vanguard Total International Bond ETF since 2013.</p>",
+    "advisor": "<p><strong>Vanguard Fixed Income Group</strong></p><p>Joshua C. Barrickman, CFA, Principal, Co-Head of Fixed Income Indexing Americas</p><ul><li>Portfolio manager.</li><li>Advised the fund since 2013.</li><li>Worked in investment management since 1999.</li><li>B.S., Ohio Northern University.</li><li>M.B.A., Lehigh University.</li></ul><p>Tara Talone, CFA</p><ul><li>Portfolio manager.</li><li>Advised the fund since 2022.</li><li>Worked in investment management since 2008.</li><li>B.S., Saint Joseph's University.</li><li>M.B.A., The Wharton School of the University of Pennsylvania.</li></ul>",
+    "levelDesc": "Conservative to Moderate",
+    "plainTalk": "<p>As with any investment, an investment in the fund could lose money over any time period. The fund\u2019s share price and total return may fluctuate, potentially within a wide range. The principal risks of investing in the fund are summarized below. Each of the following risks could affect the fund\u2019s performance:</p><ul><li><b>General Market Risk.</b> The markets in which the fund invests can be affected by a variety of factors. These factors, which can be real or perceived, may include economic, market, political, and regulatory conditions and developments as well as local, regional, or global events such as wars, military conflicts, natural disasters, and public health issues. In addition, investor sentiment and expectations regarding these factors can also impact the markets. Different parts of the market, including different industries and sectors as well as different types of securities, may react differently to factors that affect the market. These factors can contribute to market uncertainty, market volatility, and fluctuations in the value of the fund\u2019s investments, thereby resulting in potential losses to the fund over short or long periods.</li><li><b>Investing in Foreign Markets.</b> Foreign markets can perform differently than U.S. markets. World events could adversely affect the value and/or liquidity of securities of foreign companies or foreign issuers, potentially in ways that differ from impacts to U.S. companies or issuers. Further, global economies and financial markets are becoming increasingly interconnected, which increases the possibility that conditions in one country or region could adversely impact a different country or region. In addition, the rights and remedies associated with investments in a fund that invests in foreign securities may be different than a fund that invests in domestic securities. To the extent that the fund invests a large portion of its assets in securities of issuers located primarily in one country or region, the fund\u2019s performance may be hurt disproportionately by the poor performance of its investments in such country or region.</li><li><b>Investing in Emerging Markets.</b> Investments in emerging markets are subject to higher degrees of risk and volatility than investments in developed markets. Compared with developed markets, emerging markets can have greater custodial and operational risks; less developed legal, tax, regulatory, financial reporting, accounting, and recordkeeping systems; and greater political, social, and economic instability than developed markets. In addition, emerging markets generally have less efficient trading markets with lower overall liquidity and more volatile currency exchange rates. Each of these risks can cause losses to the fund\u2019s investments and/or impact the fund\u2019s performance.</li><li><b>Currency Risk.</b> The fund is subject to the risk that foreign currency will perform differently than U.S. dollars and increase the potential loss to the fund. Currency exchange rates may be volatile, move rapidly, and change as a result of changes in interest rates, inflation rates, government surpluses or deficits, and monetary policy or currency controls imposed by local governments or supranational entities such as the International Monetary fund. Changes in currency exchange rates can affect the value of the fund\u2019s holdings.</li><li><b>Currency Hedging.</b> The fund may attempt to offset currency risk through a hedging strategy; however, by doing so, the fund may not be able to capture gains that it could otherwise realize if it did not have a hedging strategy. It generally is not possible to perfectly hedge the risk posed by foreign currency exposure. Hedging transactions can increase transaction costs and subject the fund to the risk that a counterparty is unable to fulfill its contractual obligation, in which case the fund could be subject to additional loss.</li><li><b>Investing in Bond Markets.</b> The fund may be impacted by the general condition of the bond markets and by factors that affect bonds and bond issuers. For example, as a general rule, bond prices and interest rates move in opposite directions. When interest rates rise, bond prices tend to fall, and when interest rates fall, bond prices tend to go up. Bond income also is affected by changes in interest rates. Interest rates can rise or fall for a number of reasons, including, but not limited to, central bank monetary policy, inflationary or deflationary pressures, and changes in general market and economic conditions. Changing interest rates, including, but not limited to, rates that fall below zero, could have unpredictable effects on the overall market and may expose the bond markets in particular to heightened volatility and potential illiquidity. The degree to which the fund is impacted by certain bond market risks may vary based on factors disclosed in its principal investment strategies, such as the types of bonds in which it invests and the overall credit quality, average maturity, and/or average duration of its bond holdings.</li><li><b>Interest Rate Risk.</b> During periods of rising interest rates, bond prices overall may decline, which could result in a decline in the fund\u2019s value. The prices of longer-term bonds are more sensitive to changes in interest rates than the prices of shorter-term bonds.</li><li><b>Income Risk.</b> During periods of falling interest rates, the fund\u2019s income may decline. The income paid by shorter-term bonds is subject to a higher degree of fluctuation than the income paid by longer-term bonds.</li><li><b>Credit Risk.</b> Credit risk refers to the chance that an issuer will default (fail to meet its credit obligations) or fail to make payments in a timely manner, which could result in a loss to the fund. In addition, negative perceptions of an issuer\u2019s ability to make payments can cause the price of a security to decline. While all debt securities are subject to credit risk to some extent, those with higher credit quality ratings generally pose less credit risk than those with lower credit quality ratings.</li><li><b>Bond Liquidity Risk.</b> If the fund is unable to sell a security at an advantageous time or price, its returns may be reduced. There may be limited trading in the secondary market for certain debt securities, which could make them more difficult to value or sell.</li><li><b>Call Risk.</b> Certain bonds held by the fund may be callable. The issuer of a callable bond has the right to \u201ccall\u201d (redeem) the bond before its maturity date. Calls on bonds held by the fund would result in the fund losing any price appreciation above the bond\u2019s call price. In addition, because bond calls occur more frequently during periods of falling interest rates, the fund likely would be forced to reinvest the proceeds of any called bonds at a lower interest rate than that of the called bonds, resulting in a decline in the fund\u2019s income and a potential loss in the value of the fund\u2019s investments. Frequent bond calls and subsequent reinvestments of the proceeds also would increase the fund\u2019s turnover rate.</li><li><b>Index Investing.</b> The fund is subject to risks associated with index investing. Because the fund generally seeks to track the performance of the Target index regardless of how the Target index is performing, the fund\u2019s performance may be lower than it would be if it were actively managed. Additionally, because the fund does not hold all of the securities included in the Target index, it is subject to the risk that the representative sample of securities selected by the advisor will, in the aggregate, vary from the investment profile of the full Target index.The performance of the fund\u2019s investments, in the aggregate, may not match the investment performance of the Target index. This risk, known as tracking error risk, may be heightened during times of increased market volatility or under other unusual market conditions. The fund also could be negatively impacted by changes to the Target index made by the index Provider or by errors made by the index Provider. Any gains, losses, or costs associated with or resulting from an error made by the index Provider will generally be borne by the fund and, as a result, the fund\u2019s shareholders.</li><li><b>Nondiversification.</b> By tracking its broad-based Target index, the fund could become nondiversified, as defined under the Investment Company Act of 1940, due to events such as an index rebalance or market movement. The performance of nondiversified funds may be negatively impacted by relatively few securities or even a single security and their shares may experience significant fluctuations in value.</li><li><b>Investing in Derivatives.</b> Investing in derivatives may present risks different from, and/or greater than, those associated with investing directly in stocks, bonds, or other types of investments. Derivatives could expose the fund to increased volatility and/or significant loss. Certain derivatives have an inherent leverage component, providing the fund exposure to a sizable position in an underlying asset with a relatively small upfront investment at the time the fund enters into the derivatives position. For these derivatives, an adverse change in the value or price of the underlying asset could result in a loss substantially greater than the amount invested in the derivative itself. Some derivatives require the fund to enter into a contract with a counterparty. If the counterparty is unable or unwilling to fulfill its contractual obligation, the fund may experience a loss. A liquid market may not always exist for the fund\u2019s derivatives positions. The fund may be unable to sell or otherwise exit its derivatives position at desired times or prices, which could also result in a loss to the fund. Some derivatives, particularly OTC derivatives, can be complex and often are valued subjectively. Valuation may be more difficult in times of market turmoil since many investors and market makers may be reluctant to purchase complex instruments or quote prices for them. Improper valuations can result in increased cash payment requirements to counterparties or a loss of value to the fund.<br>Derivatives may not perform as intended, which may result in losses to the fund. For example, derivatives used for hedging or as a substitute for a portfolio instrument may not provide the expected benefits, particularly during adverse market conditions. The use of derivatives is also subject to legal risk, which includes the risk of loss resulting from insufficient or unenforceable contractual documentation, insufficient capacity or authority of the fund\u2019s counterparty, and operational risk, which includes documentation or settlement issues, system failures, inadequate controls, and human error.</li><li><b>ETF Share Trading.</b> Vanguard ETF Shares (\u201cETF Shares\u201d) are an exchanged-traded class of shares issued by certain Vanguard funds that represent an interest in the portfolio of securities held by the issuing fund. The fund\u2019s ETF Shares are listed for trading on Nasdaq and individual investors may only buy and sell them on the secondary market at market prices. Although it is expected that the market price of an ETF Share typically will approximate its net asset value (NAV), there may be times when the market price of an ETF Share and its NAV differ significantly. Disruptions to creation and redemption transactions, the existence of significant market volatility, or potential lack of an active trading market for ETF Shares (including through a trading halt), as well as other factors, may result in ETF Shares trading significantly above (at a premium) or below (at a discount) the fund\u2019s NAV or the intraday value of the fund\u2019s holdings. Thus, you may pay more or less than NAV when you buy ETF Shares on the secondary market, and you may receive more or less than NAV when you sell those shares.</li><li><b>Authorized Participants.</b> Only authorized participants may engage in creation or redemption transactions directly with the fund. The fund has a limited number of financial institutions that may act as authorized participants. The fund\u2019s authorized participants are not obligated to engage in creation or redemption transactions. To the extent that the fund\u2019s authorized participants are unable to or choose not to proceed with creation and/or redemption transactions with respect to the fund and no other authorized participants step forward to engage in creation or redemption transactions with the fund, the fund\u2019s ETF Shares may trade at a discount to NAV and possibly face trading halts and/or delisting.</li></ul>",
+    "firmName": "Vanguard Fixed Income Group",
+    "investmentProcess": "<p>Vanguard Total International Bond ETF seeks to track the investment performance of the Bloomberg Global Aggregate ex-USD Float Adjusted RIC Capped Index (Hedged). This index provides a broad-based measure of the global, investment-grade, fixed-rate debt markets. The index includes government, government agency, corporate, and securitized non-U.S. investment-grade fixed income investments, all issued in currencies other than the U.S. dollar and with maturities of more than one year. The fund invests in a broadly diversified sampling of bonds in the index that approximates the index\u2019s key risk factors and characteristics. Vanguard Fixed Income Group\u2019s stability and experience have permitted continuous refinement of techniques for tracking the target index. The group uses proprietary software to implement trading decisions that accommodate cash flow and maintain close correlation with the index\u2019s key characteristics. Vanguard\u2019s refined indexing process, combined with low management fees and efficient trading, has provided tight tracking, net of expenses.</p><p>\u00a0</p>",
+    "productSummary": "<ul><li>Seeks to track the performance of the Bloomberg Global Aggregate ex-USD Float Adjusted RIC Capped Index (Hedged).</li><li>Employs hedging strategies that seek to mitigate uncertainty in exchange rates.</li><li>Passively managed, using index sampling.</li><li>Fund remains fully invested.</li><li>Broad exposure across major bond markets outside of the United States.</li><li>Low expenses minimize net tracking error.</li></ul><p>With respect to 75% of its total assets, the fund may not: (1) purchase more than 10% of the outstanding voting securities of any one issuer or (2) purchase securities of any issuer if, as a result, more than 5% of the fund\u2019s total assets would be invested in that issuer\u2019s securities; except as may be necessary to approximate the composition of its target index. This limitation does not apply to obligations of the U.S. government or its agencies or instrumentalities.</p>",
+    "strategy": "<p>Vanguard Total International Bond ETF is an exchange-traded share class of Vanguard Total International Bond Index Fund, which employs indexing investment approach designed to track the performance of the Bloomberg Global Aggregate ex-USD Float Adjusted RIC Capped Index (USD Hedged), a broad-based measure of the global, investment-grade, fixed-rate debt markets. The index includes government, government agency, corporate, and securitized non-U.S. investment-grade fixed income investments, all issued in currencies other than the U.S. dollar and with maturities of more than one year. The index is capped, which means that its exposure to any particular bond issuer is limited to a maximum of 20%. Additionally, issuers that individually constitute 5% or more of the index may not constitute, in the aggregate, more than 48% of the index. If the index, as constituted based on market weights would exceed the 20% or 48% limit, the excess is reallocated to bonds of other issuers represented in the index. To minimize the currency risk associated with investment in bonds denominated in currencies other than the U.S. dollar, the fund will attempt to hedge its currency exposures. \u00a0The fund invests by sampling the index, meaning that it holds a range of securities that, in the aggregate, approximates the full index in terms of key risk factors and other characteristics. All of the fund\u2019s investments will be selected through the sampling process, and at least 80% of the fund\u2019s assets will be invested in bonds included in the index.</p>",
+    "policy": "<ul> <li> The fund reserves the right to substitute a different index for the index it currently tracks if the current index is discontinued, if the fund\u2019s agreement with the provider of its target index is terminated, or for any other reason determined in good faith by the fund\u2019s board of trustees. In the future, the advisor may recommend that the fund\u2019s board change the fund\u2019s target index to an index that provides broader market coverage of global markets. </li> <li> If the fund\u2019s board were to approve such a change, the change may require adjustments to the fund\u2019s portfolio holdings, which could temporarily increase the fund\u2019s transaction costs and may cause the fund to realize capital gains or losses. The exact timing of any index change would be held in strict confidence by Vanguard until it actually occurs, to prevent \u201cfront-running\u201d\u2014which is seeking to profit by driving up the prices of stocks to be bought by the fund, or driving down the prices of stocks to be sold by the fund. If the fund were to track a broader index, such index could have different return characteristics from those of its existing index over any period of time. </li> <li> The fund may invest, to a limited extent, in stock futures and options contracts, warrants, convertible securities, and swap agreements, all of which are types of derivatives. Generally speaking, a derivative is a financial contract whose value is based on the value of a financial asset (such as a stock, bond, or currency), a physical asset (such as gold), or a market index (such as the S&P 500 Index). Investments in derivatives may subject the funds to risks different from, and possibly greater than, those of underlying securities, assets, or market indexes. The fund will not use derivatives for speculation or for the purpose of leveraging (magnifying) investment returns. </li> <li> The fund may enter into forward foreign currency exchange contracts, which are types of derivative contracts, in order to maintain the same currency exposure as its respective index. A forward foreign currency exchange contract is an agreement to buy or sell a country\u2019s currency at a specific price on a specific date, usually 30, 60, or 90 days in the future. In other words, the contract guarantees an exchange rate on a given date. These contracts, however, would not prevent the fund\u2019s securities from falling in value during foreign market downswings. The fund may use these contracts to gain currency exposure when investing in stock index futures and to settle trades in a foreign currency. </li> <li> The fund\u2019s daily cash balance may be invested in one or more Vanguard CMT funds, which are very low-cost money market funds. When investing in a Vanguard CMT fund, the fund bears its proportionate share of the at-cost expenses of the CMT fund in which it invests. </li> <li> The fund may temporarily depart from its normal investment policies and strategies when doing so is believed to be in the fund\u2019s best interest, so long as the alternative is consistent with the fund\u2019s investment objective. For instance, the fund may invest beyond the normal limits in derivatives or ETFs that are consistent with the fund\u2019s objective when those instruments are more favorably priced or provide needed liquidity, as might be the case when the fund is transitioning assets from one advisor to another or receives large cash flows that it cannot prudently invest immediately. </li> </ul>"
+  },
+  "fundFlags": {
+    "isFundTransferableToVGI": false,
+    "isConvertibleFund": false,
+    "isExternalFund": false,
+    "isInvestorShare": false,
+    "isEtfOfEtf": false,
+    "isActiveFund": true,
+    "isTaxManaged": false,
+    "isAssetAllocationFund": false,
+    "isMutualFund": false,
+    "isLoad": false,
+    "isInternational": true,
+    "isInternationalBalancedFund": false,
+    "isFundOfFund": false,
+    "isGNMAFund": false,
+    "isSectorSpecific": false,
+    "isClosedFund": false,
+    "isAdmiralShare": false,
+    "isPreciousMetalsFund": false,
+    "hasMoreThan1ShareClass": true,
+    "isTaxExemptBondFund": false,
+    "isTaxExempt": false,
+    "isFundAccessFund": false,
+    "isTaxable": true,
+    "isNtf": false,
+    "isIndex": true,
+    "isBond": true,
+    "isInternationalStockFund": false,
+    "isStandaloneEtf": false,
+    "is529": false,
+    "isBalanced": false,
+    "isTaxExemptMoneyMarketFund": false,
+    "isEtf": true,
+    "isMarketNeutralFund": false,
+    "standaloneEtf": false,
+    "isInstitutionalShare": false,
+    "isTaxableBondFund": true,
+    "isDomesticStockFund": false,
+    "isInternalFund": true,
+    "isGlobal": false,
+    "isMoneyMarket": false,
+    "isClosedToAllNewInvestors": false,
+    "isStock": false
+  },
+  "distributions": {
+    "fiscalYearEnd": "10/31/2026",
+    "realizedGainPercentOfNav": "-4.11%",
+    "unRealizedGainPercentOfNav": "-11.00%",
+    "realizedGain": "-$1.92",
+    "unRealizedGain": "-$5.14",
+    "incomeCapitalGains": [
+      {
+        "reInvestPrice": "$47.29",
+        "recordDate": "11/02/2026",
+        "reInvestDate": "11/02/2026",
+        "share": "$0.1200000000",
+        "payableDate": "11/04/2026",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$46.76",
+        "recordDate": "10/01/2026",
+        "reInvestDate": "10/01/2026",
+        "share": "$0.1140000000",
+        "payableDate": "10/05/2026",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$47.23",
+        "recordDate": "09/01/2026",
+        "reInvestDate": "09/01/2026",
+        "share": "$0.1206000000",
+        "payableDate": "09/03/2026",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$47.74",
+        "recordDate": "08/03/2026",
+        "reInvestDate": "08/03/2026",
+        "share": "$0.1185000000",
+        "payableDate": "08/05/2026",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$48.25",
+        "recordDate": "07/01/2026",
+        "reInvestDate": "07/01/2026",
+        "share": "$0.1112000000",
+        "payableDate": "07/06/2026",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$48.08",
+        "recordDate": "06/01/2026",
+        "reInvestDate": "06/01/2026",
+        "share": "$0.1141000000",
+        "payableDate": "06/03/2026",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$47.86",
+        "recordDate": "05/01/2026",
+        "reInvestDate": "05/01/2026",
+        "share": "$0.1126000000",
+        "payableDate": "05/05/2026",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$47.92",
+        "recordDate": "04/01/2026",
+        "reInvestDate": "04/01/2026",
+        "share": "$0.1117000000",
+        "payableDate": "04/06/2026",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$48.88",
+        "recordDate": "03/02/2026",
+        "reInvestDate": "03/02/2026",
+        "share": "$0.0998000000",
+        "payableDate": "03/04/2026",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$48.39",
+        "recordDate": "02/02/2026",
+        "reInvestDate": "02/02/2026",
+        "share": "$0.1124000000",
+        "payableDate": "02/04/2026",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$48.27",
+        "recordDate": "12/18/2025",
+        "reInvestDate": "12/18/2025",
+        "share": "$0.9686000000",
+        "payableDate": "12/22/2025",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$49.29",
+        "recordDate": "12/01/2025",
+        "reInvestDate": "12/01/2025",
+        "share": "$0.1044000000",
+        "payableDate": "12/03/2025",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$49.59",
+        "recordDate": "11/03/2025",
+        "reInvestDate": "11/03/2025",
+        "share": "$0.1087000000",
+        "payableDate": "11/05/2025",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$49.28",
+        "recordDate": "10/01/2025",
+        "reInvestDate": "10/01/2025",
+        "share": "$0.1048000000",
+        "payableDate": "10/03/2025",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$48.94",
+        "recordDate": "09/02/2025",
+        "reInvestDate": "09/02/2025",
+        "share": "$0.1092000000",
+        "payableDate": "09/04/2025",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$49.22",
+        "recordDate": "08/01/2025",
+        "reInvestDate": "08/01/2025",
+        "share": "$0.1072000000",
+        "payableDate": "08/05/2025",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$49.39",
+        "recordDate": "07/01/2025",
+        "reInvestDate": "07/01/2025",
+        "share": "$0.1041000000",
+        "payableDate": "07/03/2025",
+        "type": "Dividend"
+      },
+      {
+        "reInvestPrice": "$49.17",
+        "recordDate": "06/02/2025",
+        "reInvestDate": "06/02/2025",
+        "share": "$0.1067000000",
+        "payableDate": "06/04/2025",
+        "type": "Dividend"
+      }
+    ],
+    "asOfDate": "09/30/2026",
+    "distributionSchedule": "Monthly"
+  },
+  "portfolioComposition": {
+    "ticker": "BNDX",
+    "characteristics": {
+      "fundCharacteristic": {},
+      "equityCharacteristic": {},
+      "moneyMarketCharacteristic": {},
+      "fixedIncomeCharacteristic": {
+        "benchmarkShortName": "Bloomberg GA ex-USD FlAdjRIC Cp Hgd",
+        "fund": {
+          "numberOfBonds": "6837",
+          "shareClassTotalNetAssetsDate": "09/30/2026",
+          "turnoverRateDate": "10/31/2025",
+          "numberOfSecuritiesDate": "09/30/2026",
+          "shareClassTotalNetAssets": "$82.9 billion",
+          "numberOfBondsDate": "09/30/2026",
+          "totalNetAssetsDate": "09/30/2026",
+          "averageCoupon": "2.7",
+          "averageCouponDate": "09/30/2026",
+          "averageMaturityType": "E",
+          "foreignHoldingShortDate": "09/30/2026",
+          "averageMaturity": "8.2 years",
+          "averageDurationDate": "09/30/2026",
+          "foreignHoldingDate": "09/30/2026",
+          "yieldToMaturity": "5.5",
+          "numberOfSecurities": "6838",
+          "yieldToMaturityDate": "09/30/2026",
+          "averageDuration": "6.4 years",
+          "numberOfMoneyMarketsDate": "09/30/2026",
+          "foreignHoldingShort": "0.0",
+          "averageMaturityDate": "09/30/2026",
+          "numberOfStocksDate": "09/30/2026",
+          "shortTermReserves": "1.6",
+          "foreignHolding": "0.0",
+          "totalNetAssets": "$121.7 billion",
+          "turnoverRate": "23.0",
+          "shortTermReservesDate": "09/30/2026",
+          "numberOfMoneyMarkets": "6838",
+          "numberOfStocks": "0"
+        },
+        "asOfDate": "09/30/2026",
+        "shortName": "Tot Intl Bond ETF",
+        "benchmark": {
+          "averageMaturity": "8.2 years",
+          "averageDurationDate": "09/30/2026",
+          "numberOfBonds": "14644",
+          "spreadWeightedAverageMaturity": "8.2 years",
+          "averageDuration": "6.5 years",
+          "numberOfMoneyMarketsDate": "09/30/2026",
+          "averageMaturityDate": "09/30/2026",
+          "numberOfBondsDate": "09/30/2026",
+          "numberOfStocksDate": "09/30/2026",
+          "spreadWeightedAverageMaturityDate": "09/30/2026",
+          "averageCoupon": "2.8",
+          "averageCouponDate": "09/30/2026",
+          "averageMaturityType": "E",
+          "numberOfMoneyMarkets": "14644",
+          "numberOfStocks": "14644"
+        }
+      }
+    },
+    "riskLevel": "2",
+    "weightedExposures": {
+      "allocation": {
+        "isavailable": false
+      },
+      "markets": {
+        "isavailable": true,
+        "exposure": [
+          {
+            "name": "United Arab Emirates",
+            "value": "0.0%"
+          },
+          {
+            "name": "Austria",
+            "value": "1.4%"
+          },
+          {
+            "name": "Australia",
+            "value": "3.9%"
+          },
+          {
+            "name": "Belgium",
+            "value": "2.2%"
+          },
+          {
+            "name": "Bulgaria",
+            "value": "0.1%"
+          },
+          {
+            "name": "Bermuda",
+            "value": "0.0%"
+          },
+          {
+            "name": "Brazil",
+            "value": "0.0%"
+          },
+          {
+            "name": "Canada",
+            "value": "7.0%"
+          },
+          {
+            "name": "Switzerland",
+            "value": "1.5%"
+          },
+          {
+            "name": "Chile",
+            "value": "0.2%"
+          },
+          {
+            "name": "China",
+            "value": "1.4%"
+          },
+          {
+            "name": "Czech Republic",
+            "value": "0.4%"
+          },
+          {
+            "name": "Germany",
+            "value": "10.2%"
+          },
+          {
+            "name": "Denmark",
+            "value": "0.9%"
+          },
+          {
+            "name": "Estonia",
+            "value": "0.0%"
+          },
+          {
+            "name": "Spain",
+            "value": "5.3%"
+          },
+          {
+            "name": "Finland",
+            "value": "0.9%"
+          },
+          {
+            "name": "France",
+            "value": "11.5%"
+          },
+          {
+            "name": "United Kingdom",
+            "value": "8.2%"
+          },
+          {
+            "name": "Greece",
+            "value": "0.3%"
+          },
+          {
+            "name": "Hong Kong",
+            "value": "0.1%"
+          },
+          {
+            "name": "Croatia",
+            "value": "0.1%"
+          },
+          {
+            "name": "Hungary",
+            "value": "0.4%"
+          },
+          {
+            "name": "Indonesia",
+            "value": "1.0%"
+          },
+          {
+            "name": "Ireland",
+            "value": "0.5%"
+          },
+          {
+            "name": "Israel",
+            "value": "0.5%"
+          },
+          {
+            "name": "Isle of Man",
+            "value": "0.0%"
+          },
+          {
+            "name": "Italy",
+            "value": "7.5%"
+          },
+          {
+            "name": "Japan",
+            "value": "11.3%"
+          },
+          {
+            "name": "Korea",
+            "value": "2.8%"
+          },
+          {
+            "name": "Kazakhstan",
+            "value": "0.0%"
+          },
+          {
+            "name": "Lithuania",
+            "value": "0.1%"
+          },
+          {
+            "name": "Luxembourg",
+            "value": "0.2%"
+          },
+          {
+            "name": "Latvia",
+            "value": "0.1%"
+          },
+          {
+            "name": "Mexico",
+            "value": "1.1%"
+          },
+          {
+            "name": "Malaysia",
+            "value": "1.0%"
+          },
+          {
+            "name": "Netherlands",
+            "value": "2.6%"
+          },
+          {
+            "name": "Norway",
+            "value": "0.5%"
+          },
+          {
+            "name": "New Zealand",
+            "value": "0.4%"
+          },
+          {
+            "name": "Peru",
+            "value": "0.2%"
+          },
+          {
+            "name": "Philippines",
+            "value": "0.0%"
+          },
+          {
+            "name": "Poland",
+            "value": "0.9%"
+          },
+          {
+            "name": "Portugal",
+            "value": "0.7%"
+          },
+          {
+            "name": "Romania",
+            "value": "0.5%"
+          },
+          {
+            "name": "Saudi Arabia",
+            "value": "0.0%"
+          },
+          {
+            "name": "Sweden",
+            "value": "1.3%"
+          },
+          {
+            "name": "Singapore",
+            "value": "0.6%"
+          },
+          {
+            "name": "Slovenia",
+            "value": "0.1%"
+          },
+          {
+            "name": "Slovakia",
+            "value": "0.2%"
+          },
+          {
+            "name": "Supranational",
+            "value": "5.4%"
+          },
+          {
+            "name": "Thailand",
+            "value": "0.9%"
+          },
+          {
+            "name": "United States",
+            "value": "3.5%"
+          },
+          {
+            "name": "South Africa",
+            "value": "0.0%"
+          }
+        ],
+        "asOfDate": "09/30/2026"
+      },
+      "creditQuality": {
+        "total": "100.00",
+        "isavailable": true,
+        "exposure": [
+          {
+            "name": "AAA",
+            "value": "25.706102"
+          },
+          {
+            "name": "AA",
+            "value": "17.1670566"
+          },
+          {
+            "name": "A",
+            "value": "36.8911502"
+          },
+          {
+            "name": "BBB",
+            "value": "18.5498295"
+          },
+          {
+            "name": "NR",
+            "value": "1.6858617"
+          }
+        ],
+        "fundShortName": "Tot Intl Bond ETF",
+        "asOfDate": "09/30/2026"
+      },
+      "coupon": {
+        "isavailable": false
+      },
+      "maturity": {
+        "total": "100.00",
+        "isavailable": true,
+        "exposure": [
+          {
+            "name": "Under 1 Year",
+            "value": "1.2180461"
+          },
+          {
+            "name": "1 - 5 Years",
+            "value": "42.1561668"
+          },
+          {
+            "name": "5 - 10 Years",
+            "value": "32.4502977"
+          },
+          {
+            "name": "10 - 15 Years",
+            "value": "8.7135473"
+          },
+          {
+            "name": "15 - 20 Years",
+            "value": "5.4923369"
+          },
+          {
+            "name": "20 - 25 Years",
+            "value": "3.4901253"
+          },
+          {
+            "name": "Over 25 Years",
+            "value": "6.4794799"
+          }
+        ],
+        "fundShortName": "Tot Intl Bond ETF",
+        "averageMaturityType": "E",
+        "asOfDate": "09/30/2026"
+      },
+      "sectorExposure": {
+        "isavailable": false
+      },
+      "allocationUnderlyingFunds": {
+        "isavailable": false
+      },
+      "asOfDate": "09/30/2026",
+      "region": {
+        "isavailable": true,
+        "exposure": [
+          {
+            "name": "Emerging Markets",
+            "value": "7.47%"
+          },
+          {
+            "name": "Europe",
+            "value": "56.96%"
+          },
+          {
+            "name": "Pacific",
+            "value": "19.12%"
+          },
+          {
+            "name": "Middle East",
+            "value": "0.49%"
+          },
+          {
+            "name": "North America",
+            "value": "10.52%"
+          },
+          {
+            "name": "Other",
+            "value": "5.43%"
+          }
+        ],
+        "asOfDate": "09/30/2026"
+      },
+      "issuer": {
+        "total": "100.00",
+        "isavailable": true,
+        "exposure": [
+          {
+            "name": "Asset Backed",
+            "value": "4.8992086"
+          },
+          {
+            "name": "Utilities",
+            "value": "1.5153325"
+          },
+          {
+            "name": "Other",
+            "value": "1.1754671"
+          },
+          {
+            "name": "Finance",
+            "value": "6.4938101"
+          },
+          {
+            "name": "Foreign",
+            "value": "79.1451693"
+          },
+          {
+            "name": "Industrial",
+            "value": "6.7710125"
+          }
+        ],
+        "fundShortName": "Tot Intl Bond ETF",
+        "asOfDate": "09/30/2026"
+      },
+      "styleBox": {
+        "fixedIncomeStyleBoxAverageWeightedMaturity": "Intermediate",
+        "fixedIncomeStyleBoxQuality": "Investment Grade"
+      }
+    }
+  }
+}
