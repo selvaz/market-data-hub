@@ -29,10 +29,12 @@ worst, effective duration and total holdings for EMLC, HYEM and IHY. Each
 block supplies its own as-of date. Yield to worst remains distinct from yield
 to maturity. The monthly fact sheets no longer write these daily fields.
 
-Vanguard BNDX's quarterly fact sheet publishes average duration and number of
-bonds. Those are kept under their published meanings; the factsheet does not
-provide YTM, SEC/distribution yield or average coupon. BNDX hedges multiple
-underlying currencies into USD, so its index currency remains null.
+Vanguard BNDX's profile embeds a daily 30-day SEC yield with its own as-of
+date. The quarterly fact sheet remains the source for average duration and
+number of bonds; those fields are not daily in the profile. The profile also
+reports a monthly yield to maturity, which is not collected as daily data.
+BNDX hedges multiple underlying currencies into USD, so its index currency
+remains null.
 
 DWS DBXP.DE: the downloaded September 2026 issuer factsheet does not contain
 the requested carry fields. The product page renders portfolio characteristics
@@ -60,7 +62,7 @@ endpoint. Yield to worst is not treated as yield to maturity.
 | BWX | State Street | Bloomberg Global Treasury ex-US Capped Index | Multiple local currencies | USD | No | State Street product page; endpoint pending |
 | IHY | VanEck | ICE BofA Global ex-US Issuers High Yield Constrained Index | Multiple local currencies | USD | No | VanEck daily fund-page blocks |
 | CEMB | BlackRock | J.P. Morgan CEMBI Broad Diversified Core Index | USD | USD | No | iShares product page |
-| BNDX | Vanguard | Bloomberg Global Aggregate ex-USD Float Adjusted RIC Capped Index (Hedged) | Multiple local currencies | USD | Yes, USD | Vanguard fact sheet; machine-readable endpoint pending |
+| BNDX | Vanguard | Bloomberg Global Aggregate ex-USD Float Adjusted RIC Capped Index (Hedged) | Multiple local currencies | USD | Yes, USD | Vanguard profile and fact sheet |
 | IBCL.DE | BlackRock | Verification pending | EUR | EUR | No | iShares product page; exact index pending |
 | DBXP.DE | DWS | Markit iBoxx EUR Eurozone (DE ES FR IT NL) 1-3 Index | EUR | EUR | No | DWS fact sheet; machine-readable endpoint pending |
 
