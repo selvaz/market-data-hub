@@ -5,6 +5,7 @@ connection.py — centralized access to the DuckDB database.
 The DB path is configurable via settings.yaml or the MARKET_DATA_DB environment
 variable. The schema is applied (idempotently) on first open.
 """
+
 from __future__ import annotations
 
 import math
@@ -22,7 +23,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 29
+SCHEMA_VERSION = 30
 
 
 class DatabaseNotConfigured(RuntimeError):
@@ -64,6 +65,7 @@ def resolve_db_path(db_path: Optional[str] = None) -> str:
     # settings.yaml takes precedence over the hard-coded default
     try:
         from market_data_hub.config_loader import get_settings
+
         s = get_settings()
         if s.get("db_path"):
             return _repo_local(s["db_path"])
@@ -155,8 +157,12 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
     for table in ("macro_series_vintage", "macro_panel_vintage"):
         if _table_exists(con, table):
             con.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS run_id VARCHAR")
-            con.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS change_type VARCHAR")
-            con.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS prior_value DOUBLE")
+            con.execute(
+                f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS change_type VARCHAR"
+            )
+            con.execute(
+                f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS prior_value DOUBLE"
+            )
 
     # v3 -> v4: drop the run_id indexes that v3 briefly introduced. On duckdb
     # 1.4.x (the last line supporting Python 3.9) a secondary index on a
@@ -227,16 +233,23 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # re-ingestion — first_seen_run_id (immutable) + last_seen_run_id
         # replace the single run_id that INSERT OR REPLACE overwrote.
         if _table_exists(con, "sec_filings"):
-            cols = {r[1] for r in con.execute(
-                "PRAGMA table_info('sec_filings')").fetchall()}
-            con.execute("ALTER TABLE sec_filings "
-                        "ADD COLUMN IF NOT EXISTS first_seen_run_id VARCHAR")
-            con.execute("ALTER TABLE sec_filings "
-                        "ADD COLUMN IF NOT EXISTS last_seen_run_id VARCHAR")
+            cols = {
+                r[1] for r in con.execute("PRAGMA table_info('sec_filings')").fetchall()
+            }
+            con.execute(
+                "ALTER TABLE sec_filings "
+                "ADD COLUMN IF NOT EXISTS first_seen_run_id VARCHAR"
+            )
+            con.execute(
+                "ALTER TABLE sec_filings "
+                "ADD COLUMN IF NOT EXISTS last_seen_run_id VARCHAR"
+            )
             if "run_id" in cols:
-                con.execute("UPDATE sec_filings SET "
-                            "first_seen_run_id = coalesce(first_seen_run_id, run_id), "
-                            "last_seen_run_id = coalesce(last_seen_run_id, run_id)")
+                con.execute(
+                    "UPDATE sec_filings SET "
+                    "first_seen_run_id = coalesce(first_seen_run_id, run_id), "
+                    "last_seen_run_id = coalesce(last_seen_run_id, run_id)"
+                )
                 con.execute("ALTER TABLE sec_filings DROP COLUMN run_id")
         current = 8
     if current < 9:
@@ -273,31 +286,37 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # ALTER rather than additive-by-CREATE: the table already exists on any
         # DB at v10 or later, so CREATE TABLE IF NOT EXISTS does not add it.
         try:
-            con.execute("ALTER TABLE calendar_events "
-                        "ADD COLUMN reference_date_origin VARCHAR")
+            con.execute(
+                "ALTER TABLE calendar_events ADD COLUMN reference_date_origin VARCHAR"
+            )
         except Exception:
-            pass        # already present: apply_schema() created the table fresh
+            pass  # already present: apply_schema() created the table fresh
         # Everything recorded before this step came from a source, because
         # nothing else could write it yet.
-        con.execute("UPDATE calendar_events SET reference_date_origin = 'source' "
-                    "WHERE reference_date IS NOT NULL AND reference_date_origin IS NULL")
+        con.execute(
+            "UPDATE calendar_events SET reference_date_origin = 'source' "
+            "WHERE reference_date IS NOT NULL AND reference_date_origin IS NULL"
+        )
         current = 12
     if current < 13:
         # v12 -> v13: calendar_observations.release_precision, so consolidation
         # can prefer a minute-precision timestamp over a day-only placeholder
         # instead of taking the earliest and recording midnight.
         try:
-            con.execute("ALTER TABLE calendar_observations "
-                        "ADD COLUMN release_precision VARCHAR")
+            con.execute(
+                "ALTER TABLE calendar_observations ADD COLUMN release_precision VARCHAR"
+            )
         except Exception:
-            pass        # already present on a freshly created table
+            pass  # already present on a freshly created table
         # Existing rows: midnight is what a day-only collector writes, so it is
         # the only defensible reading of what was already stored.
-        con.execute("UPDATE calendar_observations SET release_precision = "
-                    "CASE WHEN release_utc IS NULL THEN NULL "
-                    "     WHEN strftime(release_utc, '%H:%M:%S') = '00:00:00' "
-                    "     THEN 'day' ELSE 'minute' END "
-                    "WHERE release_precision IS NULL")
+        con.execute(
+            "UPDATE calendar_observations SET release_precision = "
+            "CASE WHEN release_utc IS NULL THEN NULL "
+            "     WHEN strftime(release_utc, '%H:%M:%S') = '00:00:00' "
+            "     THEN 'day' ELSE 'minute' END "
+            "WHERE release_precision IS NULL"
+        )
         current = 13
     if current < 14:
         # v13 -> v14: drop the index v11 put on calendar_indicator_aliases
@@ -330,9 +349,11 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # ALTER, not CREATE: the table exists on any DB from v10 on.
         for colonna in ("data_type", "side", "tags"):
             try:
-                con.execute(f"ALTER TABLE calendar_indicators ADD COLUMN {colonna} VARCHAR")
+                con.execute(
+                    f"ALTER TABLE calendar_indicators ADD COLUMN {colonna} VARCHAR"
+                )
             except Exception:
-                pass    # already there on a freshly created table
+                pass  # already there on a freshly created table
         current = 17
     if current < 18:
         # v17 -> v18: the corporate earnings calendar (earnings_events,
@@ -380,10 +401,11 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # anyway rather than assuming that, and the DISTINCT ON keeps the
         # highest open interest if a legacy duplicate somehow exists.
         for tabella, indice in (
-                ("cftc_tff_positioning", "idx_cftc_tff_contract"),
-                ("cftc_legacy_positioning", "idx_cftc_legacy_contract")):
+            ("cftc_tff_positioning", "idx_cftc_tff_contract"),
+            ("cftc_legacy_positioning", "idx_cftc_legacy_contract"),
+        ):
             if not _table_exists(con, tabella):
-                continue    # fresh DB: apply_schema() already built it right
+                continue  # fresh DB: apply_schema() already built it right
             # The index depends on the table and blocks the rename;
             # apply_schema() recreates it below.
             con.execute(f"DROP INDEX IF EXISTS {indice}")
@@ -393,14 +415,16 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
             # too so INSERT ... SELECT * keeps matching column order.
             con.execute(
                 f"ALTER TABLE {tabella}_v21 ADD COLUMN IF NOT EXISTS "
-                "report_variant VARCHAR DEFAULT 'futures_only'")
-            apply_schema(con)   # recreates it with the corrected key
+                "report_variant VARCHAR DEFAULT 'futures_only'"
+            )
+            apply_schema(con)  # recreates it with the corrected key
             con.execute(
                 f"INSERT INTO {tabella} SELECT * FROM {tabella}_v21 "
                 f"WHERE cftc_contract_market_code IS NOT NULL "
                 f"QUALIFY ROW_NUMBER() OVER ("
                 f"  PARTITION BY report_date, cftc_contract_market_code "
-                f"  ORDER BY open_interest_all DESC NULLS LAST) = 1")
+                f"  ORDER BY open_interest_all DESC NULLS LAST) = 1"
+            )
             con.execute(f"DROP TABLE {tabella}_v21")
         current = 22
     if current < 23:
@@ -437,13 +461,15 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # use it as the insert default for new rows in both tables.
         for table in ("cftc_tff_positioning", "cftc_legacy_positioning"):
             if not _table_exists(con, table):
-                continue    # fresh DB already has the column from schema.sql
+                continue  # fresh DB already has the column from schema.sql
             con.execute(
                 f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS "
-                "report_variant VARCHAR DEFAULT 'futures_only'")
+                "report_variant VARCHAR DEFAULT 'futures_only'"
+            )
             con.execute(
                 f"UPDATE {table} SET report_variant = 'futures_only' "
-                "WHERE report_variant IS NULL")
+                "WHERE report_variant IS NULL"
+            )
         current = 24
     if current < 25:
         # v24 -> v25: additive sovereign_bond_metadata table is created by
@@ -451,8 +477,10 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         current = 25
     if current < 26:
         # v26: bounded ALFRED validity intervals and resumable backfill ledger.
-        con.execute("ALTER TABLE alfred_vintage_observations "
-                    "ADD COLUMN IF NOT EXISTS realtime_end DATE")
+        con.execute(
+            "ALTER TABLE alfred_vintage_observations "
+            "ADD COLUMN IF NOT EXISTS realtime_end DATE"
+        )
         current = 26
     if current < 27:
         # v27 adds sovereign catalogue, snapshot budget and comparisons.
@@ -468,12 +496,22 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
     if current < 29:
         # The two snapshot tables are created by apply_schema().
         current = 29
+    if current < 30:
+        for column, kind in (
+            ("source_as_of", "DATE"),
+            ("proxy_symbol", "VARCHAR"),
+            ("index_currency", "VARCHAR"),
+            ("hedge_currency", "VARCHAR"),
+        ):
+            con.execute(
+                f"ALTER TABLE etf_carry_snapshots ADD COLUMN IF NOT EXISTS {column} {kind}"
+            )
+        current = 30
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
     con.execute(
-        "INSERT OR REPLACE INTO schema_meta (key, value) VALUES "
-        "('schema_version', ?)",
+        "INSERT OR REPLACE INTO schema_meta (key, value) VALUES ('schema_version', ?)",
         [str(current)],
     )
     return current
@@ -514,11 +552,14 @@ def _migrate_prices_to_listing_key(con: duckdb.DuckDBPyConnection) -> None:
             PRIMARY KEY (namespace, value, target_type, target_id))""")
 
     # 1. auto-register listings for symbols that have none
-    orphans = [r[0] for r in con.execute("""
+    orphans = [
+        r[0]
+        for r in con.execute("""
         SELECT DISTINCT p.symbol FROM prices_daily p
         LEFT JOIN listings l ON l.symbol = p.symbol AND l.active_to IS NULL
         WHERE l.listing_id IS NULL
-    """).fetchall()]
+    """).fetchall()
+    ]
     for sym in orphans:
         ensure_listing(con, sym)
 
@@ -533,7 +574,8 @@ def _migrate_prices_to_listing_key(con: duckdb.DuckDBPyConnection) -> None:
     if dups:
         raise RuntimeError(
             "prices_daily v7 migration aborted: these symbols map to multiple "
-            f"active listings, attribute the history manually first: {dups}")
+            f"active listings, attribute the history manually first: {dups}"
+        )
 
     # 3. rebuild with the new key
     con.execute("DROP INDEX IF EXISTS idx_prices_symbol")
@@ -568,7 +610,8 @@ def _migrate_prices_to_listing_key(con: duckdb.DuckDBPyConnection) -> None:
     if before != after:
         raise RuntimeError(
             f"prices_daily v7 migration aborted: row count changed "
-            f"({before} -> {after})")
+            f"({before} -> {after})"
+        )
     con.execute("DROP TABLE prices_daily")
     con.execute("ALTER TABLE prices_daily_v7 RENAME TO prices_daily")
 
@@ -627,8 +670,9 @@ def _is_lock_held(exc: BaseException) -> bool:
     return any(m in re.sub(r'"[^"]*"', '""', str(exc)) for m in _LOCK_HELD_MARKERS)
 
 
-def _connect_waiting(path: str, *, read_only: bool, budget_s: float,
-                     poll_s: float) -> duckdb.DuckDBPyConnection:
+def _connect_waiting(
+    path: str, *, read_only: bool, budget_s: float, poll_s: float
+) -> duckdb.DuckDBPyConnection:
     """Open the database, waiting out another process that holds the file.
 
     DuckDB gives the file to one writer and fails everyone else outright
@@ -676,20 +720,21 @@ def _connect_waiting(path: str, *, read_only: bool, budget_s: float,
 
 def _connect_read_only_waiting(path: str) -> duckdb.DuckDBPyConnection:
     """A reader, waiting out whoever holds the file."""
-    return _connect_waiting(path, read_only=True,
-                            budget_s=_READER_LOCK_WAIT_S,
-                            poll_s=_READER_LOCK_POLL_S)
+    return _connect_waiting(
+        path, read_only=True, budget_s=_READER_LOCK_WAIT_S, poll_s=_READER_LOCK_POLL_S
+    )
 
 
 def _connect_read_write_waiting(path: str) -> duckdb.DuckDBPyConnection:
     """A writer, waiting out whoever holds the file."""
-    return _connect_waiting(path, read_only=False,
-                            budget_s=_WRITER_LOCK_WAIT_S,
-                            poll_s=_WRITER_LOCK_POLL_S)
+    return _connect_waiting(
+        path, read_only=False, budget_s=_WRITER_LOCK_WAIT_S, poll_s=_WRITER_LOCK_POLL_S
+    )
 
 
-def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
-             ) -> duckdb.DuckDBPyConnection:
+def get_conn(
+    db_path: Optional[str] = None, *, read_only: bool = False
+) -> duckdb.DuckDBPyConnection:
     """
     Open (creating if absent) the DuckDB database and ensure the schema.
 
@@ -720,5 +765,3 @@ def get_conn(db_path: Optional[str] = None, *, read_only: bool = False
         # existing DB on an old column shape forever.
         migrate(con)
     return con
-
-

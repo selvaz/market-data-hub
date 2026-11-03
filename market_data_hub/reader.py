@@ -85,7 +85,7 @@ def read_market_breadth(markets, *, as_of: str, db_path: Optional[str] = None):
 def read_etf_carry(
     symbols: Union[str, List[str]], *, as_of: str, db_path: Optional[str] = None
 ) -> pd.DataFrame:
-    """Read captured rows known by the UTC timestamp `as_of`, with provenance."""
+    """Latest observation per symbol and field known by the UTC cutoff."""
     symbols = [symbols] if isinstance(symbols, str) else list(symbols)
     if not symbols:
         return pd.DataFrame(
@@ -97,6 +97,10 @@ def read_etf_carry(
                 "source",
                 "retrieved_at",
                 "raw_field",
+                "source_as_of",
+                "proxy_symbol",
+                "index_currency",
+                "hedge_currency",
             ]
         )
     placeholders = ",".join("?" for _ in symbols)
@@ -104,9 +108,11 @@ def read_etf_carry(
     try:
         return con.execute(
             f"SELECT * FROM etf_carry_snapshots WHERE symbol IN ({placeholders}) "
-            "AND retrieved_at <= ? AND NOT (field = 'duration' AND source = 'yahoo') "
-            "ORDER BY date, symbol, field",
-            [*symbols, as_of],
+            "AND retrieved_at <= ? AND date <= CAST(? AS DATE) "
+            "AND NOT (field = 'duration' AND source = 'yahoo') "
+            "QUALIFY row_number() OVER (PARTITION BY symbol, field ORDER BY date DESC, retrieved_at DESC) = 1 "
+            "ORDER BY symbol, field",
+            [*symbols, as_of, as_of],
         ).fetch_df()
     finally:
         con.close()

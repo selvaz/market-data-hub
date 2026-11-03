@@ -107,7 +107,7 @@ def collect(con, entries, *, log=print):
         matched += 1
         for field, (value, raw) in parse(quote).items():
             con.execute(
-                "INSERT INTO etf_carry_snapshots VALUES (?, ?, ?, ?, ?, ?, ?) "
+                "INSERT INTO etf_carry_snapshots (date, symbol, field, value, source, retrieved_at, raw_field) VALUES (?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT DO NOTHING",
                 [now.date(), symbol, field, value, "yahoo", now, raw],
             )

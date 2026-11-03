@@ -66,7 +66,7 @@ def test_reader_excludes_legacy_yahoo_duration(tmp_path):
     db = str(tmp_path / "legacy.duckdb")
     con = get_conn(db)
     con.execute(
-        "INSERT INTO etf_carry_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO etf_carry_snapshots (date, symbol, field, value, source, retrieved_at, raw_field) VALUES (?, ?, ?, ?, ?, ?, ?)",
         [
             "2026-01-02",
             "TLT",
@@ -78,7 +78,7 @@ def test_reader_excludes_legacy_yahoo_duration(tmp_path):
         ],
     )
     con.execute(
-        "INSERT INTO etf_carry_snapshots VALUES (?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO etf_carry_snapshots (date, symbol, field, value, source, retrieved_at, raw_field) VALUES (?, ?, ?, ?, ?, ?, ?)",
         ["2026-01-03", "TLT", "duration", 15.0, "issuer", "2026-01-03", "duration"],
     )
     con.close()
