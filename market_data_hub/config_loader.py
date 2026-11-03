@@ -82,7 +82,8 @@ def get_nyfed_acm_series() -> List[Dict[str, Any]]:
 
 @lru_cache(maxsize=1)
 def get_eia_series() -> List[Dict[str, Any]]:
-    return _load_yaml("macro_series.yaml").get("eia", [])
+    series: List[Dict[str, Any]] = _load_yaml("macro_series.yaml").get("eia", [])
+    return series
 
 
 def get_macro_series() -> List[Dict[str, Any]]:
