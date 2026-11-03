@@ -7,6 +7,16 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.19] — 2026-11-03
+
+### Added
+- EIA API v2 weekly inventories: US crude oil stocks excluding SPR, total motor gasoline, distillate fuel oil, and Lower-48 working gas in storage (`source: eia`); `run_eia_inventories.py` and a disabled-task registration script; the key is read only from `EIA_API_KEY` and never logged (#166).
+- ETF index map (`config/etf_index_map.yaml`): underlying index, provider, currencies, hedging and replication for the 87 tree ETFs, from fund documents or SEC filings; 83 verified (#167).
+- Bond ETF yield to maturity, duration, SEC yield and holdings from State Street, VanEck and Vanguard data; AGG via SPAB (same index); schema 30 adds source date, proxy and currency metadata; coverage keys `carry:<ETF>` (#167).
+
+### Removed
+- Yahoo bond `duration` (wrong values, e.g. TLT 3.6 years); the reader ignores the old rows (#167).
+
 ## [0.3.18] — 2026-11-03
 
 ### Added
