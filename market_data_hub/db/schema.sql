@@ -22,6 +22,10 @@ CREATE TABLE IF NOT EXISTS etf_carry_snapshots (
     source VARCHAR NOT NULL,
     retrieved_at TIMESTAMP NOT NULL,
     raw_field VARCHAR NOT NULL,
+    source_as_of DATE,
+    proxy_symbol VARCHAR,
+    index_currency VARCHAR,
+    hedge_currency VARCHAR,
     PRIMARY KEY (date, symbol, field)
 );
 

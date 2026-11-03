@@ -6,6 +6,7 @@ For each (symbol, source) it computes: first/last date, obs, detected frequency,
 lag_days, stalled flag, gap_count, missing_pct, coverage_score and quality flags.
 Called at the end of each daily run.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -14,8 +15,15 @@ from typing import Dict
 import duckdb
 import pandas as pd
 
-from market_data_hub.config_loader import get_yahoo_tickers, get_macro_series, get_sovereign_yields
-from market_data_hub.config_loader import get_sovereign_layer_series, get_macro_panel_specs
+from market_data_hub.config_loader import (
+    get_yahoo_tickers,
+    get_macro_series,
+    get_sovereign_yields,
+)
+from market_data_hub.config_loader import (
+    get_sovereign_layer_series,
+    get_macro_panel_specs,
+)
 from market_data_hub.coverage.freq_detector import detect_frequency
 from market_data_hub.coverage.stalled_detector import lag_days, is_stalled
 from market_data_hub.coverage.gap_detector import missing_pct, gap_count, date_span
@@ -28,33 +36,48 @@ def _meta_lookup() -> Dict[str, dict]:
     """Map symbol/series_id -> classification, priority and publication-lag limit."""
     m: Dict[str, dict] = {}
     for e in get_yahoo_tickers():
-        m[e["symbol"]] = {"asset_class": e.get("asset_class", ""),
-                          "priority": e.get("priority", 3),
-                          "max_lag_days": e.get("max_lag_days")}
+        m[e["symbol"]] = {
+            "asset_class": e.get("asset_class", ""),
+            "priority": e.get("priority", 3),
+            "max_lag_days": e.get("max_lag_days"),
+        }
     for e in get_macro_series():
-        m[e["symbol"]] = {"asset_class": e.get("asset_class", "MACRO"),
-                          "priority": e.get("priority", 2),
-                          "max_lag_days": e.get("max_lag_days"),
-                          "publication_cadence": e.get("publication_cadence")}
+        m[e["symbol"]] = {
+            "asset_class": e.get("asset_class", "MACRO"),
+            "priority": e.get("priority", 2),
+            "max_lag_days": e.get("max_lag_days"),
+            "publication_cadence": e.get("publication_cadence"),
+        }
     for e in get_sovereign_yields() + get_sovereign_layer_series():
         if e.get("enabled", True):
-            m[e["symbol"]] = {"asset_class": "MACRO", "priority": e.get("priority", 1),
-                              "max_lag_days": e["max_lag_days"],
-                              "lag_calendar": e["lag_calendar"],
-                              "holidays": e.get("holidays", ()), "frequency": "D"}
+            m[e["symbol"]] = {
+                "asset_class": "MACRO",
+                "priority": e.get("priority", 1),
+                "max_lag_days": e["max_lag_days"],
+                "lag_calendar": e["lag_calendar"],
+                "holidays": e.get("holidays", ()),
+                "frequency": "D",
+            }
     return m
 
 
-def _row_for(symbol: str, source: str, df: pd.DataFrame, date_col: str,
-             meta: dict, run_id: str) -> dict:
+def _row_for(
+    symbol: str, source: str, df: pd.DataFrame, date_col: str, meta: dict, run_id: str
+) -> dict:
     first, last, obs = date_span(df[date_col])
-    freq = meta.get("frequency") or (detect_frequency(df[date_col]) if obs >= 3 else "UNKNOWN")
+    freq = meta.get("frequency") or (
+        detect_frequency(df[date_col]) if obs >= 3 else "UNKNOWN"
+    )
     lag = lag_days(last)
     # Persist this verdict so v_stalled and reader.get_stalled() use the same
     # publication-aware limit, while freq_detected still describes observations.
-    stalled = is_stalled(last, meta.get("publication_cadence") or freq, max_lag_days=meta.get("max_lag_days"),
-                         lag_calendar=meta.get("lag_calendar", "calendar"),
-                         holidays=meta.get("holidays", ()))
+    stalled = is_stalled(
+        last,
+        meta.get("publication_cadence") or freq,
+        max_lag_days=meta.get("max_lag_days"),
+        lag_calendar=meta.get("lag_calendar", "calendar"),
+        holidays=meta.get("holidays", ()),
+    )
     mpct = missing_pct(df[date_col], freq)
     gaps = gap_count(df[date_col], freq)
     flags = check_prices(df)
@@ -104,8 +127,9 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
     if not pdf.empty:
         for symbol, g in pdf.groupby("symbol"):
             src = g["source"].iloc[0] if "source" in g else "yahoo"
-            row = _row_for(symbol, src or "yahoo", g, "date",
-                           meta.get(symbol, {}), run_id)
+            row = _row_for(
+                symbol, src or "yahoo", g, "date", meta.get(symbol, {}), run_id
+            )
             # Symbols no longer in tickers.yaml (retired, or fetched once on
             # demand) keep their history but are not downloaded any more, so
             # their age is expected and must not feed the stalled alert.
@@ -122,8 +146,14 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
             # Rows are date-ordered: keep the latest recorded publisher for all
             # macro providers, ignoring null sources in older/newer rows.
             source = g.source.dropna().iloc[-1] if g.source.notna().any() else "fred"
-            row = _row_for(sid, source, g, "date",
-                           meta.get(sid, {"asset_class": "MACRO", "priority": 2}), run_id)
+            row = _row_for(
+                sid,
+                source,
+                g,
+                "date",
+                meta.get(sid, {"asset_class": "MACRO", "priority": 2}),
+                run_id,
+            )
             # Same policy as prices: a series no longer configured or disabled
             # (retired LRHUTTTTEZM156S, SNB 2y) keeps its history but is not
             # fetched any more, so its age must not feed the stalled alert.
@@ -133,24 +163,50 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
 
     # Requested daily feeds must remain visible even before their first success.
     present = set(mdf.series_id) if not mdf.empty else set()
-    attempted = any(str(s).startswith("CB_") for s in present) or bool(con.execute(
-        "SELECT count(*) FROM download_log WHERE source='sovereign_yields'").fetchone()[0])
+    attempted = any(str(s).startswith("CB_") for s in present) or bool(
+        con.execute(
+            "SELECT count(*) FROM download_log WHERE source='sovereign_yields'"
+        ).fetchone()[0]
+    )
     for entry in get_sovereign_yields():
         sid = entry["symbol"]
         if attempted and entry.get("enabled", True) and sid not in present:
-            row = _row_for(sid, entry["source"], pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]")}),
-                           "date", meta[sid], run_id)
-            row.update(status="unavailable", error_msg=entry.get("unavailable_reason", "no official observations ingested"))
+            row = _row_for(
+                sid,
+                entry["source"],
+                pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]")}),
+                "date",
+                meta[sid],
+                run_id,
+            )
+            row.update(
+                status="unavailable",
+                error_msg=entry.get(
+                    "unavailable_reason", "no official observations ingested"
+                ),
+            )
             rows.append(row)
 
-    layer_attempted = bool(con.execute(
-        "SELECT count(*) FROM download_log WHERE source='sovereign_layers'").fetchone()[0])
+    layer_attempted = bool(
+        con.execute(
+            "SELECT count(*) FROM download_log WHERE source='sovereign_layers'"
+        ).fetchone()[0]
+    )
     for entry in get_sovereign_layer_series():
-        sid = entry['symbol']
+        sid = entry["symbol"]
         if layer_attempted and sid not in present:
-            row = _row_for(sid, entry['source'], pd.DataFrame({'date': pd.Series(dtype='datetime64[ns]')}),
-                           'date', meta[sid], run_id)
-            row.update(status='unavailable', error_msg='no observations ingested for this layer')
+            row = _row_for(
+                sid,
+                entry["source"],
+                pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]")}),
+                "date",
+                meta[sid],
+                run_id,
+            )
+            row.update(
+                status="unavailable",
+                error_msg="no observations ingested for this layer",
+            )
             rows.append(row)
 
     # --- crypto_ohlcv (binance) — key symbol:timeframe ---
@@ -161,17 +217,51 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
     if not cdf.empty:
         for (symbol, tf), g in cdf.groupby(["symbol", "timeframe"]):
             key = f"{symbol}:{tf}"
-            rows.append(_row_for(key, "binance", g, "date",
-                                 {"asset_class": "CRYPTO", "priority": 1}, run_id))
+            rows.append(
+                _row_for(
+                    key,
+                    "binance",
+                    g,
+                    "date",
+                    {"asset_class": "CRYPTO", "priority": 1},
+                    run_id,
+                )
+            )
 
     for table, key, source, prefix in (
         ("etf_valuation_snapshots", "symbol", "yahoo_valuation", "valuation"),
         ("market_breadth_snapshots", "market", "tradingview_breadth", "breadth"),
     ):
-        frame = con.execute(f"SELECT collection_date AS date, {key} AS symbol FROM {table}").fetch_df()
+        frame = con.execute(
+            f"SELECT collection_date AS date, {key} AS symbol FROM {table}"
+        ).fetch_df()
         for symbol, group in frame.groupby("symbol"):
-            rows.append(_row_for(f"{prefix}:{symbol}", source, group, "date",
-                                 {"asset_class": "EQUITY", "frequency": "D"}, run_id))
+            rows.append(
+                _row_for(
+                    f"{prefix}:{symbol}",
+                    source,
+                    group,
+                    "date",
+                    {"asset_class": "EQUITY", "frequency": "D"},
+                    run_id,
+                )
+            )
+
+    # Fund carry coverage has its own key; it must never replace price coverage.
+    frame = con.execute(
+        "SELECT DISTINCT date, symbol FROM etf_carry_snapshots WHERE source <> 'yahoo'"
+    ).fetch_df()
+    for symbol, group in frame.groupby("symbol"):
+        rows.append(
+            _row_for(
+                f"carry:{symbol}",
+                "issuer_carry",
+                group,
+                "date",
+                {"asset_class": "FIXED_INCOME", "frequency": "D"},
+                run_id,
+            )
+        )
 
     # macro_panel is scored separately by rebuild_macro_panel_coverage() — it is a
     # (date, country, indicator) panel, not a per-symbol series, so it does not
@@ -189,8 +279,9 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
     return len(cov)
 
 
-def rebuild_macro_panel_coverage(con: duckdb.DuckDBPyConnection, run_id: str,
-                                 n_countries_total: int) -> int:
+def rebuild_macro_panel_coverage(
+    con: duckdb.DuckDBPyConnection, run_id: str, n_countries_total: int
+) -> int:
     """Score cross-country availability of the macro_panel, one row per indicator.
 
     Reuses the same coverage engine (frequency detection, lag/stalled, date span)
@@ -200,7 +291,7 @@ def rebuild_macro_panel_coverage(con: duckdb.DuckDBPyConnection, run_id: str,
     df = con.execute(
         "SELECT date, country_iso3, indicator_id, pillar, source, frequency "
         "FROM macro_panel WHERE value IS NOT NULL AND date <= ?::DATE",
-        [datetime.now(timezone.utc).date().isoformat()]
+        [datetime.now(timezone.utc).date().isoformat()],
     ).fetch_df()
     if df.empty:
         con.execute("DELETE FROM macro_panel_coverage")
@@ -212,33 +303,42 @@ def rebuild_macro_panel_coverage(con: duckdb.DuckDBPyConnection, run_id: str,
     for iid, g in df.groupby("indicator_id"):
         first, last, obs = date_span(g["date"])
         # declared frequency (config) and detected frequency on the densest country
-        declared = g["frequency"].mode().iloc[0] if g["frequency"].notna().any() else None
+        declared = (
+            g["frequency"].mode().iloc[0] if g["frequency"].notna().any() else None
+        )
         densest = g.groupby("country_iso3").size().idxmax()
         freq_detected = detect_frequency(g.loc[g["country_iso3"] == densest, "date"])
         n_countries = int(g["country_iso3"].nunique())
-        stalled = iid not in discontinued and is_stalled(last, declared or freq_detected)
-        status = "discontinued" if iid in discontinued else "stalled" if stalled else "ok"
-        rows.append({
-            "indicator_id": iid,
-            "pillar": g["pillar"].iloc[0],
-            "source": ",".join(sorted(s for s in g["source"].dropna().unique())),
-            "n_sources": int(g["source"].nunique()),
-            "frequency": declared,
-            "freq_detected": freq_detected,
-            "n_countries": n_countries,
-            "n_countries_total": int(n_countries_total),
-            "coverage_pct": round(100.0 * n_countries / n_countries_total, 1)
-            if n_countries_total else None,
-            "first_date": first,
-            "last_date": last,
-            "lag_days": lag_days(last),
-            "stalled": stalled,
-            "obs_count": int(obs),
-            "status": status,
-            "last_run_id": run_id,
-            "updated_at": now,
-        })
+        stalled = iid not in discontinued and is_stalled(
+            last, declared or freq_detected
+        )
+        status = (
+            "discontinued" if iid in discontinued else "stalled" if stalled else "ok"
+        )
+        rows.append(
+            {
+                "indicator_id": iid,
+                "pillar": g["pillar"].iloc[0],
+                "source": ",".join(sorted(s for s in g["source"].dropna().unique())),
+                "n_sources": int(g["source"].nunique()),
+                "frequency": declared,
+                "freq_detected": freq_detected,
+                "n_countries": n_countries,
+                "n_countries_total": int(n_countries_total),
+                "coverage_pct": round(100.0 * n_countries / n_countries_total, 1)
+                if n_countries_total
+                else None,
+                "first_date": first,
+                "last_date": last,
+                "lag_days": lag_days(last),
+                "stalled": stalled,
+                "obs_count": int(obs),
+                "status": status,
+                "last_run_id": run_id,
+                "updated_at": now,
+            }
+        )
 
-    con.execute("DELETE FROM macro_panel_coverage")   # full rebuild each run
+    con.execute("DELETE FROM macro_panel_coverage")  # full rebuild each run
     upsert(con, "macro_panel_coverage", pd.DataFrame(rows))
     return len(rows)

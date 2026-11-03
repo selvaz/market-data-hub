@@ -13,6 +13,7 @@ the settings.yaml blocks they validate.
 
     python validate_config.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -29,9 +30,94 @@ def _y(name: str) -> dict:
     return yaml.safe_load((CFG / name).read_text(encoding="utf-8")) or {}
 
 
+# physical: bullion trusts and funds that do not say full or sampled.
+REPLICATION_METHODS = (
+    None,
+    "physical",
+    "physical_full",
+    "physical_sampling",
+    "synthetic",
+    "futures",
+)
+
+
+def validate_etf_index_map(data) -> list[str]:
+    """Validate structure and make uncertainty explicit."""
+    errors = []
+    if not isinstance(data, dict) or not isinstance(data.get("funds"), list):
+        return ["etf_index_map.yaml: funds must be a list"]
+    required = {
+        "symbol",
+        "issuer",
+        "underlying_index",
+        "index_provider",
+        "index_currency",
+        "share_class_currency",
+        "hedged",
+        "hedge_currency",
+        "replication",
+        "source_url",
+        "verified_date",
+        "note",
+    }
+    seen = set()
+    for row in data["funds"]:
+        if not isinstance(row, dict) or set(row) != required:
+            errors.append(
+                "etf_index_map.yaml: each row must have exactly the required fields"
+            )
+            continue
+        symbol = row["symbol"]
+        if not isinstance(symbol, str) or not symbol.strip() or symbol in seen:
+            errors.append(f"etf_index_map.yaml: invalid or duplicate symbol {symbol!r}")
+        seen.add(symbol)
+        for field in required - {"hedged"}:
+            if row[field] is not None and (
+                not isinstance(row[field], str) or not row[field].strip()
+            ):
+                errors.append(
+                    f"etf_index_map.yaml: {symbol} {field} must be a nonempty string or null"
+                )
+        if row["hedged"] is not None and type(row["hedged"]) is not bool:
+            errors.append(
+                f"etf_index_map.yaml: {symbol} hedged must be boolean or null"
+            )
+        if row["hedged"] is True and not row["hedge_currency"]:
+            errors.append(
+                f"etf_index_map.yaml: {symbol} hedged requires hedge_currency"
+            )
+        if row["hedged"] is False and row["hedge_currency"] is not None:
+            errors.append(
+                f"etf_index_map.yaml: {symbol} unhedged cannot have hedge_currency"
+            )
+        if row["replication"] not in REPLICATION_METHODS:
+            errors.append(f"etf_index_map.yaml: {symbol} invalid replication")
+        if (
+            any(row[k] is None for k in required - {"hedge_currency", "note"})
+            and not row["note"]
+        ):
+            errors.append(f"etf_index_map.yaml: {symbol} null fields require a note")
+        if row["underlying_index"]:
+            if not isinstance(row["source_url"], str) or not row[
+                "source_url"
+            ].startswith("https://"):
+                errors.append(
+                    f"etf_index_map.yaml: {symbol} index requires HTTPS source"
+                )
+            try:
+                date.fromisoformat(row["verified_date"] or "")
+            except (ValueError, TypeError):
+                errors.append(
+                    f"etf_index_map.yaml: {symbol} index requires ISO verified_date"
+                )
+    return errors
+
+
 def validate() -> list[str]:
     """Return a list of human-readable errors (empty list == config is valid)."""
     errors: list[str] = []
+
+    errors.extend(validate_etf_index_map(_y("etf_index_map.yaml")))
 
     tickers = _y("tickers.yaml").get("yahoo", [])
     fred = _y("macro_series.yaml").get("fred", [])
@@ -47,7 +133,9 @@ def validate() -> list[str]:
     # 1. FRED IDs must not pollute the Yahoo ticker list.
     leaked = sorted(set(ticker_syms) & fred_ids)
     if leaked:
-        errors.append(f"tickers.yaml: {len(leaked)} FRED series IDs in the Yahoo list: {leaked}")
+        errors.append(
+            f"tickers.yaml: {len(leaked)} FRED series IDs in the Yahoo list: {leaked}"
+        )
 
     # 2. Every Yahoo ticker must have a symbol and a non-empty asset_class.
     for e in tickers:
@@ -57,11 +145,13 @@ def validate() -> list[str]:
             errors.append(f"tickers.yaml: '{e['symbol']}' has no asset_class")
 
     # 3. No duplicate symbols / ids in any catalog.
-    for label, ids in (("tickers.yaml", ticker_syms),
-                       ("macro_series.yaml", [e.get("symbol") for e in fred + acm + eia]),
-                       ("macro_panel.yaml", [i.get("id") for i in panel]),
-                       ("sovereign_yields.yaml", [e.get("symbol") for e in sovereign]),
-                       ("countries.yaml", [c.get("iso3") for c in countries])):
+    for label, ids in (
+        ("tickers.yaml", ticker_syms),
+        ("macro_series.yaml", [e.get("symbol") for e in fred + acm + eia]),
+        ("macro_panel.yaml", [i.get("id") for i in panel]),
+        ("sovereign_yields.yaml", [e.get("symbol") for e in sovereign]),
+        ("countries.yaml", [c.get("iso3") for c in countries]),
+    ):
         dups = sorted({x for x in ids if ids.count(x) > 1})
         if dups:
             errors.append(f"{label}: duplicate keys: {dups}")
@@ -70,19 +160,26 @@ def validate() -> list[str]:
     for i in panel:
         for field in ("id", "name", "pillar", "source", "freq"):
             if not i.get(field):
-                errors.append(f"macro_panel.yaml: '{i.get('id', '?')}' missing '{field}'")
+                errors.append(
+                    f"macro_panel.yaml: '{i.get('id', '?')}' missing '{field}'"
+                )
 
     # 5. Optional per-series publication lag is measured in calendar days.
-    for label, entries in (("tickers.yaml", tickers), ("macro_series.yaml", fred + acm + eia)):
+    for label, entries in (
+        ("tickers.yaml", tickers),
+        ("macro_series.yaml", fred + acm + eia),
+    ):
         for entry in entries:
             if "max_lag_days" in entry:
                 value = entry["max_lag_days"]
                 if type(value) is not int or value < 0:
                     errors.append(
                         f"{label}: '{entry.get('symbol', '?')}' max_lag_days "
-                        "must be a non-negative integer")
+                        "must be a non-negative integer"
+                    )
 
     from market_data_hub.sources.sovereign_yields import PROVIDERS
+
     for entry in sovereign:
         prefix = f"sovereign_yields.yaml: '{entry.get('symbol', '?')}'"
         role = entry.get("role", "current")
@@ -91,25 +188,39 @@ def validate() -> list[str]:
         if role == "history":
             reason = entry.get("history_reason")
             if not isinstance(reason, str) or not reason.strip():
-                errors.append(f"{prefix} explicit role history requires a documented history_reason")
+                errors.append(
+                    f"{prefix} explicit role history requires a documented history_reason"
+                )
             lag = entry.get("max_lag_days")
             if type(lag) is not int or lag < 0:
-                errors.append(f"{prefix} history max_lag_days must be a non-negative integer")
-        elif entry.get("max_lag_days") != 3 or type(entry.get("max_lag_days")) is not int:
+                errors.append(
+                    f"{prefix} history max_lag_days must be a non-negative integer"
+                )
+        elif (
+            entry.get("max_lag_days") != 3 or type(entry.get("max_lag_days")) is not int
+        ):
             errors.append(f"{prefix} current max_lag_days must be 3")
         if type(entry.get("enabled", True)) is not bool:
             errors.append(f"{prefix} enabled must be a boolean")
         if not entry.get("enabled", True):
             reason = entry.get("disabled_reason")
             if not isinstance(reason, str) or not reason.strip():
-                errors.append(f"{prefix} disabled entries require a non-empty disabled_reason")
-        for field, expected in (("unit", "%"), ("frequency", "D"),
-                                ("lag_calendar", "business")):
+                errors.append(
+                    f"{prefix} disabled entries require a non-empty disabled_reason"
+                )
+        for field, expected in (
+            ("unit", "%"),
+            ("frequency", "D"),
+            ("lag_calendar", "business"),
+        ):
             if entry.get(field) != expected:
                 errors.append(f"{prefix} {field} must be {expected!r}")
         if not re.fullmatch(r"[A-Z]{3}", str(entry.get("country", ""))):
             errors.append(f"{prefix} country must be ISO3")
-        if not re.fullmatch(r"(?:CB_(?:[A-Z]{2}_(?:\d+Y|R209|R2030|NTNF_\d{4})|EA_(?:AAA|ALL)_(?:2|10)Y)|ITA_BTP10_MOT|DEU_BUND10_FA)", str(entry.get("symbol", ""))):
+        if not re.fullmatch(
+            r"(?:CB_(?:[A-Z]{2}_(?:\d+Y|R209|R2030|NTNF_\d{4})|EA_(?:AAA|ALL)_(?:2|10)Y)|ITA_BTP10_MOT|DEU_BUND10_FA)",
+            str(entry.get("symbol", "")),
+        ):
             errors.append(f"{prefix} invalid symbol")
         if not entry.get("source") or not entry.get("name"):
             errors.append(f"{prefix} source and name are required")
@@ -120,17 +231,32 @@ def validate() -> list[str]:
             if not entry.get("unavailable_reason"):
                 errors.append(f"{prefix} unavailable_reason is required")
         else:
-            if not str(entry.get("endpoint", "")).startswith("https://") or not entry.get("provider_code"):
+            if not str(entry.get("endpoint", "")).startswith(
+                "https://"
+            ) or not entry.get("provider_code"):
                 errors.append(f"{prefix} HTTPS endpoint and provider_code required")
         if provider == "ecb" or str(entry.get("symbol", "")).startswith("CB_EA_"):
-            match = re.fullmatch(r"CB_EA_(AAA|ALL)_(2|10)Y", str(entry.get("symbol", "")))
-            code = (f"B.U2.EUR.4F.G_N_{'A' if match[1] == 'AAA' else 'C'}.SV_C_YM.SR_{match[2]}Y"
-                    if match else None)
-            if (provider != "ecb" or entry.get("country") != "EMU" or entry.get("source") != "ECB"
-                    or not code or entry.get("provider_code") != code
-                    or entry.get("endpoint") != f"https://data-api.ecb.europa.eu/service/data/YC/{code}"
-                    or entry.get("key_env")):
-                errors.append(f"{prefix} ECB curve requires its matching YC key, endpoint, ECB publisher and EMU region")
+            match = re.fullmatch(
+                r"CB_EA_(AAA|ALL)_(2|10)Y", str(entry.get("symbol", ""))
+            )
+            code = (
+                f"B.U2.EUR.4F.G_N_{'A' if match[1] == 'AAA' else 'C'}.SV_C_YM.SR_{match[2]}Y"
+                if match
+                else None
+            )
+            if (
+                provider != "ecb"
+                or entry.get("country") != "EMU"
+                or entry.get("source") != "ECB"
+                or not code
+                or entry.get("provider_code") != code
+                or entry.get("endpoint")
+                != f"https://data-api.ecb.europa.eu/service/data/YC/{code}"
+                or entry.get("key_env")
+            ):
+                errors.append(
+                    f"{prefix} ECB curve requires its matching YC key, endpoint, ECB publisher and EMU region"
+                )
         if provider == "tesouro":
             try:
                 date.fromisoformat(entry.get("maturity", ""))
@@ -139,21 +265,43 @@ def validate() -> list[str]:
             if entry.get("provider_code") != "Tesouro Prefixado com Juros Semestrais":
                 errors.append(f"{prefix} provider_code must identify nominal NTN-F")
         bond_contracts = {
-            "mot": ("ITA_BTP10_MOT", "ITA", "Borsa Italiana", "nearest_10y_nominal_btp",
-                    "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html"),
-            "finanzagentur": ("DEU_BUND10_FA", "DEU", "Bundesrepublik Deutschland Finanzagentur",
-                            "nearest_10y_nominal_bund",
-                            "https://www.deutsche-finanzagentur.de/fileadmin/user_upload/Institutionelle-investoren/bundesbank/Rendite_engl.pdf"),
+            "mot": (
+                "ITA_BTP10_MOT",
+                "ITA",
+                "Borsa Italiana",
+                "nearest_10y_nominal_btp",
+                "https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/lista.html",
+            ),
+            "finanzagentur": (
+                "DEU_BUND10_FA",
+                "DEU",
+                "Bundesrepublik Deutschland Finanzagentur",
+                "nearest_10y_nominal_bund",
+                "https://www.deutsche-finanzagentur.de/fileadmin/user_upload/Institutionelle-investoren/bundesbank/Rendite_engl.pdf",
+            ),
         }
-        bond_provider = next((p for p, c in bond_contracts.items() if c[0] == entry.get("symbol")), None)
+        bond_provider = next(
+            (p for p, c in bond_contracts.items() if c[0] == entry.get("symbol")), None
+        )
         if provider in bond_contracts or bond_provider:
             contract = bond_contracts.get(provider)
-            actual = tuple(entry.get(k) for k in ("symbol", "country", "source", "provider_code", "endpoint"))
-            if (actual != contract or entry.get("key_env")
-                    or entry.get("selection_rule") != "nearest_10y_residual_then_earlier_maturity_then_isin"
-                    or entry.get("history_mode") != "current_only_daily_accumulation"):
-                errors.append(f"{prefix} bond snapshot requires its venue/issuer identity, endpoint and roll/history rules")
-        if entry.get("key_env") and not re.fullmatch(r"[A-Z][A-Z0-9_]+", entry["key_env"]):
+            actual = tuple(
+                entry.get(k)
+                for k in ("symbol", "country", "source", "provider_code", "endpoint")
+            )
+            if (
+                actual != contract
+                or entry.get("key_env")
+                or entry.get("selection_rule")
+                != "nearest_10y_residual_then_earlier_maturity_then_isin"
+                or entry.get("history_mode") != "current_only_daily_accumulation"
+            ):
+                errors.append(
+                    f"{prefix} bond snapshot requires its venue/issuer identity, endpoint and roll/history rules"
+                )
+        if entry.get("key_env") and not re.fullmatch(
+            r"[A-Z][A-Z0-9_]+", entry["key_env"]
+        ):
             errors.append(f"{prefix} key_env must name an environment variable")
         try:
             for holiday in entry.get("holidays", ()):
@@ -165,8 +313,13 @@ def validate() -> list[str]:
             if not entry.get(field):
                 errors.append(f"macro_series.yaml: NY Fed ACM missing '{field}'")
         # The monthly chart CSV and the daily workbook (NYFED_ACM_TP10_DAILY) are both NY Fed ACM.
-        if entry.get("frequency") not in ("M", "D") or entry.get("source") != "nyfed_acm":
-            errors.append("macro_series.yaml: NY Fed ACM must have frequency M or D and source nyfed_acm")
+        if (
+            entry.get("frequency") not in ("M", "D")
+            or entry.get("source") != "nyfed_acm"
+        ):
+            errors.append(
+                "macro_series.yaml: NY Fed ACM must have frequency M or D and source nyfed_acm"
+            )
 
     for entry in eia:
         if (entry.get("source") != "eia" or entry.get("frequency") != "W"
@@ -185,14 +338,16 @@ def main() -> int:
         for e in errors:
             print("  -", e)
         return 1
-    print("CONFIG OK — tickers={} fred={} panel={} countries={} nyfed_acm={} sovereign_yields={}".format(
-        len(_y("tickers.yaml").get("yahoo", [])),
-        len(_y("macro_series.yaml").get("fred", [])),
-        len(_y("macro_panel.yaml").get("indicators", [])),
-        len(_y("countries.yaml").get("countries", [])),
-        len(_y("macro_series.yaml").get("nyfed_acm", [])),
-        len(_y("sovereign_yields.yaml").get("series", [])),
-    ))
+    print(
+        "CONFIG OK — tickers={} fred={} panel={} countries={} nyfed_acm={} sovereign_yields={}".format(
+            len(_y("tickers.yaml").get("yahoo", [])),
+            len(_y("macro_series.yaml").get("fred", [])),
+            len(_y("macro_panel.yaml").get("indicators", [])),
+            len(_y("countries.yaml").get("countries", [])),
+            len(_y("macro_series.yaml").get("nyfed_acm", [])),
+            len(_y("sovereign_yields.yaml").get("series", [])),
+        )
+    )
     return 0
 
 

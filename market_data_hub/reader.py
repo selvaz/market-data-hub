@@ -13,6 +13,7 @@ Examples:
     macro = read_macro(["DGS10", "CPIAUCSL"])
     btc = read_crypto("BTCUSDT", "1h", start="2024-01-01")
 """
+
 from __future__ import annotations
 
 from typing import List, Optional, Union
@@ -33,6 +34,17 @@ def _con(db_path: Optional[str]):
     return get_conn(db_path, read_only=True)
 
 
+def read_etf_index_map(symbols: Optional[Union[str, List[str]]] = None) -> pd.DataFrame:
+    """Return current configured index metadata; this is not a historical view."""
+    from market_data_hub.config_loader import get_etf_index_map
+
+    rows = get_etf_index_map()
+    if symbols is not None:
+        wanted = {symbols} if isinstance(symbols, str) else set(symbols)
+        rows = [row for row in rows if row["symbol"] in wanted]
+    return pd.DataFrame(rows)
+
+
 def _read_latest_equity(table, key, values, as_of, db_path):
     values = [values] if isinstance(values, str) else list(values)
     if not values:
@@ -50,40 +62,70 @@ def _read_latest_equity(table, key, values, as_of, db_path):
             f"SELECT * FROM {table} WHERE {key} IN ({placeholders}) "
             "AND fetched_at <= ? AND collection_date <= CAST(? AS DATE) "
             f"QUALIFY row_number() OVER (PARTITION BY {partition} ORDER BY collection_date DESC) = 1",
-            [*values, cutoff.to_pydatetime(), cutoff.date()]).fetch_df()
+            [*values, cutoff.to_pydatetime(), cutoff.date()],
+        ).fetch_df()
     finally:
         con.close()
 
 
 def read_etf_valuations(symbols, *, as_of: str, db_path: Optional[str] = None):
     """Latest first-capture valuation per symbol known by the UTC cutoff."""
-    return _read_latest_equity("etf_valuation_snapshots", "symbol", symbols, as_of, db_path)
+    return _read_latest_equity(
+        "etf_valuation_snapshots", "symbol", symbols, as_of, db_path
+    )
 
 
 def read_market_breadth(markets, *, as_of: str, db_path: Optional[str] = None):
     """Latest breadth snapshot per market known by the UTC cutoff."""
-    return _read_latest_equity("market_breadth_snapshots", "market", markets, as_of, db_path)
+    return _read_latest_equity(
+        "market_breadth_snapshots", "market", markets, as_of, db_path
+    )
 
 
-def read_etf_carry(symbols: Union[str, List[str]], *, as_of: str,
-                   db_path: Optional[str] = None) -> pd.DataFrame:
-    """Read captured rows known by the UTC timestamp `as_of`, with provenance."""
+def read_etf_carry(
+    symbols: Union[str, List[str]], *, as_of: str, db_path: Optional[str] = None
+) -> pd.DataFrame:
+    """Latest observation per symbol and field known by the UTC cutoff."""
     symbols = [symbols] if isinstance(symbols, str) else list(symbols)
     if not symbols:
-        return pd.DataFrame(columns=["date", "symbol", "field", "value", "source", "retrieved_at", "raw_field"])
+        return pd.DataFrame(
+            columns=[
+                "date",
+                "symbol",
+                "field",
+                "value",
+                "source",
+                "retrieved_at",
+                "raw_field",
+                "source_as_of",
+                "proxy_symbol",
+                "index_currency",
+                "hedge_currency",
+            ]
+        )
     placeholders = ",".join("?" for _ in symbols)
     con = _con(db_path)
     try:
         return con.execute(
             f"SELECT * FROM etf_carry_snapshots WHERE symbol IN ({placeholders}) "
-            "AND retrieved_at <= ? ORDER BY date, symbol, field", [*symbols, as_of]
+            "AND retrieved_at <= ? AND date <= CAST(? AS DATE) "
+            "AND NOT (field = 'duration' AND source = 'yahoo') "
+            "QUALIFY row_number() OVER (PARTITION BY symbol, field ORDER BY date DESC, retrieved_at DESC) = 1 "
+            "ORDER BY symbol, field",
+            [*symbols, as_of, as_of],
         ).fetch_df()
     finally:
         con.close()
 
 
-def _asof_query(table: str, part_keys: List[str], filters: dict, asof: str,
-                start: Optional[str], end: Optional[str]):
+def _asof_query(
+    table: str,
+    part_keys: List[str],
+    filters: dict,
+    asof: str,
+    start: Optional[str],
+    end: Optional[str],
+):
     """Build the (sql, params) for a point-in-time read of a *_vintage table:
     for each partition (part_keys) keep the row with the greatest
     vintage_date <= asof, then apply the date window. ``filters`` maps a column
@@ -93,9 +135,11 @@ def _asof_query(table: str, part_keys: List[str], filters: dict, asof: str,
     for col, vals in filters.items():
         clauses.append(f"{col} IN (" + ",".join(["?"] * len(vals)) + ")")
         params += list(vals)
-    inner = (f"SELECT {sel}, row_number() OVER (PARTITION BY {', '.join(part_keys)} "
-             f"ORDER BY vintage_date DESC) AS rn FROM {table} "
-             f"WHERE {' AND '.join(clauses)}")
+    inner = (
+        f"SELECT {sel}, row_number() OVER (PARTITION BY {', '.join(part_keys)} "
+        f"ORDER BY vintage_date DESC) AS rn FROM {table} "
+        f"WHERE {' AND '.join(clauses)}"
+    )
     outer = ["rn = 1"]
     if start:
         outer.append("date >= ?")
@@ -103,13 +147,22 @@ def _asof_query(table: str, part_keys: List[str], filters: dict, asof: str,
     if end:
         outer.append("date <= ?")
         params.append(end)
-    return (f"SELECT {sel} FROM ({inner}) t WHERE {' AND '.join(outer)} "
-            f"ORDER BY {', '.join(part_keys)}"), params
+    return (
+        f"SELECT {sel} FROM ({inner}) t WHERE {' AND '.join(outer)} "
+        f"ORDER BY {', '.join(part_keys)}"
+    ), params
 
 
-def _read_asof(con, table: str, id_col: str, ids: List[str],
-               start: Optional[str], end: Optional[str], wide: bool,
-               asof: str) -> pd.DataFrame:
+def _read_asof(
+    con,
+    table: str,
+    id_col: str,
+    ids: List[str],
+    start: Optional[str],
+    end: Optional[str],
+    wide: bool,
+    asof: str,
+) -> pd.DataFrame:
     """Point-in-time macro_series read (one id column, pivoted by it when wide)."""
     q, params = _asof_query(table, ["date", id_col], {id_col: ids}, asof, start, end)
     df = con.execute(q, params).fetch_df()
@@ -122,10 +175,15 @@ def _read_asof(con, table: str, id_col: str, ids: List[str],
     return out.sort_index()
 
 
-def read_prices(symbols: Union[str, List[str]], start: Optional[str] = None,
-                end: Optional[str] = None, field: str = "adj_close",
-                wide: bool = True, include_live: bool = False,
-                db_path: Optional[str] = None) -> pd.DataFrame:
+def read_prices(
+    symbols: Union[str, List[str]],
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    field: str = "adj_close",
+    wide: bool = True,
+    include_live: bool = False,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """
     Daily prices. wide=True -> date index, symbol columns (field `field`).
     wide=False -> long format with all OHLCV columns.
@@ -134,7 +192,8 @@ def read_prices(symbols: Union[str, List[str]], start: Optional[str] = None,
         symbols = [symbols]
     if field not in _ALLOWED_PRICE_FIELDS:
         raise ValueError(
-            f"Invalid field {field!r}; allowed: {sorted(_ALLOWED_PRICE_FIELDS)}")
+            f"Invalid field {field!r}; allowed: {sorted(_ALLOWED_PRICE_FIELDS)}"
+        )
     con = _con(db_path)
     try:
         clauses = ["symbol IN (" + ",".join(["?"] * len(symbols)) + ")"]
@@ -151,25 +210,33 @@ def read_prices(symbols: Union[str, List[str]], start: Optional[str] = None,
         if wide:
             df = con.execute(
                 f"SELECT date, symbol, {field} AS v FROM prices_daily "
-                f"WHERE {where} ORDER BY date", params).fetch_df()
+                f"WHERE {where} ORDER BY date",
+                params,
+            ).fetch_df()
             if df.empty:
                 return pd.DataFrame()
-            out = df.pivot_table(index="date", columns="symbol", values="v",
-                                 aggfunc="last")
+            out = df.pivot_table(
+                index="date", columns="symbol", values="v", aggfunc="last"
+            )
             out.index = pd.to_datetime(out.index)
             return out.sort_index()
         else:
             return con.execute(
                 f"SELECT * FROM prices_daily WHERE {where} ORDER BY symbol, date",
-                params).fetch_df()
+                params,
+            ).fetch_df()
     finally:
         con.close()
 
 
-def read_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,
-               end: Optional[str] = None, wide: bool = True,
-               asof: Optional[str] = None,
-               db_path: Optional[str] = None) -> pd.DataFrame:
+def read_macro(
+    series_ids: Union[str, List[str]],
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    wide: bool = True,
+    asof: Optional[str] = None,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """Macro series. wide=True -> date index, series_id columns.
 
     asof=<YYYY-MM-DD> -> point-in-time read from macro_series_vintage: the value
@@ -182,8 +249,15 @@ def read_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,
     try:
         if asof:
             return _read_asof(
-                con, "macro_series_vintage", "series_id", series_ids,
-                start, end, wide, asof)
+                con,
+                "macro_series_vintage",
+                "series_id",
+                series_ids,
+                start,
+                end,
+                wide,
+                asof,
+            )
         clauses = ["series_id IN (" + ",".join(["?"] * len(series_ids)) + ")"]
         params: list = list(series_ids)
         if start:
@@ -196,24 +270,30 @@ def read_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,
         if wide:
             df = con.execute(
                 f"SELECT date, series_id, value FROM macro_series "
-                f"WHERE {where} ORDER BY date", params).fetch_df()
+                f"WHERE {where} ORDER BY date",
+                params,
+            ).fetch_df()
             if df.empty:
                 return pd.DataFrame()
-            out = df.pivot_table(index="date", columns="series_id",
-                                 values="value", aggfunc="last")
+            out = df.pivot_table(
+                index="date", columns="series_id", values="value", aggfunc="last"
+            )
             out.index = pd.to_datetime(out.index)
             return out.sort_index()
         return con.execute(
-            f"SELECT * FROM macro_series WHERE {where} ORDER BY series_id, date",
-            params).fetch_df()
+            f"SELECT * FROM macro_series WHERE {where} ORDER BY series_id, date", params
+        ).fetch_df()
     finally:
         con.close()
 
 
 def read_treasury_cash_balance(
-        start: Optional[str] = None, end: Optional[str] = None,
-        account_type: Optional[str] = None, *,
-        db_path: Optional[str] = None) -> pd.DataFrame:
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    account_type: Optional[str] = None,
+    *,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """Treasury cash-balance rows, optionally filtered by account type."""
     con = _con(db_path)
     try:
@@ -231,14 +311,19 @@ def read_treasury_cash_balance(
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         return con.execute(
             f"SELECT * FROM treasury_cash_balance{where} "
-            "ORDER BY record_date, account_type", params).fetch_df()
+            "ORDER BY record_date, account_type",
+            params,
+        ).fetch_df()
     finally:
         con.close()
 
 
 def read_treasury_debt(
-        start: Optional[str] = None, end: Optional[str] = None, *,
-        db_path: Optional[str] = None) -> pd.DataFrame:
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    *,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """Daily U.S. public-debt totals."""
     con = _con(db_path)
     try:
@@ -252,16 +337,20 @@ def read_treasury_debt(
             params.append(end)
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         return con.execute(
-            f"SELECT * FROM treasury_debt_outstanding{where} "
-            "ORDER BY record_date", params).fetch_df()
+            f"SELECT * FROM treasury_debt_outstanding{where} ORDER BY record_date",
+            params,
+        ).fetch_df()
     finally:
         con.close()
 
 
 def read_treasury_auctions(
-        start: Optional[str] = None, end: Optional[str] = None,
-        security_type: Optional[str] = None, *,
-        db_path: Optional[str] = None) -> pd.DataFrame:
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    security_type: Optional[str] = None,
+    *,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """Treasury auction results, optionally filtered by security type."""
     con = _con(db_path)
     try:
@@ -278,15 +367,20 @@ def read_treasury_auctions(
             params.append(security_type)
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         return con.execute(
-            f"SELECT * FROM treasury_auctions{where} "
-            "ORDER BY auction_date, cusip", params).fetch_df()
+            f"SELECT * FROM treasury_auctions{where} ORDER BY auction_date, cusip",
+            params,
+        ).fetch_df()
     finally:
         con.close()
 
 
-def _read_cftc(table: str, start: Optional[str], end: Optional[str],
-               contract_market_name: Optional[str],
-               db_path: Optional[str]) -> pd.DataFrame:
+def _read_cftc(
+    table: str,
+    start: Optional[str],
+    end: Optional[str],
+    contract_market_name: Optional[str],
+    db_path: Optional[str],
+) -> pd.DataFrame:
     con = _con(db_path)
     try:
         clauses: list = []
@@ -302,29 +396,36 @@ def _read_cftc(table: str, start: Optional[str], end: Optional[str],
             params.append(contract_market_name)
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         return con.execute(
-            f"SELECT * FROM {table}{where} "
-            "ORDER BY contract_market_name, report_date", params).fetch_df()
+            f"SELECT * FROM {table}{where} ORDER BY contract_market_name, report_date",
+            params,
+        ).fetch_df()
     finally:
         con.close()
 
 
-def read_cftc_tff(start=None, end=None, contract_market_name=None, *,
-                  db_path=None) -> pd.DataFrame:
+def read_cftc_tff(
+    start=None, end=None, contract_market_name=None, *, db_path=None
+) -> pd.DataFrame:
     """TFF Futures Only COT positioning in long form."""
-    return _read_cftc(
-        "cftc_tff_positioning", start, end, contract_market_name, db_path)
+    return _read_cftc("cftc_tff_positioning", start, end, contract_market_name, db_path)
 
 
-def read_cftc_legacy(start=None, end=None, contract_market_name=None, *,
-                     db_path=None) -> pd.DataFrame:
+def read_cftc_legacy(
+    start=None, end=None, contract_market_name=None, *, db_path=None
+) -> pd.DataFrame:
     """Legacy Futures Only COT positioning in long form."""
     return _read_cftc(
-        "cftc_legacy_positioning", start, end, contract_market_name, db_path)
+        "cftc_legacy_positioning", start, end, contract_market_name, db_path
+    )
 
 
-def read_alfred_vintage(series_id: str, date: Optional[str] = None,
-                        as_of: Optional[str] = None, *,
-                        db_path=None) -> pd.DataFrame:
+def read_alfred_vintage(
+    series_id: str,
+    date: Optional[str] = None,
+    as_of: Optional[str] = None,
+    *,
+    db_path=None,
+) -> pd.DataFrame:
     """Stored ALFRED observations for one series, optionally by date/vintage."""
     con = _con(db_path)
     try:
@@ -339,10 +440,11 @@ def read_alfred_vintage(series_id: str, date: Optional[str] = None,
         where = " AND ".join(clauses)
         return con.execute(
             f"SELECT * FROM alfred_vintage_observations WHERE {where} "
-            "ORDER BY date, as_of", params).fetch_df()
+            "ORDER BY date, as_of",
+            params,
+        ).fetch_df()
     finally:
         con.close()
-
 
 
 def alfred_as_known_at(series_id: str, as_of: str, *, db_path=None) -> pd.DataFrame:
@@ -356,24 +458,37 @@ def alfred_as_known_at(series_id: str, as_of: str, *, db_path=None) -> pd.DataFr
     con = _con(db_path)
     try:
         # Older, read-only databases may predate the additive v26 migration.
-        columns = {r[1] for r in con.execute(
-            "PRAGMA table_info('alfred_vintage_observations')").fetchall()}
+        columns = {
+            r[1]
+            for r in con.execute(
+                "PRAGMA table_info('alfred_vintage_observations')"
+            ).fetchall()
+        }
         validity = "realtime_end" if "realtime_end" in columns else "NULL::DATE"
-        return con.execute(
-            "SELECT * EXCLUDE (rn) FROM ("
-            f"SELECT *, {validity} AS valid_until, row_number() OVER "
-            "(PARTITION BY date ORDER BY as_of DESC) AS rn "
-            "FROM alfred_vintage_observations WHERE series_id = ? AND as_of <= ?) "
-            "WHERE rn = 1 AND value IS NOT NULL "
-            "AND (valid_until IS NULL OR valid_until >= ?) ORDER BY date",
-            [series_id, as_of, as_of]).fetch_df().drop(columns="valid_until")
+        return (
+            con.execute(
+                "SELECT * EXCLUDE (rn) FROM ("
+                f"SELECT *, {validity} AS valid_until, row_number() OVER "
+                "(PARTITION BY date ORDER BY as_of DESC) AS rn "
+                "FROM alfred_vintage_observations WHERE series_id = ? AND as_of <= ?) "
+                "WHERE rn = 1 AND value IS NOT NULL "
+                "AND (valid_until IS NULL OR valid_until >= ?) ORDER BY date",
+                [series_id, as_of, as_of],
+            )
+            .fetch_df()
+            .drop(columns="valid_until")
+        )
     finally:
         con.close()
 
 
-def read_custom(series_ids: Union[str, List[str]], start: Optional[str] = None,
-                end: Optional[str] = None, wide: bool = True,
-                db_path: Optional[str] = None) -> pd.DataFrame:
+def read_custom(
+    series_ids: Union[str, List[str]],
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    wide: bool = True,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """App-published series (``custom_series``, written via
     :func:`market_data_hub.custom.store_series`).
 
@@ -396,30 +511,40 @@ def read_custom(series_ids: Union[str, List[str]], start: Optional[str] = None,
         if wide:
             df = con.execute(
                 f"SELECT date, series_id, value FROM custom_series "
-                f"WHERE {where} ORDER BY date", params).fetch_df()
+                f"WHERE {where} ORDER BY date",
+                params,
+            ).fetch_df()
             if df.empty:
                 return pd.DataFrame()
-            out = df.pivot_table(index="date", columns="series_id",
-                                 values="value", aggfunc="last")
+            out = df.pivot_table(
+                index="date", columns="series_id", values="value", aggfunc="last"
+            )
             out.index = pd.to_datetime(out.index)
             return out.sort_index()
         return con.execute(
             f"SELECT * FROM custom_series WHERE {where} ORDER BY series_id, date",
-            params).fetch_df()
+            params,
+        ).fetch_df()
     finally:
         con.close()
 
 
-def read_crypto(symbols: Union[str, List[str]], timeframe: str = "1h",
-                start: Optional[str] = None, end: Optional[str] = None,
-                db_path: Optional[str] = None) -> pd.DataFrame:
+def read_crypto(
+    symbols: Union[str, List[str]],
+    timeframe: str = "1h",
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """Crypto OHLCV in long format for one or more symbols at a given timeframe."""
     if isinstance(symbols, str):
         symbols = [symbols]
     con = _con(db_path)
     try:
-        clauses = ["symbol IN (" + ",".join(["?"] * len(symbols)) + ")",
-                   "timeframe = ?"]
+        clauses = [
+            "symbol IN (" + ",".join(["?"] * len(symbols)) + ")",
+            "timeframe = ?",
+        ]
         params: list = list(symbols) + [timeframe]
         if start:
             clauses.append("ts >= ?")
@@ -429,17 +554,21 @@ def read_crypto(symbols: Union[str, List[str]], timeframe: str = "1h",
             params.append(end)
         where = " AND ".join(clauses)
         return con.execute(
-            f"SELECT * FROM crypto_ohlcv WHERE {where} ORDER BY symbol, ts",
-            params).fetch_df()
+            f"SELECT * FROM crypto_ohlcv WHERE {where} ORDER BY symbol, ts", params
+        ).fetch_df()
     finally:
         con.close()
 
 
-def read_macro_panel(indicators: Union[str, List[str]],
-                     countries: Optional[Union[str, List[str]]] = None,
-                     start: Optional[str] = None, end: Optional[str] = None,
-                     wide: bool = False, asof: Optional[str] = None,
-                     db_path: Optional[str] = None) -> pd.DataFrame:
+def read_macro_panel(
+    indicators: Union[str, List[str]],
+    countries: Optional[Union[str, List[str]]] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    wide: bool = False,
+    asof: Optional[str] = None,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """
     Cross-country macro panel (World Bank / IMF / BIS).
     wide=False -> long format (date, country_iso3, indicator_id, value, ...).
@@ -458,14 +587,20 @@ def read_macro_panel(indicators: Union[str, List[str]],
             if countries:
                 filters["country_iso3"] = countries
             q, params = _asof_query(
-                "macro_panel_vintage", ["date", "country_iso3", "indicator_id"],
-                filters, asof, start, end)
+                "macro_panel_vintage",
+                ["date", "country_iso3", "indicator_id"],
+                filters,
+                asof,
+                start,
+                end,
+            )
             df = con.execute(q, params).fetch_df()
             if wide and not df.empty:
                 if len(indicators) != 1:
                     raise ValueError("wide=True requires a single indicator")
-                out = df.pivot_table(index="date", columns="country_iso3",
-                                     values="value", aggfunc="last")
+                out = df.pivot_table(
+                    index="date", columns="country_iso3", values="value", aggfunc="last"
+                )
                 out.index = pd.to_datetime(out.index)
                 return out.sort_index()
             return df
@@ -485,12 +620,15 @@ def read_macro_panel(indicators: Union[str, List[str]],
         where = " AND ".join(clauses)
         df = con.execute(
             f"SELECT * FROM macro_panel WHERE {where} ORDER BY indicator_id, "
-            f"country_iso3, date", qparams).fetch_df()
+            f"country_iso3, date",
+            qparams,
+        ).fetch_df()
         if wide and not df.empty:
             if len(indicators) != 1:
                 raise ValueError("wide=True requires a single indicator")
-            out = df.pivot_table(index="date", columns="country_iso3",
-                                 values="value", aggfunc="last")
+            out = df.pivot_table(
+                index="date", columns="country_iso3", values="value", aggfunc="last"
+            )
             out.index = pd.to_datetime(out.index)
             return out.sort_index()
         return df
@@ -498,10 +636,13 @@ def read_macro_panel(indicators: Union[str, List[str]],
         con.close()
 
 
-def read_macro_panel_ext(indicators: Optional[Union[str, List[str]]] = None,
-                         countries: Optional[Union[str, List[str]]] = None,
-                         start: Optional[str] = None, end: Optional[str] = None,
-                         db_path: Optional[str] = None) -> pd.DataFrame:
+def read_macro_panel_ext(
+    indicators: Optional[Union[str, List[str]]] = None,
+    countries: Optional[Union[str, List[str]]] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """
     Long-format read of v_macro_panel_ext: macro_panel PLUS single-country
     FRED series remapped into panel shape (currently the 10Y government bond
@@ -521,7 +662,9 @@ def read_macro_panel_ext(indicators: Optional[Union[str, List[str]]] = None,
         clauses = ["value IS NOT NULL"]
         qparams: list = []
         if indicators:
-            clauses.append("indicator_id IN (" + ",".join(["?"] * len(indicators)) + ")")
+            clauses.append(
+                "indicator_id IN (" + ",".join(["?"] * len(indicators)) + ")"
+            )
             qparams += list(indicators)
         if countries:
             clauses.append("country_iso3 IN (" + ",".join(["?"] * len(countries)) + ")")
@@ -535,15 +678,21 @@ def read_macro_panel_ext(indicators: Optional[Union[str, List[str]]] = None,
         where = " AND ".join(clauses)
         return con.execute(
             f"SELECT * FROM v_macro_panel_ext WHERE {where} ORDER BY "
-            f"indicator_id, country_iso3, date", qparams).fetch_df()
+            f"indicator_id, country_iso3, date",
+            qparams,
+        ).fetch_df()
     finally:
         con.close()
 
 
-def read_factors(factors: Optional[Union[str, List[str]]] = None,
-                 factor_set: Optional[str] = None, start: Optional[str] = None,
-                 end: Optional[str] = None, wide: bool = True,
-                 db_path: Optional[str] = None) -> pd.DataFrame:
+def read_factors(
+    factors: Optional[Union[str, List[str]]] = None,
+    factor_set: Optional[str] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    wide: bool = True,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """Fama-French / momentum factor returns (decimal).
 
     wide=True -> date index, factor columns (filter to one factor_set to avoid
@@ -570,23 +719,27 @@ def read_factors(factors: Optional[Union[str, List[str]]] = None,
         where = (" WHERE " + " AND ".join(clauses)) if clauses else ""
         if wide:
             df = con.execute(
-                f"SELECT date, factor, value FROM factor_returns{where} "
-                f"ORDER BY date", params).fetch_df()
+                f"SELECT date, factor, value FROM factor_returns{where} ORDER BY date",
+                params,
+            ).fetch_df()
             if df.empty:
                 return pd.DataFrame()
-            out = df.pivot_table(index="date", columns="factor", values="value",
-                                 aggfunc="last")
+            out = df.pivot_table(
+                index="date", columns="factor", values="value", aggfunc="last"
+            )
             out.index = pd.to_datetime(out.index)
             return out.sort_index()
         return con.execute(
-            f"SELECT * FROM factor_returns{where} "
-            f"ORDER BY factor_set, factor, date", params).fetch_df()
+            f"SELECT * FROM factor_returns{where} ORDER BY factor_set, factor, date",
+            params,
+        ).fetch_df()
     finally:
         con.close()
 
 
-def get_coverage(symbols: Optional[List[str]] = None,
-                 db_path: Optional[str] = None) -> pd.DataFrame:
+def get_coverage(
+    symbols: Optional[List[str]] = None, db_path: Optional[str] = None
+) -> pd.DataFrame:
     """coverage_report table (optionally filtered on a list of symbols)."""
     con = _con(db_path)
     try:
@@ -594,9 +747,12 @@ def get_coverage(symbols: Optional[List[str]] = None,
             ph = ",".join(["?"] * len(symbols))
             return con.execute(
                 f"SELECT * FROM coverage_report WHERE symbol IN ({ph}) "
-                f"ORDER BY coverage_score", list(symbols)).fetch_df()
+                f"ORDER BY coverage_score",
+                list(symbols),
+            ).fetch_df()
         return con.execute(
-            "SELECT * FROM coverage_report ORDER BY coverage_score").fetch_df()
+            "SELECT * FROM coverage_report ORDER BY coverage_score"
+        ).fetch_df()
     finally:
         con.close()
 
@@ -627,10 +783,14 @@ def get_latest(symbol: str, db_path: Optional[str] = None) -> dict:
     try:
         px = con.execute(
             "SELECT date, close, adj_close, volume FROM prices_daily "
-            "WHERE symbol = ? ORDER BY date DESC LIMIT 1", [symbol]).fetch_df()
+            "WHERE symbol = ? ORDER BY date DESC LIMIT 1",
+            [symbol],
+        ).fetch_df()
         cov = con.execute(
             "SELECT lag_days, coverage_score, stalled, freq_detected, status "
-            "FROM coverage_report WHERE symbol = ? LIMIT 1", [symbol]).fetch_df()
+            "FROM coverage_report WHERE symbol = ? LIMIT 1",
+            [symbol],
+        ).fetch_df()
         out: dict = {"symbol": symbol}
         if not px.empty:
             out.update(px.iloc[0].to_dict())
@@ -641,10 +801,14 @@ def get_latest(symbol: str, db_path: Optional[str] = None) -> dict:
         con.close()
 
 
-def read_instrument(instrument: "str | InstrumentId", start: Optional[str] = None,
-                    end: Optional[str] = None, wide: bool = False,
-                    asof: Optional[str] = None,
-                    db_path: Optional[str] = None) -> pd.DataFrame:
+def read_instrument(
+    instrument: "str | InstrumentId",
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    wide: bool = False,
+    asof: Optional[str] = None,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """Read a single instrument addressed by its canonical ``InstrumentId``.
 
     The thin lazydatacore (L0) adapter: downstream tools pass a namespaced
@@ -664,19 +828,34 @@ def read_instrument(instrument: "str | InstrumentId", start: Optional[str] = Non
     ref = to_duckdb(instrument)
     f = ref.filters
     if ref.dataset == "prices":
-        return read_prices(f["symbol"], start=start, end=end, wide=wide,
-                           db_path=db_path)
+        return read_prices(
+            f["symbol"], start=start, end=end, wide=wide, db_path=db_path
+        )
     if ref.dataset == "crypto":
-        return read_crypto(f["symbol"], timeframe=f["timeframe"], start=start,
-                           end=end, db_path=db_path)
+        return read_crypto(
+            f["symbol"], timeframe=f["timeframe"], start=start, end=end, db_path=db_path
+        )
     if ref.dataset == "macro":
-        return read_macro(f["series_id"], start=start, end=end, wide=wide,
-                          asof=asof, db_path=db_path)
+        return read_macro(
+            f["series_id"], start=start, end=end, wide=wide, asof=asof, db_path=db_path
+        )
     if ref.dataset == "macro_panel":
-        return read_macro_panel(f["indicator_id"], countries=[f["country_iso3"]],
-                                start=start, end=end, wide=wide, asof=asof,
-                                db_path=db_path)
+        return read_macro_panel(
+            f["indicator_id"],
+            countries=[f["country_iso3"]],
+            start=start,
+            end=end,
+            wide=wide,
+            asof=asof,
+            db_path=db_path,
+        )
     if ref.dataset == "factors":
-        return read_factors(f["factor"], factor_set=f["factor_set"], start=start,
-                            end=end, wide=wide, db_path=db_path)
+        return read_factors(
+            f["factor"],
+            factor_set=f["factor_set"],
+            start=start,
+            end=end,
+            wide=wide,
+            db_path=db_path,
+        )
     raise ValueError(f"unsupported dataset {ref.dataset!r}")  # defensive
