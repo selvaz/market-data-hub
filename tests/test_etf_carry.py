@@ -109,7 +109,7 @@ def test_catalog_has_all_carry_series():
     expected = {f"{e['symbol']}/{f}" for e in entries for f in carry.FIELDS}
     expected |= {
         f"{symbol}/{field}"
-        for symbol in ssga_funds
+        for symbol in (*ssga_funds, "AGG")
         for field, _ in ssga_fields.values()
     }
     expected |= {

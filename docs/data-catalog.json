@@ -5341,6 +5341,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "AGG/average_coupon",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "AGG average_coupon",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -5359,6 +5384,56 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "AGG currency_hedged",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "AGG/distribution_yield",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "AGG distribution_yield",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "AGG/effective_duration",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "AGG effective_duration",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
@@ -5391,6 +5466,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "AGG/holdings_count",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "AGG holdings_count",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -5409,6 +5509,31 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "AGG sec_30_day_yield",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "AGG/sec_yield_30d",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "AGG sec_yield_30d",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
@@ -5441,12 +5566,12 @@
       "table": "etf_carry_snapshots"
     },
     {
-      "distributor": "Yahoo Finance quote",
+      "distributor": "State Street product data workbook",
       "expected_lag_days": 1,
       "frequency": "D",
       "history_start": "Point-in-time from first capture; no backfill",
       "id": "AGG/yield_to_maturity",
-      "issuer": "Fund provider via Yahoo",
+      "issuer": "State Street",
       "jobs": [
         {
           "name": "daily_eu18",
@@ -40417,7 +40542,7 @@
         "symbol",
         "field"
       ],
-      "series_count": 707,
+      "series_count": 712,
       "status": "active",
       "status_reason": "",
       "store": "hub",

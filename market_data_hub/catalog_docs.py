@@ -308,7 +308,7 @@ def build_rows(config_dir=CONFIG_DIR):
 
     for e in universe(load_config(config_dir, "tickers.yaml")["yahoo"]):
         for field, lag in FIELDS.items():
-            if e["symbol"] in SSGA_FUNDS and field == "yield_to_maturity":
+            if e["symbol"] in (*SSGA_FUNDS, "AGG") and field == "yield_to_maturity":
                 continue
             row = _row(
                 dict(
@@ -325,7 +325,7 @@ def build_rows(config_dir=CONFIG_DIR):
                 frequency="D",
             )
             rows.append(row)
-    for symbol in SSGA_FUNDS:
+    for symbol in (*SSGA_FUNDS, "AGG"):
         for field, _ in SSGA_FIELDS.values():
             rows.append(
                 _row(

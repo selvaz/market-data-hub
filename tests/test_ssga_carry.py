@@ -32,9 +32,12 @@ def test_one_workbook_per_day_and_stored_metadata(tmp_path, monkeypatch):
         ssga_carry.requests, "get", lambda *a, **k: calls.append(a) or Response()
     )
     con = get_conn(str(tmp_path / "hub.duckdb"))
-    assert collect(con, log=lambda _: None) == 18
+    assert collect(con, log=lambda _: None) == 24
     assert collect(con, log=lambda _: None) == 0
     assert len(calls) == 1
+    assert con.execute(
+        "SELECT DISTINCT proxy_symbol FROM etf_carry_snapshots WHERE symbol='AGG'"
+    ).fetchall() == [("SPAB",)]
     assert (
         con.execute(
             "SELECT source_as_of, index_currency FROM etf_carry_snapshots WHERE symbol='BIL' LIMIT 1"

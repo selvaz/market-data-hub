@@ -36,7 +36,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [download_log](#catalog-hub-download_log) | 0 |
 | hub | [earnings_events](#catalog-hub-earnings_events) | 0 |
 | hub | [earnings_observations](#catalog-hub-earnings_observations) | 0 |
-| hub | [etf_carry_snapshots](#catalog-hub-etf_carry_snapshots) | 707 |
+| hub | [etf_carry_snapshots](#catalog-hub-etf_carry_snapshots) | 712 |
 | hub | [etf_classification](#catalog-hub-etf_classification) | 0 |
 | hub | [etf_valuation_snapshots](#catalog-hub-etf_valuation_snapshots) | 46 |
 | hub | [factor_returns](#catalog-hub-factor_returns) | 7 |
@@ -577,11 +577,16 @@ Append-only ETF carry observations by capture date, symbol and field, with provi
 | ACWX/sec_30_day_yield | ACWX sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | ACWX/trailing_distribution_yield | ACWX trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | ACWX/yield_to_maturity | ACWX yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| AGG/average_coupon | AGG average_coupon | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | AGG/currency_hedged | AGG currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| AGG/distribution_yield | AGG distribution_yield | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| AGG/effective_duration | AGG effective_duration | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | AGG/expense_ratio | AGG expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| AGG/holdings_count | AGG holdings_count | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | AGG/sec_30_day_yield | AGG sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| AGG/sec_yield_30d | AGG sec_yield_30d | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | AGG/trailing_distribution_yield | AGG trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
-| AGG/yield_to_maturity | AGG yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| AGG/yield_to_maturity | AGG yield_to_maturity | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | AGGG.L/currency_hedged | AGGG.L currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | AGGG.L/expense_ratio | AGGG.L expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | AGGG.L/sec_30_day_yield | AGGG.L sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |

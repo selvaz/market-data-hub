@@ -11,12 +11,18 @@ against [AGG's regulatory disclosure](https://www.sec.gov/Archives/edgar/data/70
 and [SPAB's issuer page](https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-aggregate-bond-index-etf-spab).
 No other cross-fund proxies have been established.
 
+For TLT, LQD, TIP, EUHY, IEAC.AS, IEF, SHY, EMB, HYG, IEI, MUB, CEMB and
+IBCL.DE, the carry gap is **issuer unreachable, no same-index proxy**. AGG is
+the only BlackRock bond fund in this mapping with a verified reachable proxy.
+
 State Street BIL, BWX and SPAB are collected from the issuer's daily
 `spdr-product-data-us-en.xlsx` workbook. Its Option Adjusted Duration is
 described by State Street as effective duration. Workbook percentage values
 are converted to decimal fractions; source dates come from its `As of**` field.
 BWX holds bonds in multiple currencies, so its single `index_currency` is null.
-AGG-to-SPAB proxy rows are not yet collected.
+AGG is collected as `proxy_for=AGG` from SPAB, with `proxy_symbol=SPAB` and
+the shared Bloomberg U.S. Aggregate Bond Index. Fund characteristics, SEC yield,
+coupon and holdings count describe SPAB rather than AGG itself.
 
 VanEck US fact sheets for EMLC, HYEM and IHY provide effective duration,
 30-day SEC yield and holdings count as of the fact sheet date. The inspected

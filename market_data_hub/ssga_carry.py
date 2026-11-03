@@ -9,6 +9,7 @@ import requests
 
 URL = "https://www.ssga.com/library-content/products/fund-data/etfs/us/spdr-product-data-us-en.xlsx"
 FUNDS = {"BIL": "USD", "BWX": None, "SPAB": "USD"}
+PROXY_INDEX = "Bloomberg U.S. Aggregate Bond Index"
 FIELDS = {
     "Yield to Maturity": ("yield_to_maturity", 0.01),
     "Option Adjusted Duration": ("effective_duration", 1),
@@ -29,12 +30,14 @@ def parse_workbook(data):
         for row in rows:
             if row[1] == "Ticker":
                 header = {str(value).strip(): i for i, value in enumerate(row) if value}
-                if not {"Ticker", "As of**", *FIELDS}.issubset(header):
+                if not {"Ticker", "As of**", "Primary Index", *FIELDS}.issubset(header):
                     raise ValueError(
                         "State Street workbook is missing expected columns"
                     )
                 continue
             if header is None or row[1] not in FUNDS:
+                continue
+            if row[1] == "SPAB" and row[header["Primary Index"]] != PROXY_INDEX:
                 continue
             date_value = datetime.strptime(row[header["As of**"]], "%b %d %Y").date()
             values = {}
@@ -85,11 +88,27 @@ def collect(con, *, log=print):
         response.raise_for_status()
         data = parse_workbook(response.content)
         count = 0
-        for symbol, currency in FUNDS.items():
-            if symbol not in data:
-                log(f"State Street carry {symbol}: workbook row missing")
+        from market_data_hub.config_loader import get_etf_index_map
+
+        index_map = {row["symbol"]: row for row in get_etf_index_map()}
+        shared = all(
+            index_map.get(symbol, {}).get("underlying_index") == PROXY_INDEX
+            for symbol in ("AGG", "SPAB")
+        )
+        targets = [
+            (symbol, symbol, currency, None) for symbol, currency in FUNDS.items()
+        ]
+        if shared:
+            targets.append(("AGG", "SPAB", "USD", "SPAB"))
+        else:
+            log("State Street carry AGG: index map does not establish exact SPAB match")
+        for symbol, source_symbol, currency, proxy in targets:
+            if source_symbol not in data:
+                log(
+                    f"State Street carry {symbol}: workbook row missing or benchmark changed"
+                )
                 continue
-            as_of, values = data[symbol]
+            as_of, values = data[source_symbol]
             for field, (value, raw) in values.items():
                 con.execute(
                     "INSERT INTO etf_carry_snapshots VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING",
@@ -102,7 +121,7 @@ def collect(con, *, log=print):
                         now,
                         raw,
                         as_of,
-                        None,
+                        proxy,
                         currency,
                         None,
                     ],
