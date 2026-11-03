@@ -7,6 +7,11 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.20] — 2026-11-03
+
+### Changed
+- VanEck (EMLC, HYEM, IHY) and Vanguard (BNDX) carry come from the issuers' daily fund-page data (SEC yield, yield to worst, effective duration, holdings) instead of monthly or quarterly fact sheets; the fact sheet stays only for fields the daily data lack. A broken fact-sheet PDF no longer discards the daily yield (#169).
+
 ## [0.3.19] — 2026-11-03
 
 ### Added
