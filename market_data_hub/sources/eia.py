@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import http.client
-import json
+import logging
 import os
-from urllib.parse import urlencode
 
 import pandas as pd
+import requests
 
 _UNITS = {
     "Thousand Barrels": {"thousand barrels", "mbbl"},
@@ -49,23 +48,30 @@ def fetch(start: str, end: str, *, meta: dict, timeout: int = 30) -> pd.DataFram
             "offset": offset,
             "length": 5000,
         }
-        conn = http.client.HTTPSConnection("api.eia.gov", timeout=timeout)
-        conn.set_debuglevel(0)
         status = None
+        # urllib3 logs the request path, query string included, at DEBUG.
+        pool_log = logging.getLogger("urllib3.connectionpool")
+        pool_level = pool_log.level
+        pool_log.setLevel(max(pool_level, logging.INFO))
         try:
-            conn.request("GET", f"/v2/{meta['route']}/data/?{urlencode(params)}")
-            response = conn.getresponse()
-            status = response.status
+            # requests verifies TLS with certifi; http.client read the Windows
+            # store, where a malformed certificate broke every request.
+            response = requests.get(
+                f"https://api.eia.gov/v2/{meta['route']}/data/",
+                params=params,
+                timeout=timeout,
+            )
+            status = response.status_code
             if status != 200:
                 raise RuntimeError
-            payload = json.loads(response.read())
+            payload = response.json()
         except Exception:
             # Do not propagate an HTTP/client exception: it may contain the URL.
             raise EIARequestError(
                 f"HTTP {status or 'unavailable'}; series {sid}"
             ) from None
         finally:
-            conn.close()
+            pool_log.setLevel(pool_level)
         try:
             page = payload["response"]["data"]
             total = int(payload["response"]["total"])

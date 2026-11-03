@@ -1,6 +1,5 @@
 """Offline EIA v2 response and ingestion contracts."""
 
-import json
 import sys
 
 import pytest
@@ -12,33 +11,21 @@ from market_data_hub.sources import eia
 
 
 class Response:
-    status = 200
+    status_code = 200
 
     def __init__(self, payload):
         self.payload = payload
 
-    def read(self):
-        return json.dumps(self.payload).encode()
+    def json(self):
+        return self.payload
 
 
 def install_response(monkeypatch, payload):
-    class Connection:
-        def __init__(self, *args, **kwargs):
-            pass
+    def get(url, params, timeout):
+        assert url.startswith("https://api.eia.gov/v2/")
+        return Response(payload)
 
-        def set_debuglevel(self, level):
-            assert level == 0
-
-        def request(self, *args):
-            pass
-
-        def getresponse(self):
-            return Response(payload)
-
-        def close(self):
-            pass
-
-    monkeypatch.setattr(eia.http.client, "HTTPSConnection", Connection)
+    monkeypatch.setattr(eia.requests, "get", get)
 
 
 @pytest.mark.parametrize("meta", get_eia_series(), ids=lambda e: e["symbol"])
@@ -78,20 +65,10 @@ def test_transport_failure_never_exposes_credential(monkeypatch):
     secret = "sentinel-test-secret"
     monkeypatch.setenv("EIA_API_KEY", secret)
 
-    class Broken:
-        def __init__(self, *args, **kwargs):
-            pass
+    def broken(url, params, timeout):
+        raise OSError("failed URL with " + secret)
 
-        def set_debuglevel(self, level):
-            pass
-
-        def request(self, *args):
-            raise OSError("failed URL with " + secret)
-
-        def close(self):
-            pass
-
-    monkeypatch.setattr(eia.http.client, "HTTPSConnection", Broken)
+    monkeypatch.setattr(eia.requests, "get", broken)
     with pytest.raises(eia.EIARequestError) as exc:
         eia.fetch("2026-01-01", "2026-12-31", meta=get_eia_series()[0])
     assert secret not in str(exc.value)
