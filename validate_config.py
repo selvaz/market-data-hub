@@ -163,8 +163,9 @@ def validate() -> list[str]:
         for field in ("symbol", "name", "unit", "country", "asset_class"):
             if not entry.get(field):
                 errors.append(f"macro_series.yaml: NY Fed ACM missing '{field}'")
-        if entry.get("frequency") != "M" or entry.get("source") != "nyfed_acm":
-            errors.append("macro_series.yaml: NY Fed ACM chart CSV must have frequency M and source nyfed_acm")
+        # The monthly chart CSV and the daily workbook (NYFED_ACM_TP10_DAILY) are both NY Fed ACM.
+        if entry.get("frequency") not in ("M", "D") or entry.get("source") != "nyfed_acm":
+            errors.append("macro_series.yaml: NY Fed ACM must have frequency M or D and source nyfed_acm")
 
     return errors
 
