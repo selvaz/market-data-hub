@@ -79,6 +79,21 @@ def _quote_batch(symbols):
     return {q["symbol"]: q for q in body["result"]}
 
 
+def _summary(symbol):
+    """Yahoo topHoldings module; the equity snapshot jobs read their multiples from it."""
+    session, crumb = _client()
+    response = session.get(
+        f"https://query2.finance.yahoo.com/v10/finance/quoteSummary/{symbol}",
+        params={"modules": "topHoldings", "crumb": crumb},
+        timeout=30,
+    )
+    response.raise_for_status()
+    body = response.json()["quoteSummary"]
+    if body.get("error"):
+        raise RuntimeError(str(body["error"]))
+    return (body.get("result") or [{}])[0]
+
+
 def collect(con, entries, *, log=print):
     """Fetch once per run and insert without replacing an earlier same-day capture."""
     candidates = universe(entries)
