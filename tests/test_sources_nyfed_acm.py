@@ -25,7 +25,7 @@ def no_network(monkeypatch):
 
 def test_acm_config_is_monthly_with_verified_endpoint():
     entries = config_loader.get_nyfed_acm_series()
-    assert len(entries) == 1
+    assert len(entries) == 2
     meta = entries[0]
     recording = json.loads((FIXTURES / "nyfed_acm_metadata.json").read_text())
     assert meta["symbol"] == SERIES_ID
@@ -46,6 +46,8 @@ def test_recorded_acm_csv_ingested_with_honest_source_and_coverage(tmp_db, monke
     response._content = (FIXTURES / "nyfed_acm_2026-07_2026-09.csv").read_bytes()
     evidence = json.loads((FIXTURES / "nyfed_acm_metadata.json").read_text())
     calls = []
+    monkeypatch.setattr(runner, "get_nyfed_acm_series",
+                        lambda: [config_loader.get_nyfed_acm_series()[0]])
 
     def recorded_get(url, params, timeout, retries, base_sleep):
         assert url == evidence["url"] and params == {}
@@ -94,3 +96,44 @@ def test_acm_month_end_publication_lag_boundary():
     meta = config_loader.get_nyfed_acm_series()[0]
     assert not stalled_detector.is_stalled(date(2026, 9, 30), "M", date(2026, 11, 14), max_lag_days=meta["max_lag_days"])
     assert stalled_detector.is_stalled(date(2026, 9, 30), "M", date(2026, 11, 15), max_lag_days=meta["max_lag_days"])
+
+
+def test_daily_workbook_contract(monkeypatch):
+    import pandas as pd
+    from market_data_hub.sources import nyfed_acm as acm
+
+    meta = next(e for e in config_loader.get_nyfed_acm_series()
+                if e["symbol"] == "NYFED_ACM_TP10_DAILY")
+    response = requests.Response()
+    response._content = b"recorded workbook bytes"
+    monkeypatch.setattr(acm, "_http_get", lambda url, *args: response)
+    def read_workbook(data, *, sheet_name):
+        assert data.read() == response.content
+        assert sheet_name == "ACM Daily"
+        return pd.DataFrame({"DATE": ["29-Oct-2026", "30-Oct-2026"],
+                             "ACMTP10": [-0.1, 0.679485], "ACMY10": [4.9, 4.91]})
+    monkeypatch.setattr(acm.pd, "read_excel", read_workbook)
+    result = acm.fetch_acm("2026-10-30", "2026-10-31", meta=meta)
+    assert result["date"].dt.date.tolist() == [date(2026, 10, 30)]
+    assert result["value"].tolist() == [0.679485]
+    assert result.iloc[0]["source"] == "nyfed_acm"
+    assert result.iloc[0]["frequency"] == "D"
+    assert meta["symbol"] in set(catalog.list_macro_series(with_coverage=False)["series_id"])
+
+
+def test_daily_series_uses_runner_upsert_and_log(tmp_db, monkeypatch):
+    import pandas as pd
+    meta = config_loader.get_nyfed_acm_series()[1]
+    monkeypatch.setattr(runner, "get_nyfed_acm_series", lambda: [meta])
+    frame = pd.DataFrame([{"date": pd.Timestamp("2026-10-30"),
+                           "series_id": meta["symbol"], "value": 0.679485,
+                           "series_name": meta["name"], "unit": "Percent",
+                           "frequency": "D", "source": "nyfed_acm", "country": "US"}])
+    monkeypatch.setattr(runner.acm, "fetch_acm", lambda *a, **kw: frame)
+    cfg = {"backfill_start": {"nyfed_acm": "1961-01-01"},
+           "http": {"timeout": 1, "max_retries": 1, "retry_base_sleep": 0}}
+    with get_conn(tmp_db) as con:
+        runner.run_nyfed_acm(con, cfg, "daily-acm", start_override="2026-10-30", end="2026-10-30")
+        assert con.execute("SELECT value, frequency FROM macro_series WHERE series_id=?",
+                           [meta["symbol"]]).fetchone() == (0.679485, "D")
+        assert con.execute("SELECT status, rows_added FROM download_log WHERE run_id='daily-acm'").fetchone() == ("ok", 1)

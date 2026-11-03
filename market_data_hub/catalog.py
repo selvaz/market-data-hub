@@ -291,7 +291,7 @@ def list_macro_series(frequency: Optional[str] = None, category: Optional[str] =
         c = _classify(e)
         c["series_id"] = c.pop("symbol")
         c["country"] = e.get("country")
-        for field in ("source", "unit", "frequency", "enabled", "provider", "provider_code",
+        for field in ("source", "unit", "frequency", "publication_cadence", "enabled", "provider", "provider_code",
                       "max_lag_days", "lag_calendar", "unavailable_reason", "disabled_reason",
                       "history_reason", "history_mode", "selection_rule", "source_class",
                       "convention", "publication_lag", "history_start", "tenor"):

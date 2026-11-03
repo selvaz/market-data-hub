@@ -19,6 +19,7 @@ dependencies = [
     "pypdf>=4,<7",  # Official Finanzagentur daily prices/yields PDF; plain HTTP.
     "pyarrow",
     "openpyxl",
+    "xlrd>=2.0.1,<3",
     "pyyaml",
     "certifi",
     "tzdata; platform_system == 'Windows'",

@@ -297,7 +297,7 @@ def run_sovereign_yields(con, cfg: dict, run_id: str, *,
 # --------------------------------------------------------------- NY FED ACM
 def run_nyfed_acm(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None,
                   end: Optional[str] = None) -> None:
-    """Use the existing macro upsert/vintage/log path for the monthly ACM CSV."""
+    """Use the existing macro upsert/vintage/log path for the monthly and daily ACM series."""
     end = end or _today()
     global_start = cfg["backfill_start"].get("nyfed_acm", "1961-01-01")
     tail_days = int(cfg.get("incremental", {}).get("fred_tail_days", 95))

@@ -48,7 +48,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 290 |
+| hub | [macro_series](#catalog-hub-macro_series) | 291 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
 | hub | [schema_meta](#catalog-hub-schema_meta) | 0 |
@@ -1775,6 +1775,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | MOF_JGB_8Y | Japan MoF 8Y constant maturity YTM, semiannual compounding | Japan MoF | Japan MoF direct | D | 1 | 1974-09-24 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | MOF_JGB_9Y | Japan MoF 9Y constant maturity YTM, semiannual compounding | Japan MoF | Japan MoF direct | D | 1 | 1974-09-24 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | NFCI | RISK \| US \| Chicago Fed National Financial Conditions Index | Chicago Fed | FRED | W | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| NYFED_ACM_TP10_DAILY | RATES \| US \| NY Fed ACM 10-Year Term Premium Daily | NY Fed (model) | NY Fed direct | D | 2 | 1961-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | NYFED_ACM_TP10_MONTHLY | RATES \| US \| NY Fed ACM 10-Year Term Premium Monthly | NY Fed (model) | NY Fed direct | M | 30 | 1961-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | PAYEMS | MACRO \| US \| Nonfarm Payrolls (Total) | BLS CES | FRED | M | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCEPI | MACRO \| US \| PCE Price Index | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
