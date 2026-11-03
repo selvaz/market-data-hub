@@ -164,6 +164,15 @@ def rebuild_coverage(con: duckdb.DuckDBPyConnection, run_id: str) -> int:
             rows.append(_row_for(key, "binance", g, "date",
                                  {"asset_class": "CRYPTO", "priority": 1}, run_id))
 
+    for table, key, source, prefix in (
+        ("etf_valuation_snapshots", "symbol", "yahoo_valuation", "valuation"),
+        ("market_breadth_snapshots", "market", "tradingview_breadth", "breadth"),
+    ):
+        frame = con.execute(f"SELECT collection_date AS date, {key} AS symbol FROM {table}").fetch_df()
+        for symbol, group in frame.groupby("symbol"):
+            rows.append(_row_for(f"{prefix}:{symbol}", source, group, "date",
+                                 {"asset_class": "EQUITY", "frequency": "D"}, run_id))
+
     # macro_panel is scored separately by rebuild_macro_panel_coverage() — it is a
     # (date, country, indicator) panel, not a per-symbol series, so it does not
     # belong in coverage_report.

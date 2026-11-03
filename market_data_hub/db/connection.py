@@ -22,7 +22,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 28
+SCHEMA_VERSION = 29
 
 
 class DatabaseNotConfigured(RuntimeError):
@@ -465,6 +465,9 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         con.execute("DROP VIEW IF EXISTS v_calendar_surprise")
         con.execute("DROP VIEW IF EXISTS v_calendar_upcoming")
         current = 28
+    if current < 29:
+        # The two snapshot tables are created by apply_schema().
+        current = 29
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

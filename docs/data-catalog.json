@@ -25116,6 +25116,972 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "ACWI",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "ACWI ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EEM",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EEM ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWA",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWA ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWC",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWC ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWG",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWG ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWI",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWI ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWJ",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWJ ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWQ",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWQ ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWT",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWT ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWU",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWU ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWW",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWW ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWY",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWY ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EWZ",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EWZ ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EXH1.DE",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EXH1.DE ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EXH4.DE",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EXH4.DE ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EXH9.DE",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EXH9.DE ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EXV1.DE",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EXV1.DE ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EXV3.DE",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EXV3.DE ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EXV4.DE",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EXV4.DE ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EZA",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EZA ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "IGF",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "IGF ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "INDA",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "INDA ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "IWM",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "IWM ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "KSA",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "KSA ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "MCHI",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MCHI ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "QQQ",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "QQQ ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "SPY",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "SPY ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "VEA",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "VEA ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "VGK",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "VGK ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "VGT",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "VGT ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "VNQ",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "VNQ ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "VNQI",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "VNQI ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "VTV",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "VTV ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "VUG",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "VUG ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "VWO",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "VWO ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLB",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLB ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLC",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLC ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLE",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLE ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLF",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLF ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLI",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLI ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLK",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLK ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLP",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLP ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLRE",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLRE ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLU",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLU ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLV",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLV ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
+      "distributor": "Yahoo Finance",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "XLY",
+      "issuer": "Fund provider via Yahoo",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "XLY ETF valuation snapshot",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
       "distributor": "Ken French Data Library direct",
       "expected_lag_days": 30,
       "frequency": "D",
@@ -35359,6 +36325,27 @@
       "table": "macro_series"
     },
     {
+      "distributor": "TradingView screener",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "US/us_listed_cap10b",
+      "issuer": "TradingView",
+      "jobs": [
+        {
+          "name": "market_breadth",
+          "schedule_pt": "daily 13:50 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "US large-cap breadth",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "market_breadth_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -42176,6 +43163,26 @@
       "table": "etf_classification"
     },
     {
+      "description": "Immutable daily Yahoo ETF valuation captures with raw source fields and knowledge time.",
+      "doc": "equity-snapshots.md",
+      "jobs": [
+        {
+          "name": "etf_valuations",
+          "schedule_pt": "daily 13:40 PT (proposed, disabled)"
+        }
+      ],
+      "point_in_time": "Immutable first daily capture; filter fetched_at by UTC cutoff before selecting the latest collection date.",
+      "primary_key": [
+        "collection_date",
+        "symbol"
+      ],
+      "series_count": 46,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_valuation_snapshots"
+    },
+    {
       "description": "Ken French factor returns in decimal units, keeping factor sets distinct (including the risk-free return RF).",
       "doc": "EXTRACTION.md",
       "jobs": [
@@ -42386,6 +43393,27 @@
       "status_reason": "",
       "store": "hub",
       "table": "macro_series_vintage"
+    },
+    {
+      "description": "Immutable daily TradingView breadth captures with observable denominators and knowledge time.",
+      "doc": "equity-snapshots.md",
+      "jobs": [
+        {
+          "name": "market_breadth",
+          "schedule_pt": "daily 13:50 PT (proposed, disabled)"
+        }
+      ],
+      "point_in_time": "Immutable first daily capture; filter fetched_at by UTC cutoff before selecting the latest collection date.",
+      "primary_key": [
+        "collection_date",
+        "market",
+        "universe"
+      ],
+      "series_count": 1,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "market_breadth_snapshots"
     },
     {
       "description": "Daily OHLCV and adjusted closes by listing; is_live marks provisional intraday prices.",

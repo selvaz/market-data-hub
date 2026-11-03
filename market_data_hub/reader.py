@@ -33,6 +33,38 @@ def _con(db_path: Optional[str]):
     return get_conn(db_path, read_only=True)
 
 
+def _read_latest_equity(table, key, values, as_of, db_path):
+    values = [values] if isinstance(values, str) else list(values)
+    if not values:
+        return pd.DataFrame()
+    placeholders = ",".join("?" for _ in values)
+    cutoff = pd.Timestamp(as_of)
+    if pd.isna(cutoff):
+        raise ValueError("as_of must be a valid UTC cutoff")
+    if cutoff.tzinfo is not None:
+        cutoff = cutoff.tz_convert("UTC").tz_localize(None)
+    partition = "market, universe" if table == "market_breadth_snapshots" else key
+    con = _con(db_path)
+    try:
+        return con.execute(
+            f"SELECT * FROM {table} WHERE {key} IN ({placeholders}) "
+            "AND fetched_at <= ? AND collection_date <= CAST(? AS DATE) "
+            f"QUALIFY row_number() OVER (PARTITION BY {partition} ORDER BY collection_date DESC) = 1",
+            [*values, cutoff.to_pydatetime(), cutoff.date()]).fetch_df()
+    finally:
+        con.close()
+
+
+def read_etf_valuations(symbols, *, as_of: str, db_path: Optional[str] = None):
+    """Latest first-capture valuation per symbol known by the UTC cutoff."""
+    return _read_latest_equity("etf_valuation_snapshots", "symbol", symbols, as_of, db_path)
+
+
+def read_market_breadth(markets, *, as_of: str, db_path: Optional[str] = None):
+    """Latest breadth snapshot per market known by the UTC cutoff."""
+    return _read_latest_equity("market_breadth_snapshots", "market", markets, as_of, db_path)
+
+
 def read_etf_carry(symbols: Union[str, List[str]], *, as_of: str,
                    db_path: Optional[str] = None) -> pd.DataFrame:
     """Read captured rows known by the UTC timestamp `as_of`, with provenance."""
