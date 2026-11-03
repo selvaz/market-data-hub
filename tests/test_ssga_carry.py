@@ -1,4 +1,7 @@
 from pathlib import Path
+from io import BytesIO
+
+from openpyxl import load_workbook
 
 from market_data_hub.db.connection import get_conn
 from market_data_hub.ssga_carry import collect, parse_workbook
@@ -16,6 +19,19 @@ def test_recorded_workbook_units_and_dates():
     assert bil["sec_yield_30d"][0] == 0.0383
     assert bil["holdings_count"][0] == 33
     assert rows["SPAB"][1]["average_coupon"][0] == 0.0401
+
+
+def test_malformed_value_does_not_block_other_funds():
+    book = load_workbook(FIXTURE)
+    sheet = book.active
+    header = {cell.value: cell.column for cell in sheet[1] if cell.value}
+    bil = next(row for row in sheet.iter_rows(min_row=2) if row[1].value == "BIL")
+    sheet.cell(bil[0].row, header["Yield to Maturity"]).value = "unavailable"
+    data = BytesIO()
+    book.save(data)
+    parsed = parse_workbook(data.getvalue())
+    assert "yield_to_maturity" not in parsed["BIL"][1]
+    assert parsed["BWX"][1]["yield_to_maturity"][0] > 0
 
 
 def test_one_workbook_per_day_and_stored_metadata(tmp_path, monkeypatch):

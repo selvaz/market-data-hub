@@ -39,19 +39,27 @@ def parse_workbook(data):
                 continue
             if row[1] == "SPAB" and row[header["Primary Index"]] != PROXY_INDEX:
                 continue
-            date_value = datetime.strptime(row[header["As of**"]], "%b %d %Y").date()
+            try:
+                date_value = datetime.strptime(
+                    row[header["As of**"]], "%b %d %Y"
+                ).date()
+            except (TypeError, ValueError):
+                continue
             values = {}
             for label, (field, scale) in FIELDS.items():
                 raw = row[header[label]]
                 if raw in (None, "", "-"):
                     continue
-                value = float(
-                    str(raw)
-                    .replace(",", "")
-                    .replace("%", "")
-                    .replace(" years", "")
-                    .strip()
-                )
+                try:
+                    value = float(
+                        str(raw)
+                        .replace(",", "")
+                        .replace("%", "")
+                        .replace(" years", "")
+                        .strip()
+                    )
+                except ValueError:
+                    continue
                 values[field] = (value * scale, label)
             result[row[1]] = (date_value, values)
         return result
