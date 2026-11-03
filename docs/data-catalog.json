@@ -32823,6 +32823,28 @@
       "table": "macro_series"
     },
     {
+      "distributor": "EIA direct",
+      "expected_lag_days": 7,
+      "frequency": "W",
+      "history_start": "1982-01-01 (requested; provider availability varies)",
+      "id": "NW2_EPG0_SWO_R48_BCF",
+      "issuer": "EIA",
+      "jobs": [
+        {
+          "name": "eia_inventories",
+          "schedule_pt": "daily 14:00 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "CMDTY | Energy | Lower 48 Working Natural Gas in Storage",
+      "notes": "",
+      "stalled_after_days": 14,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
       "distributor": "NY Fed direct",
       "expected_lag_days": 2,
       "frequency": "D",
@@ -36289,6 +36311,72 @@
       "name": "MACRO | US | Fed Total Assets",
       "notes": "",
       "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "EIA direct",
+      "expected_lag_days": 7,
+      "frequency": "W",
+      "history_start": "1982-01-01 (requested; provider availability varies)",
+      "id": "WCESTUS1",
+      "issuer": "EIA",
+      "jobs": [
+        {
+          "name": "eia_inventories",
+          "schedule_pt": "daily 14:00 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "CMDTY | Energy | US Crude Oil Stocks Excluding SPR",
+      "notes": "",
+      "stalled_after_days": 14,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "EIA direct",
+      "expected_lag_days": 7,
+      "frequency": "W",
+      "history_start": "1982-01-01 (requested; provider availability varies)",
+      "id": "WDISTUS1",
+      "issuer": "EIA",
+      "jobs": [
+        {
+          "name": "eia_inventories",
+          "schedule_pt": "daily 14:00 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "CMDTY | Energy | US Distillate Fuel Oil Stocks",
+      "notes": "",
+      "stalled_after_days": 14,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "EIA direct",
+      "expected_lag_days": 7,
+      "frequency": "W",
+      "history_start": "1982-01-01 (requested; provider availability varies)",
+      "id": "WGTSTUS1",
+      "issuer": "EIA",
+      "jobs": [
+        {
+          "name": "eia_inventories",
+          "schedule_pt": "daily 14:00 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "CMDTY | Energy | US Total Motor Gasoline Stocks",
+      "notes": "",
+      "stalled_after_days": 14,
       "status": "active",
       "status_reason": "",
       "store": "hub",
@@ -43363,6 +43451,10 @@
           "schedule_pt": "daily 13:15 PT"
         },
         {
+          "name": "eia_inventories",
+          "schedule_pt": "daily 14:00 PT (proposed, disabled)"
+        },
+        {
           "name": "fred_morning",
           "schedule_pt": "daily 23:45 PT"
         }
@@ -43372,7 +43464,7 @@
         "date",
         "series_id"
       ],
-      "series_count": 291,
+      "series_count": 295,
       "status": "active",
       "status_reason": "",
       "store": "hub",

@@ -36,6 +36,7 @@ def validate() -> list[str]:
     tickers = _y("tickers.yaml").get("yahoo", [])
     fred = _y("macro_series.yaml").get("fred", [])
     acm = _y("macro_series.yaml").get("nyfed_acm", [])
+    eia = _y("macro_series.yaml").get("eia", [])
     panel = _y("macro_panel.yaml").get("indicators", [])
     countries = _y("countries.yaml").get("countries", [])
     sovereign = _y("sovereign_yields.yaml").get("series", [])
@@ -57,7 +58,7 @@ def validate() -> list[str]:
 
     # 3. No duplicate symbols / ids in any catalog.
     for label, ids in (("tickers.yaml", ticker_syms),
-                       ("macro_series.yaml", [e.get("symbol") for e in fred + acm]),
+                       ("macro_series.yaml", [e.get("symbol") for e in fred + acm + eia]),
                        ("macro_panel.yaml", [i.get("id") for i in panel]),
                        ("sovereign_yields.yaml", [e.get("symbol") for e in sovereign]),
                        ("countries.yaml", [c.get("iso3") for c in countries])):
@@ -72,7 +73,7 @@ def validate() -> list[str]:
                 errors.append(f"macro_panel.yaml: '{i.get('id', '?')}' missing '{field}'")
 
     # 5. Optional per-series publication lag is measured in calendar days.
-    for label, entries in (("tickers.yaml", tickers), ("macro_series.yaml", fred + acm)):
+    for label, entries in (("tickers.yaml", tickers), ("macro_series.yaml", fred + acm + eia)):
         for entry in entries:
             if "max_lag_days" in entry:
                 value = entry["max_lag_days"]
@@ -167,6 +168,13 @@ def validate() -> list[str]:
         if entry.get("frequency") not in ("M", "D") or entry.get("source") != "nyfed_acm":
             errors.append("macro_series.yaml: NY Fed ACM must have frequency M or D and source nyfed_acm")
 
+    for entry in eia:
+        if (entry.get("source") != "eia" or entry.get("frequency") != "W"
+                or entry.get("publication_cadence") != "W"
+                or entry.get("publication_day") not in ("Wednesday", "Thursday")
+                or entry.get("route") not in ("petroleum/stoc/wstk", "natural-gas/stor/wkly")
+                or entry.get("unit") not in ("Thousand Barrels", "Bcf")):
+            errors.append(f"macro_series.yaml: invalid EIA declaration for {entry.get('symbol', '?')}")
     return errors
 
 
