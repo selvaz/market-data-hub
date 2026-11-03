@@ -26,7 +26,7 @@ and [FRED daily-rates explanation](https://fred.stlouisfed.org/categories/94?t=u
 
 All 23 H.10 pairs configure `max_lag_days: 10`: coverage flags them stalled
 only when the last observation is more than 10 calendar days old. Their
-detected observation frequency remains D for gap detection and scoring.
+detected observation frequency remains D for gap detection and scoring. The catalogue exposes `publication_cadence: W` separately and the coverage freshness check uses it.
 The optional non-negative integer override is passed to `is_stalled()` by
 the coverage builder, which stores the verdict in `coverage_report.stalled`
 and `status`. Both `v_stalled` and `reader.get_stalled()` read that stored

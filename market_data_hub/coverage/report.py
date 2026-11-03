@@ -34,7 +34,8 @@ def _meta_lookup() -> Dict[str, dict]:
     for e in get_macro_series():
         m[e["symbol"]] = {"asset_class": e.get("asset_class", "MACRO"),
                           "priority": e.get("priority", 2),
-                          "max_lag_days": e.get("max_lag_days")}
+                          "max_lag_days": e.get("max_lag_days"),
+                          "publication_cadence": e.get("publication_cadence")}
     for e in get_sovereign_yields() + get_sovereign_layer_series():
         if e.get("enabled", True):
             m[e["symbol"]] = {"asset_class": "MACRO", "priority": e.get("priority", 1),
@@ -51,7 +52,7 @@ def _row_for(symbol: str, source: str, df: pd.DataFrame, date_col: str,
     lag = lag_days(last)
     # Persist this verdict so v_stalled and reader.get_stalled() use the same
     # publication-aware limit, while freq_detected still describes observations.
-    stalled = is_stalled(last, freq, max_lag_days=meta.get("max_lag_days"),
+    stalled = is_stalled(last, meta.get("publication_cadence") or freq, max_lag_days=meta.get("max_lag_days"),
                          lag_calendar=meta.get("lag_calendar", "calendar"),
                          holidays=meta.get("holidays", ()))
     mpct = missing_pct(df[date_col], freq)

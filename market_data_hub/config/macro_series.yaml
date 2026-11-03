@@ -13,10 +13,24 @@ nyfed_acm:
   max_lag_days: 45
   notes: Official NY Fed chart CSV; monthly last-business-day estimates, not the daily Excel series. Model estimates can be revised.
 
+- symbol: NYFED_ACM_TP10_DAILY
+  expected_lag_days: 2
+  issuer: "NY Fed (model)"
+  source: nyfed_acm
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | NY Fed ACM 10-Year Term Premium Daily
+  priority: 1
+  country: US
+  unit: Percent
+  frequency: D
+  notes: Official NY Fed daily workbook, ACM Daily sheet, ACMTP10; model estimates can be revised.
+
 fred:
 # F05: published metadata verified in tests/fixtures/fred_f05_series_metadata.json.
 # Daily observations can be published weekly; lag limits are calendar days.
 - symbol: THREEFYTP10
+  publication_cadence: W
   expected_lag_days: 7
   issuer: "Fed Board (model)"
   asset_class: MACRO
@@ -792,6 +806,7 @@ fred:
 # through get_fred_series(). Positive oriented log changes = currency stronger.
 # See docs/fred-fx.md for normalization, coverage gaps and publication lag.
 - symbol: DEXMXUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -806,6 +821,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXBZUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -820,6 +836,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXINUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -834,6 +851,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXCHUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -848,6 +866,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXKOUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -862,6 +881,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXJPUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -876,6 +896,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXSZUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -890,6 +911,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXCAUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -904,6 +926,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXUSUK
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -918,6 +941,7 @@ fred:
   currency_strength_orientation: 1
   max_lag_days: 10
 - symbol: DEXUSEU
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -932,6 +956,7 @@ fred:
   currency_strength_orientation: 1
   max_lag_days: 10
 - symbol: DEXUSAL
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -946,6 +971,7 @@ fred:
   currency_strength_orientation: 1
   max_lag_days: 10
 - symbol: DEXSFUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -960,6 +986,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXTAUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -974,6 +1001,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXHKUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -988,6 +1016,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXMAUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -1002,6 +1031,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXTHUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -1016,6 +1046,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXSIUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -1030,6 +1061,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXNOUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -1044,6 +1076,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXSDUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -1058,6 +1091,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXDNUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -1072,6 +1106,7 @@ fred:
   currency_strength_orientation: -1
   max_lag_days: 10
 - symbol: DEXUSNZ
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -1086,6 +1121,7 @@ fred:
   currency_strength_orientation: 1
   max_lag_days: 10
 - symbol: DEXVZUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"
@@ -1101,6 +1137,7 @@ fred:
   max_lag_days: 10
   notes: FRED redenomination break on 2021-10-04; see series notes before computing returns across this date.
 - symbol: DEXSLUS
+  publication_cadence: W
   expected_lag_days: 7
   frequency: D
   issuer: "Fed H.10"

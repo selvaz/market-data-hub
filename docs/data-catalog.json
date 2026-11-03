@@ -32824,6 +32824,32 @@
     },
     {
       "distributor": "NY Fed direct",
+      "expected_lag_days": 2,
+      "frequency": "D",
+      "history_start": "1961-01-01",
+      "id": "NYFED_ACM_TP10_DAILY",
+      "issuer": "NY Fed (model)",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "RATES | US | NY Fed ACM 10-Year Term Premium Daily",
+      "notes": "Official NY Fed daily workbook, ACM Daily sheet, ACMTP10; model estimates can be revised.",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "NY Fed direct",
       "expected_lag_days": 30,
       "frequency": "M",
       "history_start": "1961-01-01",
@@ -43346,7 +43372,7 @@
         "date",
         "series_id"
       ],
-      "series_count": 290,
+      "series_count": 291,
       "status": "active",
       "status_reason": "",
       "store": "hub",
