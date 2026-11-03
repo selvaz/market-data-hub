@@ -33,6 +33,17 @@ def _con(db_path: Optional[str]):
     return get_conn(db_path, read_only=True)
 
 
+def read_etf_index_map(symbols: Optional[Union[str, List[str]]] = None) -> pd.DataFrame:
+    """Return current configured index metadata; this is not a historical view."""
+    from market_data_hub.config_loader import get_etf_index_map
+
+    rows = get_etf_index_map()
+    if symbols is not None:
+        wanted = {symbols} if isinstance(symbols, str) else set(symbols)
+        rows = [row for row in rows if row["symbol"] in wanted]
+    return pd.DataFrame(rows)
+
+
 def _read_latest_equity(table, key, values, as_of, db_path):
     values = [values] if isinstance(values, str) else list(values)
     if not values:

@@ -1,0 +1,1051 @@
+funds:
+- symbol: ACWI
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: AGG
+  issuer: BlackRock
+  underlying_index: Bloomberg U.S. Aggregate Bond Index
+  index_provider: Bloomberg
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.sec.gov/Archives/edgar/data/70858/000191870425013562/form424b2.htm
+  replication: null
+  verified_date: '2026-11-03'
+  note: Replication not verified.
+- symbol: BCI
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: BIL
+  issuer: State Street
+  underlying_index: Bloomberg 1-3 Month U.S. Treasury Bill Index
+  index_provider: Bloomberg
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.ssga.com/us/en/individual/etfs/state-street-spdr-bloomberg-1-3-month-t-bill-etf-bil
+  replication: null
+  verified_date: '2026-11-03'
+  note: Replication not verified.
+- symbol: BNDX
+  issuer: Vanguard
+  underlying_index: Bloomberg Global Aggregate ex-USD Float Adjusted RIC Capped Index
+    (Hedged)
+  index_provider: Bloomberg
+  index_currency: null
+  share_class_currency: USD
+  hedged: true
+  hedge_currency: USD
+  source_url: https://workplace.vanguard.com/assets/corp/fund_communications/pdf_publish/us-products/fact-sheet/F3711.pdf
+  replication: null
+  verified_date: '2026-11-03'
+  note: Replication not verified. The underlying portfolio spans multiple currencies;
+    a single index currency is not asserted.
+- symbol: BWX
+  issuer: State Street
+  underlying_index: Bloomberg Global Treasury ex-US Capped Index
+  index_provider: Bloomberg
+  index_currency: null
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.ssga.com/us/en/individual/etfs/state-street-spdr-bloomberg-international-treasury-bond-etf-bwx
+  replication: null
+  verified_date: '2026-11-03'
+  note: Replication not verified. The underlying portfolio spans multiple currencies;
+    a single index currency is not asserted.
+- symbol: CEMB
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: CORN
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: CPER
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: DBA
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: DBB
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: DBC
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: DBXP.DE
+  issuer: DWS
+  underlying_index: Markit iBoxx EUR Eurozone (DE ES FR IT NL) 1-3 Index
+  index_provider: Markit
+  index_currency: EUR
+  share_class_currency: EUR
+  hedged: false
+  hedge_currency: null
+  source_url: https://etf.dws.com/download/asset/a3c073ff-e495-4163-b745-7eeb24badf62
+  replication: null
+  verified_date: '2026-11-03'
+  note: Replication not verified.
+- symbol: EEM
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EMB
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EMLC
+  issuer: VanEck
+  underlying_index: J.P. Morgan GBI-EM Global Core Index
+  index_provider: J.P. Morgan
+  index_currency: null
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.vaneck.com/us/en/investments/jp-morgan-em-local-currency-bond-etf-emlc/
+  replication: null
+  verified_date: '2026-11-03'
+  note: Replication not verified. The underlying portfolio spans multiple currencies;
+    a single index currency is not asserted.
+- symbol: EUHY
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWA
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWC
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWG
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWI
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWJ
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWQ
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWT
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWU
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWW
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWY
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EWZ
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EXH1.DE
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EXH4.DE
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EXH9.DE
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EXV1.DE
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EXV3.DE
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EXV4.DE
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: EZA
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: GLD
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: HYEM
+  issuer: VanEck
+  underlying_index: ICE BofA Diversified High Yield US Emerging Markets Corporate
+    Plus Index
+  index_provider: ICE
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.vaneck.com/us/en/investments/emerging-markets-high-yield-bond-etf-hyem/
+  replication: null
+  verified_date: '2026-11-03'
+  note: Replication not verified.
+- symbol: HYG
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: IBCL.DE
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: IEAC.AS
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: IEF
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: IEI
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: IGF
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: IHY
+  issuer: VanEck
+  underlying_index: ICE BofA Global ex-US Issuers High Yield Constrained Index
+  index_provider: ICE
+  index_currency: null
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.vaneck.com/us/en/investments/international-high-yield-bond-etf-ihy/overview/
+  replication: null
+  verified_date: '2026-11-03'
+  note: Replication not verified. The underlying portfolio spans multiple currencies;
+    a single index currency is not asserted.
+- symbol: INDA
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: IWM
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: KSA
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: LQD
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: MCHI
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: MNA
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: MUB
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: PALL
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: PDBC
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: PPLT
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: QAI
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: QQQ
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: SHY
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: SLV
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: SOYB
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: SPAB
+  issuer: State Street
+  underlying_index: Bloomberg U.S. Aggregate Bond Index
+  index_provider: Bloomberg
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-aggregate-bond-index-etf-spab
+  replication: null
+  verified_date: '2026-11-03'
+  note: Replication not verified.
+- symbol: SPY
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: TIP
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: TLT
+  issuer: BlackRock
+  underlying_index: ICE U.S. Treasury 20+ Year Bond Index
+  index_provider: ICE
+  index_currency: USD
+  share_class_currency: USD
+  hedged: false
+  hedge_currency: null
+  source_url: https://www.sec.gov/Archives/edgar/data/1419828/000114036118037497/form424b2.htm
+  replication: null
+  verified_date: '2026-11-03'
+  note: Replication not verified.
+- symbol: UGA
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: UNG
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: USO
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: VCSH
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: VEA
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: VGK
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: VGT
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: VNQ
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: VNQI
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: VTV
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: VUG
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: VWO
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: WEAT
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: WTMF
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: XLB
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: XLC
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: XLE
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: XLF
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: XLI
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: XLP
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: XLRE
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: XLU
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: XLV
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.
+- symbol: XLY
+  issuer: null
+  underlying_index: null
+  index_provider: null
+  index_currency: null
+  share_class_currency: null
+  hedged: null
+  hedge_currency: null
+  source_url: null
+  replication: null
+  verified_date: null
+  note: Index and share-class metadata not yet verified.

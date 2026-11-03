@@ -47,6 +47,11 @@ def get_yahoo_tickers() -> List[Dict[str, Any]]:
             if e["symbol"] not in fred_symbols]
 
 
+def get_etf_index_map() -> List[Dict[str, Any]]:
+    """Return the reviewed ETF index metadata, including declared gaps."""
+    return _load_yaml("etf_index_map.yaml").get("funds", [])
+
+
 @lru_cache(maxsize=None)
 def get_xbrl_mapping(version: int = 1) -> Dict[str, Any]:
     """Versioned XBRL concept -> statement line mapping (plan v3.1 Fase 3).

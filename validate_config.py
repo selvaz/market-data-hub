@@ -29,9 +29,51 @@ def _y(name: str) -> dict:
     return yaml.safe_load((CFG / name).read_text(encoding="utf-8")) or {}
 
 
+def validate_etf_index_map(data) -> list[str]:
+    """Validate structure and make uncertainty explicit."""
+    errors = []
+    if not isinstance(data, dict) or not isinstance(data.get("funds"), list):
+        return ["etf_index_map.yaml: funds must be a list"]
+    required = {"symbol", "issuer", "underlying_index", "index_provider", "index_currency",
+                "share_class_currency", "hedged", "hedge_currency", "replication",
+                "source_url", "verified_date", "note"}
+    seen = set()
+    for row in data["funds"]:
+        if not isinstance(row, dict) or set(row) != required:
+            errors.append("etf_index_map.yaml: each row must have exactly the required fields")
+            continue
+        symbol = row["symbol"]
+        if not isinstance(symbol, str) or not symbol.strip() or symbol in seen:
+            errors.append(f"etf_index_map.yaml: invalid or duplicate symbol {symbol!r}")
+        seen.add(symbol)
+        for field in required - {"hedged"}:
+            if row[field] is not None and (not isinstance(row[field], str) or not row[field].strip()):
+                errors.append(f"etf_index_map.yaml: {symbol} {field} must be a nonempty string or null")
+        if row["hedged"] is not None and type(row["hedged"]) is not bool:
+            errors.append(f"etf_index_map.yaml: {symbol} hedged must be boolean or null")
+        if row["hedged"] is True and not row["hedge_currency"]:
+            errors.append(f"etf_index_map.yaml: {symbol} hedged requires hedge_currency")
+        if row["hedged"] is False and row["hedge_currency"] is not None:
+            errors.append(f"etf_index_map.yaml: {symbol} unhedged cannot have hedge_currency")
+        if row["replication"] not in (None, "physical", "synthetic"):
+            errors.append(f"etf_index_map.yaml: {symbol} invalid replication")
+        if any(row[k] is None for k in required - {"hedge_currency", "note"}) and not row["note"]:
+            errors.append(f"etf_index_map.yaml: {symbol} null fields require a note")
+        if row["underlying_index"]:
+            if not isinstance(row["source_url"], str) or not row["source_url"].startswith("https://"):
+                errors.append(f"etf_index_map.yaml: {symbol} index requires HTTPS source")
+            try:
+                date.fromisoformat(row["verified_date"] or "")
+            except (ValueError, TypeError):
+                errors.append(f"etf_index_map.yaml: {symbol} index requires ISO verified_date")
+    return errors
+
+
 def validate() -> list[str]:
     """Return a list of human-readable errors (empty list == config is valid)."""
     errors: list[str] = []
+
+    errors.extend(validate_etf_index_map(_y("etf_index_map.yaml")))
 
     tickers = _y("tickers.yaml").get("yahoo", [])
     fred = _y("macro_series.yaml").get("fred", [])
