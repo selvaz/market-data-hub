@@ -24,8 +24,10 @@ def test_saved_yahoo_fixture_and_missing_fields():
 
 def test_collect_immutable_and_no_backfill(tmp_path, monkeypatch):
     from market_data_hub import ssga_carry
+    from market_data_hub import vaneck_carry
 
     monkeypatch.setattr(ssga_carry, "collect", lambda con, log: 0)
+    monkeypatch.setattr(vaneck_carry, "collect", lambda con, log: 0)
     fixture = json.loads(
         (Path(__file__).parent / "fixtures/yahoo_etf_carry.json").read_text()
     )
@@ -91,6 +93,10 @@ def test_reader_excludes_legacy_yahoo_duration(tmp_path):
 
 def test_catalog_has_all_carry_series():
     from market_data_hub.ssga_carry import FIELDS as ssga_fields, FUNDS as ssga_funds
+    from market_data_hub.vaneck_carry import (
+        FIELDS as vaneck_fields,
+        FUNDS as vaneck_funds,
+    )
 
     catalog = catalog_docs.build_catalog()
     entries = carry.universe(
@@ -103,9 +109,12 @@ def test_catalog_has_all_carry_series():
         for symbol in ssga_funds
         for field, _ in ssga_fields.values()
     }
+    expected |= {
+        f"{symbol}/{field}" for symbol in vaneck_funds for field in vaneck_fields
+    }
     assert {r["id"] for r in rows} == expected
     assert all(
-        r["expected_lag_days"] == 1 and "no backfill" in r["history_start"]
+        r["expected_lag_days"] in (1, 31) and "no backfill" in r["history_start"]
         for r in rows
     )
     assert next(t for t in catalog["tables"] if t["table"] == "etf_carry_snapshots")[

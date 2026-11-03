@@ -18,6 +18,11 @@ are converted to decimal fractions; source dates come from its `As of**` field.
 BWX holds bonds in multiple currencies, so its single `index_currency` is null.
 AGG-to-SPAB proxy rows are not yet collected.
 
+VanEck US fact sheets for EMLC, HYEM and IHY provide effective duration,
+30-day SEC yield and holdings count as of the fact sheet date. The inspected
+US sheets do not publish YTM, average coupon or distribution yield; these
+fields remain gaps. Fact sheets are monthly, not daily.
+
 | ETF | Issuer | Underlying index | Index currency | Share class currency | Hedged | Candidate source / gap |
 |---|---|---|---|---|---|---|
 | TLT | BlackRock | ICE U.S. Treasury 20+ Year Bond Index | USD | USD | No | iShares product page |

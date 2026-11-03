@@ -8616,6 +8616,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "VanEck fact sheet",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EMLC/effective_duration",
+      "issuer": "VanEck",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EMLC effective_duration",
+      "notes": "Monthly fact sheet; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -8641,6 +8666,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "VanEck fact sheet",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EMLC/holdings_count",
+      "issuer": "VanEck",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EMLC holdings_count",
+      "notes": "Monthly fact sheet; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -8660,6 +8710,31 @@
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "EMLC sec_30_day_yield",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "VanEck fact sheet",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "EMLC/sec_yield_30d",
+      "issuer": "VanEck",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "EMLC sec_yield_30d",
+      "notes": "Monthly fact sheet; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
       "store": "hub",
@@ -13241,6 +13316,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "VanEck fact sheet",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "HYEM/effective_duration",
+      "issuer": "VanEck",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "HYEM effective_duration",
+      "notes": "Monthly fact sheet; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -13266,6 +13366,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "VanEck fact sheet",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "HYEM/holdings_count",
+      "issuer": "VanEck",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "HYEM holdings_count",
+      "notes": "Monthly fact sheet; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -13285,6 +13410,31 @@
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "HYEM sec_30_day_yield",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "VanEck fact sheet",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "HYEM/sec_yield_30d",
+      "issuer": "VanEck",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "HYEM sec_yield_30d",
+      "notes": "Monthly fact sheet; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
       "store": "hub",
@@ -14616,6 +14766,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "VanEck fact sheet",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "IHY/effective_duration",
+      "issuer": "VanEck",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "IHY effective_duration",
+      "notes": "Monthly fact sheet; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -14641,6 +14816,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "VanEck fact sheet",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "IHY/holdings_count",
+      "issuer": "VanEck",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "IHY holdings_count",
+      "notes": "Monthly fact sheet; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -14660,6 +14860,31 @@
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "IHY sec_30_day_yield",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "VanEck fact sheet",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "IHY/sec_yield_30d",
+      "issuer": "VanEck",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "IHY sec_yield_30d",
+      "notes": "Monthly fact sheet; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
       "store": "hub",
@@ -40142,7 +40367,7 @@
         "symbol",
         "field"
       ],
-      "series_count": 696,
+      "series_count": 705,
       "status": "active",
       "status_reason": "",
       "store": "hub",

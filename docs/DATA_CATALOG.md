@@ -36,7 +36,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [download_log](#catalog-hub-download_log) | 0 |
 | hub | [earnings_events](#catalog-hub-earnings_events) | 0 |
 | hub | [earnings_observations](#catalog-hub-earnings_observations) | 0 |
-| hub | [etf_carry_snapshots](#catalog-hub-etf_carry_snapshots) | 696 |
+| hub | [etf_carry_snapshots](#catalog-hub-etf_carry_snapshots) | 705 |
 | hub | [etf_classification](#catalog-hub-etf_classification) | 0 |
 | hub | [etf_valuation_snapshots](#catalog-hub-etf_valuation_snapshots) | 46 |
 | hub | [factor_returns](#catalog-hub-factor_returns) | 7 |
@@ -708,8 +708,11 @@ Append-only ETF carry observations by capture date, symbol and field, with provi
 | EMB/trailing_distribution_yield | EMB trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | EMB/yield_to_maturity | EMB yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | EMLC/currency_hedged | EMLC currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| EMLC/effective_duration | EMLC effective_duration | VanEck | VanEck fact sheet | M | 31 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | EMLC/expense_ratio | EMLC expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| EMLC/holdings_count | EMLC holdings_count | VanEck | VanEck fact sheet | M | 31 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | EMLC/sec_30_day_yield | EMLC sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| EMLC/sec_yield_30d | EMLC sec_yield_30d | VanEck | VanEck fact sheet | M | 31 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | EMLC/trailing_distribution_yield | EMLC trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | EMLC/yield_to_maturity | EMLC yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | EMXC/currency_hedged | EMXC currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
@@ -893,8 +896,11 @@ Append-only ETF carry observations by capture date, symbol and field, with provi
 | HYD/trailing_distribution_yield | HYD trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | HYD/yield_to_maturity | HYD yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | HYEM/currency_hedged | HYEM currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| HYEM/effective_duration | HYEM effective_duration | VanEck | VanEck fact sheet | M | 31 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | HYEM/expense_ratio | HYEM expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| HYEM/holdings_count | HYEM holdings_count | VanEck | VanEck fact sheet | M | 31 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | HYEM/sec_30_day_yield | HYEM sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| HYEM/sec_yield_30d | HYEM sec_yield_30d | VanEck | VanEck fact sheet | M | 31 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | HYEM/trailing_distribution_yield | HYEM trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | HYEM/yield_to_maturity | HYEM yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | HYG/currency_hedged | HYG currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
@@ -948,8 +954,11 @@ Append-only ETF carry observations by capture date, symbol and field, with provi
 | IGOV/trailing_distribution_yield | IGOV trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | IGOV/yield_to_maturity | IGOV yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | IHY/currency_hedged | IHY currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| IHY/effective_duration | IHY effective_duration | VanEck | VanEck fact sheet | M | 31 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | IHY/expense_ratio | IHY expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| IHY/holdings_count | IHY holdings_count | VanEck | VanEck fact sheet | M | 31 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | IHY/sec_30_day_yield | IHY sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| IHY/sec_yield_30d | IHY sec_yield_30d | VanEck | VanEck fact sheet | M | 31 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | IHY/trailing_distribution_yield | IHY trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | IHY/yield_to_maturity | IHY yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | ILF/currency_hedged | ILF currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |

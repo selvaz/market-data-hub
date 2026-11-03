@@ -303,6 +303,7 @@ def build_rows(config_dir=CONFIG_DIR):
             )
     from .etf_carry import FIELDS, universe
     from .ssga_carry import FIELDS as SSGA_FIELDS, FUNDS as SSGA_FUNDS
+    from .vaneck_carry import FIELDS as VANECK_FIELDS, FUNDS as VANECK_FUNDS
 
     for e in universe(load_config(config_dir, "tickers.yaml")["yahoo"]):
         for field, lag in FIELDS.items():
@@ -339,6 +340,24 @@ def build_rows(config_dir=CONFIG_DIR):
                     job=["daily_eu18", "daily_usclose"],
                     history="Point-in-time from first capture; no backfill",
                     frequency="D",
+                )
+            )
+    for symbol in VANECK_FUNDS:
+        for field in VANECK_FIELDS:
+            rows.append(
+                _row(
+                    dict(
+                        name=f"{symbol} {field}",
+                        expected_lag_days=31,
+                        notes="Monthly fact sheet; no backfill. Missing values are absent.",
+                    ),
+                    id=f"{symbol}/{field}",
+                    table="etf_carry_snapshots",
+                    distributor="VanEck fact sheet",
+                    issuer="VanEck",
+                    job=["daily_eu18", "daily_usclose"],
+                    history="Point-in-time from first capture; no backfill",
+                    frequency="M",
                 )
             )
     for group, distributor in (("fred", "FRED"), ("nyfed_acm", "NY Fed direct")):
