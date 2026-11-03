@@ -82,3 +82,36 @@ def test_collect_profile_and_factsheet(tmp_path, monkeypatch):
         ("sec_yield_30d", "2026-10-30"),
     ]
     con.close()
+
+
+def test_broken_fact_sheet_keeps_daily_yield(tmp_path, monkeypatch):
+    import html
+    import json
+    from market_data_hub import vanguard_carry
+    from market_data_hub.db.connection import get_conn
+
+    fixtures = Path(__file__).parent / "fixtures"
+    profile = json.loads(
+        (fixtures / "vanguard_bndx_profile.json").read_text(encoding="utf8")
+    )
+
+    class Response:
+        text = (
+            "data-vgn-funds-profile='"
+            + html.escape(json.dumps(profile), quote=True)
+            + "'"
+        )
+        # An HTML error page served with HTTP 200 instead of the PDF.
+        content = b"<html>maintenance</html>"
+
+        def raise_for_status(self):
+            pass
+
+    monkeypatch.setattr(
+        vanguard_carry.requests, "get", lambda *args, **kwargs: Response()
+    )
+    con = get_conn(str(tmp_path / "hub.duckdb"))
+    assert vanguard_carry.collect(con) == 1
+    rows = con.execute("SELECT field FROM etf_carry_snapshots").fetchall()
+    assert rows == [("sec_yield_30d",)]
+    con.close()

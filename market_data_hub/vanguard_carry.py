@@ -8,6 +8,7 @@ import re
 import time
 
 from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 import requests
 
 URL = "https://workplace.vanguard.com/assets/corp/fund_communications/pdf_publish/us-products/fact-sheet/F3711.pdf"
@@ -96,7 +97,8 @@ def collect(con, *, log=print):
         values.update(
             {field: (value, raw, as_of) for field, (value, raw) in facts.items()}
         )
-    except (requests.RequestException, ValueError) as exc:
+    except (requests.RequestException, ValueError, PdfReadError) as exc:
+        # A truncated PDF or an HTML error page must not discard the daily yield.
         errors.append(f"fact sheet: {exc}")
         for field in FIELDS:
             log(f"Vanguard carry BNDX: {field} unavailable ({exc})")
