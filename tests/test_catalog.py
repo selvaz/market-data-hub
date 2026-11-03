@@ -6,9 +6,12 @@ coverage join on a throwaway DB.
 """
 from __future__ import annotations
 
+from datetime import datetime, timezone
 
+import pandas as pd
 
 from market_data_hub import catalog
+from market_data_hub.coverage.report import rebuild_coverage
 from market_data_hub.db import connection as C
 
 
@@ -71,6 +74,29 @@ def test_coverage_attached_when_db_populated(tmp_db):
     spy = df[df["symbol"] == "SPY"].iloc[0]
     assert float(spy["coverage_score"]) == 98.5
     assert spy["freq_detected"] == "D"
+
+
+def test_snapshot_coverage_never_masks_stale_or_missing_prices(tmp_db):
+    con = C.get_conn(tmp_db)
+    con.execute("INSERT INTO prices_daily (date, listing_id, symbol, close, source) "
+                "VALUES ('2000-01-03', 'spy-listing', 'SPY', 100, 'yahoo')")
+    today = datetime.now(timezone.utc)
+    for symbol in ("SPY", "VGK"):
+        con.execute("INSERT INTO etf_valuation_snapshots "
+                    "(collection_date, symbol, source, fetched_at, raw_fields) "
+                    "VALUES (?, ?, 'yahoo', ?, '{}')", [today.date(), symbol, today])
+    rebuild_coverage(con, "test")
+    assert con.execute("SELECT symbol, stalled FROM coverage_report "
+                       "WHERE source = 'yahoo_valuation' ORDER BY symbol").fetchall() == [
+                           ("valuation:SPY", False), ("valuation:VGK", False)]
+    con.close()
+
+    symbols = catalog.list_symbols(db_path=tmp_db).set_index("symbol")
+    assert symbols.loc["SPY", "status"] == "stalled"
+    assert bool(symbols.loc["SPY", "stalled"])
+    assert pd.Timestamp(symbols.loc["SPY", "last_date"]).date().isoformat() == "2000-01-03"
+    assert pd.isna(symbols.loc["VGK", "status"])
+    assert pd.isna(symbols.loc["VGK", "last_date"])
 
 
 def test_describe_series_resolves_domain(tmp_db):

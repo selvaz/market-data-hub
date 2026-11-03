@@ -54,9 +54,9 @@ def test_first_capture_and_point_in_time(tmp_path):
     snap.store_breadth(con, 2, values, later)
     snap.store_valuations(con, [("SPY", 30., None, None, None, "{}")], datetime(2026, 11, 3, 22))
     rebuild_coverage(con, "test")
-    assert con.execute("SELECT source FROM coverage_report WHERE source IN "
+    assert con.execute("SELECT symbol, source FROM coverage_report WHERE source IN "
                        "('yahoo_valuation', 'tradingview_breadth') ORDER BY source").fetchall() == [
-                           ("tradingview_breadth",), ("yahoo_valuation",)]
+                           ("breadth:US", "tradingview_breadth"), ("valuation:SPY", "yahoo_valuation")]
     con.close()
     assert read_etf_valuations("SPY", as_of="2026-11-02T21:00:00", db_path=path).empty
     assert read_market_breadth("US", as_of="2026-11-02T21:00:00", db_path=path).empty
