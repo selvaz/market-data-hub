@@ -7,6 +7,15 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.18] — 2026-11-03
+
+### Added
+- Daily ETF valuation snapshots (Yahoo fund data: trailing P/E, forward P/E when available, price/book, dividend yield) and US market breadth snapshots (TradingView screener, US-listed stocks >= $10bn), schema 29, point-in-time readers, namespaced coverage keys (#164).
+- Daily NY Fed ACM 10-year term premium `NYFED_ACM_TP10_DAILY`; `xlrd` dependency for the workbook (#163).
+
+### Changed
+- H.10 FX (`DEX*`) and Kim-Wright `THREEFYTP10` declare a weekly publication cadence, so a 7-day age is no longer stale (#163).
+
 ## [0.3.17] — 2026-11-02
 
 ### Fixed
