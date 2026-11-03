@@ -122,4 +122,7 @@ def collect(con, entries, *, log=print):
     from market_data_hub.vaneck_carry import collect as collect_vaneck
 
     collect_vaneck(con, log=log)
+    from market_data_hub.vanguard_carry import collect as collect_vanguard
+
+    collect_vanguard(con, log=log)
     return counts

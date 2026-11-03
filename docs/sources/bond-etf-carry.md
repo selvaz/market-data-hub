@@ -23,6 +23,11 @@ VanEck US fact sheets for EMLC, HYEM and IHY provide effective duration,
 US sheets do not publish YTM, average coupon or distribution yield; these
 fields remain gaps. Fact sheets are monthly, not daily.
 
+Vanguard BNDX's quarterly fact sheet publishes average duration and number of
+bonds. Those are kept under their published meanings; the factsheet does not
+provide YTM, SEC/distribution yield or average coupon. BNDX hedges multiple
+underlying currencies into USD, so its index currency remains null.
+
 | ETF | Issuer | Underlying index | Index currency | Share class currency | Hedged | Candidate source / gap |
 |---|---|---|---|---|---|---|
 | TLT | BlackRock | ICE U.S. Treasury 20+ Year Bond Index | USD | USD | No | iShares product page |

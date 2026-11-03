@@ -6091,6 +6091,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "Vanguard fact sheet",
+      "expected_lag_days": 92,
+      "frequency": "Q",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BNDX/average_duration",
+      "issuer": "Vanguard",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BNDX average_duration",
+      "notes": "Quarterly fact sheet; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -6135,6 +6160,31 @@
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "BNDX expense_ratio",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "Vanguard fact sheet",
+      "expected_lag_days": 92,
+      "frequency": "Q",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BNDX/holdings_count",
+      "issuer": "Vanguard",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BNDX holdings_count",
+      "notes": "Quarterly fact sheet; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
       "store": "hub",
@@ -40367,7 +40417,7 @@
         "symbol",
         "field"
       ],
-      "series_count": 705,
+      "series_count": 707,
       "status": "active",
       "status_reason": "",
       "store": "hub",

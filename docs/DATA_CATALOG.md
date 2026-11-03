@@ -36,7 +36,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [download_log](#catalog-hub-download_log) | 0 |
 | hub | [earnings_events](#catalog-hub-earnings_events) | 0 |
 | hub | [earnings_observations](#catalog-hub-earnings_observations) | 0 |
-| hub | [etf_carry_snapshots](#catalog-hub-etf_carry_snapshots) | 705 |
+| hub | [etf_carry_snapshots](#catalog-hub-etf_carry_snapshots) | 707 |
 | hub | [etf_classification](#catalog-hub-etf_classification) | 0 |
 | hub | [etf_valuation_snapshots](#catalog-hub-etf_valuation_snapshots) | 46 |
 | hub | [factor_returns](#catalog-hub-factor_returns) | 7 |
@@ -607,8 +607,10 @@ Append-only ETF carry observations by capture date, symbol and field, with provi
 | BIL/sec_yield_30d | BIL sec_yield_30d | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BIL/trailing_distribution_yield | BIL trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BIL/yield_to_maturity | BIL yield_to_maturity | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BNDX/average_duration | BNDX average_duration | Vanguard | Vanguard fact sheet | Q | 92 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BNDX/currency_hedged | BNDX currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BNDX/expense_ratio | BNDX expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BNDX/holdings_count | BNDX holdings_count | Vanguard | Vanguard fact sheet | Q | 92 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BNDX/sec_30_day_yield | BNDX sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BNDX/trailing_distribution_yield | BNDX trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BNDX/yield_to_maturity | BNDX yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
