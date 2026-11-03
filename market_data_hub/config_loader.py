@@ -54,7 +54,8 @@ def get_yahoo_tickers() -> List[Dict[str, Any]]:
 
 def get_etf_index_map() -> List[Dict[str, Any]]:
     """Return the reviewed ETF index metadata, including declared gaps."""
-    return _load_yaml("etf_index_map.yaml").get("funds", [])
+    funds: List[Dict[str, Any]] = _load_yaml("etf_index_map.yaml").get("funds", [])
+    return funds
 
 
 @lru_cache(maxsize=None)
