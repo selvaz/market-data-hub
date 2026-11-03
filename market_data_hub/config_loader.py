@@ -2,6 +2,7 @@
 """
 config_loader.py — (cached) loading of the YAML configuration files.
 """
+
 from __future__ import annotations
 
 import os
@@ -39,12 +40,16 @@ def get_settings() -> Dict[str, Any]:
 
 @lru_cache(maxsize=1)
 def get_yahoo_tickers() -> List[Dict[str, Any]]:
-    fred_symbols = {e["symbol"] for e in _load_yaml("macro_series.yaml").get("fred", [])}
+    fred_symbols = {
+        e["symbol"] for e in _load_yaml("macro_series.yaml").get("fred", [])
+    }
     # Yahoo prices are daily bars; consumers that check publication freshness
     # (LazyCommittee V2 anchors) need the frequency declared, not inferred.
-    return [{**e, "frequency": e.get("frequency", "D")}
-            for e in _load_yaml("tickers.yaml").get("yahoo", [])
-            if e["symbol"] not in fred_symbols]
+    return [
+        {**e, "frequency": e.get("frequency", "D")}
+        for e in _load_yaml("tickers.yaml").get("yahoo", [])
+        if e["symbol"] not in fred_symbols
+    ]
 
 
 def get_etf_index_map() -> List[Dict[str, Any]]:
@@ -75,8 +80,10 @@ def get_sovereign_yields() -> List[Dict[str, Any]]:
 @lru_cache(maxsize=1)
 def get_sovereign_layer_series() -> List[Dict[str, Any]]:
     """Issuer/market IDs remain distinct across discovery and coverage."""
-    return [{"enabled": True, "asset_class": "MACRO", "priority": 1, "max_lag_days": 3, **e}
-            for e in _load_yaml("sovereign_layers.yaml").get("series", [])]
+    return [
+        {"enabled": True, "asset_class": "MACRO", "priority": 1, "max_lag_days": 3, **e}
+        for e in _load_yaml("sovereign_layers.yaml").get("series", [])
+    ]
 
 
 @lru_cache(maxsize=1)
