@@ -24,10 +24,10 @@ AGG is collected as `proxy_for=AGG` from SPAB, with `proxy_symbol=SPAB` and
 the shared Bloomberg U.S. Aggregate Bond Index. Fund characteristics, SEC yield,
 coupon and holdings count describe SPAB rather than AGG itself.
 
-VanEck US fact sheets for EMLC, HYEM and IHY provide effective duration,
-30-day SEC yield and holdings count as of the fact sheet date. The inspected
-US sheets do not publish YTM, average coupon or distribution yield; these
-fields remain gaps. Fact sheets are monthly, not daily.
+VanEck's daily fund-page JSON blocks provide 30-day SEC yield, yield to
+worst, effective duration and total holdings for EMLC, HYEM and IHY. Each
+block supplies its own as-of date. Yield to worst remains distinct from yield
+to maturity. The monthly fact sheets no longer write these daily fields.
 
 Vanguard BNDX's quarterly fact sheet publishes average duration and number of
 bonds. Those are kept under their published meanings; the factsheet does not
@@ -45,8 +45,8 @@ endpoint. Yield to worst is not treated as yield to maturity.
 | TLT | BlackRock | ICE U.S. Treasury 20+ Year Bond Index | USD | USD | No | iShares product page |
 | LQD | BlackRock | iBoxx USD Liquid Investment Grade Index | USD | USD | No | iShares product page |
 | TIP | BlackRock | Verification pending | USD | USD | No | iShares product page; exact index pending |
-| EMLC | VanEck | J.P. Morgan GBI-EM Global Core Index | Multiple local currencies | USD | No | VanEck product page; machine-readable endpoint pending |
-| HYEM | VanEck | ICE BofA Diversified High Yield US Emerging Markets Corporate Plus Index | USD | USD | No | VanEck product page; machine-readable endpoint pending |
+| EMLC | VanEck | J.P. Morgan GBI-EM Global Core Index | Multiple local currencies | USD | No | VanEck daily fund-page blocks |
+| HYEM | VanEck | ICE BofA Diversified High Yield US Emerging Markets Corporate Plus Index | USD | USD | No | VanEck daily fund-page blocks |
 | EUHY | BlackRock | Bloomberg Pan-European High Yield (Euro) 100% Hedged to USD Index | EUR underlying; USD hedged index | USD | Yes, USD | iShares product page; identify whether YTM is hedge-adjusted |
 | IEAC.AS | BlackRock | BBG Euro Corporate Index (EUR) | EUR | EUR | No | iShares product page |
 | BIL | State Street | Bloomberg 1-3 Month U.S. Treasury Bill Index | USD | USD | No | State Street product page; machine-readable endpoint pending |
@@ -58,7 +58,7 @@ endpoint. Yield to worst is not treated as yield to maturity.
 | IEI | BlackRock | ICE U.S. Treasury 3-7 Year Bond Index | USD | USD | No | iShares product page |
 | MUB | BlackRock | Verification pending | USD | USD | No | iShares product page; exact index pending |
 | BWX | State Street | Bloomberg Global Treasury ex-US Capped Index | Multiple local currencies | USD | No | State Street product page; endpoint pending |
-| IHY | VanEck | ICE BofA Global ex-US Issuers High Yield Constrained Index | Multiple local currencies | USD | No | VanEck product page; machine-readable endpoint pending |
+| IHY | VanEck | ICE BofA Global ex-US Issuers High Yield Constrained Index | Multiple local currencies | USD | No | VanEck daily fund-page blocks |
 | CEMB | BlackRock | J.P. Morgan CEMBI Broad Diversified Core Index | USD | USD | No | iShares product page |
 | BNDX | Vanguard | Bloomberg Global Aggregate ex-USD Float Adjusted RIC Capped Index (Hedged) | Multiple local currencies | USD | Yes, USD | Vanguard fact sheet; machine-readable endpoint pending |
 | IBCL.DE | BlackRock | Verification pending | EUR | EUR | No | iShares product page; exact index pending |
