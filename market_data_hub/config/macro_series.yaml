@@ -1,3 +1,65 @@
+eia:
+- symbol: WCESTUS1
+  name: CMDTY | Energy | US Crude Oil Stocks Excluding SPR
+  route: petroleum/stoc/wstk
+  unit: Thousand Barrels
+  publication_day: Wednesday
+  source: eia
+  issuer: EIA
+  asset_class: COMMODITIES
+  area: USA
+  country: US
+  frequency: W
+  publication_cadence: W
+  expected_lag_days: 7
+  max_lag_days: 14
+  priority: 2
+- symbol: WGTSTUS1
+  name: CMDTY | Energy | US Total Motor Gasoline Stocks
+  route: petroleum/stoc/wstk
+  unit: Thousand Barrels
+  publication_day: Wednesday
+  source: eia
+  issuer: EIA
+  asset_class: COMMODITIES
+  area: USA
+  country: US
+  frequency: W
+  publication_cadence: W
+  expected_lag_days: 7
+  max_lag_days: 14
+  priority: 2
+- symbol: WDISTUS1
+  name: CMDTY | Energy | US Distillate Fuel Oil Stocks
+  route: petroleum/stoc/wstk
+  unit: Thousand Barrels
+  publication_day: Wednesday
+  source: eia
+  issuer: EIA
+  asset_class: COMMODITIES
+  area: USA
+  country: US
+  frequency: W
+  publication_cadence: W
+  expected_lag_days: 7
+  max_lag_days: 14
+  priority: 2
+- symbol: NW2_EPG0_SWO_R48_BCF
+  name: CMDTY | Energy | Lower 48 Working Natural Gas in Storage
+  route: natural-gas/stor/wkly
+  unit: Bcf
+  publication_day: Thursday
+  source: eia
+  issuer: EIA
+  asset_class: COMMODITIES
+  area: USA
+  country: US
+  frequency: W
+  publication_cadence: W
+  expected_lag_days: 7
+  max_lag_days: 14
+  priority: 2
+
 nyfed_acm:
 - symbol: NYFED_ACM_TP10_MONTHLY
   expected_lag_days: 30

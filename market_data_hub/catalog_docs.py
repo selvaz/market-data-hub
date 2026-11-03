@@ -35,6 +35,7 @@ JOBS = {
     "macro_releases_daily": "daily 06:30 PT",
     "cftc_cot": "daily 15:30 PT (new reports normally Friday)",
     "treasury_fiscal": "daily 15:45 PT",
+    "eia_inventories": "daily 14:00 PT (proposed, disabled)",
     "econ_calendar": "retired/frozen since 2026-09-25; former daily 06:00 PT",
     "alfred_backfill": "manual/on demand; intended hour 22:00 PT, no automatic trigger",
     "weekly_earnings_watchlist": "Sunday 15:00 PT",
@@ -227,11 +228,12 @@ def build_rows(config_dir=CONFIG_DIR):
                        distributor="Yahoo Finance quote and quoteSummary", issuer="Fund provider via Yahoo",
                        job=["daily_eu18", "daily_usclose"], history="Point-in-time from first capture; no backfill", frequency="D")
             rows.append(row)
-    for group, distributor in (("fred", "FRED"), ("nyfed_acm", "NY Fed direct")):
+    for group, distributor in (("fred", "FRED"), ("nyfed_acm", "NY Fed direct"), ("eia", "EIA direct")):
         for e in macro[group]:
             row = _row(e, id=e["symbol"], table="macro_series", distributor=distributor,
-                       job=["daily_eu18", "daily_usclose", "fred_morning"] if group == "fred" else ["daily_eu18", "daily_usclose"],
-                       history=floors[group])
+                       job=(["daily_eu18", "daily_usclose", "fred_morning"] if group == "fred" else
+                            ["eia_inventories"] if group == "eia" else ["daily_eu18", "daily_usclose"]),
+                       history="1982-01-01 (requested; provider availability varies)" if group == "eia" else floors[group])
             row["stalled_after_days"] = e.get("max_lag_days")
             rows.append(row)
     for config in ("sovereign_yields.yaml", "sovereign_layers.yaml"):
