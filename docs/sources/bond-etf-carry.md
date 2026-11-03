@@ -28,6 +28,12 @@ bonds. Those are kept under their published meanings; the factsheet does not
 provide YTM, SEC/distribution yield or average coupon. BNDX hedges multiple
 underlying currencies into USD, so its index currency remains null.
 
+DWS DBXP.DE: the downloaded September 2026 issuer factsheet does not contain
+the requested carry fields. The product page renders portfolio characteristics
+through a client-side application; a stable machine-readable data endpoint has
+not yet been established. All DBXP.DE carry fields remain gaps pending that
+endpoint. Yield to worst is not treated as yield to maturity.
+
 | ETF | Issuer | Underlying index | Index currency | Share class currency | Hedged | Candidate source / gap |
 |---|---|---|---|---|---|---|
 | TLT | BlackRock | ICE U.S. Treasury 20+ Year Bond Index | USD | USD | No | iShares product page |
