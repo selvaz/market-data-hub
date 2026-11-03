@@ -49,7 +49,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 291 |
+| hub | [macro_series](#catalog-hub-macro_series) | 295 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
@@ -1576,7 +1576,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 - Primary key: `date`, `series_id`.
 - Status: active.
 - Point-in-time / vintages: macro_series is latest state. macro_series_vintage keeps hub ingestion-date changes: filter vintage_date <= cutoff then latest per series/date. Backfilled ingestion vintages are not issuer publication history; use ALFRED for vendor point-in-time data.
-- Collection: daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT.
+- Collection: daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; eia_inventories daily 14:00 PT (proposed, disabled); fred_morning daily 23:45 PT.
 - Guide: [free-sources.md](free-sources.md).
 
 | ID | Name | Issuer | Distributor | Frequency | Expected lag (days, declared) | History floor | Job / schedule (PT) | Status / reason |
@@ -1735,6 +1735,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | MOF_JGB_8Y | Japan MoF 8Y constant maturity YTM, semiannual compounding | Japan MoF | Japan MoF direct | D | 1 | 1974-09-24 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | MOF_JGB_9Y | Japan MoF 9Y constant maturity YTM, semiannual compounding | Japan MoF | Japan MoF direct | D | 1 | 1974-09-24 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | NFCI | RISK \| US \| Chicago Fed National Financial Conditions Index | Chicago Fed | FRED | W | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| NW2_EPG0_SWO_R48_BCF | CMDTY \| Energy \| Lower 48 Working Natural Gas in Storage | EIA | EIA direct | W | 7 | 1982-01-01 (requested; provider availability varies) | eia_inventories daily 14:00 PT (proposed, disabled) | active |
 | NYFED_ACM_TP10_DAILY | RATES \| US \| NY Fed ACM 10-Year Term Premium Daily | NY Fed (model) | NY Fed direct | D | 2 | 1961-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | NYFED_ACM_TP10_MONTHLY | RATES \| US \| NY Fed ACM 10-Year Term Premium Monthly | NY Fed (model) | NY Fed direct | M | 30 | 1961-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | PAYEMS | MACRO \| US \| Nonfarm Payrolls (Total) | BLS CES | FRED | M | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
@@ -1871,6 +1872,9 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | UST_PAR_7Y | US Treasury 7Y par yield | US Treasury | US Treasury direct | D | 1 | 1990-01-02 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | VIXCLS | VOL \| US \| CBOE Volatility Index (VIX) Close | Cboe | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | WALCL | MACRO \| US \| Fed Total Assets | Fed H.4.1 | FRED | W | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| WCESTUS1 | CMDTY \| Energy \| US Crude Oil Stocks Excluding SPR | EIA | EIA direct | W | 7 | 1982-01-01 (requested; provider availability varies) | eia_inventories daily 14:00 PT (proposed, disabled) | active |
+| WDISTUS1 | CMDTY \| Energy \| US Distillate Fuel Oil Stocks | EIA | EIA direct | W | 7 | 1982-01-01 (requested; provider availability varies) | eia_inventories daily 14:00 PT (proposed, disabled) | active |
+| WGTSTUS1 | CMDTY \| Energy \| US Total Motor Gasoline Stocks | EIA | EIA direct | W | 7 | 1982-01-01 (requested; provider availability varies) | eia_inventories daily 14:00 PT (proposed, disabled) | active |
 | WTREGEN | LIQ \| US \| Treasury General Account (net liquidity) | Treasury; Fed H.4.1 | FRED | W | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 
 <a id="catalog-hub-macro_series_vintage"></a>

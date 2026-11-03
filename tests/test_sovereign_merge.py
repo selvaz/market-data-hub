@@ -16,14 +16,16 @@ from market_data_hub.db.connection import get_conn
 def test_combined_catalog_retains_every_declared_series(tmp_db):
     fred = config_loader.get_fred_series()
     acm = config_loader.get_nyfed_acm_series()
+    eia = config_loader.get_eia_series()
     sovereign = config_loader.get_sovereign_yields()
-    assert config_loader.get_macro_series() == fred + acm
+    assert config_loader.get_macro_series() == fred + acm + eia
     layers = config_loader.get_sovereign_layer_series()
-    declared = {e['symbol'] for e in fred + acm + sovereign + layers}
+    declared = {e['symbol'] for e in fred + acm + eia + sovereign + layers}
     entries = catalog.list_macro_series(with_coverage=False)
     assert set(entries.series_id) == declared and entries.series_id.is_unique
     dataset = next(d for d in catalog.list_datasets() if d['domain'] == 'macro')
-    assert dataset['n_series'] == len(declared) == 291
+    # Four weekly EIA inventories extend the former 291-series universe.
+    assert dataset['n_series'] == len(declared) == 295
     assert dataset['frequency'] == 'D/W/M/Q/A'
     assert all(name in dataset['description'] for name in ('FRED', 'NY Fed ACM', 'sovereign'))
     for sid in ('NYFED_ACM_TP10_MONTHLY', 'CB_ES_10Y', 'ITA_BTP10_MOT', 'DEU_BUND10_FA'):

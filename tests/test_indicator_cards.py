@@ -443,8 +443,12 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     assert set(report["documented_certified_gaps"]) == {"mx_core_cpi_yy"}
     assert report["macro_releases"] == {"mapped": 96, "total": len(INDICATORS), "unmapped": ["cat:mx_core_cpi_yy"]}
     assert report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
+    # Four new EIA inventory IDs have no approved indicator-card mappings yet.
     assert report["macro_series"] == {
-        "mapped": 106, "total": 107, "unmapped": ["ms:NYFED_ACM_TP10_DAILY"],
+        "mapped": 106, "total": 111, "unmapped": [
+            "ms:NW2_EPG0_SWO_R48_BCF", "ms:NYFED_ACM_TP10_DAILY",
+            "ms:WCESTUS1", "ms:WDISTUS1", "ms:WGTSTUS1",
+        ],
     }
     assert "macro_releases" in capsys.readouterr().out
 

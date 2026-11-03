@@ -93,9 +93,15 @@ def get_nyfed_acm_series() -> List[Dict[str, Any]]:
     return series
 
 
+@lru_cache(maxsize=1)
+def get_eia_series() -> List[Dict[str, Any]]:
+    series: List[Dict[str, Any]] = _load_yaml("macro_series.yaml").get("eia", [])
+    return series
+
+
 def get_macro_series() -> List[Dict[str, Any]]:
     """Configured single-value macro universe, with FRED IDs kept separate."""
-    return get_fred_series() + get_nyfed_acm_series()
+    return get_fred_series() + get_nyfed_acm_series() + get_eia_series()
 
 
 @lru_cache(maxsize=1)
