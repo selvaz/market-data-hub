@@ -38,6 +38,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [earnings_observations](#catalog-hub-earnings_observations) | 0 |
 | hub | [etf_carry_snapshots](#catalog-hub-etf_carry_snapshots) | 816 |
 | hub | [etf_classification](#catalog-hub-etf_classification) | 0 |
+| hub | [etf_valuation_snapshots](#catalog-hub-etf_valuation_snapshots) | 46 |
 | hub | [factor_returns](#catalog-hub-factor_returns) | 7 |
 | hub | [identifier_aliases](#catalog-hub-identifier_aliases) | 0 |
 | hub | [ingestion_jobs](#catalog-hub-ingestion_jobs) | 0 |
@@ -50,6 +51,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
 | hub | [macro_series](#catalog-hub-macro_series) | 290 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
+| hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
 | hub | [schema_meta](#catalog-hub-schema_meta) | 0 |
 | hub | [sec_company_facts](#catalog-hub-sec_company_facts) | 0 |
@@ -1380,6 +1382,68 @@ Config-derived ETF asset class and geographical classification.
 - Collection: hub pipeline / services; supporting state, no independent external collection schedule.
 - Guide: [ARCHITECTURE.md](ARCHITECTURE.md).
 
+<a id="catalog-hub-etf_valuation_snapshots"></a>
+
+## hub / etf_valuation_snapshots
+
+Immutable daily Yahoo ETF valuation captures with raw source fields and knowledge time.
+
+- Store: `hub`; table: `etf_valuation_snapshots`.
+- Primary key: `collection_date`, `symbol`.
+- Status: active.
+- Point-in-time / vintages: Immutable first daily capture; filter fetched_at by UTC cutoff before selecting the latest collection date.
+- Collection: etf_valuations daily 13:40 PT (proposed, disabled).
+- Guide: [equity-snapshots.md](equity-snapshots.md).
+
+| ID | Name | Issuer | Distributor | Frequency | Expected lag (days, declared) | History floor | Job / schedule (PT) | Status / reason |
+|---|---|---|---|---|---:|---|---|---|
+| ACWI | ACWI ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EEM | EEM ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWA | EWA ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWC | EWC ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWG | EWG ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWI | EWI ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWJ | EWJ ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWQ | EWQ ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWT | EWT ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWU | EWU ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWW | EWW ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWY | EWY ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EWZ | EWZ ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EXH1.DE | EXH1.DE ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EXH4.DE | EXH4.DE ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EXH9.DE | EXH9.DE ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EXV1.DE | EXV1.DE ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EXV3.DE | EXV3.DE ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EXV4.DE | EXV4.DE ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| EZA | EZA ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| IGF | IGF ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| INDA | INDA ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| IWM | IWM ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| KSA | KSA ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| MCHI | MCHI ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| QQQ | QQQ ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| SPY | SPY ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| VEA | VEA ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| VGK | VGK ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| VGT | VGT ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| VNQ | VNQ ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| VNQI | VNQI ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| VTV | VTV ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| VUG | VUG ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| VWO | VWO ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLB | XLB ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLC | XLC ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLE | XLE ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLF | XLF ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLI | XLI ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLK | XLK ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLP | XLP ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLRE | XLRE ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLU | XLU ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLV | XLV ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+| XLY | XLY ETF valuation snapshot | Fund provider via Yahoo | Yahoo Finance | D | 1 | Point-in-time from first capture; no backfill | etf_valuations daily 13:40 PT (proposed, disabled) | active |
+
 <a id="catalog-hub-factor_returns"></a>
 
 ## hub / factor_returns
@@ -1924,6 +1988,23 @@ Hub-observed changes to macro_series, with ingestion-date vintages.
 - Point-in-time / vintages: macro_series is latest state. macro_series_vintage keeps hub ingestion-date changes: filter vintage_date <= cutoff then latest per series/date. Backfilled ingestion vintages are not issuer publication history; use ALFRED for vendor point-in-time data.
 - Collection: hub pipeline / services; supporting state, no independent external collection schedule.
 - Guide: [free-sources.md](free-sources.md).
+
+<a id="catalog-hub-market_breadth_snapshots"></a>
+
+## hub / market_breadth_snapshots
+
+Immutable daily TradingView breadth captures with observable denominators and knowledge time.
+
+- Store: `hub`; table: `market_breadth_snapshots`.
+- Primary key: `collection_date`, `market`, `universe`.
+- Status: active.
+- Point-in-time / vintages: Immutable first daily capture; filter fetched_at by UTC cutoff before selecting the latest collection date.
+- Collection: market_breadth daily 13:50 PT (proposed, disabled).
+- Guide: [equity-snapshots.md](equity-snapshots.md).
+
+| ID | Name | Issuer | Distributor | Frequency | Expected lag (days, declared) | History floor | Job / schedule (PT) | Status / reason |
+|---|---|---|---|---|---:|---|---|---|
+| US/us_listed_cap10b | US large-cap breadth | TradingView | TradingView screener | D | 1 | Point-in-time from first capture; no backfill | market_breadth daily 13:50 PT (proposed, disabled) | active |
 
 <a id="catalog-hub-prices_daily"></a>
 

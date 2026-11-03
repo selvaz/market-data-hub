@@ -27,6 +27,8 @@ UNKNOWN = "not configured"
 # config/marketdata_jobs.toml and weekly_earnings_jobs.toml on 2026-10-31.
 # No sibling checkout or production scheduler is required to regenerate in CI.
 JOBS = {
+    "etf_valuations": "daily 13:40 PT (proposed, disabled)",
+    "market_breadth": "daily 13:50 PT (proposed, disabled)",
     "daily_eu18": "daily 09:00 PT",
     "daily_usclose": "daily 13:15 PT",
     "fred_morning": "daily 23:45 PT",
@@ -43,6 +45,8 @@ JOBS = {
 # Descriptions are table semantics, not another list of series. A new schema
 # table must receive an explicit description; silently inventing one hides drift.
 HUB_TABLES = {
+    "etf_valuation_snapshots": "Immutable daily Yahoo ETF valuation captures with raw source fields and knowledge time.",
+    "market_breadth_snapshots": "Immutable daily TradingView breadth captures with observable denominators and knowledge time.",
     "etf_carry_snapshots": "Append-only ETF carry observations by capture date, symbol and field, with provider field and retrieval time.",
     "schema_meta": "Warehouse schema version and migration metadata.",
     "prices_daily": "Daily OHLCV and adjusted closes by listing; is_live marks provisional intraday prices.",
@@ -197,6 +201,16 @@ def build_rows(config_dir=CONFIG_DIR):
     macro_lookback = ast.literal_eval(code_assignment(PACKAGE / "macro_releases" / "run_daily.py", "DEFAULT_LOOKBACK_MONTHS"))
     macro = load_config(config_dir, "macro_series.yaml")
     rows = []
+    for symbol in load_config(config_dir, "equity_snapshots.yaml")["symbols"]:
+        rows.append(_row(dict(name=f"{symbol} ETF valuation snapshot", expected_lag_days=1),
+                         id=symbol, table="etf_valuation_snapshots", distributor="Yahoo Finance",
+                         issuer="Fund provider via Yahoo", job="etf_valuations", frequency="D",
+                         history="Point-in-time from first capture; no backfill"))
+    rows.append(_row(dict(name="US large-cap breadth", expected_lag_days=1),
+                     id="US/us_listed_cap10b", table="market_breadth_snapshots",
+                     distributor="TradingView screener", issuer="TradingView",
+                     job="market_breadth", frequency="D",
+                     history="Point-in-time from first capture; no backfill"))
     # Match get_yahoo_tickers: FRED takes precedence over duplicate Yahoo IDs.
     fred_ids = {e["symbol"] for e in macro["fred"]}
     for e in load_config(config_dir, "tickers.yaml")["yahoo"]:
@@ -302,7 +316,10 @@ def _table_details(store, name):
         return MACRO_TABLES[name], doc, pit
     doc = "ARCHITECTURE.md"
     pit = "Current state/upserted data; no historical as-known-at reconstruction from this table alone."
-    if name == "etf_carry_snapshots":
+    if name in {"etf_valuation_snapshots", "market_breadth_snapshots"}:
+        doc = "equity-snapshots.md"
+        pit = "Immutable first daily capture; filter fetched_at by UTC cutoff before selecting the latest collection date."
+    elif name == "etf_carry_snapshots":
         pit = "Point-in-time from first capture; no backfill. Filter retrieved_at by cutoff; missing fields have no row. Same-day first capture is immutable."
     elif name.startswith("calendar_"):
         doc = "macro-indicators.md"

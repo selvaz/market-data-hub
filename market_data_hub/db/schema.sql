@@ -1115,3 +1115,23 @@ SELECT event_id, symbol, exchange, company_name, country, region, sector,
             THEN (revenue_actual - revenue_estimate) / abs(revenue_estimate) END AS revenue_surprise
 FROM earnings_events
 WHERE status = 'occurred';
+-- Immutable first capture for each collection date, preserving knowledge time.
+CREATE TABLE IF NOT EXISTS etf_valuation_snapshots (
+    collection_date DATE NOT NULL, symbol VARCHAR NOT NULL,
+    trailing_pe DOUBLE, forward_pe DOUBLE, price_to_book DOUBLE,
+    dividend_yield DOUBLE, source_as_of DATE, source VARCHAR NOT NULL,
+    fetched_at TIMESTAMP NOT NULL, raw_fields VARCHAR NOT NULL,
+    PRIMARY KEY (collection_date, symbol)
+);
+
+CREATE TABLE IF NOT EXISTS market_breadth_snapshots (
+    collection_date DATE NOT NULL, market VARCHAR NOT NULL,
+    universe VARCHAR NOT NULL, universe_size INTEGER NOT NULL,
+    above_50_pct DOUBLE, above_50_observable INTEGER,
+    above_200_pct DOUBLE, above_200_observable INTEGER,
+    advances INTEGER, declines INTEGER, change_observable INTEGER,
+    new_highs INTEGER, high_observable INTEGER,
+    new_lows INTEGER, low_observable INTEGER,
+    method VARCHAR NOT NULL, source VARCHAR NOT NULL, fetched_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (collection_date, market, universe)
+);
