@@ -5841,6 +5841,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BIL/average_coupon",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BIL average_coupon",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -5859,6 +5884,56 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "BIL currency_hedged",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BIL/distribution_yield",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BIL distribution_yield",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BIL/effective_duration",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BIL effective_duration",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
@@ -5891,6 +5966,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BIL/holdings_count",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BIL holdings_count",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -5909,6 +6009,31 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "BIL sec_30_day_yield",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BIL/sec_yield_30d",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BIL sec_yield_30d",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
@@ -5941,12 +6066,12 @@
       "table": "etf_carry_snapshots"
     },
     {
-      "distributor": "Yahoo Finance quote",
+      "distributor": "State Street product data workbook",
       "expected_lag_days": 1,
       "frequency": "D",
       "history_start": "Point-in-time from first capture; no backfill",
       "id": "BIL/yield_to_maturity",
-      "issuer": "Fund provider via Yahoo",
+      "issuer": "State Street",
       "jobs": [
         {
           "name": "daily_eu18",
@@ -6341,6 +6466,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BWX/average_coupon",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BWX average_coupon",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -6359,6 +6509,56 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "BWX currency_hedged",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BWX/distribution_yield",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BWX distribution_yield",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BWX/effective_duration",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BWX effective_duration",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
@@ -6391,6 +6591,31 @@
       "table": "etf_carry_snapshots"
     },
     {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BWX/holdings_count",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BWX holdings_count",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
       "distributor": "Yahoo Finance quote",
       "expected_lag_days": 1,
       "frequency": "D",
@@ -6409,6 +6634,31 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "BWX sec_30_day_yield",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "BWX/sec_yield_30d",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BWX sec_yield_30d",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
@@ -6441,12 +6691,12 @@
       "table": "etf_carry_snapshots"
     },
     {
-      "distributor": "Yahoo Finance quote",
+      "distributor": "State Street product data workbook",
       "expected_lag_days": 1,
       "frequency": "D",
       "history_start": "Point-in-time from first capture; no backfill",
       "id": "BWX/yield_to_maturity",
-      "issuer": "Fund provider via Yahoo",
+      "issuer": "State Street",
       "jobs": [
         {
           "name": "daily_eu18",
@@ -17334,6 +17584,156 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "SOYB yield_to_maturity",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "SPAB/average_coupon",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "SPAB average_coupon",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "SPAB/distribution_yield",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "SPAB distribution_yield",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "SPAB/effective_duration",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "SPAB effective_duration",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "SPAB/holdings_count",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "SPAB holdings_count",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "SPAB/sec_yield_30d",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "SPAB sec_yield_30d",
+      "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "etf_carry_snapshots"
+    },
+    {
+      "distributor": "State Street product data workbook",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Point-in-time from first capture; no backfill",
+      "id": "SPAB/yield_to_maturity",
+      "issuer": "State Street",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "SPAB yield_to_maturity",
       "notes": "Point-in-time from first capture; no backfill. Missing values are absent.",
       "status": "active",
       "status_reason": "",
@@ -39742,7 +40142,7 @@
         "symbol",
         "field"
       ],
-      "series_count": 680,
+      "series_count": 696,
       "status": "active",
       "status_reason": "",
       "store": "hub",

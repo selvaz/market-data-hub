@@ -302,9 +302,12 @@ def build_rows(config_dir=CONFIG_DIR):
                 )
             )
     from .etf_carry import FIELDS, universe
+    from .ssga_carry import FIELDS as SSGA_FIELDS, FUNDS as SSGA_FUNDS
 
     for e in universe(load_config(config_dir, "tickers.yaml")["yahoo"]):
         for field, lag in FIELDS.items():
+            if e["symbol"] in SSGA_FUNDS and field == "yield_to_maturity":
+                continue
             row = _row(
                 dict(
                     name=f"{e['symbol']} {field}",
@@ -320,6 +323,24 @@ def build_rows(config_dir=CONFIG_DIR):
                 frequency="D",
             )
             rows.append(row)
+    for symbol in SSGA_FUNDS:
+        for field, _ in SSGA_FIELDS.values():
+            rows.append(
+                _row(
+                    dict(
+                        name=f"{symbol} {field}",
+                        expected_lag_days=1,
+                        notes="Point-in-time from first capture; no backfill. Missing values are absent.",
+                    ),
+                    id=f"{symbol}/{field}",
+                    table="etf_carry_snapshots",
+                    distributor="State Street product data workbook",
+                    issuer="State Street",
+                    job=["daily_eu18", "daily_usclose"],
+                    history="Point-in-time from first capture; no backfill",
+                    frequency="D",
+                )
+            )
     for group, distributor in (("fred", "FRED"), ("nyfed_acm", "NY Fed direct")):
         for e in macro[group]:
             row = _row(

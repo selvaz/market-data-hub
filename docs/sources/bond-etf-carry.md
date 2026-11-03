@@ -11,6 +11,13 @@ against [AGG's regulatory disclosure](https://www.sec.gov/Archives/edgar/data/70
 and [SPAB's issuer page](https://www.ssga.com/us/en/intermediary/etfs/state-street-spdr-portfolio-aggregate-bond-index-etf-spab).
 No other cross-fund proxies have been established.
 
+State Street BIL, BWX and SPAB are collected from the issuer's daily
+`spdr-product-data-us-en.xlsx` workbook. Its Option Adjusted Duration is
+described by State Street as effective duration. Workbook percentage values
+are converted to decimal fractions; source dates come from its `As of**` field.
+BWX holds bonds in multiple currencies, so its single `index_currency` is null.
+AGG-to-SPAB proxy rows are not yet collected.
+
 | ETF | Issuer | Underlying index | Index currency | Share class currency | Hedged | Candidate source / gap |
 |---|---|---|---|---|---|---|
 | TLT | BlackRock | ICE U.S. Treasury 20+ Year Bond Index | USD | USD | No | iShares product page |

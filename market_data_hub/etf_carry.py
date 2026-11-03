@@ -116,4 +116,7 @@ def collect(con, entries, *, log=print):
         f"ETF carry coverage: {matched}/{len(candidates)} ETF quotes; "
         + ", ".join(f"{field}={count}" for field, count in counts.items())
     )
+    from market_data_hub.ssga_carry import collect as collect_ssga
+
+    collect_ssga(con, log=log)
     return counts

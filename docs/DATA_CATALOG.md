@@ -36,7 +36,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [download_log](#catalog-hub-download_log) | 0 |
 | hub | [earnings_events](#catalog-hub-earnings_events) | 0 |
 | hub | [earnings_observations](#catalog-hub-earnings_observations) | 0 |
-| hub | [etf_carry_snapshots](#catalog-hub-etf_carry_snapshots) | 680 |
+| hub | [etf_carry_snapshots](#catalog-hub-etf_carry_snapshots) | 696 |
 | hub | [etf_classification](#catalog-hub-etf_classification) | 0 |
 | hub | [etf_valuation_snapshots](#catalog-hub-etf_valuation_snapshots) | 46 |
 | hub | [factor_returns](#catalog-hub-factor_returns) | 7 |
@@ -597,11 +597,16 @@ Append-only ETF carry observations by capture date, symbol and field, with provi
 | BCI/sec_30_day_yield | BCI sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BCI/trailing_distribution_yield | BCI trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BCI/yield_to_maturity | BCI yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BIL/average_coupon | BIL average_coupon | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BIL/currency_hedged | BIL currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BIL/distribution_yield | BIL distribution_yield | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BIL/effective_duration | BIL effective_duration | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BIL/expense_ratio | BIL expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BIL/holdings_count | BIL holdings_count | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BIL/sec_30_day_yield | BIL sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BIL/sec_yield_30d | BIL sec_yield_30d | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BIL/trailing_distribution_yield | BIL trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
-| BIL/yield_to_maturity | BIL yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BIL/yield_to_maturity | BIL yield_to_maturity | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BNDX/currency_hedged | BNDX currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BNDX/expense_ratio | BNDX expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BNDX/sec_30_day_yield | BNDX sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
@@ -617,11 +622,16 @@ Append-only ETF carry observations by capture date, symbol and field, with provi
 | BTC-USD/sec_30_day_yield | BTC-USD sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BTC-USD/trailing_distribution_yield | BTC-USD trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BTC-USD/yield_to_maturity | BTC-USD yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BWX/average_coupon | BWX average_coupon | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BWX/currency_hedged | BWX currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BWX/distribution_yield | BWX distribution_yield | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BWX/effective_duration | BWX effective_duration | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BWX/expense_ratio | BWX expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BWX/holdings_count | BWX holdings_count | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BWX/sec_30_day_yield | BWX sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BWX/sec_yield_30d | BWX sec_yield_30d | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | BWX/trailing_distribution_yield | BWX trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
-| BWX/yield_to_maturity | BWX yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| BWX/yield_to_maturity | BWX yield_to_maturity | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | CEMB/currency_hedged | CEMB currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | CEMB/expense_ratio | CEMB expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | CEMB/sec_30_day_yield | CEMB sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
@@ -1057,6 +1067,12 @@ Append-only ETF carry observations by capture date, symbol and field, with provi
 | SOYB/sec_30_day_yield | SOYB sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | SOYB/trailing_distribution_yield | SOYB trailing_distribution_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | SOYB/yield_to_maturity | SOYB yield_to_maturity | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| SPAB/average_coupon | SPAB average_coupon | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| SPAB/distribution_yield | SPAB distribution_yield | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| SPAB/effective_duration | SPAB effective_duration | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| SPAB/holdings_count | SPAB holdings_count | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| SPAB/sec_yield_30d | SPAB sec_yield_30d | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| SPAB/yield_to_maturity | SPAB yield_to_maturity | State Street | State Street product data workbook | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | SPY/currency_hedged | SPY currency_hedged | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | SPY/expense_ratio | SPY expense_ratio | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | SPY/sec_30_day_yield | SPY sec_30_day_yield | Fund provider via Yahoo | Yahoo Finance quote | D | 1 | Point-in-time from first capture; no backfill | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
