@@ -106,6 +106,8 @@ def test_country_group_seed_ids_and_policy_context():
         assert card.nature == "POLICY" and card.timing.timing_class == "CTX"
     assert indicator_card("za_indpro").concept == "Manufacturing production"
     assert indicator_card("au_cpi_trimmed_q").key != indicator_card("au_cpi_quarterly").key
+    assert "ceased" in indicator_card("au_retail").flag
+    assert indicator_card("au_household_spending").key != indicator_card("au_retail").key
 
 
 def test_miscellaneous_indicators_and_existing_context():
@@ -152,7 +154,7 @@ def test_energy_geopolitical_and_term_premium_series_are_distinct():
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 426
+    assert len(rows) == len(dataset().cards) == 427
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -812,7 +814,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 426
+    assert dataset() is shipped and len(shipped.cards) == 427
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -902,7 +904,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 426
+        assert report["cards"] == 427
         assert ("draft_cards" in report) == bool(args)
 
 

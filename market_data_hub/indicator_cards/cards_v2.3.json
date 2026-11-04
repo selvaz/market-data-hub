@@ -16517,7 +16517,7 @@
         "measurement": "M",
         "mechanism": "mixed"
       },
-      "flag": "release details and local timing unverified",
+      "flag": "retail trade publication ceased July 2025",
       "frequency": "M",
       "ids": {
         "cal": [
@@ -16533,10 +16533,10 @@
       },
       "key": "au_retail",
       "known_failure_modes": [
-        "release details and local timing unverified"
+        "retail trade publication ceased July 2025"
       ],
       "nature": "HARD",
-      "rationale": "Retail trade measures differ from household consumption; check current ABS replacement series and release practice. Issuer release dates and local cycle timing require verification. Source: https://www.abs.gov.au/statistics/industry/retail-and-wholesale-trade",
+      "rationale": "ABS ceased the Retail Trade publication on 31 July 2025. The household spending indicator has broader coverage and is a separate concept; do not splice without review. Source: https://www.abs.gov.au/about/cessation-retail-business-survey-and-retail-trade-publication",
       "raw_ids": "cal:au_retail",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
@@ -20056,10 +20056,53 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "Monthly household spending indicator",
+      "country": "AUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "not equivalent to discontinued retail trade series",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "au_household_spending",
+      "known_failure_modes": [
+        "not equivalent to discontinued retail trade series"
+      ],
+      "nature": "HARD",
+      "rationale": "ABS enhanced the household spending indicator as retail trade publication ended in July 2025; coverage extends beyond retail trade and the series should not be spliced without review. Release dates vary; local cycle timing is untested. Source: https://www.abs.gov.au/about/future-cessation-retail-business-survey-and-retail-trade-publication/retail-trade-replacement-program-monthly-household-spending-indicator",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Australian Bureau of Statistics",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Australian household consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "f15e2a18b4629c7a8f8bf371063c347a58b38bf10e5709e7e51939c607290bac",
-  "timing_extract_sha256": "0ad47a213c90f0ec8fd8e907ad66b75af70db3ed5ba4353010a39a528e0b241a"
+  "source_table_sha256": "af9d7fa68e66a30c6e94eeba4bc1fae4392570363b84b8e100c93eb494a5510e",
+  "timing_extract_sha256": "62b848b96d7fb792f10f28043ecfd5af6bc8970d1590fbcf3eb96fbd5335973d"
 }
