@@ -354,6 +354,21 @@
       "id": "cat:mx_core_cpi_yy",
       "key": "mx_cpi_core",
       "basis": "Core CPI concept already approved as cal:mx_core_cpi; transform and seasonality remain specific to the source."
+    },
+    {
+      "id": "cal:ch_cpi_yy",
+      "key": "ch_cpi_mm",
+      "basis": "LazyCommittee annual CPI and cal:ch_cpi_mm refer to the same Swiss headline CPI concept; transformations remain distinct."
+    },
+    {
+      "id": "cal:mx_gdp_qq",
+      "key": "mx_gdp",
+      "basis": "LazyCommittee quarterly and annual GDP rates describe the same Mexican GDP concept as cal:mx_gdp; transformations remain distinct."
+    },
+    {
+      "id": "cal:kr_unemp",
+      "key": "kr_labour",
+      "basis": "LazyCommittee unemployment rate shares the existing Korean labour concept cal:kr_unemployment_rate_nsa; the seed adjustment is unspecified, so this is context only."
     }
   ],
   "certified_gaps": {},

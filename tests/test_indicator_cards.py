@@ -128,10 +128,23 @@ def test_seed_aliases_reuse_existing_cards_and_fortnightly_cpi_is_unique():
     assert indicator_card("mx_cpi_fortnightly") is None
 
 
+def test_remaining_real_economy_seed_identifiers_resolve():
+    identities = """br_gdp br_igpm br_indprod br_retail br_trade br_unemp
+        ca_mfg_sales ca_trade ch_cpi_mm ch_cpi_yy ch_gdp ch_unemp
+        de_indprod de_retail uk_gdp_qq in_exports in_imports in_indprod
+        in_trade in_wpi_yy jp_earnings jp_retail jp_unemp kr_cpi_yy
+        kr_gdp kr_indprod kr_trade kr_unemp mx_gdp mx_gdp_qq mx_indprod
+        mx_remit mx_retail mx_trade mx_unemp tw_cbc tw_gdp tw_indprod tw_trade""".split()
+    assert all(indicator_card("cal:" + identity) is not None for identity in identities)
+    assert indicator_card("cal:ch_cpi_mm") == indicator_card("cal:ch_cpi_yy")
+    assert indicator_card("cal:mx_gdp") == indicator_card("cal:mx_gdp_qq")
+    assert indicator_card("cal:tw_cbc").nature == "POLICY"
+
+
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 379
+    assert len(rows) == len(dataset().cards) == 415
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -804,7 +817,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 379
+    assert dataset() is shipped and len(shipped.cards) == 415
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -894,7 +907,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 379
+        assert report["cards"] == 415
         assert ("draft_cards" in report) == bool(args)
 
 

@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "76b832f19e7a5c912ac05df665bb17cb13ea8f029eef8d08de291558f3d1a2af",
+  "aliases_sha256": "9f02bb1a865991dec89865f144370a8b286b0eef989b755a10ead5bbab7221f8",
   "cards": [
     {
       "concept": "Real GDP",
@@ -9246,7 +9246,8 @@
       "ids": {
         "cal": [
           "kr_employment_change_yy",
-          "kr_unemployment_rate_nsa"
+          "kr_unemployment_rate_nsa",
+          "kr_unemp"
         ],
         "cat": [],
         "derived_ms": [],
@@ -17938,10 +17939,1632 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "GDP q/q",
+      "country": "BRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [
+          "br_gdp"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "br_gdp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records GDP q/q; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.ibge.gov.br/en/",
+      "raw_ids": "cal:br_gdp",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "IBGE",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "IGP-M",
+      "country": "BRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "br_igpm"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "br_igpm",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "FGV general price index combines wholesale, consumer and construction price components; it is not consumer CPI. Release dates and local timing require verification. Source: https://portal.fgv.br/",
+      "raw_ids": "cal:br_igpm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "FGV",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Industrial Production m/m",
+      "country": "BRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "br_indprod"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "br_indprod",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Industrial Production m/m; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.ibge.gov.br/en/",
+      "raw_ids": "cal:br_indprod",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "IBGE",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Retail Sales m/m",
+      "country": "BRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "br_retail"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "br_retail",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Retail Sales m/m; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.ibge.gov.br/en/",
+      "raw_ids": "cal:br_retail",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "IBGE",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Trade Balance",
+      "country": "BRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "br_trade"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "br_trade",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Trade Balance; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.gov.br/mdic/",
+      "raw_ids": "cal:br_trade",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "MDIC",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Unemployment Rate",
+      "country": "BRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "br_unemp"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "br_unemp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Unemployment Rate; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.ibge.gov.br/en/",
+      "raw_ids": "cal:br_unemp",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "IBGE",
+      "theme": "Labour",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Manufacturing Sales m/m",
+      "country": "CAN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "ca_mfg_sales"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ca_mfg_sales",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Manufacturing Sales m/m; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.statcan.gc.ca/",
+      "raw_ids": "cal:ca_mfg_sales",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Statistics Canada",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Trade Balance",
+      "country": "CAN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "ca_trade"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ca_trade",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Trade Balance; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.statcan.gc.ca/",
+      "raw_ids": "cal:ca_trade",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Statistics Canada",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "CPI m/m",
+      "country": "CHE",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "ch_cpi_mm",
+          "ch_cpi_yy"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ch_cpi_mm",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records CPI m/m; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.bfs.admin.ch/",
+      "raw_ids": "cal:ch_cpi_mm",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "BFS",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "GDP q/q",
+      "country": "CHE",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [
+          "ch_gdp"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ch_gdp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records GDP q/q; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.seco.admin.ch/",
+      "raw_ids": "cal:ch_gdp",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "SECO",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Unemployment Rate",
+      "country": "CHE",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "ch_unemp"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ch_unemp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Unemployment Rate; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.seco.admin.ch/",
+      "raw_ids": "cal:ch_unemp",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "SECO",
+      "theme": "Labour",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "German Industrial Production m/m",
+      "country": "DEU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "de_indprod"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "de_indprod",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records German Industrial Production m/m; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.destatis.de/EN/",
+      "raw_ids": "cal:de_indprod",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Destatis",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "German Retail Sales m/m",
+      "country": "DEU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "de_retail"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "de_retail",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records German Retail Sales m/m; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.destatis.de/EN/",
+      "raw_ids": "cal:de_retail",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Destatis",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "GDP q/q",
+      "country": "GBR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [
+          "uk_gdp_qq"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "uk_gdp_qq",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Quarterly GDP is a separate release frequency from the monthly estimate; benchmark and later releases may revise history. Local timing is not tested. Source: https://www.ons.gov.uk/",
+      "raw_ids": "cal:uk_gdp_qq",
+      "revision_behaviour": "benchmark and later releases may revise history.",
+      "secondary": [],
+      "source": "ONS",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Exports",
+      "country": "IND",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "in_exports"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "in_exports",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Exports; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://commerce.gov.in/",
+      "raw_ids": "cal:in_exports",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Ministry of Commerce",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Imports",
+      "country": "IND",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "in_imports"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "in_imports",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Imports; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://commerce.gov.in/",
+      "raw_ids": "cal:in_imports",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Ministry of Commerce",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Industrial Production y/y",
+      "country": "IND",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "in_indprod"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "in_indprod",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Industrial Production y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://mospi.gov.in/",
+      "raw_ids": "cal:in_indprod",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "MoSPI",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Trade Balance",
+      "country": "IND",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "in_trade"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "in_trade",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Trade Balance; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://commerce.gov.in/",
+      "raw_ids": "cal:in_trade",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Ministry of Commerce",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "WPI y/y",
+      "country": "IND",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "in_wpi_yy"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "in_wpi_yy",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records WPI y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://commerce.gov.in/",
+      "raw_ids": "cal:in_wpi_yy",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Ministry of Commerce",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Average Cash Earnings y/y",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "jp_earnings"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_earnings",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Average Cash Earnings y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.mhlw.go.jp/english/",
+      "raw_ids": "cal:jp_earnings",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "MHLW",
+      "theme": "Labour",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Retail Sales y/y",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "jp_retail"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_retail",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Retail Sales y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.meti.go.jp/english/",
+      "raw_ids": "cal:jp_retail",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "METI",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Unemployment Rate",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "jp_unemp"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_unemp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Unemployment Rate; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.stat.go.jp/english/",
+      "raw_ids": "cal:jp_unemp",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Statistics Bureau",
+      "theme": "Labour",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "CPI y/y",
+      "country": "KOR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "kr_cpi_yy"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "kr_cpi_yy",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records CPI y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://kostat.go.kr/",
+      "raw_ids": "cal:kr_cpi_yy",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Statistics Korea",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "GDP q/q",
+      "country": "KOR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [
+          "kr_gdp"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "kr_gdp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records GDP q/q; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.bok.or.kr/eng/",
+      "raw_ids": "cal:kr_gdp",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Bank of Korea",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Industrial Production y/y",
+      "country": "KOR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "kr_indprod"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "kr_indprod",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Industrial Production y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://kostat.go.kr/",
+      "raw_ids": "cal:kr_indprod",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Statistics Korea",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Trade Balance",
+      "country": "KOR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "kr_trade"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "kr_trade",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Trade Balance; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://english.motie.go.kr/",
+      "raw_ids": "cal:kr_trade",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "MOTIE",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "GDP y/y",
+      "country": "MEX",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [
+          "mx_gdp",
+          "mx_gdp_qq"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "mx_gdp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records GDP y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.inegi.org.mx/",
+      "raw_ids": "cal:mx_gdp",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "INEGI",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Industrial Production y/y",
+      "country": "MEX",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "mx_indprod"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "mx_indprod",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Industrial Production y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.inegi.org.mx/",
+      "raw_ids": "cal:mx_indprod",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "INEGI",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Remittances",
+      "country": "MEX",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "mx_remit"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "mx_remit",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Remittances; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.banxico.org.mx/",
+      "raw_ids": "cal:mx_remit",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Banxico",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Retail Sales y/y",
+      "country": "MEX",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "mx_retail"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "mx_retail",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Retail Sales y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.inegi.org.mx/",
+      "raw_ids": "cal:mx_retail",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "INEGI",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Trade Balance",
+      "country": "MEX",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "mx_trade"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "mx_trade",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Trade Balance; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.inegi.org.mx/",
+      "raw_ids": "cal:mx_trade",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "INEGI",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Unemployment Rate",
+      "country": "MEX",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "mx_unemp"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "mx_unemp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Unemployment Rate; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.inegi.org.mx/",
+      "raw_ids": "cal:mx_unemp",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "INEGI",
+      "theme": "Labour",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "CBC Discount Rate",
+      "country": "TWN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "E",
+      "ids": {
+        "cal": [
+          "tw_cbc"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tw_cbc",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "POLICY",
+      "rationale": "Discount rate decision follows the central bank board calendar; meeting frequency and extraordinary decisions should be verified. Source: https://www.cbc.gov.tw/en/",
+      "raw_ids": "cal:tw_cbc",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Central Bank of China (Taiwan)",
+      "theme": "Monetary policy & rates",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "current policy state",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "GDP y/y",
+      "country": "TWN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [
+          "tw_gdp"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tw_gdp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records GDP y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://eng.dgbas.gov.tw/",
+      "raw_ids": "cal:tw_gdp",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "DGBAS",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Industrial Production y/y",
+      "country": "TWN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "tw_indprod"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tw_indprod",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Industrial Production y/y; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.moea.gov.tw/",
+      "raw_ids": "cal:tw_indprod",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "MOEA",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Trade Balance",
+      "country": "TWN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "tw_trade"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tw_trade",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "The seed records Trade Balance; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.mof.gov.tw/",
+      "raw_ids": "cal:tw_trade",
+      "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
+      "secondary": [],
+      "source": "Ministry of Finance",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "2c573e0dff751c4534ec12b5af055a823bfa3f8696750d63a2400f53b4d10e6a",
-  "timing_extract_sha256": "684956276ea69e5dd6ff59ffeac43a22e5d875a540a0e753b34951ca2a6f23ae"
+  "source_table_sha256": "61e074668015fd5706822bdcb49a7e3ff0784aa8914df839cdcff3cb461de829",
+  "timing_extract_sha256": "748bb75c0ceda0b8dc6512484f8ab0d96e37e7592dc4d5e78e920bb13d225f79"
 }
