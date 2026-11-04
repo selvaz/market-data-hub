@@ -16044,10 +16044,399 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "Empire State Manufacturing Survey",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_empire_state",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "Survey of New York State manufacturers; current conditions and expectations are separate diffusion indexes. Publication dates vary; economic-cycle timing is untested locally. Source: https://www.newyorkfed.org/survey/empire/empiresurvey_overview",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Federal Reserve Bank of New York",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US activity",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Philadelphia Fed Manufacturing Business Outlook Survey",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_philadelphia_fed",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "Survey of manufacturers in the Third Federal Reserve District; current and future activity are separate. Publication dates vary; economic-cycle timing is untested locally. Source: https://www.philadelphiafed.org/surveys-and-data/regional-economic-analysis/manufacturing-business-outlook-survey",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Federal Reserve Bank of Philadelphia",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US activity",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Richmond Fed manufacturing survey",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_richmond_fed",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "Regional manufacturing survey; activity and expectations components differ. Publication dates vary; economic-cycle timing is untested locally. Source: https://www.richmondfed.org/research/regional_economy/surveys_of_business_conditions",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Federal Reserve Bank of Richmond",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US activity",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Kansas City Fed manufacturing survey",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_kansas_city_fed",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "Tenth District manufacturing survey; composite and expectations are distinct. Publication dates vary; economic-cycle timing is untested locally. Source: https://www.kansascityfed.org/surveys/manufacturing-survey/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Federal Reserve Bank of Kansas City",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US activity",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Dallas Fed Texas Manufacturing Outlook Survey",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_dallas_fed",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "Texas manufacturing survey; production and general business activity are separate indexes. Publication dates vary; economic-cycle timing is untested locally. Source: https://www.dallasfed.org/research/surveys/tmos",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Federal Reserve Bank of Dallas",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US activity",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Chicago Business Barometer",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_chicago_pmi",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "Regional purchasing managers survey; distinct from national ISM manufacturing. Publication dates vary; economic-cycle timing is untested locally. Source: https://www.ism-chicago.org/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "MNI / ISM Chicago",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US activity",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "ADP National Employment Report",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "us_adp"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_adp",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "HARD",
+      "rationale": "Private payroll-based employment estimate, not BLS nonfarm payrolls; methodology and coverage differ. Publication dates vary; economic-cycle timing is untested locally. Source: https://adpemploymentreport.com/",
+      "raw_ids": "cal:us_adp",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "ADP / Stanford Digital Economy Lab",
+      "theme": "Labour",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US activity",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "MBA mortgage applications index",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing not tested",
+      "frequency": "W",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_mba_applications",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "HARD",
+      "rationale": "Weekly lender survey of mortgage applications; applications are not mortgage originations. Publication dates vary; economic-cycle timing is untested locally. Source: https://www.mba.org/news-and-research/research-and-economics/single-family-research/weekly-applications-survey",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Mortgage Bankers Association",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US activity",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "NFIB Small Business Optimism Index",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_nfib",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "Small business survey combining current conditions and expectations; separate components have different interpretations. Publication dates vary; economic-cycle timing is untested locally. Source: https://www.nfib.com/surveys/small-business-economic-trends/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "NFIB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "US activity",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "3fc165bbb670d400cc69b73350d75102a65fa2cae354f2697d21f6a24160dfdf",
-  "timing_extract_sha256": "9ff54e66e541fcf76fa6a1a0af7c00ffa6f871e3f4dd404e09b23af1502778b2"
+  "source_table_sha256": "b1101523dc2764e0247f49171879f94b6ff5f1f572056dd37467c6e4445f806b",
+  "timing_extract_sha256": "266a7babd5d569332a4be806fc0cd102d933b3bd7ddaa1ceca3244c8edfde766"
 }

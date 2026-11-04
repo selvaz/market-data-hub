@@ -88,10 +88,19 @@ def test_saudi_pmi_is_not_mislabelled_manufacturing():
     assert "non-oil" in card.rationale and "not a manufacturing-only" in card.rationale
 
 
+def test_regional_and_payroll_sources_remain_distinct():
+    assert indicator_card("cal:us_adp").key == "us_adp"
+    assert indicator_card("cal:us_adp").key != indicator_card("cal:us_nfp").key
+    keys = ("us_empire_state", "us_philadelphia_fed", "us_richmond_fed",
+            "us_kansas_city_fed", "us_dallas_fed", "us_chicago_pmi", "us_nfib")
+    assert all(indicator_card(key).nature == "SOFT" for key in keys)
+    assert indicator_card("us_mba_applications").frequency == "W"
+
+
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 336
+    assert len(rows) == len(dataset().cards) == 345
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -281,7 +290,7 @@ def test_promotion_provenance_covers_exactly_the_24_owner_approved_rows():
     )
     assert (
         promotion["draft_timing_extract_sha256"]
-        == "13ff30d8d173de796ce78e0b3f5336d43f3bd052ece0d6e5811f4c5477aa09ef"
+        == "13ff30d8d173de796ce78e0b3f5345d43f3bd052ece0d6e5811f4c5477aa09ef"
     )
     for key, (_, basis) in PROMOTED_CLASSES.items():
         if basis == "DEFINITION":
@@ -766,7 +775,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 336
+    assert dataset() is shipped and len(shipped.cards) == 345
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -856,7 +865,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 336
+        assert report["cards"] == 345
         assert ("draft_cards" in report) == bool(args)
 
 

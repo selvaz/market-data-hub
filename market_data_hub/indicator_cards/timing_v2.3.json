@@ -32,7 +32,7 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "3fc165bbb670d400cc69b73350d75102a65fa2cae354f2697d21f6a24160dfdf"
+      "source_table_sha256": "b1101523dc2764e0247f49171879f94b6ff5f1f572056dd37467c6e4445f806b"
     },
     {
       "approval": "approved v2.3 by owner 2026-10-25",
@@ -53,7 +53,7 @@
         "cn_new_home_prices_tiers"
       ],
       "source": "PR #130, M9f housing drafts at 5e04a4b; independent Codex review",
-      "source_table_sha256": "3fc165bbb670d400cc69b73350d75102a65fa2cae354f2697d21f6a24160dfdf"
+      "source_table_sha256": "b1101523dc2764e0247f49171879f94b6ff5f1f572056dd37467c6e4445f806b"
     }
   ],
   "rows": {
@@ -1045,6 +1045,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "us_adp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "us_adv_goods_trade": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1084,6 +1088,10 @@
     "us_case_shiller": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
+    },
+    "us_chicago_pmi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_claims_continuing": {
       "descriptive_peak": "not estimated",
@@ -1129,6 +1137,10 @@
       "descriptive_peak": "inversions 1959+: 7/9 episodes followed by a peak within 24m; A11: +14m [5-95%: 11..22]; A12: +22m [5-95%: 18..24]; Q1: edge peak +24m (search limit; not a lag estimate); Q2: edge peak +24m (search limit; not a lag estimate); Q3: edge peak +24m (search limit; not a lag estimate)",
       "predictive_screen": "recession probit, status at t+12: OOS AUC 0.78, Brier skill -0.016, log score -0.259 vs base -0.294 (point estimates); A11 [10y-3m (GS10-TB3MS, level) -> IP, long history]: PRED-PASS at h=3m,6m,12m; A12 [10y-3m (GS10-TB3MS, level) -> payrolls, long history]: PRED-PASS at h=12m (PRED-PARTIAL 3m,6m); Q1 [10y-3m spread (level) -> payrolls]: PRED-PARTIAL at h=6m,12m; Q2 [10y-3m spread (level) -> IP]: PRED-NOT-SUPPORTED; Q3 [10y-3m spread (level) -> unemployment rate]: PRED-PARTIAL at h=6m,12m"
     },
+    "us_dallas_fed": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "us_diesel_retail": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1148,6 +1160,10 @@
     "us_effr": {
       "descriptive_peak": "Q29: -6m [5-95%: -21..0]; interval spans zero: direction not identified",
       "predictive_screen": "Q29 [Core PCE y/y -> EFFR (policy reaction)]: PRED-NOT-SUPPORTED"
+    },
+    "us_empire_state": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_existing_home_sales": {
       "descriptive_peak": "not estimated",
@@ -1213,9 +1229,17 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "us_kansas_city_fed": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "us_m2": {
       "descriptive_peak": "Q27: no relationship in expected sign",
       "predictive_screen": "Q27 [M2 y/y -> headline CPI]: PRED-NOT-SUPPORTED"
+    },
+    "us_mba_applications": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_nahb": {
       "descriptive_peak": "not estimated",
@@ -1228,6 +1252,10 @@
     "us_nfci": {
       "descriptive_peak": "Q11: +4m [5-95%: -6..12]; interval spans zero: direction not identified; Q12: +8m [5-95%: 4..17]",
       "predictive_screen": "Q11 [NFCI (level) -> IP]: PRED-PASS at h=3m (PRED-PARTIAL 6m,12m); Q12 [NFCI (level) -> payrolls]: PRED-PARTIAL at h=3m,6m,12m"
+    },
+    "us_nfib": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_oas_bbb": {
       "descriptive_peak": "not estimated",
@@ -1273,6 +1301,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "us_philadelphia_fed": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "us_pmms_30y": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1292,6 +1324,10 @@
     "us_retail_sales": {
       "descriptive_peak": "Q19: +1m [5-95%: 0..4]",
       "predictive_screen": "Q19 [Retail sales y/y (FRED consistent vintage) vs IP]: PRED-NOT-SUPPORTED"
+    },
+    "us_richmond_fed": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_sahm": {
       "descriptive_peak": "event timing: 7 matched real-time new signals -2..4m after NBER peaks; 1 new signal without a peak; recrossings and the left-censored first value excluded",
@@ -1404,5 +1440,5 @@
   },
   "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "3fc165bbb670d400cc69b73350d75102a65fa2cae354f2697d21f6a24160dfdf"
+  "source_table_sha256": "b1101523dc2764e0247f49171879f94b6ff5f1f572056dd37467c6e4445f806b"
 }
