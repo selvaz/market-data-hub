@@ -19561,10 +19561,505 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "ACM 10-year term premium, daily",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "D",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "NYFED_ACM_TP10_DAILY"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_acm_daily",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "MARKET-DERIVED",
+      "rationale": "Daily model-based estimate; separate from the monthly series. Estimates can be revised. Local timing is not tested. Source: https://www.newyorkfed.org/research/data_indicators/term-premia-tabs",
+      "raw_ids": "ms:NYFED_ACM_TP10_DAILY",
+      "revision_behaviour": "Estimates can be revised.",
+      "secondary": [],
+      "source": "NY Fed (model)",
+      "theme": "Monetary policy & rates",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "term premium model estimate",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Crude oil inventories excluding SPR",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "W",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "WCESTUS1"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_eia_crude_stocks",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "HARD",
+      "rationale": "Weekly US commercial crude stocks exclude the Strategic Petroleum Reserve; normally published Wednesday, subject to holiday changes. Local timing is not tested. Source: https://www.eia.gov/petroleum/supply/weekly/",
+      "raw_ids": "ms:WCESTUS1",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "EIA",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "inventory stock",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Total motor gasoline inventories",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "W",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "WGTSTUS1"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_eia_gasoline_stocks",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "HARD",
+      "rationale": "Weekly US motor gasoline stocks; normally published Wednesday, subject to holiday changes. Local timing is not tested. Source: https://www.eia.gov/petroleum/supply/weekly/",
+      "raw_ids": "ms:WGTSTUS1",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "EIA",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "inventory stock",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Distillate fuel oil inventories",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "W",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "WDISTUS1"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_eia_distillate_stocks",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "HARD",
+      "rationale": "Weekly US distillate stocks; normally published Wednesday, subject to holiday changes. Local timing is not tested. Source: https://www.eia.gov/petroleum/supply/weekly/",
+      "raw_ids": "ms:WDISTUS1",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "EIA",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "inventory stock",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Lower 48 working natural gas in storage",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "W",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "NW2_EPG0_SWO_R48_BCF"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_eia_gas_storage",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "HARD",
+      "rationale": "Working gas storage in the lower 48 states; normally published Thursday, subject to holiday changes. Local timing is not tested. Source: https://www.eia.gov/naturalgas/storage/",
+      "raw_ids": "ms:NW2_EPG0_SWO_R48_BCF",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "EIA",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "inventory stock",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Geopolitical risk index, daily",
+      "country": "PANEL",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "D",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "GPRD"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "gpr_total_daily",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "News-based daily geopolitical risk index; news coverage is a proxy, not a direct count of all events. Local timing is not tested. Source: https://www.matteoiacoviello.com/gpr.htm",
+      "raw_ids": "ms:GPRD",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Caldara and Iacoviello",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "geopolitical news coverage",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Geopolitical acts index, daily",
+      "country": "PANEL",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "D",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "GPRD_ACT"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "gpr_acts_daily",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "News-based daily index of geopolitical acts; distinct from threats and from the total index. Local timing is not tested. Source: https://www.matteoiacoviello.com/gpr.htm",
+      "raw_ids": "ms:GPRD_ACT",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Caldara and Iacoviello",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "geopolitical news coverage",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Geopolitical threats index, daily",
+      "country": "PANEL",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "D",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "GPRD_THREAT"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "gpr_threats_daily",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "News-based daily index of geopolitical threats; distinct from acts and from the total index. Local timing is not tested. Source: https://www.matteoiacoviello.com/gpr.htm",
+      "raw_ids": "ms:GPRD_THREAT",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Caldara and Iacoviello",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "geopolitical news coverage",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Geopolitical risk index, monthly",
+      "country": "PANEL",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "GPR"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "gpr_total_monthly",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "News-based monthly geopolitical risk index; news coverage is a proxy, not a direct count of all events. Local timing is not tested. Source: https://www.matteoiacoviello.com/gpr.htm",
+      "raw_ids": "ms:GPR",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Caldara and Iacoviello",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "geopolitical news coverage",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Geopolitical acts index, monthly",
+      "country": "PANEL",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "GPRA"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "gpr_acts_monthly",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "News-based monthly index of geopolitical acts; distinct from threats and from the total index. Local timing is not tested. Source: https://www.matteoiacoviello.com/gpr.htm",
+      "raw_ids": "ms:GPRA",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Caldara and Iacoviello",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "geopolitical news coverage",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Geopolitical threats index, monthly",
+      "country": "PANEL",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "GPRT"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "gpr_threats_monthly",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "SOFT",
+      "rationale": "News-based monthly index of geopolitical threats; distinct from acts and from the total index. Local timing is not tested. Source: https://www.matteoiacoviello.com/gpr.htm",
+      "raw_ids": "ms:GPRT",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Caldara and Iacoviello",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "geopolitical news coverage",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "61e074668015fd5706822bdcb49a7e3ff0784aa8914df839cdcff3cb461de829",
-  "timing_extract_sha256": "748bb75c0ceda0b8dc6512484f8ab0d96e37e7592dc4d5e78e920bb13d225f79"
+  "source_table_sha256": "6afe4724e2fd7b601e64a512582b47ebe7c1b3188d37c5a67f9f821c28f8b1d1",
+  "timing_extract_sha256": "4067ca273521fd8da96572e50068f46ff01e8a41a8c98bd7731fbb49ef34793f"
 }

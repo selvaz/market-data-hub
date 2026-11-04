@@ -32,7 +32,7 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "61e074668015fd5706822bdcb49a7e3ff0784aa8914df839cdcff3cb461de829"
+      "source_table_sha256": "6afe4724e2fd7b601e64a512582b47ebe7c1b3188d37c5a67f9f821c28f8b1d1"
     },
     {
       "approval": "approved v2.3 by owner 2026-10-25",
@@ -53,7 +53,7 @@
         "cn_new_home_prices_tiers"
       ],
       "source": "PR #130, M9f housing drafts at 5e04a4b; independent Codex review",
-      "source_table_sha256": "61e074668015fd5706822bdcb49a7e3ff0784aa8914df839cdcff3cb461de829"
+      "source_table_sha256": "6afe4724e2fd7b601e64a512582b47ebe7c1b3188d37c5a67f9f821c28f8b1d1"
     }
   ],
   "rows": {
@@ -701,6 +701,30 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "gpr_acts_daily": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "gpr_acts_monthly": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "gpr_threats_daily": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "gpr_threats_monthly": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "gpr_total_daily": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "gpr_total_monthly": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "gr_10y": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1301,6 +1325,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "us_acm_daily": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "us_adp": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1416,6 +1444,22 @@
     "us_effr": {
       "descriptive_peak": "Q29: -6m [5-95%: -21..0]; interval spans zero: direction not identified",
       "predictive_screen": "Q29 [Core PCE y/y -> EFFR (policy reaction)]: PRED-NOT-SUPPORTED"
+    },
+    "us_eia_crude_stocks": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_eia_distillate_stocks": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_eia_gas_storage": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_eia_gasoline_stocks": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_empire_state": {
       "descriptive_peak": "not estimated",
@@ -1720,5 +1764,5 @@
   },
   "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "61e074668015fd5706822bdcb49a7e3ff0784aa8914df839cdcff3cb461de829"
+  "source_table_sha256": "6afe4724e2fd7b601e64a512582b47ebe7c1b3188d37c5a67f9f821c28f8b1d1"
 }

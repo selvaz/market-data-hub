@@ -3,7 +3,7 @@
 Indicator cards provide the same owner-approved context to domain recaps and
 LazyCommittee. They describe a concept, theme, nature, timing reference, evidence,
 revision behaviour and caveats. They contain no market views or conclusions.
-The 415 concept rows and their timing evidence ship as versioned package data;
+The 426 concept rows and their timing evidence ship as versioned package data;
 reading cards requires no database or network access. For the method behind the
 classification and a generated table of every concept, its timing class and the
 stores it lives in, see [Macro indicators](macro-indicators.md).
@@ -209,16 +209,16 @@ configured-id context coverage, not live ingestion or historical completeness.
 | Universe | Measures / ids with approved cards |
 |---|---:|
 | External tier-1 measures | 86 / 86 |
-| Release catalogue | 82 / 82 |
+| Release catalogue | 97 / 97 |
 | Active tier-1 calendar | 65 / 65 |
-| Enabled hub macro series | 106 / 106 |
+| Enabled hub macro series | 117 / 117 |
 
 UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) is covered by the owner-approved
 row `uk_gdp_monthly` (added 18/10/2026, mirroring the US GDP row: COIN by
 definition, HARD, ONS). Main's original certified families remain fully covered.
 Housing now includes all 12 promoted v2.3 concepts covering 21 catalogue measures,
 in addition to construction and existing-home-sales context. The generated coverage
-report shows 415 approved concepts, 82/82 catalogue measures and no certified
+report shows 426 approved concepts, 97/97 catalogue measures and no certified
 concept gaps. Tier-1 coverage is 86 approved, zero draft resolutions and zero
 unmapped ids, with or without `--with-drafts`; the opt-in returns an empty
 `draft_cards` list. Main's M9b/M9c
