@@ -14736,10 +14736,92 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "HICP headline, provisional and final",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_hicp",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "Provisional and final stages; national CPI is a separate index. INSEE publishes provisional results around month-end and definitive results around the 13th of the next month; dates can vary. Source: https://www.insee.fr/en/metadonnees/source/indicateur/p1654/processus-statistique",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INSEE",
+      "theme": "Inflation",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "EA HICP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Household confidence (CAMME)",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_consumer_confidence",
+      "known_failure_modes": [],
+      "nature": "SOFT",
+      "rationale": "Monthly household survey mixes perceptions and expectations; no local predictive timing test. Release dates vary. Source: https://www.insee.fr/en/metadonnees/source/serie/s1208",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INSEE",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "French consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82",
-  "timing_extract_sha256": "1e79a3b22a42a7a47df3ca8953573203df96caf7070c95210c3344a454d4e41d"
+  "source_table_sha256": "38f1db81da46bd7a38a7284d4f851ed00f16b34369c85ca14fc40c481de468b8",
+  "timing_extract_sha256": "612fb8776ebb092fd04894953e5f1c465a847e193791bfe8084cd7326b26a2a8"
 }

@@ -60,10 +60,20 @@ def test_generated_json_freshness_and_provenance():
     assert len(timing["source_guide_sha256"]) == 64
 
 
+def test_french_hicp_and_confidence_are_distinct_concepts():
+    hicp = indicator_card("fr_hicp")
+    assert hicp.country == "FRA" and hicp.nature == "HARD"
+    assert hicp.key != indicator_card("fr_cpi_yy").key
+    assert "Provisional and final" in hicp.rationale
+    confidence = indicator_card("fr_consumer_confidence")
+    assert confidence.country == "FRA" and confidence.nature == "SOFT"
+    assert confidence.timing.timing_class == "UNKNOWN"
+
+
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 306
+    assert len(rows) == len(dataset().cards) == 308
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -738,7 +748,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 306
+    assert dataset() is shipped and len(shipped.cards) == 308
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -828,7 +838,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 306
+        assert report["cards"] == 308
         assert ("draft_cards" in report) == bool(args)
 
 

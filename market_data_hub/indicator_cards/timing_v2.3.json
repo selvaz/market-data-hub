@@ -32,7 +32,7 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82"
+      "source_table_sha256": "38f1db81da46bd7a38a7284d4f851ed00f16b34369c85ca14fc40c481de468b8"
     },
     {
       "approval": "approved v2.3 by owner 2026-10-25",
@@ -53,7 +53,7 @@
         "cn_new_home_prices_tiers"
       ],
       "source": "PR #130, M9f housing drafts at 5e04a4b; independent Codex review",
-      "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82"
+      "source_table_sha256": "38f1db81da46bd7a38a7284d4f851ed00f16b34369c85ca14fc40c481de468b8"
     }
   ],
   "rows": {
@@ -437,6 +437,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "fr_consumer_confidence": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "fr_cpi": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
@@ -444,6 +448,10 @@
     "fr_gdp_real": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
+    },
+    "fr_hicp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "fr_indpro": {
       "descriptive_peak": "not estimated",
@@ -1284,5 +1292,5 @@
   },
   "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82"
+  "source_table_sha256": "38f1db81da46bd7a38a7284d4f851ed00f16b34369c85ca14fc40c481de468b8"
 }
