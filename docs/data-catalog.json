@@ -28743,6 +28743,138 @@
       "table": "macro_series"
     },
     {
+      "distributor": "Caldara and Iacoviello direct",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "1985 onward (provider availability varies)",
+      "id": "GPR",
+      "issuer": "Caldara and Iacoviello",
+      "jobs": [
+        {
+          "name": "gpr",
+          "schedule_pt": "daily 14:10 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Monthly geopolitical risk",
+      "notes": "",
+      "stalled_after_days": 45,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "Caldara and Iacoviello direct",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "1985 onward (provider availability varies)",
+      "id": "GPRA",
+      "issuer": "Caldara and Iacoviello",
+      "jobs": [
+        {
+          "name": "gpr",
+          "schedule_pt": "daily 14:10 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Monthly geopolitical acts",
+      "notes": "",
+      "stalled_after_days": 45,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "Caldara and Iacoviello direct",
+      "expected_lag_days": 7,
+      "frequency": "D",
+      "history_start": "1985 onward (provider availability varies)",
+      "id": "GPRD",
+      "issuer": "Caldara and Iacoviello",
+      "jobs": [
+        {
+          "name": "gpr",
+          "schedule_pt": "daily 14:10 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Daily geopolitical risk",
+      "notes": "",
+      "stalled_after_days": 14,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "Caldara and Iacoviello direct",
+      "expected_lag_days": 7,
+      "frequency": "D",
+      "history_start": "1985 onward (provider availability varies)",
+      "id": "GPRD_ACT",
+      "issuer": "Caldara and Iacoviello",
+      "jobs": [
+        {
+          "name": "gpr",
+          "schedule_pt": "daily 14:10 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Daily geopolitical acts",
+      "notes": "",
+      "stalled_after_days": 14,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "Caldara and Iacoviello direct",
+      "expected_lag_days": 7,
+      "frequency": "D",
+      "history_start": "1985 onward (provider availability varies)",
+      "id": "GPRD_THREAT",
+      "issuer": "Caldara and Iacoviello",
+      "jobs": [
+        {
+          "name": "gpr",
+          "schedule_pt": "daily 14:10 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Daily geopolitical threats",
+      "notes": "",
+      "stalled_after_days": 14,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "Caldara and Iacoviello direct",
+      "expected_lag_days": 31,
+      "frequency": "M",
+      "history_start": "1985 onward (provider availability varies)",
+      "id": "GPRT",
+      "issuer": "Caldara and Iacoviello",
+      "jobs": [
+        {
+          "name": "gpr",
+          "schedule_pt": "daily 14:10 PT (proposed, disabled)"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Monthly geopolitical threats",
+      "notes": "",
+      "stalled_after_days": 45,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
       "distributor": "FRED",
       "expected_lag_days": 20,
       "frequency": "M",
@@ -40857,6 +40989,10 @@
         {
           "name": "fred_morning",
           "schedule_pt": "daily 23:45 PT"
+        },
+        {
+          "name": "gpr",
+          "schedule_pt": "daily 14:10 PT (proposed, disabled)"
         }
       ],
       "point_in_time": "macro_series is latest state. macro_series_vintage keeps hub ingestion-date changes: filter vintage_date <= cutoff then latest per series/date. Backfilled ingestion vintages are not issuer publication history; use ALFRED for vendor point-in-time data.",
@@ -40864,7 +41000,7 @@
         "date",
         "series_id"
       ],
-      "series_count": 295,
+      "series_count": 301,
       "status": "active",
       "status_reason": "",
       "store": "hub",

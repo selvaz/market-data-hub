@@ -1,3 +1,76 @@
+gpr:
+- symbol: GPRD
+  name: Daily geopolitical risk
+  source: gpr
+  issuer: Caldara and Iacoviello
+  asset_class: MACRO
+  area: Global
+  country: Global
+  unit: Index
+  frequency: D
+  publication_cadence: W
+  expected_lag_days: 7
+  max_lag_days: 14
+- symbol: GPRD_ACT
+  name: Daily geopolitical acts
+  source: gpr
+  issuer: Caldara and Iacoviello
+  asset_class: MACRO
+  area: Global
+  country: Global
+  unit: Index
+  frequency: D
+  publication_cadence: W
+  expected_lag_days: 7
+  max_lag_days: 14
+- symbol: GPRD_THREAT
+  name: Daily geopolitical threats
+  source: gpr
+  issuer: Caldara and Iacoviello
+  asset_class: MACRO
+  area: Global
+  country: Global
+  unit: Index
+  frequency: D
+  publication_cadence: W
+  expected_lag_days: 7
+  max_lag_days: 14
+- symbol: GPR
+  name: Monthly geopolitical risk
+  source: gpr
+  issuer: Caldara and Iacoviello
+  asset_class: MACRO
+  area: Global
+  country: Global
+  unit: Index
+  frequency: M
+  publication_cadence: M
+  expected_lag_days: 31
+  max_lag_days: 45
+- symbol: GPRA
+  name: Monthly geopolitical acts
+  source: gpr
+  issuer: Caldara and Iacoviello
+  asset_class: MACRO
+  area: Global
+  country: Global
+  unit: Index
+  frequency: M
+  publication_cadence: M
+  expected_lag_days: 31
+  max_lag_days: 45
+- symbol: GPRT
+  name: Monthly geopolitical threats
+  source: gpr
+  issuer: Caldara and Iacoviello
+  asset_class: MACRO
+  area: Global
+  country: Global
+  unit: Index
+  frequency: M
+  publication_cadence: M
+  expected_lag_days: 31
+  max_lag_days: 45
 eia:
 - symbol: WCESTUS1
   name: CMDTY | Energy | US Crude Oil Stocks Excluding SPR
