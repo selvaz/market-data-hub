@@ -60,10 +60,101 @@ def test_generated_json_freshness_and_provenance():
     assert len(timing["source_guide_sha256"]) == 64
 
 
+def test_french_hicp_and_confidence_are_distinct_concepts():
+    hicp = indicator_card("fr_hicp")
+    assert hicp.country == "FRA" and hicp.nature == "HARD"
+    assert hicp.key != indicator_card("fr_cpi_yy").key
+    assert "Provisional and final" in hicp.rationale
+    confidence = indicator_card("fr_consumer_confidence")
+    assert confidence.country == "FRA" and confidence.nature == "SOFT"
+    assert confidence.timing.timing_class == "UNKNOWN"
+
+
+@pytest.mark.parametrize("identity,key", [
+    ("cal:de_pmi_mfg", "de_pmi_mfg"), ("cal:de_pmi_svc", "de_pmi_svc"),
+    ("cal:uk_pmi_mfg", "uk_pmi_mfg"), ("cal:jp_pmi_mfg", "jp_pmi_mfg"),
+    ("cal:in_pmi_mfg", "in_pmi_mfg"), ("cal:in_pmi_svc", "in_pmi_svc"),
+    ("cal:ca_pmi_mfg", "ca_pmi_mfg"), ("cal:ca_ivey", "ca_ivey"),
+    ("cal:ch_pmi_mfg", "ch_pmi_mfg"), ("cal:cn_pmi_nbs_svc", "cn_pmi_nbs_nonmfg"),
+    ("cal:cn_pmi_caixin_svc", "cn_pmi_private_services"),
+])
+def test_pmi_seed_ids_resolve_to_distinct_surveys(identity, key):
+    card = indicator_card(identity)
+    assert card.key == key and card.nature == "SOFT"
+
+
+def test_saudi_pmi_is_not_mislabelled_manufacturing():
+    card = indicator_card("sa_pmi_non_oil")
+    assert "non-oil" in card.rationale and "not a manufacturing-only" in card.rationale
+
+
+def test_regional_and_payroll_sources_remain_distinct():
+    assert indicator_card("cal:us_adp").key == "us_adp"
+    assert indicator_card("cal:us_adp").key != indicator_card("cal:us_nfp").key
+    keys = ("us_empire_state", "us_philadelphia_fed", "us_richmond_fed",
+            "us_kansas_city_fed", "us_dallas_fed", "us_chicago_pmi", "us_nfib")
+    assert all(indicator_card(key).nature == "SOFT" for key in keys)
+    assert indicator_card("us_mba_applications").frequency == "W"
+
+
+def test_country_group_seed_ids_and_policy_context():
+    for identity, key in (("au_retail", "au_retail"), ("au_trade", "au_trade"),
+                          ("au_gdp", "au_gdp"), ("au_building", "au_building")):
+        assert indicator_card("cal:" + identity).key == key
+    for key in ("tr_cbrt", "ru_cbr", "id_bi_rate", "za_repo"):
+        card = indicator_card(key)
+        assert card.nature == "POLICY" and card.timing.timing_class == "CTX"
+    assert indicator_card("za_indpro").concept == "Manufacturing production"
+    assert indicator_card("au_cpi_trimmed_q").key != indicator_card("au_cpi_quarterly").key
+    assert "ceased" in indicator_card("au_retail").flag
+    assert indicator_card("au_household_spending").key != indicator_card("au_retail").key
+
+
+def test_miscellaneous_indicators_and_existing_context():
+    assert indicator_card("cal:jp_machinery").key == "jp_core_machine_orders"
+    assert indicator_card("cal:ez_sentix").key == "ea_sentix"
+    assert indicator_card("cal:jp_tokyo_cpi").key == "jp_tokyo_cpi"
+    assert indicator_card("cal:de_unemployment_change").key == "de_unemployment_ba"
+    assert indicator_card("mx_cpi_fortnight").frequency == "2W"
+    assert indicator_card("uk_nationwide_house_prices").key != indicator_card("uk_hpi").key
+
+
+def test_seed_aliases_reuse_existing_cards_and_fortnightly_cpi_is_unique():
+    for identity, key in (("ca_gdp_mm", "ca_gdp_monthly"), ("ca_housing", "ca_housing_starts"),
+                          ("cn_gdp", "cn_gdp"), ("ez_indprod", "ea_indpro"),
+                          ("uk_unemp", "uk_unemployment"), ("jp_trade", "jp_trade_balance"),
+                          ("tw_cpi_yy", "tw_cpi")):
+        assert indicator_card("cal:" + identity).key == key
+    assert indicator_card("cat:mx_core_cpi_yy").key == "mx_cpi_core"
+    assert indicator_card("cal:mx_cpi_biweekly").key == "mx_cpi_fortnight"
+    assert indicator_card("mx_cpi_fortnightly") is None
+
+
+def test_remaining_real_economy_seed_identifiers_resolve():
+    identities = """br_gdp br_igpm br_indprod br_retail br_trade br_unemp
+        ca_mfg_sales ca_trade ch_cpi_mm ch_cpi_yy ch_gdp ch_unemp
+        de_indprod de_retail uk_gdp_qq in_exports in_imports in_indprod
+        in_trade in_wpi_yy jp_earnings jp_retail jp_unemp kr_cpi_yy
+        kr_gdp kr_indprod kr_trade kr_unemp mx_gdp mx_gdp_qq mx_indprod
+        mx_remit mx_retail mx_trade mx_unemp tw_cbc tw_gdp tw_indprod tw_trade""".split()
+    assert all(indicator_card("cal:" + identity) is not None for identity in identities)
+    assert indicator_card("cal:ch_cpi_mm") == indicator_card("cal:ch_cpi_yy")
+    assert indicator_card("cal:mx_gdp") == indicator_card("cal:mx_gdp_qq")
+    assert indicator_card("cal:tw_cbc").nature == "POLICY"
+
+
+def test_energy_geopolitical_and_term_premium_series_are_distinct():
+    assert indicator_card("ms:WCESTUS1").key == "us_eia_crude_stocks"
+    assert indicator_card("ms:NW2_EPG0_SWO_R48_BCF").frequency == "W"
+    assert indicator_card("ms:NYFED_ACM_TP10_DAILY").frequency == "D"
+    assert indicator_card("ms:GPRD_ACT").key != indicator_card("ms:GPRA").key
+    assert indicator_card("ms:GPRD_ACT").key != indicator_card("ms:GPRD_THREAT").key
+
+
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 306
+    assert len(rows) == len(dataset().cards) == 427
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -568,35 +659,20 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
     print(json.dumps(report, indent=2))
     assert set(report["certified_families"]) == set(FAMILIES)
     for family in FAMILIES:
-        assert report["certified_families"][family]["unmapped"] == (
-            ["cat:mx_core_cpi_yy"] if family == "mx_cpi" else []
-        )
-    assert set(report["documented_certified_gaps"]) == {"mx_core_cpi_yy"}
+        assert report["certified_families"][family]["unmapped"] == []
+    assert report["documented_certified_gaps"] == {}
     assert report["macro_releases"] == {
-        "mapped": 96,
+        "mapped": 97,
         "total": len(INDICATORS),
-        "unmapped": ["cat:mx_core_cpi_yy"],
+        "unmapped": [],
     }
     assert (
         report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     )
-    # EIA and GPR IDs have no approved indicator-card mappings yet.
     assert report["macro_series"] == {
-        "mapped": 106,
+        "mapped": 117,
         "total": 117,
-        "unmapped": [
-            "ms:GPR",
-            "ms:GPRA",
-            "ms:GPRD",
-            "ms:GPRD_ACT",
-            "ms:GPRD_THREAT",
-            "ms:GPRT",
-            "ms:NW2_EPG0_SWO_R48_BCF",
-            "ms:NYFED_ACM_TP10_DAILY",
-            "ms:WCESTUS1",
-            "ms:WDISTUS1",
-            "ms:WGTSTUS1",
-        ],
+        "unmapped": [],
     }
     assert "macro_releases" in capsys.readouterr().out
 
@@ -738,7 +814,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 306
+    assert dataset() is shipped and len(shipped.cards) == 427
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -828,7 +904,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 306
+        assert report["cards"] == 427
         assert ("draft_cards" in report) == bool(args)
 
 

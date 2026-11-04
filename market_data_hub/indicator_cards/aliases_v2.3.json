@@ -1,9 +1,25 @@
 {
   "aliases": [
-    {"basis": "Same approved Copom Selic target concept; issuer decision, not realized overnight rates (M9i).", "id": "cat:bcb_selic_rate_decision", "key": "br_selic"},
-    {"basis": "Same approved Banxico overnight interbank target decision concept; public issuer statement (M9i).", "id": "cat:banxico_overnight_rate_decision", "key": "mx_banxico"},
-    {"basis": "Same approved Mexican monthly headline INPC concept; issuer-printed annual rate (M9i).", "id": "cat:mx_cpi_yy", "key": "mx_cpi"},
-    {"basis": "M9d1 explicit Tokyo ex-fresh-food CPI y/y addition; same approved Tokyo CPI concept as cal:jp_tokyo_core_cpi. National CPI remains separate.", "id": "cat:jp_tokyo_core_cpi_yy", "key": "jp_tokyo_cpi"},
+    {
+      "basis": "Same approved Copom Selic target concept; issuer decision, not realized overnight rates (M9i).",
+      "id": "cat:bcb_selic_rate_decision",
+      "key": "br_selic"
+    },
+    {
+      "basis": "Same approved Banxico overnight interbank target decision concept; public issuer statement (M9i).",
+      "id": "cat:banxico_overnight_rate_decision",
+      "key": "mx_banxico"
+    },
+    {
+      "basis": "Same approved Mexican monthly headline INPC concept; issuer-printed annual rate (M9i).",
+      "id": "cat:mx_cpi_yy",
+      "key": "mx_cpi"
+    },
+    {
+      "basis": "M9d1 explicit Tokyo ex-fresh-food CPI y/y addition; same approved Tokyo CPI concept as cal:jp_tokyo_core_cpi. National CPI remains separate.",
+      "id": "cat:jp_tokyo_core_cpi_yy",
+      "key": "jp_tokyo_cpi"
+    },
     {
       "basis": "Same approved ECB MIR house-purchase cost-of-borrowing concept as pan:ecb_cost_borrow_house; euro area U2 monthly headline, not corporations or a fixation bucket. Source: https://data.ecb.europa.eu/data/datasets/MIR/MIR.M.U2.B.A2C.AM.R.A.2250.EUR.N (M9f context only; no FF measure equivalence).",
       "id": "cat:ea_cost_borrow_house",
@@ -243,9 +259,119 @@
       "basis": "Same approved total-private all-employee CES earnings concept as cat:us_avg_hourly_earnings_yy and ms:CES0500000003; SA published monthly change. Concept context only; no timing reclassification (M9h).",
       "id": "cat:us_avg_hourly_earnings_mm",
       "key": "us_ahe"
+    },
+    {
+      "id": "cal:uk_pmi_mfg",
+      "key": "uk_pmi_mfg",
+      "basis": "LazyCommittee seed uk_pmi_mfg identifies UK manufacturing PMI; approved cat:uk_sp_global_manufacturing_pmi."
+    },
+    {
+      "id": "cal:ca_gdp_mm",
+      "key": "ca_gdp_monthly",
+      "basis": "LazyCommittee seed identifies the same concept as cat:ca_gdp_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:ca_housing",
+      "key": "ca_housing_starts",
+      "basis": "LazyCommittee seed identifies the same concept as cat:ca_housing_starts; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:ca_retail",
+      "key": "ca_retail_sales",
+      "basis": "LazyCommittee seed identifies the same concept as cat:ca_retail_sales_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:cn_gdp",
+      "key": "cn_gdp",
+      "basis": "LazyCommittee seed identifies the same concept as cat:cn_gdp_yy; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:cn_indprod",
+      "key": "cn_indpro",
+      "basis": "LazyCommittee seed identifies the same concept as cat:cn_industrial_production_yy; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:cn_retail",
+      "key": "cn_retail_sales",
+      "basis": "LazyCommittee seed identifies the same concept as cat:cn_retail_sales_yy; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:ez_employment",
+      "key": "ea_employment",
+      "basis": "LazyCommittee seed identifies the same concept as cal:ez_employment_yy; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:ez_indprod",
+      "key": "ea_indpro",
+      "basis": "LazyCommittee seed identifies the same concept as cat:ea_industrial_production_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:ez_retail",
+      "key": "ea_retail_sales",
+      "basis": "LazyCommittee seed identifies the same concept as cat:ea_retail_sales_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:uk_retail",
+      "key": "uk_retail_sales",
+      "basis": "LazyCommittee seed identifies the same concept as cat:uk_retail_sales_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:uk_unemp",
+      "key": "uk_unemployment",
+      "basis": "LazyCommittee seed identifies the same concept as cat:uk_unemployment_rate; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:jp_cpi_yy",
+      "key": "jp_cpi",
+      "basis": "LazyCommittee seed identifies the same concept as cat:jp_cpi_yy; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:jp_gdp",
+      "key": "jp_gdp_real",
+      "basis": "LazyCommittee seed identifies the same concept as cat:jp_gdp_qq; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:jp_indprod",
+      "key": "jp_indpro",
+      "basis": "LazyCommittee seed identifies the same concept as cat:jp_industrial_production_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:jp_trade",
+      "key": "jp_trade_balance",
+      "basis": "LazyCommittee seed identifies the same concept as cat:jp_trade_balance; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:tw_cpi_yy",
+      "key": "tw_cpi",
+      "basis": "LazyCommittee seed identifies the same concept as cal:tw_cpi_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:tw_unemp",
+      "key": "tw_labour",
+      "basis": "LazyCommittee seed identifies the same concept as cal:tw_unemp_sa; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cat:mx_core_cpi_yy",
+      "key": "mx_cpi_core",
+      "basis": "Core CPI concept already approved as cal:mx_core_cpi; transform and seasonality remain specific to the source."
+    },
+    {
+      "id": "cal:ch_cpi_yy",
+      "key": "ch_cpi_mm",
+      "basis": "LazyCommittee annual CPI and cal:ch_cpi_mm refer to the same Swiss headline CPI concept; transformations remain distinct."
+    },
+    {
+      "id": "cal:mx_gdp_qq",
+      "key": "mx_gdp",
+      "basis": "LazyCommittee quarterly and annual GDP rates describe the same Mexican GDP concept as cal:mx_gdp; transformations remain distinct."
+    },
+    {
+      "id": "cal:kr_unemp",
+      "key": "kr_labour",
+      "basis": "LazyCommittee unemployment rate shares the existing Korean labour concept cal:kr_unemployment_rate_nsa; the seed adjustment is unspecified, so this is context only."
     }
   ],
-  "certified_gaps": {"mx_core_cpi_yy": "No approved Mexican core INPC card; do not alias core inflation to the headline card (M9i)."},
+  "certified_gaps": {},
   "classification_version": "v2.3",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages."
 }

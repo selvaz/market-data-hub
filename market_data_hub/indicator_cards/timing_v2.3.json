@@ -32,7 +32,7 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82"
+      "source_table_sha256": "f3c0d3a51dd3a8154b601de0810de20072b65ecfc66d0919e185c6e88403eddf"
     },
     {
       "approval": "approved v2.3 by owner 2026-10-25",
@@ -53,7 +53,7 @@
         "cn_new_home_prices_tiers"
       ],
       "source": "PR #130, M9f housing drafts at 5e04a4b; independent Codex review",
-      "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82"
+      "source_table_sha256": "f3c0d3a51dd3a8154b601de0810de20072b65ecfc66d0919e185c6e88403eddf"
     }
   ],
   "rows": {
@@ -81,6 +81,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "au_building": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "au_cpi_monthly": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
@@ -89,11 +93,39 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "au_cpi_trimmed_q": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "au_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "au_household_spending": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "au_labour": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "au_nab": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "au_rba": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "au_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "au_trade": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "au_westpac": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -106,6 +138,18 @@
       "predictive_screen": "not tested"
     },
     "be_2y": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "br_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "br_igpm": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "br_indprod": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -125,7 +169,23 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "br_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "br_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "br_selic": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "br_trade": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "br_unemp": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -153,7 +213,19 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "ca_ivey": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "ca_lfs": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ca_mfg_sales": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ca_pmi_mfg": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -162,6 +234,10 @@
       "predictive_screen": "not tested"
     },
     "ca_seph": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ca_trade": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -177,7 +253,23 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "ch_cpi_mm": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ch_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ch_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "ch_snb": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ch_unemp": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -233,7 +325,15 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "cn_pmi_nbs_nonmfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "cn_pmi_private": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "cn_pmi_private_services": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -290,6 +390,26 @@
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
     "de_ifo": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "de_indprod": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "de_pmi_composite": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "de_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "de_pmi_svc": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "de_retail": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -389,6 +509,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "ea_sentix": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "ea_trade_balance": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -425,6 +549,14 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "es_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "es_pmi_svc": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "es_unemployment": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -437,6 +569,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "fr_consumer_confidence": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "fr_cpi": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
@@ -445,7 +581,23 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "fr_hicp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "fr_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "fr_pmi_composite": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "fr_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "fr_pmi_svc": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -553,11 +705,51 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "gpr_acts_daily": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "gpr_acts_monthly": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "gpr_threats_daily": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "gpr_threats_monthly": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "gpr_total_daily": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "gpr_total_monthly": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "gr_10y": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
     "hu_10y": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "id_bi_rate": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "id_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "id_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "id_pmi_mfg": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -573,15 +765,43 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "in_exports": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "in_gdp": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
+    },
+    "in_imports": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "in_indprod": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "in_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "in_pmi_svc": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "in_rbi": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "in_trade": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "in_unemployment": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "in_wpi_yy": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -613,11 +833,23 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "it_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "it_pmi_svc": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "it_unemployment": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
     "jp_boj": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "jp_core_machine_orders": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -632,6 +864,10 @@
     "jp_cpi_core_core": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
+    },
+    "jp_earnings": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "jp_gdp_real": {
       "descriptive_peak": "n.a.",
@@ -653,6 +889,22 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "jp_job_applicant_ratio": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "jp_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "jp_pmi_svc": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "jp_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "jp_tankan": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -665,11 +917,19 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "jp_unemp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "kr_10y": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
     "kr_bok": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "kr_cpi_yy": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -681,7 +941,23 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "kr_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "kr_indprod": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "kr_labour": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "kr_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "kr_trade": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -708,6 +984,34 @@
     "mx_cpi_fortnight": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
+    },
+    "mx_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "mx_indprod": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "mx_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "mx_remit": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "mx_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "mx_trade": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "mx_unemp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "mx_wholesale": {
       "descriptive_peak": "not estimated",
@@ -821,6 +1125,46 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "ru_cbr": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_reserves": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "sa_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "sa_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "sa_pmi_non_oil": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "se_10y": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -834,6 +1178,38 @@
       "predictive_screen": "not tested"
     },
     "sk_10y": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_cbrt": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_current_account": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_ppi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_trade": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tw_cbc": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -853,7 +1229,19 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "tw_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tw_indprod": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "tw_labour": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tw_trade": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -889,6 +1277,10 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "uk_gdp_qq": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "uk_gilt_10y": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -902,6 +1294,14 @@
       "predictive_screen": "not tested"
     },
     "uk_mortgage_approvals": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "uk_nationwide_house_prices": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "uk_pmi_composite": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -926,6 +1326,14 @@
       "predictive_screen": "not tested"
     },
     "uk_unemployment": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_acm_daily": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_adp": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -968,6 +1376,10 @@
     "us_case_shiller": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
+    },
+    "us_chicago_pmi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_claims_continuing": {
       "descriptive_peak": "not estimated",
@@ -1013,6 +1425,10 @@
       "descriptive_peak": "inversions 1959+: 7/9 episodes followed by a peak within 24m; A11: +14m [5-95%: 11..22]; A12: +22m [5-95%: 18..24]; Q1: edge peak +24m (search limit; not a lag estimate); Q2: edge peak +24m (search limit; not a lag estimate); Q3: edge peak +24m (search limit; not a lag estimate)",
       "predictive_screen": "recession probit, status at t+12: OOS AUC 0.78, Brier skill -0.016, log score -0.259 vs base -0.294 (point estimates); A11 [10y-3m (GS10-TB3MS, level) -> IP, long history]: PRED-PASS at h=3m,6m,12m; A12 [10y-3m (GS10-TB3MS, level) -> payrolls, long history]: PRED-PASS at h=12m (PRED-PARTIAL 3m,6m); Q1 [10y-3m spread (level) -> payrolls]: PRED-PARTIAL at h=6m,12m; Q2 [10y-3m spread (level) -> IP]: PRED-NOT-SUPPORTED; Q3 [10y-3m spread (level) -> unemployment rate]: PRED-PARTIAL at h=6m,12m"
     },
+    "us_dallas_fed": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "us_diesel_retail": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1032,6 +1448,26 @@
     "us_effr": {
       "descriptive_peak": "Q29: -6m [5-95%: -21..0]; interval spans zero: direction not identified",
       "predictive_screen": "Q29 [Core PCE y/y -> EFFR (policy reaction)]: PRED-NOT-SUPPORTED"
+    },
+    "us_eia_crude_stocks": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_eia_distillate_stocks": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_eia_gas_storage": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_eia_gasoline_stocks": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_empire_state": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_existing_home_sales": {
       "descriptive_peak": "not estimated",
@@ -1097,9 +1533,17 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "us_kansas_city_fed": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "us_m2": {
       "descriptive_peak": "Q27: no relationship in expected sign",
       "predictive_screen": "Q27 [M2 y/y -> headline CPI]: PRED-NOT-SUPPORTED"
+    },
+    "us_mba_applications": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_nahb": {
       "descriptive_peak": "not estimated",
@@ -1112,6 +1556,10 @@
     "us_nfci": {
       "descriptive_peak": "Q11: +4m [5-95%: -6..12]; interval spans zero: direction not identified; Q12: +8m [5-95%: 4..17]",
       "predictive_screen": "Q11 [NFCI (level) -> IP]: PRED-PASS at h=3m (PRED-PARTIAL 6m,12m); Q12 [NFCI (level) -> payrolls]: PRED-PARTIAL at h=3m,6m,12m"
+    },
+    "us_nfib": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_oas_bbb": {
       "descriptive_peak": "not estimated",
@@ -1157,6 +1605,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "us_philadelphia_fed": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "us_pmms_30y": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1176,6 +1628,10 @@
     "us_retail_sales": {
       "descriptive_peak": "Q19: +1m [5-95%: 0..4]",
       "predictive_screen": "Q19 [Retail sales y/y (FRED consistent vintage) vs IP]: PRED-NOT-SUPPORTED"
+    },
+    "us_richmond_fed": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "us_sahm": {
       "descriptive_peak": "event timing: 7 matched real-time new signals -2..4m after NBER peaks; 1 new signal without a peak; recrossings and the left-censored first value excluded",
@@ -1273,6 +1729,22 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "za_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "za_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "za_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "za_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "za_r2030": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1280,9 +1752,21 @@
     "za_r209": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
+    },
+    "za_repo": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "za_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "za_trade": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     }
   },
   "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "7408abb6a1a568ec62e0ccf0f11b2b91f12eee0248ad0144f627f469e6bd2e82"
+  "source_table_sha256": "f3c0d3a51dd3a8154b601de0810de20072b65ecfc66d0919e185c6e88403eddf"
 }
