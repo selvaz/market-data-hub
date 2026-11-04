@@ -7,6 +7,11 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.21] — 2026-11-04
+
+### Fixed
+- `setup_eia_scheduler.ps1` could not run: a parameter named `-Db` collides with the `-db` alias of the common `-Debug` parameter. Renamed to `-Database`; the task is now `InvestmentCommittee_MarketData_EIAInventories`, like the other hub jobs (#171).
+
 ## [0.3.20] — 2026-11-03
 
 ### Changed
