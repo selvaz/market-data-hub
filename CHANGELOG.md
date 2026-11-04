@@ -7,8 +7,10 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.22] — 2026-11-04
+
 ### Added
-- Caldara?Iacoviello daily and monthly geopolitical risk indices as macro series, with ingestion vintages, a runner and a disabled scheduler registrar.
+- Caldara–Iacoviello daily and monthly geopolitical risk indices as macro series, with ingestion vintages, a runner and a disabled scheduler registrar.
 
 ## [0.3.21] — 2026-11-04
 
