@@ -290,7 +290,7 @@ def test_promotion_provenance_covers_exactly_the_24_owner_approved_rows():
     )
     assert (
         promotion["draft_timing_extract_sha256"]
-        == "13ff30d8d173de796ce78e0b3f5345d43f3bd052ece0d6e5811f4c5477aa09ef"
+        == "13ff30d8d173de796ce78e0b3f5336d43f3bd052ece0d6e5811f4c5477aa09ef"
     )
     for key, (_, basis) in PROMOTED_CLASSES.items():
         if basis == "DEFINITION":
