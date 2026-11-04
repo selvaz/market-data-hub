@@ -16433,10 +16433,1308 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "CPI trimmed mean, quarterly",
+      "country": "AUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "au_cpi_trimmed_q",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Trimmed mean excludes weighted tails; it is separate from headline quarterly CPI and the monthly trimmed mean. Issuer release dates and local cycle timing require verification. Source: https://www.abs.gov.au/statistics/economy/price-indexes-and-inflation/consumer-price-index-australia",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Australian Bureau of Statistics",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Retail trade",
+      "country": "AUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "au_retail"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "au_retail",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Retail trade measures differ from household consumption; check current ABS replacement series and release practice. Issuer release dates and local cycle timing require verification. Source: https://www.abs.gov.au/statistics/industry/retail-and-wholesale-trade",
+      "raw_ids": "cal:au_retail",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Australian Bureau of Statistics",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "International trade balance",
+      "country": "AUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "au_trade"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "au_trade",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Trade balance definition and seasonal adjustment depend on the released series. Issuer release dates and local cycle timing require verification. Source: https://www.abs.gov.au/statistics/economy/international-trade",
+      "raw_ids": "cal:au_trade",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Australian Bureau of Statistics",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Real GDP",
+      "country": "AUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [
+          "au_gdp"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "au_gdp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Quarterly national accounts are subject to later revisions. Issuer release dates and local cycle timing require verification. Source: https://www.abs.gov.au/statistics/economy/national-accounts",
+      "raw_ids": "cal:au_gdp",
+      "revision_behaviour": "Quarterly national accounts are subject to later revisions.",
+      "secondary": [],
+      "source": "Australian Bureau of Statistics",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Westpac consumer sentiment",
+      "country": "AUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "au_westpac",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Consumer expectations and assessments differ from observed spending. Issuer release dates and local cycle timing require verification. Source: https://melbourneinstitute.unimelb.edu.au/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Westpac / Melbourne Institute",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "NAB business survey",
+      "country": "AUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "au_nab",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Business conditions and confidence are separate survey measures. Issuer release dates and local cycle timing require verification. Source: https://business.nab.com.au/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "National Australia Bank",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Building approvals",
+      "country": "AUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "au_building"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "au_building",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Approvals are not housing starts; multi-unit projects can make monthly movements volatile. Issuer release dates and local cycle timing require verification. Source: https://www.abs.gov.au/statistics/industry/building-and-construction/building-approvals-australia",
+      "raw_ids": "cal:au_building",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Australian Bureau of Statistics",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Consumer price index",
+      "country": "TUR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tr_cpi",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Headline consumer prices; transform and seasonal adjustment must be identified per release. Issuer release dates and local cycle timing require verification. Source: https://www.tuik.gov.tr/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Turkish Statistical Institute",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Domestic producer price index",
+      "country": "TUR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tr_ppi",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Domestic producer prices differ from consumer prices and export prices. Issuer release dates and local cycle timing require verification. Source: https://www.tuik.gov.tr/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Turkish Statistical Institute",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "CBRT one-week repo rate decision",
+      "country": "TUR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "E",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tr_cbrt",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "POLICY",
+      "rationale": "Policy rate decisions occur on the published meeting calendar; extraordinary decisions may occur. Issuer release dates and local cycle timing require verification. Source: https://www.tcmb.gov.tr/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Central Bank of the Republic of T?rkiye",
+      "theme": "Monetary policy & rates",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "current policy state",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Current account balance",
+      "country": "TUR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tr_current_account",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Current account includes services, income and transfers as well as goods trade. Issuer release dates and local cycle timing require verification. Source: https://www.tcmb.gov.tr/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Central Bank of the Republic of T?rkiye",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Foreign trade balance",
+      "country": "TUR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tr_trade",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Goods trade balance differs from the current account. Issuer release dates and local cycle timing require verification. Source: https://www.tuik.gov.tr/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Turkish Statistical Institute",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Industrial production index",
+      "country": "TUR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tr_indpro",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Calendar and seasonal adjustment must match the chosen industrial-production transform. Issuer release dates and local cycle timing require verification. Source: https://www.tuik.gov.tr/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Turkish Statistical Institute",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Consumer price index",
+      "country": "RUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ru_cpi",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Consumer price inflation; publication and seasonal adjustment details need verification. Issuer release dates and local cycle timing require verification. Source: https://rosstat.gov.ru/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Rosstat",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Bank of Russia key rate decision",
+      "country": "RUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "E",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ru_cbr",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "POLICY",
+      "rationale": "Policy decisions follow the announced meeting calendar; unscheduled decisions are possible. Issuer release dates and local cycle timing require verification. Source: https://www.cbr.ru/eng/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Bank of Russia",
+      "theme": "Monetary policy & rates",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "current policy state",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Real GDP",
+      "country": "RUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ru_gdp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "GDP estimates may be revised; identify the exact real growth transform. Issuer release dates and local cycle timing require verification. Source: https://rosstat.gov.ru/",
+      "raw_ids": "",
+      "revision_behaviour": "GDP estimates may be revised",
+      "secondary": [],
+      "source": "Rosstat",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Industrial production",
+      "country": "RUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ru_indpro",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Industrial output includes extractive activities; local timing has not been tested. Issuer release dates and local cycle timing require verification. Source: https://rosstat.gov.ru/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Rosstat",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Retail trade turnover",
+      "country": "RUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ru_retail",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Retail turnover is not total household consumption. Issuer release dates and local cycle timing require verification. Source: https://rosstat.gov.ru/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Rosstat",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "International reserves",
+      "country": "RUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "W",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ru_reserves",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Weekly stock of international reserves; valuation and composition can change. Issuer release dates and local cycle timing require verification. Source: https://www.cbr.ru/eng/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Bank of Russia",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Consumer price index",
+      "country": "IDN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "id_cpi",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "National CPI; verify transform and index geography for each release. Issuer release dates and local cycle timing require verification. Source: https://www.bps.go.id/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Badan Pusat Statistik",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Bank Indonesia policy rate",
+      "country": "IDN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "E",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "id_bi_rate",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "POLICY",
+      "rationale": "Policy decision follows the announced Bank Indonesia board calendar; conventions and rate name can change. Issuer release dates and local cycle timing require verification. Source: https://www.bi.go.id/en/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Bank Indonesia",
+      "theme": "Monetary policy & rates",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "current policy state",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Real GDP",
+      "country": "IDN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "id_gdp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Quarterly national accounts; distinguish year-on-year and quarter-on-quarter growth. Issuer release dates and local cycle timing require verification. Source: https://www.bps.go.id/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Badan Pusat Statistik",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Consumer price index",
+      "country": "SAU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "sa_cpi",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "National consumer price index; identify the exact year-on-year or monthly transform. Issuer release dates and local cycle timing require verification. Source: https://www.stats.gov.sa/en",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "General Authority for Statistics",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Real GDP",
+      "country": "SAU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "sa_gdp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Quarterly GDP; distinguish flash and detailed estimates and oil from non-oil activity. Issuer release dates and local cycle timing require verification. Source: https://www.stats.gov.sa/en",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "General Authority for Statistics",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Consumer price index",
+      "country": "ZAF",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "za_cpi",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Headline CPI is distinct from core or producer prices. Issuer release dates and local cycle timing require verification. Source: https://www.statssa.gov.za/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Statistics South Africa",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "SARB repo rate decision",
+      "country": "ZAF",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "n.a."
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "E",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "za_repo",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "POLICY",
+      "rationale": "Policy decisions follow the published monetary policy committee schedule. Issuer release dates and local cycle timing require verification. Source: https://www.resbank.co.za/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "South African Reserve Bank",
+      "theme": "Monetary policy & rates",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "current policy state",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Real GDP",
+      "country": "ZAF",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "za_gdp",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "GDP growth depends on the selected quarterly or annual transform. Issuer release dates and local cycle timing require verification. Source: https://www.statssa.gov.za/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Statistics South Africa",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Manufacturing production",
+      "country": "ZAF",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "za_indpro",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Manufacturing production is not total industrial output including mining. Issuer release dates and local cycle timing require verification. Source: https://www.statssa.gov.za/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Statistics South Africa",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Retail trade sales",
+      "country": "ZAF",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "za_retail",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Retail sales are a partial consumption measure; verify current-price versus constant-price series. Issuer release dates and local cycle timing require verification. Source: https://www.statssa.gov.za/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Statistics South Africa",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Merchandise trade balance",
+      "country": "ZAF",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "za_trade",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Goods trade differs from the wider current account. Issuer release dates and local cycle timing require verification. Source: https://www.sars.gov.za/customs-and-excise/trade-statistics/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "South African Revenue Service",
+      "theme": "External / global",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "b1101523dc2764e0247f49171879f94b6ff5f1f572056dd37467c6e4445f806b",
-  "timing_extract_sha256": "266a7babd5d569332a4be806fc0cd102d933b3bd7ddaa1ceca3244c8edfde766"
+  "source_table_sha256": "f2a0a17c1586ca4070c690ad4685735374cf97ff40ad924bd86a5e932eb008f4",
+  "timing_extract_sha256": "94fad10b203b2021781e23055f1468d06303650f59045204436f744ad77226be"
 }

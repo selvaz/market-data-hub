@@ -97,10 +97,21 @@ def test_regional_and_payroll_sources_remain_distinct():
     assert indicator_card("us_mba_applications").frequency == "W"
 
 
+def test_country_group_seed_ids_and_policy_context():
+    for identity, key in (("au_retail", "au_retail"), ("au_trade", "au_trade"),
+                          ("au_gdp", "au_gdp"), ("au_building", "au_building")):
+        assert indicator_card("cal:" + identity).key == key
+    for key in ("tr_cbrt", "ru_cbr", "id_bi_rate", "za_repo"):
+        card = indicator_card(key)
+        assert card.nature == "POLICY" and card.timing.timing_class == "CTX"
+    assert indicator_card("za_indpro").concept == "Manufacturing production"
+    assert indicator_card("au_cpi_trimmed_q").key != indicator_card("au_cpi_quarterly").key
+
+
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 345
+    assert len(rows) == len(dataset().cards) == 375
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -775,7 +786,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 345
+    assert dataset() is shipped and len(shipped.cards) == 375
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -865,7 +876,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 345
+        assert report["cards"] == 375
         assert ("draft_cards" in report) == bool(args)
 
 

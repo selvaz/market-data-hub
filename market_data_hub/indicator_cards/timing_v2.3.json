@@ -32,7 +32,7 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "b1101523dc2764e0247f49171879f94b6ff5f1f572056dd37467c6e4445f806b"
+      "source_table_sha256": "f2a0a17c1586ca4070c690ad4685735374cf97ff40ad924bd86a5e932eb008f4"
     },
     {
       "approval": "approved v2.3 by owner 2026-10-25",
@@ -53,7 +53,7 @@
         "cn_new_home_prices_tiers"
       ],
       "source": "PR #130, M9f housing drafts at 5e04a4b; independent Codex review",
-      "source_table_sha256": "b1101523dc2764e0247f49171879f94b6ff5f1f572056dd37467c6e4445f806b"
+      "source_table_sha256": "f2a0a17c1586ca4070c690ad4685735374cf97ff40ad924bd86a5e932eb008f4"
     }
   ],
   "rows": {
@@ -81,6 +81,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "au_building": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "au_cpi_monthly": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
@@ -89,11 +93,35 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "au_cpi_trimmed_q": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "au_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "au_labour": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "au_nab": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "au_rba": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "au_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "au_trade": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "au_westpac": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -625,6 +653,18 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "id_bi_rate": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "id_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "id_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "id_pmi_mfg": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -921,7 +961,39 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "ru_cbr": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "ru_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_reserves": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "ru_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "sa_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "sa_gdp": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -945,7 +1017,31 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "tr_cbrt": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_current_account": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "tr_pmi_mfg": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_ppi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "tr_trade": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -1425,6 +1521,18 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "za_cpi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "za_gdp": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "za_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "za_pmi_mfg": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1436,9 +1544,21 @@
     "za_r209": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
+    },
+    "za_repo": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "za_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "za_trade": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     }
   },
   "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "b1101523dc2764e0247f49171879f94b6ff5f1f572056dd37467c6e4445f806b"
+  "source_table_sha256": "f2a0a17c1586ca4070c690ad4685735374cf97ff40ad924bd86a5e932eb008f4"
 }
