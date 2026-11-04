@@ -356,9 +356,7 @@
       "basis": "Core CPI concept already approved as cal:mx_core_cpi; transform and seasonality remain specific to the source."
     }
   ],
-  "certified_gaps": {
-    "mx_core_cpi_yy": "No approved Mexican core INPC card; do not alias core inflation to the headline card (M9i)."
-  },
+  "certified_gaps": {},
   "classification_version": "v2.3",
   "purpose": "Concept context aliases only: these do not equate stores' transformations, seasonal adjustments, release stages or geography vintages."
 }
