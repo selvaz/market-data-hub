@@ -16011,7 +16011,7 @@
         "notes": [],
         "pan": []
       },
-      "key": "sa_pmi_mfg",
+      "key": "sa_pmi_non_oil",
       "known_failure_modes": [
         "calendar and local timing unverified"
       ],
@@ -20060,6 +20060,6 @@
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "6afe4724e2fd7b601e64a512582b47ebe7c1b3188d37c5a67f9f821c28f8b1d1",
-  "timing_extract_sha256": "4067ca273521fd8da96572e50068f46ff01e8a41a8c98bd7731fbb49ef34793f"
+  "source_table_sha256": "f15e2a18b4629c7a8f8bf371063c347a58b38bf10e5709e7e51939c607290bac",
+  "timing_extract_sha256": "0ad47a213c90f0ec8fd8e907ad66b75af70db3ed5ba4353010a39a528e0b241a"
 }

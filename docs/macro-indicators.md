@@ -995,7 +995,7 @@ How to read the tables:
 | Concept (card key) | Theme | Timing class vs reference · nature | Evidence (`ev_timing`) | Stores | Issuer / source | Freq | Release time | Official card | Consensus | Tier |
 |---|---|---|---|---|---|---|---|---|---|---|
 | Real GDP (`sa_gdp`) | Growth / activity | not classified<br>HARD | none | — | issuer: General Authority for Statistics | Q | — | no | no | — |
-| Saudi Arabia PMI (`sa_pmi_mfg`) | Growth / activity | not classified<br>SOFT | none | — | issuer: S&P Global | M | — | no | no | — |
+| Saudi Arabia PMI (`sa_pmi_non_oil`) | Growth / activity | not classified<br>SOFT | none | — | issuer: S&P Global | M | — | no | no | — |
 | Consumer price index (`sa_cpi`) | Inflation | not classified<br>HARD | none | — | issuer: General Authority for Statistics | M | — | no | no | — |
 
 ### SWE (Sweden)

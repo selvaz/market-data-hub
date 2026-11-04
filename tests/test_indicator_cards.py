@@ -84,7 +84,7 @@ def test_pmi_seed_ids_resolve_to_distinct_surveys(identity, key):
 
 
 def test_saudi_pmi_is_not_mislabelled_manufacturing():
-    card = indicator_card("sa_pmi_mfg")
+    card = indicator_card("sa_pmi_non_oil")
     assert "non-oil" in card.rationale and "not a manufacturing-only" in card.rationale
 
 
