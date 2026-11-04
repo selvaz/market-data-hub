@@ -70,10 +70,28 @@ def test_french_hicp_and_confidence_are_distinct_concepts():
     assert confidence.timing.timing_class == "UNKNOWN"
 
 
+@pytest.mark.parametrize("identity,key", [
+    ("cal:de_pmi_mfg", "de_pmi_mfg"), ("cal:de_pmi_svc", "de_pmi_svc"),
+    ("cal:uk_pmi_mfg", "uk_pmi_mfg"), ("cal:jp_pmi_mfg", "jp_pmi_mfg"),
+    ("cal:in_pmi_mfg", "in_pmi_mfg"), ("cal:in_pmi_svc", "in_pmi_svc"),
+    ("cal:ca_pmi_mfg", "ca_pmi_mfg"), ("cal:ca_ivey", "ca_ivey"),
+    ("cal:ch_pmi_mfg", "ch_pmi_mfg"), ("cal:cn_pmi_nbs_svc", "cn_pmi_nbs_nonmfg"),
+    ("cal:cn_pmi_caixin_svc", "cn_pmi_private_services"),
+])
+def test_pmi_seed_ids_resolve_to_distinct_surveys(identity, key):
+    card = indicator_card(identity)
+    assert card.key == key and card.nature == "SOFT"
+
+
+def test_saudi_pmi_is_not_mislabelled_manufacturing():
+    card = indicator_card("sa_pmi_mfg")
+    assert "non-oil" in card.rationale and "not a manufacturing-only" in card.rationale
+
+
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 308
+    assert len(rows) == len(dataset().cards) == 336
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -748,7 +766,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 308
+    assert dataset() is shipped and len(shipped.cards) == 336
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -838,7 +856,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 308
+        assert report["cards"] == 336
         assert ("draft_cards" in report) == bool(args)
 
 

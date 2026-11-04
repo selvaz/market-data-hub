@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "77bf82e7e5fa01bef8be8936e1cf0bb58d53c7bc08e3182ed55ff4bdcc5fbf13",
+  "aliases_sha256": "0f9e7e9d5d66bfc9bc9a69796e577e5c4fad2df60977b22ed13a9e0450606690",
   "cards": [
     {
       "concept": "Real GDP",
@@ -13824,7 +13824,9 @@
       "flag": "never captured (licensed)",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "uk_pmi_mfg"
+        ],
         "cat": [
           "uk_sp_global_manufacturing_pmi"
         ],
@@ -14818,10 +14820,1234 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "Germany HCOB manufacturing PMI",
+      "country": "DEU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "de_pmi_mfg"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "de_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "cal:de_pmi_mfg",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HCOB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Germany HCOB services PMI",
+      "country": "DEU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "de_pmi_svc"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "de_pmi_svc",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "cal:de_pmi_svc",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HCOB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Germany HCOB composite output PMI",
+      "country": "DEU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "de_pmi_composite",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HCOB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "France HCOB manufacturing PMI",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HCOB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "France HCOB services PMI",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_pmi_svc",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HCOB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "France HCOB composite output PMI",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_pmi_composite",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HCOB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Italy manufacturing PMI",
+      "country": "ITA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "it_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HCOB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Italy services PMI",
+      "country": "ITA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "it_pmi_svc",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HCOB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Spain manufacturing PMI",
+      "country": "ESP",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "es_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HCOB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Spain services PMI",
+      "country": "ESP",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "es_pmi_svc",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HCOB",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "UK composite output PMI",
+      "country": "GBR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "uk_pmi_composite",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Japan manufacturing PMI",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "jp_pmi_mfg"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "cal:jp_pmi_mfg",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Japan services PMI",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_pmi_svc",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "India manufacturing PMI",
+      "country": "IND",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "in_pmi_mfg"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "in_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "cal:in_pmi_mfg",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HSBC",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "India services PMI",
+      "country": "IND",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "in_pmi_svc"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "in_pmi_svc",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "cal:in_pmi_svc",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global / HSBC",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Canada manufacturing PMI",
+      "country": "CAN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "ca_pmi_mfg"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ca_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "cal:ca_pmi_mfg",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Ivey purchasing managers index",
+      "country": "CAN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "ca_ivey"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ca_ivey",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Canadian purchasing managers survey across sectors; distinct from the S&P manufacturing PMI. Publication schedule and local timing need checking. Source: https://www.ivey.uwo.ca/ivey-pmi/",
+      "raw_ids": "cal:ca_ivey",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Ivey Business School",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Swiss manufacturing PMI",
+      "country": "CHE",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "ch_pmi_mfg"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ch_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.procure.ch/",
+      "raw_ids": "cal:ch_pmi_mfg",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "procure.ch / UBS",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "NBS non-manufacturing PMI",
+      "country": "CHN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "cn_pmi_nbs_svc"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "cn_pmi_nbs_nonmfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Official non-manufacturing survey covers services and construction; the private services PMI uses a separate panel. Release calendar and local timing need checking. Source: https://www.stats.gov.cn/english/",
+      "raw_ids": "cal:cn_pmi_nbs_svc",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "National Bureau of Statistics",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Private services PMI (Caixin / RatingDog)",
+      "country": "CHN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "cn_pmi_caixin_svc"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "cn_pmi_private_services",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Private services survey is separate from the NBS non-manufacturing index; current sponsor branding should be checked. Local timing not tested. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "cal:cn_pmi_caixin_svc",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Brazil manufacturing PMI",
+      "country": "BRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "br_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Mexico manufacturing PMI",
+      "country": "MEX",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "mx_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Korea manufacturing PMI",
+      "country": "KOR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "kr_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Indonesia manufacturing PMI",
+      "country": "IDN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "id_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Turkey manufacturing PMI",
+      "country": "TUR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "tr_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Russia manufacturing PMI",
+      "country": "RUS",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ru_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Monthly survey of purchasing managers; readings mix current conditions and expectations. Release lead does not establish an economic-cycle lead; local timing not tested. Licensing and publication dates should be checked. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Saudi Arabia PMI",
+      "country": "SAU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "sa_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Private-sector PMI covers the non-oil economy; it is not a manufacturing-only index. Publication schedule and local timing need checking. Source: https://www.pmi.spglobal.com/Public/Release/PressReleases",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "S&P Global",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Absa manufacturing PMI",
+      "country": "ZAF",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "calendar and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "za_pmi_mfg",
+      "known_failure_modes": [
+        "calendar and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Manufacturing purchasing-managers survey; local timing not tested. Release date and licensing should be checked. Source: https://www.ber.ac.za/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "BER / Absa",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "38f1db81da46bd7a38a7284d4f851ed00f16b34369c85ca14fc40c481de468b8",
-  "timing_extract_sha256": "612fb8776ebb092fd04894953e5f1c465a847e193791bfe8084cd7326b26a2a8"
+  "source_table_sha256": "3fc165bbb670d400cc69b73350d75102a65fa2cae354f2697d21f6a24160dfdf",
+  "timing_extract_sha256": "9ff54e66e541fcf76fa6a1a0af7c00ffa6f871e3f4dd404e09b23af1502778b2"
 }
