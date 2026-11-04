@@ -17731,10 +17731,229 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "Active job openings-to-applicants ratio",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_job_applicant_ratio",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Administrative active job openings divided by active job applicants; ratio differs from the unemployment rate. Issuer release dates and local cycle timing require verification. Source: https://www.mhlw.go.jp/english/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Ministry of Health, Labour and Welfare",
+      "theme": "Labour",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Core machinery orders",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "jp_machinery"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_core_machine_orders",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Private-sector orders excluding ships and electric power are volatile and are not realised investment. Issuer release dates and local cycle timing require verification. Source: https://www.esri.cao.go.jp/en/stat/juchu/juchu-e.html",
+      "raw_ids": "cal:jp_machinery",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Cabinet Office",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Biweekly consumer price index",
+      "country": "MEX",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "2W",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "mx_cpi_fortnightly",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Fortnightly CPI uses a different reference period from monthly CPI; do not splice the rates. Issuer release dates and local cycle timing require verification. Source: https://www.inegi.org.mx/temas/inpc/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INEGI",
+      "theme": "Inflation",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Nationwide house price index",
+      "country": "GBR",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "uk_nationwide_house_prices",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Mortgage-lending based house price index; coverage differs from official UK HPI. Issuer release dates and local cycle timing require verification. Source: https://www.nationwide.co.uk/house-price-index/",
+      "raw_ids": "",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Nationwide Building Society",
+      "theme": "Housing",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Sentix investor confidence",
+      "country": "EA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "release details and local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [
+          "ez_sentix"
+        ],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "ea_sentix",
+      "known_failure_modes": [
+        "release details and local timing unverified"
+      ],
+      "nature": "SOFT",
+      "rationale": "Investor survey combines current assessment and expectations; each component should be read separately. Issuer release dates and local cycle timing require verification. Source: https://www.sentix.de/",
+      "raw_ids": "cal:ez_sentix",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Sentix",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "national activity or measured price",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "f2a0a17c1586ca4070c690ad4685735374cf97ff40ad924bd86a5e932eb008f4",
-  "timing_extract_sha256": "94fad10b203b2021781e23055f1468d06303650f59045204436f744ad77226be"
+  "source_table_sha256": "f6db107b7c1a118c00c5b3a81785926dc40f36ecb36ca75005bccdba70b27984",
+  "timing_extract_sha256": "4994dac038c478970dc8985f745968e7ac68783b89abaa0fdd6e1eb88c275063"
 }
