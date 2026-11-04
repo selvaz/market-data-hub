@@ -113,14 +113,25 @@ def test_miscellaneous_indicators_and_existing_context():
     assert indicator_card("cal:ez_sentix").key == "ea_sentix"
     assert indicator_card("cal:jp_tokyo_cpi").key == "jp_tokyo_cpi"
     assert indicator_card("cal:de_unemployment_change").key == "de_unemployment_ba"
-    assert indicator_card("mx_cpi_fortnightly").frequency == "2W"
+    assert indicator_card("mx_cpi_fortnight").frequency == "2W"
     assert indicator_card("uk_nationwide_house_prices").key != indicator_card("uk_hpi").key
+
+
+def test_seed_aliases_reuse_existing_cards_and_fortnightly_cpi_is_unique():
+    for identity, key in (("ca_gdp_mm", "ca_gdp_monthly"), ("ca_housing", "ca_housing_starts"),
+                          ("cn_gdp", "cn_gdp"), ("ez_indprod", "ea_indpro"),
+                          ("uk_unemp", "uk_unemployment"), ("jp_trade", "jp_trade_balance"),
+                          ("tw_cpi_yy", "tw_cpi")):
+        assert indicator_card("cal:" + identity).key == key
+    assert indicator_card("cat:mx_core_cpi_yy").key == "mx_cpi_core"
+    assert indicator_card("cal:mx_cpi_biweekly").key == "mx_cpi_fortnight"
+    assert indicator_card("mx_cpi_fortnightly") is None
 
 
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 380
+    assert len(rows) == len(dataset().cards) == 379
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -795,7 +806,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 380
+    assert dataset() is shipped and len(shipped.cards) == 379
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -885,7 +896,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 380
+        assert report["cards"] == 379
         assert ("draft_cards" in report) == bool(args)
 
 

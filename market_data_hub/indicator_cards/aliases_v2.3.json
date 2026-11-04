@@ -264,6 +264,96 @@
       "id": "cal:uk_pmi_mfg",
       "key": "uk_pmi_mfg",
       "basis": "LazyCommittee seed uk_pmi_mfg identifies UK manufacturing PMI; approved cat:uk_sp_global_manufacturing_pmi."
+    },
+    {
+      "id": "cal:ca_gdp_mm",
+      "key": "ca_gdp_monthly",
+      "basis": "LazyCommittee seed identifies the same concept as cat:ca_gdp_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:ca_housing",
+      "key": "ca_housing_starts",
+      "basis": "LazyCommittee seed identifies the same concept as cat:ca_housing_starts; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:ca_retail",
+      "key": "ca_retail_sales",
+      "basis": "LazyCommittee seed identifies the same concept as cat:ca_retail_sales_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:cn_gdp",
+      "key": "cn_gdp",
+      "basis": "LazyCommittee seed identifies the same concept as cat:cn_gdp_yy; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:cn_indprod",
+      "key": "cn_indpro",
+      "basis": "LazyCommittee seed identifies the same concept as cat:cn_industrial_production_yy; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:cn_retail",
+      "key": "cn_retail_sales",
+      "basis": "LazyCommittee seed identifies the same concept as cat:cn_retail_sales_yy; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:ez_employment",
+      "key": "ea_employment",
+      "basis": "LazyCommittee seed identifies the same concept as cal:ez_employment_yy; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:ez_indprod",
+      "key": "ea_indpro",
+      "basis": "LazyCommittee seed identifies the same concept as cat:ea_industrial_production_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:ez_retail",
+      "key": "ea_retail_sales",
+      "basis": "LazyCommittee seed identifies the same concept as cat:ea_retail_sales_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:uk_retail",
+      "key": "uk_retail_sales",
+      "basis": "LazyCommittee seed identifies the same concept as cat:uk_retail_sales_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:uk_unemp",
+      "key": "uk_unemployment",
+      "basis": "LazyCommittee seed identifies the same concept as cat:uk_unemployment_rate; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:jp_cpi_yy",
+      "key": "jp_cpi",
+      "basis": "LazyCommittee seed identifies the same concept as cat:jp_cpi_yy; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:jp_gdp",
+      "key": "jp_gdp_real",
+      "basis": "LazyCommittee seed identifies the same concept as cat:jp_gdp_qq; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:jp_indprod",
+      "key": "jp_indpro",
+      "basis": "LazyCommittee seed identifies the same concept as cat:jp_industrial_production_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:jp_trade",
+      "key": "jp_trade_balance",
+      "basis": "LazyCommittee seed identifies the same concept as cat:jp_trade_balance; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:tw_cpi_yy",
+      "key": "tw_cpi",
+      "basis": "LazyCommittee seed identifies the same concept as cal:tw_cpi_mm; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cal:tw_unemp",
+      "key": "tw_labour",
+      "basis": "LazyCommittee seed identifies the same concept as cal:tw_unemp_sa; context only, not numerical equivalence of transforms, adjustment or release stage."
+    },
+    {
+      "id": "cat:mx_core_cpi_yy",
+      "key": "mx_cpi_core",
+      "basis": "Core CPI concept already approved as cal:mx_core_cpi; transform and seasonality remain specific to the source."
     }
   ],
   "certified_gaps": {

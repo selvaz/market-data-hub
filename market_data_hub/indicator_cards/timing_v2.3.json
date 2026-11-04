@@ -32,7 +32,7 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "f6db107b7c1a118c00c5b3a81785926dc40f36ecb36ca75005bccdba70b27984"
+      "source_table_sha256": "2c573e0dff751c4534ec12b5af055a823bfa3f8696750d63a2400f53b4d10e6a"
     },
     {
       "approval": "approved v2.3 by owner 2026-10-25",
@@ -53,7 +53,7 @@
         "cn_new_home_prices_tiers"
       ],
       "source": "PR #130, M9f housing drafts at 5e04a4b; independent Codex review",
-      "source_table_sha256": "f6db107b7c1a118c00c5b3a81785926dc40f36ecb36ca75005bccdba70b27984"
+      "source_table_sha256": "2c573e0dff751c4534ec12b5af055a823bfa3f8696750d63a2400f53b4d10e6a"
     }
   ],
   "rows": {
@@ -857,10 +857,6 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
-    "mx_cpi_fortnightly": {
-      "descriptive_peak": "not estimated",
-      "predictive_screen": "not tested"
-    },
     "mx_pmi_mfg": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1580,5 +1576,5 @@
   },
   "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "f6db107b7c1a118c00c5b3a81785926dc40f36ecb36ca75005bccdba70b27984"
+  "source_table_sha256": "2c573e0dff751c4534ec12b5af055a823bfa3f8696750d63a2400f53b4d10e6a"
 }

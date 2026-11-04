@@ -1,5 +1,5 @@
 {
-  "aliases_sha256": "0f9e7e9d5d66bfc9bc9a69796e577e5c4fad2df60977b22ed13a9e0450606690",
+  "aliases_sha256": "6fe21f53ff37e5cc9a56a2544e6422616a0c9b6ad5b9cc300a80258632ce420d",
   "cards": [
     {
       "concept": "Real GDP",
@@ -4801,7 +4801,8 @@
       "frequency": "Q",
       "ids": {
         "cal": [
-          "ez_employment_yy"
+          "ez_employment_yy",
+          "ez_employment"
         ],
         "cat": [],
         "derived_ms": [],
@@ -7020,7 +7021,9 @@
       "flag": "planned only",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "uk_unemp"
+        ],
         "cat": [
           "uk_unemployment_rate"
         ],
@@ -7345,7 +7348,8 @@
       "frequency": "M",
       "ids": {
         "cal": [
-          "jp_cpi_mm_sa"
+          "jp_cpi_mm_sa",
+          "jp_cpi_yy"
         ],
         "cat": [
           "jp_cpi_yy"
@@ -7814,7 +7818,8 @@
       "frequency": "Q",
       "ids": {
         "cal": [
-          "cn_gdp_yy_prelim"
+          "cn_gdp_yy_prelim",
+          "cn_gdp"
         ],
         "cat": [
           "cn_gdp_yy"
@@ -9466,7 +9471,8 @@
       "ids": {
         "cal": [
           "tw_cpi_mm",
-          "tw_cpi_mm_sa"
+          "tw_cpi_mm_sa",
+          "tw_cpi_yy"
         ],
         "cat": [],
         "derived_ms": [],
@@ -9558,7 +9564,8 @@
         "cal": [
           "tw_employment_change_mm",
           "tw_payroll_employment_change_yy",
-          "tw_unemp_sa"
+          "tw_unemp_sa",
+          "tw_unemp"
         ],
         "cat": [],
         "derived_ms": [],
@@ -9926,7 +9933,9 @@
           "mx_core_cpi",
           "mx_core_cpi_mm"
         ],
-        "cat": [],
+        "cat": [
+          "mx_core_cpi_yy"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -13155,7 +13164,9 @@
       "flag": "geography EA21",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "ez_retail"
+        ],
         "cat": [
           "ea_retail_sales_mm"
         ],
@@ -13200,7 +13211,9 @@
       "flag": "geography EA21",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "ez_indprod"
+        ],
         "cat": [
           "ea_industrial_production_mm"
         ],
@@ -13781,7 +13794,9 @@
       "flag": "",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "uk_retail"
+        ],
         "cat": [
           "uk_retail_sales_mm"
         ],
@@ -13871,7 +13886,9 @@
       "flag": "",
       "frequency": "Q",
       "ids": {
-        "cal": [],
+        "cal": [
+          "jp_gdp"
+        ],
         "cat": [
           "jp_gdp_qq"
         ],
@@ -13914,7 +13931,9 @@
       "flag": "",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "jp_indprod"
+        ],
         "cat": [
           "jp_industrial_production_mm"
         ],
@@ -13957,7 +13976,9 @@
       "flag": "",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "jp_trade"
+        ],
         "cat": [
           "jp_trade_balance"
         ],
@@ -14000,7 +14021,9 @@
       "flag": "Jan-Feb combined",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "cn_indprod"
+        ],
         "cat": [
           "cn_industrial_production_yy"
         ],
@@ -14045,7 +14068,9 @@
       "flag": "",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "cn_retail"
+        ],
         "cat": [
           "cn_retail_sales_yy"
         ],
@@ -14088,7 +14113,9 @@
       "flag": "issuer table id unverified",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "ca_gdp_mm"
+        ],
         "cat": [
           "ca_gdp_mm"
         ],
@@ -14133,7 +14160,9 @@
       "flag": "issuer table id unverified",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "ca_retail"
+        ],
         "cat": [
           "ca_retail_sales_mm"
         ],
@@ -14599,7 +14628,9 @@
       "flag": "volatile monthly annualized flow; later revisions; distinct from six-month trend",
       "frequency": "M",
       "ids": {
-        "cal": [],
+        "cal": [
+          "ca_housing"
+        ],
         "cat": [
           "ca_housing_starts"
         ],
@@ -17821,49 +17852,6 @@
       }
     },
     {
-      "concept": "Biweekly consumer price index",
-      "country": "MEX",
-      "evidence": {
-        "local_timing": "none",
-        "measurement": "M",
-        "mechanism": "mixed"
-      },
-      "flag": "release details and local timing unverified",
-      "frequency": "2W",
-      "ids": {
-        "cal": [],
-        "cat": [],
-        "derived_ms": [],
-        "es": [],
-        "hub": [],
-        "ms": [],
-        "notes": [],
-        "pan": []
-      },
-      "key": "mx_cpi_fortnightly",
-      "known_failure_modes": [
-        "release details and local timing unverified"
-      ],
-      "nature": "HARD",
-      "rationale": "Fortnightly CPI uses a different reference period from monthly CPI; do not splice the rates. Issuer release dates and local cycle timing require verification. Source: https://www.inegi.org.mx/temas/inpc/",
-      "raw_ids": "",
-      "revision_behaviour": "Not specified in approved row.",
-      "secondary": [],
-      "source": "INEGI",
-      "theme": "Inflation",
-      "timing": {
-        "basis": null,
-        "class": "UNKNOWN",
-        "class_pair": null,
-        "descriptive_peak": null,
-        "matched_turning_point_leads": "not estimated",
-        "predictive_screen": [],
-        "reference": "national activity or measured price",
-        "relationship_keys": [],
-        "screen_note": "not tested"
-      }
-    },
-    {
       "concept": "Nationwide house price index",
       "country": "GBR",
       "evidence": {
@@ -17954,6 +17942,6 @@
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "f6db107b7c1a118c00c5b3a81785926dc40f36ecb36ca75005bccdba70b27984",
-  "timing_extract_sha256": "4994dac038c478970dc8985f745968e7ac68783b89abaa0fdd6e1eb88c275063"
+  "source_table_sha256": "2c573e0dff751c4534ec12b5af055a823bfa3f8696750d63a2400f53b4d10e6a",
+  "timing_extract_sha256": "684956276ea69e5dd6ff59ffeac43a22e5d875a540a0e753b34951ca2a6f23ae"
 }
