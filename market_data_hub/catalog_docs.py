@@ -36,6 +36,7 @@ JOBS = {
     "macro_releases_daily": "daily 06:30 PT",
     "cftc_cot": "daily 15:30 PT (new reports normally Friday)",
     "treasury_fiscal": "daily 15:45 PT",
+    "gpr": "daily 14:10 PT (proposed, disabled)",
     "eia_inventories": "daily 14:00 PT (proposed, disabled)",
     "econ_calendar": "retired/frozen since 2026-09-25; former daily 06:00 PT",
     "alfred_backfill": "manual/on demand; intended hour 22:00 PT, no automatic trigger",
@@ -383,6 +384,7 @@ def build_rows(config_dir=CONFIG_DIR):
         ("fred", "FRED"),
         ("nyfed_acm", "NY Fed direct"),
         ("eia", "EIA direct"),
+        ("gpr", "Caldara and Iacoviello direct"),
     ):
         for e in macro[group]:
             row = _row(
@@ -392,11 +394,15 @@ def build_rows(config_dir=CONFIG_DIR):
                 distributor=distributor,
                 job=["daily_eu18", "daily_usclose", "fred_morning"]
                 if group == "fred"
+                else ["gpr"]
+                if group == "gpr"
                 else ["eia_inventories"]
                 if group == "eia"
                 else ["daily_eu18", "daily_usclose"],
                 history="1982-01-01 (requested; provider availability varies)"
                 if group == "eia"
+                else "1985 onward (provider availability varies)"
+                if group == "gpr"
                 else floors[group],
             )
             row["stalled_after_days"] = e.get("max_lag_days")

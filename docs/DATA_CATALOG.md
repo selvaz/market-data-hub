@@ -49,7 +49,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 295 |
+| hub | [macro_series](#catalog-hub-macro_series) | 301 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
@@ -1576,7 +1576,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 - Primary key: `date`, `series_id`.
 - Status: active.
 - Point-in-time / vintages: macro_series is latest state. macro_series_vintage keeps hub ingestion-date changes: filter vintage_date <= cutoff then latest per series/date. Backfilled ingestion vintages are not issuer publication history; use ALFRED for vendor point-in-time data.
-- Collection: daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; eia_inventories daily 14:00 PT (proposed, disabled); fred_morning daily 23:45 PT.
+- Collection: daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; eia_inventories daily 14:00 PT (proposed, disabled); fred_morning daily 23:45 PT; gpr daily 14:10 PT (proposed, disabled).
 - Guide: [free-sources.md](free-sources.md).
 
 | ID | Name | Issuer | Distributor | Frequency | Expected lag (days, declared) | History floor | Job / schedule (PT) | Status / reason |
@@ -1683,6 +1683,12 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | GASDESW | CMDTY \| Energy \| US Retail Diesel Sales Price | EIA | FRED | W | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | GDP | MACRO \| US \| GDP (current $) | BEA | FRED | Q | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | GDPC1 | MACRO \| US \| Real GDP (SAAR chained 2017$) | BEA | FRED | Q | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| GPR | Monthly geopolitical risk | Caldara and Iacoviello | Caldara and Iacoviello direct | M | 31 | 1985 onward (provider availability varies) | gpr daily 14:10 PT (proposed, disabled) | active |
+| GPRA | Monthly geopolitical acts | Caldara and Iacoviello | Caldara and Iacoviello direct | M | 31 | 1985 onward (provider availability varies) | gpr daily 14:10 PT (proposed, disabled) | active |
+| GPRD | Daily geopolitical risk | Caldara and Iacoviello | Caldara and Iacoviello direct | D | 7 | 1985 onward (provider availability varies) | gpr daily 14:10 PT (proposed, disabled) | active |
+| GPRD_ACT | Daily geopolitical acts | Caldara and Iacoviello | Caldara and Iacoviello direct | D | 7 | 1985 onward (provider availability varies) | gpr daily 14:10 PT (proposed, disabled) | active |
+| GPRD_THREAT | Daily geopolitical threats | Caldara and Iacoviello | Caldara and Iacoviello direct | D | 7 | 1985 onward (provider availability varies) | gpr daily 14:10 PT (proposed, disabled) | active |
+| GPRT | Monthly geopolitical threats | Caldara and Iacoviello | Caldara and Iacoviello direct | M | 31 | 1985 onward (provider availability varies) | gpr daily 14:10 PT (proposed, disabled) | active |
 | HOUST | MACRO \| US \| Housing Starts | Census | FRED | M | 20 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | INDPRO | MACRO \| US \| Industrial Production Index | Fed Board | FRED | M | 16 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | IRLTLT01ATM156N | RATES \| AUT \| 10-Year Government Bond Yield (OECD via FRED) | OECD Main Economic Indicators (national source agencies) | FRED | M | 60 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
