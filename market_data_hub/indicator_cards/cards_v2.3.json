@@ -20082,7 +20082,7 @@
         "not equivalent to discontinued retail trade series"
       ],
       "nature": "HARD",
-      "rationale": "ABS enhanced the household spending indicator as retail trade publication ended in July 2025; coverage extends beyond retail trade and the series should not be spliced without review. Release dates vary; local cycle timing is untested. Source: https://www.abs.gov.au/about/future-cessation-retail-business-survey-and-retail-trade-publication/retail-trade-replacement-program-monthly-household-spending-indicator",
+      "rationale": "Broader than retail trade, which ceased in July 2025; do not splice without review. Cycle timing untested. Source: https://www.abs.gov.au/statistics/economy/finance/monthly-household-spending-indicator",
       "raw_ids": "",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
@@ -20103,6 +20103,6 @@
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "af9d7fa68e66a30c6e94eeba4bc1fae4392570363b84b8e100c93eb494a5510e",
-  "timing_extract_sha256": "62b848b96d7fb792f10f28043ecfd5af6bc8970d1590fbcf3eb96fbd5335973d"
+  "source_table_sha256": "f3c0d3a51dd3a8154b601de0810de20072b65ecfc66d0919e185c6e88403eddf",
+  "timing_extract_sha256": "c085deeeaba28e18acb2b7d9d7897bf4a0ba13d6dbe7337d216698ade26b32b3"
 }
