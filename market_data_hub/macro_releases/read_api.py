@@ -367,13 +367,14 @@ class ReadAPI:
             "limitations": limitations,
         }
 
-    def decision_history(self, indicator, *, as_known_at=None, limit=100):
+    def decision_history(self, indicator, *, as_known_at=None, limit=100, policy="revised_history"):
         """Latest official vintage per decision, newest decision date first.
 
         Rates are percent levels (Fed scalar: upper bound); change_bp is the
         stored issuer decision change, never a difference across collected rows.
         Full rates preserve ranges and multi-rate decisions. No FRED mapping.
         """
+        validate_history_policy(policy, as_known_at)
         if type(limit) is not int or limit < 1:
             raise ValueError("limit must be a positive integer")
         cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
@@ -389,7 +390,7 @@ class ReadAPI:
                   if e.indicator_id == indicator and e.event_id and e.reference_period}
         decisions = []
         for event_id, period, stage in sorted(groups):
-            resolution = resolve_evidence(snapshot, indicator, period, stage, event_id=event_id)
+            resolution = resolve_evidence(snapshot, indicator, period, stage, event_id=event_id, policy=policy)
             if resolution is None or resolution.status != "official":
                 continue
             facts = resolution.policy_decision
@@ -432,7 +433,7 @@ class ReadAPI:
         snapshot = Snapshot.load(self.store, cutoff)
         return self._cards(snapshot, start, end, indicators, geography, policy=policy)
 
-    def first_seen_release_cards(self, since, until, *, as_known_at=None):
+    def first_seen_release_cards(self, since, until, *, as_known_at=None, policy="revised_history"):
         """Issuer actuals first captured in [since, until), known at the cutoff.
 
         Reuse publication-card resolution, previous values and forecast policy.
@@ -442,10 +443,11 @@ class ReadAPI:
         Collection issues are the latest saved outcome per family at the cutoff,
         independent of publication/fetch windows. No-change is a healthy outcome.
         """
+        validate_history_policy(policy, as_known_at)
         start, end = window(since, until)
         cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
         snapshot = Snapshot.load(self.store, cutoff)
-        result = self._cards(snapshot, start, end, first_seen_window=True)
+        result = self._cards(snapshot, start, end, first_seen_window=True, policy=policy)
         latest = {}
         for row in snapshot.collect_families:
             latest.setdefault(row["family"], row)
