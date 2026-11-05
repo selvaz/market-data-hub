@@ -58,7 +58,7 @@
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
-      "name": "Continuing claims download in scripts/data; weekly and seasonal revisions.",
+      "name": "Continuing claims (insured unemployment)",
       "notes": "Continuing claims download in scripts/data; weekly and seasonal revisions. Default observation/vintage floor from alfred_backfill.EARLIEST; --since-vintage can override vintage floor.",
       "status": "active",
       "status_reason": "",
@@ -373,7 +373,7 @@
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
-      "name": "Weekly initial claims aggregated monthly; weekly and seasonal revisions.",
+      "name": "Initial jobless claims",
       "notes": "Weekly initial claims aggregated monthly; weekly and seasonal revisions. Default observation/vintage floor from alfred_backfill.EARLIEST; --since-vintage can override vintage floor.",
       "status": "active",
       "status_reason": "",
@@ -562,7 +562,7 @@
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
-      "name": "Building permits lead; monthly and seasonal revisions.",
+      "name": "Building permits",
       "notes": "Building permits lead; monthly and seasonal revisions. Default observation/vintage floor from alfred_backfill.EARLIEST; --since-vintage can override vintage floor.",
       "status": "active",
       "status_reason": "",
@@ -583,7 +583,7 @@
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
-      "name": "Final demand PPI control; preliminary and seasonal revisions. Source download is PPIFIS.csv.",
+      "name": "PPI final demand (headline)",
       "notes": "Final demand PPI control; preliminary and seasonal revisions. Source download is PPIFIS.csv. Default observation/vintage floor from alfred_backfill.EARLIEST; --since-vintage can override vintage floor.",
       "status": "active",
       "status_reason": "",
@@ -27339,6 +27339,36 @@
     },
     {
       "distributor": "FRED",
+      "expected_lag_days": 12,
+      "frequency": "W",
+      "history_start": "1776-07-04",
+      "id": "CCSA",
+      "issuer": "DOL",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MACRO | US | Continued Claims (Number, SA)",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
       "expected_lag_days": 7,
       "frequency": "M",
       "history_start": "1776-07-04",
@@ -28906,6 +28936,36 @@
     },
     {
       "distributor": "FRED",
+      "expected_lag_days": 5,
+      "frequency": "W",
+      "history_start": "1776-07-04",
+      "id": "ICSA",
+      "issuer": "DOL",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MACRO | US | Initial Claims (Number, SA)",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
       "expected_lag_days": 16,
       "frequency": "M",
       "history_start": "1776-07-04",
@@ -30463,6 +30523,36 @@
       "expected_lag_days": 29,
       "frequency": "M",
       "history_start": "1776-07-04",
+      "id": "PCE",
+      "issuer": "BEA",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MACRO | US | Personal Consumption Expenditures (Billions of Dollars, SAAR)",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
+      "expected_lag_days": 29,
+      "frequency": "M",
+      "history_start": "1776-07-04",
       "id": "PCEPI",
       "issuer": "BEA",
       "jobs": [
@@ -30511,6 +30601,96 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "MACRO | US | Core PCE Price Index",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
+      "expected_lag_days": 20,
+      "frequency": "M",
+      "history_start": "1776-07-04",
+      "id": "PERMIT",
+      "issuer": "Census",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MACRO | US | Building Permits (Thousands of Units, SAAR)",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
+      "expected_lag_days": 29,
+      "frequency": "M",
+      "history_start": "1776-07-04",
+      "id": "PI",
+      "issuer": "BEA",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MACRO | US | Personal Income (Billions of Dollars, SAAR)",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
+      "expected_lag_days": 14,
+      "frequency": "M",
+      "history_start": "1776-07-04",
+      "id": "PPIFIS",
+      "issuer": "BLS",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MACRO | US | PPI Final Demand (Index Nov 2009=100, SA)",
       "notes": "",
       "stalled_after_days": null,
       "status": "active",
@@ -41000,7 +41180,7 @@
         "date",
         "series_id"
       ],
-      "series_count": 301,
+      "series_count": 307,
       "status": "active",
       "status_reason": "",
       "store": "hub",
