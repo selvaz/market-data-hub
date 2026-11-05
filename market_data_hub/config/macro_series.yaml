@@ -369,6 +369,60 @@ fred:
   name: RATES | US | 5-Year Breakeven Inflation Rate
   priority: 2
   country: US
+- symbol: ICSA
+  expected_lag_days: 5
+  frequency: W
+  issuer: "DOL"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Initial Claims (Number, SA)
+  priority: 2
+  country: US
+- symbol: CCSA
+  expected_lag_days: 12
+  frequency: W
+  issuer: "DOL"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Continued Claims (Number, SA)
+  priority: 2
+  country: US
+- symbol: PPIFIS
+  expected_lag_days: 14
+  frequency: M
+  issuer: "BLS"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | PPI Final Demand (Index Nov 2009=100, SA)
+  priority: 2
+  country: US
+- symbol: PERMIT
+  expected_lag_days: 20
+  frequency: M
+  issuer: "Census"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Building Permits (Thousands of Units, SAAR)
+  priority: 2
+  country: US
+- symbol: PI
+  expected_lag_days: 29
+  frequency: M
+  issuer: "BEA"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Personal Income (Billions of Dollars, SAAR)
+  priority: 2
+  country: US
+- symbol: PCE
+  expected_lag_days: 29
+  frequency: M
+  issuer: "BEA"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Personal Consumption Expenditures (Billions of Dollars, SAAR)
+  priority: 2
+  country: US
 - symbol: CPIAUCSL
   expected_lag_days: 14
   frequency: M
