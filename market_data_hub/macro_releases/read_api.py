@@ -433,7 +433,7 @@ class ReadAPI:
         snapshot = Snapshot.load(self.store, cutoff)
         return self._cards(snapshot, start, end, indicators, geography, policy=policy)
 
-    def first_seen_release_cards(self, since, until, *, as_known_at=None, policy="revised_history"):
+    def first_seen_release_cards(self, since, until, *, as_known_at=None, policy="new_release"):
         """Issuer actuals first captured in [since, until), known at the cutoff.
 
         Reuse publication-card resolution, previous values and forecast policy.
@@ -442,12 +442,16 @@ class ReadAPI:
         redistributors, provisional and disputed readings are excluded.
         Collection issues are the latest saved outcome per family at the cutoff,
         independent of publication/fetch windows. No-change is a healthy outcome.
+        The new_release default resolves the latest value, but excludes cards
+        when either the selected or earliest official evidence is a backfill.
+        This exclusion also applies when another history policy is requested.
         """
-        validate_history_policy(policy, as_known_at)
+        selection_policy = "revised_history" if policy == "new_release" else policy
+        validate_history_policy(selection_policy, as_known_at)
         start, end = window(since, until)
         cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
         snapshot = Snapshot.load(self.store, cutoff)
-        result = self._cards(snapshot, start, end, first_seen_window=True, policy=policy)
+        result = self._cards(snapshot, start, end, first_seen_window=True, policy=selection_policy)
         latest = {}
         for row in snapshot.collect_families:
             latest.setdefault(row["family"], row)
@@ -515,13 +519,16 @@ class ReadAPI:
                 if stage in {e.stage for e in headline}
                 else sorted({e.stage for e in headline})[-1]
             )
-            first_official_seen = min((
-                e.first_seen_at for e in headline
+            official_headline = [
+                e for e in headline
                 if e.verified_issuer and e.value is not None
                 and e.reading_kind == "actual" and e.stage == stage
-            ), default=None)
+            ]
+            first_official_seen = min((e.first_seen_at for e in official_headline), default=None)
             if first_seen_window and (
                 first_official_seen is None or not start <= first_official_seen < end
+                or any(e.first_seen_at == first_official_seen and e.revision_kind == "backfill"
+                       for e in official_headline)
             ):
                 continue
             resolution = resolve_evidence(
@@ -532,6 +539,8 @@ class ReadAPI:
             selected = next(
                 e for e in headline if e.id == resolution.source["selected_evidence_id"]
             )
+            if first_seen_window and selected.revision_kind == "backfill":
+                continue
             if (
                 selected.role == "mirror"
                 and resolution.status == "provisional"
