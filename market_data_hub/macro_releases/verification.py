@@ -156,8 +156,8 @@ def _month_number(period):
 def _gdp_backfill_check(store, obs, observations, band):
     """Check missing ECY2 periods locally, keeping a verified scale anchor.
 
-    A reviewed ECY2 document may bridge history only when it overlaps a
-    verified period on the same scale. Adjacent months then have a 10% band;
+    A reviewed ECY2 document may bridge history only through consecutive
+    valid months to a verified period on the same scale. Adjacent months have a 10% band;
     the reviewed April 2020 pandemic contraction has a specific 25% allowance.
     Unreviewed or isolated observations use a nearby verified period, with a
     compounded 10% per month band, up to three months. Longer gaps need review.
@@ -176,16 +176,32 @@ def _gdp_backfill_check(store, obs, observations, band):
     peers = [o for o in observations if o.indicator_id == obs.indicator_id and o.document == obs.document
              and o.series_key == obs.series_key and o.edition == obs.edition and reviewed_anchor(o)
              and o.value is not None and math.isfinite(o.value) and not o.needs_review]
-    anchored = any(o.period in verified and abs(o.value - verified[o.period]) <= band for o in peers)
-    neighbours = [o for o in peers if _month_number(o.period) is not None
-                  and abs(_month_number(o.period) - month) == 1 and o.value > 0]
-    if reviewed_anchor(obs) and anchored and neighbours:
-        for other in neighbours:
-            earlier, later = sorted((obs, other), key=lambda o: o.period)
-            limit = 0.25 if later.period == "2020-04" else 0.10
-            if abs(later.value / earlier.value - 1) > limit:
-                return False
-        return True
+    peers = [o for o in peers if _month_number(o.period) is not None and o.value > 0]
+
+    def valid_step(a, b):
+        earlier, later = sorted((a, b), key=lambda o: o.period)
+        limit = 0.25 if later.period == "2020-04" else 0.10
+        return abs(later.value / earlier.value - 1) <= limit
+
+    if reviewed_anchor(obs):
+        neighbours = [o for o in peers if abs(_month_number(o.period) - month) == 1]
+        if any(not valid_step(obs, other) for other in neighbours):
+            return False
+        # Walk only valid adjacent edges; a matching peer in another component
+        # cannot certify this observation's scale.
+        pending = [obs]
+        visited = {month}
+        while pending:
+            current = pending.pop()
+            if current.period in verified and abs(current.value - verified[current.period]) <= band:
+                return True
+            current_month = _month_number(current.period)
+            for other in peers:
+                other_month = _month_number(other.period)
+                if (other_month not in visited and abs(other_month - current_month) == 1
+                        and valid_step(current, other)):
+                    visited.add(other_month)
+                    pending.append(other)
     nearby = [(abs(_month_number(period) - month), value) for period, value in verified.items()]
     if not nearby:
         return False
