@@ -149,6 +149,7 @@ class Resolution:
     discrepancies: tuple[dict, ...]
     provenance: tuple[dict, ...]
     reason: str
+    revision_kind: Optional[str] = None
     rule_version: str = RULE_VERSION
     policy_decision: Optional[dict] = None
     issuer_id: str = ""
@@ -743,6 +744,7 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
         discrepancies=tuple(discrepancies),
         provenance=tuple(e.provenance() for e in sorted(all_rows, key=_tie)),
         reason=reason,
+        revision_kind=selected.revision_kind,
         policy_decision=selected.policy_decision,
         issuer_id=selected.issuer_id,
         source_class=selected.source_class,

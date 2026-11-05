@@ -403,6 +403,7 @@ class ReadAPI:
                 "vote_split": facts.get("vote_split"),
                 "published_at": resolution.published_at,
                 "first_seen_at": resolution.first_seen_at,
+                "revision_kind": resolution.revision_kind,
                 "policy_decision": facts, "resolution": resolution.to_dict(),
             })
         decisions.sort(key=lambda d: (d["decision_date"], d["published_at"] or "", d["release_event_id"]), reverse=True)
@@ -701,6 +702,7 @@ class ReadAPI:
                     "time_basis": time_basis,
                     "publication_precision": precision,
                     "resolution": resolution.to_dict(),
+                    "revision_kind": resolution.revision_kind,
                     "issuer_id": resolution.issuer_id,
                     "source_class": resolution.source_class,
                     "policy_decision": resolution.policy_decision,
