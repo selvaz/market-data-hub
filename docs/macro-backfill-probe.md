@@ -54,3 +54,33 @@ headline only. A longer `since` does not discover older releases. Deep
 first-print history requires reviewed archived bulletins and composition
 validation; a separate current-series API would instead yield revised history
 and needs explicit vintage labeling, including geography/composition checks.
+
+## Policy
+
+`resolve(store, indicator, period, policy=..., as_known_at=...)` selects a
+value for a period and exposes `revision_kind` directly, as well as in
+provenance. `ReadAPI.release_cards`, `first_seen_release_cards` and
+`decision_history` accept the same policy; `Store.release_cards` and
+`Store.decision_history` forward it. Card resolution and previous/revision
+objects carry the selected kind, and cards with an actual also expose it at
+the top level. A selected reading without a stored kind returns `None`, not a
+guessed kind. Cards are event-based, so use `resolve` for one selected value
+per period.
+
+* `first_release`: only verified issuer vintages marked `initial`, earliest
+  publication first; unknown or backfill kinds are ineligible. Missing
+  initial evidence returns no resolution, not a substitute.
+* `as_known_at`: latest compatible value known by the required `as_known_at`
+  timestamp; a backfill first appears at its actual first-seen timestamp.
+* `revised_history`: latest compatible value per period, including marked
+  backfills. This is the default for compatibility with existing consumers.
+  It still honors an `as_known_at` cutoff if supplied; without one, the cutoff
+  is the current time. It is not a first-release or historical simulation.
+
+`latest_official` continues including backfills and returns their existing
+`revision_kind` field; `first_release` filters for `initial`. Callers building
+point-in-time or first-print series must explicitly choose their policy. The
+default preserves current report and calendar behavior, so those consumers
+need no signature changes, but they must opt in before treating values as
+first releases. Stored classification is only as reliable as the adapter's
+evidence; these policies cannot reconstruct missing original publications.
