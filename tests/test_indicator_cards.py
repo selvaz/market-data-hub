@@ -480,9 +480,16 @@ def test_derived_ingredients_are_not_spread_aliases():
     assert indicator_card("ms:BAA").key not in {"us_spread_baa10y", "us_spread_baa_aaa"}
     assert indicator_card("us_curve_10y3m").ids.derived_ms == ("DGS10", "DGS3MO")
     assert indicator_card("us_curve_10y3m").ids.ms == ()
-    assert (
-        indicator_card("ms:ICSA") is None
-    )  # explicitly not stored, not an approved id
+    assert indicator_card("ms:ICSA").key == "us_claims_initial"
+
+
+@pytest.mark.parametrize("symbol,key", [
+    ("ICSA", "us_claims_initial"), ("CCSA", "us_claims_continuing"),
+    ("PPIFIS", "us_ppi_final_demand"), ("PERMIT", "us_building_permits"),
+    ("PI", "us_personal_income"), ("PCE", "us_personal_spending"),
+])
+def test_us_macro_series_resolve_to_matching_cards(symbol, key):
+    assert indicator_card("ms:" + symbol).key == key
 
 
 def test_ambiguity_resolution_prefers_the_ids_own_row_then_country_concept_key():
@@ -670,8 +677,8 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
         report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     )
     assert report["macro_series"] == {
-        "mapped": 117,
-        "total": 117,
+        "mapped": 123,
+        "total": 123,
         "unmapped": [],
     }
     assert "macro_releases" in capsys.readouterr().out

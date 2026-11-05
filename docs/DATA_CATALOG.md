@@ -49,7 +49,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 301 |
+| hub | [macro_series](#catalog-hub-macro_series) | 307 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
@@ -136,7 +136,7 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 |---|---|---|---|---|---:|---|---|---|
 | AWHMAN | Manufacturing hours lead; monthly and benchmark revisions. | BLS CES | ALFRED via FRED API | M | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | BUSLOANS | Commercial and industrial loans lead; revised bank aggregates and seasonal factors. | Federal Reserve Board H.8 | ALFRED via FRED API | W | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
-| CCSA | Continuing claims download in scripts/data; weekly and seasonal revisions. | US Department of Labor / ETA | ALFRED via FRED API | W | 5 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| CCSA | Continuing claims (insured unemployment) | US Department of Labor / ETA | ALFRED via FRED API | W | 5 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | CES0500000003 | Average hourly earnings, total private | BLS CES | ALFRED via FRED API | M | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | CLVMEURSCAB1GQEA19 | Real GDP | Eurostat | ALFRED via FRED API | Q | 30 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | CMRMTSPL | Real manufacturing and trade sales coincident input; revised deflators and sales. | Federal Reserve Bank of St. Louis (Census sales / BEA deflators) | ALFRED via FRED API | M | 45 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
@@ -151,7 +151,7 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 | GDPC1 | Real GDP | BEA | ALFRED via FRED API | Q | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | GDPNOW | GDPNow external benchmark; preserve successive within-quarter nowcasts. | Federal Reserve Bank of Atlanta | ALFRED via FRED API | D | 0 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | HOUST | Housing starts | Census | ALFRED via FRED API | M | 20 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
-| ICSA | Weekly initial claims aggregated monthly; weekly and seasonal revisions. | US Department of Labor / ETA | ALFRED via FRED API | W | 5 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| ICSA | Initial jobless claims | US Department of Labor / ETA | ALFRED via FRED API | W | 5 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | INDPRO | Industrial production | Fed Board | ALFRED via FRED API | M | 16 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | JTSJOL | JOLTS openings input; monthly and annual revisions. | BLS JOLTS | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | M2SL | M2 money stock | Fed H.6 | ALFRED via FRED API | M | 30 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
@@ -160,8 +160,8 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 | PAYEMS | Nonfarm payrolls | BLS CES | ALFRED via FRED API | M | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PCEPI | PCE price index (headline) | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PCEPILFE | Core PCE price index | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
-| PERMIT | Building permits lead; monthly and seasonal revisions. | US Census Bureau | ALFRED via FRED API | M | 20 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
-| PPIFIS | Final demand PPI control; preliminary and seasonal revisions. Source download is PPIFIS.csv. | BLS | ALFRED via FRED API | M | 15 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| PERMIT | Building permits | US Census Bureau | ALFRED via FRED API | M | 20 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| PPIFIS | PPI final demand (headline) | BLS | ALFRED via FRED API | M | 15 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | RSAFS | Retail and food services sales (nominal) | Census | ALFRED via FRED API | M | 15 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | SAHMCURRENT | Revised Sahm comparator built from revised unemployment history. | Federal Reserve Bank of St. Louis | ALFRED via FRED API | M | 30 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | SAHMREALTIME | Published real-time Sahm detector; archive actual publication availability. | Federal Reserve Bank of St. Louis | ALFRED via FRED API | M | 30 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
@@ -1636,6 +1636,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | CB_ZA_10Y | Constant 10y government bond yield (unresolved) | South African Reserve Bank | South African Reserve Bank direct | D | 3 | 2023-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | disabled: Constant-tenor daily 10y endpoint unresolved; supplementary R209 and R2030 retain explicit bond identities |
 | CB_ZA_R2030 | R2030 government stock closing yield (2030 bond, not constant 10y) | South African Reserve Bank | South African Reserve Bank direct | D | 3 | 2023-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | CB_ZA_R209 | R209 government stock closing yield (2036 bond, not constant 10y) | South African Reserve Bank | South African Reserve Bank direct | D | 3 | 2023-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| CCSA | MACRO \| US \| Continued Claims (Number, SA) | DOL | FRED | W | 12 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | CES0500000003 | LABOR \| US \| Average Hourly Earnings of All Employees Total Private | BLS CES | FRED | M | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | CLVMEURSCAB1GQEA19 | MACRO \| EA \| Real GDP (chained 2010 EUR) | Eurostat | FRED | Q | 30 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | CP0000EZ19M086NEST | MACRO \| EA \| HICP All items (Index 2015=100) | Eurostat | FRED | M | 17 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
@@ -1690,6 +1691,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | GPRD_THREAT | Daily geopolitical threats | Caldara and Iacoviello | Caldara and Iacoviello direct | D | 7 | 1985 onward (provider availability varies) | gpr daily 14:10 PT (proposed, disabled) | active |
 | GPRT | Monthly geopolitical threats | Caldara and Iacoviello | Caldara and Iacoviello direct | M | 31 | 1985 onward (provider availability varies) | gpr daily 14:10 PT (proposed, disabled) | active |
 | HOUST | MACRO \| US \| Housing Starts | Census | FRED | M | 20 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| ICSA | MACRO \| US \| Initial Claims (Number, SA) | DOL | FRED | W | 5 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | INDPRO | MACRO \| US \| Industrial Production Index | Fed Board | FRED | M | 16 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | IRLTLT01ATM156N | RATES \| AUT \| 10-Year Government Bond Yield (OECD via FRED) | OECD Main Economic Indicators (national source agencies) | FRED | M | 60 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | IRLTLT01AUM156N | RATES \| AUS \| 10-Year Government Bond Yield (OECD via FRED) | OECD Main Economic Indicators (national source agencies) | FRED | M | 60 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
@@ -1745,8 +1747,12 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | NYFED_ACM_TP10_DAILY | RATES \| US \| NY Fed ACM 10-Year Term Premium Daily | NY Fed (model) | NY Fed direct | D | 2 | 1961-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | NYFED_ACM_TP10_MONTHLY | RATES \| US \| NY Fed ACM 10-Year Term Premium Monthly | NY Fed (model) | NY Fed direct | M | 30 | 1961-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | PAYEMS | MACRO \| US \| Nonfarm Payrolls (Total) | BLS CES | FRED | M | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| PCE | MACRO \| US \| Personal Consumption Expenditures (Billions of Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCEPI | MACRO \| US \| PCE Price Index | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCEPILFE | MACRO \| US \| Core PCE Price Index | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| PERMIT | MACRO \| US \| Building Permits (Thousands of Units, SAAR) | Census | FRED | M | 20 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| PI | MACRO \| US \| Personal Income (Billions of Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| PPIFIS | MACRO \| US \| PPI Final Demand (Index Nov 2009=100, SA) | BLS | FRED | M | 14 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | RRPONTSYD | LIQ \| US \| Overnight Reverse Repo (RRP, net liquidity) | NY Fed | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | RSAFS | MACRO \| US \| Retail Sales (Total) | Census | FRED | M | 15 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | STLFSI4 | RISK \| US \| St. Louis Fed Financial Stress Index | St. Louis Fed | FRED | W | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
