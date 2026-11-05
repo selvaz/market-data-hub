@@ -369,6 +369,36 @@
       "id": "cal:kr_unemp",
       "key": "kr_labour",
       "basis": "LazyCommittee unemployment rate shares the existing Korean labour concept cal:kr_unemployment_rate_nsa; the seed adjustment is unspecified, so this is context only."
+    },
+    {
+      "basis": "Weekly seasonally adjusted initial claims level, number.",
+      "id": "ms:ICSA",
+      "key": "us_claims_initial"
+    },
+    {
+      "basis": "Weekly seasonally adjusted continued claims level, number.",
+      "id": "ms:CCSA",
+      "key": "us_claims_continuing"
+    },
+    {
+      "basis": "Monthly seasonally adjusted headline final-demand producer price index level.",
+      "id": "ms:PPIFIS",
+      "key": "us_ppi_final_demand"
+    },
+    {
+      "basis": "Monthly total authorized housing units, seasonally adjusted annual rate.",
+      "id": "ms:PERMIT",
+      "key": "us_building_permits"
+    },
+    {
+      "basis": "Monthly nominal personal income level, seasonally adjusted annual rate.",
+      "id": "ms:PI",
+      "key": "us_personal_income"
+    },
+    {
+      "basis": "Monthly nominal personal consumption expenditures level, seasonally adjusted annual rate.",
+      "id": "ms:PCE",
+      "key": "us_personal_spending"
     }
   ],
   "certified_gaps": {},
