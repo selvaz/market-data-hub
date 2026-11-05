@@ -143,6 +143,75 @@ def configured_bands(overrides=None):
     return values
 
 
+def _month_number(period):
+    try:
+        year, month = period.split("-")
+        if len(year) != 4 or len(month) != 2 or not 1 <= int(month) <= 12:
+            return None
+        return int(year) * 12 + int(month)
+    except (ValueError, AttributeError):
+        return None
+
+
+def _gdp_backfill_check(store, obs, observations, band):
+    """Check missing ECY2 periods locally, keeping a verified scale anchor.
+
+    A reviewed ECY2 document may bridge history only through consecutive
+    valid months to a verified period on the same scale. Adjacent months have a 10% band;
+    the reviewed April 2020 pandemic contraction has a specific 25% allowance.
+    Unreviewed or isolated observations use a nearby verified period, with a
+    compounded 10% per month band, up to three months. Longer gaps need review.
+    """
+    month = _month_number(obs.period)
+    if month is None or obs.value <= 0:
+        return False
+    rows = store.conn.execute(
+        "SELECT v.reference_period,v.value FROM value_vintages v JOIN source_series s ON s.id=v.source_series_id "
+        "WHERE v.indicator_id=? AND v.verification_status='verified' AND s.evidence_role='issuer' "
+        "AND s.is_published=1 ORDER BY v.issuer_published_at DESC,v.id DESC", (obs.indicator_id,)).fetchall()
+    verified = {}
+    for period, value in rows:
+        if _month_number(period) is not None:
+            verified.setdefault(period, value)
+    peers = [o for o in observations if o.indicator_id == obs.indicator_id and o.document == obs.document
+             and o.series_key == obs.series_key and o.edition == obs.edition and reviewed_anchor(o)
+             and o.value is not None and math.isfinite(o.value) and not o.needs_review]
+    peers = [o for o in peers if _month_number(o.period) is not None and o.value > 0]
+
+    def valid_step(a, b):
+        earlier, later = sorted((a, b), key=lambda o: o.period)
+        limit = 0.25 if later.period == "2020-04" else 0.10
+        return abs(later.value / earlier.value - 1) <= limit
+
+    if reviewed_anchor(obs):
+        neighbours = [o for o in peers if abs(_month_number(o.period) - month) == 1]
+        if any(not valid_step(obs, other) for other in neighbours):
+            return False
+        # Walk only valid adjacent edges; a matching peer in another component
+        # cannot certify this observation's scale.
+        pending = [obs]
+        visited = {month}
+        while pending:
+            current = pending.pop()
+            if current.period in verified and abs(current.value - verified[current.period]) <= band:
+                return True
+            current_month = _month_number(current.period)
+            for other in peers:
+                other_month = _month_number(other.period)
+                if (other_month not in visited and abs(other_month - current_month) == 1
+                        and valid_step(current, other)):
+                    visited.add(other_month)
+                    pending.append(other)
+    nearby = [(abs(_month_number(period) - month), value) for period, value in verified.items()]
+    if not nearby:
+        return False
+    gap, value = min(nearby)
+    if not 1 <= gap <= 3 or value <= 0:
+        return False
+    ratio = obs.value / value
+    return (1 / 1.1 ** gap) <= ratio <= 1.1 ** gap
+
+
 def verify(store, batch, bands):
     # A known-good edition may bootstrap its own backfill/current final values.
     # Other editions can use that reviewed anchor as their initial comparison;
@@ -167,7 +236,15 @@ def verify(store, batch, bands):
             if candidates:
                 anchor = max(candidates, key=lambda o: (o.period == obs.period, o.published_at or "", o.period))
                 baseline = (anchor.value,)
-        if baseline and abs(obs.value - baseline[0]) > bands[obs.indicator_id]:
+        same_period = store.conn.execute(
+            "SELECT 1 FROM value_vintages v JOIN source_series s ON s.id=v.source_series_id "
+            "WHERE v.indicator_id=? AND v.reference_period=? AND v.verification_status='verified' "
+            "AND s.evidence_role='issuer' AND s.is_published=1 LIMIT 1",
+            (obs.indicator_id, obs.period)).fetchone() if obs.indicator_id == "uk_gdp_index" else None
+        if obs.indicator_id == "uk_gdp_index" and baseline and not same_period:
+            if not _gdp_backfill_check(store, obs, batch.observations, bands[obs.indicator_id]):
+                batch.issue("sanity_band_exceeded:" + obs.indicator_id)
+        elif baseline and abs(obs.value - baseline[0]) > bands[obs.indicator_id]:
             batch.issue("sanity_band_exceeded:" + obs.indicator_id)
         elif not baseline and not batch.anchors and not reviewed_anchor(obs):
             batch.issue("verified_baseline_missing:" + obs.indicator_id)
