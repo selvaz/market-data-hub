@@ -91,11 +91,28 @@ def releases(report):
     return [r for group in report["groups"] for r in group["releases"]]
 
 
+def test_backfill_only_edition_is_not_a_new_release(tmp_path):
+    path = tmp_path / "backfill.sqlite"
+    with open_writer(path) as store:
+        persist(store, [obs("uk_cpi_yy", "uk_cpi", period="2026-08", value=2.4,
+                            published="2026-09-17T07:00:00Z", seen="2026-10-29T13:16:00Z",
+                            revision="routine")])
+        from market_data_hub.macro_releases import ReadAPI
+        cards = ReadAPI(store).first_seen_release_cards(
+            "2026-10-29T00:00:00Z", "2026-10-29T21:00:00Z", as_known_at="2026-10-29T21:00:00Z")
+        assert cards["cards"] == []
+    result = collect_report(path, now=NOW)
+    assert result["release_count"] == 0
+    assert releases(result) == []
+
+
 def test_central_bank_and_read_only_issuer_document(db):
     before = db.read_bytes()
     report = collect_report(db, now=NOW)
     assert report["groups"][0]["name"] == "Central banks"
     (row,) = releases(report)
+    assert row["revision_kind"] == "initial"
+    assert "<b>Revision kind:</b> initial" in render_html(report)
     assert row["official_value"] == 2.5 and row["unit"] == "% per annum"
     assert row["reference_period"] == "2026-10-29" and row["issuer"] == "ECB"
     assert row["document_url"].startswith("https://issuer.example/decision")

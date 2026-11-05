@@ -84,3 +84,36 @@ def test_cards_apply_policy_and_surface_kind(history):
     assert initial[0]["resolution"]["revision_kind"] == "initial"
     with pytest.raises(ValueError, match="requires an as_known_at"):
         api.release_cards("2024-01-01", "2024-12-31", policy="as_known_at")
+
+
+def test_same_edition_initial_then_backfill_never_announced_as_new(history):
+    row = dict(history.conn.execute("SELECT * FROM value_vintages WHERE revision_kind='initial'").fetchone())
+    row = {key: value for key, value in row.items() if key in ValueVintage.model_fields}
+    row.update(value=2.3, published_as="2.3", revision_kind="backfill",
+               first_seen_at="2024-02-14T09:00:00Z", retrieved_at="2024-02-14T09:00:00Z",
+               document_hash=hashlib.sha256(b"same edition later snapshot").hexdigest())
+    history.put(ValueVintage(**row))
+    cutoff = "2024-02-14T10:00:00Z"
+    first = resolve(history, "uk_cpi_yy", "2024-01", policy="first_release", as_known_at=cutoff)
+    known = resolve(history, "uk_cpi_yy", "2024-01", policy="as_known_at", as_known_at=cutoff)
+    assert (first.value, first.revision_kind) == (2.0, "initial")
+    assert (known.value, known.revision_kind) == (2.3, "backfill")
+    api = ReadAPI(history)
+    kwargs = dict(since="2024-02-14T07:00:00Z", until=cutoff, as_known_at=cutoff)
+    assert api.first_seen_release_cards(**kwargs)["cards"] == []
+    assert api.first_seen_release_cards(**kwargs, policy="as_known_at")["cards"] == []
+    initial_cards = api.first_seen_release_cards(**kwargs, policy="first_release")["cards"]
+    assert [(card["resolution"]["value"], card["revision_kind"]) for card in initial_cards] == [(2.0, "initial")]
+
+
+def test_initial_selected_after_backfill_first_seen_is_not_a_new_release(history):
+    row = dict(history.conn.execute("SELECT * FROM value_vintages WHERE revision_kind='initial'").fetchone())
+    row = {key: value for key, value in row.items() if key in ValueVintage.model_fields}
+    row.update(value=1.9, published_as="1.9", revision_kind="backfill",
+               first_seen_at="2024-02-14T07:45:00Z", retrieved_at="2024-02-14T07:45:00Z",
+               document_hash=hashlib.sha256(b"same edition early snapshot").hexdigest())
+    history.put(ValueVintage(**row))
+    cards = ReadAPI(history).first_seen_release_cards(
+        "2024-02-14T07:00:00Z", "2024-02-14T09:00:00Z",
+        as_known_at="2024-02-14T09:00:00Z", policy="first_release")
+    assert cards["cards"] == []
