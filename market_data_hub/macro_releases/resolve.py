@@ -629,7 +629,6 @@ def validate_history_policy(policy, as_known_at=None):
 
 def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_id=None,
                      policy="revised_history"):
-    validate_history_policy(policy, snapshot.cutoff)
     indicator = snapshot.indicators.get(indicator_id)
     if indicator is None:
         return None
