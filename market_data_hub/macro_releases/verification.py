@@ -143,6 +143,59 @@ def configured_bands(overrides=None):
     return values
 
 
+def _month_number(period):
+    try:
+        year, month = period.split("-")
+        if len(year) != 4 or len(month) != 2 or not 1 <= int(month) <= 12:
+            return None
+        return int(year) * 12 + int(month)
+    except (ValueError, AttributeError):
+        return None
+
+
+def _gdp_backfill_check(store, obs, observations, band):
+    """Check missing ECY2 periods locally, keeping a verified scale anchor.
+
+    A reviewed ECY2 document may bridge history only when it overlaps a
+    verified period on the same scale. Adjacent months then have a 10% band;
+    the reviewed April 2020 pandemic contraction has a specific 25% allowance.
+    Unreviewed or isolated observations use a nearby verified period, with a
+    compounded 10% per month band, up to three months. Longer gaps need review.
+    """
+    month = _month_number(obs.period)
+    if month is None or obs.value <= 0:
+        return False
+    rows = store.conn.execute(
+        "SELECT v.reference_period,v.value FROM value_vintages v JOIN source_series s ON s.id=v.source_series_id "
+        "WHERE v.indicator_id=? AND v.verification_status='verified' AND s.evidence_role='issuer' "
+        "AND s.is_published=1 ORDER BY v.issuer_published_at DESC,v.id DESC", (obs.indicator_id,)).fetchall()
+    verified = {}
+    for period, value in rows:
+        if _month_number(period) is not None:
+            verified.setdefault(period, value)
+    peers = [o for o in observations if o.indicator_id == obs.indicator_id and o.document == obs.document
+             and o.series_key == obs.series_key and o.edition == obs.edition and reviewed_anchor(o)
+             and o.value is not None and math.isfinite(o.value) and not o.needs_review]
+    anchored = any(o.period in verified and abs(o.value - verified[o.period]) <= band for o in peers)
+    neighbours = [o for o in peers if _month_number(o.period) is not None
+                  and abs(_month_number(o.period) - month) == 1 and o.value > 0]
+    if reviewed_anchor(obs) and anchored and neighbours:
+        for other in neighbours:
+            earlier, later = sorted((obs, other), key=lambda o: o.period)
+            limit = 0.25 if later.period == "2020-04" else 0.10
+            if abs(later.value / earlier.value - 1) > limit:
+                return False
+        return True
+    nearby = [(abs(_month_number(period) - month), value) for period, value in verified.items()]
+    if not nearby:
+        return False
+    gap, value = min(nearby)
+    if not 1 <= gap <= 3 or value <= 0:
+        return False
+    ratio = obs.value / value
+    return (1 / 1.1 ** gap) <= ratio <= 1.1 ** gap
+
+
 def verify(store, batch, bands):
     # A known-good edition may bootstrap its own backfill/current final values.
     # Other editions can use that reviewed anchor as their initial comparison;
@@ -167,7 +220,15 @@ def verify(store, batch, bands):
             if candidates:
                 anchor = max(candidates, key=lambda o: (o.period == obs.period, o.published_at or "", o.period))
                 baseline = (anchor.value,)
-        if baseline and abs(obs.value - baseline[0]) > bands[obs.indicator_id]:
+        same_period = store.conn.execute(
+            "SELECT 1 FROM value_vintages v JOIN source_series s ON s.id=v.source_series_id "
+            "WHERE v.indicator_id=? AND v.reference_period=? AND v.verification_status='verified' "
+            "AND s.evidence_role='issuer' AND s.is_published=1 LIMIT 1",
+            (obs.indicator_id, obs.period)).fetchone() if obs.indicator_id == "uk_gdp_index" else None
+        if obs.indicator_id == "uk_gdp_index" and baseline and not same_period:
+            if not _gdp_backfill_check(store, obs, batch.observations, bands[obs.indicator_id]):
+                batch.issue("sanity_band_exceeded:" + obs.indicator_id)
+        elif baseline and abs(obs.value - baseline[0]) > bands[obs.indicator_id]:
             batch.issue("sanity_band_exceeded:" + obs.indicator_id)
         elif not baseline and not batch.anchors and not reviewed_anchor(obs):
             batch.issue("verified_baseline_missing:" + obs.indicator_id)
