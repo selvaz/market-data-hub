@@ -78,6 +78,7 @@ def collect_report(db_path, *, since_hours=24, now=None):
             geography=card["geography"], family=card["family"],
             reference_period=card["reference_period"], stage=card["stage"],
             official_value=resolution["value"], unit=resolution["unit"], scale=resolution["scale"],
+            revision_kind=resolution["revision_kind"],
             source_class=card["source_class"], status=resolution["status"],
             previous=card["previous"], previous_missing_reason=card["previous_missing_reason"],
             published_at=card["released_at"], publication_precision=card["publication_precision"],
@@ -181,6 +182,7 @@ def _release_html(row, report):
         f'<span class="release-value">{_text(_value(row["official_value"], row["unit"], row["scale"]))}</span>'
         f'{_change_html(row)}</div></div>'
         f'<p class="release-period"><b>Reference period:</b> {_text(row["reference_period"])} · {_text(row["stage"])}</p>'
+        f'<p class="release-period"><b>Revision kind:</b> {_text(row.get("revision_kind") or "unknown")}</p>'
         f'{_indicator_card_html(row)}'
         f'<div class="release-details"><p><b>Previous:</b> {_text(previous_text)}</p>{forecasts}'
         f'<p><b>Published:</b> {_text(publication)} · <b>Issuer:</b> {_text(row["issuer"])}</p></div>'

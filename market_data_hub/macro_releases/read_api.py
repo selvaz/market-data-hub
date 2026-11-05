@@ -20,6 +20,7 @@ from .resolve import (
     publication_order,
     resolve_evidence,
     subset,
+    validate_history_policy,
 )
 
 FAMILY_INDICATORS = {
@@ -269,7 +270,7 @@ def event_timezone(snapshot, event_id, selected, time_basis):
         return None
 
 
-def latest_period(snapshot, indicator, period):
+def latest_period(snapshot, indicator, period, *, policy="revised_history"):
     """Resolve each stage separately, then choose the latest publication stage."""
     candidates = [
         e
@@ -277,7 +278,7 @@ def latest_period(snapshot, indicator, period):
         if e.indicator_id == indicator and e.reference_period == period
     ]
     stages = sorted({e.stage for e in candidates})
-    resolved = [resolve_evidence(snapshot, indicator, period, s) for s in stages]
+    resolved = [resolve_evidence(snapshot, indicator, period, s, policy=policy) for s in stages]
     resolved = [r for r in resolved if r is not None]
     if not resolved:
         return None
@@ -292,7 +293,7 @@ def latest_period(snapshot, indicator, period):
             resolution.stage,
         )
 
-    return max(resolved, key=order).to_dict()
+    return (min if policy == "first_release" else max)(resolved, key=order).to_dict()
 
 
 class ReadAPI:
@@ -366,13 +367,14 @@ class ReadAPI:
             "limitations": limitations,
         }
 
-    def decision_history(self, indicator, *, as_known_at=None, limit=100):
+    def decision_history(self, indicator, *, as_known_at=None, limit=100, policy="revised_history"):
         """Latest official vintage per decision, newest decision date first.
 
         Rates are percent levels (Fed scalar: upper bound); change_bp is the
         stored issuer decision change, never a difference across collected rows.
         Full rates preserve ranges and multi-rate decisions. No FRED mapping.
         """
+        validate_history_policy(policy, as_known_at)
         if type(limit) is not int or limit < 1:
             raise ValueError("limit must be a positive integer")
         cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
@@ -388,7 +390,7 @@ class ReadAPI:
                   if e.indicator_id == indicator and e.event_id and e.reference_period}
         decisions = []
         for event_id, period, stage in sorted(groups):
-            resolution = resolve_evidence(snapshot, indicator, period, stage, event_id=event_id)
+            resolution = resolve_evidence(snapshot, indicator, period, stage, event_id=event_id, policy=policy)
             if resolution is None or resolution.status != "official":
                 continue
             facts = resolution.policy_decision
@@ -403,6 +405,7 @@ class ReadAPI:
                 "vote_split": facts.get("vote_split"),
                 "published_at": resolution.published_at,
                 "first_seen_at": resolution.first_seen_at,
+                "revision_kind": resolution.revision_kind,
                 "policy_decision": facts, "resolution": resolution.to_dict(),
             })
         decisions.sort(key=lambda d: (d["decision_date"], d["published_at"] or "", d["release_event_id"]), reverse=True)
@@ -414,7 +417,8 @@ class ReadAPI:
         return result
 
     def release_cards(
-        self, since, until, indicators=None, geography=None, as_known_at=None
+        self, since, until, indicators=None, geography=None, as_known_at=None, *,
+        policy="revised_history",
     ):
         """Return {cards, empty, limitations}; each requested absence is explained.
 
@@ -423,12 +427,13 @@ class ReadAPI:
         Actual issuer times drive the window, then schedules, then explicitly
         labelled legacy calendar dates. No missing time is invented.
         """
+        validate_history_policy(policy, as_known_at)
         start, end = window(since, until)
         cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
         snapshot = Snapshot.load(self.store, cutoff)
-        return self._cards(snapshot, start, end, indicators, geography)
+        return self._cards(snapshot, start, end, indicators, geography, policy=policy)
 
-    def first_seen_release_cards(self, since, until, *, as_known_at=None):
+    def first_seen_release_cards(self, since, until, *, as_known_at=None, policy="new_release"):
         """Issuer actuals first captured in [since, until), known at the cutoff.
 
         Reuse publication-card resolution, previous values and forecast policy.
@@ -437,11 +442,16 @@ class ReadAPI:
         redistributors, provisional and disputed readings are excluded.
         Collection issues are the latest saved outcome per family at the cutoff,
         independent of publication/fetch windows. No-change is a healthy outcome.
+        The new_release default resolves the latest value, but excludes cards
+        when either the selected or earliest official evidence is a backfill.
+        This exclusion also applies when another history policy is requested.
         """
+        selection_policy = "revised_history" if policy == "new_release" else policy
+        validate_history_policy(selection_policy, as_known_at)
         start, end = window(since, until)
         cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
         snapshot = Snapshot.load(self.store, cutoff)
-        result = self._cards(snapshot, start, end, first_seen_window=True)
+        result = self._cards(snapshot, start, end, first_seen_window=True, policy=selection_policy)
         latest = {}
         for row in snapshot.collect_families:
             latest.setdefault(row["family"], row)
@@ -452,7 +462,8 @@ class ReadAPI:
         result["window_basis"] = "first_official_seen_at"
         return result
 
-    def _cards(self, snapshot, start, end, indicators=None, geography=None, *, first_seen_window=False):
+    def _cards(self, snapshot, start, end, indicators=None, geography=None, *, first_seen_window=False,
+               policy="revised_history"):
         requested = (
             [indicators]
             if isinstance(indicators, str)
@@ -508,23 +519,28 @@ class ReadAPI:
                 if stage in {e.stage for e in headline}
                 else sorted({e.stage for e in headline})[-1]
             )
-            first_official_seen = min((
-                e.first_seen_at for e in headline
+            official_headline = [
+                e for e in headline
                 if e.verified_issuer and e.value is not None
                 and e.reading_kind == "actual" and e.stage == stage
-            ), default=None)
+            ]
+            first_official_seen = min((e.first_seen_at for e in official_headline), default=None)
             if first_seen_window and (
                 first_official_seen is None or not start <= first_official_seen < end
+                or any(e.first_seen_at == first_official_seen and e.revision_kind == "backfill"
+                       for e in official_headline)
             ):
                 continue
             resolution = resolve_evidence(
-                snapshot, indicator, period, stage, event_id=event_id
+                snapshot, indicator, period, stage, event_id=event_id, policy=policy
             )
             if resolution is None:
                 continue
             selected = next(
                 e for e in headline if e.id == resolution.source["selected_evidence_id"]
             )
+            if first_seen_window and selected.revision_kind == "backfill":
+                continue
             if (
                 selected.role == "mirror"
                 and resolution.status == "provisional"
@@ -538,7 +554,7 @@ class ReadAPI:
                         if e.published_at and e.published_at <= selected.published_at
                     ),
                 )
-                contextual = resolve_evidence(context, indicator, period, stage)
+                contextual = resolve_evidence(context, indicator, period, stage, policy=policy)
                 if (
                     contextual
                     and contextual.source["selected_evidence_id"] == selected.id
@@ -595,13 +611,13 @@ class ReadAPI:
                     and (e.published_at is None or e.published_at < released_at)
                 ),
             )
-            previous_before_release = latest_period(before, indicator, prior) if prior else None
+            previous_before_release = latest_period(before, indicator, prior, policy=policy) if prior else None
             # A late archive capture can establish the preceding decision at the
             # query cutoff without backdating what we knew before this release.
-            previous = (latest_period(decisions, indicator, prior) if prior else None
+            previous = (latest_period(decisions, indicator, prior, policy=policy) if prior else None
                         ) if decisions is not None else previous_before_release
             revised_previous = (
-                latest_period(snapshot if frequency == "E" else subset(snapshot, evidence), indicator, prior)
+                latest_period(snapshot if frequency == "E" else subset(snapshot, evidence), indicator, prior, policy=policy)
                 if prior
                 else None
             )
@@ -633,9 +649,9 @@ class ReadAPI:
             for changed_period in sorted(
                 {e.reference_period for e in evidence if e.reference_period < period}
             ):
-                old = latest_period(history, indicator, changed_period)
+                old = latest_period(history, indicator, changed_period, policy=policy)
                 changed = latest_period(
-                    subset(snapshot, evidence), indicator, changed_period
+                    subset(snapshot, evidence), indicator, changed_period, policy=policy
                 )
                 if old and changed and differs(old["value"], changed["value"]):
                     revisions.append(
@@ -646,7 +662,7 @@ class ReadAPI:
                             "comparison_basis": "publication_history_as_known_at_query",
                         }
                     )
-            old_stage = latest_period(history, indicator, period)
+            old_stage = latest_period(history, indicator, period, policy=policy)
             stage_change = None
             if old_stage and old_stage["stage"] != stage:
                 stage_change = {
@@ -701,6 +717,7 @@ class ReadAPI:
                     "time_basis": time_basis,
                     "publication_precision": precision,
                     "resolution": resolution.to_dict(),
+                    "revision_kind": resolution.revision_kind,
                     "issuer_id": resolution.issuer_id,
                     "source_class": resolution.source_class,
                     "policy_decision": resolution.policy_decision,

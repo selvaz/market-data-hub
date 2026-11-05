@@ -243,9 +243,10 @@ class Store:
     def first_release(self, indicator_id: Optional[str] = None) -> list[dict]:
         return self._view("first_release", indicator_id)
 
-    def release_cards(self, since, until, indicators=None, geography=None, as_known_at=None):
+    def release_cards(self, since, until, indicators=None, geography=None, as_known_at=None, *,
+                      policy="revised_history"):
         from .read_api import ReadAPI
-        return ReadAPI(self).release_cards(since, until, indicators, geography, as_known_at)
+        return ReadAPI(self).release_cards(since, until, indicators, geography, as_known_at, policy=policy)
 
     def explain_empty(self, indicator, period_or_window, *, as_known_at=None):
         from .read_api import ReadAPI
@@ -258,15 +259,16 @@ class Store:
             release_event_id, indicator=indicator, reference_period=reference_period,
             as_known_at=as_known_at, max_chars=max_chars)
 
-    def decision_history(self, indicator, *, as_known_at=None, limit=100):
+    def decision_history(self, indicator, *, as_known_at=None, limit=100, policy="revised_history"):
         from .read_api import ReadAPI
-        return ReadAPI(self).decision_history(indicator, as_known_at=as_known_at, limit=limit)
+        return ReadAPI(self).decision_history(indicator, as_known_at=as_known_at, limit=limit, policy=policy)
 
     def coverage(self, since, until, *, as_known_at=None):
         from .read_api import ReadAPI
         return ReadAPI(self).coverage(since, until, as_known_at=as_known_at)
 
     def latest_official(self, indicator_id: Optional[str] = None) -> list[dict]:
+        """Latest issuer vintages, including backfills labeled by revision_kind."""
         return self._view("latest_official", indicator_id)
 
     def _view(self, name: str, indicator_id: Optional[str]) -> list[dict]:

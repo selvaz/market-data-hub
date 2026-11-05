@@ -149,6 +149,7 @@ class Resolution:
     discrepancies: tuple[dict, ...]
     provenance: tuple[dict, ...]
     reason: str
+    revision_kind: Optional[str] = None
     rule_version: str = RULE_VERSION
     policy_decision: Optional[dict] = None
     issuer_id: str = ""
@@ -616,7 +617,18 @@ def publication_order(e):
     return e.ordering_at or ""
 
 
-def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_id=None):
+HISTORY_POLICIES = frozenset({"first_release", "as_known_at", "revised_history"})
+
+
+def validate_history_policy(policy, as_known_at=None):
+    if policy not in HISTORY_POLICIES:
+        raise ValueError("policy must be first_release, as_known_at, or revised_history")
+    if policy == "as_known_at" and as_known_at is None:
+        raise ValueError("as_known_at policy requires an as_known_at timestamp")
+
+
+def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_id=None,
+                     policy="revised_history"):
     indicator = snapshot.indicators.get(indicator_id)
     if indicator is None:
         return None
@@ -630,6 +642,10 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
     ]
     if event_id is not None:
         all_rows = [e for e in all_rows if e.event_id == event_id]
+    if policy == "first_release":
+        # Readings do not carry a revision kind; never infer initial status.
+        all_rows = [e for e in all_rows if e.id.startswith("vintage:")
+                    and e.revision_kind == "initial" and e.verified_issuer]
     if not all_rows:
         return None
     streams = {}
@@ -640,11 +656,11 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
     for stream in streams.values():
         vintages = [e for e in stream if e.id.startswith("vintage:")]
         pool = vintages or stream
-        newest = max(e.first_seen_at for e in pool)
-        rows.append(min((e for e in pool if e.first_seen_at == newest), key=_tie))
+        seen = (min if policy == "first_release" else max)(e.first_seen_at for e in pool)
+        rows.append(min((e for e in pool if e.first_seen_at == seen), key=_tie))
     issuers = [e for e in rows if e.role == "issuer" and e.source_class != "redistributor"]
     if issuers:
-        newest_issuer = max(publication_order(e) for e in issuers)
+        newest_issuer = (min if policy == "first_release" else max)(publication_order(e) for e in issuers)
         edition_leader = min(
             (e for e in issuers if publication_order(e) == newest_issuer),
             key=lambda e: (_tier(e), _tie(e)),
@@ -654,7 +670,7 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
         pool = rows
     tier = min(_tier(e) for e in pool)
     pool = [e for e in pool if _tier(e) == tier]
-    newest = max(publication_order(e) for e in pool)
+    newest = (min if policy == "first_release" else max)(publication_order(e) for e in pool)
     selected = min((e for e in pool if publication_order(e) == newest), key=_tie)
     pending = [
         e
@@ -743,6 +759,7 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
         discrepancies=tuple(discrepancies),
         provenance=tuple(e.provenance() for e in sorted(all_rows, key=_tie)),
         reason=reason,
+        revision_kind=selected.revision_kind,
         policy_decision=selected.policy_decision,
         issuer_id=selected.issuer_id,
         source_class=selected.source_class,
@@ -757,14 +774,17 @@ def resolve(
     *,
     as_known_at=None,
     release_event_id=None,
+    policy="revised_history",
 ):
-    """Return Resolution or None; ReadAPI.explain_empty diagnoses absence."""
+    """Resolve one period using the selected history policy at the knowledge cutoff."""
+    validate_history_policy(policy, as_known_at)
     return resolve_evidence(
         Snapshot.load(store, as_known_at),
         indicator_id,
         reference_period,
         stage,
         event_id=release_event_id,
+        policy=policy,
     )
 
 
