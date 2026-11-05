@@ -243,9 +243,10 @@ class Store:
     def first_release(self, indicator_id: Optional[str] = None) -> list[dict]:
         return self._view("first_release", indicator_id)
 
-    def release_cards(self, since, until, indicators=None, geography=None, as_known_at=None):
+    def release_cards(self, since, until, indicators=None, geography=None, as_known_at=None, *,
+                      policy="revised_history"):
         from .read_api import ReadAPI
-        return ReadAPI(self).release_cards(since, until, indicators, geography, as_known_at)
+        return ReadAPI(self).release_cards(since, until, indicators, geography, as_known_at, policy=policy)
 
     def explain_empty(self, indicator, period_or_window, *, as_known_at=None):
         from .read_api import ReadAPI
