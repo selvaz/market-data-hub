@@ -111,8 +111,6 @@ def test_central_bank_and_read_only_issuer_document(db):
     report = collect_report(db, now=NOW)
     assert report["groups"][0]["name"] == "Central banks"
     (row,) = releases(report)
-    assert row["revision_kind"] == "initial"
-    assert "<b>Revision kind:</b> initial" in render_html(report)
     assert row["official_value"] == 2.5 and row["unit"] == "% per annum"
     assert row["reference_period"] == "2026-10-29" and row["issuer"] == "ECB"
     assert row["document_url"].startswith("https://issuer.example/decision")
@@ -123,6 +121,12 @@ def test_central_bank_and_read_only_issuer_document(db):
         pytest.raises(sqlite3.OperationalError, match="readonly"),
     ):
         reader.conn.execute("CREATE TABLE forbidden(x)")
+
+
+def test_report_displays_revision_kind(db):
+    result = collect_report(db, now=NOW)
+    assert releases(result)[0]["revision_kind"] == "initial"
+    assert "<b>Revision kind:</b> initial" in render_html(result)
 
 
 def test_ff_forecast_label_and_previous_value(db):
