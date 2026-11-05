@@ -7,8 +7,6 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
-from market_data_hub.macro_releases import collect
-from market_data_hub.macro_releases.http import HttpClient
 
 SOURCE = Path(r'C:\ProgramData\InvestmentCommittee\live\db\macro_releases.sqlite')
 COPY = ROOT / '.tmp' / 'macro-history-probe.sqlite'
@@ -21,6 +19,9 @@ def coverage():
         return {r[0]: list(r[1:]) for r in rows}
 
 def main():
+    from market_data_hub.macro_releases import collect
+    from market_data_hub.macro_releases.http import HttpClient
+
     COPY.parent.mkdir(exist_ok=True)
     if COPY.exists():
         raise SystemExit('Probe copy already exists; refusing to overwrite it')
