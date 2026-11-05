@@ -35,3 +35,13 @@ def test_reviewed_history_drift_crash_and_scale(tmp_path):
         assert check([(p, v + 30) for p, v in drift]).issues
         # The exception is tied to April 2020, not any large monthly change.
         assert check([("2020-03", 90), ("2020-04", 71.8), ("2020-05", 90)] + bridge).issues
+
+
+def test_unreviewed_crash_with_adjacent_verified_baseline_is_held(tmp_path):
+    template = ONSAdapter.parse_index(document("ons/ecy2-mgdp.json"), "2026-08")[-1]
+    with open_writer(tmp_path / "macro.sqlite") as store:
+        persist(store, [replace(template, period="2020-03", value=90.0)])
+        april = replace(template, period="2020-04", value=71.8, edition="2026-11-12")
+        batch = verify(store, FamilyFetch(observations=[april]), configured_bands())
+        assert "sanity_band_exceeded:uk_gdp_index" in batch.issues
+        assert batch.observations[0].needs_review
