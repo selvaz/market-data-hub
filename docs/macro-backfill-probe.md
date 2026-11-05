@@ -84,3 +84,16 @@ default preserves current report and calendar behavior, so those consumers
 need no signature changes, but they must opt in before treating values as
 first releases. Stored classification is only as reliable as the adapter's
 evidence; these policies cannot reconstruct missing original publications.
+
+`first_seen_release_cards` defaults to the dedicated `new_release` policy:
+it resolves the latest value but excludes a card if its selected evidence or
+its earliest official headline evidence is a backfill. That exclusion applies
+even when a caller explicitly selects another history policy. A reading and a
+vintage first seen at the same instant are treated together, so an unclassified
+reading cannot hide a backfill vintage. The daily report displays the selected
+kind. Other card queries retain their existing defaults.
+
+Under the default history policy, a card's `previous_revised` can contain a
+later backfill. It is labelled as revised and its resolution dictionary
+contains `revision_kind`. Likewise `latest_official` includes labelled
+backfills: it is a latest-value view, not a first-print view.
