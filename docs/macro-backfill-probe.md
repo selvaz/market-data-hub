@@ -27,6 +27,20 @@ snapshot values are the current edition's historical rates, not reconstructed
 first releases. The extra vintage beyond the 486 gained periods is an
 additional edition for an already-covered period.
 
+The 487 newly inserted vintages in the probe copy belong to four existing
+release events (each has vintage evidence first seen before the probe):
+
+| Release event ID | New backfill vintages |
+| --- | ---: |
+| `ONS:uk_cpi:regular:2026-10-21` | 162 |
+| `ONS:uk_gdp:regular:2026-10-15` | 82 |
+| `ONS:uk_labour_market:regular:2026-10-20` | 162 |
+| `ONS:uk_total_pay:final:2026-10-20` | 81 |
+
+None of these four was a new edition event in that snapshot. A later run may
+encounter different provider editions, so this is an observation of the probe,
+not a guarantee about a future production run.
+
 All 486 newly covered 2018-01 through 2024-09 vintage rows are `backfill`;
 their first-seen timestamps record collection time. The copy's actual migrated
 `first_release` view requires `revision_kind = 'initial'`, so it excludes
