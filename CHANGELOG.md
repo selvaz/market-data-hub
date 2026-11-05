@@ -7,6 +7,11 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.24] — 2026-11-05
+
+### Fixed
+- macro_releases verification: UK GDP index history periods are checked against connected adjacent months (10%, documented 25% for the reviewed April 2020 contraction) or the nearest verified period, instead of today's level; the 106-month UK backfill no longer stalls in review (#179).
+
 ## [0.3.23] — 2026-11-05
 
 ### Added
