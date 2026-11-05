@@ -7,6 +7,13 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.23] — 2026-11-05
+
+### Added
+- Indicator cards for 121 previously uncovered calendar indicators (#175).
+- US FRED series in `macro_series`, linked to their cards: ICSA, CCSA, PPIFIS, PERMIT, PI, PCE (#176).
+- macro_releases history policy: `first_release`, `as_known_at`, `revised_history` (default) and `new_release` for first-seen release cards; selected values expose `revision_kind`; the daily report never lists backfilled evidence as a new release and shows the kind (#177).
+
 ## [0.3.22] — 2026-11-04
 
 ### Added
