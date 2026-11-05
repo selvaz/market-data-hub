@@ -26,3 +26,31 @@ total pay gained 81 distinct periods, from 23 or 24 to 104 or 105, reaching
 snapshot values are the current edition's historical rates, not reconstructed
 first releases. The extra vintage beyond the 486 gained periods is an
 additional edition for an already-covered period.
+
+All 486 newly covered 2018-01 through 2024-09 vintage rows are `backfill`;
+their first-seen timestamps record collection time. The copy's actual migrated
+`first_release` view requires `revision_kind = 'initial'`, so it excludes
+these rows. `latest_official` includes them by design. `resolve_evidence` also
+selects the latest compatible issuer edition without filtering revision kind;
+it returns kind in evidence provenance, not as a prominent selected-value
+field. It filters observations by first-seen for an as-known-at query. Thus the
+store already has the necessary marker, but a consumer must explicitly choose
+initial-only history versus revised snapshots. Before production, expose the
+selected revision kind prominently and require an explicit history policy in
+the macro framework, with regression tests for both policies and cutoff time.
+Use `first_release` only where genuine initial observations are available;
+tagged snapshots do not create historical point-in-time observations. Check
+other adapters as well: archived final headlines may also be marked `backfill`
+when no prior observation exists, even if the bulletin is a true first print.
+
+## Eurostat copy run
+
+The same copy then ran activity IP and retail with `--since 2018-01`: 60.81 s,
+five Eurostat HTTP attempts, four observations reused, zero new vintages, and
+no reported errors. Both indicators remained at two periods (2026-07 and
+2026-08). The calendar request is fixed to September 2026 to January 2027,
+and the reviewed edition map is narrow; each parsed publication yields its
+headline only. A longer `since` does not discover older releases. Deep
+first-print history requires reviewed archived bulletins and composition
+validation; a separate current-series API would instead yield revised history
+and needs explicit vintage labeling, including geography/composition checks.
