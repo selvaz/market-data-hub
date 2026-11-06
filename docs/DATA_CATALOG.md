@@ -40,6 +40,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [etf_classification](#catalog-hub-etf_classification) | 0 |
 | hub | [etf_valuation_snapshots](#catalog-hub-etf_valuation_snapshots) | 46 |
 | hub | [factor_returns](#catalog-hub-factor_returns) | 7 |
+| hub | [fred_series_metadata](#catalog-hub-fred_series_metadata) | 0 |
 | hub | [identifier_aliases](#catalog-hub-identifier_aliases) | 0 |
 | hub | [ingestion_jobs](#catalog-hub-ingestion_jobs) | 0 |
 | hub | [ingestion_runs](#catalog-hub-ingestion_runs) | 0 |
@@ -1362,6 +1363,19 @@ Ken French factor returns in decimal units, keeping factor sets distinct (includ
 | FF5_daily/RMW | FF5_daily: RMW | Kenneth R. French / Dartmouth | Ken French Data Library direct | D | 30 | 1990-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | FF5_daily/SMB | FF5_daily: SMB | Kenneth R. French / Dartmouth | Ken French Data Library direct | D | 30 | 1990-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | MOM_daily/Mom | MOM_daily: Mom | Kenneth R. French / Dartmouth | Ken French Data Library direct | D | 30 | 1990-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+
+<a id="catalog-hub-fred_series_metadata"></a>
+
+## hub / fred_series_metadata
+
+Versioned FRED series measurement metadata captured on demand, with retrieval time.
+
+- Store: `hub`; table: `fred_series_metadata`.
+- Primary key: `series_id`, `retrieved_at`.
+- Status: active.
+- Point-in-time / vintages: Current state/upserted data; no historical as-known-at reconstruction from this table alone.
+- Collection: hub pipeline / services; supporting state, no independent external collection schedule.
+- Guide: [ARCHITECTURE.md](ARCHITECTURE.md).
 
 <a id="catalog-hub-identifier_aliases"></a>
 

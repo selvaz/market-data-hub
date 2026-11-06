@@ -15,6 +15,11 @@ import pandas as pd
 
 # Expected columns per table (guaranteed order in the INSERT)
 _COLUMNS = {
+    "fred_series_metadata": [
+        "series_id", "retrieved_at", "title", "units", "units_short",
+        "seasonal_adjustment", "seasonal_adjustment_short", "frequency",
+        "frequency_short", "last_updated", "observation_start", "observation_end",
+    ],
     "sovereign_bond_metadata": [
         "date", "series_id", "isin", "maturity_date", "coupon_percent",
         "reference_price", "price_type", "selection_rule", "source_url", "updated_at",
@@ -117,6 +122,7 @@ _COLUMN_DEFAULTS: Dict[str, Dict[str, object]] = {
 }
 
 _PK = {
+    "fred_series_metadata": ["series_id", "retrieved_at"],
     "sovereign_bond_metadata": ["date", "series_id"],
     "prices_daily": ["date", "listing_id"],
     "crypto_ohlcv": ["ts", "symbol", "timeframe"],

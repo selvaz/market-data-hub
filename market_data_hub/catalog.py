@@ -302,6 +302,27 @@ def list_macro_series(frequency: Optional[str] = None, category: Optional[str] =
             c["group"] = e.get("group", "Sovereign yields")
         rows.append(c)
     df = pd.DataFrame(rows)
+    # Metadata is optional on older or unconfigured stores. Preserve the
+    # configured frequency code and expose FRED's native frequency separately.
+    try:
+        metadata = reader.read_fred_series_metadata(db_path=db_path)
+        metadata_status = "available" if not metadata.empty else "no captured metadata"
+    except Exception as exc:
+        # Discovery remains useful even when the optional metadata store is locked,
+        # missing or unreadable. Do not expose paths or connection error details.
+        metadata = pd.DataFrame()
+        metadata_status = f"unavailable: {type(exc).__name__}"
+    fields = ("units", "units_short", "seasonal_adjustment", "seasonal_adjustment_short",
+              "frequency", "frequency_short", "last_updated", "observation_start",
+              "observation_end", "title", "retrieved_at")
+    if not metadata.empty:
+        metadata = metadata.set_index("series_id")
+    for field in fields:
+        column = "fred_" + field if field == "frequency" else field
+        df[column] = df["series_id"].map(metadata[field]) if not metadata.empty else pd.NA
+        df.loc[df["source"].str.upper() != "FRED", column] = pd.NA
+    df["unit"] = df["units"].fillna(df["unit"])
+    df["fred_metadata_status"] = metadata_status
     if category:
         df = df[df["category"] == category]
     df = df.reset_index(drop=True)

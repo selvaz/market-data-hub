@@ -41008,6 +41008,21 @@
       "table": "factor_returns"
     },
     {
+      "description": "Versioned FRED series measurement metadata captured on demand, with retrieval time.",
+      "doc": "ARCHITECTURE.md",
+      "jobs": [],
+      "point_in_time": "Current state/upserted data; no historical as-known-at reconstruction from this table alone.",
+      "primary_key": [
+        "series_id",
+        "retrieved_at"
+      ],
+      "series_count": 0,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "fred_series_metadata"
+    },
+    {
       "description": "External identifier aliases with validity intervals and identity targets.",
       "doc": "ARCHITECTURE.md",
       "jobs": [],

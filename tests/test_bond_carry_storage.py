@@ -1,5 +1,5 @@
 from market_data_hub.coverage.report import rebuild_coverage
-from market_data_hub.db.connection import get_conn, migrate
+from market_data_hub.db.connection import SCHEMA_VERSION, get_conn, migrate
 from market_data_hub.reader import read_etf_carry
 
 
@@ -13,7 +13,7 @@ def test_migrate_old_carry_and_reader_latest(tmp_path):
     con.execute(
         "INSERT INTO schema_meta VALUES ('schema_version', '29') ON CONFLICT (key) DO UPDATE SET value='29'"
     )
-    assert migrate(con) == 30
+    assert migrate(con) == SCHEMA_VERSION
     con.execute(
         "INSERT INTO etf_carry_snapshots VALUES ('2026-01-01','AGG','yield_to_maturity',0.04,'ssga','2026-01-01 12:00:00','YTM','2025-12-31','SPAB','USD',NULL)"
     )

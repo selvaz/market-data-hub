@@ -219,3 +219,30 @@ run_regime_daily.py  make_report.py  send_telegram_run_report.py
 run_daily_with_telegram.ps1  run_regime_daily_with_telegram.ps1
 ```
 
+# FRED series metadata
+
+Capture the measurement descriptions for every FRED series in
+`market_data_hub/config/macro_series.yaml` with an explicit hub database path:
+
+```powershell
+& C:/ProgramData/spyder-6/python.exe -m market_data_hub.fred_metadata --db-path C:/ProgramData/InvestmentCommittee/live/db/market_data.duckdb
+```
+
+Run this manually only after the owner approves a production refresh; it does not
+register a scheduled task. Set `FRED_API_KEY` in the environment first. The
+default cache is 30 days; `--max-age-days 0` refreshes all entries. Requests are
+sequential and at least one second apart; coordinate other FRED clients to stay
+within the shared rate limit. Failed IDs are reported and the command exits 1;
+successful captures remain saved and a rerun skips fresh entries.
+
+`market_data_hub.reader.read_fred_series_metadata(db_path=...)` reads the latest
+capture per series without network access or writes. The versioned table retains
+each `retrieved_at` as naive UTC, which is the hub's capture time, not a historical FRED
+availability date. `catalog.list_macro_series(db_path=...)` exposes `unit`,
+`seasonal_adjustment`, their FRED short forms, native `fred_frequency`, title,
+observation bounds, FRED `last_updated`, and retrieval time. Catalog frequency
+retains the configured cadence code. Consumers such as LazyCommittee must read
+the structured adjustment field; the current audit infers it from name/convention.
+The `fred_metadata_status` field reports when optional metadata could not be read;
+the static catalog remains available in that case.
+

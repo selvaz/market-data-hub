@@ -23,7 +23,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 30
+SCHEMA_VERSION = 31
 
 
 class DatabaseNotConfigured(RuntimeError):
@@ -507,6 +507,9 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
                 f"ALTER TABLE etf_carry_snapshots ADD COLUMN IF NOT EXISTS {column} {kind}"
             )
         current = 30
+    if current < 31:
+        # The new table is created by apply_schema above.
+        current = 31
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 

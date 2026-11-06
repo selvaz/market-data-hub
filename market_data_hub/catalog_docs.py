@@ -48,6 +48,7 @@ JOBS = {
 # Descriptions are table semantics, not another list of series. A new schema
 # table must receive an explicit description; silently inventing one hides drift.
 HUB_TABLES = {
+    "fred_series_metadata": "Versioned FRED series measurement metadata captured on demand, with retrieval time.",
     "etf_valuation_snapshots": "Immutable daily Yahoo ETF valuation captures with raw source fields and knowledge time.",
     "market_breadth_snapshots": "Immutable daily TradingView breadth captures with observable denominators and knowledge time.",
     "etf_carry_snapshots": "Append-only ETF carry observations by capture date, symbol and field, with provider field and retrieval time.",
