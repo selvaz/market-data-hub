@@ -306,7 +306,8 @@ def read_resolved_percentile(concept, as_of=None, window_years=10, db_path=None)
               'history_series_id': None, 'history_method': None, 'oecd_last_month': None,
               'current_value': current['value'], 'current_date': current['observation_date'],
               'current_series_id': current['series_id'], 'current_status': current['status'],
-              'adjusted_value': None, 'basis_bp': None, 'basis_series_id': None,
+              'adjusted_value': None, 'basis_bp': None, 'basis_month': None,
+              'basis_series': None, 'basis_series_id': None,
               'overlap_months': 0, 'basis_reason': None}
     history = {}
     if monthly is not None:
@@ -345,19 +346,21 @@ def read_resolved_percentile(concept, as_of=None, window_years=10, db_path=None)
         primary = next((s['series_id'] for s in daily if s['role'] == 'primary'), None)
         candidates = list(dict.fromkeys(sid for sid in (current_id, primary)
                                         if sid in {s['series_id'] for s in daily}))
-        best_count = 0
         for sid in candidates:
             daily_means = means.get(sid, {})
             overlap = sorted(set(history) & set(daily_means))
-            best_count = max(best_count, len(overlap))
-            if len(overlap) >= 12:
-                basis = float(pd.Series([daily_means[m] - history[m] for m in overlap]).median())
+            if overlap:
+                month = overlap[-1]
+                basis = daily_means[month] - history[month]
+                result['basis_month'] = month
+                result['basis_series'] = sid
                 result['basis_series_id'] = sid
                 result['overlap_months'] = len(overlap)
+                if sid != current_id:
+                    result['basis_reason'] = 'current source has no common month; using daily primary'
                 break
         if basis is None:
-            result['overlap_months'] = best_count
-            result['basis_reason'] = 'fewer than 12 overlapping months with current or daily primary source'
+            result['basis_reason'] = 'no common month with current or daily primary source'
     else:
         result['basis_reason'] = 'no OECD monthly series in this concept chain'
     adjusted = current['value'] - basis if basis is not None else current['value']

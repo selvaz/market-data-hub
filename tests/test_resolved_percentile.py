@@ -41,24 +41,26 @@ def test_basis_estimated_and_window_cutoff(percentile_fixture):
     insert(con, rows)
     con.close()
     result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', window_years=1, db_path=path)
-    assert result['status'] == 'ok' and result['basis_bp'] == pytest.approx(50)
+    assert result['status'] == 'ok' and result['basis_bp'] == pytest.approx(100)
+    assert result['basis_month'] == '2025-12' and result['basis_series'] == 'DAILY'
     assert result['overlap_months'] == 12 and result['months_used'] == 12
     assert result['first_month'] == '2025-01' and result['last_month'] == '2025-12'
     assert result['oecd_last_month'] == '2025-12' and result['percentile'] == 100
     assert result['current_series_id'] == result['basis_series_id'] == 'DAILY'
 
 
-def test_basis_not_estimated_under_twelve_months(percentile_fixture):
+def test_basis_not_estimated_without_common_month(percentile_fixture):
     path, con, _ = percentile_fixture
     rows = []
     for stamp in pd.date_range('2025-01-01', periods=11, freq='MS'):
-        rows.extend([(stamp.date(), 'IRLTLT01DEM156N', 1.0), (stamp.date(), 'DAILY', 2.0)])
+        rows.append((stamp.date(), 'IRLTLT01DEM156N', 1.0))
     rows.append((date(2025, 12, 31), 'DAILY', 2.0))
     insert(con, rows)
     con.close()
     result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', db_path=path)
     assert result['status'] == 'basis_not_estimated' and result['basis_bp'] is None
-    assert result['overlap_months'] == 11 and result['adjusted_value'] == 2.0
+    assert result['overlap_months'] == 0 and result['adjusted_value'] == 2.0
+    assert result['basis_month'] is None and result['basis_series'] is None
     assert result['percentile'] == 100 and result['basis_reason']
 
 
@@ -100,13 +102,13 @@ def test_all_other_official_series_are_accounted_for():
     assert all(sid in included or f'`{sid}`' in docs for sid in inventory)
 
 
-def test_basis_uses_daily_primary_when_current_has_short_history(percentile_fixture):
+def test_basis_uses_daily_primary_when_current_has_no_overlap(percentile_fixture):
     path, con, spec = percentile_fixture
     spec['sources'].insert(1, {'series_id': 'SECONDARY', 'role': 'secondary',
                                'convention': 'vendor', 'frequency': 'D',
                                'max_age_business_days': 3})
     rows = []
-    for stamp in pd.date_range('2025-01-01', periods=12, freq='MS'):
+    for stamp in pd.date_range('2025-01-01', periods=11, freq='MS'):
         rows.extend([(stamp.date(), 'IRLTLT01DEM156N', 1.0), (stamp.date(), 'DAILY', 1.25)])
     rows.append((date(2025, 12, 31), 'SECONDARY', 2.0))
     insert(con, rows)
@@ -114,6 +116,29 @@ def test_basis_uses_daily_primary_when_current_has_short_history(percentile_fixt
     result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', db_path=path)
     assert result['current_series_id'] == 'SECONDARY' and result['basis_series_id'] == 'DAILY'
     assert result['status'] == 'ok' and result['basis_bp'] == pytest.approx(25)
+    assert result['basis_month'] == '2025-11' and result['basis_series'] == 'DAILY'
+    assert 'using daily primary' in result['basis_reason']
+
+
+def test_current_source_one_common_month_beats_longer_primary_overlap(percentile_fixture):
+    path, con, spec = percentile_fixture
+    spec['sources'].insert(1, {'series_id': 'SECONDARY', 'role': 'secondary',
+                               'convention': 'vendor', 'frequency': 'D',
+                               'max_age_business_days': 3})
+    rows = []
+    for stamp in pd.date_range('2025-01-01', periods=12, freq='MS'):
+        rows.extend([(stamp.date(), 'IRLTLT01DEM156N', 1.0), (stamp.date(), 'DAILY', 1.25)])
+    rows += [(date(2025, 10, 15), 'SECONDARY', 1.6),
+             (date(2025, 12, 31), 'SECONDARY', 2.0)]
+    # The current month also overlaps; make a separate source point before
+    # the cutoff month by dropping the December OECD observation.
+    rows = [r for r in rows if not (r[0] == date(2025, 12, 1) and r[1] == 'IRLTLT01DEM156N')]
+    insert(con, rows)
+    con.close()
+    result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', db_path=path)
+    assert result['status'] == 'ok' and result['basis_series'] == 'SECONDARY'
+    assert result['basis_month'] == '2025-10' and result['overlap_months'] == 1
+    assert result['basis_bp'] == pytest.approx(60) and result['basis_reason'] is None
 
 
 def test_longest_daily_source_is_single_history(percentile_fixture):
