@@ -73,10 +73,21 @@ def validate_resolved_rates(config, known_series):
             declared = known_series[sid].get('convention')
             if declared and convention != declared:
                 raise ValueError(f'{name}: convention does not match {sid}')
+            description = known_series[sid].get('name', '').lower()
+            if ('zero-coupon' in description or 'spot yield' in description or 'spot rate' in description):
+                if not any(word in convention.lower() for word in ('zero-coupon', 'spot yield', 'spot rate')):
+                    raise ValueError(f'{name}: convention misrepresents {sid}')
             if first_convention is None:
                 first_convention = convention
-            elif convention != first_convention and not str(source.get('comparability_note') or '').strip():
-                raise ValueError(f'{name}: incompatible conventions need a comparability note')
+            elif convention != first_convention:
+                a = first_convention.lower()
+                b = convention.lower()
+                if any(word in a for word in ('zero-coupon', 'spot yield', 'spot rate')) != any(
+                    word in b for word in ('zero-coupon', 'spot yield', 'spot rate')
+                ):
+                    raise ValueError(f'{name}: zero-coupon and bond yield conventions are incompatible')
+                if not str(source.get('comparability_note') or '').strip():
+                    raise ValueError(f'{name}: incompatible conventions need a comparability note')
             if sid.startswith('IRLTLT01') and (role != 'fallback' or index != len(sources) - 1):
                 raise ValueError(f'{name}: monthly OECD must be last fallback')
         if primary_count != 1 and not (len(sources) == 1 and sources[0]['role'] == 'fallback'):
