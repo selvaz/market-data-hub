@@ -7,6 +7,11 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.25] — 2026-11-05
+
+### Added
+- FRED series metadata (units, seasonal adjustment, native frequency, title, observation bounds, last updated) in a versioned `fred_series_metadata` table (schema 31), collected by `python -m market_data_hub.fred_metadata` (sequential, at least 1 s between requests, 30-day cache) and read by `reader.read_fred_series_metadata`; `catalog.list_macro_series` exposes `unit`, `seasonal_adjustment` and short forms, best-effort with `fred_metadata_status` when the metadata cannot be read (#181).
+
 ## [0.3.24] — 2026-11-05
 
 ### Fixed
