@@ -16,11 +16,24 @@ This is an observation-date cutoff, not a vintage or release-time backtest.
 Only comparable conventions belong in a chain. A documented comparability note
 explains any differences, including benchmark selection, interpolation,
 publication frequency and fixing time. Fitted zero-coupon curves are not
-substitutes for observed bond yields. Tolerance is in basis points. When fresh
-values differ by more than tolerance, a strict majority of at least three fresh
-sources must agree pairwise within tolerance to overrule an outlier; otherwise
-the result is disputed and the first fresh source is retained. A tie or multiple
-competing majorities is disputed. No value is fabricated. History reads select
+substitutes for observed bond yields. A fallback never votes when a higher-ranked
+source is fresh; only the first eligible fallback is selected when all higher
+sources are stale or missing. History-only sources never vote. Monthly and
+daily observations never vote against each other.
+
+Voting compares fresh sources with the same convention and frequency. A concept
+may declare a `pair_tolerances` list of `series_ids` (two IDs), `tolerance_bp`,
+and a reason in `note` to allow a specific cross-convention comparison. Pairwise
+comparability is not assumed to be transitive: starting with the first fresh
+source, later sources vote only if comparable to every source already in the
+voting set. Other fresh candidates remain visible as alternatives, with signed
+`basis_bp` (alternative minus selected value) and whether they voted.
+
+Tolerance is in basis points. When voting values differ by more than their
+applicable tolerance, a strict majority of at least three voting sources must
+agree pairwise within tolerance to overrule an outlier; otherwise the result is
+disputed and the first fresh source is retained. A tie or multiple competing
+majorities is disputed. No value is fabricated. History reads select
 one explicitly named configured source, or the primary by default, and never
 splice series. History-only entries are excluded from current resolution.
 

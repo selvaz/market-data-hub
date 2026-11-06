@@ -14,6 +14,7 @@ def db(tmp_path):
     con.executemany('INSERT INTO macro_series VALUES (?, ?, ?)', [
         ('2026-11-02', 'A', 2.0), ('2026-11-05', 'B', 2.5),
         ('2026-11-05', 'C', 2.51), ('2026-11-09', 'A', 9.0),
+        ('2026-09-01', 'MONTHLY', 2.5),
     ])
     con.close()
     return str(path)
@@ -22,7 +23,7 @@ def db(tmp_path):
 @pytest.fixture
 def table(monkeypatch):
     sources = [dict(series_id=s, max_age_business_days=3, convention='yield', role=role)
-               for s, role in [('A', 'primary'), ('B', 'secondary'), ('C', 'fallback')]]
+               for s, role in [('A', 'primary'), ('B', 'secondary'), ('C', 'secondary')]]
     spec = {'concept': 'DE_10Y', 'sources': sources}
     config = {'tolerance_bp': 10, 'concepts': [spec]}
     monkeypatch.setattr(resolved_rates, 'load_resolved_rates', lambda: (config, {'DE_10Y': spec}))
@@ -53,6 +54,43 @@ def test_majority_and_dispute(db, table):
     table['sources'].pop()
     result = reader.read_resolved_rate('DE_10Y', as_of='2026-11-06', db_path=db)
     assert result['series_id'] == 'A' and result['status'] == 'disputed'
+
+
+def test_fallback_never_votes_against_fresh_daily(db, table):
+    table['sources'][0]['max_age_business_days'] = 5
+    table['sources'][1]['role'] = 'fallback'
+    table['sources'][1]['series_id'] = 'MONTHLY'
+    table['sources'][1]['frequency'] = 'M'
+    table['sources'][1]['max_age_business_days'] = 90
+    table['sources'][2]['role'] = 'history_only'
+    result = reader.read_resolved_rate('DE_10Y', as_of='2026-11-06', db_path=db)
+    assert result['status'] == 'primary' and result['series_id'] == 'A'
+    assert result['alternatives'][0]['basis_bp'] == pytest.approx(50)
+    assert result['alternatives'][0]['voted'] is False
+    table['sources'][0]['max_age_business_days'] = 0
+    assert reader.read_resolved_rate('DE_10Y', as_of='2026-11-06', db_path=db)['series_id'] == 'MONTHLY'
+
+
+def test_same_convention_fallback_does_not_vote(db, table):
+    table['sources'][0]['max_age_business_days'] = 5
+    table['sources'][1]['role'] = 'fallback'
+    result = reader.read_resolved_rate('DE_10Y', as_of='2026-11-06', db_path=db)
+    assert result['status'] == 'primary'
+    assert all(not item['voted'] for item in result['alternatives'])
+
+
+def test_different_conventions_are_alternatives_unless_pair_tolerance(db, table):
+    table['sources'][0]['max_age_business_days'] = 5
+    table['sources'][0]['convention'] = 'constant maturity YTM'
+    table['sources'][1]['convention'] = 'benchmark bond YTM'
+    table['sources'][2]['role'] = 'history_only'
+    result = reader.read_resolved_rate('DE_10Y', as_of='2026-11-06', db_path=db)
+    assert result['status'] == 'primary' and result['alternatives'][0]['basis_bp'] == pytest.approx(50)
+    assert not result['alternatives'][0]['voted']
+    table['pair_tolerances'] = [{'series_ids': ['A', 'B'], 'tolerance_bp': 10, 'note': 'reviewed'}]
+    assert reader.read_resolved_rate('DE_10Y', as_of='2026-11-06', db_path=db)['status'] == 'disputed'
+    table['pair_tolerances'][0]['tolerance_bp'] = 60
+    assert reader.read_resolved_rate('DE_10Y', as_of='2026-11-06', db_path=db)['status'] == 'primary'
 
 
 def test_as_of_and_history_never_splices(db, table):
@@ -95,6 +133,10 @@ def test_validator_errors():
         resolved_rates.validate_resolved_rates(invalid, known)
     invalid['concepts'][0]['sources'][1].update(convention='fitted zero-coupon', comparability_note='note')
     with pytest.raises(ValueError, match='incompatible'):
+        resolved_rates.validate_resolved_rates(invalid, known)
+    invalid = deepcopy(simple)
+    invalid['concepts'][0]['pair_tolerances'] = [{'series_ids': ['A', 'B'], 'tolerance_bp': 10, 'note': 'reviewed'}]
+    with pytest.raises(ValueError, match='invalid pair'):
         resolved_rates.validate_resolved_rates(invalid, known)
     assert len(config['concepts']) >= 100
 

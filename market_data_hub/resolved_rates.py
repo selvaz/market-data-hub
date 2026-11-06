@@ -92,6 +92,23 @@ def validate_resolved_rates(config, known_series):
                 raise ValueError(f'{name}: monthly OECD must be last fallback')
         if primary_count != 1 and not (len(sources) == 1 and sources[0]['role'] == 'fallback'):
             raise ValueError(f'{name}: expected one primary')
+        pairs = entry.get('pair_tolerances', [])
+        if not isinstance(pairs, list):
+            raise ValueError(f'{name}: pair_tolerances must be a list')
+        seen_pairs = set()
+        for pair in pairs:
+            ids = pair.get('series_ids') if isinstance(pair, dict) else None
+            if not isinstance(ids, list) or len(ids) != 2 or any(sid not in seen for sid in ids) or ids[0] == ids[1]:
+                raise ValueError(f'{name}: invalid pair series_ids')
+            key = frozenset(ids)
+            if key in seen_pairs:
+                raise ValueError(f'{name}: duplicate pair tolerance')
+            seen_pairs.add(key)
+            value = pair.get('tolerance_bp')
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+                raise ValueError(f'{name}: invalid pair tolerance')
+            if not isinstance(pair.get('note'), str) or not pair['note'].strip():
+                raise ValueError(f'{name}: pair tolerance requires a note')
         result[name] = entry
     return result
 
@@ -107,4 +124,8 @@ def load_resolved_rates(path=None):
     for group in _load_yaml('macro_series.yaml').values():
         for item in group:
             known[item['symbol']] = item
-    return config, validate_resolved_rates(config, known)
+    table = validate_resolved_rates(config, known)
+    for entry in table.values():
+        for source in entry['sources']:
+            source['frequency'] = known[source['series_id']].get('frequency', 'D')
+    return config, table

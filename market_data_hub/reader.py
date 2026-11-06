@@ -81,31 +81,59 @@ def _resolve_one(con, concept, spec, cutoff, tolerance):
             reasons.append(f'{sid}: stale ({age} business days)')
             continue
         fresh.append({'series_id': sid, 'value': row[1], 'observation_date': row[0],
-                      'role': source['role'], 'age_business_days': age})
+                      'role': source['role'], 'age_business_days': age,
+                      'convention': source['convention'],
+                      'frequency': source.get('frequency', 'D')})
     result = {'concept': concept, 'value': None, 'observation_date': None,
               'series_id': None, 'role': None, 'status': 'unavailable',
-              'age_business_days': None, 'other_fresh_candidates': [],
+              'age_business_days': None, 'other_fresh_candidates': [], 'alternatives': [],
               'reason': '; '.join(reasons) or 'no eligible fresh source'}
     if not fresh:
         return result
     chosen = fresh[0]
     disputed = False
-    disagreement = any(abs(a['value'] - b['value']) * 100 > tolerance + 1e-9
-                       for a, b in combinations(fresh, 2))
+    pair_tolerances = {frozenset(pair['series_ids']): pair['tolerance_bp']
+                       for pair in spec.get('pair_tolerances', [])}
+
+    def threshold(a, b):
+        if a['frequency'] != b['frequency']:
+            return None
+        pair = frozenset((a['series_id'], b['series_id']))
+        if pair in pair_tolerances:
+            return pair_tolerances[pair]
+        return tolerance if a['convention'] == b['convention'] else None
+
+    # Fallbacks are sequential: the first fresh fallback is selectable only
+    # when every higher-ranked source is unavailable, and never votes against
+    # another source. Build a pairwise comparable set anchored at that source.
+    eligible = []
+    for candidate in fresh:
+        if candidate['role'] == 'fallback':
+            if not eligible:
+                eligible.append(candidate)
+            break
+        eligible.append(candidate)
+    voters = [eligible[0]]
+    for candidate in eligible[1:]:
+        if all(threshold(candidate, previous) is not None for previous in voters):
+            voters.append(candidate)
+    disagreement = any(abs(a['value'] - b['value']) * 100 > threshold(a, b) + 1e-9
+                       for a, b in combinations(voters, 2))
     if disagreement:
         # Find all largest pairwise-agreeing groups; ambiguous groups cannot
         # decide which observation to use, even if both contain a majority.
         groups = []
-        for size in range(len(fresh), len(fresh) // 2, -1):
-            if size < 2 or len(fresh) < 3:
+        for size in range(len(voters), len(voters) // 2, -1):
+            if size < 2 or len(voters) < 3:
                 break
-            groups = [group for group in combinations(range(len(fresh)), size)
-                      if all(abs(fresh[a]['value'] - fresh[b]['value']) * 100
-                             <= tolerance + 1e-9 for a, b in combinations(group, 2))]
+            groups = [group for group in combinations(range(len(voters)), size)
+                      if all(abs(voters[a]['value'] - voters[b]['value']) * 100
+                             <= threshold(voters[a], voters[b]) + 1e-9
+                             for a, b in combinations(group, 2))]
             if groups:
                 break
         if len(groups) == 1:
-            chosen = fresh[groups[0][0]]
+            chosen = voters[groups[0][0]]
             reasons.append('fresh sources disagree; strict majority agrees within tolerance')
         else:
             disputed = True
@@ -113,7 +141,10 @@ def _resolve_one(con, concept, spec, cutoff, tolerance):
     result.update(chosen)
     result['status'] = ('disputed' if disputed else 'primary' if chosen['role'] == 'primary'
                         else f"fallback:{chosen['series_id']}")
-    result['other_fresh_candidates'] = [item for item in fresh if item is not chosen]
+    alternatives = [{**item, 'basis_bp': (item['value'] - chosen['value']) * 100,
+                     'voted': item in voters} for item in fresh if item is not chosen]
+    result['other_fresh_candidates'] = alternatives
+    result['alternatives'] = alternatives
     result['reason'] = '; '.join(reasons) or 'first fresh source within tolerance'
     return result
 
