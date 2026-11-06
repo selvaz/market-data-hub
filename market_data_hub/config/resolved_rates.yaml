@@ -275,12 +275,20 @@
     },
     {
       "concept": "CH_10Y",
+      "spot_bond_justification": "Owner-approved Swiss spot and benchmark yields share the tenor but can have material curve and compounding basis; they are not interchangeable observations.",
       "sources": [
+        {
+          "series_id": "CB_CH_10Y",
+          "max_age_business_days": 3,
+          "convention": "Swiss Confederation spot yield",
+          "role": "primary"
+        },
         {
           "series_id": "TV_CH_10Y",
           "max_age_business_days": 3,
           "convention": "benchmark bond YTM (vendor methodology not specified)",
-          "role": "primary"
+          "role": "secondary",
+          "comparability_note": "Observed benchmark YTM differs from the SNB spot curve in security selection, compounding, and fixing; no adjustment is implied."
         },
         {
           "series_id": "IRLTLT01CHM156N",
@@ -293,12 +301,20 @@
     },
     {
       "concept": "CH_2Y",
+      "spot_bond_justification": "Owner-approved historical Swiss spot yield and benchmark bond yield share a tenor but differ in curve and compounding basis.",
       "sources": [
         {
           "series_id": "TV_CH_2Y",
           "max_age_business_days": 3,
           "convention": "benchmark bond YTM (vendor methodology not specified)",
           "role": "primary"
+        },
+        {
+          "series_id": "CB_CH_2Y",
+          "max_age_business_days": 3,
+          "convention": "Swiss Confederation spot yield",
+          "role": "history_only",
+          "comparability_note": "Discontinued SNB spot curve differs from the benchmark bond YTM in compounding and selection; history only."
         }
       ]
     },
@@ -377,12 +393,20 @@
     },
     {
       "concept": "CN_10Y",
+      "spot_bond_justification": "Owner-approved ChinaBond curve and benchmark bond yield share a tenor but can differ in curve construction and fixing.",
       "sources": [
+        {
+          "series_id": "CB_CN_10Y",
+          "max_age_business_days": 3,
+          "convention": "ChinaBond zero-coupon government yield curve",
+          "role": "primary"
+        },
         {
           "series_id": "TV_CN_10Y",
           "max_age_business_days": 3,
           "convention": "benchmark bond YTM (vendor methodology not specified)",
-          "role": "primary"
+          "role": "secondary",
+          "comparability_note": "Vendor benchmark YTM differs from the ChinaBond curve in bond selection, compounding, and fixing; no adjustment is implied."
         }
       ]
     },

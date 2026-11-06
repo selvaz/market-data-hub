@@ -84,7 +84,7 @@ def validate_resolved_rates(config, known_series):
                 b = convention.lower()
                 if any(word in a for word in ('zero-coupon', 'spot yield', 'spot rate')) != any(
                     word in b for word in ('zero-coupon', 'spot yield', 'spot rate')
-                ):
+                ) and not str(entry.get('spot_bond_justification') or '').strip():
                     raise ValueError(f'{name}: zero-coupon and bond yield conventions are incompatible')
                 if not str(source.get('comparability_note') or '').strip():
                     raise ValueError(f'{name}: incompatible conventions need a comparability note')

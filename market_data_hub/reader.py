@@ -263,6 +263,111 @@ def read_resolved_history(concept, series_id=None, start=None, end=None, as_of=N
     return frame
 
 
+def read_resolved_percentile(concept, as_of=None, window_years=10, db_path=None):
+    """Descriptive monthly-history percentile with optional overlap correction.
+
+    Observation-date cutoff only; no release or revision vintage is implied.
+    The daily-history fallback always uses a single source.
+    """
+    import math
+
+    from market_data_hub.resolved_rates import load_resolved_rates
+
+    if isinstance(window_years, bool) or not isinstance(window_years, int) or window_years <= 0:
+        raise ValueError('window_years must be a positive integer')
+    config, table = load_resolved_rates()
+    if concept not in table:
+        raise KeyError(f'unknown resolved rate concept: {concept}')
+    cutoff = _resolved_cutoff(as_of)
+    start = (pd.Timestamp(cutoff) - pd.DateOffset(years=window_years)).date()
+    sources = table[concept]['sources']
+    monthly = next((s for s in sources if s['series_id'].startswith('IRLTLT01')
+                    and s.get('frequency') == 'M'), None)
+    daily = [s for s in sources if s.get('frequency', 'D') == 'D']
+    con = _resolved_connection(db_path)
+    try:
+        current = _resolve_one(con, concept, table[concept], cutoff, config['tolerance_bp'])
+        ids = [s['series_id'] for s in sources]
+        placeholders = ','.join('?' for _ in ids)
+        rows = con.execute(f'SELECT date, series_id, value FROM macro_series '
+                           f'WHERE series_id IN ({placeholders}) AND date >= ? AND date <= ? '
+                           'AND value IS NOT NULL ORDER BY date', [*ids, start, cutoff]).fetchall()
+    finally:
+        con.close()
+    groups = {}
+    for day, sid, value in rows:
+        if math.isfinite(value):
+            groups.setdefault(sid, {}).setdefault(day.strftime('%Y-%m'), []).append(value)
+    means = {sid: {month: sum(values) / len(values) for month, values in months.items()}
+             for sid, months in groups.items()}
+    result = {'concept': concept, 'status': 'unavailable', 'reason': None,
+              'percentile': None, 'window_years': window_years, 'window_start': start,
+              'window_end': cutoff, 'months_used': 0, 'first_month': None, 'last_month': None,
+              'history_series_id': None, 'history_method': None, 'oecd_last_month': None,
+              'current_value': current['value'], 'current_date': current['observation_date'],
+              'current_series_id': current['series_id'], 'current_status': current['status'],
+              'adjusted_value': None, 'basis_bp': None, 'basis_series_id': None,
+              'overlap_months': 0, 'basis_reason': None}
+    history = {}
+    if monthly is not None:
+        result['history_method'] = 'OECD monthly'
+        result['history_series_id'] = monthly['series_id']
+        history = means.get(monthly['series_id'], {})
+        result['oecd_last_month'] = max(history, default=None)
+    else:
+        result['history_method'] = 'single daily source monthly means'
+        # Longest calendar span first; coverage and chain order break ties.
+        candidates = [(s, means.get(s['series_id'], {})) for s in daily]
+        candidates = [(s, values) for s, values in candidates if values]
+        if candidates:
+            def span(item):
+                months = sorted(item[1])
+                first, last = months[0].split('-'), months[-1].split('-')
+                return ((int(last[0]) - int(first[0])) * 12 + int(last[1]) - int(first[1]), len(months))
+            selected, history = max(candidates, key=span)
+            result['history_series_id'] = selected['series_id']
+    result['months_used'] = len(history)
+    result['first_month'] = min(history, default=None)
+    result['last_month'] = max(history, default=None)
+    if current['value'] is None:
+        result['reason'] = 'current resolved rate is unavailable'
+        return result
+    if not history:
+        result['reason'] = 'no monthly history in the requested window'
+        return result
+    if monthly is None and len(history) < 36:
+        result['reason'] = 'longest daily source has fewer than 36 observed months in the window'
+        return result
+
+    basis = None
+    if monthly is not None:
+        current_id = current['series_id']
+        primary = next((s['series_id'] for s in daily if s['role'] == 'primary'), None)
+        candidates = list(dict.fromkeys(sid for sid in (current_id, primary)
+                                        if sid in {s['series_id'] for s in daily}))
+        best_count = 0
+        for sid in candidates:
+            daily_means = means.get(sid, {})
+            overlap = sorted(set(history) & set(daily_means))
+            best_count = max(best_count, len(overlap))
+            if len(overlap) >= 12:
+                basis = float(pd.Series([daily_means[m] - history[m] for m in overlap]).median())
+                result['basis_series_id'] = sid
+                result['overlap_months'] = len(overlap)
+                break
+        if basis is None:
+            result['overlap_months'] = best_count
+            result['basis_reason'] = 'fewer than 12 overlapping months with current or daily primary source'
+    else:
+        result['basis_reason'] = 'no OECD monthly series in this concept chain'
+    adjusted = current['value'] - basis if basis is not None else current['value']
+    result['adjusted_value'] = adjusted
+    result['basis_bp'] = basis * 100 if basis is not None else None
+    result['percentile'] = 100.0 * sum(value <= adjusted for value in history.values()) / len(history)
+    result['status'] = 'ok' if basis is not None else 'basis_not_estimated'
+    return result
+
+
 def read_fred_series_metadata(db_path: Optional[str] = None) -> pd.DataFrame:
     """Latest captured FRED metadata per series; never refreshes or writes."""
     from pathlib import Path

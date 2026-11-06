@@ -1,0 +1,131 @@
+from datetime import date
+from pathlib import Path
+
+import duckdb
+import pandas as pd
+import pytest
+
+from market_data_hub import reader, resolved_rates
+
+
+@pytest.fixture
+def percentile_fixture(tmp_path, monkeypatch):
+    path = str(tmp_path / 'percentile.duckdb')
+    con = duckdb.connect(path)
+    con.execute('CREATE TABLE macro_series (date DATE, series_id VARCHAR, value DOUBLE)')
+    sources = [
+        {'series_id': 'DAILY', 'role': 'primary', 'convention': 'bond',
+         'frequency': 'D', 'max_age_business_days': 3},
+        {'series_id': 'IRLTLT01DEM156N', 'role': 'fallback', 'convention': 'monthly',
+         'frequency': 'M', 'max_age_business_days': 90},
+    ]
+    spec = {'concept': 'DE_10Y', 'sources': sources}
+    monkeypatch.setattr(resolved_rates, 'load_resolved_rates',
+                        lambda: ({'tolerance_bp': 10}, {'DE_10Y': spec}))
+    yield path, con, spec
+    con.close()
+
+
+def insert(con, rows):
+    con.executemany('INSERT INTO macro_series VALUES (?, ?, ?)', rows)
+
+
+def test_basis_estimated_and_window_cutoff(percentile_fixture):
+    path, con, _ = percentile_fixture
+    rows = []
+    for i, stamp in enumerate(pd.date_range('2024-01-01', periods=24, freq='MS')):
+        rows.extend([(stamp.date(), 'IRLTLT01DEM156N', float(i)),
+                     (stamp.date(), 'DAILY', float(i) + 0.5)])
+    rows += [(date(2025, 12, 31), 'DAILY', 24.5),
+             (date(2026, 1, 1), 'IRLTLT01DEM156N', 1000.0)]
+    insert(con, rows)
+    con.close()
+    result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', window_years=1, db_path=path)
+    assert result['status'] == 'ok' and result['basis_bp'] == pytest.approx(50)
+    assert result['overlap_months'] == 12 and result['months_used'] == 12
+    assert result['first_month'] == '2025-01' and result['last_month'] == '2025-12'
+    assert result['oecd_last_month'] == '2025-12' and result['percentile'] == 100
+    assert result['current_series_id'] == result['basis_series_id'] == 'DAILY'
+
+
+def test_basis_not_estimated_under_twelve_months(percentile_fixture):
+    path, con, _ = percentile_fixture
+    rows = []
+    for stamp in pd.date_range('2025-01-01', periods=11, freq='MS'):
+        rows.extend([(stamp.date(), 'IRLTLT01DEM156N', 1.0), (stamp.date(), 'DAILY', 2.0)])
+    rows.append((date(2025, 12, 31), 'DAILY', 2.0))
+    insert(con, rows)
+    con.close()
+    result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', db_path=path)
+    assert result['status'] == 'basis_not_estimated' and result['basis_bp'] is None
+    assert result['overlap_months'] == 11 and result['adjusted_value'] == 2.0
+    assert result['percentile'] == 100 and result['basis_reason']
+
+
+@pytest.mark.parametrize('months,expected', [(35, 'unavailable'), (36, 'basis_not_estimated')])
+def test_daily_fallback_requires_36_months(percentile_fixture, months, expected):
+    path, con, spec = percentile_fixture
+    spec['sources'].pop()
+    stamps = pd.date_range(end='2025-12-01', periods=months, freq='MS')
+    rows = [(stamp.date(), 'DAILY', float(i)) for i, stamp in enumerate(stamps)]
+    rows.append((date(2025, 12, 31), 'DAILY', 100.0))
+    insert(con, rows)
+    con.close()
+    result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', db_path=path)
+    assert result['status'] == expected and result['months_used'] == months
+    assert result['history_series_id'] == 'DAILY'
+    assert result['history_method'] == 'single daily source monthly means'
+    if months < 36:
+        assert result['percentile'] is None and '36' in result['reason']
+    else:
+        assert result['percentile'] == 100 and result['basis_reason']
+
+
+def test_explicit_swiss_and_chinese_chains():
+    _, table = resolved_rates.load_resolved_rates()
+    assert table['CH_10Y']['sources'][0]['series_id'] == 'CB_CH_10Y'
+    assert table['CN_10Y']['sources'][0]['series_id'] == 'CB_CN_10Y'
+    assert next(s for s in table['CH_2Y']['sources'] if s['series_id'] == 'CB_CH_2Y')['role'] == 'history_only'
+
+
+def test_all_other_official_series_are_accounted_for():
+    from market_data_hub.config_loader import _load_yaml
+
+    _, table = resolved_rates.load_resolved_rates()
+    included = {source['series_id'] for entry in table.values() for source in entry['sources']}
+    docs = (Path(__file__).resolve().parents[1] / 'docs/method/resolved-rates.md').read_text(encoding='utf-8')
+    prefixes = ('CB_', 'BOE_GILT_PAR_', 'MOF_JGB_', 'BOC_', 'UST_PAR_')
+    inventory = [entry['symbol'] for name in ('sovereign_yields.yaml', 'sovereign_layers.yaml')
+                 for entry in _load_yaml(name)['series'] if entry['symbol'].startswith(prefixes)]
+    assert all(sid in included or f'`{sid}`' in docs for sid in inventory)
+
+
+def test_basis_uses_daily_primary_when_current_has_short_history(percentile_fixture):
+    path, con, spec = percentile_fixture
+    spec['sources'].insert(1, {'series_id': 'SECONDARY', 'role': 'secondary',
+                               'convention': 'vendor', 'frequency': 'D',
+                               'max_age_business_days': 3})
+    rows = []
+    for stamp in pd.date_range('2025-01-01', periods=12, freq='MS'):
+        rows.extend([(stamp.date(), 'IRLTLT01DEM156N', 1.0), (stamp.date(), 'DAILY', 1.25)])
+    rows.append((date(2025, 12, 31), 'SECONDARY', 2.0))
+    insert(con, rows)
+    con.close()
+    result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', db_path=path)
+    assert result['current_series_id'] == 'SECONDARY' and result['basis_series_id'] == 'DAILY'
+    assert result['status'] == 'ok' and result['basis_bp'] == pytest.approx(25)
+
+
+def test_longest_daily_source_is_single_history(percentile_fixture):
+    path, con, spec = percentile_fixture
+    spec['sources'].pop()
+    spec['sources'].append({'series_id': 'LONG', 'role': 'history_only', 'convention': 'bond',
+                            'frequency': 'D', 'max_age_business_days': 3})
+    rows = [(stamp.date(), 'LONG', 1.0)
+            for stamp in pd.date_range('2022-01-01', periods=40, freq='MS')]
+    rows += [(date(2025, 12, 31), 'DAILY', 2.0)]
+    insert(con, rows)
+    con.close()
+    result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', db_path=path)
+    assert result['history_series_id'] == 'LONG' and result['months_used'] == 40
+    assert result['status'] == 'basis_not_estimated' and result['percentile'] == 100

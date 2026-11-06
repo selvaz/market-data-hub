@@ -22,8 +22,12 @@ This is an observation-date cutoff, not a vintage or release-time backtest.
 
 Only comparable conventions belong in a chain. A documented comparability note
 explains any differences, including benchmark selection, interpolation,
-publication frequency and fixing time. Fitted zero-coupon curves are not
-substitutes for observed bond yields. A fallback never votes when a higher-ranked
+publication frequency and fixing time. The owner explicitly allows the Swiss
+spot and ChinaBond curve series in their country chains alongside benchmark
+bonds; they differ in convention and do not vote against one another. Their
+per-date composition can introduce a basis and does not make them equivalent.
+Other fitted zero-coupon curves are not substitutes for observed bond yields.
+A fallback never votes when a higher-ranked
 source has an observation on the chosen date. History-only sources are excluded
 from current resolution. Monthly and daily observations never vote against each
 other.
@@ -53,6 +57,51 @@ source at their latest overlapping date on or before the change, with that date
 in `basis_date`; both are null when no overlap exists. No adjustment is applied,
 and a missing overlap does not imply a zero basis. A `start` filter does not
 hide preceding observations used to identify a change or historical overlap.
+
+## Official-source inventory
+
+The remaining configured official sovereign series are excluded deliberately:
+
+- `CB_EA_AAA_2Y`, `CB_EA_AAA_10Y`, `CB_EA_ALL_2Y`, and `CB_EA_ALL_10Y`
+  are euro-area fitted spot curves, not national observed-bond concepts.
+- `CB_GB_10Y` is a fitted zero-coupon curve; the gilt par and benchmark chain
+  already exists. `CB_JP_2Y` and `CB_JP_10Y` duplicate the corresponding
+  `MOF_JGB_*` feeds and must not add a second vote.
+- `CB_DE_2Y`, `CB_DE_10Y`, `CB_KR_10Y`, `CB_PT_10Y`, `CB_GR_10Y`,
+  `CB_NL_10Y`, `CB_AT_10Y`, `CB_IE_10Y`, `CB_MX_10Y`, `CB_BR_10Y`,
+  `CB_AR_10Y`, `CB_IN_10Y`, `CB_ID_10Y`, `CB_ZA_10Y`, `CB_TR_10Y`,
+  `CB_PL_10Y`, `CB_CO_10Y`, `CB_CL_10Y`, and `CB_PE_10Y` are disabled
+  or unresolved sources, without an established current data feed.
+- `CB_ZA_R209`, `CB_ZA_R2030`, `CB_BR_NTNF_2033`, and `CB_BR_NTNF_2037`
+  have fixed maturities that drift away from the constant-tenor concepts.
+- `UST_PAR_1M`, `UST_PAR_1_5M`, `UST_PAR_2M`, `UST_PAR_3M`, `UST_PAR_4M`,
+  `UST_PAR_6M`, `UST_PAR_1Y`, `UST_PAR_3Y`, `UST_PAR_7Y`, `UST_PAR_20Y`,
+  `MOF_JGB_1Y`, `MOF_JGB_3Y`, `MOF_JGB_4Y`, `MOF_JGB_6Y`, `MOF_JGB_7Y`,
+  `MOF_JGB_8Y`, `MOF_JGB_9Y`, `MOF_JGB_15Y`, `MOF_JGB_20Y`, `MOF_JGB_25Y`,
+  `MOF_JGB_40Y`, and `BOE_GILT_PAR_20Y` have tenors outside the current
+  configured concept set. `BOC_LONG` is not a fixed-tenor benchmark.
+
+## Descriptive percentiles
+
+`read_resolved_percentile` ranks the current resolved value against monthly
+history in the requested calendar-year window, using the share of observations
+less than or equal to that value. OECD monthly history is preferred because it
+typically extends much further back than daily snapshots. When the concept has
+no OECD series, the longest single daily series in the window is aggregated to
+monthly means; fewer than 36 observed months makes the percentile unavailable.
+The selected history series, method, window and month count are returned.
+
+For OECD history, when the current daily source has at least 12 overlapping
+months, the median of its monthly mean minus the OECD observation is subtracted
+from the current value before ranking. If it has too little overlap, the daily
+primary is tried. The returned basis identifies the source and overlap count.
+When no qualifying overlap exists, no correction is applied and the status is
+`basis_not_estimated`. The same status applies to the daily-history fallback,
+where an OECD basis cannot be estimated. Dates are restricted to the cutoff,
+including a potentially partial current month, but publication and revision
+vintages are not reconstructed. OECD monthly averaging, benchmark selection and
+the daily source's convention may differ; a median basis need not be stable.
+The percentile is descriptive, not a claim of an equivalent historical series.
 
 To add or change a source, first register its actual series in the hub, review
 country, tenor, convention, units and publication lag, then edit the ordered
