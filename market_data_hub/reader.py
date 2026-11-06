@@ -34,6 +34,143 @@ def _con(db_path: Optional[str]):
     return get_conn(db_path, read_only=True)
 
 
+def _resolved_connection(db_path):
+    from pathlib import Path
+
+    from market_data_hub.db.connection import _connect_read_only_waiting, resolve_db_path
+
+    path = resolve_db_path(db_path)
+    if not Path(path).is_file():
+        raise FileNotFoundError(path)
+    return _connect_read_only_waiting(path)
+
+
+def _resolved_cutoff(as_of):
+    from datetime import date, datetime
+
+    if as_of is None:
+        return date.today()
+    if isinstance(as_of, datetime):
+        return as_of.date()
+    if isinstance(as_of, date):
+        return as_of
+    return date.fromisoformat(as_of)
+
+
+def _resolve_one(con, concept, spec, cutoff, tolerance):
+    from itertools import combinations
+    import math
+
+    import numpy as np
+
+    fresh = []
+    reasons = []
+    for source in spec['sources']:
+        if source['role'] == 'history_only':
+            continue
+        sid = source['series_id']
+        row = con.execute(
+            'SELECT date, value FROM macro_series WHERE series_id = ? AND date <= ? '
+            'AND value IS NOT NULL ORDER BY date DESC LIMIT 1', [sid, cutoff]
+        ).fetchone()
+        if row is None or not math.isfinite(row[1]):
+            reasons.append(f'{sid}: missing')
+            continue
+        age = int(np.busday_count(row[0].isoformat(), cutoff.isoformat()))
+        if age > source['max_age_business_days']:
+            reasons.append(f'{sid}: stale ({age} business days)')
+            continue
+        fresh.append({'series_id': sid, 'value': row[1], 'observation_date': row[0],
+                      'role': source['role'], 'age_business_days': age})
+    result = {'concept': concept, 'value': None, 'observation_date': None,
+              'series_id': None, 'role': None, 'status': 'unavailable',
+              'age_business_days': None, 'other_fresh_candidates': [],
+              'reason': '; '.join(reasons) or 'no eligible fresh source'}
+    if not fresh:
+        return result
+    chosen = fresh[0]
+    disputed = False
+    disagreement = any(abs(a['value'] - b['value']) * 100 > tolerance + 1e-9
+                       for a, b in combinations(fresh, 2))
+    if disagreement:
+        # Find all largest pairwise-agreeing groups; ambiguous groups cannot
+        # decide which observation to use, even if both contain a majority.
+        groups = []
+        for size in range(len(fresh), len(fresh) // 2, -1):
+            if size < 2 or len(fresh) < 3:
+                break
+            groups = [group for group in combinations(range(len(fresh)), size)
+                      if all(abs(fresh[a]['value'] - fresh[b]['value']) * 100
+                             <= tolerance + 1e-9 for a, b in combinations(group, 2))]
+            if groups:
+                break
+        if len(groups) == 1:
+            chosen = fresh[groups[0][0]]
+            reasons.append('fresh sources disagree; strict majority agrees within tolerance')
+        else:
+            disputed = True
+            reasons.append('fresh sources disagree without an unambiguous majority')
+    result.update(chosen)
+    result['status'] = ('disputed' if disputed else 'primary' if chosen['role'] == 'primary'
+                        else f"fallback:{chosen['series_id']}")
+    result['other_fresh_candidates'] = [item for item in fresh if item is not chosen]
+    result['reason'] = '; '.join(reasons) or 'first fresh source within tolerance'
+    return result
+
+
+def read_resolved_rates(concepts=None, as_of=None, db_path=None):
+    """Resolve concepts using dated observations, without network or DB writes.
+
+    The cutoff limits observation dates; it does not reconstruct vintage availability.
+    Returns a list of dictionaries in requested order.
+    """
+    from market_data_hub.resolved_rates import load_resolved_rates
+
+    config, table = load_resolved_rates()
+    names = list(table) if concepts is None else [concepts] if isinstance(concepts, str) else list(concepts)
+    for name in names:
+        if name not in table:
+            raise KeyError(f'unknown resolved rate concept: {name}')
+    cutoff = _resolved_cutoff(as_of)
+    con = _resolved_connection(db_path)
+    try:
+        return [_resolve_one(con, name, table[name], cutoff, config['tolerance_bp']) for name in names]
+    finally:
+        con.close()
+
+
+def read_resolved_rate(concept, as_of=None, db_path=None):
+    """Resolve one concept, returning value, provenance and fresh alternatives."""
+    return read_resolved_rates([concept], as_of=as_of, db_path=db_path)[0]
+
+
+def read_resolved_history(concept, series_id=None, start=None, end=None, as_of=None, db_path=None):
+    """Read one configured source, primary by default; never splice sources."""
+    from market_data_hub.resolved_rates import load_resolved_rates
+
+    _, table = load_resolved_rates()
+    if concept not in table:
+        raise KeyError(f'unknown resolved rate concept: {concept}')
+    sources = table[concept]['sources']
+    sid = series_id or sources[0]['series_id']
+    if sid not in {source['series_id'] for source in sources}:
+        raise ValueError(f'{sid} is not configured for {concept}')
+    cutoff = _resolved_cutoff(as_of)
+    if end is not None:
+        cutoff = min(cutoff, _resolved_cutoff(end))
+    con = _resolved_connection(db_path)
+    try:
+        clauses = ['series_id = ?', 'date <= ?']
+        params = [sid, cutoff]
+        if start is not None:
+            clauses.append('date >= ?')
+            params.append(_resolved_cutoff(start))
+        return con.execute('SELECT date, series_id, value FROM macro_series WHERE '
+                           + ' AND '.join(clauses) + ' ORDER BY date', params).fetch_df()
+    finally:
+        con.close()
+
+
 def read_fred_series_metadata(db_path: Optional[str] = None) -> pd.DataFrame:
     """Latest captured FRED metadata per series; never refreshes or writes."""
     from pathlib import Path
