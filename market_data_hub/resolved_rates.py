@@ -104,6 +104,11 @@ def validate_resolved_rates(config, known_series):
             if key in seen_pairs:
                 raise ValueError(f'{name}: duplicate pair tolerance')
             seen_pairs.add(key)
+            paired = [source for source in sources if source['series_id'] in key]
+            if paired[0]['convention'] != paired[1]['convention'] or (
+                known_series[ids[0]].get('frequency', 'D') != known_series[ids[1]].get('frequency', 'D')
+            ):
+                raise ValueError(f'{name}: pair tolerance requires matching conventions and frequency')
             value = pair.get('tolerance_bp')
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
                 raise ValueError(f'{name}: invalid pair tolerance')

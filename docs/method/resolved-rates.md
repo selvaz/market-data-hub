@@ -13,31 +13,46 @@ The age is zero on the observation date; Tuesday to Saturday counts Wednesday,
 Thursday and Friday (three days), and Friday to Monday counts one day. A source is
 fresh at or below its configured maximum age. Monthly OECD observations use a
 larger limit reflecting their publication lag and appear only as last fallback.
+The current value uses the latest fresh daily observation date across the chain,
+then the highest-priority source on that date. A lagged primary replaces the
+lower-priority observation for that date when it arrives. A fresh monthly
+fallback is used only when no daily source is fresh. A newer secondary returns
+`latest:<series_id>` when a higher-priority fresh source has an older date.
 This is an observation-date cutoff, not a vintage or release-time backtest.
 
 Only comparable conventions belong in a chain. A documented comparability note
 explains any differences, including benchmark selection, interpolation,
 publication frequency and fixing time. Fitted zero-coupon curves are not
 substitutes for observed bond yields. A fallback never votes when a higher-ranked
-source is fresh; only the first eligible fallback is selected when all higher
-sources are stale or missing. History-only sources never vote. Monthly and
-daily observations never vote against each other.
+source has an observation on the chosen date. History-only sources are excluded
+from current resolution. Monthly and daily observations never vote against each
+other.
 
-Voting compares fresh sources with the same convention and frequency. A concept
+Voting compares fresh sources on the selected date with the same convention and frequency. A concept
 may declare a `pair_tolerances` list of `series_ids` (two IDs), `tolerance_bp`,
-and a reason in `note` to allow a specific cross-convention comparison. Pairwise
+and a reason in `note` to set a specific tolerance for a same-convention pair. Pairwise
 comparability is not assumed to be transitive: starting with the first fresh
 source, later sources vote only if comparable to every source already in the
 voting set. Other fresh candidates remain visible as alternatives, with signed
-`basis_bp` (alternative minus selected value) and whether they voted.
+`basis_bp` (alternative minus selected value) for the same date and whether they
+voted. Basis for alternatives from a different date is unavailable.
 
 Tolerance is in basis points. When voting values differ by more than their
 applicable tolerance, a strict majority of at least three voting sources must
 agree pairwise within tolerance to overrule an outlier; otherwise the result is
-disputed and the first fresh source is retained. A tie or multiple competing
-majorities is disputed. No value is fabricated. History reads select
-one explicitly named configured source, or the primary by default, and never
-splice series. History-only entries are excluded from current resolution.
+disputed and the first source on that date is retained. A tie or multiple competing
+majorities is disputed. No value is fabricated. History reads compose each date
+using the highest-priority available source, including history-only sources;
+daily observations take precedence over monthly values on the same date. Each
+row names its source and role. `single_source` returns only one configured
+series. Counts per series are in `DataFrame.attrs['source_counts']`.
+
+When consecutive composed points have different conventions, the latter row is
+marked `mixed_source`. Its `basis_bp` is the new source minus the previous
+source at their latest overlapping date on or before the change, with that date
+in `basis_date`; both are null when no overlap exists. No adjustment is applied,
+and a missing overlap does not imply a zero basis. A `start` filter does not
+hide preceding observations used to identify a change or historical overlap.
 
 To add or change a source, first register its actual series in the hub, review
 country, tenor, convention, units and publication lag, then edit the ordered

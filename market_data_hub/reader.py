@@ -101,24 +101,28 @@ def _resolve_one(con, concept, spec, cutoff, tolerance):
               'reason': '; '.join(reasons) or 'no eligible fresh source'}
     if not fresh:
         return result
-    chosen = fresh[0]
+    daily = [item for item in fresh if item['frequency'] == 'D']
+    pool = daily or fresh
+    latest_date = max(item['observation_date'] for item in pool)
+    same_date = [item for item in pool if item['observation_date'] == latest_date]
+    chosen = same_date[0]
     disputed = False
     pair_tolerances = {frozenset(pair['series_ids']): pair['tolerance_bp']
                        for pair in spec.get('pair_tolerances', [])}
 
     def threshold(a, b):
-        if a['frequency'] != b['frequency']:
+        if a['frequency'] != b['frequency'] or a['convention'] != b['convention']:
             return None
         pair = frozenset((a['series_id'], b['series_id']))
         if pair in pair_tolerances:
             return pair_tolerances[pair]
-        return tolerance if a['convention'] == b['convention'] else None
+        return tolerance
 
     # Fallbacks are sequential: the first fresh fallback is selectable only
     # when every higher-ranked source is unavailable, and never votes against
     # another source. Build a pairwise comparable set anchored at that source.
     eligible = []
-    for candidate in fresh:
+    for candidate in same_date:
         if candidate['role'] == 'fallback':
             if not eligible:
                 eligible.append(candidate)
@@ -150,13 +154,18 @@ def _resolve_one(con, concept, spec, cutoff, tolerance):
             disputed = True
             reasons.append('fresh sources disagree without an unambiguous majority')
     result.update(chosen)
+    higher = fresh[:next(i for i, item in enumerate(fresh) if item is chosen)]
+    later_than_higher = any(item['frequency'] == chosen['frequency']
+                            and item['observation_date'] < chosen['observation_date'] for item in higher)
     result['status'] = ('disputed' if disputed else 'primary' if chosen['role'] == 'primary'
+                        else f"latest:{chosen['series_id']}" if later_than_higher
                         else f"fallback:{chosen['series_id']}")
-    alternatives = [{**item, 'basis_bp': (item['value'] - chosen['value']) * 100,
+    alternatives = [{**item, 'basis_bp': (item['value'] - chosen['value']) * 100
+                     if item['observation_date'] == chosen['observation_date'] else None,
                      'voted': item in voters} for item in fresh if item is not chosen]
     result['other_fresh_candidates'] = alternatives
     result['alternatives'] = alternatives
-    result['reason'] = '; '.join(reasons) or 'first fresh source within tolerance'
+    result['reason'] = '; '.join(reasons) or 'highest-priority source on latest fresh date'
     return result
 
 
@@ -186,31 +195,72 @@ def read_resolved_rate(concept, as_of=None, db_path=None):
     return read_resolved_rates([concept], as_of=as_of, db_path=db_path)[0]
 
 
-def read_resolved_history(concept, series_id=None, start=None, end=None, as_of=None, db_path=None):
-    """Read one configured source, primary by default; never splice sources."""
+def read_resolved_history(concept, series_id=None, start=None, end=None, as_of=None,
+                          db_path=None, *, single_source=None):
+    """Compose by date, or select one source; counts are in DataFrame.attrs.
+
+    ``series_id`` is the legacy alias for ``single_source``. Basis at a
+    convention change is new minus old, from the most recent overlap on or
+    before that date; values remain unadjusted.
+    """
+    import math
+
     from market_data_hub.resolved_rates import load_resolved_rates
 
     _, table = load_resolved_rates()
     if concept not in table:
         raise KeyError(f'unknown resolved rate concept: {concept}')
     sources = table[concept]['sources']
-    sid = series_id or sources[0]['series_id']
-    if sid not in {source['series_id'] for source in sources}:
+    if series_id is not None and single_source is not None and series_id != single_source:
+        raise ValueError('series_id and single_source disagree')
+    sid = single_source if single_source is not None else series_id
+    by_id = {source['series_id']: source for source in sources}
+    if sid is not None and sid not in by_id:
         raise ValueError(f'{sid} is not configured for {concept}')
     cutoff = _resolved_cutoff(as_of)
     if end is not None:
         cutoff = min(cutoff, _resolved_cutoff(end))
     con = _resolved_connection(db_path)
     try:
-        clauses = ['series_id = ?', 'date <= ?']
-        params = [sid, cutoff]
-        if start is not None:
-            clauses.append('date >= ?')
-            params.append(_resolved_cutoff(start))
-        return con.execute('SELECT date, series_id, value FROM macro_series WHERE '
-                           + ' AND '.join(clauses) + ' ORDER BY date', params).fetch_df()
+        ids = [sid] if sid is not None else list(by_id)
+        placeholders = ','.join('?' for _ in ids)
+        rows = con.execute(f'SELECT date, series_id, value FROM macro_series '
+                           f'WHERE series_id IN ({placeholders}) AND date <= ? '
+                           'AND value IS NOT NULL ORDER BY date', [*ids, cutoff]).fetchall()
     finally:
         con.close()
+    dates = {}
+    for day, series, value in rows:
+        if math.isfinite(value):
+            dates.setdefault(day, {})[series] = value
+    start_date = _resolved_cutoff(start) if start is not None else None
+    previous = None
+    output = []
+    for day, values in sorted(dates.items()):
+        available = [source for source in sources if source['series_id'] in values]
+        if sid is not None:
+            available = [by_id[sid]]
+        daily = [source for source in available if source.get('frequency', 'D') == 'D']
+        source = (daily or available)[0]
+        current = source['series_id']
+        mixed = previous is not None and previous['convention'] != source['convention']
+        basis = None
+        basis_date = None
+        if mixed:
+            old = previous['series_id']
+            overlaps = [d for d, vals in dates.items() if d <= day and old in vals and current in vals]
+            if overlaps:
+                basis_date = max(overlaps)
+                basis = (dates[basis_date][current] - dates[basis_date][old]) * 100
+        if start_date is None or day >= start_date:
+            output.append({'date': day, 'series_id': current, 'value': values[current],
+                           'role': source['role'], 'mixed_source': mixed,
+                           'basis_bp': basis, 'basis_date': basis_date})
+        previous = source
+    frame = pd.DataFrame(output, columns=['date', 'series_id', 'value', 'role',
+                                          'mixed_source', 'basis_bp', 'basis_date'])
+    frame.attrs['source_counts'] = frame['series_id'].value_counts().to_dict()
+    return frame
 
 
 def read_fred_series_metadata(db_path: Optional[str] = None) -> pd.DataFrame:
