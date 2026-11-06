@@ -57,11 +57,22 @@ def _resolved_cutoff(as_of):
     return date.fromisoformat(as_of)
 
 
+def _resolved_business_day_age(observation_date, cutoff):
+    """Count weekdays strictly after observation_date through cutoff, inclusive."""
+    from datetime import timedelta
+
+    import numpy as np
+
+    if cutoff < observation_date:
+        raise ValueError('cutoff precedes observation date')
+    one_day = timedelta(days=1)
+    return int(np.busday_count((observation_date + one_day).isoformat(),
+                               (cutoff + one_day).isoformat()))
+
+
 def _resolve_one(con, concept, spec, cutoff, tolerance):
     from itertools import combinations
     import math
-
-    import numpy as np
 
     fresh = []
     reasons = []
@@ -76,7 +87,7 @@ def _resolve_one(con, concept, spec, cutoff, tolerance):
         if row is None or not math.isfinite(row[1]):
             reasons.append(f'{sid}: missing')
             continue
-        age = int(np.busday_count(row[0].isoformat(), cutoff.isoformat()))
+        age = _resolved_business_day_age(row[0], cutoff)
         if age > source['max_age_business_days']:
             reasons.append(f'{sid}: stale ({age} business days)')
             continue

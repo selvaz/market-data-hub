@@ -7,8 +7,10 @@ are yields in percent. A concept is a practical comparison, not a claim that
 every benchmark uses the same security or fixing time.
 
 The reader considers observations dated on or before `as_of`, taking the latest
-non-null observation per source. Age counts Monday through Friday after the
-observation date through the cutoff, without a holiday calendar. A source is
+non-null observation per source. Age counts Monday through Friday strictly after
+the observation date up to and including the cutoff, without a holiday calendar.
+The age is zero on the observation date; Tuesday to Saturday counts Wednesday,
+Thursday and Friday (three days), and Friday to Monday counts one day. A source is
 fresh at or below its configured maximum age. Monthly OECD observations use a
 larger limit reflecting their publication lag and appear only as last fallback.
 This is an observation-date cutoff, not a vintage or release-time backtest.

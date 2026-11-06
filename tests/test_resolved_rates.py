@@ -1,9 +1,27 @@
 from copy import deepcopy
+from datetime import date
 
 import duckdb
 import pytest
 
 from market_data_hub import reader, resolved_rates
+
+
+@pytest.mark.parametrize('observation,cutoff,expected', [
+    ('2026-11-03', '2026-11-03', 0),
+    ('2026-11-03', '2026-11-04', 1),
+    ('2026-11-03', '2026-11-07', 3),
+    ('2026-11-06', '2026-11-09', 1),
+    ('2026-11-07', '2026-11-09', 1),
+])
+def test_business_day_age(observation, cutoff, expected):
+    assert reader._resolved_business_day_age(date.fromisoformat(observation),
+                                              date.fromisoformat(cutoff)) == expected
+
+
+def test_business_day_age_rejects_future_observation():
+    with pytest.raises(ValueError, match='precedes observation'):
+        reader._resolved_business_day_age(date(2026, 11, 4), date(2026, 11, 3))
 
 
 @pytest.fixture
@@ -103,6 +121,14 @@ def test_as_of_and_history_never_splices(db, table):
     assert frame.series_id.tolist() == ['B']
     with pytest.raises(ValueError):
         reader.read_resolved_history('DE_10Y', series_id='OTHER', db_path=db)
+
+
+def test_weekend_cutoff_keeps_source_at_age_limit(db, table):
+    table['sources'][0]['series_id'] = 'B'
+    table['sources'][0]['max_age_business_days'] = 1
+    table['sources'][1:]= []
+    result = reader.read_resolved_rate('DE_10Y', as_of='2026-11-07', db_path=db)
+    assert result['status'] == 'primary' and result['age_business_days'] == 1
 
 
 def test_missing_database_is_not_created(tmp_path):
