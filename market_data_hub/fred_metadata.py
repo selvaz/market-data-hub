@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import os
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import pandas as pd
 import requests
@@ -41,12 +41,12 @@ def refresh(con, api_key, *, max_age_days=30, interval=1.0, session=None):
         raise ValueError(
             "max_age_days must be nonnegative and interval at least one second"
         )
-    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(
-        days=max_age_days
-    )
+    # epoch() reads TIMESTAMP (naive UTC) and legacy TIMESTAMPTZ alike, without
+    # pytz or Python 3.9's strict fromisoformat.
+    cutoff = time.time() - max_age_days * 86400
     cached = dict(
         con.execute(
-            "SELECT series_id, CAST(max(retrieved_at) AS VARCHAR) "
+            "SELECT series_id, epoch(max(retrieved_at)) "
             "FROM fred_series_metadata GROUP BY series_id"
         ).fetchall()
     )
@@ -54,12 +54,8 @@ def refresh(con, api_key, *, max_age_days=30, interval=1.0, session=None):
     failures = []
     requested = False
     for series_id in dict.fromkeys(entry["symbol"] for entry in get_fred_series()):
-        timestamp = cached.get(series_id)
-        if timestamp:
-            parsed = datetime.fromisoformat(timestamp)
-            if parsed.tzinfo is not None:
-                parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
-        if timestamp and parsed >= cutoff:
+        captured = cached.get(series_id)
+        if captured is not None and captured >= cutoff:
             continue
         if requested:
             time.sleep(interval)
