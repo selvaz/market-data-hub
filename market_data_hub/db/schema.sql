@@ -1139,3 +1139,18 @@ CREATE TABLE IF NOT EXISTS market_breadth_snapshots (
     method VARCHAR NOT NULL, source VARCHAR NOT NULL, fetched_at TIMESTAMP NOT NULL,
     PRIMARY KEY (collection_date, market, universe)
 );
+CREATE TABLE IF NOT EXISTS fred_series_metadata (
+    series_id VARCHAR NOT NULL,
+    retrieved_at TIMESTAMPTZ NOT NULL,
+    title VARCHAR NOT NULL,
+    units VARCHAR NOT NULL,
+    units_short VARCHAR NOT NULL,
+    seasonal_adjustment VARCHAR NOT NULL,
+    seasonal_adjustment_short VARCHAR NOT NULL,
+    frequency VARCHAR NOT NULL,
+    frequency_short VARCHAR NOT NULL,
+    last_updated VARCHAR NOT NULL,
+    observation_start DATE NOT NULL,
+    observation_end DATE NOT NULL,
+    PRIMARY KEY (series_id, retrieved_at)
+);
