@@ -1,0 +1,17 @@
+{
+  "seriess": [
+    {
+      "title": "Real Gross Domestic Product",
+      "units": "Billions of Chained 2017 Dollars",
+      "units_short": "Bil. of Chn. 2017 $",
+      "seasonal_adjustment": "Seasonally Adjusted Annual Rate",
+      "seasonal_adjustment_short": "SAAR",
+      "frequency": "Quarterly",
+      "frequency_short": "Q",
+      "last_updated": "2026-10-29 08:03:15-05",
+      "observation_start": "1947-01-01",
+      "observation_end": "2026-07-01",
+      "id": "GDPC1"
+    }
+  ]
+}
