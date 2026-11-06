@@ -38,21 +38,20 @@ def read_fred_series_metadata(db_path: Optional[str] = None) -> pd.DataFrame:
     """Latest captured FRED metadata per series; never refreshes or writes."""
     from pathlib import Path
 
-    import duckdb
-
-    from market_data_hub.db.connection import resolve_db_path
+    from market_data_hub.db.connection import _connect_read_only_waiting, resolve_db_path
 
     path = resolve_db_path(db_path)
     if not Path(path).is_file():
         raise FileNotFoundError(path)
-    with duckdb.connect(path, read_only=True) as con:
-        exists = con.execute(
+    with _connect_read_only_waiting(path) as con:
+        row = con.execute(
             "SELECT count(*) FROM information_schema.tables WHERE table_name = 'fred_series_metadata'"
-        ).fetchone()[0]
-        if not exists:
+        ).fetchone()
+        if row is None or not row[0]:
             return pd.DataFrame()
         return con.execute(
-            "SELECT * FROM fred_series_metadata QUALIFY row_number() OVER "
+            "SELECT * REPLACE (CAST(retrieved_at AS VARCHAR) AS retrieved_at) "
+            "FROM fred_series_metadata QUALIFY row_number() OVER "
             "(PARTITION BY series_id ORDER BY retrieved_at DESC) = 1 ORDER BY series_id"
         ).df()
 

@@ -1141,7 +1141,7 @@ CREATE TABLE IF NOT EXISTS market_breadth_snapshots (
 );
 CREATE TABLE IF NOT EXISTS fred_series_metadata (
     series_id VARCHAR NOT NULL,
-    retrieved_at TIMESTAMPTZ NOT NULL,
+    retrieved_at TIMESTAMP NOT NULL,
     title VARCHAR NOT NULL,
     units VARCHAR NOT NULL,
     units_short VARCHAR NOT NULL,

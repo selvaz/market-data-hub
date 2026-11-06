@@ -41,17 +41,25 @@ def refresh(con, api_key, *, max_age_days=30, interval=1.0, session=None):
         raise ValueError(
             "max_age_days must be nonnegative and interval at least one second"
         )
-    cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(
+        days=max_age_days
+    )
     cached = dict(
         con.execute(
-            "SELECT series_id, max(retrieved_at) FROM fred_series_metadata GROUP BY series_id"
+            "SELECT series_id, CAST(max(retrieved_at) AS VARCHAR) "
+            "FROM fred_series_metadata GROUP BY series_id"
         ).fetchall()
     )
     client = session or requests.Session()
     failures = []
     requested = False
     for series_id in dict.fromkeys(entry["symbol"] for entry in get_fred_series()):
-        if series_id in cached and cached[series_id] >= cutoff:
+        timestamp = cached.get(series_id)
+        if timestamp:
+            parsed = datetime.fromisoformat(timestamp)
+            if parsed.tzinfo is not None:
+                parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+        if timestamp and parsed >= cutoff:
             continue
         if requested:
             time.sleep(interval)
@@ -77,7 +85,10 @@ def refresh(con, api_key, *, max_age_days=30, interval=1.0, session=None):
             ):
                 raise ValueError("incomplete FRED metadata")
             row = {field: item[field] for field in FIELDS}
-            row.update(series_id=series_id, retrieved_at=datetime.now(timezone.utc))
+            row.update(
+                series_id=series_id,
+                retrieved_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            )
             upsert(con, "fred_series_metadata", pd.DataFrame([row]))
         except (requests.RequestException, KeyError, TypeError, ValueError):
             # Do not print request exceptions: URLs can contain the API key.

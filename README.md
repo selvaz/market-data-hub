@@ -237,10 +237,12 @@ successful captures remain saved and a rerun skips fresh entries.
 
 `market_data_hub.reader.read_fred_series_metadata(db_path=...)` reads the latest
 capture per series without network access or writes. The versioned table retains
-each `retrieved_at`, which is the hub's capture time, not a historical FRED
+each `retrieved_at` as naive UTC, which is the hub's capture time, not a historical FRED
 availability date. `catalog.list_macro_series(db_path=...)` exposes `unit`,
 `seasonal_adjustment`, their FRED short forms, native `fred_frequency`, title,
 observation bounds, FRED `last_updated`, and retrieval time. Catalog frequency
 retains the configured cadence code. Consumers such as LazyCommittee must read
 the structured adjustment field; the current audit infers it from name/convention.
+The `fred_metadata_status` field reports when optional metadata could not be read;
+the static catalog remains available in that case.
 
