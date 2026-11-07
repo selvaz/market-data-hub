@@ -7,6 +7,11 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.26] — 2026-11-06
+
+### Added
+- Resolved sovereign rates (#183): per-concept source chains in `config/resolved_rates.yaml` (116 concepts; primary → secondary → fallback with max age, convention and comparability notes; validator), and readers `read_resolved_rate`, `read_resolved_rates`, `read_resolved_history` and `read_resolved_percentile`. The current value comes from the newest fresh daily source, and the primary replaces earlier days when it arrives; fresh same-convention sources that disagree beyond tolerance resolve by majority (≥3) or are flagged `disputed`; history is composed per date with each point labelled; percentiles rank against OECD monthly history leveled at the last common month with the composed daily history. Method: `docs/method/resolved-rates.md`.
+
 ## [0.3.25] — 2026-11-05
 
 ### Added
