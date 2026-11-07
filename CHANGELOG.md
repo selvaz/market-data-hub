@@ -9,6 +9,7 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ### Added
 - Earnings calendar records the currency of the estimates and actuals: new nullable `estimate_currency` column (schema 32) on `earnings_events` and `earnings_observations`, filled from the TradingView `fundamental_currency_code` field. `eps_estimate`, `eps_actual`, `revenue_estimate` and `revenue_actual` are in `estimate_currency`, which is often not the listing `currency` (TSE:7011 lists in JPY, its estimates are in USD). Exposed by `events_between`, `event_history` and `v_earnings_surprise`. Old rows stay NULL (unknown); nothing is backfilled by guessing.
+- Norges Bank 10Y generic bond yield and SNB 10Y spot yield daily collectors, with resolved-rate chains and SNB cube history.
 
 ## [0.3.26] — 2026-11-06
 
