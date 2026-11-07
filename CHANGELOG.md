@@ -7,6 +7,9 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- US real consumption and real income FRED series in `macro_series`: `PCEC96` (real personal consumption expenditures) and `DSPIC96` (real disposable personal income), both monthly, SAAR, chained 2017 dollars, BEA, lag 29 days; the nominal `PI`/`PCE` stay as they are. Two new indicator cards, `us_real_personal_spending` and `us_real_disposable_income`, cover them (429 cards). Both are also in the ALFRED vintage backfill universe (`alfred_backfill.yaml`); `docs/alfred-backfill-estimate.json` is a dated capture and is not extended.
+
 ## [0.3.26] — 2026-11-06
 
 ### Added

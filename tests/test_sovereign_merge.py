@@ -27,7 +27,7 @@ def test_combined_catalog_retains_every_declared_series(tmp_db):
     assert set(entries.series_id) == declared and entries.series_id.is_unique
     dataset = next(d for d in catalog.list_datasets() if d["domain"] == "macro")
     # Four EIA inventories and six GPR series extend the former 291-series universe.
-    assert dataset["n_series"] == len(declared) == 307
+    assert dataset["n_series"] == len(declared) == 309
     assert dataset["frequency"] == "D/W/M/Q/A"
     assert all(
         name in dataset["description"] for name in ("FRED", "NY Fed ACM", "sovereign")
@@ -146,7 +146,7 @@ def test_validation_reports_both_counts_and_checks_both_contracts(monkeypatch, c
     assert validate_config.main() == 0
     output = capsys.readouterr().out
     assert (
-        "fred=111" in output
+        "fred=113" in output
         and "nyfed_acm=2" in output
         and "sovereign_yields=42" in output
     )
