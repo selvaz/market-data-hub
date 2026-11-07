@@ -1,4 +1,5 @@
 """Read-only shadow cards and coverage CLI; explicit database path required."""
+
 from __future__ import annotations
 
 import argparse
@@ -19,33 +20,69 @@ def main(argv=None):
         command.add_argument("--since", required=True)
         command.add_argument("--until", required=True)
         command.add_argument("--as-known-at")
-        command.add_argument("--json", action="store_true", help="Emit JSON (also the default)")
+        command.add_argument(
+            "--json", action="store_true", help="Emit JSON (also the default)"
+        )
         if name == "cards":
             command.add_argument("--indicator", action="append", dest="indicators")
             command.add_argument("--geography")
-    review = commands.add_parser("review-queue", help="List provisional issuer releases needing review")
+    review = commands.add_parser(
+        "review-queue", help="List provisional issuer releases needing review"
+    )
     review.add_argument("--db", required=True, type=Path)
     review.add_argument("--family")
-    resolve = commands.add_parser("resolve-worklist", help="Resolve imported evidence on an explicit local copy")
+    resolve = commands.add_parser(
+        "resolve-worklist", help="Resolve imported evidence on an explicit local copy"
+    )
     resolve.add_argument("--db", required=True, type=Path)
     resolve.add_argument("--dry-run", action="store_true")
     resolve.add_argument("--as-of", help="UTC evaluation cutoff (default: now)")
-    resolve.add_argument("--lateness-days", type=int, default=14, help="Retry window, at least 1 day (default: 14)")
-    resolve.add_argument("--revert", metavar="RUN_ID", help="Restore one run's original worklist state atomically")
+    resolve.add_argument(
+        "--lateness-days",
+        type=int,
+        default=14,
+        help="Retry window, at least 1 day (default: 14)",
+    )
+    resolve.add_argument(
+        "--revert",
+        metavar="RUN_ID",
+        help="Restore one run's original worklist state atomically",
+    )
     args = parser.parse_args(argv)
     try:
         if args.command == "resolve-worklist":
             from .worklist import execute
-            result = execute(args.db, dry_run=args.dry_run, as_of=args.as_of,
-                             lateness_days=args.lateness_days, revert=args.revert)
+
+            result = execute(
+                args.db,
+                dry_run=args.dry_run,
+                as_of=args.as_of,
+                lateness_days=args.lateness_days,
+                revert=args.revert,
+            )
             print(json.dumps(result, indent=2, ensure_ascii=False))
             return 0
         with open_reader(args.db) as store:
             if args.command == "review-queue":
-                tables = {r[0] for r in store.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-                rows = [] if "review_queue" not in tables else [dict(r) for r in store.conn.execute(
-                    "SELECT * FROM review_queue" + (" WHERE family=?" if args.family else "") +
-                    " ORDER BY recorded_at,id", (args.family,) if args.family else ())]
+                tables = {
+                    r[0]
+                    for r in store.conn.execute(
+                        "SELECT name FROM sqlite_master WHERE type='table'"
+                    )
+                }
+                rows = (
+                    []
+                    if "review_queue" not in tables
+                    else [
+                        dict(r)
+                        for r in store.conn.execute(
+                            "SELECT * FROM review_queue"
+                            + (" WHERE family=?" if args.family else "")
+                            + " ORDER BY recorded_at,id",
+                            (args.family,) if args.family else (),
+                        )
+                    ]
+                )
                 for row in rows:
                     row["reasons"] = json.loads(row["reasons"])
                 print(json.dumps({"review_queue": rows}, indent=2))

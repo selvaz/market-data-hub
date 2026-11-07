@@ -1,4 +1,5 @@
 """Free Census New Residential Sales publication; issuer units -> thousands."""
+
 from datetime import datetime
 
 from .bls import shift_month
@@ -16,13 +17,29 @@ def parse(document, family="us_new_home_sales", since="1900-01"):
     head, _, _ = reviewed(family, edition)
     if "MONTHLY NEW RESIDENTIAL SALES, " + month(head).upper() not in body:
         raise FetchError("Census sales reference month needs review")
-    values = require(r"Sales of new single-family houses in (\w+ \d{4}) were at a seasonally-adjusted annual rate of ([\d,]+),.*?the (\w+ \d{4}) rate of ([\d,]+)", body)
+    values = require(
+        r"Sales of new single-family houses in (\w+ \d{4}) were at a seasonally-adjusted annual rate of ([\d,]+),.*?the (\w+ \d{4}) rate of ([\d,]+)",
+        body,
+    )
     out = []
-    for period, label, printed in ((head, values[1], values[2]), (shift_month(head, -1), values[3], values[4])):
+    for period, label, printed in (
+        (head, values[1], values[2]),
+        (shift_month(head, -1), values[3], values[4]),
+    ):
         if label != month(period):
             raise FetchError("Census sales prior reference month needs review")
-        out.append(observation(document, family, edition, "us_new_home_sales", period, printed, method,
-                               value=float(printed.replace(",", "")) / 1000))
+        out.append(
+            observation(
+                document,
+                family,
+                edition,
+                "us_new_home_sales",
+                period,
+                printed,
+                method,
+                value=float(printed.replace(",", "")) / 1000,
+            )
+        )
     return [o for o in out if o.period >= since]
 
 

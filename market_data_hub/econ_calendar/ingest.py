@@ -12,6 +12,7 @@ Two layers, deliberately kept apart:
     one row per release, rebuilt from the observations under explicit
     precedence rules. It is derived, and can always be regenerated.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -52,10 +53,10 @@ class CalendarObservation:
     indicator_key: str
     country_iso3: str
     source: str
-    provenance: str                      # 'official' | 'aggregator' | 'web'
+    provenance: str  # 'official' | 'aggregator' | 'web'
     source_event_name: str
     release_utc: datetime
-    release_precision: str = "minute"    # 'minute' | 'day'
+    release_precision: str = "minute"  # 'minute' | 'day'
     reference_period: Optional[str] = None
     reference_date: Optional[date] = None
     actual: Optional[str] = None
@@ -63,7 +64,9 @@ class CalendarObservation:
     previous: Optional[str] = None
     revised_from: Optional[str] = None
     impact: Optional[str] = None
-    vintage_date: date = field(default_factory=lambda: datetime.now(timezone.utc).date())
+    vintage_date: date = field(
+        default_factory=lambda: datetime.now(timezone.utc).date()
+    )
 
     def __post_init__(self) -> None:
         if self.provenance not in _PROVENANCE_RANK:
@@ -72,7 +75,9 @@ class CalendarObservation:
                 f"expected one of {sorted(_PROVENANCE_RANK)}"
             )
         if self.release_utc.tzinfo is not None:
-            self.release_utc = self.release_utc.astimezone(timezone.utc).replace(tzinfo=None)
+            self.release_utc = self.release_utc.astimezone(timezone.utc).replace(
+                tzinfo=None
+            )
 
     @property
     def event_id(self) -> str:
@@ -121,8 +126,11 @@ def make_event_id(indicator_key: str, release_utc: datetime) -> str:
     Deterministic on purpose: two collectors seeing the same event must
     produce the same key without consulting each other.
     """
-    grain = release_utc.date().isoformat() if _EVENT_GRAIN == "day" \
+    grain = (
+        release_utc.date().isoformat()
+        if _EVENT_GRAIN == "day"
         else release_utc.replace(second=0, microsecond=0).isoformat()
+    )
     impronta = f"{indicator_key}|{grain}".encode("utf-8")
     return hashlib.sha1(impronta).hexdigest()[:16]
 
@@ -150,7 +158,7 @@ def parse_number(valore: Optional[str]) -> Optional[float]:
     # an error nothing downstream catches.
     if x >= 0 and re.match(r"^\s*-", testo):
         x = -x
-    coda = testo[m.end():].strip().upper()
+    coda = testo[m.end() :].strip().upper()
     if coda.startswith("K"):
         x *= 1e3
     elif coda.startswith("M"):
@@ -162,7 +170,9 @@ def parse_number(valore: Optional[str]) -> Optional[float]:
     return x
 
 
-def _valori_concordi(valori: Sequence[Optional[float]], tolleranza: float = 0.02) -> Optional[bool]:
+def _valori_concordi(
+    valori: Sequence[Optional[float]], tolleranza: float = 0.02
+) -> Optional[bool]:
     """Sources agree on the value, allowing for the scale they write it in.
 
     Tradays writes '75.1 K' where Yahoo writes '75.1', and one source's
@@ -181,7 +191,7 @@ def _valori_concordi(valori: Sequence[Optional[float]], tolleranza: float = 0.02
         if a == 0 or b == 0:
             return False
         if (a > 0) != (b > 0):
-            return False            # opposite signs are not a matter of scale
+            return False  # opposite signs are not a matter of scale
         grande, piccolo = (abs(a), abs(b)) if abs(a) > abs(b) else (abs(b), abs(a))
         for potenza in (1e3, 1e6, 1e9, 1e12):
             if abs(grande / potenza - piccolo) <= tolleranza * max(piccolo, 1e-9):
@@ -210,8 +220,13 @@ def ingest_observations(
 
     righe, respinte, ridiretti = _applica_alias(con, righe)
     if not righe:
-        return {"observations": 0, "events": 0, "revised": 0,
-                "rejected_by_alias": respinte, "redirected_by_alias": ridiretti}
+        return {
+            "observations": 0,
+            "events": 0,
+            "revised": 0,
+            "rejected_by_alias": respinte,
+            "redirected_by_alias": ridiretti,
+        }
 
     # Identity is resolved before writing, in chronological order: the first
     # observation of a release creates the event, later ones attach to it
@@ -275,10 +290,25 @@ def ingest_observations(
                  previous, revised_from, impact, change_type, prior_actual, run_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            [id_per_riga[id(o)], o.source, o.provenance, o.vintage_date, o.source_event_name,
-             o.release_utc, o.release_precision, o.reference_period, o.reference_date,
-             o.actual, consenso,
-             o.previous, o.revised_from, o.impact, tipo, prior, run_id],
+            [
+                id_per_riga[id(o)],
+                o.source,
+                o.provenance,
+                o.vintage_date,
+                o.source_event_name,
+                o.release_utc,
+                o.release_precision,
+                o.reference_period,
+                o.reference_date,
+                o.actual,
+                consenso,
+                o.previous,
+                o.revised_from,
+                o.impact,
+                tipo,
+                prior,
+                run_id,
+            ],
         )
 
     toccati = sorted(set(id_per_riga.values()))
@@ -286,8 +316,13 @@ def ingest_observations(
     for o in righe:
         anagrafica.setdefault(id_per_riga[id(o)], o)
     consolidate_events(con, toccati, anagrafica, consensus_source=consensus_source)
-    return {"observations": len(righe), "events": len(toccati), "revised": revisioni,
-            "rejected_by_alias": respinte, "redirected_by_alias": ridiretti}
+    return {
+        "observations": len(righe),
+        "events": len(toccati),
+        "revised": revisioni,
+        "rejected_by_alias": respinte,
+        "redirected_by_alias": ridiretti,
+    }
 
 
 def _applica_alias(con, righe):
@@ -316,16 +351,19 @@ def _applica_alias(con, righe):
             "FROM calendar_indicator_aliases WHERE status IN ('confirmed', 'rejected')"
         ).fetchall()
     except Exception:
-        return righe, 0, 0          # table absent: a DB below v11
+        return righe, 0, 0  # table absent: a DB below v11
     if not decisioni:
         return righe, 0, 0
 
     from market_data_hub.econ_calendar.aliases import normalize_name
+
     mappa = {(f, p, n): (k, s) for f, p, n, k, s in decisioni}
 
     tenute, respinte, ridiretti = [], 0, 0
     for o in righe:
-        voce = mappa.get((o.source, o.country_iso3, normalize_name(o.source_event_name)))
+        voce = mappa.get(
+            (o.source, o.country_iso3, normalize_name(o.source_event_name))
+        )
         if voce is None:
             tenute.append(o)
             continue
@@ -415,10 +453,15 @@ def consolidate_events(
         # single outcome this whole rule exists to prevent. The earliest date
         # the sources claim is used, which errs the safe way -- a vintage
         # counts as pre-release only if it precedes every claimed release.
-        giorno_rilascio = min(
-            r[3].date() if hasattr(r[3], "date") else r[3]
-            for r in osservazioni if r[3] is not None
-        ) if any(r[3] is not None for r in osservazioni) else None
+        giorno_rilascio = (
+            min(
+                r[3].date() if hasattr(r[3], "date") else r[3]
+                for r in osservazioni
+                if r[3] is not None
+            )
+            if any(r[3] is not None for r in osservazioni)
+            else None
+        )
         primo_consenso = {
             fonte: valore
             for fonte, valore in con.execute(
@@ -435,8 +478,13 @@ def consolidate_events(
                       AND consensus IS NOT NULL AND consensus <> ''
                 ) WHERE rn = 1
                 """,
-                [giorno_rilascio, giorno_rilascio,
-                 giorno_rilascio, giorno_rilascio, eid],
+                [
+                    giorno_rilascio,
+                    giorno_rilascio,
+                    giorno_rilascio,
+                    giorno_rilascio,
+                    eid,
+                ],
             ).fetchall()
         }
         osservazioni = [
@@ -447,7 +495,9 @@ def consolidate_events(
         if anagrafica is None:
             precedente = con.execute(
                 "SELECT indicator_key, country_iso3, release_precision "
-                "FROM calendar_events WHERE event_id = ?", [eid]).fetchone()
+                "FROM calendar_events WHERE event_id = ?",
+                [eid],
+            ).fetchone()
             if precedente is None:
                 # without identity the event cannot be written; the
                 # observations remain available for a later re-consolidation
@@ -500,7 +550,9 @@ def consolidate_events(
         cons_max = max(attese) if attese else None
 
         impact, impact_src, _ = scegli(9, ordine_valore)
-        periodo = next((r[4] for r in osservazioni if r[4] not in (None, "", "N/D")), None)
+        periodo = next(
+            (r[4] for r in osservazioni if r[4] not in (None, "", "N/D")), None
+        )
 
         # A source that publishes only a date arrives as midnight, and taking
         # the earliest timestamp across sources would make that midnight the
@@ -509,8 +561,9 @@ def consolidate_events(
         # backtest treating a figure as public hours before it was: the one
         # error the point-in-time bridge exists to prevent. A known minute
         # always outranks a placeholder, however early the placeholder looks.
-        al_minuto = [r[3] for r in osservazioni
-                     if r[3] is not None and r[11] == "minute"]
+        al_minuto = [
+            r[3] for r in osservazioni if r[3] is not None and r[11] == "minute"
+        ]
         if al_minuto:
             release, precisione = min(al_minuto), "minute"
         else:
@@ -534,17 +587,39 @@ def consolidate_events(
                     COALESCE((SELECT first_seen_at FROM calendar_events WHERE event_id = ?),
                              ?), ?)
             """,
-            [eid, indicator_key, country_iso3, release, precisione,
-             periodo, reference_date,
-             # a re-consolidation must not relabel an inferred date as published
-             "source" if reference_date is not None else None,
-             "released" if actual else "scheduled",
-             actual, parse_number(actual), actual_src, actual_prov,
-             consensus, parse_number(consensus), consensus_src, consensus_contestato,
-             cons_min, cons_max, len(attese),
-             previous, parse_number(previous), revised, impact, impact_src,
-             len(osservazioni), _valori_concordi(numerici),
-             eid, datetime.now(timezone.utc), datetime.now(timezone.utc)],
+            [
+                eid,
+                indicator_key,
+                country_iso3,
+                release,
+                precisione,
+                periodo,
+                reference_date,
+                # a re-consolidation must not relabel an inferred date as published
+                "source" if reference_date is not None else None,
+                "released" if actual else "scheduled",
+                actual,
+                parse_number(actual),
+                actual_src,
+                actual_prov,
+                consensus,
+                parse_number(consensus),
+                consensus_src,
+                consensus_contestato,
+                cons_min,
+                cons_max,
+                len(attese),
+                previous,
+                parse_number(previous),
+                revised,
+                impact,
+                impact_src,
+                len(osservazioni),
+                _valori_concordi(numerici),
+                eid,
+                datetime.now(timezone.utc),
+                datetime.now(timezone.utc),
+            ],
         )
         scritti += 1
     return scritti

@@ -23,6 +23,7 @@ Examples:
     catalog.list_macro_indicators(pillar="growth")
     catalog.search("emerging markets bonds")
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -68,11 +69,11 @@ _SECTOR_BY_SYMBOL = {
     "XLK": "Information Technology",
     "XLRE": "Real Estate",
     # Europe — STOXX 600 sector sleeves
-    "EXV1.DE": "Financials",        # Banks
+    "EXV1.DE": "Financials",  # Banks
     "EXV3.DE": "Information Technology",
     "EXV4.DE": "Health Care",
     "EXH4.DE": "Industrials",
-    "EXH1.DE": "Energy",            # Oil & Gas
+    "EXH1.DE": "Energy",  # Oil & Gas
     "EXH9.DE": "Utilities",
 }
 
@@ -129,8 +130,14 @@ def _coverage_lookup(db_path: Optional[str]) -> pd.DataFrame:
 
 
 _COVERAGE_COLS = [
-    "first_date", "last_date", "obs_count", "freq_detected",
-    "lag_days", "stalled", "coverage_score", "status",
+    "first_date",
+    "last_date",
+    "obs_count",
+    "freq_detected",
+    "lag_days",
+    "stalled",
+    "coverage_score",
+    "status",
 ]
 
 
@@ -153,8 +160,9 @@ def _macro_entries() -> List[Dict[str, Any]]:
     Include configured unavailable/disabled feeds so absence remains discoverable.
     Derived spreads appear only if explicitly listed, never synthesized here.
     """
-    entries = {e["symbol"]: dict(e, source=e.get("source", "FRED"))
-               for e in get_macro_series()}
+    entries = {
+        e["symbol"]: dict(e, source=e.get("source", "FRED")) for e in get_macro_series()
+    }
     for entry in get_sovereign_yields() + get_sovereign_layer_series():
         entries[entry["symbol"]] = dict(entry)
     return list(entries.values())
@@ -221,10 +229,14 @@ def _symbol_universe() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def list_symbols(asset_class: Optional[str] = None, area: Optional[str] = None,
-                 sector: Optional[str] = None, group: Optional[str] = None,
-                 with_coverage: bool = True,
-                 db_path: Optional[str] = None) -> pd.DataFrame:
+def list_symbols(
+    asset_class: Optional[str] = None,
+    area: Optional[str] = None,
+    sector: Optional[str] = None,
+    group: Optional[str] = None,
+    with_coverage: bool = True,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """The price-universe symbols, filterable by semantic cuts.
 
     asset_class : EQUITY | FIXED_INCOME | COMMODITIES | REAL_ESTATE | ALTERNATIVES | FX
@@ -264,21 +276,28 @@ def list_sectors(area: Optional[str] = None) -> pd.DataFrame:
     df = df[df["sector"].notna()]
     if area:
         df = df[df["area_norm"] == _norm_area(area)]
-    out = (df.groupby(["sector"])
-             .agg(symbols=("symbol", lambda s: sorted(s)),
-                  areas=("area_norm", lambda a: sorted(set(a))))
-             .reset_index()
-             .sort_values("sector")
-             .reset_index(drop=True))
+    out = (
+        df.groupby(["sector"])
+        .agg(
+            symbols=("symbol", lambda s: sorted(s)),
+            areas=("area_norm", lambda a: sorted(set(a))),
+        )
+        .reset_index()
+        .sort_values("sector")
+        .reset_index(drop=True)
+    )
     return out
 
 
 # ---------------------------------------------------------------------------
 # Macro series (FRED, NY Fed ACM and configured sovereign yields/spreads)
 # ---------------------------------------------------------------------------
-def list_macro_series(frequency: Optional[str] = None, category: Optional[str] = None,
-                      with_coverage: bool = True,
-                      db_path: Optional[str] = None) -> pd.DataFrame:
+def list_macro_series(
+    frequency: Optional[str] = None,
+    category: Optional[str] = None,
+    with_coverage: bool = True,
+    db_path: Optional[str] = None,
+) -> pd.DataFrame:
     """FRED, NY Fed ACM and sovereign universe before ingestion; coverage uses series_id.
 
     `category` filters name taxonomy; sovereign yields default to RATES and
@@ -286,19 +305,40 @@ def list_macro_series(frequency: Optional[str] = None, category: Optional[str] =
     otherwise the configured frequency. Publisher/unit/availability stay visible.
     """
     rows = []
-    sovereign_ids = {e["symbol"] for e in get_sovereign_yields() + get_sovereign_layer_series()}
+    sovereign_ids = {
+        e["symbol"] for e in get_sovereign_yields() + get_sovereign_layer_series()
+    }
     for e in _macro_entries():
         c = _classify(e)
         c["series_id"] = c.pop("symbol")
         c["country"] = e.get("country")
-        for field in ("source", "unit", "frequency", "publication_cadence", "enabled", "provider", "provider_code",
-                      "max_lag_days", "lag_calendar", "unavailable_reason", "disabled_reason",
-                      "history_reason", "history_mode", "selection_rule", "source_class",
-                      "convention", "publication_lag", "history_start", "tenor"):
+        for field in (
+            "source",
+            "unit",
+            "frequency",
+            "publication_cadence",
+            "enabled",
+            "provider",
+            "provider_code",
+            "max_lag_days",
+            "lag_calendar",
+            "unavailable_reason",
+            "disabled_reason",
+            "history_reason",
+            "history_mode",
+            "selection_rule",
+            "source_class",
+            "convention",
+            "publication_lag",
+            "history_start",
+            "tenor",
+        ):
             c[field] = e.get(field)
         if e["symbol"] in sovereign_ids:
             c["role"] = e.get("role", "current")
-            c["category"] = e.get("category", "CREDIT" if e["symbol"].startswith("SPREAD_") else "RATES")
+            c["category"] = e.get(
+                "category", "CREDIT" if e["symbol"].startswith("SPREAD_") else "RATES"
+            )
             c["group"] = e.get("group", "Sovereign yields")
         rows.append(c)
     df = pd.DataFrame(rows)
@@ -312,14 +352,26 @@ def list_macro_series(frequency: Optional[str] = None, category: Optional[str] =
         # missing or unreadable. Do not expose paths or connection error details.
         metadata = pd.DataFrame()
         metadata_status = f"unavailable: {type(exc).__name__}"
-    fields = ("units", "units_short", "seasonal_adjustment", "seasonal_adjustment_short",
-              "frequency", "frequency_short", "last_updated", "observation_start",
-              "observation_end", "title", "retrieved_at")
+    fields = (
+        "units",
+        "units_short",
+        "seasonal_adjustment",
+        "seasonal_adjustment_short",
+        "frequency",
+        "frequency_short",
+        "last_updated",
+        "observation_start",
+        "observation_end",
+        "title",
+        "retrieved_at",
+    )
     if not metadata.empty:
         metadata = metadata.set_index("series_id")
     for field in fields:
         column = "fred_" + field if field == "frequency" else field
-        df[column] = df["series_id"].map(metadata[field]) if not metadata.empty else pd.NA
+        df[column] = (
+            df["series_id"].map(metadata[field]) if not metadata.empty else pd.NA
+        )
         df.loc[df["source"].str.upper() != "FRED", column] = pd.NA
     df["unit"] = df["units"].fillna(df["unit"])
     df["fred_metadata_status"] = metadata_status
@@ -328,10 +380,25 @@ def list_macro_series(frequency: Optional[str] = None, category: Optional[str] =
     df = df.reset_index(drop=True)
     if with_coverage:
         cov = _coverage_lookup(db_path)
-        for col in ("first_date", "last_date", "obs_count", "freq_detected", "lag_days", "stalled"):
-            df[col] = df["series_id"].map(cov[col]) if (not cov.empty and col in cov.columns) else pd.NA
+        for col in (
+            "first_date",
+            "last_date",
+            "obs_count",
+            "freq_detected",
+            "lag_days",
+            "stalled",
+        ):
+            df[col] = (
+                df["series_id"].map(cov[col])
+                if (not cov.empty and col in cov.columns)
+                else pd.NA
+            )
     if frequency:
-        freq = df["freq_detected"].fillna(df["frequency"]) if "freq_detected" in df else df["frequency"]
+        freq = (
+            df["freq_detected"].fillna(df["frequency"])
+            if "freq_detected" in df
+            else df["frequency"]
+        )
         df = df[freq == frequency].reset_index(drop=True)
     return df
 
@@ -339,23 +406,29 @@ def list_macro_series(frequency: Optional[str] = None, category: Optional[str] =
 # ---------------------------------------------------------------------------
 # Macro panel indicators (cross-country)
 # ---------------------------------------------------------------------------
-def list_macro_indicators(pillar: Optional[str] = None,
-                          db_path: Optional[str] = None) -> pd.DataFrame:
+def list_macro_indicators(
+    pillar: Optional[str] = None, db_path: Optional[str] = None
+) -> pd.DataFrame:
     """Cross-country panel indicators, filterable by pillar
     (growth/liquidity/external/debt_cycle/sovereign/banking/governance/geopolitical).
     Enriched with availability (n_countries, coverage_pct, last_date) when present."""
     specs = get_macro_panel_specs()
-    df = pd.DataFrame([{
-        "indicator_id": s.get("id"),
-        "name": s.get("name"),
-        "pillar": s.get("pillar"),
-        "frequency": s.get("freq"),
-        "unit": s.get("unit"),
-        "source": s.get("source"),
-        "dataset": s.get("dataset"),
-        "orientation": s.get("orientation"),
-        "priority": s.get("priority"),
-    } for s in specs])
+    df = pd.DataFrame(
+        [
+            {
+                "indicator_id": s.get("id"),
+                "name": s.get("name"),
+                "pillar": s.get("pillar"),
+                "frequency": s.get("freq"),
+                "unit": s.get("unit"),
+                "source": s.get("source"),
+                "dataset": s.get("dataset"),
+                "orientation": s.get("orientation"),
+                "priority": s.get("priority"),
+            }
+            for s in specs
+        ]
+    )
     if pillar:
         df = df[df["pillar"] == pillar]
     df = df.reset_index(drop=True)
@@ -365,8 +438,15 @@ def list_macro_indicators(pillar: Optional[str] = None,
         cov = pd.DataFrame()
     if cov is not None and not cov.empty:
         cov = cov.set_index("indicator_id")
-        for col in ("n_countries", "n_countries_total", "coverage_pct",
-                    "first_date", "last_date", "lag_days", "stalled"):
+        for col in (
+            "n_countries",
+            "n_countries_total",
+            "coverage_pct",
+            "first_date",
+            "last_date",
+            "lag_days",
+            "stalled",
+        ):
             df[col] = df["indicator_id"].map(cov[col]) if col in cov.columns else pd.NA
     return df
 
@@ -374,8 +454,11 @@ def list_macro_indicators(pillar: Optional[str] = None,
 # ---------------------------------------------------------------------------
 # Countries
 # ---------------------------------------------------------------------------
-def list_countries(region: Optional[str] = None, income: Optional[str] = None,
-                   g7: Optional[bool] = None) -> pd.DataFrame:
+def list_countries(
+    region: Optional[str] = None,
+    income: Optional[str] = None,
+    g7: Optional[bool] = None,
+) -> pd.DataFrame:
     """The macro_panel country universe, filterable by region / income / G7 flag.
 
     `region` matches either region_group (G7/EU/EM/...) or region_geo (the
@@ -408,7 +491,8 @@ def list_crypto_symbols(db_path: Optional[str] = None) -> pd.DataFrame:
                 "SELECT symbol, timeframe, COUNT(*) AS obs_count, "
                 "MIN(ts) AS first_ts, MAX(ts) AS last_ts "
                 "FROM crypto_ohlcv GROUP BY symbol, timeframe "
-                "ORDER BY symbol, timeframe").fetch_df()
+                "ORDER BY symbol, timeframe"
+            ).fetch_df()
         finally:
             con.close()
         if not df.empty:
@@ -416,11 +500,19 @@ def list_crypto_symbols(db_path: Optional[str] = None) -> pd.DataFrame:
     except Exception:
         pass
     crypto = get_settings().get("crypto", {})
-    return pd.DataFrame([
-        {"symbol": s, "timeframe": tf, "obs_count": pd.NA,
-         "first_ts": pd.NA, "last_ts": pd.NA}
-        for s in crypto.get("symbols", []) for tf in crypto.get("timeframes", [])
-    ])
+    return pd.DataFrame(
+        [
+            {
+                "symbol": s,
+                "timeframe": tf,
+                "obs_count": pd.NA,
+                "first_ts": pd.NA,
+                "last_ts": pd.NA,
+            }
+            for s in crypto.get("symbols", [])
+            for tf in crypto.get("timeframes", [])
+        ]
+    )
 
 
 def list_factor_sets(db_path: Optional[str] = None) -> pd.DataFrame:
@@ -432,7 +524,8 @@ def list_factor_sets(db_path: Optional[str] = None) -> pd.DataFrame:
                 "SELECT factor_set, factor, frequency, COUNT(*) AS obs_count, "
                 "MIN(date) AS first_date, MAX(date) AS last_date "
                 "FROM factor_returns GROUP BY factor_set, factor, frequency "
-                "ORDER BY factor_set, factor").fetch_df()
+                "ORDER BY factor_set, factor"
+            ).fetch_df()
         finally:
             con.close()
         if not df.empty:
@@ -440,9 +533,19 @@ def list_factor_sets(db_path: Optional[str] = None) -> pd.DataFrame:
     except Exception:
         pass
     datasets = get_settings().get("factors", {}).get("datasets", [])
-    return pd.DataFrame([{"factor_set": d, "factor": pd.NA, "frequency": pd.NA,
-                          "obs_count": pd.NA, "first_date": pd.NA, "last_date": pd.NA}
-                         for d in datasets])
+    return pd.DataFrame(
+        [
+            {
+                "factor_set": d,
+                "factor": pd.NA,
+                "frequency": pd.NA,
+                "obs_count": pd.NA,
+                "first_date": pd.NA,
+                "last_date": pd.NA,
+            }
+            for d in datasets
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -477,8 +580,11 @@ def describe_series(symbol_or_id: str, db_path: Optional[str] = None) -> Dict[st
         row["domain"] = "macro_panel"
         return row
 
-    return {"symbol": symbol_or_id, "domain": None,
-            "error": "not found in any domain (prices/macro/macro_panel)"}
+    return {
+        "symbol": symbol_or_id,
+        "domain": None,
+        "error": "not found in any domain (prices/macro/macro_panel)",
+    }
 
 
 def search(query: str, db_path: Optional[str] = None) -> pd.DataFrame:
@@ -494,16 +600,46 @@ def search(query: str, db_path: Optional[str] = None) -> pd.DataFrame:
         return any(q in str(v).lower() for v in vals if v is not None)
 
     for e in (_classify(x) for x in get_yahoo_tickers()):
-        if _match(e["symbol"], e["name"], e["sector"], e["area"], e["group"], e["asset_class"]):
-            out.append({"domain": "prices", "key": e["symbol"], "name": e["name"],
-                        "tag": e["asset_class"], "detail": e["sector"] or e["area"]})
+        if _match(
+            e["symbol"], e["name"], e["sector"], e["area"], e["group"], e["asset_class"]
+        ):
+            out.append(
+                {
+                    "domain": "prices",
+                    "key": e["symbol"],
+                    "name": e["name"],
+                    "tag": e["asset_class"],
+                    "detail": e["sector"] or e["area"],
+                }
+            )
     for e in _macro_entries():
-        if _match(e.get("symbol"), e.get("name"), e.get("area"), e.get("country"), e.get("source")):
-            out.append({"domain": "macro", "key": e.get("symbol"), "name": e.get("name"),
-                        "tag": e.get("asset_class"), "detail": e.get("area") or e.get("country"),
-                        "source": e.get("source"), "country": e.get("country")})
+        if _match(
+            e.get("symbol"),
+            e.get("name"),
+            e.get("area"),
+            e.get("country"),
+            e.get("source"),
+        ):
+            out.append(
+                {
+                    "domain": "macro",
+                    "key": e.get("symbol"),
+                    "name": e.get("name"),
+                    "tag": e.get("asset_class"),
+                    "detail": e.get("area") or e.get("country"),
+                    "source": e.get("source"),
+                    "country": e.get("country"),
+                }
+            )
     for s in get_macro_panel_specs():
         if _match(s.get("id"), s.get("name"), s.get("pillar")):
-            out.append({"domain": "macro_panel", "key": s.get("id"), "name": s.get("name"),
-                        "tag": s.get("pillar"), "detail": s.get("source")})
+            out.append(
+                {
+                    "domain": "macro_panel",
+                    "key": s.get("id"),
+                    "name": s.get("name"),
+                    "tag": s.get("pillar"),
+                    "detail": s.get("source"),
+                }
+            )
     return pd.DataFrame(out)

@@ -19,6 +19,7 @@ a tool-only agent ever needs it, add the ``tool_*`` function here AND mirror
 it by hand in LazyTools' ``DataHubBackend`` — its methods map 1:1 explicitly,
 so new tools do not flow through automatically.
 """
+
 from __future__ import annotations
 
 import json
@@ -64,8 +65,9 @@ def tool_list_datasets() -> str:
     return _json(catalog.list_datasets())
 
 
-def tool_list_symbols(asset_class: str = "", area: str = "",
-                      sector: str = "", group: str = "") -> str:
+def tool_list_symbols(
+    asset_class: str = "", area: str = "", sector: str = "", group: str = ""
+) -> str:
     """List price-universe symbols, optionally filtered.
 
     asset_class: EQUITY | FIXED_INCOME | COMMODITIES | REAL_ESTATE | ALTERNATIVES | FX.
@@ -75,8 +77,11 @@ def tool_list_symbols(asset_class: str = "", area: str = "",
     group:       name sub-group, e.g. "EM", "Energy", "Metals".
     Returns a JSON list of symbols with coverage (date range, obs, freshness)."""
     df = catalog.list_symbols(
-        asset_class=asset_class or None, area=area or None,
-        sector=sector or None, group=group or None)
+        asset_class=asset_class or None,
+        area=area or None,
+        sector=sector or None,
+        group=group or None,
+    )
     return _json({"n": int(len(df)), "symbols": _df_records(df)})
 
 
@@ -89,7 +94,9 @@ def tool_list_sectors(area: str = "") -> str:
 def tool_list_macro(frequency: str = "", category: str = "") -> str:
     """List FRED macro series. category filters the name prefix
     (RATES/MACRO/CREDIT/RISK/LIQ/FX); frequency filters detected D/M/Q/A."""
-    df = catalog.list_macro_series(frequency=frequency or None, category=category or None)
+    df = catalog.list_macro_series(
+        frequency=frequency or None, category=category or None
+    )
     return _json(_df_records(df))
 
 
@@ -102,8 +109,11 @@ def tool_list_indicators(pillar: str = "") -> str:
 def tool_list_countries(region: str = "", income: str = "") -> str:
     """List the macro_panel country universe, filterable by region
     (G7/EU/EM or geographic region) and income group."""
-    return _json(_df_records(catalog.list_countries(region=region or None,
-                                                    income=income or None)))
+    return _json(
+        _df_records(
+            catalog.list_countries(region=region or None, income=income or None)
+        )
+    )
 
 
 def tool_describe(symbol_or_id: str) -> str:
@@ -121,9 +131,15 @@ def tool_search(query: str) -> str:
 # ---------------------------------------------------------------------------
 # Extraction tools
 # ---------------------------------------------------------------------------
-def tool_get_series(symbols: str, start: str = "", end: str = "",
-                    domain: str = "prices", field: str = "adj_close",
-                    transform: str = "level", frequency: str = "") -> str:
+def tool_get_series(
+    symbols: str,
+    start: str = "",
+    end: str = "",
+    domain: str = "prices",
+    field: str = "adj_close",
+    transform: str = "level",
+    frequency: str = "",
+) -> str:
     """Extract an analysis-ready time-series matrix as JSON records.
 
     symbols:   comma-separated (e.g. "SPY,TLT,^VIX").
@@ -133,27 +149,48 @@ def tool_get_series(symbols: str, start: str = "", end: str = "",
     frequency: ""(native) | D | W | M | Q.
     Long series are truncated to the first rows; meta.n_rows holds the true count."""
     df, meta = extract.extract_series(
-        _split(symbols), start=start or None, end=end or None, domain=domain,
-        field=field, transform=transform, frequency=frequency or None)
-    return _json({"meta": meta, "data": _df_records(df, limit=_MAX_ROWS),
-                  "truncated": bool(len(df) > _MAX_ROWS)})
+        _split(symbols),
+        start=start or None,
+        end=end or None,
+        domain=domain,
+        field=field,
+        transform=transform,
+        frequency=frequency or None,
+    )
+    return _json(
+        {
+            "meta": meta,
+            "data": _df_records(df, limit=_MAX_ROWS),
+            "truncated": bool(len(df) > _MAX_ROWS),
+        }
+    )
 
 
-def tool_get_returns(symbols: str, start: str = "", end: str = "",
-                     frequency: str = "W") -> str:
+def tool_get_returns(
+    symbols: str, start: str = "", end: str = "", frequency: str = "W"
+) -> str:
     """Extract log-returns (default weekly W-FRI) ready for regime/HMM analysis.
     symbols: comma-separated. Returns JSON records + meta (incl. coverage)."""
     df, meta = extract.extract_returns(
-        _split(symbols), start=start or None, end=end or None,
-        frequency=frequency or None)
-    return _json({"meta": meta, "data": _df_records(df, limit=_MAX_ROWS),
-                  "truncated": bool(len(df) > _MAX_ROWS)})
+        _split(symbols),
+        start=start or None,
+        end=end or None,
+        frequency=frequency or None,
+    )
+    return _json(
+        {
+            "meta": meta,
+            "data": _df_records(df, limit=_MAX_ROWS),
+            "truncated": bool(len(df) > _MAX_ROWS),
+        }
+    )
 
 
 def tool_get_coverage(symbols: str = "") -> str:
     """Data-quality report (coverage_score, lag_days, stalled, date range) for
     the given symbols, or the whole universe when symbols is empty."""
     from market_data_hub import reader
+
     df = reader.get_coverage(symbols=_split(symbols) or None)
     return _json(_df_records(df))
 
@@ -162,18 +199,24 @@ def tool_get_coverage(symbols: str = "") -> str:
 _MAX_CANDIDATES = 50
 
 
-def tool_resolve_instrument(query: str, exchange: str = "",
-                            currency: str = "") -> str:
+def tool_resolve_instrument(query: str, exchange: str = "", currency: str = "") -> str:
     """Resolve human input (ticker, alias, or a 'lst_*' listing_id) to listing
     candidates with listing_id/instrument_id. Ambiguous input returns ALL
     candidates so the caller can choose — this tool never guesses and never
     writes. registered=false means the symbol is known to the config universe
     but has no identity rows yet (ensure_price_history registers it)."""
     from market_data_hub.services import prices as _prices
+
     cands = _prices.resolve_instrument(
-        query, exchange=exchange or None, currency=currency or None)
-    return _json({"n": len(cands), "ambiguous": len(cands) > 1,
-                  "candidates": cands[:_MAX_CANDIDATES]})
+        query, exchange=exchange or None, currency=currency or None
+    )
+    return _json(
+        {
+            "n": len(cands),
+            "ambiguous": len(cands) > 1,
+            "candidates": cands[:_MAX_CANDIDATES],
+        }
+    )
 
 
 def tool_get_price_summary(query: str, start: str = "", end: str = "") -> str:
@@ -182,9 +225,11 @@ def tool_get_price_summary(query: str, start: str = "", end: str = "") -> str:
     from the hub DB — no network, no raw OHLCV bars. If the hub has no data,
     the reply says to use tool_ensure_price_history first."""
     from market_data_hub.services import prices as _prices
+
     try:
-        return _json(_prices.get_price_summary(
-            query, start=start or None, end=end or None))
+        return _json(
+            _prices.get_price_summary(query, start=start or None, end=end or None)
+        )
     except _prices.AmbiguousInstrumentError as ex:
         return _json({"error": str(ex), "candidates": ex.candidates})
     except _prices.UnknownInstrumentError as ex:
@@ -196,11 +241,13 @@ def tool_get_financials_coverage(query: str = "") -> str:
     how many, which forms, freshness. query: CIK, ticker or issuer_id; empty
     for all covered issuers. Read-only, no network."""
     from market_data_hub.services import financials as _fin
+
     return _json(_fin.get_financials_coverage(query or None))
 
 
-def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
-                             limit: int = 25) -> str:
+def tool_get_financial_facts(
+    query: str, line: str = "", forms: str = "", limit: int = 25
+) -> str:
     """XBRL company facts for ONE issuer from the hub DB (read-only, no
     network, max 100 rows). Every value carries unit, period, fiscal
     year/period, form, accession and filed date, so it is verifiable.
@@ -210,8 +257,12 @@ def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
            liabilities | equity | operating_cash_flow (versioned mapping).
     forms: optional comma-separated filter, e.g. "10-K" or "10-K,10-Q"."""
     from market_data_hub.services import financials as _fin
-    return _json(_fin.get_facts(
-        query, line=line or None, forms=_split(forms) or None, limit=limit))
+
+    return _json(
+        _fin.get_facts(
+            query, line=line or None, forms=_split(forms) or None, limit=limit
+        )
+    )
 
 
 def tool_get_statement(query: str, statement: str = "", periods: int = 8) -> str:
@@ -226,8 +277,10 @@ def tool_get_statement(query: str, statement: str = "", periods: int = 8) -> str
     query:     CIK, ticker or issuer_id (ingested via tool_ensure_financials).
     statement: optional filter — income | balance | cash_flow."""
     from market_data_hub.services import financials as _fin
-    return _json(_fin.get_statement(query, statement=statement or None,
-                                    periods=periods))
+
+    return _json(
+        _fin.get_statement(query, statement=statement or None, periods=periods)
+    )
 
 
 def tool_get_ingestion_health() -> str:
@@ -236,6 +289,7 @@ def tool_get_ingestion_health() -> str:
     SEC coverage freshness. Read-only, no network — use it to decide whether
     an ensure_* capability or a retry is needed."""
     from market_data_hub.services import health as _health
+
     return _json(_health.get_ingestion_health())
 
 
@@ -244,6 +298,7 @@ def tool_get_job_status(job_id: str) -> str:
     queued | running | completed | error, plus the linked run record
     (provider, rows written, timestamps)."""
     from market_data_hub.services import prices as _prices
+
     job = _prices.get_job_status(job_id)
     if job is None:
         return _json({"error": f"unknown job_id {job_id!r}"})
@@ -266,10 +321,18 @@ def tool_calendar_vocabulary() -> str:
         con.close()
 
 
-def tool_calendar_series(day: str = "", from_day: str = "", to_day: str = "",
-                         country: str = "", area: str = "", category: str = "",
-                         tags: str = "", data_type: str = "",
-                         criticality: str = "", released_only: bool = False) -> str:
+def tool_calendar_series(
+    day: str = "",
+    from_day: str = "",
+    to_day: str = "",
+    country: str = "",
+    area: str = "",
+    category: str = "",
+    tags: str = "",
+    data_type: str = "",
+    criticality: str = "",
+    released_only: bool = False,
+) -> str:
     """What the economic calendar can answer about, along the axes people ask in.
 
     With no arguments it says what exists; with a window, what came out in it;
@@ -285,29 +348,50 @@ def tool_calendar_series(day: str = "", from_day: str = "", to_day: str = "",
     try:
         rows = _calendar.available_series(
             con,
-            day=day or None, from_day=from_day or None, to_day=to_day or None,
-            country=country or None, area=area or None, category=category or None,
-            tags=_split(tags) or None, data_type=data_type or None,
-            criticality=criticality or None, released_only=released_only,
+            day=day or None,
+            from_day=from_day or None,
+            to_day=to_day or None,
+            country=country or None,
+            area=area or None,
+            category=category or None,
+            tags=_split(tags) or None,
+            data_type=data_type or None,
+            criticality=criticality or None,
+            released_only=released_only,
         )
     finally:
         con.close()
-    return _json({"data": rows[:_MAX_ROWS],
-                  "truncated": bool(len(rows) > _MAX_ROWS),
-                  "meta": {"rows": len(rows)}})
+    return _json(
+        {
+            "data": rows[:_MAX_ROWS],
+            "truncated": bool(len(rows) > _MAX_ROWS),
+            "meta": {"rows": len(rows)},
+        }
+    )
 
 
 # All read-only tool functions exposed to an agent, in the order an agent
 # should prefer. The hub's agent surface is read-only by default (the data is
 # kept fresh by a separate downloader, run_daily.py).
 TOOL_FUNCTIONS = [
-    tool_list_datasets, tool_list_symbols, tool_list_sectors, tool_list_macro,
-    tool_list_indicators, tool_list_countries, tool_describe, tool_search,
+    tool_list_datasets,
+    tool_list_symbols,
+    tool_list_sectors,
+    tool_list_macro,
+    tool_list_indicators,
+    tool_list_countries,
+    tool_describe,
+    tool_search,
     tool_get_coverage,
-    tool_resolve_instrument, tool_get_price_summary, tool_get_job_status,
-    tool_get_financials_coverage, tool_get_financial_facts, tool_get_statement,
+    tool_resolve_instrument,
+    tool_get_price_summary,
+    tool_get_job_status,
+    tool_get_financials_coverage,
+    tool_get_financial_facts,
+    tool_get_statement,
     tool_get_ingestion_health,
-    tool_calendar_vocabulary, tool_calendar_series,
+    tool_calendar_vocabulary,
+    tool_calendar_series,
 ]
 
 # Raw time-series matrices — NOT in the standard profile (plan v3.1 §5.1: "Le
@@ -328,8 +412,9 @@ RAW_SERIES_TOOL_FUNCTIONS = [tool_get_series, tool_get_returns]
 _REFRESH_LOCK = threading.Lock()
 
 
-def tool_ensure_price_history(query: str, start: str = "", end: str = "",
-                              allow_write: bool = False) -> str:
+def tool_ensure_price_history(
+    query: str, start: str = "", end: str = "", allow_write: bool = False
+) -> str:
     """Ensure the hub holds price history for ONE listing, ingesting it from
     the primary provider if needed. WRITE capability (plan v3.1 §5.2): it is
     gated by allow_write=True, runs as an idempotent persistent job under the
@@ -342,18 +427,19 @@ def tool_ensure_price_history(query: str, start: str = "", end: str = "",
         return _json({"error": "write capability requires allow_write=true"})
     from market_data_hub.lock import DBLockTimeout
     from market_data_hub.services import prices as _prices
+
     try:
         with _REFRESH_LOCK:
             res = _prices.ensure_price_history(
-                query, start=start or None, end=end or None, requester="llm")
+                query, start=start or None, end=end or None, requester="llm"
+            )
         return _json(res)
     except _prices.AmbiguousInstrumentError as ex:
         return _json({"error": str(ex), "candidates": ex.candidates})
     except _prices.UnknownInstrumentError as ex:
         return _json({"error": str(ex)})
     except DBLockTimeout as ex:
-        return _json({"error": f"another writer holds the DB lock; "
-                               f"retry later ({ex})"})
+        return _json({"error": f"another writer holds the DB lock; retry later ({ex})"})
 
 
 def tool_ensure_financials(query: str, allow_write: bool = False) -> str:
@@ -368,20 +454,26 @@ def tool_ensure_financials(query: str, allow_write: bool = False) -> str:
         return _json({"error": "write capability requires allow_write=true"})
     from market_data_hub.lock import DBLockTimeout
     from market_data_hub.services import financials as _fin
+
     try:
         with _REFRESH_LOCK:
             return _json(_fin.ensure_filings_and_facts(query, requester="llm"))
     except _fin.UnknownIssuerError as ex:
         return _json({"error": str(ex)})
     except DBLockTimeout as ex:
-        return _json({"error": f"another writer holds the DB lock; "
-                               f"retry later ({ex})"})
+        return _json({"error": f"another writer holds the DB lock; retry later ({ex})"})
 
 
-def tool_register_listing(symbol: str, exchange: str, currency: str,
-                          kind: str = "EQUITY", name: str = "",
-                          provider: str = "yahoo", provider_symbol: str = "",
-                          allow_write: bool = False) -> str:
+def tool_register_listing(
+    symbol: str,
+    exchange: str,
+    currency: str,
+    kind: str = "EQUITY",
+    name: str = "",
+    provider: str = "yahoo",
+    provider_symbol: str = "",
+    allow_write: bool = False,
+) -> str:
     """Register an ARBITRARY single name the hub does not know yet (audit
     CA-05). WRITE capability gated by allow_write=True. The identity is
     explicit — exchange and currency are REQUIRED, provider_symbol when the
@@ -392,12 +484,20 @@ def tool_register_listing(symbol: str, exchange: str, currency: str,
     if not allow_write:
         return _json({"error": "write capability requires allow_write=true"})
     from market_data_hub.services import prices as _prices
+
     try:
         with _REFRESH_LOCK:
-            return _json(_prices.register_listing(
-                symbol, exchange=exchange, currency=currency, kind=kind,
-                name=name or None, provider=provider,
-                provider_symbol=provider_symbol or None))
+            return _json(
+                _prices.register_listing(
+                    symbol,
+                    exchange=exchange,
+                    currency=currency,
+                    kind=kind,
+                    name=name or None,
+                    provider=provider,
+                    provider_symbol=provider_symbol or None,
+                )
+            )
     except ValueError as ex:
         return _json({"error": str(ex)})
 
@@ -406,5 +506,8 @@ def tool_register_listing(symbol: str, exchange: str, currency: str,
 # runner's universe, invented an asset class and bypassed the identity model
 # and the job ledger. On-demand ingestion goes through the ensure_* jobs;
 # batch refresh stays an administrative concern (run_daily.py).
-WRITE_TOOL_FUNCTIONS = [tool_register_listing, tool_ensure_price_history,
-                        tool_ensure_financials]
+WRITE_TOOL_FUNCTIONS = [
+    tool_register_listing,
+    tool_ensure_price_history,
+    tool_ensure_financials,
+]

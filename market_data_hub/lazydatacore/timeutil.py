@@ -6,6 +6,7 @@ module makes it explicit and shared so nobody re-implements timezone handling.
 Everything is timezone-aware UTC. Naive datetimes are assumed to be UTC and
 made aware, never silently localised.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

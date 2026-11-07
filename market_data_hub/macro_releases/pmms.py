@@ -3,6 +3,7 @@
 The reference period is the issuer calendar's survey week ending, distinct
 from the publication date. Only reviewed editions and the 30-year rate qualify.
 """
+
 from datetime import datetime
 import re
 
@@ -19,6 +20,7 @@ FAMILY = "us_pmms"
 
 def rate_row(document, family, edition, printed):
     from .housing import observation
+
     reviewed(family, edition)
     if not re.fullmatch(r"\d+(?:\.\d+)?", printed) or not 0 <= float(printed) <= 25:
         raise FetchError("PMMS printed rate needs review")
@@ -32,7 +34,11 @@ def parse_archive(document, family=FAMILY, since="1900-01"):
     calendar = EDITIONS[family]
     if year != min(calendar)[:4]:
         raise FetchError("PMMS archive year needs review")
-    blocks = re.findall(r'<strong\b[^>]*>(\w+ \d{1,2}, \d{4})</strong>\s*</p>\s*(<table\b.*?</table>)', raw, re.S)
+    blocks = re.findall(
+        r"<strong\b[^>]*>(\w+ \d{1,2}, \d{4})</strong>\s*</p>\s*(<table\b.*?</table>)",
+        raw,
+        re.S,
+    )
     if not blocks:
         raise FetchError("PMMS dated archive table format needs review")
     out, seen = [], set()
@@ -44,11 +50,20 @@ def parse_archive(document, family=FAMILY, since="1900-01"):
         if edition in seen:
             raise FetchError("PMMS duplicate archive edition needs review")
         seen.add(edition)
-        rows = [[plain(cell) for cell in re.findall(r'<t[hd]\b[^>]*>(.*?)</t[hd]>', row, re.S)]
-                for row in re.findall(r'<tr\b[^>]*>(.*?)</tr>', table, re.S)]
-        if (len(rows) != 2 or rows[0] != ["", "30-Yr FRM", "15-Yr FRM"] or
-                len(rows[1]) != 3 or rows[1][0] != "Average Rates" or
-                any(not re.fullmatch(r"\d+(?:\.\d+)?%", v) for v in rows[1][1:])):
+        rows = [
+            [
+                plain(cell)
+                for cell in re.findall(r"<t[hd]\b[^>]*>(.*?)</t[hd]>", row, re.S)
+            ]
+            for row in re.findall(r"<tr\b[^>]*>(.*?)</tr>", table, re.S)
+        ]
+        if (
+            len(rows) != 2
+            or rows[0] != ["", "30-Yr FRM", "15-Yr FRM"]
+            or len(rows[1]) != 3
+            or rows[1][0] != "Average Rates"
+            or any(not re.fullmatch(r"\d+(?:\.\d+)?%", v) for v in rows[1][1:])
+        ):
             raise FetchError("PMMS archive term, unit or column format needs review")
         row = rate_row(document, family, edition, rows[1][1][:-1])
         if row.period >= since:
@@ -60,14 +75,24 @@ def parse_archive(document, family=FAMILY, since="1900-01"):
 
 def parse_current(document, family=FAMILY, since="1900-01"):
     body, _ = publication_text(document)
-    stamp = require(r"U.S. weekly mortgage rate averages as of (\d{1,2}/\d{1,2}/\d{4})", body)[1]
+    stamp = require(
+        r"U.S. weekly mortgage rate averages as of (\d{1,2}/\d{1,2}/\d{4})", body
+    )[1]
     edition = datetime.strptime(stamp, "%m/%d/%Y").date().isoformat()
     reviewed(family, edition)
-    panel = require(r"30-year Fixed-Rate Mortgage (\d+(?:\.\d+)?)% 15-year Fixed-Rate Mortgage", body)[1]
-    headline = require(r"The 30-year fixed-rate mortgage averaged (\d+(?:\.\d+)?)% as of (\w+ \d{1,2}, \d{4})", body)
+    panel = require(
+        r"30-year Fixed-Rate Mortgage (\d+(?:\.\d+)?)% 15-year Fixed-Rate Mortgage",
+        body,
+    )[1]
+    headline = require(
+        r"The 30-year fixed-rate mortgage averaged (\d+(?:\.\d+)?)% as of (\w+ \d{1,2}, \d{4})",
+        body,
+    )
     require(r"PMMS results are released weekly on Thursdays at 12 p.m. ET", body)
-    if (datetime.strptime(headline[2], "%B %d, %Y").date().isoformat() != edition or
-            headline[1] != panel):
+    if (
+        datetime.strptime(headline[2], "%B %d, %Y").date().isoformat() != edition
+        or headline[1] != panel
+    ):
         raise FetchError("PMMS current headline date or rate needs review")
     row = rate_row(document, family, edition, panel)
     return [row] if row.period >= since else []

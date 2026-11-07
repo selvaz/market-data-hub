@@ -11,6 +11,7 @@ All deletes run inside a single transaction so a failure rolls back cleanly and
 never leaves a half-pruned DB. ``dry_run=True`` runs the equivalent COUNT
 queries and deletes nothing, returning what *would* be removed.
 """
+
 from __future__ import annotations
 
 from typing import Optional
@@ -60,23 +61,27 @@ def prune(
 
     def _count(table: str, where: str) -> int:
         row = con.execute(f"SELECT count(*) FROM {table} WHERE {where}").fetchone()
-        assert row is not None   # COUNT(*) always returns exactly one row
+        assert row is not None  # COUNT(*) always returns exactly one row
         return int(row[0])
 
     # Build (target, table, where) work items.
     items: list[tuple[str, str, str]] = []
     if download_log_days is not None:
-        items.append((
-            "download_log",
-            "download_log",
-            f"started_at < now() - INTERVAL '{int(download_log_days)} days'",
-        ))
+        items.append(
+            (
+                "download_log",
+                "download_log",
+                f"started_at < now() - INTERVAL '{int(download_log_days)} days'",
+            )
+        )
     if crypto_days is not None:
-        items.append((
-            "crypto_ohlcv",
-            "crypto_ohlcv",
-            f"ts < now() - INTERVAL '{int(crypto_days)} days'",
-        ))
+        items.append(
+            (
+                "crypto_ohlcv",
+                "crypto_ohlcv",
+                f"ts < now() - INTERVAL '{int(crypto_days)} days'",
+            )
+        )
     if vintage_keep_per_key is not None:
         keep = int(vintage_keep_per_key)
         for table, keys in _VINTAGE_KEYS.items():

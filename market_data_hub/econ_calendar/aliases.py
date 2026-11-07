@@ -32,6 +32,7 @@ between sources catches timing and value errors, never a shared wrong name.
 What catches it is ``cadence_violations()``: Average Hourly Earnings is monthly,
 and two of them in one August is an arithmetic contradiction.
 """
+
 from __future__ import annotations
 
 import re
@@ -91,8 +92,18 @@ def upsert_alias(
              indicator_key, status, decided_by, seeded_from_file, decided_at, note)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        [source, country_iso3, norm, source_name, indicator_key, status,
-         decided_by, seeded_from_file, datetime.now(timezone.utc), note],
+        [
+            source,
+            country_iso3,
+            norm,
+            source_name,
+            indicator_key,
+            status,
+            decided_by,
+            seeded_from_file,
+            datetime.now(timezone.utc),
+            note,
+        ],
     )
     return norm
 
@@ -158,7 +169,8 @@ def seed_from_observations(
     esistenti = set()
     if not overwrite:
         esistenti = {
-            (s, c, n) for s, c, n in con.execute(
+            (s, c, n)
+            for s, c, n in con.execute(
                 "SELECT source, country_iso3, source_name_norm "
                 "FROM calendar_indicator_aliases"
             ).fetchall()
@@ -180,8 +192,13 @@ def seed_from_observations(
         if (source, paese, normalize_name(nome)) in esistenti:
             continue
         upsert_alias(
-            con, source=source, country_iso3=paese, source_name=nome,
-            indicator_key=chiave, status=status, decided_by=decided_by,
+            con,
+            source=source,
+            country_iso3=paese,
+            source_name=nome,
+            indicator_key=chiave,
+            status=status,
+            decided_by=decided_by,
             note=f"seeded from {quante} observation(s) matched by match_rules",
         )
         n += 1
@@ -211,8 +228,12 @@ def load_seed(
     vive: set[tuple[str, str, str]] = set()
     for r in doc.get("rejections", []):
         upsert_alias(
-            con, source=r["source"], country_iso3=r["country_iso3"],
-            source_name=r["name"], indicator_key=None, status="rejected",
+            con,
+            source=r["source"],
+            country_iso3=r["country_iso3"],
+            source_name=r["name"],
+            indicator_key=None,
+            status="rejected",
             decided_by=r.get("decided_by", "econ_calendar_aliases.yaml"),
             seeded_from_file=True,
             note=" ".join((r.get("reason") or "").split()),
@@ -221,8 +242,11 @@ def load_seed(
         n += 1
     for r in doc.get("bindings", []):
         upsert_alias(
-            con, source=r["source"], country_iso3=r["country_iso3"],
-            source_name=r["name"], indicator_key=r["indicator_key"],
+            con,
+            source=r["source"],
+            country_iso3=r["country_iso3"],
+            source_name=r["name"],
+            indicator_key=r["indicator_key"],
             status="confirmed",
             decided_by=r.get("decided_by", "econ_calendar_aliases.yaml"),
             seeded_from_file=True,
@@ -310,9 +334,16 @@ def propose(
     ).fetchone()
     if esiste:
         return False
-    upsert_alias(con, source=source, country_iso3=country_iso3,
-                 source_name=source_name, indicator_key=indicator_key,
-                 status="proposed", decided_by="match_rules", note=note)
+    upsert_alias(
+        con,
+        source=source,
+        country_iso3=country_iso3,
+        source_name=source_name,
+        indicator_key=indicator_key,
+        status="proposed",
+        decided_by="match_rules",
+        note=note,
+    )
     return True
 
 
@@ -324,8 +355,13 @@ def unmapped(con: duckdb.DuckDBPyConnection) -> list[dict]:
     nothing else in the pipeline will mention it.
     """
     return [
-        {"source": s, "country_iso3": c, "source_name": raw or n,
-         "suggested": k, "note": note}
+        {
+            "source": s,
+            "country_iso3": c,
+            "source_name": raw or n,
+            "suggested": k,
+            "note": note,
+        }
         for s, c, n, raw, k, note in con.execute(
             "SELECT source, country_iso3, source_name_norm, source_name_raw, "
             "       indicator_key, note "
@@ -439,16 +475,22 @@ def cadence_violations(
             GROUP BY ALL
             HAVING count(*) > ? + CASE WHEN pubblica_due_volte THEN 1 ELSE 0 END
         """
-        parametri = [freq, *filtro_parametri, atteso,
-                     freq, *filtro_parametri, atteso]
+        parametri = [freq, *filtro_parametri, atteso, freq, *filtro_parametri, atteso]
         righe = con.execute(query, parametri).fetchall()
         for chiave, nome, area, crit, periodo, _due_volte, n, giorni in righe:
-            fuori.append({
-                "indicator_key": chiave, "indicator_name": nome, "area": area,
-                "criticality": crit, "frequency": freq,
-                "period": str(periodo)[:10], "releases": n, "expected": atteso,
-                "dates": giorni,
-            })
+            fuori.append(
+                {
+                    "indicator_key": chiave,
+                    "indicator_name": nome,
+                    "area": area,
+                    "criticality": crit,
+                    "frequency": freq,
+                    "period": str(periodo)[:10],
+                    "releases": n,
+                    "expected": atteso,
+                    "dates": giorni,
+                }
+            )
 
     fuori.sort(key=lambda x: (-x["releases"], x["indicator_key"]))
     return fuori
@@ -457,8 +499,11 @@ def cadence_violations(
 def format_unmapped(righe: list[dict]) -> str:
     if not righe:
         return "No unmapped name: every name seen has been ruled on."
-    out = [f"{len(righe)} names awaiting a decision "
-           f"(they produce no event until one is made):", ""]
+    out = [
+        f"{len(righe)} names awaiting a decision "
+        f"(they produce no event until one is made):",
+        "",
+    ]
     for r in righe:
         suggerito = r["suggested"] or "-- no suggestion"
         out.append(f"  {r['source']:10s} {r['country_iso3']}  {r['source_name']}")
@@ -471,8 +516,12 @@ def format_cadence(righe: list[dict]) -> str:
         return "No cadence violation: every indicator released as often as declared."
     out = [f"{len(righe)} indicators released more often than declared:", ""]
     for r in righe:
-        out.append(f"[{r['criticality']}] {r['area']} {r['indicator_name']} "
-                   f"({r['indicator_key']}, {r['frequency']})")
-        out.append(f"      {r['period']}: {r['releases']} releases where "
-                   f"{r['expected']} was expected -- {r['dates']}")
+        out.append(
+            f"[{r['criticality']}] {r['area']} {r['indicator_name']} "
+            f"({r['indicator_key']}, {r['frequency']})"
+        )
+        out.append(
+            f"      {r['period']}: {r['releases']} releases where "
+            f"{r['expected']} was expected -- {r['dates']}"
+        )
     return "\n".join(out)

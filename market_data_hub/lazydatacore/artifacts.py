@@ -26,6 +26,7 @@ model in this contract (raw ``bytes`` would not).
 Only the first ``:`` separates scheme from key, so keys may themselves
 contain ``:`` (Windows paths under ``file:``).
 """
+
 from __future__ import annotations
 
 import base64
@@ -33,7 +34,14 @@ import binascii
 import re
 from typing import Any, Dict
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_serializer, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 
 from market_data_hub.lazydatacore.result import LazyDataModel
 
@@ -42,9 +50,9 @@ from market_data_hub.lazydatacore.result import LazyDataModel
 WELL_KNOWN_ARTIFACT_SCHEMES = (
     "regimes",  # PNG blob in a LazyStats regime depot; key = plot_key
     "crawler",  # blob in a LazyCrawler artifacts table; key = content_hash
-    "chart",    # chart rendered on demand from hub series; key = chart spec id
-    "file",     # local file; key = path (may contain ':' on Windows)
-    "bytes",    # inline payload; key = base64-encoded bytes
+    "chart",  # chart rendered on demand from hub series; key = chart spec id
+    "file",  # local file; key = path (may contain ':' on Windows)
+    "bytes",  # inline payload; key = base64-encoded bytes
 )
 
 _SCHEME_RE = re.compile(r"^[a-z][a-z0-9_-]*$")

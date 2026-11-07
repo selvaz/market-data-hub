@@ -4,6 +4,7 @@ NBS editions use the first official release date/time in China Standard Time.
 English translations may carry a PubDate up to one day later; that is source
 publication metadata, not a different economic release edition.
 """
+
 from datetime import date
 
 NBS_CALENDAR = "https://www.stats.gov.cn/english/PressRelease/ReleaseCalendar/202512/t20251226_1962154.html"
@@ -68,16 +69,22 @@ EDITIONS = {
     },
 }
 SCHEDULES = {family: NBS_CALENDAR for family in EDITIONS}
-SCHEDULES["jp_gdp"] = "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262/pdf/note_e.pdf"
+SCHEDULES["jp_gdp"] = (
+    "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262/pdf/note_e.pdf"
+)
 SCHEDULES["jp_cpi"] = "https://www.stat.go.jp/english/data/cpi/1582.htm"
 SCHEDULES["jp_tokyo_cpi"] = SCHEDULES["jp_cpi"]
 SCHEDULES["jp_tankan"] = "https://www.boj.or.jp/en/statistics/outline/tkohyos.xlsx"
 SCHEDULES["jp_trade_balance"] = "https://www.customs.go.jp/toukei/calendar/calend_e.htm"
-ZONES = {family: "Asia/Tokyo" if family.startswith("jp_") else "Asia/Shanghai" for family in EDITIONS}
+ZONES = {
+    family: "Asia/Tokyo" if family.startswith("jp_") else "Asia/Shanghai"
+    for family in EDITIONS
+}
 
 
 def reviewed(family, edition):
     from .http import FetchError
+
     if edition not in EDITIONS.get(family, {}):
         raise FetchError("Asia issuer publication edition needs review")
     return EDITIONS[family][edition]

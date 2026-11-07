@@ -1,4 +1,5 @@
 """Reproduce the versioned JSON from the approved PSV and timing evidence."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,8 +10,14 @@ import re
 from pathlib import Path
 
 from .models import (
-    CLASSIFICATION_VERSION, CardDataset, DescriptivePeak, Evidence, IndicatorCard,
-    PredictiveScreen, StoreIds, Timing,
+    CLASSIFICATION_VERSION,
+    CardDataset,
+    DescriptivePeak,
+    Evidence,
+    IndicatorCard,
+    PredictiveScreen,
+    StoreIds,
+    Timing,
 )
 
 DATA_DIR = Path(__file__).resolve().parent
@@ -80,7 +87,9 @@ def parse_ids(raw: str) -> StoreIds:
             continue
         store = match[1].replace("derived ms", "derived_ms")
         groups.setdefault(store, []).extend(s.strip() for s in match[2].split(","))
-    return StoreIds(**{k: tuple(dict.fromkeys(v)) for k, v in groups.items()}, notes=tuple(notes))
+    return StoreIds(
+        **{k: tuple(dict.fromkeys(v)) for k, v in groups.items()}, notes=tuple(notes)
+    )
 
 
 def parse_screen(text: str) -> tuple[tuple[PredictiveScreen, ...], str]:
@@ -89,7 +98,8 @@ def parse_screen(text: str) -> tuple[tuple[PredictiveScreen, ...], str]:
     for part in text.split("; "):
         match = re.fullmatch(
             r"([AQ]\d+) \[(.+)\]: (PRED-PASS|PRED-PARTIAL|PRED-NOT-SUPPORTED)"
-            r"(?: at h=([\dm,]+))?(?: \(PRED-PARTIAL ([\dm,]+)\))?", part,
+            r"(?: at h=([\dm,]+))?(?: \(PRED-PARTIAL ([\dm,]+)\))?",
+            part,
         )
         if not match:
             if "PRED-" in part:
@@ -97,13 +107,24 @@ def parse_screen(text: str) -> tuple[tuple[PredictiveScreen, ...], str]:
             notes.append(part)
             continue
         relationship, pair, status, horizons, partial = match.groups()
-        screens.append(PredictiveScreen(
-            relationship_id=relationship, pair=pair, status=status,
-            pass_horizons=tuple(horizons.split(",")) if status == "PRED-PASS" else (),
-            partial_horizons=tuple((partial or (horizons if status == "PRED-PARTIAL" else "") or "").split(","))
-            if partial or (status == "PRED-PARTIAL" and horizons) else (),
-            source_text=part,
-        ))
+        screens.append(
+            PredictiveScreen(
+                relationship_id=relationship,
+                pair=pair,
+                status=status,
+                pass_horizons=tuple(horizons.split(","))
+                if status == "PRED-PASS"
+                else (),
+                partial_horizons=tuple(
+                    (
+                        partial or (horizons if status == "PRED-PARTIAL" else "") or ""
+                    ).split(",")
+                )
+                if partial or (status == "PRED-PARTIAL" and horizons)
+                else (),
+                source_text=part,
+            )
+        )
     return tuple(screens), "; ".join(notes)
 
 
@@ -116,11 +137,15 @@ def build_dataset(
     aliases = json.loads(aliases_path.read_text(encoding="utf-8"))
     for name, resource in (("Timing", timing), ("Aliases", aliases)):
         if resource["classification_version"] != CLASSIFICATION_VERSION:
-            raise ValueError(f"{name} classification version must be {CLASSIFICATION_VERSION}")
+            raise ValueError(
+                f"{name} classification version must be {CLASSIFICATION_VERSION}"
+            )
     if len({alias["id"] for alias in aliases["aliases"]}) != len(aliases["aliases"]):
         raise ValueError("Duplicate alias ids")
     if timing["source_table_sha256"] != _hash(psv_path):
-        raise ValueError("Timing extract belongs to a different PSV; re-import the approved guide")
+        raise ValueError(
+            "Timing extract belongs to a different PSV; re-import the approved guide"
+        )
     with psv_path.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
     if set(timing["rows"]) != {r["key"] for r in rows}:
@@ -142,36 +167,67 @@ def build_dataset(
         for alias in aliases["aliases"]:
             if alias["key"] == row["key"]:
                 store, value = alias["id"].split(":", 1)
-                ids = StoreIds(**{**ids.model_dump(), store: tuple(dict.fromkeys((*getattr(ids, store), value)))})
+                ids = StoreIds(
+                    **{
+                        **ids.model_dump(),
+                        store: tuple(dict.fromkeys((*getattr(ids, store), value))),
+                    }
+                )
         evidence = timing["rows"][row["key"]]
         screens, note = parse_screen(evidence["predictive_screen"])
         peak = evidence["descriptive_peak"]
-        revision = " ".join(s.strip() for s in re.split(r"(?<=\.)\s+|;\s*", row["rationale"])
-                            if re.search(r"\brevis", s, re.IGNORECASE))
-        cards.append(IndicatorCard(
-            key=row["key"], concept=row["concept"], country=row["country"], ids=ids,
-            raw_ids=row["ids"], theme=row["theme"],
-            secondary=tuple(s.strip() for s in row["secondary"].split(";") if s.strip()),
-            nature=row["nature"],
-            timing=Timing(
-                timing_class=row["timing_class"],
-                basis=None if row["timing_basis"] == "—" else row["timing_basis"],
-                reference=row["reference"], class_pair=row["class_pair"] or None,
-                relationship_keys=tuple(s for s in row["vkeys"].split(";") if s),
-                predictive_screen=screens, screen_note=note,
-                descriptive_peak=None if peak in ("n.a.", "not estimated") else DescriptivePeak(source_text=peak),
-            ),
-            evidence=Evidence(measurement=row["ev_meas"], mechanism=row["ev_mech"], local_timing=row["ev_timing"]),
-            revision_behaviour=revision or "Not specified in approved row.",
-            known_failure_modes=tuple(s.strip() for s in row["flag"].split(";") if s.strip()),
-            flag=row["flag"], rationale=row["rationale"], source=row["source"], frequency=row["freq"],
-        ))
+        revision = " ".join(
+            s.strip()
+            for s in re.split(r"(?<=\.)\s+|;\s*", row["rationale"])
+            if re.search(r"\brevis", s, re.IGNORECASE)
+        )
+        cards.append(
+            IndicatorCard(
+                key=row["key"],
+                concept=row["concept"],
+                country=row["country"],
+                ids=ids,
+                raw_ids=row["ids"],
+                theme=row["theme"],
+                secondary=tuple(
+                    s.strip() for s in row["secondary"].split(";") if s.strip()
+                ),
+                nature=row["nature"],
+                timing=Timing(
+                    timing_class=row["timing_class"],
+                    basis=None if row["timing_basis"] == "—" else row["timing_basis"],
+                    reference=row["reference"],
+                    class_pair=row["class_pair"] or None,
+                    relationship_keys=tuple(s for s in row["vkeys"].split(";") if s),
+                    predictive_screen=screens,
+                    screen_note=note,
+                    descriptive_peak=None
+                    if peak in ("n.a.", "not estimated")
+                    else DescriptivePeak(source_text=peak),
+                ),
+                evidence=Evidence(
+                    measurement=row["ev_meas"],
+                    mechanism=row["ev_mech"],
+                    local_timing=row["ev_timing"],
+                ),
+                revision_behaviour=revision or "Not specified in approved row.",
+                known_failure_modes=tuple(
+                    s.strip() for s in row["flag"].split(";") if s.strip()
+                ),
+                flag=row["flag"],
+                rationale=row["rationale"],
+                source=row["source"],
+                frequency=row["freq"],
+            )
+        )
     keys = {c.key for c in cards}
     if any(a["key"] not in keys for a in aliases["aliases"]):
         raise ValueError("Alias targets a missing approved card")
     return CardDataset(
-        source_table_sha256=_hash(psv_path), timing_extract_sha256=_hash(timing_path),
-        aliases_sha256=_hash(aliases_path), cards=tuple(cards),
+        source_table_sha256=_hash(psv_path),
+        timing_extract_sha256=_hash(timing_path),
+        aliases_sha256=_hash(aliases_path),
+        cards=tuple(cards),
     )
 
 
@@ -181,8 +237,14 @@ def build_json() -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--import-guide", type=Path, help="Refresh the verbatim timing extract from an approved guide")
-    parser.add_argument("--check", action="store_true", help="Check freshness without writing")
+    parser.add_argument(
+        "--import-guide",
+        type=Path,
+        help="Refresh the verbatim timing extract from an approved guide",
+    )
+    parser.add_argument(
+        "--check", action="store_true", help="Check freshness without writing"
+    )
     args = parser.parse_args()
     if args.import_guide:
         extracted = json_text(extract_timing(args.import_guide))
@@ -194,7 +256,9 @@ def main() -> None:
     result = build_json()
     if args.check:
         if JSON_PATH.read_text(encoding="utf-8") != result:
-            raise SystemExit("Indicator-card JSON is stale; run python -m market_data_hub.indicator_cards.build")
+            raise SystemExit(
+                "Indicator-card JSON is stale; run python -m market_data_hub.indicator_cards.build"
+            )
         print("Indicator-card JSON is up to date")
     else:
         _write(JSON_PATH, result)

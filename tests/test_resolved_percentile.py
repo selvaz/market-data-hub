@@ -300,3 +300,11 @@ def test_monthly_fallback_current_is_not_basis_corrected(percentile_fixture):
     assert result["status"] == "ok" and result["basis_bp"] is None
     assert result["adjusted_value"] == 23.0
     assert "monthly series itself" in result["basis_reason"]
+
+
+def test_swiss_10y_snb_feeds_share_one_convention():
+    # CB_CH_10Y history and SNB_CH_10Y are the same SNB NSS spot series: a
+    # feed change alone must not read as a methodological break.
+    _, table = resolved_rates.load_resolved_rates()
+    by_id = {s["series_id"]: s for s in table["CH_10Y"]["sources"]}
+    assert by_id["CB_CH_10Y"]["convention"] == by_id["SNB_CH_10Y"]["convention"]

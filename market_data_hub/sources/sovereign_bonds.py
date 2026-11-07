@@ -3,6 +3,7 @@
 Published gross yields are used directly, never inferred from last trade prices.
 These current-only exports accumulate daily; they cannot backfill past rolls.
 """
+
 from __future__ import annotations
 
 import re
@@ -15,8 +16,15 @@ import pandas as pd
 from .sovereign_yields import COLUMNS, SourceUnavailable, _normalize, _Tables, _text
 
 SELECTION_RULE = "nearest_10y_residual_then_earlier_maturity_then_isin"
-METADATA_COLUMNS = ["isin", "maturity_date", "coupon_percent", "reference_price",
-                    "price_type", "selection_rule", "source_url"]
+METADATA_COLUMNS = [
+    "isin",
+    "maturity_date",
+    "coupon_percent",
+    "reference_price",
+    "price_type",
+    "selection_rule",
+    "source_url",
+]
 MOT_ROOT = "https://www.borsaitaliana.it"
 
 
@@ -31,8 +39,14 @@ def select_bond(bonds: list[dict], as_of: date) -> dict:
     eligible = [b for b in bonds if b["maturity_date"] > pd.Timestamp(as_of)]
     if not eligible:
         raise SourceUnavailable("no eligible nominal bond")
-    return min(eligible, key=lambda b: (abs((b["maturity_date"] - target).days),
-                                        b["maturity_date"], b["isin"]))
+    return min(
+        eligible,
+        key=lambda b: (
+            abs((b["maturity_date"] - target).days),
+            b["maturity_date"],
+            b["isin"],
+        ),
+    )
 
 
 def _number(raw: str) -> float:
@@ -52,13 +66,21 @@ def _tables(body: bytes):
     # Read only literal original tables; never evaluate any publisher JavaScript.
     parser = _Tables()
     parser.feed("\n".join(re.findall(r"<table\b.*?</table>", text, re.S | re.I)))
-    tables = [[[" ".join(cell.split()) for cell in row] for row in t] for t in parser.tables]
+    tables = [
+        [[" ".join(cell.split()) for cell in row] for row in t] for t in parser.tables
+    ]
     return text, tables
 
 
 def _mot_list(body: bytes) -> tuple[list[dict], set[int]]:
     text, tables = _tables(body)
-    tables = [t for t in tables if any(r[:5] == ["Isin", "Descrizione", "Ultimo", "Cedola", "Scadenza"] for r in t)]
+    tables = [
+        t
+        for t in tables
+        if any(
+            r[:5] == ["Isin", "Descrizione", "Ultimo", "Cedola", "Scadenza"] for r in t
+        )
+    ]
     if len(tables) != 1:
         raise SourceUnavailable("missing MOT BTP universe table")
     bonds = []
@@ -81,12 +103,23 @@ def _mot_list(body: bytes) -> tuple[list[dict], set[int]]:
         bonds.append(dict(isin=isin, maturity_date=maturity))
     if not listed or len(set(listed)) != len(listed):
         raise SourceUnavailable("empty or duplicate MOT universe page")
-    pages = {int(n) for n in re.findall(r'/borsa/obbligazioni/mot/btp/lista\.html\?[^"<>]*?\bpage=(\d+)', text)}
+    pages = {
+        int(n)
+        for n in re.findall(
+            r'/borsa/obbligazioni/mot/btp/lista\.html\?[^"<>]*?\bpage=(\d+)', text
+        )
+    }
     return bonds, pages | {1}
 
 
-def _snapshot(meta: dict, when: pd.Timestamp, bond: dict, value: float,
-              price_type: str, source_url: str) -> pd.DataFrame:
+def _snapshot(
+    meta: dict,
+    when: pd.Timestamp,
+    bond: dict,
+    value: float,
+    price_type: str,
+    source_url: str,
+) -> pd.DataFrame:
     if bond["reference_price"] <= 0 or bond["coupon_percent"] < 0:
         raise SourceUnavailable("invalid bond price or coupon")
     df = _normalize(meta, [(when.date().isoformat(), value)])
@@ -107,14 +140,16 @@ def _mot_bond(meta: dict, body: bytes, expected: dict, url: str) -> pd.DataFrame
                 if row[0] in fields and fields[row[0]] != row[1]:
                     raise SourceUnavailable("conflicting MOT bond fields")
                 fields[row[0]] = row[1]
-    if (fields.get("Codice Isin") != expected["isin"]
-            or fields.get("Emittente") != "REPUBLIC OF ITALY"
-            or fields.get("Struttura Bond") != "Plain Vanilla"
-            or fields.get("Mercato") != "MOT"
-            or fields.get("Valuta di Negoziazione/ Liquidazione") != "EUR/EUR"
-            or fields.get("Periodicità cedola") != "Semestrale"
-            or fields.get("Modalità di Negoziazione") != "Corso Secco"
-            or fields.get("Indicizzazione", "") != ""):
+    if (
+        fields.get("Codice Isin") != expected["isin"]
+        or fields.get("Emittente") != "REPUBLIC OF ITALY"
+        or fields.get("Struttura Bond") != "Plain Vanilla"
+        or fields.get("Mercato") != "MOT"
+        or fields.get("Valuta di Negoziazione/ Liquidazione") != "EUR/EUR"
+        or fields.get("Periodicità cedola") != "Semestrale"
+        or fields.get("Modalità di Negoziazione") != "Corso Secco"
+        or fields.get("Indicizzazione", "") != ""
+    ):
         raise SourceUnavailable("MOT bond identity/type does not match nominal BTP")
     try:
         # Use the explicit yield-reference date, never today's request date or
@@ -126,12 +161,23 @@ def _mot_bond(meta: dict, body: bytes, expected: dict, url: str) -> pd.DataFrame
         coupon = _number(fields["Tasso Cedola su base Annua"])
         if abs(coupon - 2 * _number(fields["Tasso Cedola Periodale"])) > 1e-8:
             raise SourceUnavailable("MOT fixed coupon schedule disagrees")
-        bond = dict(expected, coupon_percent=coupon,
-                    reference_price=_number(fields["Prezzo di riferimento"]))
-        return _snapshot(meta, when, bond, _number(fields["Rendimento effettivo a scadenza lordo"]),
-                         "venue_yield_reference_clean", url)
+        bond = dict(
+            expected,
+            coupon_percent=coupon,
+            reference_price=_number(fields["Prezzo di riferimento"]),
+        )
+        return _snapshot(
+            meta,
+            when,
+            bond,
+            _number(fields["Rendimento effettivo a scadenza lordo"]),
+            "venue_yield_reference_clean",
+            url,
+        )
     except (KeyError, ValueError) as exc:
-        raise SourceUnavailable(f"invalid MOT snapshot ({type(exc).__name__})") from None
+        raise SourceUnavailable(
+            f"invalid MOT snapshot ({type(exc).__name__})"
+        ) from None
 
 
 def parse_finanzagentur(meta: dict, body: bytes) -> pd.DataFrame:
@@ -140,12 +186,20 @@ def parse_finanzagentur(meta: dict, body: bytes) -> pd.DataFrame:
     from pypdf.errors import PdfReadError
 
     if not body.startswith(b"%PDF-"):
-        raise SourceUnavailable("Finanzagentur response is not a PDF; no challenge bypass")
+        raise SourceUnavailable(
+            "Finanzagentur response is not a PDF; no challenge bypass"
+        )
     try:
         reader = PdfReader(BytesIO(body))
         text = "\n".join(page.extract_text() or "" for page in reader.pages)
-        stamps = re.findall(r"Prices and yields of listed Federal securities as of (\d{2}\.\d{2}\.\d{4})", text)
-        if len(set(stamps)) != 1 or not all(x in text for x in ["Yield", "in %", "Dirty price", "Bundesbank reference price"]):
+        stamps = re.findall(
+            r"Prices and yields of listed Federal securities as of (\d{2}\.\d{2}\.\d{4})",
+            text,
+        )
+        if len(set(stamps)) != 1 or not all(
+            x in text
+            for x in ["Yield", "in %", "Dirty price", "Bundesbank reference price"]
+        ):
             raise SourceUnavailable("changed Finanzagentur date/units/price definition")
         when = pd.to_datetime(stamps[0], format="%d.%m.%Y")
         bonds = []
@@ -154,23 +208,41 @@ def parse_finanzagentur(meta: dict, body: bytes) -> pd.DataFrame:
                 continue
             match = re.fullmatch(
                 r"(DE[A-Z0-9]{10})\s+(\d+\.\d+)\s+(.*?)\s+(\d{2}\.\d{2}\.\d{4})"
-                r"\s+\d+/\d+\s+[\d.]+\s+([\d.]+)\s+(-?[\d.]+)\s+([\d.]+)", line.strip())
+                r"\s+\d+/\d+\s+[\d.]+\s+([\d.]+)\s+(-?[\d.]+)\s+([\d.]+)",
+                line.strip(),
+            )
             if not match:
                 raise SourceUnavailable("changed Finanzagentur security row")
             isin, coupon, description, maturity, price, value, dirty = match.groups()
             # Conventional nominal Bunds only, including conventional twins.
             if not description.startswith("DBR ") or description.endswith(" G"):
                 continue
-            bonds.append(dict(isin=isin, maturity_date=pd.to_datetime(maturity, format="%d.%m.%Y"),
-                              coupon_percent=_number(coupon), reference_price=_number(price), value=_number(value)))
-        if len({b['isin'] for b in bonds}) != len(bonds):
+            bonds.append(
+                dict(
+                    isin=isin,
+                    maturity_date=pd.to_datetime(maturity, format="%d.%m.%Y"),
+                    coupon_percent=_number(coupon),
+                    reference_price=_number(price),
+                    value=_number(value),
+                )
+            )
+        if len({b["isin"] for b in bonds}) != len(bonds):
             raise SourceUnavailable("duplicate Finanzagentur securities")
         bond = select_bond(bonds, when.date())
-        return _snapshot(meta, when, bond, bond["value"], "bundesbank_noon_reference_clean", meta["endpoint"])
+        return _snapshot(
+            meta,
+            when,
+            bond,
+            bond["value"],
+            "bundesbank_noon_reference_clean",
+            meta["endpoint"],
+        )
     except SourceUnavailable:
         raise
     except (ValueError, KeyError, PdfReadError) as exc:
-        raise SourceUnavailable(f"invalid Finanzagentur PDF ({type(exc).__name__})") from None
+        raise SourceUnavailable(
+            f"invalid Finanzagentur PDF ({type(exc).__name__})"
+        ) from None
 
 
 def _request_date() -> date:
@@ -194,7 +266,7 @@ def fetch_bond(meta: dict, get) -> pd.DataFrame:
         pending = (pending | pages) - seen
     if seen != set(range(1, max(seen) + 1)):
         raise SourceUnavailable("incomplete MOT pagination")
-    if len({b['isin'] for b in universe}) != len(universe):
+    if len({b["isin"] for b in universe}) != len(universe):
         raise SourceUnavailable("duplicate/repeated MOT universe pages")
     # The universe is current-only, even for a requested historical range.
     # Do not select an obsolete benchmark using the caller's historical end.
@@ -204,7 +276,9 @@ def fetch_bond(meta: dict, get) -> pd.DataFrame:
         frame = _mot_bond(meta, get(url), chosen, url)
         # Selection belongs to the published observation date, including weekends.
         correct = select_bond(universe, frame.date.iloc[0].date())
-        if correct['isin'] == chosen['isin']:
+        if correct["isin"] == chosen["isin"]:
             return frame
         chosen = correct
-    raise SourceUnavailable("MOT snapshot dates do not permit a stable benchmark selection")
+    raise SourceUnavailable(
+        "MOT snapshot dates do not permit a stable benchmark selection"
+    )

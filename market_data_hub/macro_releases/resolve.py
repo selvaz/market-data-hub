@@ -50,7 +50,11 @@ COLLECT_LOG_LIMITATION = (
 def policy_payload(row, vintage):
     """Old stores and arbitrary raw readings need not contain policy metadata."""
     if vintage:
-        return json.loads(row["policy_decision_json"]) if row.get("policy_decision_json") else None
+        return (
+            json.loads(row["policy_decision_json"])
+            if row.get("policy_decision_json")
+            else None
+        )
     try:
         payload = json.loads(row["raw_payload_json"])
     except (ValueError, TypeError):
@@ -121,7 +125,11 @@ class Evidence:
 
     @property
     def verified_issuer(self):
-        return self.role == "issuer" and self.verified and self.source_class != "redistributor"
+        return (
+            self.role == "issuer"
+            and self.verified
+            and self.source_class != "redistributor"
+        )
 
     @property
     def official(self):
@@ -224,8 +232,13 @@ class Snapshot:
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 )
             }
-            boj_times = ([] if "boj_publication_times" not in tables else
-                [dict(r) for r in conn.execute("SELECT * FROM boj_publication_times")])
+            boj_times = (
+                []
+                if "boj_publication_times" not in tables
+                else [
+                    dict(r) for r in conn.execute("SELECT * FROM boj_publication_times")
+                ]
+            )
             link_versions = (
                 []
                 if "consensus_link_versions" not in tables
@@ -344,9 +357,15 @@ class Snapshot:
         )
         collect_families.sort(key=lambda r: r["finished_at"], reverse=True)
         evidence = []
-        boj_times = {r["value_vintage_id"]: r for r in metadata(
-            boj_times, {"recorded_at": None, "issuer_published_at": None},
-            "recorded_at", "boj_publication_times")}
+        boj_times = {
+            r["value_vintage_id"]: r
+            for r in metadata(
+                boj_times,
+                {"recorded_at": None, "issuer_published_at": None},
+                "recorded_at",
+                "boj_publication_times",
+            )
+        }
         for row in vintages:
             try:
                 timing = boj_times.get(row["id"])
@@ -480,7 +499,10 @@ class Snapshot:
         issuer = source["issuer_id"] if source else row["issuer_id"]
         role = source["evidence_role"] if source else "web"
         source_id = source["source_id"] if source else row["source_id"]
-        if role == "issuer" and source_class(issuer, source_id, role) == "redistributor":
+        if (
+            role == "issuer"
+            and source_class(issuer, source_id, role) == "redistributor"
+        ):
             role = "mirror"
         if (
             issuer != indicator["issuer_id"]
@@ -622,13 +644,22 @@ HISTORY_POLICIES = frozenset({"first_release", "as_known_at", "revised_history"}
 
 def validate_history_policy(policy, as_known_at=None):
     if policy not in HISTORY_POLICIES:
-        raise ValueError("policy must be first_release, as_known_at, or revised_history")
+        raise ValueError(
+            "policy must be first_release, as_known_at, or revised_history"
+        )
     if policy == "as_known_at" and as_known_at is None:
         raise ValueError("as_known_at policy requires an as_known_at timestamp")
 
 
-def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_id=None,
-                     policy="revised_history"):
+def resolve_evidence(
+    snapshot,
+    indicator_id,
+    reference_period,
+    stage,
+    *,
+    event_id=None,
+    policy="revised_history",
+):
     indicator = snapshot.indicators.get(indicator_id)
     if indicator is None:
         return None
@@ -644,8 +675,13 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
         all_rows = [e for e in all_rows if e.event_id == event_id]
     if policy == "first_release":
         # Readings do not carry a revision kind; never infer initial status.
-        all_rows = [e for e in all_rows if e.id.startswith("vintage:")
-                    and e.revision_kind == "initial" and e.verified_issuer]
+        all_rows = [
+            e
+            for e in all_rows
+            if e.id.startswith("vintage:")
+            and e.revision_kind == "initial"
+            and e.verified_issuer
+        ]
     if not all_rows:
         return None
     streams = {}
@@ -656,11 +692,17 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
     for stream in streams.values():
         vintages = [e for e in stream if e.id.startswith("vintage:")]
         pool = vintages or stream
-        seen = (min if policy == "first_release" else max)(e.first_seen_at for e in pool)
+        seen = (min if policy == "first_release" else max)(
+            e.first_seen_at for e in pool
+        )
         rows.append(min((e for e in pool if e.first_seen_at == seen), key=_tie))
-    issuers = [e for e in rows if e.role == "issuer" and e.source_class != "redistributor"]
+    issuers = [
+        e for e in rows if e.role == "issuer" and e.source_class != "redistributor"
+    ]
     if issuers:
-        newest_issuer = (min if policy == "first_release" else max)(publication_order(e) for e in issuers)
+        newest_issuer = (min if policy == "first_release" else max)(
+            publication_order(e) for e in issuers
+        )
         edition_leader = min(
             (e for e in issuers if publication_order(e) == newest_issuer),
             key=lambda e: (_tier(e), _tie(e)),
@@ -670,7 +712,9 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
         pool = rows
     tier = min(_tier(e) for e in pool)
     pool = [e for e in pool if _tier(e) == tier]
-    newest = (min if policy == "first_release" else max)(publication_order(e) for e in pool)
+    newest = (min if policy == "first_release" else max)(
+        publication_order(e) for e in pool
+    )
     selected = min((e for e in pool if publication_order(e) == newest), key=_tie)
     pending = [
         e
@@ -680,10 +724,13 @@ def resolve_evidence(snapshot, indicator_id, reference_period, stage, *, event_i
         and e.published_at
         and (not selected.published_at or e.published_at > selected.published_at)
     ]
-    status = certification_status(selected.source_class, verified_issuer=selected.verified_issuer)
+    status = certification_status(
+        selected.source_class, verified_issuer=selected.verified_issuer
+    )
     reason = (
-        "verified private issuer publication" if selected.verified_issuer and selected.source_class == "private" else
-        "verified issuer publication"
+        "verified private issuer publication"
+        if selected.verified_issuer and selected.source_class == "private"
+        else "verified issuer publication"
         if selected.verified_issuer
         else "only unverified or non-issuer evidence"
     )

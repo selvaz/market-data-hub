@@ -293,7 +293,7 @@
         {
           "series_id": "CB_CH_10Y",
           "max_age_business_days": 3,
-          "convention": "Swiss Confederation spot yield",
+          "convention": "SNB NSS-fitted zero-coupon spot yield",
           "role": "history_only",
           "comparability_note": "SNB cube history and current SNB spot feed share the same NSS origin; history only, never an independent vote."
         },

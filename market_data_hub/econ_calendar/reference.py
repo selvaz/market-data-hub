@@ -33,6 +33,7 @@ Two rules this module keeps:
     cannot tell them apart is joining on dates nobody ever published and has no
     way to know.
 """
+
 from __future__ import annotations
 
 from calendar import monthrange
@@ -48,7 +49,7 @@ import duckdb
 # 'E' means the schedule is the calendar's own -- a policy meeting describes no
 # period at all.
 _DERIVABILI = {"M", "Q", "A"}
-_MIN_EVENTI = 2         # one observation is an anecdote, not a lag
+_MIN_EVENTI = 2  # one observation is an anecdote, not a lag
 
 
 def _fine_periodo(anno: int, mese: int, frequenza: str) -> date:
@@ -56,7 +57,7 @@ def _fine_periodo(anno: int, mese: int, frequenza: str) -> date:
     if frequenza == "A":
         return date(anno, 12, 31)
     if frequenza == "Q":
-        mese = ((mese - 1) // 3) * 3 + 3        # end of the containing quarter
+        mese = ((mese - 1) // 3) * 3 + 3  # end of the containing quarter
     return date(anno, mese, monthrange(anno, mese)[1])
 
 
@@ -130,8 +131,7 @@ def infer_reference_dates(
     if indicator_keys is not None:
         volute = set(indicator_keys)
         imparati = {k: v for k, v in imparati.items() if k in volute}
-    usabili = {k: v for k, v in imparati.items()
-               if v["stable"] or not only_stable}
+    usabili = {k: v for k, v in imparati.items() if v["stable"] or not only_stable}
 
     mancanti = con.execute(
         """
@@ -245,7 +245,7 @@ def validate_lags(con: duckdb.DuckDBPyConnection) -> dict:
             saltati += len(eventi)
             continue
         for i, (freq, giorno, vero) in enumerate(eventi):
-            altri = eventi[:i] + eventi[i + 1:]
+            altri = eventi[:i] + eventi[i + 1 :]
             conteggio: dict[int, int] = defaultdict(int)
             for _f, g, v in altri:
                 conteggio[(g.year * 12 + g.month) - (v.year * 12 + v.month)] += 1
@@ -256,8 +256,14 @@ def validate_lags(con: duckdb.DuckDBPyConnection) -> dict:
                 giusti += 1
             else:
                 sbagliati += 1
-                errori.append({"indicator_key": chiave, "release": str(giorno),
-                               "expected": str(atteso), "actual": str(vero)})
+                errori.append(
+                    {
+                        "indicator_key": chiave,
+                        "release": str(giorno),
+                        "expected": str(atteso),
+                        "actual": str(vero),
+                    }
+                )
 
     totale = giusti + sbagliati
     return {

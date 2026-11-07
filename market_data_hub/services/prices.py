@@ -17,6 +17,7 @@ Public semantics live here, not in agent_tools.py:
 Identity model: prices_daily is untouched (its INSERT OR REPLACE upsert would
 NULL any column it does not write); listings.symbol joins prices_daily.symbol.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -31,6 +32,7 @@ import pandas as pd
 from market_data_hub.config_loader import get_settings, get_yahoo_tickers
 from market_data_hub.db.connection import get_conn
 from market_data_hub.db import identity as _identity
+
 # Single id scheme shared with the upsert auto-attach (db.identity): two
 # writers can never mint different ids for the same (symbol, provider).
 from market_data_hub.db.identity import stable_id as _stable_id
@@ -61,7 +63,8 @@ class AmbiguousInstrumentError(ValueError):
     def __init__(self, query: str, candidates: List[Dict[str, Any]]):
         super().__init__(
             f"{query!r} matches {len(candidates)} listings; pass an exact "
-            f"listing_id or narrow with exchange/currency")
+            f"listing_id or narrow with exchange/currency"
+        )
         self.candidates = candidates
 
 
@@ -71,8 +74,6 @@ class UnknownInstrumentError(ValueError):
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
-
-
 
 
 def _request_hash(payload: Dict[str, Any]) -> str:
@@ -88,25 +89,30 @@ def _config_candidates(query: str) -> List[Dict[str, Any]]:
     out = []
     for e in get_yahoo_tickers():
         if e["symbol"].upper() == q:
-            out.append({
-                "listing_id": None,
-                "instrument_id": None,
-                "issuer_id": None,
-                "symbol": e["symbol"],
-                "kind": _KIND_BY_ASSET_CLASS.get(e.get("asset_class", ""), "OTHER"),
-                "name": e.get("name"),
-                "exchange": None,
-                "currency": _currency_for_symbol(e["symbol"]),
-                "provider": _DEFAULT_PROVIDER,
-                "provider_symbol": e["symbol"],
-                "registered": False,
-            })
+            out.append(
+                {
+                    "listing_id": None,
+                    "instrument_id": None,
+                    "issuer_id": None,
+                    "symbol": e["symbol"],
+                    "kind": _KIND_BY_ASSET_CLASS.get(e.get("asset_class", ""), "OTHER"),
+                    "name": e.get("name"),
+                    "exchange": None,
+                    "currency": _currency_for_symbol(e["symbol"]),
+                    "provider": _DEFAULT_PROVIDER,
+                    "provider_symbol": e["symbol"],
+                    "registered": False,
+                }
+            )
     return out
 
 
-def resolve_instrument(query: str, exchange: Optional[str] = None,
-                       currency: Optional[str] = None,
-                       db_path: Optional[str] = None) -> List[Dict[str, Any]]:
+def resolve_instrument(
+    query: str,
+    exchange: Optional[str] = None,
+    currency: Optional[str] = None,
+    db_path: Optional[str] = None,
+) -> List[Dict[str, Any]]:
     """Resolve human input (symbol, alias, or a 'lst_*' listing_id) to listing
     candidates. Read-only: never registers anything and never guesses — the
     caller decides what to do when more than one candidate comes back."""
@@ -121,17 +127,21 @@ def resolve_instrument(query: str, exchange: Optional[str] = None,
             where.append("l.currency = ?")
             params.append(currency)
         try:
-            rows = con.execute(f"""
+            rows = con.execute(
+                f"""
                 SELECT l.listing_id, l.instrument_id, i.issuer_id, l.symbol,
                        i.kind, i.name, l.exchange, l.currency, l.provider,
                        l.provider_symbol
                 FROM listings l JOIN instruments i USING (instrument_id)
-                WHERE {' AND '.join(where)} AND l.active_to IS NULL
+                WHERE {" AND ".join(where)} AND l.active_to IS NULL
                 ORDER BY l.listing_id
-            """, params).fetchall()
+            """,
+                params,
+            ).fetchall()
             if not rows:
                 # alias lookup (historic ticker, ISIN, FIGI ...) -> listing
-                rows = con.execute("""
+                rows = con.execute(
+                    """
                     SELECT l.listing_id, l.instrument_id, i.issuer_id, l.symbol,
                            i.kind, i.name, l.exchange, l.currency, l.provider,
                            l.provider_symbol
@@ -140,15 +150,27 @@ def resolve_instrument(query: str, exchange: Optional[str] = None,
                     JOIN instruments i USING (instrument_id)
                     WHERE upper(a.value) = upper(?) AND a.valid_to IS NULL
                     ORDER BY l.listing_id
-                """, [q]).fetchall()
+                """,
+                    [q],
+                ).fetchall()
         except duckdb.CatalogException:
             # DB file predates schema v5 (identity tables not created yet) and
             # this is a read-only connection, which never runs migrate() --
             # only a writer (e.g. ensure_price_history) upgrades the schema.
             # Degrade to config-only candidates instead of raising.
             rows = []
-        cols = ["listing_id", "instrument_id", "issuer_id", "symbol", "kind",
-                "name", "exchange", "currency", "provider", "provider_symbol"]
+        cols = [
+            "listing_id",
+            "instrument_id",
+            "issuer_id",
+            "symbol",
+            "kind",
+            "name",
+            "exchange",
+            "currency",
+            "provider",
+            "provider_symbol",
+        ]
         found = [dict(zip(cols, r), registered=True) for r in rows]
     finally:
         con.close()
@@ -163,7 +185,8 @@ def _resolve_single(query: str, db_path: Optional[str] = None) -> Dict[str, Any]
         raise UnknownInstrumentError(
             f"{query!r} matches no listing, alias or config-universe symbol; "
             f"register it first with register_listing(symbol, exchange=..., "
-            f"currency=...) and then ensure_price_history")
+            f"currency=...) and then ensure_price_history"
+        )
     if len(candidates) > 1:
         raise AmbiguousInstrumentError(query, candidates)
     return candidates[0]
@@ -177,40 +200,70 @@ def _register_listing(con, cand: Dict[str, Any]) -> Dict[str, Any]:
     symbol = cand["symbol"]
     instrument_id = _stable_id("ins", symbol)
     listing_id = _stable_id("lst", symbol, cand.get("provider") or _DEFAULT_PROVIDER)
-    con.execute("""
+    con.execute(
+        """
         INSERT INTO instruments (instrument_id, issuer_id, kind, name,
                                  created_at, updated_at)
         SELECT ?, NULL, ?, ?, ?, ?
         WHERE NOT EXISTS (SELECT 1 FROM instruments WHERE instrument_id = ?)
-    """, [instrument_id, cand.get("kind") or "OTHER", cand.get("name"),
-          now, now, instrument_id])
-    con.execute("""
+    """,
+        [
+            instrument_id,
+            cand.get("kind") or "OTHER",
+            cand.get("name"),
+            now,
+            now,
+            instrument_id,
+        ],
+    )
+    con.execute(
+        """
         INSERT INTO listings (listing_id, instrument_id, symbol, exchange,
                               currency, provider, provider_symbol,
                               active_from, active_to, created_at, updated_at)
         SELECT ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?
         WHERE NOT EXISTS (SELECT 1 FROM listings WHERE listing_id = ?)
-    """, [listing_id, instrument_id, symbol, cand.get("exchange"),
-          cand.get("currency"), cand.get("provider") or _DEFAULT_PROVIDER,
-          cand.get("provider_symbol") or symbol, now, now, listing_id])
-    con.execute("""
+    """,
+        [
+            listing_id,
+            instrument_id,
+            symbol,
+            cand.get("exchange"),
+            cand.get("currency"),
+            cand.get("provider") or _DEFAULT_PROVIDER,
+            cand.get("provider_symbol") or symbol,
+            now,
+            now,
+            listing_id,
+        ],
+    )
+    con.execute(
+        """
         INSERT INTO identifier_aliases (namespace, value, target_type,
                                         target_id, valid_from, valid_to, updated_at)
         SELECT 'ticker', ?, 'listing', ?, NULL, NULL, ?
         WHERE NOT EXISTS (SELECT 1 FROM identifier_aliases
                           WHERE namespace = 'ticker' AND value = ?
                             AND target_type = 'listing' AND target_id = ?)
-    """, [symbol, listing_id, now, symbol, listing_id])
+    """,
+        [symbol, listing_id, now, symbol, listing_id],
+    )
     out = dict(cand)
     out.update(listing_id=listing_id, instrument_id=instrument_id, registered=True)
     return out
 
 
-def register_listing(symbol: str, *, exchange: str, currency: str,
-                     kind: str = "EQUITY", name: Optional[str] = None,
-                     provider: str = _DEFAULT_PROVIDER,
-                     provider_symbol: Optional[str] = None,
-                     db_path: Optional[str] = None) -> Dict[str, Any]:
+def register_listing(
+    symbol: str,
+    *,
+    exchange: str,
+    currency: str,
+    kind: str = "EQUITY",
+    name: Optional[str] = None,
+    provider: str = _DEFAULT_PROVIDER,
+    provider_symbol: Optional[str] = None,
+    db_path: Optional[str] = None,
+) -> Dict[str, Any]:
     """Register an ARBITRARY single name not present in listings/config
     (audit CA-05): the caller supplies the identity — exchange, currency,
     provider symbol — and gets a listing_id back; ingestion then goes through
@@ -228,7 +281,8 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
     if not (exchange or "").strip() or not (currency or "").strip():
         raise ValueError(
             f"registering the unknown symbol {symbol!r} requires explicit "
-            f"exchange and currency (identity is never guessed)")
+            f"exchange and currency (identity is never guessed)"
+        )
     exchange = exchange.strip()
     currency = currency.strip().upper()
 
@@ -236,39 +290,67 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
         con = get_conn(db_path)
         try:
             now = _now()
-            row = con.execute("""
+            row = con.execute(
+                """
                 SELECT listing_id, instrument_id FROM listings
                 WHERE symbol = ? AND provider = ?
                   AND coalesce(exchange, '') = ? AND active_to IS NULL
-            """, [symbol, provider, exchange]).fetchone()
+            """,
+                [symbol, provider, exchange],
+            ).fetchone()
             if row:
-                return {"listing_id": row[0], "instrument_id": row[1],
-                        "symbol": symbol, "exchange": exchange,
-                        "currency": currency, "provider": provider,
-                        "registered": True, "created": False}
+                return {
+                    "listing_id": row[0],
+                    "instrument_id": row[1],
+                    "symbol": symbol,
+                    "exchange": exchange,
+                    "currency": currency,
+                    "provider": provider,
+                    "registered": True,
+                    "created": False,
+                }
 
             instrument_id = _stable_id("ins", symbol)
             base = _stable_id("lst", symbol, provider)
             taken = con.execute(
-                "SELECT 1 FROM listings WHERE listing_id = ?", [base]).fetchone()
+                "SELECT 1 FROM listings WHERE listing_id = ?", [base]
+            ).fetchone()
             # second venue for the same (symbol, provider): venue-qualified id
-            listing_id = _stable_id("lst", symbol, provider, exchange) if taken else base
+            listing_id = (
+                _stable_id("lst", symbol, provider, exchange) if taken else base
+            )
 
-            con.execute("""
+            con.execute(
+                """
                 INSERT INTO instruments (instrument_id, issuer_id, kind, name,
                                          created_at, updated_at)
                 SELECT ?, NULL, ?, ?, ?, ?
                 WHERE NOT EXISTS (SELECT 1 FROM instruments WHERE instrument_id = ?)
-            """, [instrument_id, kind, name, now, now, instrument_id])
-            con.execute("""
+            """,
+                [instrument_id, kind, name, now, now, instrument_id],
+            )
+            con.execute(
+                """
                 INSERT INTO listings (listing_id, instrument_id, symbol,
                                       exchange, currency, provider,
                                       provider_symbol, active_from, active_to,
                                       created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?)
-            """, [listing_id, instrument_id, symbol, exchange, currency,
-                  provider, provider_symbol or symbol, now, now])
-            con.execute("""
+            """,
+                [
+                    listing_id,
+                    instrument_id,
+                    symbol,
+                    exchange,
+                    currency,
+                    provider,
+                    provider_symbol or symbol,
+                    now,
+                    now,
+                ],
+            )
+            con.execute(
+                """
                 INSERT INTO identifier_aliases (namespace, value, target_type,
                                                 target_id, valid_from,
                                                 valid_to, updated_at)
@@ -276,12 +358,20 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
                 WHERE NOT EXISTS (SELECT 1 FROM identifier_aliases
                                   WHERE namespace = 'ticker' AND value = ?
                                     AND target_type = 'listing' AND target_id = ?)
-            """, [symbol, listing_id, now, symbol, listing_id])
-            return {"listing_id": listing_id, "instrument_id": instrument_id,
-                    "symbol": symbol, "exchange": exchange,
-                    "currency": currency, "provider": provider,
-                    "provider_symbol": provider_symbol or symbol,
-                    "registered": True, "created": True}
+            """,
+                [symbol, listing_id, now, symbol, listing_id],
+            )
+            return {
+                "listing_id": listing_id,
+                "instrument_id": instrument_id,
+                "symbol": symbol,
+                "exchange": exchange,
+                "currency": currency,
+                "provider": provider,
+                "provider_symbol": provider_symbol or symbol,
+                "registered": True,
+                "created": True,
+            }
         finally:
             con.close()
 
@@ -290,18 +380,22 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
 FetchFn = Callable[[List[str], str, str], Dict[str, pd.DataFrame]]
 
 
-def _default_fetch(symbols: List[str], start: str, end: str
-                   ) -> Dict[str, pd.DataFrame]:
+def _default_fetch(symbols: List[str], start: str, end: str) -> Dict[str, pd.DataFrame]:
     from market_data_hub.sources.yahoo import yahoo_batch
+
     return yahoo_batch(symbols, start, end)
 
 
-def ensure_price_history(query: str, start: Optional[str] = None,
-                         end: Optional[str] = None, *,
-                         requester: str = "python",
-                         db_path: Optional[str] = None,
-                         fetch: Optional[FetchFn] = None,
-                         force: bool = False) -> Dict[str, Any]:
+def ensure_price_history(
+    query: str,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    *,
+    requester: str = "python",
+    db_path: Optional[str] = None,
+    fetch: Optional[FetchFn] = None,
+    force: bool = False,
+) -> Dict[str, Any]:
     """Idempotent ingestion capability (plan v3.1 §4.1 / §5.2).
 
     Resolves `query` to exactly one listing (raising AmbiguousInstrumentError
@@ -331,41 +425,61 @@ def ensure_price_history(query: str, start: Optional[str] = None,
                 cand = _register_listing(con, cand)
             listing_id, symbol = cand["listing_id"], cand["symbol"]
 
-            req = {"kind": "price_history", "listing_id": listing_id,
-                   "start": start, "end": end}
+            req = {
+                "kind": "price_history",
+                "listing_id": listing_id,
+                "start": start,
+                "end": end,
+            }
             request_hash = _request_hash(req)
 
             row = con.execute(
                 "SELECT job_id, status, run_id FROM ingestion_jobs "
-                "WHERE request_hash = ?", [request_hash]).fetchone()
+                "WHERE request_hash = ?",
+                [request_hash],
+            ).fetchone()
             if row and row[1] == "completed" and not force:
-                return {"job_id": row[0], "run_id": row[2],
-                        "status": "completed", "listing_id": listing_id,
-                        "symbol": symbol, "reused": True,
-                        "rows_added": 0, "rows_updated": 0}
+                return {
+                    "job_id": row[0],
+                    "run_id": row[2],
+                    "status": "completed",
+                    "listing_id": listing_id,
+                    "symbol": symbol,
+                    "reused": True,
+                    "rows_added": 0,
+                    "rows_updated": 0,
+                }
 
             if row:
                 job_id = row[0]
                 con.execute(
                     "UPDATE ingestion_jobs SET status = 'running', "
-                    "updated_at = ? WHERE job_id = ?", [now, job_id])
+                    "updated_at = ? WHERE job_id = ?",
+                    [now, job_id],
+                )
             else:
                 job_id = f"job_{uuid.uuid4().hex[:12]}"
-                con.execute("""
+                con.execute(
+                    """
                     INSERT INTO ingestion_jobs (job_id, request_hash, kind,
                         request_json, status, run_id, requester, created_at,
                         updated_at)
                     VALUES (?, ?, 'price_history', ?, 'running', NULL, ?, ?, ?)
-                """, [job_id, request_hash, json.dumps(req), requester, now, now])
+                """,
+                    [job_id, request_hash, json.dumps(req), requester, now, now],
+                )
 
             run_id = f"run_{uuid.uuid4().hex[:12]}"
             provider = cand.get("provider") or _DEFAULT_PROVIDER
-            con.execute("""
+            con.execute(
+                """
                 INSERT INTO ingestion_runs (run_id, kind, input_json, provider,
                     provider_reason, status, attempts, started_at)
                 VALUES (?, 'price_history', ?, ?, 'primary provider for listing',
                         'running', 1, ?)
-            """, [run_id, json.dumps(req), provider, now])
+            """,
+                [run_id, json.dumps(req), provider, now],
+            )
         finally:
             con.close()
 
@@ -398,30 +512,44 @@ def ensure_price_history(query: str, start: Optional[str] = None,
             try:
                 added = updated = 0
                 if df is not None and not df.empty:
-                    added, updated = upsert(con, "prices_daily", df,
-                                            outer_txn=True)
+                    added, updated = upsert(con, "prices_daily", df, outer_txn=True)
                 payload_hash = (
                     hashlib.sha256(
                         pd.util.hash_pandas_object(df).values.tobytes()
-                    ).hexdigest() if df is not None and not df.empty else None)
+                    ).hexdigest()
+                    if df is not None and not df.empty
+                    else None
+                )
                 fin = _now()
-                con.execute("""
+                con.execute(
+                    """
                     UPDATE ingestion_runs SET status = 'completed',
                         payload_hash = ?, rows_written = ?, finished_at = ?
                     WHERE run_id = ?
-                """, [payload_hash, added + updated, fin, run_id])
-                con.execute("""
+                """,
+                    [payload_hash, added + updated, fin, run_id],
+                )
+                con.execute(
+                    """
                     UPDATE ingestion_jobs SET status = 'completed', run_id = ?,
                         error_msg = NULL, updated_at = ? WHERE job_id = ?
-                """, [run_id, fin, job_id])
+                """,
+                    [run_id, fin, job_id],
+                )
                 con.execute("COMMIT")
             except Exception:
                 con.execute("ROLLBACK")
                 raise
-            return {"job_id": job_id, "run_id": run_id,
-                    "status": "completed", "listing_id": listing_id,
-                    "symbol": symbol, "reused": False,
-                    "rows_added": added, "rows_updated": updated}
+            return {
+                "job_id": job_id,
+                "run_id": run_id,
+                "status": "completed",
+                "listing_id": listing_id,
+                "symbol": symbol,
+                "reused": False,
+                "rows_added": added,
+                "rows_updated": updated,
+            }
         except Exception as exc:
             _mark_job_error(db_path, job_id, run_id, exc, con=con)
             raise
@@ -429,8 +557,9 @@ def ensure_price_history(query: str, start: Optional[str] = None,
             con.close()
 
 
-def _mark_job_error(db_path: Optional[str], job_id: str, run_id: str,
-                    exc: Exception, con=None) -> None:
+def _mark_job_error(
+    db_path: Optional[str], job_id: str, run_id: str, exc: Exception, con=None
+) -> None:
     """Record the failure on job + run (autocommit, outside any transaction).
     Best effort by design: the original exception must surface either way."""
     fin = _now()
@@ -438,11 +567,14 @@ def _mark_job_error(db_path: Optional[str], job_id: str, run_id: str,
     def _write(c) -> None:
         c.execute(
             "UPDATE ingestion_runs SET status = 'error', error_msg = ?, "
-            "finished_at = ? WHERE run_id = ?", [str(exc), fin, run_id])
+            "finished_at = ? WHERE run_id = ?",
+            [str(exc), fin, run_id],
+        )
         c.execute(
             "UPDATE ingestion_jobs SET status = 'error', error_msg = ?, "
             "run_id = ?, updated_at = ? WHERE job_id = ?",
-            [str(exc), run_id, fin, job_id])
+            [str(exc), run_id, fin, job_id],
+        )
 
     if con is not None:
         _write(con)
@@ -456,12 +588,14 @@ def _mark_job_error(db_path: Optional[str], job_id: str, run_id: str,
 
 
 # --------------------------------------------------------------------- readers
-def get_job_status(job_id: str, db_path: Optional[str] = None
-                   ) -> Optional[Dict[str, Any]]:
+def get_job_status(
+    job_id: str, db_path: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
     """Job envelope + linked run record. Read-only, no network."""
     con = get_conn(db_path, read_only=True)
     try:
-        row = con.execute("""
+        row = con.execute(
+            """
             SELECT j.job_id, j.kind, j.status, j.run_id, j.requester,
                    j.error_msg, j.created_at, j.updated_at,
                    r.provider, r.provider_reason, r.rows_written,
@@ -469,20 +603,37 @@ def get_job_status(job_id: str, db_path: Optional[str] = None
             FROM ingestion_jobs j
             LEFT JOIN ingestion_runs r ON j.run_id = r.run_id
             WHERE j.job_id = ?
-        """, [job_id]).fetchone()
+        """,
+            [job_id],
+        ).fetchone()
         if row is None:
             return None
-        cols = ["job_id", "kind", "status", "run_id", "requester", "error_msg",
-                "created_at", "updated_at", "provider", "provider_reason",
-                "rows_written", "started_at", "finished_at"]
+        cols = [
+            "job_id",
+            "kind",
+            "status",
+            "run_id",
+            "requester",
+            "error_msg",
+            "created_at",
+            "updated_at",
+            "provider",
+            "provider_reason",
+            "rows_written",
+            "started_at",
+            "finished_at",
+        ]
         return dict(zip(cols, row))
     finally:
         con.close()
 
 
-def get_price_summary(query: str, start: Optional[str] = None,
-                      end: Optional[str] = None,
-                      db_path: Optional[str] = None) -> Dict[str, Any]:
+def get_price_summary(
+    query: str,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    db_path: Optional[str] = None,
+) -> Dict[str, Any]:
     """Bounded price metrics for one listing. Read-only, no network, and no
     raw OHLCV bars in the output (plan v3.1 go/no-go)."""
     cand = _resolve_single(query, db_path=db_path)
@@ -502,17 +653,24 @@ def get_price_summary(query: str, start: Optional[str] = None,
         if end:
             where.append("date <= ?")
             params.append(end)
-        df = con.execute(f"""
+        df = con.execute(
+            f"""
             SELECT date, adj_close FROM prices_daily
-            WHERE {' AND '.join(where)} AND adj_close IS NOT NULL
+            WHERE {" AND ".join(where)} AND adj_close IS NOT NULL
             ORDER BY date
-        """, params).fetch_df()
+        """,
+            params,
+        ).fetch_df()
     finally:
         con.close()
     if df.empty:
-        return {"listing_id": cand.get("listing_id"), "symbol": symbol,
-                "n_obs": 0, "note": "no data in the hub for this range; "
-                "use ensure_price_history to ingest"}
+        return {
+            "listing_id": cand.get("listing_id"),
+            "symbol": symbol,
+            "n_obs": 0,
+            "note": "no data in the hub for this range; "
+            "use ensure_price_history to ingest",
+        }
     px = df["adj_close"].astype(float)
     rets = px.pct_change().dropna()
     last_date = pd.Timestamp(df["date"].iloc[-1]).date()
@@ -526,6 +684,6 @@ def get_price_summary(query: str, start: Optional[str] = None,
         "lag_days": (datetime.now(timezone.utc).date() - last_date).days,
         "last_adj_close": float(px.iloc[-1]),
         "total_return_pct": float((px.iloc[-1] / px.iloc[0] - 1) * 100),
-        "ann_vol_pct": float(rets.std() * (252 ** 0.5) * 100) if len(rets) > 1 else None,
+        "ann_vol_pct": float(rets.std() * (252**0.5) * 100) if len(rets) > 1 else None,
         "max_drawdown_pct": float(((px / px.cummax()) - 1).min() * 100),
     }

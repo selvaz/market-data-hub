@@ -3,7 +3,10 @@
 Dates authorize a fetch; the publication must independently confirm its edition.
 No dataset update or retrieval timestamp is promoted to a release date.
 """
-EUROSTAT_SCHEDULE = "https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar"
+
+EUROSTAT_SCHEDULE = (
+    "https://ec.europa.eu/eurostat/news/euro-indicators/release-calendar"
+)
 EDITIONS = {
     "us_umich_sentiment": {
         "2026-09-11": ("2026-09", "preliminary", "10:00"),
@@ -77,8 +80,18 @@ EDITIONS = {
     },
 }
 SCHEDULES = {family: EUROSTAT_SCHEDULE for family in EDITIONS}
-SCHEDULES["uk_retail_sales"] = "https://www.ons.gov.uk/releasecalendar?keywords=retail%20sales&release-type=type-upcoming"
-SCHEDULES["us_new_home_sales"] = "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
-SCHEDULES["uk_total_pay"] = "https://www.ons.gov.uk/releasecalendar?keywords=labour+market&release-type=type-upcoming"
-SCHEDULES["ea_ec_surveys"] = "https://ec.europa.eu/economy_finance/db_indicators/surveys/documents/calendar/Publication%20dates%202026.pdf"
-SCHEDULES["us_umich_sentiment"] = "https://data.sca.isr.umich.edu/fetchdoc.php?docid=79628"
+SCHEDULES["uk_retail_sales"] = (
+    "https://www.ons.gov.uk/releasecalendar?keywords=retail%20sales&release-type=type-upcoming"
+)
+SCHEDULES["us_new_home_sales"] = (
+    "https://www.census.gov/economic-indicators/calendar-listview-2026.html"
+)
+SCHEDULES["uk_total_pay"] = (
+    "https://www.ons.gov.uk/releasecalendar?keywords=labour+market&release-type=type-upcoming"
+)
+SCHEDULES["ea_ec_surveys"] = (
+    "https://ec.europa.eu/economy_finance/db_indicators/surveys/documents/calendar/Publication%20dates%202026.pdf"
+)
+SCHEDULES["us_umich_sentiment"] = (
+    "https://data.sca.isr.umich.edu/fetchdoc.php?docid=79628"
+)

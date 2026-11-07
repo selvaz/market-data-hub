@@ -8,6 +8,7 @@ on our list. All WEO indicators are annual.
 
 Canonical output for macro_panel (same columns as worldbank.py).
 """
+
 from __future__ import annotations
 
 import time
@@ -19,9 +20,21 @@ import requests
 
 _BASE = "https://www.imf.org/external/datamapper/api/v1"
 
-_COLS = ["date", "country_iso3", "indicator_id", "value", "indicator_name",
-         "pillar", "orientation", "source", "provider_dataset",
-         "provider_code", "unit", "frequency", "status"]
+_COLS = [
+    "date",
+    "country_iso3",
+    "indicator_id",
+    "value",
+    "indicator_name",
+    "pillar",
+    "orientation",
+    "source",
+    "provider_dataset",
+    "provider_code",
+    "unit",
+    "frequency",
+    "status",
+]
 
 # IMPORTANT about the IMF's Akamai WAF (verified empirically):
 #   - custom UA like "market-data-hub/0.1"  -> 403
@@ -46,20 +59,28 @@ def _get_json(url: str, timeout: int, retries: int, base_sleep: float):
         except Exception as e:
             last = e
             if attempt < retries - 1:
-                is_403 = isinstance(e, requests.HTTPError) and \
-                    getattr(e, "response", None) is not None and \
-                    e.response.status_code == 403
-                wait = (10.0 + 5 * attempt) if is_403 else base_sleep * (2 ** attempt)
+                is_403 = (
+                    isinstance(e, requests.HTTPError)
+                    and getattr(e, "response", None) is not None
+                    and e.response.status_code == 403
+                )
+                wait = (10.0 + 5 * attempt) if is_403 else base_sleep * (2**attempt)
                 time.sleep(wait)
     # retries<=0 means the loop above never ran, leaving `last` unset --
     # raising it directly would then raise None instead of a real error.
     raise last if last else RuntimeError(f"imf: no attempts made (retries={retries})")
 
 
-def fetch_imf(spec: Dict, countries: List[Dict], *,
-              start_year: int = 1990, end_year: Optional[int] = None,
-              timeout: int = 30, retries: int = 3, base_sleep: float = 1.0
-              ) -> pd.DataFrame:
+def fetch_imf(
+    spec: Dict,
+    countries: List[Dict],
+    *,
+    start_year: int = 1990,
+    end_year: Optional[int] = None,
+    timeout: int = 30,
+    retries: int = 3,
+    base_sleep: float = 1.0,
+) -> pd.DataFrame:
     """Download a WEO indicator for the requested countries. Returns a macro_panel frame."""
     # The WEO includes projections ~5-6 years beyond the current year: do NOT
     # truncate at the current year (we would lose the forecasts, needed for
@@ -96,15 +117,23 @@ def fetch_imf(spec: Dict, countries: List[Dict], *,
                 continue
             if y < start_year or y > end_year:
                 continue
-            rows.append({
-                "date": pd.Timestamp(y, 12, 31).date(),
-                "country_iso3": ci["iso3"], "indicator_id": spec["id"],
-                "value": float(val), "indicator_name": spec["name"],
-                "pillar": spec["pillar"], "orientation": spec.get("orientation", 0),
-                "source": "imf", "provider_dataset": spec["dataset"],
-                "provider_code": code, "unit": spec.get("unit"),
-                "frequency": "A", "status": "ok",
-            })
+            rows.append(
+                {
+                    "date": pd.Timestamp(y, 12, 31).date(),
+                    "country_iso3": ci["iso3"],
+                    "indicator_id": spec["id"],
+                    "value": float(val),
+                    "indicator_name": spec["name"],
+                    "pillar": spec["pillar"],
+                    "orientation": spec.get("orientation", 0),
+                    "source": "imf",
+                    "provider_dataset": spec["dataset"],
+                    "provider_code": code,
+                    "unit": spec.get("unit"),
+                    "frequency": "A",
+                    "status": "ok",
+                }
+            )
 
     if not rows:
         return pd.DataFrame(columns=_COLS)

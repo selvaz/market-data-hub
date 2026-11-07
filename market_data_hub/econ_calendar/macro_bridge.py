@@ -47,6 +47,7 @@ but above ``'web'`` (an agency series beats an LLM's reading of a news page).
 And the fill only ever runs against events whose ``actual`` is NULL, so a value
 that came from a real source is never touched.
 """
+
 from __future__ import annotations
 
 import json
@@ -120,16 +121,28 @@ def bridged_indicators(con: duckdb.DuckDBPyConnection) -> list[dict]:
     for chiave, paese, nome, serie, freq, tipo in righe:
         motivo = None
         if tipo not in _IDENTITY_VALUE_TYPES:
-            motivo = (f"value_type {tipo!r} is not a level in the series' own "
-                      f"unit; only {sorted(_IDENTITY_VALUE_TYPES)} bridge without "
-                      f"a transformation")
+            motivo = (
+                f"value_type {tipo!r} is not a level in the series' own "
+                f"unit; only {sorted(_IDENTITY_VALUE_TYPES)} bridge without "
+                f"a transformation"
+            )
         elif freq not in _PERIOD_GRAIN:
-            motivo = (f"frequency {freq!r} has no period grain to match a series "
-                      f"observation against; supported: {sorted(_PERIOD_GRAIN)}")
-        esito.append({"indicator_key": chiave, "country_iso3": paese,
-                      "name": nome, "macro_series_id": serie,
-                      "frequency": freq, "value_type": tipo,
-                      "usable": motivo is None, "reason": motivo})
+            motivo = (
+                f"frequency {freq!r} has no period grain to match a series "
+                f"observation against; supported: {sorted(_PERIOD_GRAIN)}"
+            )
+        esito.append(
+            {
+                "indicator_key": chiave,
+                "country_iso3": paese,
+                "name": nome,
+                "macro_series_id": serie,
+                "frequency": freq,
+                "value_type": tipo,
+                "usable": motivo is None,
+                "reason": motivo,
+            }
+        )
     return esito
 
 
@@ -155,8 +168,11 @@ _VINTAGE_WINDOW_DAYS = 7
 
 
 def _first_vintage(
-    con: duckdb.DuckDBPyConnection, series_id: str, grain: str,
-    reference_date: date, release_date: date,
+    con: duckdb.DuckDBPyConnection,
+    series_id: str,
+    grain: str,
+    reference_date: date,
+    release_date: date,
 ) -> Optional[tuple[date, float, date]]:
     """(observation date, value, vintage date) for the event's period, or None.
 
@@ -192,7 +208,9 @@ def _first_vintage(
     if len({r[0] for r in righe}) != 1:
         return None
     data_oss, valore, vintage = righe[0]
-    if not (release_date <= vintage <= release_date + timedelta(days=_VINTAGE_WINDOW_DAYS)):
+    if not (
+        release_date <= vintage <= release_date + timedelta(days=_VINTAGE_WINDOW_DAYS)
+    ):
         return None
     return data_oss, valore, vintage
 
@@ -229,8 +247,13 @@ def fill_from_macro_series(
         volute = set(indicator_keys)
         indicatori = [i for i in indicatori if i["indicator_key"] in volute]
 
-    esito = {"bridged_indicators": len(indicatori), "candidates": 0,
-             "filled": 0, "no_series_observation": 0, "skipped_future": 0}
+    esito = {
+        "bridged_indicators": len(indicatori),
+        "candidates": 0,
+        "filled": 0,
+        "no_series_observation": 0,
+        "skipped_future": 0,
+    }
     da_scrivere: list[tuple[dict, CalendarObservation, dict]] = []
     for ind in indicatori:
         grana = _PERIOD_GRAIN[ind["frequency"]]
@@ -250,8 +273,9 @@ def fill_from_macro_series(
             if release_utc > adesso:
                 esito["skipped_future"] += 1
                 continue
-            trovato = _first_vintage(con, ind["macro_series_id"], grana,
-                                     reference_date, release_utc.date())
+            trovato = _first_vintage(
+                con, ind["macro_series_id"], grana, reference_date, release_utc.date()
+            )
             if trovato is None:
                 # One counter for both refusals on purpose: neither is an
                 # error, and the summary already says how many candidates
@@ -259,29 +283,34 @@ def fill_from_macro_series(
                 esito["no_series_observation"] += 1
                 continue
             data_oss, valore, vintage = trovato
-            da_scrivere.append((
-                ind,
-                CalendarObservation(
-                    indicator_key=ind["indicator_key"],
-                    country_iso3=ind["country_iso3"],
-                    source=f"macro_series:{ind['macro_series_id']}",
-                    provenance="derived",
-                    source_event_name=ind["name"],
-                    release_utc=release_utc,
-                    reference_period=periodo,
-                    reference_date=reference_date,
-                    actual=_formatta(valore, ind["value_type"]),
-                ),
-                {"event_id": event_id, "observation_date": data_oss,
-                 "vintage_date": vintage, "value": valore,
-                 "reference_date": reference_date},
-            ))
+            da_scrivere.append(
+                (
+                    ind,
+                    CalendarObservation(
+                        indicator_key=ind["indicator_key"],
+                        country_iso3=ind["country_iso3"],
+                        source=f"macro_series:{ind['macro_series_id']}",
+                        provenance="derived",
+                        source_event_name=ind["name"],
+                        release_utc=release_utc,
+                        reference_period=periodo,
+                        reference_date=reference_date,
+                        actual=_formatta(valore, ind["value_type"]),
+                    ),
+                    {
+                        "event_id": event_id,
+                        "observation_date": data_oss,
+                        "vintage_date": vintage,
+                        "value": valore,
+                        "reference_date": reference_date,
+                    },
+                )
+            )
 
     if not da_scrivere:
         return esito
 
-    risultato = ingest_observations(
-        con, [o for _, o, _ in da_scrivere], run_id=run_id)
+    risultato = ingest_observations(con, [o for _, o, _ in da_scrivere], run_id=run_id)
     esito["filled"] = risultato["observations"]
     ora = datetime.now(timezone.utc)
     for ind, _, dettaglio in da_scrivere:
@@ -292,17 +321,27 @@ def fill_from_macro_series(
                  technical_source, run_id)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
-            [dettaglio["event_id"], ora, f"macro_series:{ind['macro_series_id']}",
-             json.dumps({
-                 "check": "macro_series_fill",
-                 "macro_series_id": ind["macro_series_id"],
-                 "series_observation_date": str(dettaglio["observation_date"]),
-                 "series_first_vintage": str(dettaglio["vintage_date"]),
-                 "value": dettaglio["value"],
-                 "event_reference_date": str(dettaglio["reference_date"]),
-                 "note": ("filled from the hub's own macro series, first "
-                          "vintage; no source published the value"),
-             }, ensure_ascii=False),
-             f"macro_series:{ind['macro_series_id']}", run_id],
+            [
+                dettaglio["event_id"],
+                ora,
+                f"macro_series:{ind['macro_series_id']}",
+                json.dumps(
+                    {
+                        "check": "macro_series_fill",
+                        "macro_series_id": ind["macro_series_id"],
+                        "series_observation_date": str(dettaglio["observation_date"]),
+                        "series_first_vintage": str(dettaglio["vintage_date"]),
+                        "value": dettaglio["value"],
+                        "event_reference_date": str(dettaglio["reference_date"]),
+                        "note": (
+                            "filled from the hub's own macro series, first "
+                            "vintage; no source published the value"
+                        ),
+                    },
+                    ensure_ascii=False,
+                ),
+                f"macro_series:{ind['macro_series_id']}",
+                run_id,
+            ],
         )
     return esito

@@ -4,6 +4,7 @@ The dashboard deliberately reports facts, provenance and cross-country raw
 percentiles. It does not contain investment scores, cycle labels, or any
 downstream analytical interpretation.
 """
+
 from __future__ import annotations
 
 import html
@@ -80,18 +81,28 @@ def _label_fx(country: dict[str, Any]) -> str:
     return f"FX regime: {regime}"
 
 
-def _fuel_trade(values: dict[str, dict[str, Any]], reference_year: int) -> dict[str, Any]:
+def _fuel_trade(
+    values: dict[str, dict[str, Any]], reference_year: int
+) -> dict[str, Any]:
     inputs = [values.get(key, {}) for key in _ENERGY_INPUTS]
     raw = [item.get("value") for item in inputs]
     years = [_year(item.get("date")) for item in inputs]
     if any(value is None for value in raw) or any(year is None for year in years):
-        return {"status": "unavailable", "label": "Fuel trade: unavailable", "as_of": None,
-                "value": None}
+        return {
+            "status": "unavailable",
+            "label": "Fuel trade: unavailable",
+            "as_of": None,
+            "value": None,
+        }
 
     as_of = min(years)
     if reference_year - as_of > MAX_TAG_AGE_YEARS:
-        return {"status": "stale", "label": f"Fuel trade: stale ({as_of})", "as_of": as_of,
-                "value": None}
+        return {
+            "status": "stale",
+            "label": f"Fuel trade: stale ({as_of})",
+            "as_of": as_of,
+            "value": None,
+        }
 
     fuel_exports, fuel_imports, exports_gdp, imports_gdp = raw
     net = fuel_exports * exports_gdp / 100.0 - fuel_imports * imports_gdp / 100.0
@@ -105,11 +116,17 @@ def _fuel_trade(values: dict[str, dict[str, Any]], reference_year: int) -> dict[
         position = "exporter"
     else:
         position = "strong exporter"
-    return {"status": "fresh", "label": f"Net fuel trade: {position}", "as_of": as_of,
-            "value": round(net, 2)}
+    return {
+        "status": "fresh",
+        "label": f"Net fuel trade: {position}",
+        "as_of": as_of,
+        "value": round(net, 2),
+    }
 
 
-def _latest_values(con, indicator_ids: list[str], reference_date: date) -> dict[str, dict[str, dict[str, Any]]]:
+def _latest_values(
+    con, indicator_ids: list[str], reference_date: date
+) -> dict[str, dict[str, dict[str, Any]]]:
     if not indicator_ids:
         return {}
     placeholders = ",".join("?" * len(indicator_ids))
@@ -147,11 +164,17 @@ def _country_data_status(con, reference_date: date) -> dict[str, dict[str, Any]]
         """,
         [reference_date, reference_date],
     ).fetch_df()
-    return {str(r["country_iso3"]): {key: _scalar(r[key]) for key in r.index if key != "country_iso3"}
-            for _, r in df.iterrows()}
+    return {
+        str(r["country_iso3"]): {
+            key: _scalar(r[key]) for key in r.index if key != "country_iso3"
+        }
+        for _, r in df.iterrows()
+    }
 
 
-def _series(con, indicator_ids: list[str]) -> tuple[dict[str, dict[str, list[dict[str, Any]]]], dict[str, dict[str, str]]]:
+def _series(
+    con, indicator_ids: list[str]
+) -> tuple[dict[str, dict[str, list[dict[str, Any]]]], dict[str, dict[str, str]]]:
     placeholders = ",".join("?" * len(indicator_ids))
     query = f"""
         SELECT country_iso3, indicator_id, year(date) AS year, value, unit,
@@ -169,11 +192,13 @@ def _series(con, indicator_ids: list[str]) -> tuple[dict[str, dict[str, list[dic
     metadata: dict[str, dict[str, str]] = {}
     for _, row in df.iterrows():
         iso, iid = str(row["country_iso3"]), str(row["indicator_id"])
-        series.setdefault(iso, {}).setdefault(iid, []).append({
-            "year": int(row["year"]),
-            "value": round(float(row["value"]), 4),
-            "dataset": str(row["provider_dataset"] or ""),
-        })
+        series.setdefault(iso, {}).setdefault(iid, []).append(
+            {
+                "year": int(row["year"]),
+                "value": round(float(row["value"]), 4),
+                "dataset": str(row["provider_dataset"] or ""),
+            }
+        )
         metadata[iid] = {
             "name": str(row["indicator_name"] or iid),
             "unit": str(row["unit"] or ""),
@@ -181,7 +206,9 @@ def _series(con, indicator_ids: list[str]) -> tuple[dict[str, dict[str, list[dic
     return series, metadata
 
 
-def _percentiles(con, indicator_specs: list[tuple[str, str, str]], completed_year: int) -> dict[str, dict[str, Any]]:
+def _percentiles(
+    con, indicator_specs: list[tuple[str, str, str]], completed_year: int
+) -> dict[str, dict[str, Any]]:
     result: dict[str, dict[str, Any]] = {}
     for indicator_id, label, unit in indicator_specs:
         period = con.execute(
@@ -208,10 +235,14 @@ def _percentiles(con, indicator_specs: list[tuple[str, str, str]], completed_yea
         for rank, (_, row) in enumerate(df.iterrows()):
             percentile = 50 if count == 1 else round(100 * rank / (count - 1))
             by_country[str(row["country_iso3"])] = {
-                "value": round(float(row["value"]), 3), "percentile": percentile,
+                "value": round(float(row["value"]), 3),
+                "percentile": percentile,
             }
         result[indicator_id] = {
-            "label": label, "unit": unit, "year": _year(period), "n": count,
+            "label": label,
+            "unit": unit,
+            "year": _year(period),
+            "n": count,
             "countries": by_country,
         }
     return result
@@ -259,14 +290,25 @@ def collect_dashboard(con, *, now: Optional[datetime] = None) -> dict[str, Any]:
             "market": str(country.get("development") or "Unknown"),
             "currency": "EUR" if country.get("euro") else None,
             "fx_regime": str(country.get("fx_regime") or "unknown").replace("_", " "),
-            "imf_arrangement": str(country.get("imf_program_type") or "") if country.get("imf_program") else None,
+            "imf_arrangement": str(country.get("imf_program_type") or "")
+            if country.get("imf_program")
+            else None,
             "tags": tags,
             "fuel": fuel,
-            "status": status.get(iso, {"latest_period": None, "forecast_to": None,
-                                        "ingested_at": None, "indicator_count": 0}),
+            "status": status.get(
+                iso,
+                {
+                    "latest_period": None,
+                    "forecast_to": None,
+                    "ingested_at": None,
+                    "indicator_count": 0,
+                },
+            ),
             "series": series.get(iso, {}),
             "percentiles": {
-                indicator_id: {key: value for key, value in details.items() if key != "countries"}
+                indicator_id: {
+                    key: value for key, value in details.items() if key != "countries"
+                }
                 | {"country": details["countries"].get(iso)}
                 for indicator_id, details in percentiles.items()
                 if details["countries"].get(iso) is not None
@@ -278,7 +320,10 @@ def collect_dashboard(con, *, now: Optional[datetime] = None) -> dict[str, Any]:
         "reference_year": reference_year,
         "completed_year": completed_year,
         "countries": countries,
-        "chart_indicators": [{"id": iid, "label": label, "unit": unit} for iid, label, unit in CHART_INDICATORS],
+        "chart_indicators": [
+            {"id": iid, "label": label, "unit": unit}
+            for iid, label, unit in CHART_INDICATORS
+        ],
         "indicator_metadata": metadata,
     }
 
@@ -314,7 +359,11 @@ def _display(value: Any, digits: int = 1) -> str:
 
 
 def _svg_line(points: list[dict[str, Any]], completed_year: int) -> str:
-    valid = [p for p in points if p.get("value") is not None and math.isfinite(float(p["value"]))]
+    valid = [
+        p
+        for p in points
+        if p.get("value") is not None and math.isfinite(float(p["value"]))
+    ]
     if len(valid) < 2:
         return '<svg viewBox="0 0 520 180"><text x="12" y="90" fill="#667085">No comparable series</text></svg>'
     width, height, left, right, top, bottom = 520, 180, 42, 12, 10, 26
@@ -327,7 +376,9 @@ def _svg_line(points: list[dict[str, Any]], completed_year: int) -> str:
     low, high = low - pad, high + pad
 
     def sx(year: int) -> float:
-        return left + (year - min(years)) / (max(years) - min(years) or 1) * (width - left - right)
+        return left + (year - min(years)) / (max(years) - min(years) or 1) * (
+            width - left - right
+        )
 
     def sy(value: float) -> float:
         return top + (1 - (value - low) / (high - low)) * (height - top - bottom)
@@ -337,13 +388,16 @@ def _svg_line(points: list[dict[str, Any]], completed_year: int) -> str:
         for index, p in enumerate(valid)
     )
     forecast_start = next(
-        (index for index, p in enumerate(valid)
-         if p.get("dataset") == "WEO" and int(p["year"]) > completed_year),
+        (
+            index
+            for index, p in enumerate(valid)
+            if p.get("dataset") == "WEO" and int(p["year"]) > completed_year
+        ),
         None,
     )
     dashed = ""
     if forecast_start is not None and forecast_start > 0:
-        forecast_points = valid[forecast_start - 1:]
+        forecast_points = valid[forecast_start - 1 :]
         forecast_path = " ".join(
             f"{'M' if index == 0 else 'L'}{sx(int(p['year'])):.1f} {sy(float(p['value'])):.1f}"
             for index, p in enumerate(forecast_points)
@@ -357,12 +411,14 @@ def _svg_line(points: list[dict[str, Any]], completed_year: int) -> str:
         f'<text x="2" y="{height - bottom}" font-size="10" fill="#667085">{low:.1f}</text>'
         f'<text x="{left}" y="{height - 7}" font-size="10" fill="#667085">{min(years)}</text>'
         f'<text x="{width - right - 28}" y="{height - 7}" font-size="10" fill="#667085">{max(years)}</text>'
-        '</svg>'
+        "</svg>"
     )
 
 
 def _country_sheet_html(country: dict[str, Any], data: dict[str, Any]) -> str:
-    tags = "".join(f'<span class="tag">{html.escape(tag)}</span>' for tag in country["tags"])
+    tags = "".join(
+        f'<span class="tag">{html.escape(tag)}</span>' for tag in country["tags"]
+    )
     facts = [
         ("Latest source period", country["status"].get("latest_period")),
         ("WEO forecast horizon", country["status"].get("forecast_to")),
@@ -379,57 +435,57 @@ def _country_sheet_html(country: dict[str, Any], data: dict[str, Any]) -> str:
         pct = int(point["percentile"])
         percentile_html += (
             '<div class="percentile">'
-            f'<div><span>{html.escape(percentile["label"])}</span><b>{pct}th</b></div>'
+            f"<div><span>{html.escape(percentile['label'])}</span><b>{pct}th</b></div>"
             f'<div class="bar"><i style="width:{pct}%"></i></div>'
-            f'<small>{html.escape(_display(point["value"]))} {html.escape(percentile["unit"])}'
-            f' | {percentile["year"]} | {percentile["n"]} countries</small></div>'
+            f"<small>{html.escape(_display(point['value']))} {html.escape(percentile['unit'])}"
+            f" | {percentile['year']} | {percentile['n']} countries</small></div>"
         )
     if not percentile_html:
         percentile_html = '<p class="meta">No comparable annual percentiles.</p>'
     charts = ""
     for spec in data["chart_indicators"]:
-        chart_id = f'chart-{html.escape(country["iso"])}-{html.escape(spec["id"])}'
+        chart_id = f"chart-{html.escape(country['iso'])}-{html.escape(spec['id'])}"
         svg = _svg_line(country["series"].get(spec["id"], []), data["completed_year"])
         charts += (
             f'<article class="chart" id="{chart_id}">'
             f'<a class="chart-expand" href="#{chart_id}" aria-label="Expand chart">'
-            f'<h3>{html.escape(spec["label"])}</h3><small>{html.escape(spec["unit"])}</small>'
-            f'{svg}'
-            '</a>'
+            f"<h3>{html.escape(spec['label'])}</h3><small>{html.escape(spec['unit'])}</small>"
+            f"{svg}"
+            "</a>"
             f'<a class="chart-close" href="#" aria-label="Close">&times;</a>'
-            '</article>'
+            "</article>"
         )
     fuel_note = country["fuel"]["status"]
     if fuel_note == "fresh":
-        fuel_note += f' | {_display(country["fuel"].get("value"))}% GDP'
+        fuel_note += f" | {_display(country['fuel'].get('value'))}% GDP"
     return (
         f'<details id="country-{html.escape(country["iso"])}" class="country">'
-        f'<summary><b>{html.escape(country["name"])}</b> <span>{html.escape(country["iso"])} | '
-        f'{html.escape(country["region"])}</span></summary>'
+        f"<summary><b>{html.escape(country['name'])}</b> <span>{html.escape(country['iso'])} | "
+        f"{html.escape(country['region'])}</span></summary>"
         '<div class="country-body">'
         f'<div class="tags">{tags}</div>'
         f'<p class="meta">{html.escape(country["region_geo"])} | Fuel data: {html.escape(fuel_note)}</p>'
         f'<div class="facts">{facts_html}</div>'
         f'<h3>Peer percentiles</h3><div class="percentiles">{percentile_html}</div>'
         f'<h3>Historical series</h3><div class="charts">{charts}</div>'
-        '</div></details>'
+        "</div></details>"
     )
 
 
 def _static_dashboard(data: dict[str, Any]) -> str:
     countries = sorted(data["countries"].values(), key=lambda item: item["name"])
     rows = "".join(
-        '<tr>'
+        "<tr>"
         f'<td><a href="#country-{html.escape(country["iso"])}">{html.escape(country["name"])}</a><br>'
         f'<span class="meta">{html.escape(country["iso"])} | {html.escape(country["region"])}</span></td>'
-        f'<td>{html.escape(country["market"])}</td><td>{html.escape(country["income"])}</td>'
-        f'<td>{html.escape(country["currency"] or country["fx_regime"])}</td>'
-        f'<td>{html.escape(country["imf_arrangement"] or "-")}</td>'
-        f'<td>{html.escape(country["fuel"]["label"])}'
-        f'{" (" + _display(country["fuel"].get("value")) + "% GDP)" if country["fuel"].get("value") is not None else ""}</td>'
-        f'<td>{html.escape(_display(country["status"].get("latest_period"), 0))}</td>'
-        f'<td>{html.escape(_display(country["status"].get("forecast_to"), 0))}</td>'
-        '</tr>'
+        f"<td>{html.escape(country['market'])}</td><td>{html.escape(country['income'])}</td>"
+        f"<td>{html.escape(country['currency'] or country['fx_regime'])}</td>"
+        f"<td>{html.escape(country['imf_arrangement'] or '-')}</td>"
+        f"<td>{html.escape(country['fuel']['label'])}"
+        f"{' (' + _display(country['fuel'].get('value')) + '% GDP)' if country['fuel'].get('value') is not None else ''}</td>"
+        f"<td>{html.escape(_display(country['status'].get('latest_period'), 0))}</td>"
+        f"<td>{html.escape(_display(country['status'].get('forecast_to'), 0))}</td>"
+        "</tr>"
         for country in countries
     )
     sheets = "".join(_country_sheet_html(country, data) for country in countries)
@@ -455,7 +511,9 @@ def render_html(data: dict[str, Any]) -> str:
     return _static_dashboard(data)
 
 
-def write_dashboard(db_path: Optional[str] = None, *, now: Optional[datetime] = None) -> Path:
+def write_dashboard(
+    db_path: Optional[str] = None, *, now: Optional[datetime] = None
+) -> Path:
     """Generate the dashboard and return its HTML path."""
     now = now or datetime.now(timezone.utc)
     con = get_conn(db_path, read_only=True)

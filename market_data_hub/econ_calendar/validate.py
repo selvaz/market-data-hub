@@ -50,6 +50,7 @@ make ``import market_data_hub.econ_calendar.validate`` fail wherever
 lazybridge is not installed, for every caller, even one that only wants
 ``run_validation``'s signature or never calls it.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -69,7 +70,7 @@ from market_data_hub.econ_calendar.ingest import (
 # A compact figure at the START of a reply field: '2.5%', '-42.0K', '162K',
 # '$-73.261 B', '54.6'. Anchored, so a sentence that merely contains a number
 # ('rose for a third month (about 2.5%)') is not a figure.
-_FIGURE = re.compile(r'^\s*(\$?[-+]?\$?\d[\d,]*(?:\.\d+)?\s?(?:%|[KMBT]\b)?)')
+_FIGURE = re.compile(r"^\s*(\$?[-+]?\$?\d[\d,]*(?:\.\d+)?\s?(?:%|[KMBT]\b)?)")
 
 
 def _figure(testo: Optional[str]) -> Optional[str]:
@@ -88,6 +89,7 @@ def _figure(testo: Optional[str]) -> Optional[str]:
         return None
     figura = m.group(1).strip()
     return figura if parse_number(figura) is not None else None
+
 
 _SYSTEM = (
     "You verify one economic data release against what was actually "
@@ -114,8 +116,17 @@ _SYSTEM = (
 )
 
 
-_CAMPI = ("event_id", "indicator_key", "indicator_name", "area",
-          "country_iso3", "release_utc", "actual", "previous", "consensus")
+_CAMPI = (
+    "event_id",
+    "indicator_key",
+    "indicator_name",
+    "area",
+    "country_iso3",
+    "release_utc",
+    "actual",
+    "previous",
+    "consensus",
+)
 
 # A value the bridge already took from an agency series is not re-checked
 # against the web. The pass deliberately includes events that HAVE an actual,
@@ -179,7 +190,10 @@ def window_start(now_utc: datetime, lookback_days: int) -> datetime:
 
 
 def _t1_events_for_window(
-    con: duckdb.DuckDBPyConnection, *, now_utc: datetime, lookback_days: int,
+    con: duckdb.DuckDBPyConnection,
+    *,
+    now_utc: datetime,
+    lookback_days: int,
 ) -> list[dict]:
     """Recent, safely-past T1 releases, including ones awaiting an actual."""
     earliest = window_start(now_utc.replace(tzinfo=None), lookback_days)
@@ -188,16 +202,22 @@ def _t1_events_for_window(
     # whether it has already happened. Half an hour of grace lets the wires
     # catch up with the print.
     latest = now_utc.replace(tzinfo=None) - timedelta(minutes=30)
-    return _righe_a_eventi(con.execute(
-        _SELECT_EVENTI + "      AND e.release_utc BETWEEN ? AND ?\n"
-        "    ORDER BY e.release_utc",
-        [earliest, latest],
-    ).fetchall())
+    return _righe_a_eventi(
+        con.execute(
+            _SELECT_EVENTI + "      AND e.release_utc BETWEEN ? AND ?\n"
+            "    ORDER BY e.release_utc",
+            [earliest, latest],
+        ).fetchall()
+    )
 
 
 def _t1_events_for_catchup(
-    con: duckdb.DuckDBPyConnection, *, now_utc: datetime, lookback_days: int,
-    catchup_days: int, max_attempts: int,
+    con: duckdb.DuckDBPyConnection,
+    *,
+    now_utc: datetime,
+    lookback_days: int,
+    catchup_days: int,
+    max_attempts: int,
 ) -> list[dict]:
     """Older T1 releases that still have no value, and have attempts left.
 
@@ -219,8 +239,10 @@ def _t1_events_for_catchup(
     adesso = now_utc.replace(tzinfo=None)
     earliest = window_start(adesso, catchup_days)
     latest = window_start(adesso, lookback_days)
-    return _righe_a_eventi(con.execute(
-        _SELECT_EVENTI + """
+    return _righe_a_eventi(
+        con.execute(
+            _SELECT_EVENTI
+            + """
           AND e.actual IS NULL
           AND e.release_utc >= ? AND e.release_utc < ?
           AND (
@@ -230,12 +252,19 @@ def _t1_events_for_catchup(
                     = 'actual_catchup'
           ) < ?
         ORDER BY e.release_utc DESC""",
-        [earliest, latest, max_attempts],
-    ).fetchall())
+            [earliest, latest, max_attempts],
+        ).fetchall()
+    )
 
 
-def _record_attempt(con: duckdb.DuckDBPyConnection, evento: dict, esito: str,
-                    *, model: str, run_id: Optional[str]) -> None:
+def _record_attempt(
+    con: duckdb.DuckDBPyConnection,
+    evento: dict,
+    esito: str,
+    *,
+    model: str,
+    run_id: Optional[str],
+) -> None:
     """Mark that this event was looked for and not found, so the cap can bite.
 
     Written to ``calendar_event_notes``, which already carries a
@@ -256,12 +285,23 @@ def _record_attempt(con: duckdb.DuckDBPyConnection, evento: dict, esito: str,
              not_found, run_id)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """,
-        [evento["event_id"], datetime.now(timezone.utc), model, n + 1,
-         json.dumps({"check": "actual_catchup", "attempt": n + 1,
-                     "outcome": esito,
-                     "release_utc": str(evento["release_utc"])},
-                    ensure_ascii=False),
-         f"published actual: {esito}", run_id],
+        [
+            evento["event_id"],
+            datetime.now(timezone.utc),
+            model,
+            n + 1,
+            json.dumps(
+                {
+                    "check": "actual_catchup",
+                    "attempt": n + 1,
+                    "outcome": esito,
+                    "release_utc": str(evento["release_utc"]),
+                },
+                ensure_ascii=False,
+            ),
+            f"published actual: {esito}",
+            run_id,
+        ],
     )
 
 
@@ -274,15 +314,18 @@ def _prompt(evento: dict) -> str:
         f"previous: {evento['previous'] or 'N/D'}, "
         f"consensus: {evento['consensus'] or 'N/D'}\n"
         "Find the published actual and previous. "
-        + ("Our actual is missing: return FOUND with the published actual; "
-           "MATCH/MISMATCH cannot apply until one is recorded."
-           if not evento["actual"] else
-           "Check our calendar's actual and previous against it.")
+        + (
+            "Our actual is missing: return FOUND with the published actual; "
+            "MATCH/MISMATCH cannot apply until one is recorded."
+            if not evento["actual"]
+            else "Check our calendar's actual and previous against it."
+        )
     )
 
 
-def _ask(prompt: str, *, model: str, effort: str, max_turns: int,
-          timeout_s: float) -> str:
+def _ask(
+    prompt: str, *, model: str, effort: str, max_turns: int, timeout_s: float
+) -> str:
     """One web-search call through Claude Code -- no API key, the local
     subscription speaks for it, the same as investmentcommittee's research step.
 
@@ -310,14 +353,20 @@ def _ask(prompt: str, *, model: str, effort: str, max_turns: int,
     async def _chiedi() -> str:
         agente = Agent(
             name="econ_calendar_validate",
-            engine=ClaudeCodeEngine(model, system=_SYSTEM, web=True,
-                                    reasoning_effort=effort, max_turns=max_turns),
+            engine=ClaudeCodeEngine(
+                model,
+                system=_SYSTEM,
+                web=True,
+                reasoning_effort=effort,
+                max_turns=max_turns,
+            ),
         )
         busta = await agente.run(prompt)
         if not busta.ok:
             errore = busta.model_dump().get("error") or {}
             raise RuntimeError(
-                f"{errore.get('type', 'Error')}: {errore.get('message', 'call failed')}")
+                f"{errore.get('type', 'Error')}: {errore.get('message', 'call failed')}"
+            )
         return busta.text()
 
     return asyncio.run(asyncio.wait_for(_chiedi(), timeout=timeout_s))
@@ -340,22 +389,38 @@ def _parse(testo: str) -> dict:
         chiave, _, valore = riga.partition(":")
         chiave, valore = chiave.strip().upper(), valore.strip()
         if chiave == "STATUS":
-            stato = valore.upper() if valore.upper() in (
-                "MATCH", "MISMATCH", "FOUND", "UNVERIFIED") else "UNVERIFIED"
+            stato = (
+                valore.upper()
+                if valore.upper() in ("MATCH", "MISMATCH", "FOUND", "UNVERIFIED")
+                else "UNVERIFIED"
+            )
         elif chiave == "ACTUAL":
             campi["actual"] = valore
         elif chiave == "PREVIOUS":
             campi["previous"] = valore
         elif chiave == "NOTE":
             campi["note"] = valore
-    urls = [r.strip().lstrip("-* ").strip() for r in coda.splitlines()
-            if r.strip().startswith(("http", "- http", "* http"))]
-    return {"status": stato, **campi,
-            "sources": [u for u in urls if u.startswith("http")][:5]}
+    urls = [
+        r.strip().lstrip("-* ").strip()
+        for r in coda.splitlines()
+        if r.strip().startswith(("http", "- http", "* http"))
+    ]
+    return {
+        "status": stato,
+        **campi,
+        "sources": [u for u in urls if u.startswith("http")][:5],
+    }
 
 
-def _write_note(con: duckdb.DuckDBPyConnection, evento: dict, esito: dict,
-                *, model: str, run_id: Optional[str], check: str = "calendar_vs_published") -> None:
+def _write_note(
+    con: duckdb.DuckDBPyConnection,
+    evento: dict,
+    esito: dict,
+    *,
+    model: str,
+    run_id: Optional[str],
+    check: str = "calendar_vs_published",
+) -> None:
     """Record what the web check found, next to what the calendar had.
 
     Two kinds of note share this function. ``check="calendar_vs_published"``
@@ -371,22 +436,36 @@ def _write_note(con: duckdb.DuckDBPyConnection, evento: dict, esito: dict,
     reuses the same table rather than adding a new one, filling only the
     columns a validation check actually has content for.
     """
-    contenuto = json.dumps({
-        "check": check,
-        "calendar": {"actual": evento["actual"], "previous": evento["previous"],
-                     "consensus": evento["consensus"]},
-        "published": {"actual": esito["actual"] or None,
-                       "previous": esito["previous"] or None},
-        "note": esito["note"],
-    }, ensure_ascii=False)
+    contenuto = json.dumps(
+        {
+            "check": check,
+            "calendar": {
+                "actual": evento["actual"],
+                "previous": evento["previous"],
+                "consensus": evento["consensus"],
+            },
+            "published": {
+                "actual": esito["actual"] or None,
+                "previous": esito["previous"] or None,
+            },
+            "note": esito["note"],
+        },
+        ensure_ascii=False,
+    )
     con.execute(
         """
         INSERT INTO calendar_event_notes
             (event_id, generated_at, model, commentary_json, technical_source, run_id)
         VALUES (?, ?, ?, ?, ?, ?)
         """,
-        [evento["event_id"], datetime.now(timezone.utc), model, contenuto,
-         "; ".join(esito["sources"]) or None, run_id],
+        [
+            evento["event_id"],
+            datetime.now(timezone.utc),
+            model,
+            contenuto,
+            "; ".join(esito["sources"]) or None,
+            run_id,
+        ],
     )
 
 
@@ -426,25 +505,41 @@ def run_validation(
     now_utc = datetime.now(timezone.utc)
     if day is not None:
         now_utc = datetime.combine(day, now_utc.timetz())
-    eventi = _t1_events_for_window(
-        con, now_utc=now_utc, lookback_days=lookback_days)
+    eventi = _t1_events_for_window(con, now_utc=now_utc, lookback_days=lookback_days)
     ripasso = _t1_events_for_catchup(
-        con, now_utc=now_utc, lookback_days=lookback_days,
-        catchup_days=catchup_days, max_attempts=max_attempts)
+        con,
+        now_utc=now_utc,
+        lookback_days=lookback_days,
+        catchup_days=catchup_days,
+        max_attempts=max_attempts,
+    )
     # Counted apart from `checked`: 'we looked at 4 releases today' and 'we
     # also went back for 2 older ones nobody had ever filled' are different
     # statements, and folding them together hides whether the backlog is
     # shrinking.
-    esito = {"checked": len(eventi), "match": 0, "mismatch": 0,
-             "unverified": 0, "errors": 0, "filled": 0,
-             "found_unusable": 0, "rechecked": len(ripasso),
-             "refilled": 0, "attempts_exhausted": 0}
+    esito = {
+        "checked": len(eventi),
+        "match": 0,
+        "mismatch": 0,
+        "unverified": 0,
+        "errors": 0,
+        "filled": 0,
+        "found_unusable": 0,
+        "rechecked": len(ripasso),
+        "refilled": 0,
+        "attempts_exhausted": 0,
+    }
     in_ripasso = {e["event_id"] for e in ripasso}
     fills: list[tuple[dict, dict]] = []
     for evento in eventi + ripasso:
         try:
-            testo = _ask(_prompt(evento), model=model, effort=effort,
-                        max_turns=max_turns, timeout_s=timeout_s)
+            testo = _ask(
+                _prompt(evento),
+                model=model,
+                effort=effort,
+                max_turns=max_turns,
+                timeout_s=timeout_s,
+            )
             risultato = _parse(testo)
         except Exception as e:
             # One release's check is the only thing lost: everything already
@@ -454,8 +549,11 @@ def run_validation(
             # the catch-up: an engine failure is not the event's fault, and a
             # week of a missing claude-agent-sdk would otherwise exhaust every
             # event in the backlog without a single search ever having run.
-            print(f'    {evento["indicator_name"]}: could not run '
-                  f'({type(e).__name__}: {str(e)[:120]})', flush=True)
+            print(
+                f"    {evento['indicator_name']}: could not run "
+                f"({type(e).__name__}: {str(e)[:120]})",
+                flush=True,
+            )
             continue
 
         if not evento["actual"]:
@@ -472,17 +570,24 @@ def run_validation(
                 usabile = True
             if evento["event_id"] in in_ripasso and not usabile:
                 _record_attempt(
-                    con, evento,
-                    "unverified" if risultato["status"] == "UNVERIFIED"
+                    con,
+                    evento,
+                    "unverified"
+                    if risultato["status"] == "UNVERIFIED"
                     else "found but unusable",
-                    model=model, run_id=run_id)
+                    model=model,
+                    run_id=run_id,
+                )
             continue
 
         if risultato["status"] == "MISMATCH":
             esito["mismatch"] += 1
             _write_note(con, evento, risultato, model=model, run_id=run_id)
-            print(f'    MISMATCH  {evento["indicator_name"]} '
-                  f'({evento["country_iso3"]}): {risultato["note"][:100]}', flush=True)
+            print(
+                f"    MISMATCH  {evento['indicator_name']} "
+                f"({evento['country_iso3']}): {risultato['note'][:100]}",
+                flush=True,
+            )
         elif risultato["status"] == "MATCH":
             esito["match"] += 1
         else:
@@ -510,11 +615,13 @@ def run_validation(
         ]
         ingest_result = ingest_observations(con, osservazioni, run_id=run_id)
         esito["filled"] = ingest_result["observations"]
-        esito["refilled"] = sum(1 for evento, _ in fills
-                                if evento["event_id"] in in_ripasso)
+        esito["refilled"] = sum(
+            1 for evento, _ in fills if evento["event_id"] in in_ripasso
+        )
         for evento, risultato in fills:
-            _write_note(con, evento, risultato, model=model, run_id=run_id,
-                        check="web_fill")
+            _write_note(
+                con, evento, risultato, model=model, run_id=run_id, check="web_fill"
+            )
 
     # Reported after the writes, so it counts events that are out of attempts
     # *now* rather than events that were out of attempts before this run added
@@ -528,5 +635,7 @@ def run_validation(
                       = 'actual_catchup'
                 GROUP BY event_id
             ) WHERE n >= ?
-            """, [max_attempts]).fetchone()[0]
+            """,
+            [max_attempts],
+        ).fetchone()[0]
     return esito

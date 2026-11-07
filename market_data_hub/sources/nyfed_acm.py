@@ -1,4 +1,5 @@
 """Official NY Fed ACM ten-year monthly CSV and daily workbook, in percent."""
+
 from __future__ import annotations
 
 from io import BytesIO, StringIO
@@ -11,8 +12,15 @@ _XLS_URL = "https://www.newyorkfed.org/medialibrary/media/research/data_indicato
 _CSV_URL = "https://www.newyorkfed.org/medialibrary/media/research/data_indicators/acmPlot_data.csv"
 
 
-def fetch_acm(start: str, end: str, *, meta: dict, timeout: int = 30,
-              retries: int = 3, base_sleep: float = 1.0) -> pd.DataFrame:
+def fetch_acm(
+    start: str,
+    end: str,
+    *,
+    meta: dict,
+    timeout: int = 30,
+    retries: int = 3,
+    base_sleep: float = 1.0,
+) -> pd.DataFrame:
     """Fetch/filter ten-year term premia, preserving provider dates and units."""
     if meta["symbol"] == "NYFED_ACM_TP10_DAILY":
         response = _http_get(_XLS_URL, {}, timeout, retries, base_sleep)
@@ -35,5 +43,15 @@ def fetch_acm(start: str, end: str, *, meta: dict, timeout: int = 30,
     df["frequency"] = meta["frequency"]
     df["country"] = meta["country"]
     df["source"] = "nyfed_acm"
-    return df[["date", "series_id", "value", "series_name", "unit",
-               "frequency", "source", "country"]]
+    return df[
+        [
+            "date",
+            "series_id",
+            "value",
+            "series_name",
+            "unit",
+            "frequency",
+            "source",
+            "country",
+        ]
+    ]

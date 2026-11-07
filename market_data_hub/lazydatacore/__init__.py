@@ -20,6 +20,7 @@ Nothing here has behaviour beyond validation, so every model round-trips
 cleanly through ``model_dump(mode="json")`` / ``model_validate_json`` and
 through ``lazybridge.Store``.
 """
+
 from __future__ import annotations
 
 from market_data_hub.lazydatacore.artifacts import (

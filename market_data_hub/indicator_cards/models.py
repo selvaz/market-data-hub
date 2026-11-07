@@ -1,4 +1,5 @@
 """Strict, immutable context cards; timing screens never establish lead times."""
+
 from __future__ import annotations
 
 from typing import Literal, Optional
@@ -9,7 +10,9 @@ CLASSIFICATION_VERSION = "v2.3"
 
 
 class StrictModel(BaseModel):
-    model_config = ConfigDict(strict=True, extra="forbid", frozen=True, populate_by_name=True)
+    model_config = ConfigDict(
+        strict=True, extra="forbid", frozen=True, populate_by_name=True
+    )
 
 
 class StoreIds(StrictModel):
@@ -28,9 +31,15 @@ class Evidence(StrictModel):
     measurement: Literal["H", "M", "L"]
     mechanism: Literal["strong", "mixed", "weak", "n.a."]
     local_timing: Literal[
-        "v2-pred-pass (US)", "v2-pred-partial (US)",
-        "v2-pred-not-supported (US)", "v2-descriptive (US)",
-        "lit-local", "lit-US", "analogy", "none", "n.a.",
+        "v2-pred-pass (US)",
+        "v2-pred-partial (US)",
+        "v2-pred-not-supported (US)",
+        "v2-descriptive (US)",
+        "lit-local",
+        "lit-US",
+        "analogy",
+        "none",
+        "n.a.",
     ]
 
 
@@ -48,10 +57,15 @@ class PredictiveScreen(StrictModel):
     @model_validator(mode="after")
     def check_horizons(self):
         if (self.status == "PRED-PASS") != bool(self.pass_horizons):
-            raise ValueError("Only PRED-PASS has pass_horizons, and every pass needs horizons")
+            raise ValueError(
+                "Only PRED-PASS has pass_horizons, and every pass needs horizons"
+            )
         if set(self.pass_horizons) & set(self.partial_horizons):
             raise ValueError("A horizon cannot both pass and partially pass")
-        if any(h not in {"3m", "6m", "12m"} for h in self.pass_horizons + self.partial_horizons):
+        if any(
+            h not in {"3m", "6m", "12m"}
+            for h in self.pass_horizons + self.partial_horizons
+        ):
             raise ValueError("Horizon absent from the approved monthly screen")
         return self
 
@@ -62,7 +76,9 @@ class DescriptivePeak(StrictModel):
 
 
 class Timing(StrictModel):
-    timing_class: Literal["LEAD", "COIN", "LAG", "CTX", "UNKNOWN"] = Field(alias="class")
+    timing_class: Literal["LEAD", "COIN", "LAG", "CTX", "UNKNOWN"] = Field(
+        alias="class"
+    )
     basis: Optional[Literal["DESCRIPTIVE", "HYPOTHESIS", "DEFINITION"]]
     reference: str
     class_pair: Optional[str]

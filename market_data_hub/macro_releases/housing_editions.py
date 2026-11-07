@@ -3,6 +3,7 @@
 Only listed editions can be certified. Calendars permit a fetch, never prove a
 publication. The saved issuer reports include the FHFA 2026 calendar.
 """
+
 EDITIONS = {
     "cn_new_home_prices": {
         "2026-09-15": ("2026-08", "regular", "09:30"),
@@ -145,20 +146,36 @@ SCHEDULES = {
     "us_fhfa_hpi": "https://www.fhfa.gov/data/hpi",
     "us_construction_spending": "https://www.census.gov/economic-indicators/calendar-listview-2026.html",
 }
-ZONES = {"cn_new_home_prices": "Asia/Shanghai", "jp_housing_starts": "Asia/Tokyo", "ca_housing_starts": "America/Toronto", "de_building_permits": "Europe/Berlin", "ea_house_purchase_loans": "Europe/Berlin", "ea_house_purchase_cost": "Europe/Berlin"}
-SOURCES = {"cn_new_home_prices": ("NBS", "official", "M"), "jp_housing_starts": ("MLIT", "official", "M"), "ca_housing_starts": ("CMHC", "official", "M"), "de_building_permits": ("Destatis", "official", "M"), "uk_mortgage_approvals": ("BoE", "official", "M"), "uk_hpi": ("HMLR/ONS", "official", "M"), "ea_house_purchase_loans": ("ECB", "official", "M"),
-           "ea_house_purchase_cost": ("ECB", "official", "M"),
-           "ea_hpi": ("Eurostat", "official", "Q"),
-           "us_case_shiller": ("SPDJI", "private", "M"),
-           "us_pending_home_sales": ("NAR", "private", "M"),
-           "us_existing_home_sales": ("NAR", "private", "M"),
-           "us_pmms": ("FreddieMac", "official", "W"),
-           "us_fhfa_hpi": ("FHFA", "official", "M"),
-           "us_construction_spending": ("Census", "official", "M")}
+ZONES = {
+    "cn_new_home_prices": "Asia/Shanghai",
+    "jp_housing_starts": "Asia/Tokyo",
+    "ca_housing_starts": "America/Toronto",
+    "de_building_permits": "Europe/Berlin",
+    "ea_house_purchase_loans": "Europe/Berlin",
+    "ea_house_purchase_cost": "Europe/Berlin",
+}
+SOURCES = {
+    "cn_new_home_prices": ("NBS", "official", "M"),
+    "jp_housing_starts": ("MLIT", "official", "M"),
+    "ca_housing_starts": ("CMHC", "official", "M"),
+    "de_building_permits": ("Destatis", "official", "M"),
+    "uk_mortgage_approvals": ("BoE", "official", "M"),
+    "uk_hpi": ("HMLR/ONS", "official", "M"),
+    "ea_house_purchase_loans": ("ECB", "official", "M"),
+    "ea_house_purchase_cost": ("ECB", "official", "M"),
+    "ea_hpi": ("Eurostat", "official", "Q"),
+    "us_case_shiller": ("SPDJI", "private", "M"),
+    "us_pending_home_sales": ("NAR", "private", "M"),
+    "us_existing_home_sales": ("NAR", "private", "M"),
+    "us_pmms": ("FreddieMac", "official", "W"),
+    "us_fhfa_hpi": ("FHFA", "official", "M"),
+    "us_construction_spending": ("Census", "official", "M"),
+}
 
 
 def reviewed(family, edition):
     from .http import FetchError
+
     try:
         return EDITIONS[family][edition]
     except KeyError:

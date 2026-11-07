@@ -7,6 +7,7 @@ the allowed threshold for its frequency or a configured publication-lag override
 The thresholds are freq-aware: an annual series is not flagged as stalled for
 a normal delay of ~12 months.
 """
+
 from __future__ import annotations
 
 from datetime import date
@@ -27,7 +28,7 @@ STALLED_THRESHOLD_DAYS = {
     "W": 10,
     "M": 95,
     "Q": 230,
-    "A": 550,      # WDI/WGI publish with ~18 months of lag (World Bank)
+    "A": 550,  # WDI/WGI publish with ~18 months of lag (World Bank)
     "UNKNOWN": 30,
 }
 
@@ -49,10 +50,15 @@ def lag_days(last_date, as_of: Optional[date] = None) -> Optional[int]:
     return (ref - ld).days
 
 
-def is_stalled(last_date, freq: Optional[str],
-               as_of: Optional[date] = None, *,
-               max_lag_days: Optional[int] = None,
-               lag_calendar: str = "calendar", holidays=()) -> bool:
+def is_stalled(
+    last_date,
+    freq: Optional[str],
+    as_of: Optional[date] = None,
+    *,
+    max_lag_days: Optional[int] = None,
+    lag_calendar: str = "calendar",
+    holidays=(),
+) -> bool:
     """True when the chosen lag calendar exceeds the override/default limit.
 
     Observation frequency is independent of publication cadence: a daily series
@@ -72,7 +78,11 @@ def is_stalled(last_date, freq: Optional[str],
         # National market-closure dates can be supplied in the series catalog.
         ld = pd.Timestamp(last_date).date()
         ref = as_of or pd.Timestamp.now(tz="UTC").date()
-        lag = int(np.busday_count(ld + pd.Timedelta(days=1),
-                                 ref + pd.Timedelta(days=1),
-                                 holidays=list(holidays)))
+        lag = int(
+            np.busday_count(
+                ld + pd.Timedelta(days=1),
+                ref + pd.Timedelta(days=1),
+                holidays=list(holidays),
+            )
+        )
     return lag > threshold

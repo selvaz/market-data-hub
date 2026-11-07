@@ -5,6 +5,7 @@ upsert.py — atomic upsert DataFrame -> DuckDB via INSERT OR REPLACE.
 All tables have a PRIMARY KEY, so INSERT OR REPLACE replaces conflicting rows
 and inserts new ones. Returns (rows_added, rows_total).
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -16,96 +17,254 @@ import pandas as pd
 # Expected columns per table (guaranteed order in the INSERT)
 _COLUMNS = {
     "fred_series_metadata": [
-        "series_id", "retrieved_at", "title", "units", "units_short",
-        "seasonal_adjustment", "seasonal_adjustment_short", "frequency",
-        "frequency_short", "last_updated", "observation_start", "observation_end",
+        "series_id",
+        "retrieved_at",
+        "title",
+        "units",
+        "units_short",
+        "seasonal_adjustment",
+        "seasonal_adjustment_short",
+        "frequency",
+        "frequency_short",
+        "last_updated",
+        "observation_start",
+        "observation_end",
     ],
     "sovereign_bond_metadata": [
-        "date", "series_id", "isin", "maturity_date", "coupon_percent",
-        "reference_price", "price_type", "selection_rule", "source_url", "updated_at",
+        "date",
+        "series_id",
+        "isin",
+        "maturity_date",
+        "coupon_percent",
+        "reference_price",
+        "price_type",
+        "selection_rule",
+        "source_url",
+        "updated_at",
     ],
     "prices_daily": [
-        "date", "listing_id", "symbol", "open", "high", "low", "close",
-        "adj_close", "volume", "source", "is_live", "updated_at",
+        "date",
+        "listing_id",
+        "symbol",
+        "open",
+        "high",
+        "low",
+        "close",
+        "adj_close",
+        "volume",
+        "source",
+        "is_live",
+        "updated_at",
     ],
     "crypto_ohlcv": [
-        "ts", "symbol", "timeframe", "open", "high", "low", "close",
-        "volume", "volume_quote", "n_trades", "taker_buy_base",
-        "is_closed", "updated_at",
+        "ts",
+        "symbol",
+        "timeframe",
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume",
+        "volume_quote",
+        "n_trades",
+        "taker_buy_base",
+        "is_closed",
+        "updated_at",
     ],
     "macro_series": [
-        "date", "series_id", "value", "series_name", "unit",
-        "frequency", "source", "country", "updated_at",
+        "date",
+        "series_id",
+        "value",
+        "series_name",
+        "unit",
+        "frequency",
+        "source",
+        "country",
+        "updated_at",
     ],
     "custom_series": [
-        "date", "series_id", "value", "series_name", "unit",
-        "frequency", "source", "updated_at",
+        "date",
+        "series_id",
+        "value",
+        "series_name",
+        "unit",
+        "frequency",
+        "source",
+        "updated_at",
     ],
     "macro_panel": [
-        "date", "country_iso3", "indicator_id", "value", "indicator_name",
-        "pillar", "orientation", "source", "provider_dataset",
-        "provider_code", "unit", "frequency", "updated_at",
+        "date",
+        "country_iso3",
+        "indicator_id",
+        "value",
+        "indicator_name",
+        "pillar",
+        "orientation",
+        "source",
+        "provider_dataset",
+        "provider_code",
+        "unit",
+        "frequency",
+        "updated_at",
     ],
     "coverage_report": [
-        "symbol", "source", "asset_class", "first_date", "last_date",
-        "obs_count", "freq_detected", "lag_days", "stalled", "gap_count",
-        "missing_pct", "coverage_score", "has_zero_price", "has_negative",
-        "status", "error_msg", "last_run_id", "updated_at",
+        "symbol",
+        "source",
+        "asset_class",
+        "first_date",
+        "last_date",
+        "obs_count",
+        "freq_detected",
+        "lag_days",
+        "stalled",
+        "gap_count",
+        "missing_pct",
+        "coverage_score",
+        "has_zero_price",
+        "has_negative",
+        "status",
+        "error_msg",
+        "last_run_id",
+        "updated_at",
     ],
     "factor_returns": [
-        "date", "factor_set", "factor", "value", "frequency", "source",
+        "date",
+        "factor_set",
+        "factor",
+        "value",
+        "frequency",
+        "source",
         "updated_at",
     ],
     "macro_panel_coverage": [
-        "indicator_id", "pillar", "source", "n_sources", "frequency",
-        "freq_detected", "n_countries", "n_countries_total", "coverage_pct",
-        "first_date", "last_date", "lag_days", "stalled", "obs_count",
-        "status", "last_run_id", "updated_at",
+        "indicator_id",
+        "pillar",
+        "source",
+        "n_sources",
+        "frequency",
+        "freq_detected",
+        "n_countries",
+        "n_countries_total",
+        "coverage_pct",
+        "first_date",
+        "last_date",
+        "lag_days",
+        "stalled",
+        "obs_count",
+        "status",
+        "last_run_id",
+        "updated_at",
     ],
     "etf_classification": [
-        "symbol", "asset_class", "area", "category", "sub_group", "sector",
-        "theme", "benchmark_proxy", "priority", "created_at", "updated_at",
+        "symbol",
+        "asset_class",
+        "area",
+        "category",
+        "sub_group",
+        "sector",
+        "theme",
+        "benchmark_proxy",
+        "priority",
+        "created_at",
+        "updated_at",
     ],
     "treasury_cash_balance": [
-        "record_date", "account_type", "open_today_bal", "close_today_bal",
-        "open_month_bal", "open_fiscal_year_bal", "source", "updated_at",
+        "record_date",
+        "account_type",
+        "open_today_bal",
+        "close_today_bal",
+        "open_month_bal",
+        "open_fiscal_year_bal",
+        "source",
+        "updated_at",
     ],
     "treasury_debt_outstanding": [
-        "record_date", "debt_held_public_amt", "intragov_hold_amt",
-        "tot_pub_debt_out_amt", "source", "updated_at",
+        "record_date",
+        "debt_held_public_amt",
+        "intragov_hold_amt",
+        "tot_pub_debt_out_amt",
+        "source",
+        "updated_at",
     ],
     "treasury_auctions": [
-        "record_date", "cusip", "security_type", "security_term",
-        "auction_date", "issue_date", "maturity_date", "high_yield",
-        "avg_med_yield", "high_discnt_rate", "avg_med_discnt_rate",
-        "total_tendered", "total_accepted", "bid_to_cover_ratio",
-        "source", "updated_at",
+        "record_date",
+        "cusip",
+        "security_type",
+        "security_term",
+        "auction_date",
+        "issue_date",
+        "maturity_date",
+        "high_yield",
+        "avg_med_yield",
+        "high_discnt_rate",
+        "avg_med_discnt_rate",
+        "total_tendered",
+        "total_accepted",
+        "bid_to_cover_ratio",
+        "source",
+        "updated_at",
     ],
     "cftc_tff_positioning": [
-        "report_date", "contract_market_name", "cftc_contract_market_code",
-        "commodity_name", "commodity_subgroup_name", "open_interest_all",
-        "dealer_long", "dealer_short", "dealer_spread",
-        "asset_mgr_long", "asset_mgr_short", "asset_mgr_spread",
-        "lev_money_long", "lev_money_short", "lev_money_spread",
-        "other_rept_long", "other_rept_short", "other_rept_spread",
-        "total_reportable_long", "total_reportable_short",
-        "nonreportable_long", "nonreportable_short",
-        "pct_oi_dealer_long", "pct_oi_dealer_short",
-        "pct_oi_asset_mgr_long", "pct_oi_asset_mgr_short",
-        "pct_oi_lev_money_long", "pct_oi_lev_money_short",
-        "traders_total", "source", "updated_at", "report_variant",
+        "report_date",
+        "contract_market_name",
+        "cftc_contract_market_code",
+        "commodity_name",
+        "commodity_subgroup_name",
+        "open_interest_all",
+        "dealer_long",
+        "dealer_short",
+        "dealer_spread",
+        "asset_mgr_long",
+        "asset_mgr_short",
+        "asset_mgr_spread",
+        "lev_money_long",
+        "lev_money_short",
+        "lev_money_spread",
+        "other_rept_long",
+        "other_rept_short",
+        "other_rept_spread",
+        "total_reportable_long",
+        "total_reportable_short",
+        "nonreportable_long",
+        "nonreportable_short",
+        "pct_oi_dealer_long",
+        "pct_oi_dealer_short",
+        "pct_oi_asset_mgr_long",
+        "pct_oi_asset_mgr_short",
+        "pct_oi_lev_money_long",
+        "pct_oi_lev_money_short",
+        "traders_total",
+        "source",
+        "updated_at",
+        "report_variant",
     ],
     "cftc_legacy_positioning": [
-        "report_date", "contract_market_name", "cftc_contract_market_code",
-        "commodity_name", "open_interest_all",
-        "noncomm_long", "noncomm_short", "noncomm_spread",
-        "comm_long", "comm_short",
-        "total_reportable_long", "total_reportable_short",
-        "nonreportable_long", "nonreportable_short",
-        "source", "updated_at", "report_variant",
+        "report_date",
+        "contract_market_name",
+        "cftc_contract_market_code",
+        "commodity_name",
+        "open_interest_all",
+        "noncomm_long",
+        "noncomm_short",
+        "noncomm_spread",
+        "comm_long",
+        "comm_short",
+        "total_reportable_long",
+        "total_reportable_short",
+        "nonreportable_long",
+        "nonreportable_short",
+        "source",
+        "updated_at",
+        "report_variant",
     ],
     "alfred_vintage_observations": [
-        "series_id", "date", "as_of", "value", "source", "updated_at", "realtime_end",
+        "series_id",
+        "date",
+        "as_of",
+        "value",
+        "source",
+        "updated_at",
+        "realtime_end",
     ],
 }
 
@@ -142,8 +301,9 @@ _PK = {
 }
 
 
-def _attach_listing_ids(con: duckdb.DuckDBPyConnection,
-                        df: pd.DataFrame) -> pd.DataFrame:
+def _attach_listing_ids(
+    con: duckdb.DuckDBPyConnection, df: pd.DataFrame
+) -> pd.DataFrame:
     """Map prices_daily rows to their listing_id via the listings table
     (audit CA-01: the price series is keyed by listing, not by symbol).
 
@@ -158,7 +318,9 @@ def _attach_listing_ids(con: duckdb.DuckDBPyConnection,
     symbols = sorted({str(s) for s in out["symbol"].dropna().unique()})
     rows = con.execute(
         f"SELECT symbol, listing_id FROM listings WHERE active_to IS NULL "
-        f"AND symbol IN ({','.join('?' * len(symbols))})", symbols).fetchall()
+        f"AND symbol IN ({','.join('?' * len(symbols))})",
+        symbols,
+    ).fetchall()
     mapping: dict[str, str] = {}
     ambiguous = set()
     for sym, lid in rows:
@@ -168,7 +330,8 @@ def _attach_listing_ids(con: duckdb.DuckDBPyConnection,
     if ambiguous:
         raise AmbiguousSymbolError(
             f"symbols map to multiple active listings, pass listing_id "
-            f"explicitly: {sorted(ambiguous)}")
+            f"explicitly: {sorted(ambiguous)}"
+        )
     for sym in symbols:
         if sym not in mapping:
             mapping[sym] = ensure_listing(con, sym)
@@ -176,24 +339,30 @@ def _attach_listing_ids(con: duckdb.DuckDBPyConnection,
     return out
 
 
-def _count_existing(con: duckdb.DuckDBPyConnection, table: str,
-                    df: pd.DataFrame) -> int:
+def _count_existing(
+    con: duckdb.DuckDBPyConnection, table: str, df: pd.DataFrame
+) -> int:
     """How many rows of the df already exist (to estimate added vs updated)."""
     pk = _PK[table]
     con.register("_inc", df[pk])
-    q = (f"SELECT COUNT(*) FROM {table} t "
-         f"SEMI JOIN _inc i ON " + " AND ".join(f"t.{c} = i.{c}" for c in pk))
+    q = f"SELECT COUNT(*) FROM {table} t SEMI JOIN _inc i ON " + " AND ".join(
+        f"t.{c} = i.{c}" for c in pk
+    )
     row = con.execute(q).fetchone()
-    assert row is not None   # COUNT(*) always returns exactly one row
+    assert row is not None  # COUNT(*) always returns exactly one row
     con.unregister("_inc")
     return int(row[0])
 
 
-def upsert(con: duckdb.DuckDBPyConnection, table: str,
-           df: pd.DataFrame, *, outer_txn: bool = False,
-           preserve_non_null_columns: tuple[str, ...] = (),
-           prefer_existing_non_null_columns: tuple[str, ...] = ()
-           ) -> tuple[int, int]:
+def upsert(
+    con: duckdb.DuckDBPyConnection,
+    table: str,
+    df: pd.DataFrame,
+    *,
+    outer_txn: bool = False,
+    preserve_non_null_columns: tuple[str, ...] = (),
+    prefer_existing_non_null_columns: tuple[str, ...] = (),
+) -> tuple[int, int]:
     """
     Atomic upsert. Returns (rows_added, rows_updated).
     Columns missing in the df are filled with NULL; updated_at is set.
@@ -218,22 +387,25 @@ def upsert(con: duckdb.DuckDBPyConnection, table: str,
     unknown_existing = set(prefer_existing_non_null_columns) - set(cols)
     if unknown_preserved:
         raise ValueError(
-            f"Columns to preserve are not in {table}: "
-            f"{sorted(unknown_preserved)}")
+            f"Columns to preserve are not in {table}: {sorted(unknown_preserved)}"
+        )
     if unknown_existing:
         raise ValueError(
             f"Columns to prefer from existing rows are not in {table}: "
-            f"{sorted(unknown_existing)}")
+            f"{sorted(unknown_existing)}"
+        )
     if set(preserve_non_null_columns) & set(prefer_existing_non_null_columns):
         raise ValueError("A column cannot use both null-preservation strategies")
     primary_keys = set(_PK[table])
     if primary_keys.intersection(
-            set(preserve_non_null_columns) | set(prefer_existing_non_null_columns)):
+        set(preserve_non_null_columns) | set(prefer_existing_non_null_columns)
+    ):
         raise ValueError("Primary-key columns cannot use null-preserving updates")
     out = df.copy()
 
-    if table == "prices_daily" and ("listing_id" not in out.columns
-                                    or out["listing_id"].isna().any()):
+    if table == "prices_daily" and (
+        "listing_id" not in out.columns or out["listing_id"].isna().any()
+    ):
         out = _attach_listing_ids(con, out)
 
     # Collapse intra-batch primary-key duplicates before counting: INSERT OR
@@ -302,8 +474,14 @@ _VINTAGE = {
 }
 
 
-def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
-                   df: pd.DataFrame, vintage_date, *, run_id: str | None = None) -> int:
+def record_vintage(
+    con: duckdb.DuckDBPyConnection,
+    table: str,
+    df: pd.DataFrame,
+    vintage_date,
+    *,
+    run_id: str | None = None,
+) -> int:
     """Append point-in-time rows to ``{table}_vintage`` for any key whose value
     is new or differs from the latest stored vintage (append-on-change).
 
@@ -368,20 +546,39 @@ def record_vintage(con: duckdb.DuckDBPyConnection, table: str,
         [str(vintage_date), run_id, str(vintage_date), str(vintage_date)],
     ).fetchone()
     con.unregister("_vtsrc")
-    assert inserted is not None   # INSERT always reports a row count
+    assert inserted is not None  # INSERT always reports a row count
     return int(inserted[0])
 
 
-def log_run(con: duckdb.DuckDBPyConnection, *, run_id: str, started_at: datetime,
-            source: str, symbol: str, rows_added: int, rows_updated: int,
-            status: str, error_msg: str | None, duration_sec: float) -> None:
+def log_run(
+    con: duckdb.DuckDBPyConnection,
+    *,
+    run_id: str,
+    started_at: datetime,
+    source: str,
+    symbol: str,
+    rows_added: int,
+    rows_updated: int,
+    status: str,
+    error_msg: str | None,
+    duration_sec: float,
+) -> None:
     """Insert a row into download_log."""
     con.execute(
         "INSERT INTO download_log "
         "(run_id, started_at, ended_at, source, symbol, rows_added, "
         " rows_updated, status, error_msg, duration_sec) "
         "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [run_id, started_at, datetime.now(timezone.utc), source, symbol,
-         int(rows_added), int(rows_updated), status, error_msg,
-         float(duration_sec)],
+        [
+            run_id,
+            started_at,
+            datetime.now(timezone.utc),
+            source,
+            symbol,
+            int(rows_added),
+            int(rows_updated),
+            status,
+            error_msg,
+            float(duration_sec),
+        ],
     )

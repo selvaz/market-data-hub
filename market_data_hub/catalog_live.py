@@ -1,4 +1,5 @@
 """Optional read-only observations for catalog_docs; never imported by --check."""
+
 from __future__ import annotations
 
 from calendar import monthrange
@@ -25,7 +26,13 @@ def period_end(value, frequency):
     if result.tzinfo is None:
         result = result.replace(tzinfo=timezone.utc)
     if frequency in ("M", "Q", "A"):
-        month = result.month if frequency == "M" else ((result.month - 1) // 3 + 1) * 3 if frequency == "Q" else 12
+        month = (
+            result.month
+            if frequency == "M"
+            else ((result.month - 1) // 3 + 1) * 3
+            if frequency == "Q"
+            else 12
+        )
         return result.replace(month=month, day=monthrange(result.year, month)[1])
     if frequency in ("1h", "4h", "1d"):
         return result + timedelta(hours={"1h": 1, "4h": 4, "1d": 24}[frequency])
@@ -39,15 +46,20 @@ def _lag(reference, available, frequency):
         stamp = datetime.fromisoformat(str(available).replace("Z", "+00:00"))
         if stamp.tzinfo is None:
             stamp = stamp.replace(tzinfo=timezone.utc)
-        return round((stamp - period_end(reference, frequency)).total_seconds() / 86400, 4)
+        return round(
+            (stamp - period_end(reference, frequency)).total_seconds() / 86400, 4
+        )
     except (ValueError, TypeError, IndexError):
         return None
 
 
 def _columns(conn, table):
-    if not isinstance(conn, sqlite3.Connection) and not conn.execute(
-        "SELECT 1 FROM information_schema.tables WHERE table_name=?", [table]
-    ).fetchone():
+    if (
+        not isinstance(conn, sqlite3.Connection)
+        and not conn.execute(
+            "SELECT 1 FROM information_schema.tables WHERE table_name=?", [table]
+        ).fetchone()
+    ):
         return set()
     return {r[1] for r in conn.execute(f"PRAGMA table_info('{table}')").fetchall()}
 
@@ -70,7 +82,9 @@ def _observe_hub(conn, catalog):
     }
     for table, (identity, date_column) in specs.items():
         cols = _columns(conn, table)
-        selected = [r for r in catalog["series"] if r["store"] == "hub" and r["table"] == table]
+        selected = [
+            r for r in catalog["series"] if r["store"] == "hub" and r["table"] == table
+        ]
         if not cols or date_column is None or date_column not in cols:
             continue
         # Current-state tables cannot prove first availability. Deliberately do
@@ -81,11 +95,16 @@ def _observe_hub(conn, catalog):
         by_id = {r[0]: r[1:] for r in values}
         for row in selected:
             bounds = by_id.get(row["id"])
-            row["observed"] = dict(first_date=str(bounds[0]) if bounds else None,
-                                   last_date=str(bounds[1]) if bounds else None,
-                                   lag_days=None, lag_basis="No first-availability timestamp in current-state table")
-    for table, parent, keys in (("macro_series_vintage", "macro_series", ["series_id"]),
-                                ("macro_panel_vintage", "macro_panel", ["indicator_id", "country_iso3"])):
+            row["observed"] = dict(
+                first_date=str(bounds[0]) if bounds else None,
+                last_date=str(bounds[1]) if bounds else None,
+                lag_days=None,
+                lag_basis="No first-availability timestamp in current-state table",
+            )
+    for table, parent, keys in (
+        ("macro_series_vintage", "macro_series", ["series_id"]),
+        ("macro_panel_vintage", "macro_panel", ["indicator_id", "country_iso3"]),
+    ):
         if not _columns(conn, table):
             continue
         identity = keys[0]
@@ -96,12 +115,19 @@ def _observe_hub(conn, catalog):
         ).fetchall()
         by_id = {r[0]: r[1:] for r in values}
         for row in catalog["series"]:
-            if row["store"] == "hub" and row["table"] == parent and row["id"] in by_id and row.get("observed"):
+            if (
+                row["store"] == "hub"
+                and row["table"] == parent
+                and row["id"] in by_id
+                and row.get("observed")
+            ):
                 reference, available = by_id[row["id"]]
                 if str(reference) != row["observed"]["last_date"]:
                     continue
-                row["observed"].update(lag_days=_lag(reference, available, row["frequency"]),
-                                       lag_basis="Earliest stored hub vintage_date for latest period; date precision, may reflect backfill; panel pools countries")
+                row["observed"].update(
+                    lag_days=_lag(reference, available, row["frequency"]),
+                    lag_basis="Earliest stored hub vintage_date for latest period; date precision, may reflect backfill; panel pools countries",
+                )
     # ALFRED preserves vendor availability. Measure the earliest vendor vintage
     # of the latest period, never the last revision date or latest updated_at.
     if _columns(conn, "alfred_vintage_observations"):
@@ -112,14 +138,20 @@ def _observe_hub(conn, catalog):
         ).fetchall()
         by_id = {r[0]: r[1:] for r in values}
         for row in catalog["series"]:
-            if row["table"] == "alfred_vintage_observations" and row["id"] in by_id and row.get("observed"):
+            if (
+                row["table"] == "alfred_vintage_observations"
+                and row["id"] in by_id
+                and row.get("observed")
+            ):
                 reference, available = by_id[row["id"]]
                 # A trailing vendor "." (NULL) makes the bounds end later than
                 # the latest valued period: leave the lag unavailable (Codex P2).
                 if str(reference) != row["observed"]["last_date"]:
                     continue
-                row["observed"].update(lag_days=_lag(reference, available, row["frequency"]),
-                                       lag_basis="Earliest stored vendor as_of for latest period; not hub first-seen")
+                row["observed"].update(
+                    lag_days=_lag(reference, available, row["frequency"]),
+                    lag_basis="Earliest stored vendor as_of for latest period; not hub first-seen",
+                )
 
 
 def _observe_macro(conn, catalog):
@@ -133,18 +165,23 @@ def _observe_macro(conn, catalog):
     bounds = {r[0]: r[1:] for r in values}
     # First stored numeric availability for the newest reference period. This
     # includes all evidence classes, so it makes no official-certification claim.
-    availability = dict(conn.execute(
-        "SELECT v.indicator_id, MIN(v.first_seen_at) FROM value_vintages v "
-        "JOIN (SELECT indicator_id, MAX(reference_period) p FROM value_vintages GROUP BY indicator_id) n "
-        "ON n.indicator_id=v.indicator_id AND n.p=v.reference_period GROUP BY v.indicator_id"
-    ).fetchall())
+    availability = dict(
+        conn.execute(
+            "SELECT v.indicator_id, MIN(v.first_seen_at) FROM value_vintages v "
+            "JOIN (SELECT indicator_id, MAX(reference_period) p FROM value_vintages GROUP BY indicator_id) n "
+            "ON n.indicator_id=v.indicator_id AND n.p=v.reference_period GROUP BY v.indicator_id"
+        ).fetchall()
+    )
     for row in catalog["series"]:
         if row["store"] != "macro_releases.sqlite":
             continue
         first, last = bounds.get(row["id"], (None, None))
-        row["observed"] = dict(first_date=first, last_date=last,
-                               lag_days=_lag(last, availability.get(row["id"]), row["frequency"]),
-                               lag_basis="First hub numeric first_seen_at for latest reference period; all evidence classes, may reflect backfill")
+        row["observed"] = dict(
+            first_date=first,
+            last_date=last,
+            lag_days=_lag(last, availability.get(row["id"]), row["frequency"]),
+            lag_basis="First hub numeric first_seen_at for latest reference period; all evidence classes, may reflect backfill",
+        )
 
 
 def observe(catalog, paths):

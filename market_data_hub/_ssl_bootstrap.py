@@ -15,6 +15,7 @@ SSL_CERT_FILE / REQUESTS_CA_BUNDLE / CURL_CA_BUNDLE.
 Import-safe and idempotent: call ensure_ssl() at the startup of the entry
 points, BEFORE importing yfinance/requests.
 """
+
 from __future__ import annotations
 
 import os
@@ -63,6 +64,7 @@ def ensure_ssl(force_rebuild: bool = False) -> str | None:
     # belt-and-suspenders: also use the Windows cert store for the stdlib ssl
     try:
         import truststore
+
         truststore.inject_into_ssl()
     except Exception:
         pass

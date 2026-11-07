@@ -1,4 +1,5 @@
 """BLS v2 CPI rates and CES net changes supplied by BLS calculations."""
+
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -23,10 +24,21 @@ EDITIONS = {
     ("us_payrolls", "2026-10"): "2026-11-06",
     ("us_payrolls", "2026-11"): "2026-12-04",
 }
-EDITIONS.update({(f, p): d for f in ("us_ppi", "us_jolts")
-                 for d, (p, _, _) in MONTHLY_EDITIONS[f].items()})
-EDITIONS.update({(f, p): d for f in ("us_unemployment", "us_ahe")
-                 for (family, p), d in list(EDITIONS.items()) if family == "us_payrolls"})
+EDITIONS.update(
+    {
+        (f, p): d
+        for f in ("us_ppi", "us_jolts")
+        for d, (p, _, _) in MONTHLY_EDITIONS[f].items()
+    }
+)
+EDITIONS.update(
+    {
+        (f, p): d
+        for f in ("us_unemployment", "us_ahe")
+        for (family, p), d in list(EDITIONS.items())
+        if family == "us_payrolls"
+    }
+)
 SERIES = dict(BLS_SERIES, **NEW_BLS_SERIES)
 MEASURES = (*SERIES.items(), *EMPLOYMENT_SERIES)
 
@@ -40,8 +52,13 @@ def unavailable(error):
 
     Parser and publication-review errors must not be hidden by older mirrors.
     """
-    return isinstance(error, BLSRequestRejected) or bool(re.fullmatch(r"bls: (?:HTTP [1-5][0-9]{2}|TLS verification failed|"
-                             r"transport failed after bounded attempts|non-transient request failure)", str(error)))
+    return isinstance(error, BLSRequestRejected) or bool(
+        re.fullmatch(
+            r"bls: (?:HTTP [1-5][0-9]{2}|TLS verification failed|"
+            r"transport failed after bounded attempts|non-transient request failure)",
+            str(error),
+        )
+    )
 
 
 def shift_month(period, offset):
@@ -53,9 +70,16 @@ def shift_month(period, offset):
 def revision_start(family, newest, since, edition=None):
     # Annual SA review covers five complete calendar years, plus the current
     # year. A rolling 60-month cutoff would miss the first months of year five.
-    benchmark = family in ("us_payrolls", "us_ahe") and edition is not None and edition[5:7] == "02"
-    window = (shift_month(newest, -2) if family in ("us_payrolls", "us_ahe") and not benchmark
-              else f"{int(newest[:4]) - 5:04d}-01")
+    benchmark = (
+        family in ("us_payrolls", "us_ahe")
+        and edition is not None
+        and edition[5:7] == "02"
+    )
+    window = (
+        shift_month(newest, -2)
+        if family in ("us_payrolls", "us_ahe") and not benchmark
+        else f"{int(newest[:4]) - 5:04d}-01"
+    )
     return min(since, window)
 
 
@@ -74,14 +98,26 @@ class BLSAdapter:
                     raise
                 raise FetchError(str(exc) + "; needs review") from None
             from .fred import BLSFallbackAdapter
+
             return BLSFallbackAdapter(self.client).fetch(families, since)
         from .schedule import due, family_editions
+
         # The manual collector needs the same release-instant gate as daily
         # discovery, even if BLS exposes a reviewed edition before publication.
-        return [o for o in observations if o.edition in due(family_editions(o.family), family=o.family)]
+        return [
+            o
+            for o in observations
+            if o.edition in due(family_editions(o.family), family=o.family)
+        ]
 
     def fetch_official(self, families, since):
-        series = list(dict.fromkeys(key for key, (indicator, _, _) in MEASURES if bls_family(indicator) in families))
+        series = list(
+            dict.fromkeys(
+                key
+                for key, (indicator, _, _) in MEASURES
+                if bls_family(indicator) in families
+            )
+        )
         if not series:
             return []
         # One batch, well below BLS's 50-series ceiling. Inspect the SA revision
@@ -90,21 +126,38 @@ class BLSAdapter:
         startyear = min(int(since[:4]) - 1, current_year - 5)
         if current_year - startyear >= 20:
             raise FetchError("BLS request exceeds 20-year window; narrow --since")
-        document = self.client.request("bls", ENDPOINT, payload={
-            "seriesid": series, "startyear": str(startyear), "endyear": str(current_year),
-            "calculations": True, "catalog": True, "registrationkey": api_key("BLS_API_KEY"),
-        })
+        document = self.client.request(
+            "bls",
+            ENDPOINT,
+            payload={
+                "seriesid": series,
+                "startyear": str(startyear),
+                "endyear": str(current_year),
+                "calculations": True,
+                "catalog": True,
+                "registrationkey": api_key("BLS_API_KEY"),
+            },
+        )
         return self.parse(document, families, since)
 
     def parse(self, document, families, since, *, editions=None):
         payload = json_payload(document)
         if payload.get("status") != "REQUEST_SUCCEEDED":
-            if (payload.get("status") == "REQUEST_FAILED" and payload.get("Results") is None and
-                    isinstance(payload.get("message"), list) and payload["message"] and
-                    all(isinstance(message, str) and message for message in payload["message"])):
+            if (
+                payload.get("status") == "REQUEST_FAILED"
+                and payload.get("Results") is None
+                and isinstance(payload.get("message"), list)
+                and payload["message"]
+                and all(
+                    isinstance(message, str) and message
+                    for message in payload["message"]
+                )
+            ):
                 raise BLSRequestRejected("BLS rejected request")
             raise FetchError("BLS rejected request")
-        series = {s["seriesID"]: s for s in payload.get("Results", {}).get("series", [])}
+        series = {
+            s["seriesID"]: s for s in payload.get("Results", {}).get("series", [])
+        }
         observations = []
         for key, (indicator, calc, lag) in MEASURES:
             family = bls_family(indicator)
@@ -117,26 +170,54 @@ class BLSAdapter:
             newest = max(r["year"] + "-" + r["period"][1:] for r in rows)
             edition = (editions or EDITIONS).get((family, newest))
             if edition is None:
-                raise FetchError(f"BLS publication metadata needs review: {family} {newest}")
+                raise FetchError(
+                    f"BLS publication metadata needs review: {family} {newest}"
+                )
             cutoff = revision_start(family, newest, since, edition)
             by_period = {r["year"] + "-" + r["period"][1:]: r for r in rows}
             for row in rows:
                 period = row["year"] + "-" + row["period"][1:]
                 if period < cutoff:
                     continue
-                value = row["value"] if calc == "level" else row.get("calculations", {}).get(calc, {}).get(lag)
+                value = (
+                    row["value"]
+                    if calc == "level"
+                    else row.get("calculations", {}).get(calc, {}).get(lag)
+                )
                 if value in (None, "", "-"):
                     base = by_period.get(shift_month(period, -int(lag)), {})
                     if row["value"] != "-" and base.get("value") != "-":
-                        raise FetchError(f"BLS published calculation absent: {key} {period}")
-                observations.append(Observation(
-                    indicator, family, period, float(value) if value not in (None, "", "-") else None,
-                    value or f"not published: {calc}/{lag}", key + ":" + calc + ":" + lag,
-                    "BLS", document, edition, **new_york_release(edition, "10:00" if family == "us_jolts" else "08:30"), precision="exact",
-                    provider_vintage=edition if family in MONTHLY_EDITIONS else None,
-                    revision=("initial" if period == newest else
-                              "benchmark" if family in ("us_payrolls", "us_ahe") and edition[5:7] == "02" else "routine"),
-                ))
+                        raise FetchError(
+                            f"BLS published calculation absent: {key} {period}"
+                        )
+                observations.append(
+                    Observation(
+                        indicator,
+                        family,
+                        period,
+                        float(value) if value not in (None, "", "-") else None,
+                        value or f"not published: {calc}/{lag}",
+                        key + ":" + calc + ":" + lag,
+                        "BLS",
+                        document,
+                        edition,
+                        **new_york_release(
+                            edition, "10:00" if family == "us_jolts" else "08:30"
+                        ),
+                        precision="exact",
+                        provider_vintage=edition
+                        if family in MONTHLY_EDITIONS
+                        else None,
+                        revision=(
+                            "initial"
+                            if period == newest
+                            else "benchmark"
+                            if family in ("us_payrolls", "us_ahe")
+                            and edition[5:7] == "02"
+                            else "routine"
+                        ),
+                    )
+                )
         return observations
 
     @staticmethod
@@ -148,35 +229,81 @@ class BLSAdapter:
         """
         text = document.body.decode("utf-8")
         if text.startswith('"'):
-            text = document.json()  # Saved browser/web fetch response, labelled as such.
+            text = (
+                document.json()
+            )  # Saved browser/web fetch response, labelled as such.
         text = re.sub(r"L\d+:\s*", "", text)
         text = re.sub(r"\s+", " ", text)
         release_date = re.search(r"8:30 a\.m\. \(ET\) \w+, (\w+ \d+, \d{4})", text)
         release_month = re.search(r"THE EMPLOYMENT SITUATION - ([A-Z]+ \d{4})", text)
         if release_date is None or release_month is None:
             raise FetchError("BLS archive publication metadata absent")
-        if (datetime.strptime(release_date[1], "%B %d, %Y").date().isoformat() != edition or
-                datetime.strptime(release_month[1].title(), "%B %Y").strftime("%Y-%m") != headline_period):
+        if (
+            datetime.strptime(release_date[1], "%B %d, %Y").date().isoformat()
+            != edition
+            or datetime.strptime(release_month[1].title(), "%B %Y").strftime("%Y-%m")
+            != headline_period
+        ):
             raise FetchError("BLS archive does not match requested edition/period")
-        first = (re.search(r"Total nonfarm payroll employment (?:increased|rose) by ([\d,]+)", text)
-                 or re.search(r"Both nonfarm payroll employment \(([+-]?[\d,]+)\)", text))
+        first = re.search(
+            r"Total nonfarm payroll employment (?:increased|rose) by ([\d,]+)", text
+        ) or re.search(r"Both nonfarm payroll employment \(([+-]?[\d,]+)\)", text)
         if not first:
             raise FetchError("BLS archive headline did not match certified format")
-        out = [Observation("us_payrolls_change", "us_payrolls", headline_period,
-                           float(first[1].replace(",", "")) / 1000, first[1],
-                           "CES0000000001:archive-text-change", "BLS", document,
-                           edition, **new_york_release(edition), method="archive_text", precision="exact")]
-        months = {"January": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6,
-                  "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12}
-        for match in re.finditer(r"(?:change in total nonfarm payroll employment for|change for) "
-                                r"(\w+) was revised (?:up|down) by [\d,]+, from [+-]?[\d,]+ to ([+-]?[\d,]+)", text):
+        out = [
+            Observation(
+                "us_payrolls_change",
+                "us_payrolls",
+                headline_period,
+                float(first[1].replace(",", "")) / 1000,
+                first[1],
+                "CES0000000001:archive-text-change",
+                "BLS",
+                document,
+                edition,
+                **new_york_release(edition),
+                method="archive_text",
+                precision="exact",
+            )
+        ]
+        months = {
+            "January": 1,
+            "February": 2,
+            "March": 3,
+            "April": 4,
+            "May": 5,
+            "June": 6,
+            "July": 7,
+            "August": 8,
+            "September": 9,
+            "October": 10,
+            "November": 11,
+            "December": 12,
+        }
+        for match in re.finditer(
+            r"(?:change in total nonfarm payroll employment for|change for) "
+            r"(\w+) was revised (?:up|down) by [\d,]+, from [+-]?[\d,]+ to ([+-]?[\d,]+)",
+            text,
+        ):
             month = months.get(match[1])
             if month is None:
                 raise FetchError("BLS archive month unknown")
             year = int(headline_period[:4]) - (month > int(headline_period[5:]))
-            out.append(Observation("us_payrolls_change", "us_payrolls", f"{year:04d}-{month:02d}",
-                                   float(match[2].replace(",", "")) / 1000, match[2],
-                                   "CES0000000001:archive-text-change", "BLS", document,
-                                   edition, **new_york_release(edition), revision="routine",
-                                   method="archive_text", precision="exact"))
+            out.append(
+                Observation(
+                    "us_payrolls_change",
+                    "us_payrolls",
+                    f"{year:04d}-{month:02d}",
+                    float(match[2].replace(",", "")) / 1000,
+                    match[2],
+                    "CES0000000001:archive-text-change",
+                    "BLS",
+                    document,
+                    edition,
+                    **new_york_release(edition),
+                    revision="routine",
+                    method="archive_text",
+                    precision="exact",
+                )
+            )
         return out

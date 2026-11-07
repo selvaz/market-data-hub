@@ -1,4 +1,5 @@
 """Owner-approved indicator context, with no database or network dependency."""
+
 from __future__ import annotations
 
 from fnmatch import fnmatchcase
@@ -9,7 +10,14 @@ from typing import Iterable, Optional
 from .models import CLASSIFICATION_VERSION, CardDataset, IndicatorCard
 from .render import render_card
 
-__all__ = ["IndicatorCard", "indicator_card", "cards_for", "unmapped", "render_card", "dataset"]
+__all__ = [
+    "IndicatorCard",
+    "indicator_card",
+    "cards_for",
+    "unmapped",
+    "render_card",
+    "dataset",
+]
 
 
 _STORES = ("ms", "es", "cal", "cat", "pan", "hub")
@@ -19,7 +27,9 @@ _STORES = ("ms", "es", "cal", "cat", "pan", "hub")
 def dataset() -> CardDataset:
     """Load and strictly validate the immutable, versioned package resource."""
     return CardDataset.model_validate_json(
-        files(__package__).joinpath(f"cards_{CLASSIFICATION_VERSION}.json").read_text(encoding="utf-8"),
+        files(__package__)
+        .joinpath(f"cards_{CLASSIFICATION_VERSION}.json")
+        .read_text(encoding="utf-8"),
     )
 
 
@@ -59,15 +69,27 @@ def indicator_card(indicator_id_or_key: Optional[str]) -> Optional[IndicatorCard
     exact, patterns = _index()
     if identity in exact:
         candidates = exact[identity]
-        return min(candidates, key=lambda c: (
-            c.key != identity, not _own_id_row(c, identity), c.country, c.concept, c.key))
+        return min(
+            candidates,
+            key=lambda c: (
+                c.key != identity,
+                not _own_id_row(c, identity),
+                c.country,
+                c.concept,
+                c.key,
+            ),
+        )
     matches = [card for pattern, card in patterns if fnmatchcase(identity, pattern)]
-    return min(matches, key=lambda c: (c.country, c.concept, c.key)) if matches else None
+    return (
+        min(matches, key=lambda c: (c.country, c.concept, c.key)) if matches else None
+    )
 
 
 def _reject_bare_string(ids) -> None:
     if isinstance(ids, (str, bytes)):
-        raise TypeError("Expected an iterable of ids, not a single string; wrap it in a list")
+        raise TypeError(
+            "Expected an iterable of ids, not a single string; wrap it in a list"
+        )
 
 
 def cards_for(ids: Iterable[str]) -> list[IndicatorCard]:

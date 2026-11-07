@@ -11,6 +11,7 @@ Composition:
 The freshness threshold scales with the frequency, so an annual series is not
 penalized for a normal delay of ~12 months.
 """
+
 from __future__ import annotations
 
 from typing import Optional
@@ -28,9 +29,13 @@ def _base_freq(freq: Optional[str]) -> str:
     return freq
 
 
-def coverage_score(obs_count: int, missing_pct: float,
-                   latest_lag_days: Optional[float], priority: int,
-                   freq: str) -> float:
+def coverage_score(
+    obs_count: int,
+    missing_pct: float,
+    latest_lag_days: Optional[float],
+    priority: int,
+    freq: str,
+) -> float:
     """0-100. See the module docstring."""
     if obs_count <= 0:
         return 0.0
@@ -40,9 +45,14 @@ def coverage_score(obs_count: int, missing_pct: float,
 
     obs_component = min(obs_count / max(min_obs, 1), 1.0) * 40
     missing_component = max(0.0, 1.0 - float(missing_pct or 0.0)) * 25
-    lag = tol if latest_lag_days is None or pd.isna(latest_lag_days) else float(latest_lag_days)
+    lag = (
+        tol
+        if latest_lag_days is None or pd.isna(latest_lag_days)
+        else float(latest_lag_days)
+    )
     freshness_component = max(0.0, 1.0 - lag / (2 * tol)) * 25
     priority_component = {1: 10, 2: 7, 3: 4, 4: 1}.get(int(priority or 4), 0)
 
-    return round(obs_component + missing_component
-                 + freshness_component + priority_component, 2)
+    return round(
+        obs_component + missing_component + freshness_component + priority_component, 2
+    )

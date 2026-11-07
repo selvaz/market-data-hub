@@ -28,6 +28,7 @@ def _policy_facts(payload):
         return None
     return value.get("policy_decision") if isinstance(value, dict) else None
 
+
 TABLES = {
     m.Indicator: "indicators",
     m.SourceSeries: "source_series",
@@ -132,7 +133,9 @@ class Store:
                 and record.captured_at >= cutoff
             )
         with self.transaction():
-            if isinstance(record, m.Reading) and record.parser_version.startswith("official-adapters:"):
+            if isinstance(record, m.Reading) and record.parser_version.startswith(
+                "official-adapters:"
+            ):
                 # A document can change its transport envelope or another series
                 # without changing this observation. Compare the latest semantic
                 # state, including provenance, against pre-fix rows as well.
@@ -140,20 +143,54 @@ class Store:
                     "SELECT * FROM readings WHERE source_id=? AND series_key=? "
                     "AND period_key=? AND edition=? AND estimate_stage=? "
                     "AND release_event_id IS ? AND reading_kind=? ORDER BY id DESC LIMIT 1",
-                    (record.source_id, record.series_key, record.period_key, record.edition,
-                     record.estimate_stage, record.release_event_id, record.reading_kind),
+                    (
+                        record.source_id,
+                        record.series_key,
+                        record.period_key,
+                        record.edition,
+                        record.estimate_stage,
+                        record.release_event_id,
+                        record.reading_kind,
+                    ),
                 ).fetchone()
-                volatile = {"first_seen_at", "retrieved_at", "content_hash", "raw_payload_json", "url"}
+                volatile = {
+                    "first_seen_at",
+                    "retrieved_at",
+                    "content_hash",
+                    "raw_payload_json",
+                    "url",
+                }
                 policy = _policy_facts(record.raw_payload_json)
-                same_policy = not policy or previous and _policy_facts(previous["raw_payload_json"]) == policy
-                if previous and same_policy and all(previous[key] == value for key, value in data.items()
-                                    if key not in volatile):
+                same_policy = (
+                    not policy
+                    or previous
+                    and _policy_facts(previous["raw_payload_json"]) == policy
+                )
+                if (
+                    previous
+                    and same_policy
+                    and all(
+                        previous[key] == value
+                        for key, value in data.items()
+                        if key not in volatile
+                    )
+                ):
                     return previous["id"]
             if isinstance(record, m.ValueVintage):
-                value_semantics = ("indicator_id", "value", "unit", "scale", "estimate_stage")
+                value_semantics = (
+                    "indicator_id",
+                    "value",
+                    "unit",
+                    "scale",
+                    "estimate_stage",
+                )
                 semantics = value_semantics
                 if record.policy_decision_json is not None:
-                    semantics += ("policy_decision_json", "issuer_published_at", "publication_precision")
+                    semantics += (
+                        "policy_decision_json",
+                        "issuer_published_at",
+                        "publication_precision",
+                    )
                 provenance = ("verification_status", "extraction_method")
                 same_document = self.conn.execute(
                     "SELECT * FROM value_vintages WHERE source_series_id=? AND reference_period=? "
@@ -166,18 +203,25 @@ class Store:
                     ),
                 ).fetchone()
                 if same_document:
-                    boj = (record.indicator_id == "boj_policy_rate_decision"
+                    boj = (
+                        record.indicator_id == "boj_policy_rate_decision"
                         and record.policy_decision_json is not None
                         and same_document["policy_decision_json"] is not None
                         and self.conn.execute(
                             "SELECT 1 FROM release_events e JOIN source_series s ON s.id=? "
                             "WHERE e.id=? AND e.family='boj_policy' AND e.issuer_id='BOJ' "
                             "AND s.source_id='BOJ' AND s.issuer_id='BOJ' AND s.evidence_role='issuer'",
-                            (record.source_series_id, record.release_event_id)).fetchone() is not None)
+                            (record.source_series_id, record.release_event_id),
+                        ).fetchone()
+                        is not None
+                    )
                     compared = value_semantics if boj else semantics
-                    if (any(same_document[key] != data[key] for key in compared)
-                        or boj and decision_facts(same_document["policy_decision_json"]) !=
-                                   decision_facts(record.policy_decision_json)):
+                    if (
+                        any(same_document[key] != data[key] for key in compared)
+                        or boj
+                        and decision_facts(same_document["policy_decision_json"])
+                        != decision_facts(record.policy_decision_json)
+                    ):
                         raise ValueError(
                             "same publication hash has conflicting value semantics"
                         )
@@ -243,28 +287,60 @@ class Store:
     def first_release(self, indicator_id: Optional[str] = None) -> list[dict]:
         return self._view("first_release", indicator_id)
 
-    def release_cards(self, since, until, indicators=None, geography=None, as_known_at=None, *,
-                      policy="revised_history"):
+    def release_cards(
+        self,
+        since,
+        until,
+        indicators=None,
+        geography=None,
+        as_known_at=None,
+        *,
+        policy="revised_history",
+    ):
         from .read_api import ReadAPI
-        return ReadAPI(self).release_cards(since, until, indicators, geography, as_known_at, policy=policy)
+
+        return ReadAPI(self).release_cards(
+            since, until, indicators, geography, as_known_at, policy=policy
+        )
 
     def explain_empty(self, indicator, period_or_window, *, as_known_at=None):
         from .read_api import ReadAPI
-        return ReadAPI(self).explain_empty(indicator, period_or_window, as_known_at=as_known_at)
 
-    def release_documents(self, release_event_id=None, *, indicator=None, reference_period=None,
-                          as_known_at=None, max_chars=20000):
+        return ReadAPI(self).explain_empty(
+            indicator, period_or_window, as_known_at=as_known_at
+        )
+
+    def release_documents(
+        self,
+        release_event_id=None,
+        *,
+        indicator=None,
+        reference_period=None,
+        as_known_at=None,
+        max_chars=20000,
+    ):
         from .read_api import ReadAPI
+
         return ReadAPI(self).release_documents(
-            release_event_id, indicator=indicator, reference_period=reference_period,
-            as_known_at=as_known_at, max_chars=max_chars)
+            release_event_id,
+            indicator=indicator,
+            reference_period=reference_period,
+            as_known_at=as_known_at,
+            max_chars=max_chars,
+        )
 
-    def decision_history(self, indicator, *, as_known_at=None, limit=100, policy="revised_history"):
+    def decision_history(
+        self, indicator, *, as_known_at=None, limit=100, policy="revised_history"
+    ):
         from .read_api import ReadAPI
-        return ReadAPI(self).decision_history(indicator, as_known_at=as_known_at, limit=limit, policy=policy)
+
+        return ReadAPI(self).decision_history(
+            indicator, as_known_at=as_known_at, limit=limit, policy=policy
+        )
 
     def coverage(self, since, until, *, as_known_at=None):
         from .read_api import ReadAPI
+
         return ReadAPI(self).coverage(since, until, as_known_at=as_known_at)
 
     def latest_official(self, indicator_id: Optional[str] = None) -> list[dict]:
@@ -275,25 +351,43 @@ class Store:
         where, params = (
             (" WHERE indicator_id=?", (indicator_id,)) if indicator_id else ("", ())
         )
-        return self._classified_rows([
-            dict(row)
-            for row in self.conn.execute(
-                f"SELECT * FROM {name}{where} ORDER BY indicator_id, reference_period",
-                params,
-            )
-        ])
+        return self._classified_rows(
+            [
+                dict(row)
+                for row in self.conn.execute(
+                    f"SELECT * FROM {name}{where} ORDER BY indicator_id, reference_period",
+                    params,
+                )
+            ]
+        )
 
     def _classified_rows(self, rows):
         """Keep legacy view selection, but never imply public issuer ownership."""
-        sources = {r["id"]: dict(r) for r in self.conn.execute("SELECT * FROM source_series")}
+        sources = {
+            r["id"]: dict(r) for r in self.conn.execute("SELECT * FROM source_series")
+        }
         result = []
         for row in rows:
             series = sources[row["source_series_id"]]
-            kind = source_class(series["issuer_id"], series["source_id"], series["evidence_role"])
-            status = certification_status(kind, verified_issuer=(
-                series["evidence_role"] == "issuer" and row["verification_status"] == "verified"))
-            result.append(dict(row, issuer_id=series["issuer_id"], source_id=series["source_id"],
-                               source_class=kind, resolution_status=status))
+            kind = source_class(
+                series["issuer_id"], series["source_id"], series["evidence_role"]
+            )
+            status = certification_status(
+                kind,
+                verified_issuer=(
+                    series["evidence_role"] == "issuer"
+                    and row["verification_status"] == "verified"
+                ),
+            )
+            result.append(
+                dict(
+                    row,
+                    issuer_id=series["issuer_id"],
+                    source_id=series["source_id"],
+                    source_class=kind,
+                    resolution_status=status,
+                )
+            )
         return result
 
     def as_known_at(
@@ -308,17 +402,19 @@ class Store:
         params = (
             (m.utc(timestamp), indicator_id) if indicator_id else (m.utc(timestamp),)
         )
-        return self._classified_rows([
-            dict(row)
-            for row in self.conn.execute(
-                "SELECT * FROM (SELECT v.*, ROW_NUMBER() OVER ("
-                "PARTITION BY indicator_id, reference_period ORDER BY issuer_published_at DESC, "
-                "first_seen_at DESC, id DESC) AS selection_rank FROM official_candidates v "
-                f"WHERE first_seen_at <= ?{where}) WHERE selection_rank=1 "
-                "ORDER BY indicator_id, reference_period",
-                params,
-            )
-        ])
+        return self._classified_rows(
+            [
+                dict(row)
+                for row in self.conn.execute(
+                    "SELECT * FROM (SELECT v.*, ROW_NUMBER() OVER ("
+                    "PARTITION BY indicator_id, reference_period ORDER BY issuer_published_at DESC, "
+                    "first_seen_at DESC, id DESC) AS selection_rank FROM official_candidates v "
+                    f"WHERE first_seen_at <= ?{where}) WHERE selection_rank=1 "
+                    "ORDER BY indicator_id, reference_period",
+                    params,
+                )
+            ]
+        )
 
 
 def open_reader(path: Union[str, Path]) -> Store:
@@ -326,12 +422,24 @@ def open_reader(path: Union[str, Path]) -> Store:
     version = conn.execute("PRAGMA user_version").fetchone()[0]
     if not READER_FLOOR <= version <= READER_CEILING:
         conn.close()
-        raise RuntimeError("macro releases schema is outside the declared reader compatibility range")
-    if conn.execute("SELECT 1 FROM sqlite_master WHERE name='schema_compatibility'").fetchone():
-        compatibility = conn.execute("SELECT reader_floor,reader_ceiling FROM schema_compatibility WHERE schema_version=?", (version,)).fetchone()
-        if compatibility is None or not compatibility[0] <= READER_FLOOR <= compatibility[1]:
+        raise RuntimeError(
+            "macro releases schema is outside the declared reader compatibility range"
+        )
+    if conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE name='schema_compatibility'"
+    ).fetchone():
+        compatibility = conn.execute(
+            "SELECT reader_floor,reader_ceiling FROM schema_compatibility WHERE schema_version=?",
+            (version,),
+        ).fetchone()
+        if (
+            compatibility is None
+            or not compatibility[0] <= READER_FLOOR <= compatibility[1]
+        ):
             conn.close()
-            raise RuntimeError("database changes are not additive for this reader contract")
+            raise RuntimeError(
+                "database changes are not additive for this reader contract"
+            )
     return Store(conn)
 
 

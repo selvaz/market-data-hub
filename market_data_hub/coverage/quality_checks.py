@@ -3,6 +3,7 @@
 quality_checks.py — price-quality flags consumed by coverage/report.py
 (zero and negative prices; see QualityFlags).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -22,8 +23,11 @@ def check_prices(df: pd.DataFrame) -> QualityFlags:
     if df is None or df.empty:
         return flags
 
-    price_cols = [c for c in ("open", "high", "low", "close", "adj_close", "value")
-                  if c in df.columns]
+    price_cols = [
+        c
+        for c in ("open", "high", "low", "close", "adj_close", "value")
+        if c in df.columns
+    ]
     if not price_cols:
         return flags
 
