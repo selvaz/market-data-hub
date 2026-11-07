@@ -22,7 +22,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 |---|---|---:|
 | hub | [alfred_backfill_pending](#catalog-hub-alfred_backfill_pending) | 0 |
 | hub | [alfred_backfill_progress](#catalog-hub-alfred_backfill_progress) | 0 |
-| hub | [alfred_vintage_observations](#catalog-hub-alfred_vintage_observations) | 41 |
+| hub | [alfred_vintage_observations](#catalog-hub-alfred_vintage_observations) | 43 |
 | hub | [calendar_event_notes](#catalog-hub-calendar_event_notes) | 0 |
 | hub | [calendar_events](#catalog-hub-calendar_events) | 0 |
 | hub | [calendar_indicator_aliases](#catalog-hub-calendar_indicator_aliases) | 0 |
@@ -145,6 +145,7 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 | CPIAUCSL | CPI-U all items | BLS | ALFRED via FRED API | M | 14 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | CPILFESL | CPI ex food and energy | BLS | ALFRED via FRED API | M | 14 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | DRTSCILM | Quarterly lending standards lead from SLOOS; retain vendor publication history. | Federal Reserve Board SLOOS | ALFRED via FRED API | Q | 45 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| DSPIC96 | Real disposable personal income | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | DTWEXBGS | Broad trade-weighted dollar | Fed H.10 | ALFRED via FRED API | D | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | EUNNGDP | Nominal GDP | Eurostat | ALFRED via FRED API | Q | 30 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | GACDFSA066MSFRBPHI | Philadelphia Fed soft activity input; preserve actual archived depth without inventing early vintages. | Federal Reserve Bank of Philadelphia | ALFRED via FRED API | M | 0 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
@@ -159,6 +160,7 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 | NEWORDER | Nondefense capital goods orders lead; monthly and benchmark revisions. | US Census Bureau | ALFRED via FRED API | M | 27 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | NFCI | Chicago Fed NFCI | Chicago Fed | ALFRED via FRED API | W | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PAYEMS | Nonfarm payrolls | BLS CES | ALFRED via FRED API | M | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| PCEC96 | Real personal consumption expenditures | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PCEPI | PCE price index (headline) | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PCEPILFE | Core PCE price index | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PERMIT | Building permits | US Census Bureau | ALFRED via FRED API | M | 20 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
