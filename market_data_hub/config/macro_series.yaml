@@ -423,6 +423,24 @@ fred:
   name: MACRO | US | Personal Consumption Expenditures (Billions of Dollars, SAAR)
   priority: 2
   country: US
+- symbol: PCEC96
+  expected_lag_days: 29
+  frequency: M
+  issuer: "BEA"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Real Personal Consumption Expenditures (Billions of Chained 2017 Dollars, SAAR)
+  priority: 2
+  country: US
+- symbol: DSPIC96
+  expected_lag_days: 29
+  frequency: M
+  issuer: "BEA"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Real Disposable Personal Income (Billions of Chained 2017 Dollars, SAAR)
+  priority: 2
+  country: US
 - symbol: CPIAUCSL
   expected_lag_days: 14
   frequency: M
