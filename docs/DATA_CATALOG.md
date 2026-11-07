@@ -50,7 +50,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 307 |
+| hub | [macro_series](#catalog-hub-macro_series) | 309 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
@@ -1689,6 +1689,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | DGS2 | RATES \| US \| 2-Year Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS30 | RATES \| US \| 30-Year Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS3MO | RATES \| US \| 3-Month Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| DSPIC96 | MACRO \| US \| Real Disposable Personal Income (Billions of Chained 2017 Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DTWEXBGS | FX \| USD \| Trade Weighted US Dollar Index: Broad | Fed H.10 | FRED | D | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ECBDFR | RATES \| ECB \| Deposit Facility Rate | ECB | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ECBMLFR | RATES \| ECB \| Marginal Lending Facility Rate | ECB | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
@@ -1762,6 +1763,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | NYFED_ACM_TP10_MONTHLY | RATES \| US \| NY Fed ACM 10-Year Term Premium Monthly | NY Fed (model) | NY Fed direct | M | 30 | 1961-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | PAYEMS | MACRO \| US \| Nonfarm Payrolls (Total) | BLS CES | FRED | M | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCE | MACRO \| US \| Personal Consumption Expenditures (Billions of Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| PCEC96 | MACRO \| US \| Real Personal Consumption Expenditures (Billions of Chained 2017 Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCEPI | MACRO \| US \| PCE Price Index | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCEPILFE | MACRO \| US \| Core PCE Price Index | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PERMIT | MACRO \| US \| Building Permits (Thousands of Units, SAAR) | Census | FRED | M | 20 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
