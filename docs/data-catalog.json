@@ -40876,7 +40876,7 @@
       "table": "download_log"
     },
     {
-      "description": "Earnings release calendar events by exchange, symbol and release day, including timing and market metadata; dynamic company universe.",
+      "description": "Earnings release calendar events by exchange, symbol and release day, including timing and market metadata; eps_*/revenue_* are in estimate_currency (not the listing currency; NULL = unknown); dynamic company universe.",
       "doc": "EXTRACTION.md",
       "jobs": [
         {
@@ -40899,7 +40899,7 @@
       "table": "earnings_events"
     },
     {
-      "description": "TradingView earnings actuals, estimates and prior values captured per provider and hub vintage date; dynamic company universe.",
+      "description": "TradingView earnings actuals, estimates and prior values captured per provider and hub vintage date; eps_*/revenue_* are in estimate_currency (not the listing currency; NULL = unknown); dynamic company universe.",
       "doc": "EXTRACTION.md",
       "jobs": [
         {

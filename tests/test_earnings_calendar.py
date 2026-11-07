@@ -13,6 +13,7 @@ from market_data_hub.earnings_calendar import (
     aggregate,
     audit,
     consolidate_events,
+    event_history,
     events_between,
     ingest_observations,
     make_event_id,
@@ -512,3 +513,76 @@ def test_an_unknown_event_has_no_history(con):
     from market_data_hub.earnings_calendar import event_history
 
     assert event_history(con, "nonesiste") == {}
+
+
+# ------------------------------------------------- estimate currency (v32) ----
+def test_the_estimate_currency_is_read_from_the_csv_and_may_differ(tmp_path):
+    p = _csv(tmp_path, [_riga(_unix(datetime(2026, 7, 30, 20, 30)), coda=",USD")],
+             intestazione=_INTESTAZIONE + ",estimate_currency")
+    o = leggi(p)[0]
+    assert o.currency == "USD" and o.estimate_currency == "USD"
+    # Listing in JPY, estimates in USD: the two fields stay separate.
+    p = _csv(tmp_path, [_riga(_unix(datetime(2026, 7, 30, 20, 30)), coda=",USD")
+                        .replace(",USD,1.3", ",JPY,1.3")],
+             intestazione=_INTESTAZIONE + ",estimate_currency", nome="jp.csv")
+    o = leggi(p)[0]
+    assert o.currency == "JPY" and o.estimate_currency == "USD"
+
+
+def test_an_old_csv_without_the_column_has_unknown_estimate_currency(tmp_path):
+    p = _csv(tmp_path, [_riga(_unix(datetime(2026, 7, 30, 20, 30)))])
+    assert leggi(p)[0].estimate_currency is None
+
+
+def test_the_collector_requests_and_renames_the_field(monkeypatch):
+    from datetime import datetime as dt
+    from market_data_hub.earnings_calendar.collect import tradingview as tv
+    seen = {}
+
+    class R:
+        def raise_for_status(self): pass
+        def json(self):
+            cols = seen["cols"]
+            vals = {"name": "7011", "description": "MHI", "market_cap_basic": 1e10,
+                    "country": "Japan", "exchange": "TSE", "sector": "x",
+                    "industry": "y", "currency": "JPY",
+                    "fundamental_currency_code": "USD"}
+            return {"totalCount": 1, "data": [
+                {"s": "TSE:7011", "d": [vals.get(c, 1.0) for c in cols]}]}
+
+    def post(url, **kw):
+        seen["cols"] = kw["json"]["columns"]
+        return R()
+
+    monkeypatch.setattr(tv.requests, "post", post)
+    df = tv.scarica(dt(2026, 11, 9), dt(2026, 11, 14))
+    assert "fundamental_currency_code" in seen["cols"]
+    assert df.loc[0, "currency"] == "JPY" and df.loc[0, "estimate_currency"] == "USD"
+
+
+def test_estimate_currency_flows_to_events_query_and_view(con):
+    ingest_observations(con, [_oss(symbol="7011", exchange="TSE", currency="JPY",
+                                   estimate_currency="USD", status="occurred",
+                                   eps_estimate=1.0, eps_actual=1.1)])
+    ev = events_between(con, "2026-07-01", "2026-09-01")[0]
+    assert ev["currency"] == "JPY" and ev["estimate_currency"] == "USD"
+    assert event_history(con, ev["event_id"])["estimate_currency"] == "USD"
+    assert con.execute("SELECT estimate_currency FROM v_earnings_surprise"
+                       ).fetchone()[0] == "USD"
+
+
+def test_migration_adds_null_estimate_currency_to_old_rows():
+    c = duckdb.connect(":memory:")
+    cx.migrate(c)
+    # Rebuild the v31 shape: no estimate_currency on tables, view dropped.
+    c.execute("DROP VIEW v_earnings_surprise")
+    for t in ("earnings_events", "earnings_observations"):
+        c.execute(f"ALTER TABLE {t} DROP COLUMN estimate_currency")
+    c.execute("INSERT INTO earnings_events (event_id, symbol, exchange, status, "
+              "currency, eps_estimate) VALUES ('e1','AAPL','NASDAQ','occurred','USD',1.0)")
+    c.execute("UPDATE schema_meta SET value = '31' WHERE key = 'schema_version'")
+    assert cx.migrate(c) == cx.SCHEMA_VERSION
+    assert c.execute("SELECT currency, estimate_currency FROM earnings_events"
+                     ).fetchone() == ("USD", None)
+    assert c.execute("SELECT estimate_currency FROM v_earnings_surprise").fetchall() == [(None,)]
+    c.close()

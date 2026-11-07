@@ -13,7 +13,7 @@ import duckdb
 _CAMPI = """
     event_id, symbol, exchange, tv_ticker, company_name, country, region,
     sector, industry, theme, market_cap, release_ts_utc,
-    release_precision, status, currency, eps_estimate, eps_actual,
+    release_precision, status, currency, estimate_currency, eps_estimate, eps_actual,
     revenue_estimate, revenue_actual
 """
 _RAGGRUPPABILI = ("country", "region", "sector", "industry", "theme")
@@ -104,7 +104,8 @@ def event_history(con: duckdb.DuckDBPyConnection, event_id: str) -> dict:
     versioni = con.execute(
         """
         SELECT source, vintage_date, release_ts_utc, release_precision, status,
-               eps_estimate, eps_actual, revenue_estimate, revenue_actual, run_id
+               estimate_currency, eps_estimate, eps_actual, revenue_estimate,
+               revenue_actual, run_id
         FROM earnings_observations WHERE event_id = ?
         ORDER BY vintage_date, source
         """,

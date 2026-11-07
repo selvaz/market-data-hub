@@ -1051,8 +1051,9 @@ LEFT JOIN calendar_events e
 --
 -- market_cap is normalised across venues (the same issuer's listings in EUR
 -- and MXN report the same figure) and is comparable in USD. EPS and revenue
--- are NOT: they are in the instrument's own currency, so they are only ever
--- compared against their own forecast, as a ratio.
+-- are NOT: they are in `estimate_currency` (TradingView's "fundamental
+-- currency", often not the listing currency `currency`; NULL = unknown, old
+-- rows), so they are only ever compared against their own forecast, as a ratio.
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE IF NOT EXISTS earnings_events (
@@ -1074,7 +1075,8 @@ CREATE TABLE IF NOT EXISTS earnings_events (
     eps_actual          DOUBLE,
     revenue_estimate    DOUBLE,
     revenue_actual      DOUBLE,
-    currency            VARCHAR,               -- of eps/revenue, not of market_cap
+    currency            VARCHAR,               -- listing currency
+    estimate_currency   VARCHAR,               -- of eps/revenue; NULL = unknown
     n_sources           INTEGER,
     first_seen_at       TIMESTAMP,
     updated_at          TIMESTAMP
@@ -1100,6 +1102,7 @@ CREATE TABLE IF NOT EXISTS earnings_observations (
     revenue_estimate    DOUBLE,
     revenue_actual      DOUBLE,
     currency            VARCHAR,
+    estimate_currency   VARCHAR,
     run_id              VARCHAR,
     PRIMARY KEY (event_id, source, vintage_date)
 );
@@ -1111,7 +1114,7 @@ CREATE TABLE IF NOT EXISTS earnings_observations (
 -- Surprise as a ratio, the only cross-company comparison the units allow.
 CREATE OR REPLACE VIEW v_earnings_surprise AS
 SELECT event_id, symbol, exchange, company_name, country, region, sector,
-       theme, market_cap, release_ts_utc, currency,
+       theme, market_cap, release_ts_utc, currency, estimate_currency,
        eps_estimate, eps_actual, revenue_estimate, revenue_actual,
        CASE WHEN eps_estimate IS NOT NULL AND eps_estimate <> 0 AND eps_actual IS NOT NULL
             THEN (eps_actual - eps_estimate) / abs(eps_estimate) END AS eps_surprise,
