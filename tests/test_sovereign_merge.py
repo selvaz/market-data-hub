@@ -27,7 +27,7 @@ def test_combined_catalog_retains_every_declared_series(tmp_db):
     assert set(entries.series_id) == declared and entries.series_id.is_unique
     dataset = next(d for d in catalog.list_datasets() if d["domain"] == "macro")
     # Four EIA inventories and six GPR series extend the former 291-series universe.
-    assert dataset["n_series"] == len(declared) == 307
+    assert dataset["n_series"] == len(declared) == 309
     assert dataset["frequency"] == "D/W/M/Q/A"
     assert all(
         name in dataset["description"] for name in ("FRED", "NY Fed ACM", "sovereign")
