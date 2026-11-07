@@ -1,5 +1,4 @@
 """Reviewed release instants permit collection; they never prove publication."""
-
 from contextvars import ContextVar
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
@@ -28,28 +27,19 @@ def run_date():
 
 def issuer_zone(family):
     from .latam_editions import ZONES as LATAM_ZONES
-
     if family in LATAM_ZONES:
         return LATAM_ZONES[family]
     from .asia_editions import ZONES as ASIA_ZONES
-
     if family in ASIA_ZONES:
         return ASIA_ZONES[family]
     from .housing_editions import ZONES as HOUSING_ZONES
-
     if family in HOUSING_ZONES:
         return HOUSING_ZONES[family]
     from .policy_editions import ZONES
-
     if family in ZONES:
         return ZONES[family]
-    return (
-        "Europe/London"
-        if family and family.startswith("uk_")
-        else "Europe/Luxembourg"
-        if family and family.startswith("ea_")
-        else "America/New_York"
-    )
+    return ("Europe/London" if family and family.startswith("uk_") else
+            "Europe/Luxembourg" if family and family.startswith("ea_") else "America/New_York")
 
 
 def release_instant(edition, metadata=None, *, family=None):
@@ -58,9 +48,7 @@ def release_instant(edition, metadata=None, *, family=None):
     time = metadata[2] if len(metadata) >= 3 else "08:30"
     if time is None:
         return None  # Permission on the meeting date is not an exact publication time.
-    local = datetime.fromisoformat(edition + "T" + time).replace(
-        tzinfo=ZoneInfo(issuer_zone(family))
-    )
+    local = datetime.fromisoformat(edition + "T" + time).replace(tzinfo=ZoneInfo(issuer_zone(family)))
     return local.astimezone(timezone.utc)
 
 
@@ -68,21 +56,14 @@ def edition_status(edition, as_of=None, *, metadata=None, family=None):
     pending = PENDING_EDITIONS.get() or {}
     instant = run_instant(as_of)
     release = release_instant(edition, metadata, family=family)
-    before = (
-        instant < release
-        if release is not None
-        else instant.astimezone(ZoneInfo(issuer_zone(family))).date().isoformat()
-        < edition
-    )
+    before = (instant < release if release is not None else
+              instant.astimezone(ZoneInfo(issuer_zone(family))).date().isoformat() < edition)
     return "scheduled" if (family, edition) in pending or before else "due"
 
 
 def due(editions, as_of=None, *, family=None):
-    return {
-        d: metadata
-        for d, metadata in editions.items()
-        if edition_status(d, as_of, metadata=metadata, family=family) == "due"
-    }
+    return {d: metadata for d, metadata in editions.items()
+            if edition_status(d, as_of, metadata=metadata, family=family) == "due"}
 
 
 def publication_grace(family, edition):
@@ -102,13 +83,10 @@ def mark_pending(family, edition, reason="not_yet_published"):
 def get_edition(client, provider, url, family, edition, params=None):
     """Only an edition-specific, newly due 404 has the publication-delay grace."""
     from .http import FetchError
-
     try:
         return client.get(provider, url, params)
     except FetchError as exc:
-        if str(exc) != provider + ": HTTP 404" or not publication_grace(
-            family, edition
-        ):
+        if str(exc) != provider + ": HTTP 404" or not publication_grace(family, edition):
             raise
         mark_pending(family, edition)
         return None
@@ -117,7 +95,6 @@ def get_edition(client, provider, url, family, edition, params=None):
 def current_edition_allowed(family, edition):
     """Rolling pages may retain only the immediately previous edition in grace."""
     from .http import FetchError
-
     calendar = family_editions(family)
     eligible = due(calendar, family=family)
     if edition not in eligible:
@@ -134,23 +111,18 @@ def current_edition_allowed(family, edition):
 
 def family_editions(family):
     from .latam_editions import EDITIONS as LATAM
-
     if family in LATAM:
         return LATAM[family]
     from .asia_editions import EDITIONS as ASIA
-
     if family in ASIA:
         return ASIA[family]
     from .housing_editions import EDITIONS as HOUSING
-
     if family in HOUSING:
         return HOUSING[family]
     from .policy_editions import EDITIONS as POLICY
-
     if family in POLICY:
         return POLICY[family]
     from .tier1_editions import EDITIONS as REMAINING
-
     if family in REMAINING:
         return REMAINING[family]
     from .us_editions import EDITIONS as MONTHLY
@@ -158,7 +130,6 @@ def family_editions(family):
     from .eurostat_gdp import EDITIONS as GDP
     from .dol import EDITIONS as CLAIMS
     from . import bea, bls, eurostat
-
     if family in MONTHLY:
         return MONTHLY[family]
     if family in UK:
@@ -174,6 +145,4 @@ def family_editions(family):
         result = {d: (p, s, "11:00") for (p, s), d in eurostat.PUBLICATIONS.items()}
         result.update(REMAINING["ea_core_hicp"])
         return result
-    return {
-        d: (p, "regular", "08:30") for (f, p), d in bls.EDITIONS.items() if f == family
-    }
+    return {d: (p, "regular", "08:30") for (f, p), d in bls.EDITIONS.items() if f == family}

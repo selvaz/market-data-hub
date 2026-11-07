@@ -213,9 +213,7 @@ class IssuerEvents:
                 if e.reference_period
                 and e.stage == event["estimate_stage"]
                 and explicit_period(
-                    e.reference_period,
-                    "D" if info["frequency"] == "E" else info["frequency"],
-                    info["geography"],
+                    e.reference_period, "D" if info["frequency"] == "E" else info["frequency"], info["geography"]
                 )
             ]
             if not rows:
@@ -350,12 +348,7 @@ def prepare(store, catalogue, event, captured_at, snapshot_hash):
         ("USD", "final gdp q/q", "us_gdp_qq_saar", "third"),
         ("EUR", "prelim flash gdp q/q", "ea21_gdp_qq", "preliminary_flash"),
     }
-    if (
-        event.get("country"),
-        name(title),
-        indicator["id"],
-        mapping["stage"],
-    ) in vocabulary:
+    if (event.get("country"), name(title), indicator["id"], mapping["stage"]) in vocabulary:
         expected = {mapping["stage"]}
     if mapping["stage"] not in ("unknown", "", None):
         expected.add(mapping["stage"])
@@ -473,7 +466,6 @@ def ingest(store, directory=DEFAULT_RAW_DIR, *, before_snapshot=None, reprocess=
     """
     directory = Path(directory)
     from .scheduled_events import persist_scheduled_events
-
     if before_snapshot:
         before_snapshot()
     # The reviewed issuer calendar is independent of FF archive availability.

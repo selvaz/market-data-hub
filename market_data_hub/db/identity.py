@@ -6,7 +6,6 @@ The stable-id scheme lives HERE so the two producers of identity rows (the
 services layer and the prices upsert auto-attach) can never mint two
 different listing_ids for the same (symbol, provider).
 """
-
 from __future__ import annotations
 
 import hashlib
@@ -61,7 +60,6 @@ _FX_PAIR_RE = re.compile(r"^[A-Z]{3}([A-Z]{3})=X$")
 
 def _config_symbols() -> set[str]:
     from market_data_hub.config_loader import get_yahoo_tickers
-
     return {e["symbol"] for e in get_yahoo_tickers()}
 
 
@@ -124,17 +122,12 @@ def stable_id(prefix: str, *parts: str) -> str:
     return f"{prefix}_{h}"
 
 
-def ensure_listing(
-    con,
-    symbol: str,
-    *,
-    kind: str = "OTHER",
-    name: Optional[str] = None,
-    exchange: Optional[str] = None,
-    currency: Optional[str] = None,
-    provider: str = DEFAULT_PROVIDER,
-    provider_symbol: Optional[str] = None,
-) -> str:
+def ensure_listing(con, symbol: str, *, kind: str = "OTHER",
+                   name: Optional[str] = None,
+                   exchange: Optional[str] = None,
+                   currency: Optional[str] = None,
+                   provider: str = DEFAULT_PROVIDER,
+                   provider_symbol: Optional[str] = None) -> str:
     """Idempotently create instrument + listing + ticker alias for a symbol
     and return the listing_id. Deterministic ids: safe to call repeatedly and
     from multiple writers.
@@ -149,47 +142,28 @@ def ensure_listing(
     now = datetime.now(timezone.utc)
     instrument_id = stable_id("ins", symbol)
     listing_id = stable_id("lst", symbol, provider)
-    con.execute(
-        """
+    con.execute("""
         INSERT INTO instruments (instrument_id, issuer_id, kind, name,
                                  created_at, updated_at)
         SELECT ?, NULL, ?, ?, ?, ?
         WHERE NOT EXISTS (SELECT 1 FROM instruments WHERE instrument_id = ?)
-    """,
-        [instrument_id, kind, name, now, now, instrument_id],
-    )
-    con.execute(
-        """
+    """, [instrument_id, kind, name, now, now, instrument_id])
+    con.execute("""
         INSERT INTO listings (listing_id, instrument_id, symbol, exchange,
                               currency, provider, provider_symbol,
                               active_from, active_to, created_at, updated_at)
         SELECT ?, ?, ?, ?, ?, ?, ?, NULL, NULL, ?, ?
         WHERE NOT EXISTS (SELECT 1 FROM listings WHERE listing_id = ?)
-    """,
-        [
-            listing_id,
-            instrument_id,
-            symbol,
-            exchange,
-            currency,
-            provider,
-            provider_symbol or symbol,
-            now,
-            now,
-            listing_id,
-        ],
-    )
-    con.execute(
-        """
+    """, [listing_id, instrument_id, symbol, exchange, currency, provider,
+          provider_symbol or symbol, now, now, listing_id])
+    con.execute("""
         INSERT INTO identifier_aliases (namespace, value, target_type,
                                         target_id, valid_from, valid_to, updated_at)
         SELECT 'ticker', ?, 'listing', ?, NULL, NULL, ?
         WHERE NOT EXISTS (SELECT 1 FROM identifier_aliases
                           WHERE namespace = 'ticker' AND value = ?
                             AND target_type = 'listing' AND target_id = ?)
-    """,
-        [symbol, listing_id, now, symbol, listing_id],
-    )
+    """, [symbol, listing_id, now, symbol, listing_id])
     return listing_id
 
 
@@ -206,8 +180,7 @@ def duplicate_active_listings(con, symbol: Optional[str] = None):
     which venue is canonical: real dual listings are valid and must be
     distinguished from accidental empty duplicates by an operator.
     """
-    rows = con.execute(
-        """
+    rows = con.execute("""
         WITH duplicated AS (
             SELECT symbol
             FROM listings
@@ -226,27 +199,16 @@ def duplicate_active_listings(con, symbol: Optional[str] = None):
         GROUP BY l.symbol, l.listing_id, l.instrument_id, l.exchange,
                  l.currency, l.provider, l.provider_symbol
         ORDER BY l.symbol, l.listing_id
-    """,
-        [symbol, symbol],
-    ).fetchall()
-    columns = (
-        "symbol",
-        "listing_id",
-        "instrument_id",
-        "exchange",
-        "currency",
-        "provider",
-        "provider_symbol",
-        "price_rows",
-        "first_date",
-        "last_date",
-    )
+    """, [symbol, symbol]).fetchall()
+    columns = ("symbol", "listing_id", "instrument_id", "exchange",
+               "currency", "provider", "provider_symbol", "price_rows",
+               "first_date", "last_date")
     return [dict(zip(columns, row)) for row in rows]
 
 
-def resolve_empty_duplicate_listing(
-    con, *, symbol: str, keep_listing_id: str, deactivate_listing_id: str
-):
+def resolve_empty_duplicate_listing(con, *, symbol: str,
+                                    keep_listing_id: str,
+                                    deactivate_listing_id: str):
     """Retire an explicitly selected, empty duplicate listing atomically.
 
     This API never infers which listing to keep. The two IDs must be the only
@@ -265,15 +227,12 @@ def resolve_empty_duplicate_listing(
     if keep_listing_id == deactivate_listing_id:
         raise ValueError("keeper and duplicate listing IDs must be different")
 
-    rows = con.execute(
-        """
+    rows = con.execute("""
         SELECT listing_id, instrument_id, symbol, provider, provider_symbol,
                active_to
         FROM listings
         WHERE listing_id IN (?, ?)
-    """,
-        [keep_listing_id, deactivate_listing_id],
-    ).fetchall()
+    """, [keep_listing_id, deactivate_listing_id]).fetchall()
     by_id = {row[0]: row for row in rows}
     if set(by_id) != {keep_listing_id, deactivate_listing_id}:
         raise ValueError("both listing IDs must exist in listings")
@@ -282,75 +241,54 @@ def resolve_empty_duplicate_listing(
     duplicate = by_id[deactivate_listing_id]
     if keeper[2] != symbol or duplicate[2] != symbol:
         raise ValueError("both listings must have the requested symbol")
-    if (
-        keeper[1] != duplicate[1]
-        or keeper[3] != duplicate[3]
-        or keeper[4] != duplicate[4]
-    ):
+    if keeper[1] != duplicate[1] or keeper[3] != duplicate[3] \
+            or keeper[4] != duplicate[4]:
         raise ValueError(
-            "listings must share instrument_id, provider, and provider_symbol"
-        )
+            "listings must share instrument_id, provider, and provider_symbol")
     if keeper[5] is not None:
         raise ValueError("the keeper listing must be active")
 
-    active_ids = {
-        row[0]
-        for row in con.execute(
-            "SELECT listing_id FROM listings WHERE symbol = ? AND active_to IS NULL",
-            [symbol],
-        ).fetchall()
-    }
+    active_ids = {row[0] for row in con.execute(
+        "SELECT listing_id FROM listings "
+        "WHERE symbol = ? AND active_to IS NULL", [symbol]).fetchall()}
     expected_active = {keep_listing_id}
     if duplicate[5] is None:
         expected_active.add(deactivate_listing_id)
     if active_ids != expected_active:
         raise ValueError(
             f"expected only the selected listings active for {symbol}; "
-            f"found {sorted(active_ids)}"
-        )
+            f"found {sorted(active_ids)}")
 
     price_count_row = con.execute(
         "SELECT COUNT(*) FROM prices_daily WHERE listing_id = ?",
-        [deactivate_listing_id],
-    ).fetchone()
+        [deactivate_listing_id]).fetchone()
     price_count = int(price_count_row[0]) if price_count_row else 0
     if price_count:
         raise ValueError(
             f"refusing to retire {deactivate_listing_id}: "
-            f"it has {price_count} price rows"
-        )
+            f"it has {price_count} price rows")
 
-    aliases = con.execute(
-        """
+    aliases = con.execute("""
         SELECT namespace, value, target_type, valid_from
         FROM identifier_aliases
         WHERE target_type = 'listing' AND target_id = ? AND valid_to IS NULL
-    """,
-        [deactivate_listing_id],
-    ).fetchall()
+    """, [deactivate_listing_id]).fetchall()
     already_inactive = duplicate[5] is not None
     if already_inactive and not aliases:
-        return {
-            "symbol": symbol,
-            "keep_listing_id": keep_listing_id,
-            "deactivated_listing_id": deactivate_listing_id,
-            "price_rows": 0,
-            "changed": False,
-        }
+        return {"symbol": symbol, "keep_listing_id": keep_listing_id,
+                "deactivated_listing_id": deactivate_listing_id,
+                "price_rows": 0, "changed": False}
 
     now = datetime.now(timezone.utc)
     effective_date = now.date()
     con.execute("BEGIN TRANSACTION")
     try:
         for namespace, value, target_type, valid_from in aliases:
-            collision = con.execute(
-                """
+            collision = con.execute("""
                 SELECT valid_from FROM identifier_aliases
                 WHERE namespace = ? AND value = ? AND target_type = ?
                   AND target_id = ?
-            """,
-                [namespace, value, target_type, keep_listing_id],
-            ).fetchone()
+            """, [namespace, value, target_type, keep_listing_id]).fetchone()
             if collision:
                 keeper_valid_from = collision[0]
                 if keeper_valid_from is None or valid_from is None:
@@ -361,65 +299,37 @@ def resolve_empty_duplicate_listing(
                 # merge the validity interval into it before removing the
                 # duplicate row. An active retiree alias makes the merged
                 # mapping active; keep the earliest open/start boundary.
-                con.execute(
-                    """
+                con.execute("""
                     UPDATE identifier_aliases
                     SET valid_from = ?, valid_to = NULL, updated_at = ?
                     WHERE namespace = ? AND value = ? AND target_type = ?
                       AND target_id = ?
-                """,
-                    [
-                        merged_valid_from,
-                        now,
-                        namespace,
-                        value,
-                        target_type,
-                        keep_listing_id,
-                    ],
-                )
-                con.execute(
-                    """
+                """, [merged_valid_from, now, namespace, value, target_type,
+                      keep_listing_id])
+                con.execute("""
                     DELETE FROM identifier_aliases
                     WHERE namespace = ? AND value = ? AND target_type = ?
                       AND target_id = ?
-                """,
-                    [namespace, value, target_type, deactivate_listing_id],
-                )
+                """, [namespace, value, target_type, deactivate_listing_id])
             else:
-                con.execute(
-                    """
+                con.execute("""
                     UPDATE identifier_aliases
                     SET target_id = ?, updated_at = ?
                     WHERE namespace = ? AND value = ? AND target_type = ?
                       AND target_id = ? AND valid_to IS NULL
-                """,
-                    [
-                        keep_listing_id,
-                        now,
-                        namespace,
-                        value,
-                        target_type,
-                        deactivate_listing_id,
-                    ],
-                )
+                """, [keep_listing_id, now, namespace, value, target_type,
+                      deactivate_listing_id])
 
         if not already_inactive:
-            con.execute(
-                """
+            con.execute("""
                 UPDATE listings SET active_to = ?, updated_at = ?
                 WHERE listing_id = ? AND active_to IS NULL
-            """,
-                [effective_date, now, deactivate_listing_id],
-            )
+            """, [effective_date, now, deactivate_listing_id])
         con.execute("COMMIT")
     except Exception:
         con.execute("ROLLBACK")
         raise
 
-    return {
-        "symbol": symbol,
-        "keep_listing_id": keep_listing_id,
-        "deactivated_listing_id": deactivate_listing_id,
-        "price_rows": 0,
-        "changed": True,
-    }
+    return {"symbol": symbol, "keep_listing_id": keep_listing_id,
+            "deactivated_listing_id": deactivate_listing_id,
+            "price_rows": 0, "changed": True}

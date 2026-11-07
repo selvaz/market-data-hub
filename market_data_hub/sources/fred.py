@@ -10,7 +10,6 @@ from FRED) go through here.
 Canonical output for macro_series:
   [date, series_id, value, series_name, unit, frequency, source, country]
 """
-
 from __future__ import annotations
 
 import time
@@ -24,9 +23,8 @@ _API_URL = "https://api.stlouisfed.org/fred/series/observations"
 _CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
 
 
-def _http_get(
-    url: str, params: dict, timeout: int, retries: int, base_sleep: float
-) -> requests.Response:
+def _http_get(url: str, params: dict, timeout: int, retries: int,
+              base_sleep: float) -> requests.Response:
     # Connection: close avoids reusing "dead" keep-alive connections
     # through corporate proxies (a frequent cause of RemoteDisconnected).
     headers = {"User-Agent": "market-data-hub/0.1", "Connection": "close"}
@@ -40,33 +38,23 @@ def _http_get(
         except Exception as e:
             last = e
             if attempt < retries - 1:
-                time.sleep(base_sleep * (4**attempt))  # 1, 4, 16s
+                time.sleep(base_sleep * (4 ** attempt))  # 1, 4, 16s
     # retries<=0 means the loop above never ran, leaving `last` unset --
     # raising it directly would then raise None instead of a real error.
     raise last if last else RuntimeError(f"fred: no attempts made (retries={retries})")
 
 
-def fetch_fred(
-    series_id: str,
-    start: str,
-    end: str,
-    *,
-    api_key: Optional[str] = None,
-    timeout: int = 30,
-    retries: int = 3,
-    base_sleep: float = 1.0,
-    meta: Optional[dict] = None,
-) -> pd.DataFrame:
+def fetch_fred(series_id: str, start: str, end: str, *,
+               api_key: Optional[str] = None, timeout: int = 30,
+               retries: int = 3, base_sleep: float = 1.0,
+               meta: Optional[dict] = None) -> pd.DataFrame:
     """Download a FRED series between start and end (inclusive)."""
     meta = meta or {}
 
     if api_key:
         params = {
-            "series_id": series_id,
-            "api_key": api_key,
-            "file_type": "json",
-            "observation_start": start,
-            "observation_end": end,
+            "series_id": series_id, "api_key": api_key, "file_type": "json",
+            "observation_start": start, "observation_end": end,
         }
         r = _http_get(_API_URL, params, timeout, retries, base_sleep)
         obs = r.json().get("observations", [])
@@ -100,30 +88,10 @@ def fetch_fred(
     df["frequency"] = meta.get("frequency")
     df["source"] = "fred"
     df["country"] = meta.get("country", "US")
-    return df[
-        [
-            "date",
-            "series_id",
-            "value",
-            "series_name",
-            "unit",
-            "frequency",
-            "source",
-            "country",
-        ]
-    ]
+    return df[["date", "series_id", "value", "series_name", "unit",
+               "frequency", "source", "country"]]
 
 
 def _empty() -> pd.DataFrame:
-    return pd.DataFrame(
-        columns=[
-            "date",
-            "series_id",
-            "value",
-            "series_name",
-            "unit",
-            "frequency",
-            "source",
-            "country",
-        ]
-    )
+    return pd.DataFrame(columns=["date", "series_id", "value", "series_name",
+                                 "unit", "frequency", "source", "country"])

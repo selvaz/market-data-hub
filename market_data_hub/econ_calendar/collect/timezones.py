@@ -31,7 +31,6 @@ with daylight saving, so it is computed per release date rather than written
 down -- a fixed UTC hour is right for half the year and one hour wrong for the
 other half, which is the exact error this module exists to catch.
 """
-
 from __future__ import annotations
 
 from collections import Counter
@@ -40,9 +39,9 @@ from typing import Optional
 from zoneinfo import ZoneInfo
 
 # source -> how its offset is established
-DERIVED = ("myfxbook",)  # measured from the batch, every run
-EXPECTED_ZERO = ("tradays", "yahoo")
-NOT_APPLICABLE = ("nasdaq", "forexfactory")
+DERIVED = ('myfxbook',)          # measured from the batch, every run
+EXPECTED_ZERO = ('tradays', 'yahoo')
+NOT_APPLICABLE = ('nasdaq', 'forexfactory')
 
 # source -> (country code, event name pattern, LOCAL hour as float, IANA zone)
 #
@@ -56,19 +55,19 @@ NOT_APPLICABLE = ("nasdaq", "forexfactory")
 # maps to ISO before writing, so an anchor on 'USD' would match nothing and the
 # batch would be refused for having no anchors rather than for being undatable.
 ANCORE = {
-    "myfxbook": [
-        ("US", r"Inflation Rate|Initial Jobless|Retail Sales", 8.5, "America/New_York"),
-        ("EU", r"Interest Rate", 14.25, "Europe/Berlin"),
+    'myfxbook': [
+        ('US', r'Inflation Rate|Initial Jobless|Retail Sales', 8.5, 'America/New_York'),
+        ('EU', r'Interest Rate', 14.25, 'Europe/Berlin'),
     ],
-    "tradays": [
-        ("US", r"CPI|Initial Jobless Claims|Retail Sales", 8.5, "America/New_York"),
+    'tradays': [
+        ('US', r'CPI|Initial Jobless Claims|Retail Sales', 8.5, 'America/New_York'),
     ],
-    "yahoo": [
-        ("US", r"CPI YY|Initial Jobless", 8.5, "America/New_York"),
+    'yahoo': [
+        ('US', r'CPI YY|Initial Jobless', 8.5, 'America/New_York'),
     ],
 }
 
-TOLLERANZA = 0.01  # hours; the anchors are whole or half hours
+TOLLERANZA = 0.01               # hours; the anchors are whole or half hours
 
 
 class TimezoneUnknown(RuntimeError):
@@ -86,12 +85,11 @@ def ore(orario) -> Optional[float]:
     if not o:
         return None
     try:
-        if "AM" in o.upper() or "PM" in o.upper():
+        if 'AM' in o.upper() or 'PM' in o.upper():
             from datetime import datetime
-
-            d = datetime.strptime(o.replace(" UTC", "").strip(), "%I:%M %p")
+            d = datetime.strptime(o.replace(' UTC', '').strip(), '%I:%M %p')
             return d.hour + d.minute / 60
-        h, m = o.split(":")
+        h, m = o.split(':')
         return int(h) + int(m) / 60
     except (ValueError, AttributeError):
         return None
@@ -112,21 +110,20 @@ def giorno_di(valore, oggi=None):
         return None
     oggi = oggi or datetime.utcnow().date()
     try:
-        return datetime.strptime(s, "%Y-%m-%d").date()
+        return datetime.strptime(s, '%Y-%m-%d').date()
     except ValueError:
         pass
-    testa = s.split(",")[0].strip()
+    testa = s.split(',')[0].strip()
     # The nearest candidate wins, measured both ways. Taking the first one that
     # merely is not far in the future picks this year for '1 January' read on
     # 31 December -- a date 364 days behind, when the row means tomorrow.
     # Distance decides it in both directions and needs no rule about which.
     candidati = []
-    for formato in ("%d %B", "%d %b"):
+    for formato in ('%d %B', '%d %b'):
         for anno in (oggi.year - 1, oggi.year, oggi.year + 1):
             try:
                 candidati.append(
-                    datetime.strptime(f"{testa} {anno}", f"{formato} %Y").date()
-                )
+                    datetime.strptime(f'{testa} {anno}', f'{formato} %Y').date())
             except ValueError:
                 continue
     if not candidati:
@@ -143,10 +140,9 @@ def ora_utc_ancora(locale: float, zona: str, giorno) -> Optional[float]:
     if giorno is None:
         return None
     h, m = divmod(round(locale * 60), 60)
-    istante = datetime(
-        giorno.year, giorno.month, giorno.day, h, m, tzinfo=ZoneInfo(zona)
-    )
-    utc = istante.astimezone(ZoneInfo("UTC"))
+    istante = datetime(giorno.year, giorno.month, giorno.day, h, m,
+                       tzinfo=ZoneInfo(zona))
+    utc = istante.astimezone(ZoneInfo('UTC'))
     return utc.hour + utc.minute / 60
 
 
@@ -166,27 +162,21 @@ def measure(d, fonte: str, oggi=None) -> float:
 
     ancore = ANCORE.get(fonte)
     if not ancore:
-        raise TimezoneUnknown(
-            f"{fonte}: no anchors defined, so no offset can be "
-            f"established. Add one to ANCORE before ingesting it."
-        )
+        raise TimezoneUnknown(f"{fonte}: no anchors defined, so no offset can be "
+                              f"established. Add one to ANCORE before ingesting it.")
 
     misure = []
     for paese, pattern, ora_locale, zona in ancore:
-        sub = d[
-            (d.Paese.astype(str) == paese)
-            & d.Evento.astype(str).str.contains(
-                pattern, case=False, regex=True, na=False
-            )
-        ]
+        sub = d[(d.Paese.astype(str) == paese)
+                & d.Evento.astype(str).str.contains(pattern, case=False,
+                                                    regex=True, na=False)]
         scarti = []
         for _, r in sub.iterrows():
             pubblicata = ore(r.Orario)
             if pubblicata is None:
                 continue
-            vera = ora_utc_ancora(
-                ora_locale, zona, giorno_di(r.get("Data_Rilascio", ""), oggi)
-            )
+            vera = ora_utc_ancora(ora_locale, zona,
+                                  giorno_di(r.get('Data_Rilascio', ''), oggi))
             if vera is None:
                 continue
             scarti.append(round(vera - pubblicata, 2))
@@ -198,14 +188,12 @@ def measure(d, fonte: str, oggi=None) -> float:
         raise TimezoneUnknown(
             f"{fonte}: none of the {len(ancore)} anchors appear in this batch, so "
             f"its timezone cannot be established. A batch too narrow to contain a "
-            f"US 08:30 print cannot be dated; widen it or ingest it separately."
-        )
+            f"US 08:30 print cannot be dated; widen it or ingest it separately.")
 
     if max(misure) - min(misure) > TOLLERANZA:
         raise TimezoneUnknown(
             f"{fonte}: the anchors disagree ({misure}). One of them is not the "
-            f"release it is taken for -- do not ingest until it is known which."
-        )
+            f"release it is taken for -- do not ingest until it is known which.")
 
     scarto = misure[0]
 
@@ -213,8 +201,7 @@ def measure(d, fonte: str, oggi=None) -> float:
         raise TimezoneUnknown(
             f"{fonte}: expected UTC and measured {scarto:+.2f} h. For tradays this "
             f"means the browser is no longer pinned to UTC (see "
-            f"setup_browser), and every time in this batch is off by that much."
-        )
+            f"setup_browser), and every time in this batch is off by that much.")
 
     return scarto
 
@@ -222,42 +209,32 @@ def measure(d, fonte: str, oggi=None) -> float:
 def report(frames: dict) -> int:
     """Print what each source's batch says. Returns the number of failures."""
     print(f"{'source':14} {'how':14} {'offset to UTC':>14}   note")
-    print("-" * 72)
+    print('-' * 72)
     guasti = 0
     for fonte, d in frames.items():
-        come = (
-            "derived"
-            if fonte in DERIVED
-            else "expected 0"
-            if fonte in EXPECTED_ZERO
-            else "n/a"
-        )
+        come = ('derived' if fonte in DERIVED
+                else 'expected 0' if fonte in EXPECTED_ZERO else 'n/a')
         try:
             scarto = measure(d, fonte)
-            print(f"{fonte:14} {come:14} {scarto:>+13.2f} h")
+            print(f'{fonte:14} {come:14} {scarto:>+13.2f} h')
         except TimezoneUnknown as e:
             guasti += 1
-            print(f"{fonte:14} {come:14} {'REFUSED':>14}   {e}")
+            print(f'{fonte:14} {come:14} {"REFUSED":>14}   {e}')
     return guasti
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import argparse
 
     import pandas as pd
 
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument(
-        "--csv",
-        action="append",
-        default=[],
-        metavar="SOURCE=PATH",
-        help="es. --csv myfxbook=myfxbook_universo.csv",
-    )
+    ap.add_argument('--csv', action='append', default=[], metavar='SOURCE=PATH',
+                    help='es. --csv myfxbook=myfxbook_universo.csv')
     args = ap.parse_args()
 
     frames = {}
     for voce in args.csv:
-        fonte, _, path = voce.partition("=")
-        frames[fonte] = pd.read_csv(path).fillna("")
+        fonte, _, path = voce.partition('=')
+        frames[fonte] = pd.read_csv(path).fillna('')
     raise SystemExit(1 if report(frames) else 0)

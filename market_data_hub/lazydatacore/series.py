@@ -9,7 +9,6 @@ The DataFrame validators import pandas lazily so that ``lazydatacore`` stays a
 leaf: importing the contract never pulls pandas unless you actually validate a
 frame.
 """
-
 from __future__ import annotations
 
 from enum import Enum
@@ -40,7 +39,7 @@ class ReturnKind(str, Enum):
     """How a return was computed. Decimal fraction, never percent."""
 
     SIMPLE = "simple"  # p_t / p_{t-1} - 1
-    LOG = "log"  # ln(p_t / p_{t-1})
+    LOG = "log"        # ln(p_t / p_{t-1})
 
 
 class PriceBar(BaseModel):
@@ -94,5 +93,7 @@ def validate_long_prices(df: "pd.DataFrame") -> "pd.DataFrame":
     if "symbol" not in cols:
         raise ValueError("long price frame missing required column: 'symbol'")
     if not ({"date", "ts"} & cols):
-        raise ValueError("long price frame missing a time column ('date' or 'ts')")
+        raise ValueError(
+            "long price frame missing a time column ('date' or 'ts')"
+        )
     return df

@@ -8,7 +8,6 @@ Ports the logic of:
 
 Returns a canonical code: 'D' | 'W' | 'M' | 'Q' | 'A' | 'irregular_Xd' | 'UNKNOWN'
 """
-
 from __future__ import annotations
 
 import numpy as np
@@ -17,12 +16,8 @@ import pandas as pd
 
 def detect_frequency(dates) -> str:
     """Infer D/W/M/Q/A from the median spacing of the dates (pandas 3.x safe)."""
-    ds = (
-        pd.to_datetime(pd.Series(list(dates)), errors="coerce")
-        .dropna()
-        .sort_values()
-        .unique()
-    )
+    ds = (pd.to_datetime(pd.Series(list(dates)), errors="coerce")
+          .dropna().sort_values().unique())
     if len(ds) < 2:
         return "UNKNOWN"
     deltas = np.diff(ds).astype("timedelta64[D]").astype(int)

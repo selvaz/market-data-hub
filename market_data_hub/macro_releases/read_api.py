@@ -8,18 +8,7 @@ from decimal import Decimal
 import re
 from zoneinfo import ZoneInfo
 
-from .catalogue import (
-    FAMILIES,
-    INDICATORS,
-    US_MONTHLY,
-    EMPLOYMENT_FAMILIES,
-    UK_FAMILIES,
-    REMAINING_FAMILIES,
-    CENTRAL_BANKS,
-    HOUSING_FAMILIES,
-    ASIA_FAMILIES,
-    LATAM_FAMILIES,
-)
+from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, EMPLOYMENT_FAMILIES, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES
 from .models import utc
 from .read_times import stored_rows
 from .source_classes import source_class
@@ -41,44 +30,23 @@ FAMILY_INDICATORS = {
     "ea_hicp": {i for i in INDICATORS if "hicp" in i and "core" not in i},
     "uk_gdp": {"uk_gdp_mm", "uk_gdp_index"},
 }
-FAMILY_INDICATORS.update(
-    {
-        f: {i.id for i in measures}
-        for f, measures in {**US_MONTHLY, **EMPLOYMENT_FAMILIES, **UK_FAMILIES}.items()
-    }
-)
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in {**US_MONTHLY, **EMPLOYMENT_FAMILIES, **UK_FAMILIES}.items()})
 FAMILY_INDICATORS["ea_gdp"] = {"ea21_gdp_qq", "ea21_gdp_yy"}
 FAMILY_INDICATORS["us_jobless_claims"] = {"us_initial_jobless_claims"}
-FAMILY_INDICATORS.update(
-    {f: {i.id for i in measures} for f, measures in REMAINING_FAMILIES.items()}
-)
-FAMILY_INDICATORS.update(
-    {f: {i.id for i in measures} for f, measures in CENTRAL_BANKS.items()}
-)
-FAMILY_INDICATORS.update(
-    {f: {i.id for i in measures} for f, measures in HOUSING_FAMILIES.items()}
-)
-FAMILY_INDICATORS.update(
-    {f: {i.id for i in measures} for f, measures in ASIA_FAMILIES.items()}
-)
-FAMILY_INDICATORS.update(
-    {f: {i.id for i in measures} for f, measures in LATAM_FAMILIES.items()}
-)
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in REMAINING_FAMILIES.items()})
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in CENTRAL_BANKS.items()})
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in HOUSING_FAMILIES.items()})
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in ASIA_FAMILIES.items()})
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in LATAM_FAMILIES.items()})
 
 
 def indicators_for_stage(family, stage):
     """Only measures actually published by this family's edition stage."""
     if family in ASIA_FAMILIES:
         from .asia_editions import EDITIONS
-
-        return (
-            FAMILY_INDICATORS[family]
-            if stage in {m[1] for m in EDITIONS[family].values()}
-            else set()
-        )
+        return FAMILY_INDICATORS[family] if stage in {m[1] for m in EDITIONS[family].values()} else set()
     if family in HOUSING_FAMILIES:
         from .housing_editions import EDITIONS
-
         stages = {metadata[1] for metadata in EDITIONS[family].values()}
         return FAMILY_INDICATORS[family] if stage in stages else set()
     if (family, stage) == ("ea_ec_surveys", "flash"):
@@ -150,12 +118,9 @@ def window(since, until):
 def prior_period(period, frequency=None, *, indicator=None):
     if indicator == "us_pmms_30y":
         from .housing_editions import EDITIONS
-
         # Holiday survey weeks may end six or eight days apart. Preserve the
         # issuer calendar rather than inventing a seven-day comparison date.
-        return max(
-            (p for p, _, _ in EDITIONS["us_pmms"].values() if p < period), default=None
-        )
+        return max((p for p, _, _ in EDITIONS["us_pmms"].values() if p < period), default=None)
     if re.fullmatch(r"\d{4}-\d{2}", period):
         first = date.fromisoformat(period + "-01")
         return (first - timedelta(days=1)).strftime("%Y-%m")
@@ -168,9 +133,7 @@ def prior_period(period, frequency=None, *, indicator=None):
     if re.fullmatch(r"\d{4}", period):
         return str(int(period) - 1)
     if re.fullmatch(r"\d{4}-\d{2}-\d{2}", period):
-        return (
-            date.fromisoformat(period) - timedelta(days=7 if frequency == "W" else 1)
-        ).isoformat()
+        return (date.fromisoformat(period) - timedelta(days=7 if frequency == "W" else 1)).isoformat()
     return None
 
 
@@ -315,9 +278,7 @@ def latest_period(snapshot, indicator, period, *, policy="revised_history"):
         if e.indicator_id == indicator and e.reference_period == period
     ]
     stages = sorted({e.stage for e in candidates})
-    resolved = [
-        resolve_evidence(snapshot, indicator, period, s, policy=policy) for s in stages
-    ]
+    resolved = [resolve_evidence(snapshot, indicator, period, s, policy=policy) for s in stages]
     resolved = [r for r in resolved if r is not None]
     if not resolved:
         return None
@@ -340,13 +301,8 @@ class ReadAPI:
         self.store = store
 
     def release_documents(
-        self,
-        release_event_id=None,
-        *,
-        indicator=None,
-        reference_period=None,
-        as_known_at=None,
-        max_chars=20000,
+        self, release_event_id=None, *, indicator=None, reference_period=None,
+        as_known_at=None, max_chars=20000,
     ):
         """Saved issuer bodies linked by content hash; never fetch a URL.
 
@@ -355,12 +311,8 @@ class ReadAPI:
         max_chars is a shared text budget across documents, oldest retrieval
         first. Content types are inferred: the collector stores no HTTP headers.
         """
-        if (release_event_id is not None) == (
-            indicator is not None or reference_period is not None
-        ):
-            raise ValueError(
-                "supply release_event_id OR indicator and reference_period"
-            )
+        if (release_event_id is not None) == (indicator is not None or reference_period is not None):
+            raise ValueError("supply release_event_id OR indicator and reference_period")
         if release_event_id is None and (indicator is None or reference_period is None):
             raise ValueError("indicator and reference_period are both required")
         if type(max_chars) is not int or max_chars < 1:
@@ -373,81 +325,49 @@ class ReadAPI:
         try:
             snapshot = Snapshot.load(self.store, cutoff)
             hashes = {
-                e.content_hash
-                for e in snapshot.evidence
-                if e.role == "issuer"
-                and e.source_class != "redistributor"
-                and (
-                    e.event_id == release_event_id
-                    if release_event_id is not None
-                    else e.indicator_id == indicator
-                    and e.reference_period == reference_period
-                )
+                e.content_hash for e in snapshot.evidence
+                if e.role == "issuer" and e.source_class != "redistributor"
+                and (e.event_id == release_event_id if release_event_id is not None else
+                     e.indicator_id == indicator and e.reference_period == reference_period)
             }
             rows = []
-            if conn.execute(
-                "SELECT 1 FROM sqlite_master WHERE name='documents' AND type='table'"
-            ).fetchone():
+            if conn.execute("SELECT 1 FROM sqlite_master WHERE name='documents' AND type='table'").fetchone():
                 for digest in sorted(hashes):
-                    row = conn.execute(
-                        "SELECT * FROM documents WHERE document_hash=?", (digest,)
-                    ).fetchone()
+                    row = conn.execute("SELECT * FROM documents WHERE document_hash=?", (digest,)).fetchone()
                     if row is not None:
                         rows.append(dict(row))
         finally:
             if owns_transaction:
                 conn.execute("ROLLBACK")
         limitations = list(snapshot.limitations)
-        rows = stored_rows(
-            rows,
-            {"retrieved_at": None},
-            known_at="retrieved_at",
-            cutoff=cutoff,
-            limitations=limitations,
-            table="documents",
-        )
+        rows = stored_rows(rows, {"retrieved_at": None}, known_at="retrieved_at",
+                           cutoff=cutoff, limitations=limitations, table="documents")
         documents = []
         remaining = max_chars
         from .documents import extract_document_text
-
         for row in sorted(rows, key=lambda r: (r["retrieved_at"], r["document_hash"])):
             text, content_type, reason = extract_document_text(row)
-            documents.append(
-                {
-                    "url": row["url"],
-                    "retrieved_at": row["retrieved_at"],
-                    "document_hash": row["document_hash"],
-                    "content_type": content_type,
-                    "content_type_basis": "inferred_from_saved_body",
-                    "text": text[:remaining],
-                    "text_chars": len(text),
-                    "truncated": len(text) > remaining,
-                    "text_missing_reason": reason,
-                    "timestamp_precisions": row["timestamp_precisions"],
-                }
-            )
+            documents.append({
+                "url": row["url"], "retrieved_at": row["retrieved_at"],
+                "document_hash": row["document_hash"], "content_type": content_type,
+                "content_type_basis": "inferred_from_saved_body",
+                "text": text[:remaining], "text_chars": len(text),
+                "truncated": len(text) > remaining, "text_missing_reason": reason,
+                "timestamp_precisions": row["timestamp_precisions"],
+            })
             remaining -= len(documents[-1]["text"])
         return {
-            "release_event_id": release_event_id,
-            "indicator_id": indicator,
-            "reference_period": reference_period,
-            "as_known_at": cutoff,
-            "max_chars": max_chars,
-            "documents": documents,
-            "empty": []
-            if documents
-            else [
-                {
-                    "reason": "document_not_found",
-                    "detail": "no linked saved issuer document was available at as_known_at; later retrievals and mirror documents are excluded",
-                }
-            ],
+            "release_event_id": release_event_id, "indicator_id": indicator,
+            "reference_period": reference_period, "as_known_at": cutoff,
+            "max_chars": max_chars, "documents": documents,
+            "empty": [] if documents else [{
+                "reason": "document_not_found",
+                "detail": "no linked saved issuer document was available at as_known_at; later retrievals and mirror documents are excluded",
+            }],
             "limitations": limitations,
         }
 
-    def decision_history(
-        self, indicator, *, as_known_at=None, limit=100, policy="revised_history"
-    ):
+    def decision_history(self, indicator, *, as_known_at=None, limit=100, policy="revised_history"):
         """Latest official vintage per decision, newest decision date first.
 
         Rates are percent levels (Fed scalar: upper bound); change_bp is the
@@ -459,88 +379,45 @@ class ReadAPI:
             raise ValueError("limit must be a positive integer")
         cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
         snapshot = Snapshot.load(self.store, cutoff)
-        result = {
-            "indicator_id": indicator,
-            "as_known_at": cutoff,
-            "limit": limit,
-            "decisions": [],
-            "empty": [],
-            "has_more": False,
-            "limitations": [
-                *snapshot.limitations,
-                "Stored decisions only; missing meetings or a truncated history cannot establish a complete hold streak or 12-month total.",
-            ],
-        }
+        result = {"indicator_id": indicator, "as_known_at": cutoff, "limit": limit,
+                  "decisions": [], "empty": [], "has_more": False,
+                  "limitations": [*snapshot.limitations,
+                      "Stored decisions only; missing meetings or a truncated history cannot establish a complete hold streak or 12-month total."]}
         if indicator not in INDICATORS or not indicator.endswith("_decision"):
-            result["empty"] = [
-                {
-                    "reason": "not_covered",
-                    "detail": "indicator is not a supported policy decision",
-                }
-            ]
+            result["empty"] = [{"reason": "not_covered", "detail": "indicator is not a supported policy decision"}]
             return result
-        groups = {
-            (e.event_id, e.reference_period, e.stage)
-            for e in snapshot.evidence
-            if e.indicator_id == indicator and e.event_id and e.reference_period
-        }
+        groups = {(e.event_id, e.reference_period, e.stage) for e in snapshot.evidence
+                  if e.indicator_id == indicator and e.event_id and e.reference_period}
         decisions = []
         for event_id, period, stage in sorted(groups):
-            resolution = resolve_evidence(
-                snapshot, indicator, period, stage, event_id=event_id, policy=policy
-            )
+            resolution = resolve_evidence(snapshot, indicator, period, stage, event_id=event_id, policy=policy)
             if resolution is None or resolution.status != "official":
                 continue
             facts = resolution.policy_decision
             if not facts or not facts.get("rates"):
-                result["limitations"].append(
-                    f"Skipped {event_id}: stored policy facts are missing."
-                )
+                result["limitations"].append(f"Skipped {event_id}: stored policy facts are missing.")
                 continue
             headline = next(iter(facts["rates"].values()))
-            decisions.append(
-                {
-                    "release_event_id": event_id,
-                    "decision_date": facts["decision_date"],
-                    "rate": resolution.value,
-                    "unit": resolution.unit,
-                    "change_bp": headline.get("change_bp"),
-                    "rates": facts["rates"],
-                    "vote_split": facts.get("vote_split"),
-                    "published_at": resolution.published_at,
-                    "first_seen_at": resolution.first_seen_at,
-                    "revision_kind": resolution.revision_kind,
-                    "policy_decision": facts,
-                    "resolution": resolution.to_dict(),
-                }
-            )
-        decisions.sort(
-            key=lambda d: (
-                d["decision_date"],
-                d["published_at"] or "",
-                d["release_event_id"],
-            ),
-            reverse=True,
-        )
+            decisions.append({
+                "release_event_id": event_id, "decision_date": facts["decision_date"],
+                "rate": resolution.value, "unit": resolution.unit,
+                "change_bp": headline.get("change_bp"), "rates": facts["rates"],
+                "vote_split": facts.get("vote_split"),
+                "published_at": resolution.published_at,
+                "first_seen_at": resolution.first_seen_at,
+                "revision_kind": resolution.revision_kind,
+                "policy_decision": facts, "resolution": resolution.to_dict(),
+            })
+        decisions.sort(key=lambda d: (d["decision_date"], d["published_at"] or "", d["release_event_id"]), reverse=True)
         result["decisions"] = decisions[:limit]
         result["has_more"] = len(decisions) > limit
         if not decisions:
-            result["empty"] = [
-                {
-                    "reason": "decision_history_not_found",
-                    "detail": "no official resolved decision with stored policy facts was available at as_known_at",
-                }
-            ]
+            result["empty"] = [{"reason": "decision_history_not_found",
+                                "detail": "no official resolved decision with stored policy facts was available at as_known_at"}]
         return result
 
     def release_cards(
-        self,
-        since,
-        until,
-        indicators=None,
-        geography=None,
-        as_known_at=None,
-        *,
+        self, since, until, indicators=None, geography=None, as_known_at=None, *,
         policy="revised_history",
     ):
         """Return {cards, empty, limitations}; each requested absence is explained.
@@ -556,9 +433,7 @@ class ReadAPI:
         snapshot = Snapshot.load(self.store, cutoff)
         return self._cards(snapshot, start, end, indicators, geography, policy=policy)
 
-    def first_seen_release_cards(
-        self, since, until, *, as_known_at=None, policy="new_release"
-    ):
+    def first_seen_release_cards(self, since, until, *, as_known_at=None, policy="new_release"):
         """Issuer actuals first captured in [since, until), known at the cutoff.
 
         Reuse publication-card resolution, previous values and forecast policy.
@@ -576,31 +451,19 @@ class ReadAPI:
         start, end = window(since, until)
         cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
         snapshot = Snapshot.load(self.store, cutoff)
-        result = self._cards(
-            snapshot, start, end, first_seen_window=True, policy=selection_policy
-        )
+        result = self._cards(snapshot, start, end, first_seen_window=True, policy=selection_policy)
         latest = {}
         for row in snapshot.collect_families:
             latest.setdefault(row["family"], row)
         result["collection_issues"] = [
-            latest[family]
-            for family in sorted(latest)
+            latest[family] for family in sorted(latest)
             if latest[family]["status"] not in {"ok", "no_change"}
         ]
         result["window_basis"] = "first_official_seen_at"
         return result
 
-    def _cards(
-        self,
-        snapshot,
-        start,
-        end,
-        indicators=None,
-        geography=None,
-        *,
-        first_seen_window=False,
-        policy="revised_history",
-    ):
+    def _cards(self, snapshot, start, end, indicators=None, geography=None, *, first_seen_window=False,
+               policy="revised_history"):
         requested = (
             [indicators]
             if isinstance(indicators, str)
@@ -657,24 +520,15 @@ class ReadAPI:
                 else sorted({e.stage for e in headline})[-1]
             )
             official_headline = [
-                e
-                for e in headline
-                if e.verified_issuer
-                and e.value is not None
-                and e.reading_kind == "actual"
-                and e.stage == stage
+                e for e in headline
+                if e.verified_issuer and e.value is not None
+                and e.reading_kind == "actual" and e.stage == stage
             ]
-            first_official_seen = min(
-                (e.first_seen_at for e in official_headline), default=None
-            )
+            first_official_seen = min((e.first_seen_at for e in official_headline), default=None)
             if first_seen_window and (
-                first_official_seen is None
-                or not start <= first_official_seen < end
-                or any(
-                    e.first_seen_at == first_official_seen
-                    and e.revision_kind == "backfill"
-                    for e in official_headline
-                )
+                first_official_seen is None or not start <= first_official_seen < end
+                or any(e.first_seen_at == first_official_seen and e.revision_kind == "backfill"
+                       for e in official_headline)
             ):
                 continue
             resolution = resolve_evidence(
@@ -700,9 +554,7 @@ class ReadAPI:
                         if e.published_at and e.published_at <= selected.published_at
                     ),
                 )
-                contextual = resolve_evidence(
-                    context, indicator, period, stage, policy=policy
-                )
+                contextual = resolve_evidence(context, indicator, period, stage, policy=policy)
                 if (
                     contextual
                     and contextual.source["selected_evidence_id"] == selected.id
@@ -717,61 +569,35 @@ class ReadAPI:
                 or window_time is None
                 or not start <= window_time < end
                 or released_at > snapshot.cutoff
-                or first_seen_window
-                and resolution.status not in {"official", "private"}
+                or first_seen_window and resolution.status not in {"official", "private"}
             ):
                 continue
             if stale_series(snapshot, indicator, period, released_at):
                 continue
             frequency = snapshot.indicators[indicator]["frequency"]
-            prior = (
-                prior_period(period, frequency, indicator=indicator)
-                if frequency != "E"
-                else None
-            )
+            prior = prior_period(period, frequency, indicator=indicator) if frequency != "E" else None
             decisions = None
             missing_decision = None
             if frequency == "E":
                 # Event periods are decision dates, not a daily calendar. Only
                 # stored actuals of this indicator can establish a predecessor;
                 # unavailable calendar memberships and other banks cannot.
-                decisions = subset(
-                    snapshot,
-                    (
-                        e
-                        for e in snapshot.evidence
-                        if e.indicator_id == indicator
-                        and e.event_id != event_id
-                        and e.reading_kind == "actual"
-                        and e.value is not None
-                        and e.reference_period
-                        and e.reference_period < period
-                        and event_order(snapshot, e)
-                        and event_order(snapshot, e) < released_at
-                    ),
-                )
-                prior = max(
-                    (e.reference_period for e in decisions.evidence), default=None
-                )
+                decisions = subset(snapshot, (
+                    e for e in snapshot.evidence
+                    if e.indicator_id == indicator and e.event_id != event_id
+                    and e.reading_kind == "actual" and e.value is not None
+                    and e.reference_period and e.reference_period < period
+                    and event_order(snapshot, e) and event_order(snapshot, e) < released_at
+                ))
+                prior = max((e.reference_period for e in decisions.evidence), default=None)
                 if prior is not None:
                     from .schedule import family_editions
-
-                    family = snapshot.events.get(event_id, {}).get(
-                        "family", family_for(snapshot, indicator)
-                    )
+                    family = snapshot.events.get(event_id, {}).get("family", family_for(snapshot, indicator))
                     # A reviewed meeting between two saved decisions is a gap,
                     # not permission to call the older decision the previous one.
-                    missing_decision = max(
-                        (
-                            p
-                            for p, _, _ in family_editions(family).values()
-                            if prior < p < period
-                            and not any(
-                                e.reference_period == p for e in decisions.evidence
-                            )
-                        ),
-                        default=None,
-                    )
+                    missing_decision = max((p for p, _, _ in family_editions(family).values()
+                        if prior < p < period and not any(
+                            e.reference_period == p for e in decisions.evidence)), default=None)
                     if missing_decision is not None:
                         prior = missing_decision
             # The previous figure is strictly what we knew by release time.
@@ -785,29 +611,13 @@ class ReadAPI:
                     and (e.published_at is None or e.published_at < released_at)
                 ),
             )
-            previous_before_release = (
-                latest_period(before, indicator, prior, policy=policy)
-                if prior
-                else None
-            )
+            previous_before_release = latest_period(before, indicator, prior, policy=policy) if prior else None
             # A late archive capture can establish the preceding decision at the
             # query cutoff without backdating what we knew before this release.
-            previous = (
-                (
-                    latest_period(decisions, indicator, prior, policy=policy)
-                    if prior
-                    else None
-                )
-                if decisions is not None
-                else previous_before_release
-            )
+            previous = (latest_period(decisions, indicator, prior, policy=policy) if prior else None
+                        ) if decisions is not None else previous_before_release
             revised_previous = (
-                latest_period(
-                    snapshot if frequency == "E" else subset(snapshot, evidence),
-                    indicator,
-                    prior,
-                    policy=policy,
-                )
+                latest_period(snapshot if frequency == "E" else subset(snapshot, evidence), indicator, prior, policy=policy)
                 if prior
                 else None
             )
@@ -832,10 +642,7 @@ class ReadAPI:
                     if e.event_id != event_id
                     and event_orders[e.id]
                     and event_orders[e.id] < released_at
-                    and (
-                        indicator != "uk_gdp_index"
-                        or e.series_key == selected.series_key
-                    )
+                    and (indicator != "uk_gdp_index" or e.series_key == selected.series_key)
                 ),
             )
             revisions = []
@@ -906,11 +713,7 @@ class ReadAPI:
                     "reference_period": period,
                     "stage": stage,
                     "released_at": released_at,
-                    **(
-                        {"first_official_seen_at": first_official_seen}
-                        if first_seen_window
-                        else {}
-                    ),
+                    **({"first_official_seen_at": first_official_seen} if first_seen_window else {}),
                     "time_basis": time_basis,
                     "publication_precision": precision,
                     "resolution": resolution.to_dict(),
@@ -924,13 +727,9 @@ class ReadAPI:
                     "previous_period": prior,
                     "previous_missing_reason": None
                     if previous
-                    else (
-                        f"reviewed decision not collected: {missing_decision}"
-                        if missing_decision
-                        else "no preceding stored decision"
-                        if frequency == "E"
-                        else "prior period not known at release time"
-                    ),
+                    else (f"reviewed decision not collected: {missing_decision}" if missing_decision else
+                          "no preceding stored decision" if frequency == "E" else
+                          "prior period not known at release time"),
                     "revisions": revisions,
                     "stage_change": stage_change,
                     "consensus": consensus,
@@ -1325,8 +1124,7 @@ class ReadAPI:
         monthly = [
             e.reference_period
             for e in valid_rows
-            if e.verified_issuer
-            and re.fullmatch(r"\d{4}-\d{2}", e.reference_period or "")
+            if e.verified_issuer and re.fullmatch(r"\d{4}-\d{2}", e.reference_period or "")
         ]
         if monthly and is_window:
             discontinued = stale_series(
@@ -1352,43 +1150,20 @@ class ReadAPI:
             if not is_window
             or start <= event_timing(snapshot, s["release_event_id"])[0] < end
         ]
-        if (
-            family in FAMILY_INDICATORS
-            and is_window
-            and schedules
-            and not relevant
-            and all(
-                indicator
-                not in indicators_for_stage(
-                    family, snapshot.events[s["release_event_id"]]["estimate_stage"]
-                )
-                for s in schedules
-            )
+        if family in FAMILY_INDICATORS and is_window and schedules and not relevant and all(
+            indicator not in indicators_for_stage(family, snapshot.events[s["release_event_id"]]["estimate_stage"])
+            for s in schedules
         ):
-            return dict(
-                base,
-                reason="no_release_scheduled",
-                family=family,
-                detail="reviewed editions in this window do not publish the requested indicator",
-            )
+            return dict(base, reason="no_release_scheduled", family=family,
+                detail="reviewed editions in this window do not publish the requested indicator")
         if family in FAMILY_INDICATORS:
-            schedules = [
-                s
-                for s in schedules
-                if indicator
-                in indicators_for_stage(
-                    family, snapshot.events[s["release_event_id"]]["estimate_stage"]
-                )
-            ]
+            schedules = [s for s in schedules if indicator in indicators_for_stage(
+                family, snapshot.events[s["release_event_id"]]["estimate_stage"])]
         family_rows = [
             e
             for e in snapshot.evidence
-            if family_for(snapshot, e.indicator_id) == family
-            and matches(e)
-            and (
-                family not in FAMILY_INDICATORS
-                or indicator in indicators_for_stage(family, e.stage)
-            )
+            if family_for(snapshot, e.indicator_id) == family and matches(e)
+            and (family not in FAMILY_INDICATORS or indicator in indicators_for_stage(family, e.stage))
         ]
         # Schedules lack reference periods: a family schedule cannot be assigned
         # to an arbitrary period when no evidence links that period to the event.

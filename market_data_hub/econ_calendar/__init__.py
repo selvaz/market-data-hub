@@ -21,7 +21,6 @@ The three provenances never mix:
 ``provenance``       ``'aggregator'`` third-party calendars
 ===================  ============================================
 """
-
 from market_data_hub.econ_calendar.aliases import (
     cadence_violations,
     load_aliases,

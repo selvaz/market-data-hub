@@ -4,7 +4,6 @@
 Every window is served from what we stored, so a past week answers exactly as
 well as a future one -- which is the whole reason the observations accumulate.
 """
-
 from __future__ import annotations
 
 from typing import Optional
@@ -35,12 +34,8 @@ def events_between(
     """Releases whose expected or actual instant falls in [start, end)."""
     dove = ["release_ts_utc >= ?", "release_ts_utc < ?"]
     valori: list = [start, end]
-    for colonna, valore in (
-        ("region", region),
-        ("sector", sector),
-        ("theme", theme),
-        ("status", status),
-    ):
+    for colonna, valore in (("region", region), ("sector", sector),
+                            ("theme", theme), ("status", status)):
         if valore:
             dove.append(f"lower({colonna}) = lower(?)")
             valori.append(valore)
@@ -83,15 +78,13 @@ def aggregate(
         SELECT {by} AS bucket, count(*) AS n,
                sum(market_cap) AS market_cap_total,
                count(*) FILTER (WHERE status = 'occurred') AS occurred
-        FROM earnings_events WHERE {" AND ".join(dove)}
+        FROM earnings_events WHERE {' AND '.join(dove)}
         GROUP BY {by} ORDER BY n DESC
         """,
         valori,
     ).fetchall()
-    return [
-        {"bucket": b, "n": n, "market_cap_total": tot, "occurred": occ}
-        for b, n, tot, occ in righe
-    ]
+    return [{"bucket": b, "n": n, "market_cap_total": tot, "occurred": occ}
+            for b, n, tot, occ in righe]
 
 
 def event_history(con: duckdb.DuckDBPyConnection, event_id: str) -> dict:
@@ -126,7 +119,6 @@ def event_history(con: duckdb.DuckDBPyConnection, event_id: str) -> dict:
 
 def vocabulary(con: duckdb.DuckDBPyConnection) -> dict:
     """What a caller can filter on, with counts. Empty lists when nothing is stored."""
-
     def valori(colonna: str) -> list[dict]:
         try:
             righe = con.execute(

@@ -1,5 +1,4 @@
 """Bounded HTTP and a provider-wide, process-safe quota ledger. No polling."""
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -27,7 +26,6 @@ class FetchError(RuntimeError):
 
 class RateLimitBusy(FetchError):
     """A contended provider ledger can be retried within the request budget."""
-
     retryable = True
 
 
@@ -59,58 +57,32 @@ class Document:
     @property
     def identity_hash(self):
         normalized = normalize_body(self.body, source_url=self.url)
-        return (
-            hashlib.sha256(normalized).hexdigest()
-            if normalized != self.body
-            and hashlib.sha256(self.body).hexdigest() == self.document_hash
-            else self.document_hash
-        )
+        return hashlib.sha256(normalized).hexdigest() if normalized != self.body and hashlib.sha256(self.body).hexdigest() == self.document_hash else self.document_hash
 
 
 def normalize_body(body, *, source_url=""):
     """Remove narrowly identified transport tokens, never dates/values/content."""
     body = re.sub(rb"(window\.__CF\$cv\$params=)\{[^}]*\}", rb"\1{}", body)
-    body = re.sub(
-        rb"(?i)((?:cf-ray|ray[_-]?id)[\"']?\s*[:=]\s*[\"'])[a-z0-9-]+",
-        rb"\1VOLATILE",
-        body,
-    )
+    body = re.sub(rb"(?i)((?:cf-ray|ray[_-]?id)[\"']?\s*[:=]\s*[\"'])[a-z0-9-]+", rb"\1VOLATILE", body)
     # BLS reports elapsed request time in an otherwise identical JSON response.
-    body = re.sub(
-        rb'("responseTime"\s*:\s*)(?:"[^"]*"|\d+(?:\.\d+)?)', rb"\g<1>0", body
-    )
+    body = re.sub(rb'("responseTime"\s*:\s*)(?:"[^"]*"|\d+(?:\.\d+)?)', rb'\g<1>0', body)
     # CMHC's Sitecore render ticks and form CSRF token change per request.
     # Keep the original body/SHA; normalize only these named transport values.
     if source_url.startswith("https://www.cmhc-schl.gc.ca/"):
-        body = re.sub(
-            rb"(SearchResourcesProperties_)[0-9a-fA-F]{32}", rb"\1VOLATILE", body
-        )
-        for tag, name, attribute in (
-            (b"meta", b"VIcurrentDateTime", b"content"),
-            (b"input", b"__RequestVerificationToken", b"value"),
-        ):
-            pattern = (
-                rb"(?i)<" + tag + rb'\b(?=[^>]*\bname=["\']' + name + rb'["\'])[^>]*>'
-            )
-            value_pattern = rb"(?i)(\b" + attribute + rb'\s*=\s*)(["\'])(.*?)\2'
-            body = re.sub(
-                pattern,
-                lambda m: re.sub(
-                    value_pattern, lambda v: v[1] + v[2] + b"VOLATILE" + v[2], m[0]
-                ),
-                body,
-            )
+        body = re.sub(rb"(SearchResourcesProperties_)[0-9a-fA-F]{32}", rb"\1VOLATILE", body)
+        for tag, name, attribute in ((b"meta", b"VIcurrentDateTime", b"content"),
+                                     (b"input", b"__RequestVerificationToken", b"value")):
+            pattern = rb'(?i)<' + tag + rb'\b(?=[^>]*\bname=["\']' + name + rb'["\'])[^>]*>'
+            value_pattern = rb'(?i)(\b' + attribute + rb'\s*=\s*)(["\'])(.*?)\2'
+            body = re.sub(pattern, lambda m: re.sub(value_pattern,
+                lambda v: v[1] + v[2] + b"VOLATILE" + v[2], m[0]), body)
     return body
 
 
 def retry_delay(response, attempt, *, clock=None):
     clock = clock or time.time
-    delay = 2**attempt
-    header = (
-        getattr(response, "headers", {}).get("Retry-After")
-        if response is not None
-        else None
-    )
+    delay = 2 ** attempt
+    header = getattr(response, "headers", {}).get("Retry-After") if response is not None else None
     if header:
         try:
             value = float(header)
@@ -127,15 +99,8 @@ def retry_delay(response, attempt, *, clock=None):
 class RateLimiter:
     """One named ledger per provider, shared even when databases differ."""
 
-    def __init__(
-        self,
-        provider,
-        directory=None,
-        *,
-        interval=1.0,
-        daily_limit=None,
-        persistent=True,
-    ):
+    def __init__(self, provider, directory=None, *, interval=1.0, daily_limit=None,
+                 persistent=True):
         self.path = None
         if persistent:
             root = Path(directory or Path(tempfile.gettempdir()) / "mdh-macro-rates")
@@ -147,46 +112,24 @@ class RateLimiter:
 
     def acquire(self):
         try:
-            with (
-                FileLock(str(self.path) + ".lock", timeout=15)
-                if self.path
-                else nullcontext()
-            ):
+            with FileLock(str(self.path) + ".lock", timeout=15) if self.path else nullcontext():
                 now = time.time()
-                state = (
-                    (json.loads(self.path.read_text()) if self.path.exists() else {})
-                    if self.path
-                    else self.state
-                )
+                state = (json.loads(self.path.read_text()) if self.path.exists() else {}) if self.path else self.state
                 day = datetime.fromtimestamp(now, timezone.utc).date().isoformat()
                 count = state.get("count", 0) if state.get("day") == day else 0
                 if self.daily_limit is not None and count >= self.daily_limit:
-                    raise FetchError(
-                        "Provider daily quota exhausted; try the next daily run"
-                    )
+                    raise FetchError("Provider daily quota exhausted; try the next daily run")
                 if state.get("last", 0) > now + 5:
-                    raise FetchError(
-                        "Provider rate ledger clock is ahead; no wait loop"
-                    )
+                    raise FetchError("Provider rate ledger clock is ahead; no wait loop")
                 # Old ledgers have only last. A reservation may legitimately be
                 # far ahead; keep it separate from the wall clock skew guard.
-                slot = max(
-                    now,
-                    state.get("reserved_until", state.get("last", 0)) + self.interval,
-                )
+                slot = max(now, state.get("reserved_until", state.get("last", 0)) + self.interval)
                 delay = slot - now
-                self.state = {
-                    "day": day,
-                    "count": count + 1,
-                    "last": now,
-                    "reserved_until": slot,
-                }
+                self.state = {"day": day, "count": count + 1, "last": now, "reserved_until": slot}
                 if self.path:
                     self.path.write_text(json.dumps(self.state))
         except FileLockTimeout:
-            raise RateLimitBusy(
-                "Provider rate ledger lock is busy; retry within the request budget"
-            ) from None
+            raise RateLimitBusy("Provider rate ledger lock is busy; retry within the request budget") from None
         # Sleeping never holds the ledger lock: other processes can reserve
         # their own distinct slots without exhausting the lock timeout.
         if delay:
@@ -194,15 +137,8 @@ class RateLimiter:
 
 
 class HttpClient:
-    def __init__(
-        self,
-        *,
-        rate_directory=None,
-        session=None,
-        before_request=None,
-        persistent_rates=True,
-        max_attempts=3,
-    ):
+    def __init__(self, *, rate_directory=None, session=None, before_request=None, persistent_rates=True,
+                 max_attempts=3):
         self.session = session or requests.Session()
         self.before_request = before_request
         self.max_attempts = max_attempts
@@ -210,46 +146,10 @@ class HttpClient:
         # Use certifi explicitly: the Windows system store is broken here.
         self.session.trust_env = False
         # The public Euro-indicator archive throttles bursts across families.
-        self.limiters = {
-            p: RateLimiter(
-                p,
-                rate_directory,
-                interval=15.0 if p == "eurostat" else 1.0,
-                daily_limit=500 if p == "bls" else None,
-                persistent=persistent_rates,
-            )
-            for p in (
-                "bls",
-                "bea",
-                "fred",
-                "eurostat",
-                "ons",
-                "dol",
-                "census",
-                "ecfin",
-                "umich",
-                "fed",
-                "ecb",
-                "boe",
-                "boj",
-                "pboc",
-                "boc",
-                "fhfa",
-                "nar",
-                "spglobal",
-                "freddiemac",
-                "destatis",
-                "cmhc",
-                "mlit",
-                "nbs",
-                "esri",
-                "statjp",
-                "mof",
-                "bcb",
-                "banxico",
-                "inegi",
-            )
-        }
+        self.limiters = {p: RateLimiter(p, rate_directory, interval=15.0 if p == "eurostat" else 1.0,
+                                     daily_limit=500 if p == "bls" else None,
+                                     persistent=persistent_rates)
+                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich", "fed", "ecb", "boe", "boj", "pboc", "boc", "fhfa", "nar", "spglobal", "freddiemac", "destatis", "cmhc", "mlit", "nbs", "esri", "statjp", "mof", "bcb", "banxico", "inegi")}
 
     def request(self, provider, url, *, params=None, payload=None) -> Document:
         safe_url = urlsplit(url)
@@ -267,18 +167,10 @@ class HttpClient:
                 continue
             try:
                 response = self.session.request(
-                    "POST" if payload is not None else "GET",
-                    url,
-                    params=params,
-                    json=payload,
-                    timeout=(10, 45),
-                    verify=certifi.where(),
-                    allow_redirects=False,
-                    **(
-                        {"headers": {"User-Agent": "Mozilla/5.0"}}
-                        if provider in {"boe", "cmhc"}
-                        else {}
-                    ),
+                    "POST" if payload is not None else "GET", url,
+                    params=params, json=payload, timeout=(10, 45),
+                    verify=certifi.where(), allow_redirects=False,
+                    **({"headers": {"User-Agent": "Mozilla/5.0"}} if provider in {"boe", "cmhc"} else {}),
                 )
             except requests.exceptions.SSLError:
                 raise FetchError(f"{provider}: TLS verification failed") from None
@@ -286,15 +178,10 @@ class HttpClient:
                 if attempt + 1 < self.max_attempts:
                     self._backoff(retry_delay(None, attempt))
                     continue
-                raise FetchError(
-                    f"{provider}: transport failed after bounded attempts"
-                ) from None
+                raise FetchError(f"{provider}: transport failed after bounded attempts") from None
             except requests.RequestException:
                 raise FetchError(f"{provider}: non-transient request failure") from None
-            if (
-                response.status_code in (429, 500, 502, 503, 504)
-                and attempt + 1 < self.max_attempts
-            ):
+            if response.status_code in (429, 500, 502, 503, 504) and attempt + 1 < self.max_attempts:
                 self._backoff(retry_delay(response, attempt))
                 continue
             if response.status_code != 200:

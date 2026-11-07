@@ -16,7 +16,6 @@ Reading back goes through the same analysis surface as everything else::
     from market_data_hub.extract import extract_series
     df, meta = extract_series(["lazyfin:nav:pf-1"], domain="custom")
 """
-
 from __future__ import annotations
 
 from datetime import date, datetime
@@ -67,9 +66,8 @@ def _to_frame(series_id: str, observations: Observations) -> pd.DataFrame:
                 f"store_series({series_id!r}): observation at {when!r} is None; "
                 "drop missing points before publishing"
             )
-        rows.append(
-            {"date": _to_date(when), "series_id": series_id, "value": float(value)}
-        )
+        rows.append({"date": _to_date(when), "series_id": series_id,
+                     "value": float(value)})
     df = pd.DataFrame(rows)
     dup = df["date"].duplicated()
     if dup.any():
@@ -80,16 +78,10 @@ def _to_frame(series_id: str, observations: Observations) -> pd.DataFrame:
     return df
 
 
-def store_series(
-    series_id: str,
-    observations: Observations,
-    *,
-    series_name: Optional[str] = None,
-    unit: Optional[str] = None,
-    frequency: Optional[str] = None,
-    source: str = "custom",
-    db_path: Optional[str] = None,
-) -> tuple[int, int]:
+def store_series(series_id: str, observations: Observations, *,
+                 series_name: Optional[str] = None, unit: Optional[str] = None,
+                 frequency: Optional[str] = None, source: str = "custom",
+                 db_path: Optional[str] = None) -> tuple[int, int]:
     """Upsert observations of one app-published series into ``custom_series``.
 
     Parameters
@@ -127,7 +119,7 @@ def delete_series(series_id: str, *, db_path: Optional[str] = None) -> int:
         row = con.execute(
             "SELECT count(*) FROM custom_series WHERE series_id = ?", [series_id]
         ).fetchone()
-        assert row is not None  # COUNT(*) always returns exactly one row
+        assert row is not None   # COUNT(*) always returns exactly one row
         con.execute("DELETE FROM custom_series WHERE series_id = ?", [series_id])
         return int(row[0])
     finally:

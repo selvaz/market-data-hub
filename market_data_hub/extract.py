@@ -18,7 +18,6 @@ Examples:
 
     macro, m = extract_series(["DGS10", "T10Y2Y"], domain="macro", transform="diff")
 """
-
 from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple, Union
@@ -81,18 +80,8 @@ def _quality(symbols: List[str], db_path: Optional[str]) -> Dict[str, dict]:
         return {}
     if cov is None or cov.empty:
         return {}
-    keep = [
-        c
-        for c in (
-            "last_date",
-            "lag_days",
-            "coverage_score",
-            "stalled",
-            "freq_detected",
-            "status",
-        )
-        if c in cov.columns
-    ]
+    keep = [c for c in ("last_date", "lag_days", "coverage_score", "stalled",
+                        "freq_detected", "status") if c in cov.columns]
     out: Dict[str, dict] = {}
     for _, r in cov.iterrows():
         rec = {k: (None if pd.isna(r[k]) else r[k]) for k in keep}
@@ -106,38 +95,25 @@ def _quality(symbols: List[str], db_path: Optional[str]) -> Dict[str, dict]:
     return out
 
 
-def _wide_levels(
-    symbols: List[str],
-    start: Optional[str],
-    end: Optional[str],
-    domain: str,
-    field: str,
-    db_path: Optional[str],
-) -> pd.DataFrame:
+def _wide_levels(symbols: List[str], start: Optional[str], end: Optional[str],
+                 domain: str, field: str, db_path: Optional[str]) -> pd.DataFrame:
     """Pull a wide (date × symbol) level matrix for the requested domain."""
     if domain == "prices":
-        return reader.read_prices(
-            symbols, start=start, end=end, field=field, wide=True, db_path=db_path
-        )
+        return reader.read_prices(symbols, start=start, end=end, field=field,
+                                  wide=True, db_path=db_path)
     if domain == "macro":
-        return reader.read_macro(
-            symbols, start=start, end=end, wide=True, db_path=db_path
-        )
+        return reader.read_macro(symbols, start=start, end=end, wide=True, db_path=db_path)
     if domain == "custom":
-        return reader.read_custom(
-            symbols, start=start, end=end, wide=True, db_path=db_path
-        )
+        return reader.read_custom(symbols, start=start, end=end, wide=True, db_path=db_path)
     if domain == "factors":
-        return reader.read_factors(
-            factors=symbols, start=start, end=end, wide=True, db_path=db_path
-        )
+        return reader.read_factors(factors=symbols, start=start, end=end,
+                                   wide=True, db_path=db_path)
     if domain == "crypto":
         # crypto is long; pivot close by symbol (single timeframe at a time)
         frames = []
         for sym in symbols:
-            raw = reader.read_crypto(
-                sym, timeframe=field, start=start, end=end, db_path=db_path
-            )
+            raw = reader.read_crypto(sym, timeframe=field,
+                                     start=start, end=end, db_path=db_path)
             if raw is None or raw.empty:
                 continue
             s = raw.set_index("ts")["close"].rename(sym)
@@ -148,23 +124,15 @@ def _wide_levels(
         out.index = pd.to_datetime(out.index)
         return out.sort_index()
     raise ValueError(
-        f"Invalid domain {domain!r}; allowed: prices|macro|custom|crypto|factors"
-    )
+        f"Invalid domain {domain!r}; allowed: prices|macro|custom|crypto|factors")
 
 
-def extract_series(
-    symbols: Union[str, List[str]],
-    start: Optional[str] = None,
-    end: Optional[str] = None,
-    *,
-    domain: str = "prices",
-    field: str = "adj_close",
-    transform: str = "level",
-    frequency: Optional[str] = None,
-    fillna: str = "none",
-    align: bool = True,
-    db_path: Optional[str] = None,
-) -> Tuple[pd.DataFrame, dict]:
+def extract_series(symbols: Union[str, List[str]], start: Optional[str] = None,
+                   end: Optional[str] = None, *, domain: str = "prices",
+                   field: str = "adj_close", transform: str = "level",
+                   frequency: Optional[str] = None, fillna: str = "none",
+                   align: bool = True, db_path: Optional[str] = None
+                   ) -> Tuple[pd.DataFrame, dict]:
     """Extract an analysis-ready time-series matrix.
 
     Parameters
@@ -186,24 +154,16 @@ def extract_series(
     """
     symbols = _as_list(symbols)
     if transform not in _TRANSFORMS:
-        raise ValueError(
-            f"Invalid transform {transform!r}; allowed: {sorted(_TRANSFORMS)}"
-        )
+        raise ValueError(f"Invalid transform {transform!r}; allowed: {sorted(_TRANSFORMS)}")
     if frequency and frequency not in _FREQ_RULE:
-        raise ValueError(
-            f"Invalid frequency {frequency!r}; allowed: {sorted(_FREQ_RULE)}"
-        )
+        raise ValueError(f"Invalid frequency {frequency!r}; allowed: {sorted(_FREQ_RULE)}")
     if domain == "crypto" and field == "adj_close":
         field = "1d"  # `field` carries the timeframe for crypto; map the price default
 
     # Fast path: stored daily log-returns via the v_returns view (prices only).
     used_view = False
-    if (
-        domain == "prices"
-        and transform == "log_return"
-        and field == "adj_close"
-        and frequency in (None, "D")
-    ):
+    if (domain == "prices" and transform == "log_return"
+            and field == "adj_close" and frequency in (None, "D")):
         df = _read_returns_view(symbols, start, end, db_path)
         used_view = not df.empty
     else:
@@ -225,9 +185,8 @@ def extract_series(
         if cols:
             df = df[cols]
 
-    meta = _build_meta(
-        df, symbols, domain, field, transform, frequency, fillna, used_view, db_path
-    )
+    meta = _build_meta(df, symbols, domain, field, transform, frequency,
+                       fillna, used_view, db_path)
     return df, meta
 
 
@@ -246,36 +205,22 @@ def _read_returns_view(symbols, start, end, db_path) -> pd.DataFrame:
         where = " AND ".join(clauses)
         raw = con.execute(
             f"SELECT date, symbol, log_return FROM v_returns WHERE {where} "
-            f"AND log_return IS NOT NULL ORDER BY date",
-            params,
-        ).fetch_df()
+            f"AND log_return IS NOT NULL ORDER BY date", params).fetch_df()
     finally:
         con.close()
     if raw.empty:
         return pd.DataFrame()
-    out = raw.pivot_table(
-        index="date", columns="symbol", values="log_return", aggfunc="last"
-    )
+    out = raw.pivot_table(index="date", columns="symbol", values="log_return",
+                          aggfunc="last")
     out.index = pd.to_datetime(out.index)
     return out.sort_index()
 
 
-def _build_meta(
-    df: pd.DataFrame,
-    symbols,
-    domain,
-    field,
-    transform,
-    frequency,
-    fillna,
-    used_view,
-    db_path,
-) -> dict:
+def _build_meta(df: pd.DataFrame, symbols, domain, field, transform, frequency,
+                fillna, used_view, db_path) -> dict:
     missing_pct = {}
     if not df.empty:
-        missing_pct = {
-            c: round(float(df[c].isna().mean() * 100), 3) for c in df.columns
-        }
+        missing_pct = {c: round(float(df[c].isna().mean() * 100), 3) for c in df.columns}
     return {
         "domain": domain,
         "symbols": symbols,
@@ -299,75 +244,37 @@ def _build_meta(
 # ---------------------------------------------------------------------------
 # Convenience wrappers
 # ---------------------------------------------------------------------------
-def extract_returns(
-    symbols: Union[str, List[str]],
-    start: Optional[str] = None,
-    end: Optional[str] = None,
-    *,
-    frequency: Optional[str] = "W",
-    field: str = "adj_close",
-    fillna: str = "none",
-    db_path: Optional[str] = None,
-) -> Tuple[pd.DataFrame, dict]:
+def extract_returns(symbols: Union[str, List[str]], start: Optional[str] = None,
+                    end: Optional[str] = None, *, frequency: Optional[str] = "W",
+                    field: str = "adj_close", fillna: str = "none",
+                    db_path: Optional[str] = None) -> Tuple[pd.DataFrame, dict]:
     """Log-returns of prices, default weekly (W-FRI) — the shape LazyHMM expects.
 
     When frequency is weekly/monthly the levels are resampled with last() and the
     log-return is computed on the resampled series.
     """
-    return extract_series(
-        symbols,
-        start=start,
-        end=end,
-        domain="prices",
-        field=field,
-        transform="log_return",
-        frequency=frequency,
-        fillna=fillna,
-        db_path=db_path,
-    )
+    return extract_series(symbols, start=start, end=end, domain="prices",
+                          field=field, transform="log_return",
+                          frequency=frequency, fillna=fillna, db_path=db_path)
 
 
-def extract_macro(
-    series_ids: Union[str, List[str]],
-    start: Optional[str] = None,
-    end: Optional[str] = None,
-    *,
-    transform: str = "level",
-    frequency: Optional[str] = None,
-    fillna: str = "ffill",
-    db_path: Optional[str] = None,
-) -> Tuple[pd.DataFrame, dict]:
+def extract_macro(series_ids: Union[str, List[str]], start: Optional[str] = None,
+                  end: Optional[str] = None, *, transform: str = "level",
+                  frequency: Optional[str] = None, fillna: str = "ffill",
+                  db_path: Optional[str] = None) -> Tuple[pd.DataFrame, dict]:
     """FRED macro series as a wide matrix (ffill default since macro is sparse)."""
-    return extract_series(
-        series_ids,
-        start=start,
-        end=end,
-        domain="macro",
-        transform=transform,
-        frequency=frequency,
-        fillna=fillna,
-        db_path=db_path,
-    )
+    return extract_series(series_ids, start=start, end=end, domain="macro",
+                          transform=transform, frequency=frequency,
+                          fillna=fillna, db_path=db_path)
 
 
-def extract_panel(
-    indicator: str,
-    countries: Optional[List[str]] = None,
-    start: Optional[str] = None,
-    end: Optional[str] = None,
-    asof: Optional[str] = None,
-    db_path: Optional[str] = None,
-) -> Tuple[pd.DataFrame, dict]:
+def extract_panel(indicator: str, countries: Optional[List[str]] = None,
+                  start: Optional[str] = None, end: Optional[str] = None,
+                  asof: Optional[str] = None,
+                  db_path: Optional[str] = None) -> Tuple[pd.DataFrame, dict]:
     """A single cross-country indicator pivoted date × country (wide)."""
-    df = reader.read_macro_panel(
-        indicator,
-        countries=countries,
-        start=start,
-        end=end,
-        wide=True,
-        asof=asof,
-        db_path=db_path,
-    )
+    df = reader.read_macro_panel(indicator, countries=countries, start=start,
+                                 end=end, wide=True, asof=asof, db_path=db_path)
     meta = {
         "domain": "macro_panel",
         "indicator": indicator,

@@ -15,7 +15,6 @@ Key series for the debt cycle (Dalio method):
 
 Canonical output for macro_panel (same columns as worldbank.py/imf.py).
 """
-
 from __future__ import annotations
 
 import csv
@@ -28,21 +27,9 @@ import requests
 
 _BASE = "https://stats.bis.org/api/v2/data/dataflow/BIS"
 
-_COLS = [
-    "date",
-    "country_iso3",
-    "indicator_id",
-    "value",
-    "indicator_name",
-    "pillar",
-    "orientation",
-    "source",
-    "provider_dataset",
-    "provider_code",
-    "unit",
-    "frequency",
-    "status",
-]
+_COLS = ["date", "country_iso3", "indicator_id", "value", "indicator_name",
+         "pillar", "orientation", "source", "provider_dataset",
+         "provider_code", "unit", "frequency", "status"]
 
 
 def _period_end(period: str) -> Optional[pd.Timestamp]:
@@ -70,21 +57,15 @@ def _get_csv(url: str, timeout: int, retries: int, base_sleep: float) -> Optiona
         except Exception as e:
             last = e
             if attempt < retries - 1:
-                time.sleep(base_sleep * (2**attempt))
+                time.sleep(base_sleep * (2 ** attempt))
     if last:
         raise last
     return None
 
 
-def fetch_bis(
-    spec: Dict,
-    countries: List[Dict],
-    *,
-    start_year: int = 1990,
-    timeout: int = 60,
-    retries: int = 3,
-    base_sleep: float = 1.0,
-) -> pd.DataFrame:
+def fetch_bis(spec: Dict, countries: List[Dict], *,
+              start_year: int = 1990, timeout: int = 60,
+              retries: int = 3, base_sleep: float = 1.0) -> pd.DataFrame:
     """Download a BIS indicator (native API) for the requested countries.
 
     The spec must contain:
@@ -130,19 +111,12 @@ def fetch_bis(
 
     def _mkrow(dt, iso3, val):
         return {
-            "date": dt.date(),
-            "country_iso3": iso3,
-            "indicator_id": spec["id"],
-            "value": float(val),
-            "indicator_name": spec["name"],
-            "pillar": spec["pillar"],
-            "orientation": spec.get("orientation", 0),
-            "source": "bis",
-            "provider_dataset": dataset,
-            "provider_code": key_tpl,
-            "unit": spec.get("unit"),
-            "frequency": freq,
-            "status": "ok",
+            "date": dt.date(), "country_iso3": iso3,
+            "indicator_id": spec["id"], "value": float(val),
+            "indicator_name": spec["name"], "pillar": spec["pillar"],
+            "orientation": spec.get("orientation", 0), "source": "bis",
+            "provider_dataset": dataset, "provider_code": key_tpl,
+            "unit": spec.get("unit"), "frequency": freq, "status": "ok",
         }
 
     rows = []
@@ -156,7 +130,7 @@ def fetch_bis(
         if dt is None or dt.year < start_year:
             continue
         if euro_agg and iso2 == euro_agg:
-            agg_obs.append((dt, float(val)))  # capture euro aggregate
+            agg_obs.append((dt, float(val)))   # capture euro aggregate
         if iso2 not in wanted:
             continue
         rows.append(_mkrow(dt, iso2_to_iso3[iso2], val))

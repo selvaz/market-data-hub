@@ -7,7 +7,6 @@ travel in the same ``source + as_of + tool_version`` envelope. ``Money`` is the
 only place ``Decimal`` appears in the shared contract — the boundary of the
 "float for analysis, Decimal for money" rule.
 """
-
 from __future__ import annotations
 
 from decimal import Decimal
@@ -82,11 +81,11 @@ class Money(LazyDataModel):
 class ResultKind(str, Enum):
     """Coarse category of an :class:`AnalysisResult` payload."""
 
-    SIGNAL = "signal"  # e.g. regime label, z-score signal
-    SCORE = "score"  # e.g. security score
-    FORECAST = "forecast"  # e.g. predicted value / state
-    REPORT = "report"  # e.g. risk report, monitor memo
-    SERIES = "series"  # a derived series (returns, vol, ...)
+    SIGNAL = "signal"        # e.g. regime label, z-score signal
+    SCORE = "score"          # e.g. security score
+    FORECAST = "forecast"    # e.g. predicted value / state
+    REPORT = "report"        # e.g. risk report, monitor memo
+    SERIES = "series"        # a derived series (returns, vol, ...)
     OTHER = "other"
 
 

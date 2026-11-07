@@ -7,7 +7,6 @@ with an IO error. The EOD task (22:00) and the hourly live task can overlap at
 the day boundary, so writers serialize on an advisory file lock placed next to
 the database. Readers (read_only=True) are unaffected and never take the lock.
 """
-
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -32,9 +31,8 @@ class DBLockTimeout(RuntimeError):
 
 
 @contextmanager
-def db_write_lock(
-    db_path: Optional[str] = None, timeout: float = DEFAULT_TIMEOUT
-) -> Iterator[None]:
+def db_write_lock(db_path: Optional[str] = None,
+                  timeout: float = DEFAULT_TIMEOUT) -> Iterator[None]:
     """Hold the writer lock for the database file for the duration of the block.
 
     Raises DBLockTimeout if another writer holds it past ``timeout``. If
@@ -58,8 +56,7 @@ def db_write_lock(
     except Timeout as exc:  # pragma: no cover - timing dependent
         raise DBLockTimeout(
             f"Another writer holds the DB lock ({db_lock_path(db_path)}); "
-            f"skipping this run."
-        ) from exc
+            f"skipping this run.") from exc
     try:
         yield
     finally:

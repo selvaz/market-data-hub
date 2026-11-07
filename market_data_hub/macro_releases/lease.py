@@ -1,5 +1,4 @@
 """Expiring run ownership, fenced by the store's existing writer file lock."""
-
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -39,9 +38,7 @@ class RunLease:
 
     @contextmanager
     def guard(self):
-        lock = FileLock(
-            str(self.db) + ".writer.lock", timeout=5 if self.wait_for_writer else 0
-        )
+        lock = FileLock(str(self.db) + ".writer.lock", timeout=5 if self.wait_for_writer else 0)
         # Writer contention is not loss of the run lease. Short waits keep a
         # concurrent start/importer from spuriously killing the live owner.
         while True:
@@ -61,25 +58,18 @@ class RunLease:
             return None
         try:
             state = json.loads(self.path.read_text(encoding="utf-8"))
-            if not isinstance(state.get("token"), str) or not math.isfinite(
-                float(state["expires_at"])
-            ):
+            if not isinstance(state.get("token"), str) or not math.isfinite(float(state["expires_at"])):
                 raise ValueError("Invalid lease fields")
             state["expires_at"] = float(state["expires_at"])
             return state
         except (ValueError, KeyError, TypeError, AttributeError):
-            return {
-                "token": None,
-                "expires_at": self.path.stat().st_mtime + self.timeout,
-                "corrupt": True,
-            }
+            return {"token": None, "expires_at": self.path.stat().st_mtime + self.timeout,
+                    "corrupt": True}
 
     def _write(self):
         temporary = Path(str(self.path) + ".tmp")
         with temporary.open("w", encoding="utf-8") as stream:
-            json.dump(
-                {"token": self.token, "expires_at": self.clock() + self.timeout}, stream
-            )
+            json.dump({"token": self.token, "expires_at": self.clock() + self.timeout}, stream)
             stream.flush()
             os.fsync(stream.fileno())
         temporary.replace(self.path)
@@ -100,11 +90,7 @@ class RunLease:
     def validate(self):
         """Caller holds the writer lock, including for token renewal."""
         state = self._read()
-        if (
-            not state
-            or state["token"] != self.token
-            or state["expires_at"] <= self.clock()
-        ):
+        if not state or state["token"] != self.token or state["expires_at"] <= self.clock():
             raise LeaseLost("daily collector lease expired or changed owner")
         self._write()
 

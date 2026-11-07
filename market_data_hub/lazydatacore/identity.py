@@ -22,7 +22,6 @@ ISIN keys are upper-cased and format-checked.
 Note (Python 3.9+): we use ``class X(str, Enum)`` rather than ``StrEnum``
 (3.11+) because the data core targets 3.9.
 """
-
 from __future__ import annotations
 
 import re
@@ -50,14 +49,14 @@ class Domain(str, Enum):
     for ``ticker`` (normalised away on construction).
     """
 
-    TICKER = "ticker"  # prices_daily (equity, ETF, FX, VIX); canonical
-    PRICE = "price"  # input alias for TICKER (normalised to ticker:)
-    CRYPTO = "crypto"  # crypto_ohlcv  (intraday, takes a timeframe)
-    MACRO = "macro"  # macro_series  (FRED single-value series)
+    TICKER = "ticker"          # prices_daily (equity, ETF, FX, VIX); canonical
+    PRICE = "price"            # input alias for TICKER (normalised to ticker:)
+    CRYPTO = "crypto"          # crypto_ohlcv  (intraday, takes a timeframe)
+    MACRO = "macro"            # macro_series  (FRED single-value series)
     MACRO_PANEL = "macro_panel"  # macro_panel (country/indicator pair)
-    FACTOR = "factor"  # factor_returns (factor_set/factor pair)
-    CIK = "cik"  # SEC company identity (reference only)
-    ISIN = "isin"  # ISIN reference identity (reference only)
+    FACTOR = "factor"          # factor_returns (factor_set/factor pair)
+    CIK = "cik"                # SEC company identity (reference only)
+    ISIN = "isin"              # ISIN reference identity (reference only)
 
 
 # Input-alias domains normalised to a canonical domain on construction.
@@ -79,7 +78,9 @@ def _parse_canonical(value: str) -> dict:
         domain = Domain(domain_str)
     except ValueError as exc:
         allowed = ", ".join(d.value for d in Domain)
-        raise ValueError(f"unknown domain {domain_str!r}; allowed: {allowed}") from exc
+        raise ValueError(
+            f"unknown domain {domain_str!r}; allowed: {allowed}"
+        ) from exc
     return {"domain": domain, "key": rest, "qualifier": qualifier}
 
 

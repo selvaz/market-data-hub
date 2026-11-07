@@ -1,5 +1,4 @@
 """One explicit-path, lease-locked daily official release collection."""
-
 from __future__ import annotations
 
 import argparse
@@ -17,14 +16,7 @@ from .asia import AsiaAdapter
 from .latam import LatamAdapter
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
-from .catalogue import (
-    FAMILIES,
-    REMAINING_FAMILIES,
-    CENTRAL_BANKS,
-    HOUSING_FAMILIES,
-    ASIA_FAMILIES,
-    LATAM_FAMILIES,
-)
+from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES
 from .consensus import DEFAULT_RAW_DIR, ingest
 from .eurostat import EurostatAdapter
 from .fred import USRedistributorAdapter
@@ -35,13 +27,7 @@ from .lease import LeaseBusy, LeaseLost, RunLease
 from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
-from .schedule import (
-    RUN_INSTANT,
-    PENDING_EDITIONS,
-    edition_status,
-    family_editions,
-    run_instant,
-)
+from .schedule import RUN_INSTANT, PENDING_EDITIONS, edition_status, family_editions, run_instant
 from .policy import PolicyAdapter
 from .tier1_publications import Tier1Adapter
 from .housing import HousingAdapter
@@ -49,32 +35,14 @@ from .store import Store, open_writer
 from .verification import configured_bands, persist_review, verify
 
 DEFAULT_LOOKBACK_MONTHS = 24
-ADAPTERS = {
-    "us_cpi": BLSAdapter,
-    "us_payrolls": BLSAdapter,
-    "us_gdp": BEAAdapter,
-    "us_unemployment": BLSAdapter,
-    "us_ahe": BLSAdapter,
-    "ea_hicp": EurostatAdapter,
-    "ea_gdp": EurostatAdapter,
-    "uk_gdp": ONSAdapter,
-    "uk_cpi": ONSAdapter,
-    "uk_labour_market": ONSAdapter,
-    "us_jobless_claims": DOLAdapter,
-    "us_ppi": BLSAdapter,
-    "us_jolts": BLSAdapter,
-    "us_pce": BEAAdapter,
-    **{
-        f: USRedistributorAdapter
-        for f in (
-            "us_retail_sales",
-            "us_housing_starts",
-            "us_durable_goods",
-            "us_industrial_production",
-            "us_trade_balance",
-        )
-    },
-}
+ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapter,
+            "us_unemployment": BLSAdapter, "us_ahe": BLSAdapter,
+            "ea_hicp": EurostatAdapter, "ea_gdp": EurostatAdapter, "uk_gdp": ONSAdapter,
+            "uk_cpi": ONSAdapter, "uk_labour_market": ONSAdapter,
+            "us_jobless_claims": DOLAdapter,
+            "us_ppi": BLSAdapter, "us_jolts": BLSAdapter, "us_pce": BEAAdapter,
+            **{f: USRedistributorAdapter for f in ("us_retail_sales", "us_housing_starts", "us_durable_goods",
+                                                   "us_industrial_production", "us_trade_balance")}}
 DISCOVERY_ADAPTERS = dict(ADAPTERS)
 ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: Tier1Adapter for f in REMAINING_FAMILIES})
@@ -93,10 +61,8 @@ def fetch_windows(families, lookback, today):
     since = shift_month(today.strftime("%Y-%m"), -lookback)
     # Revision/benchmark widening belongs to the provider; persist routine
     # history within this window and discover its publication evidence.
-    return since, {
-        family: {"fetch_since": since, "fetch_until": today.isoformat()}
-        for family in families
-    }
+    return since, {family: {"fetch_since": since,
+                            "fetch_until": today.isoformat()} for family in families}
 
 
 @contextmanager
@@ -112,11 +78,9 @@ def preview_store(target, *, expected_schema=None):
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys=ON")
         if target.exists():
-
             def read_files():
                 wal = Path(str(target) + "-wal")
                 return target.read_bytes(), wal.read_bytes() if wal.exists() else None
-
             for attempt in range(3):
                 try:
                     data, wal = read_files()
@@ -138,13 +102,8 @@ def preview_store(target, *, expected_schema=None):
                     source.backup(conn)
                 finally:
                     source.close()
-        if (
-            expected_schema is not None
-            and conn.execute("PRAGMA user_version").fetchone()[0] != expected_schema
-        ):
-            raise RuntimeError(
-                "Preview source does not have the required schema version"
-            )
+        if expected_schema is not None and conn.execute("PRAGMA user_version").fetchone()[0] != expected_schema:
+            raise RuntimeError("Preview source does not have the required schema version")
         migrate(conn)
         yield Store(conn, writable=True)
     finally:
@@ -158,10 +117,7 @@ def safe_error(exc):
         text = str(exc)
         if re.fullmatch(r"Missing credential: (BLS|BEA|FRED)_API_KEY", text):
             message = text
-        elif re.fullmatch(
-            r"(bls|bea|fred|eurostat|ons|dol|census|ecfin|umich|nbs|boj|esri|statjp|mof|bcb|banxico|inegi): HTTP \d{3}",
-            text,
-        ):
+        elif re.fullmatch(r"(bls|bea|fred|eurostat|ons|dol|census|ecfin|umich|nbs|boj|esri|statjp|mof|bcb|banxico|inegi): HTTP \d{3}", text):
             message = text
         elif "needs review" in text or "metadata" in text:
             message = "Provider publication metadata/version needs review before this edition can be certified"
@@ -170,17 +126,11 @@ def safe_error(exc):
         elif "transport" in text:
             message = "Provider transport failed after bounded retries"
         elif "rate ledger lock is busy" in text:
-            message = (
-                "Provider rate ledger is busy; retry after the bounded request attempts"
-            )
+            message = "Provider rate ledger is busy; retry after the bounded request attempts"
         else:
             message = "Provider fetch/parse failed; check availability and certified response schema"
     elif isinstance(exc, (LeaseBusy, LeaseLost)):
-        message = (
-            "Daily collector lease is live"
-            if isinstance(exc, LeaseBusy)
-            else "Daily collector lease ownership lost"
-        )
+        message = "Daily collector lease is live" if isinstance(exc, LeaseBusy) else "Daily collector lease ownership lost"
     elif isinstance(exc, (ValueError, KeyError, TypeError)):
         message = "Observation validation or certified source schema failed"
     else:
@@ -189,20 +139,13 @@ def safe_error(exc):
 
 
 def persist_counts(store, observations):
-    before = {
-        table: store.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
-        for table in ("value_vintages", "readings")
-    }
+    before = {table: store.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+              for table in ("value_vintages", "readings")}
     persist(store, observations)
-    added = {
-        table: store.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] - count
-        for table, count in before.items()
-    }
-    return {
-        "vintages_added": added["value_vintages"],
-        "readings_added": added["readings"],
-        "readings_skipped": len(observations) - added["readings"],
-    }
+    added = {table: store.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] - count
+             for table, count in before.items()}
+    return {"vintages_added": added["value_vintages"], "readings_added": added["readings"],
+            "readings_skipped": len(observations) - added["readings"]}
 
 
 def now():
@@ -216,13 +159,8 @@ def execute(
     run_at = now()
     since, windows = fetch_windows(families, lookback, run_at.date())
     run_id = uuid4().hex
-    summary = {
-        "run_id": run_id,
-        "db": str(target),
-        "dry_run": dry_run,
-        "requested_since": since,
-        "families": {},
-    }
+    summary = {"run_id": run_id, "db": str(target), "dry_run": dry_run,
+               "requested_since": since, "families": {}}
     parameters = {
         "lookback_months": lookback,
         "run_at": run_at.isoformat(),
@@ -234,18 +172,8 @@ def execute(
         client = HttpClient()
         with preview_store(target) as store:
             for family in families:
-                summary["families"].update(
-                    collect_family(
-                        lambda: nullcontext(store),
-                        client,
-                        run_id,
-                        family,
-                        windows,
-                        dry_run=True,
-                        bands=bands,
-                        run_at=run_at,
-                    )
-                )
+                summary["families"].update(collect_family(
+                    lambda: nullcontext(store), client, run_id, family, windows, dry_run=True, bands=bands, run_at=run_at))
             summary["consensus"] = collect_consensus(
                 lambda: nullcontext(store), run_id, raw_dir, dry_run=True
             )
@@ -259,18 +187,8 @@ def execute(
                 run_log.start(store, run_id, families, parameters)
             # Keep the writer lock/transaction out of all network and parsing work.
             for family in families:
-                summary["families"].update(
-                    collect_family(
-                        lambda: open_writer(target),
-                        client,
-                        run_id,
-                        family,
-                        windows,
-                        lease=lease,
-                        bands=bands,
-                        run_at=run_at,
-                    )
-                )
+                summary["families"].update(collect_family(
+                    lambda: open_writer(target), client, run_id, family, windows, lease=lease, bands=bands, run_at=run_at))
             summary["consensus"] = collect_consensus(
                 lambda: open_writer(target), run_id, raw_dir, lease=lease
             )
@@ -278,13 +196,8 @@ def execute(
                 lease.validate()
                 run_log.finish(store, run_id, outcome(summary["families"]))
     summary["status"] = outcome(summary["families"])
-    summary["exit_code"] = (
-        1
-        if summary["status"] == "failed"
-        else 0
-        if any(r["vintages_added"] for r in summary["families"].values())
-        else 3
-    )
+    summary["exit_code"] = 1 if summary["status"] == "failed" else 0 if any(
+        r["vintages_added"] for r in summary["families"].values()) else 3
     return summary
 
 
@@ -311,27 +224,13 @@ def collect_consensus(writer, run_id, raw_dir, *, lease=None, dry_run=False):
     return result
 
 
-def collect_family(
-    writer,
-    client,
-    run_id,
-    family,
-    windows,
-    *,
-    lease=None,
-    dry_run=False,
-    bands=None,
-    run_at=None,
-):
+def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_run=False, bands=None, run_at=None):
     """Fetch outside the writer lock, then atomically commit data and outcome."""
-    result = dict(
-        windows[family], vintages_added=0, readings_added=0, readings_skipped=0
-    )
+    result = dict(windows[family], vintages_added=0, readings_added=0, readings_skipped=0)
     try:
         if lease:
             lease.renew()
         from .ec_surveys import STORED_EDITIONS, stored_official_editions
-
         collected = frozenset()
         if family == "ea_ec_surveys":
             # Take a short snapshot before network I/O, never a long writer lock.
@@ -342,59 +241,26 @@ def collect_family(
         token = RUN_INSTANT.set(instant)
         pending_token = PENDING_EDITIONS.set({})
         try:
-            batch = (
-                fetch_daily(client, family, result["fetch_since"])
-                if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
-                else FamilyFetch(
-                    observations=list(
-                        ADAPTERS[family](client).fetch([family], result["fetch_since"])
-                    )
-                )
-            )
+            batch = (fetch_daily(client, family, result["fetch_since"]) if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
+                     else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
             calendar = family_editions(family)
             if calendar:
                 pending = PENDING_EDITIONS.get()
-                result["scheduled_editions"] = [
-                    dict(
-                        edition=d,
-                        period=p,
-                        stage=s,
-                        time=t,
-                        status=pending.get((family, d))
-                        if pending.get((family, d))
-                        in {"scheduled_unreviewed", "needs_review"}
-                        else "scheduled",
-                        **(
-                            {"reason": pending[family, d]}
-                            if (family, d) in pending
-                            else {}
-                        ),
-                    )
+                result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t,
+                    status=pending.get((family, d)) if pending.get((family, d)) in
+                        {"scheduled_unreviewed", "needs_review"} else "scheduled",
+                    **({"reason": pending[family, d]} if (family, d) in pending else {}))
                     for d, (p, s, t) in calendar.items()
-                    if edition_status(d, metadata=(p, s, t), family=family)
-                    == "scheduled"
-                ]
+                    if edition_status(d, metadata=(p, s, t), family=family) == "scheduled"]
             # An endpoint exposing a reviewed edition early does not make it due.
-            batch.observations = [
-                o
-                for o in batch.observations
-                if o.edition not in calendar
-                or edition_status(
-                    o.edition, metadata=calendar[o.edition], family=family
-                )
-                == "due"
-            ]
+            batch.observations = [o for o in batch.observations if o.edition not in calendar or
+                edition_status(o.edition, metadata=calendar[o.edition], family=family) == "due"]
         finally:
             PENDING_EDITIONS.reset(pending_token)
             RUN_INSTANT.reset(token)
             STORED_EDITIONS.reset(collected_token)
         observations = batch.observations
-        if (
-            not observations
-            and not batch.issues
-            and not result.get("scheduled_editions")
-            and not collected
-        ):
+        if not observations and not batch.issues and not result.get("scheduled_editions") and not collected:
             raise FetchError("No observations in requested window")
         if any(o.family != family for o in observations):
             raise ValueError("Adapter returned another family")
@@ -406,34 +272,18 @@ def collect_family(
             with store.batch():
                 persist_review(store, batch, family, None if dry_run else run_id)
                 result.update(persist_counts(store, observations))
-                edition_reviews = [
-                    "edition_needs_review:" + e["edition"]
-                    for e in result.get("scheduled_editions", [])
-                    if e["status"] == "needs_review"
-                ]
-                result["status"] = (
-                    "needs_review"
-                    if batch.issues or edition_reviews
-                    else "ok"
-                    if result["vintages_added"]
-                    else "no_change"
-                )
+                edition_reviews = ["edition_needs_review:" + e["edition"] for e in
+                    result.get("scheduled_editions", []) if e["status"] == "needs_review"]
+                result["status"] = "needs_review" if batch.issues or edition_reviews else "ok" if result["vintages_added"] else "no_change"
                 if batch.issues:
                     result["review_reasons"] = batch.issues
                 if edition_reviews:
-                    result["review_reasons"] = (
-                        result.get("review_reasons", []) + edition_reviews
-                    )
+                    result["review_reasons"] = result.get("review_reasons", []) + edition_reviews
                 if not dry_run:
                     run_log.family_result(store, run_id, family, result)
     except Exception as exc:
-        result.update(
-            status="failed",
-            vintages_added=0,
-            readings_added=0,
-            readings_skipped=0,
-            **safe_error(exc),
-        )
+        result.update(status="failed", vintages_added=0, readings_added=0, readings_skipped=0,
+                      **safe_error(exc))
         if not dry_run:
             with writer() as store:
                 if lease:
@@ -444,31 +294,13 @@ def collect_family(
 
 def outcome(results):
     statuses = {r["status"] for r in results.values()}
-    return (
-        "failed"
-        if "failed" in statuses
-        else "ok"
-        if "ok" in statuses
-        else "needs_review"
-        if "needs_review" in statuses
-        else "no_change"
-    )
+    return "failed" if "failed" in statuses else "ok" if "ok" in statuses else "needs_review" if "needs_review" in statuses else "no_change"
 
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--db",
-        required=True,
-        type=Path,
-        help="Explicit database path; no environment fallback",
-    )
-    parser.add_argument(
-        "--families",
-        nargs="+",
-        default=list(FAMILIES),
-        help="Names separated by spaces or commas",
-    )
+    parser.add_argument("--db", required=True, type=Path, help="Explicit database path; no environment fallback")
+    parser.add_argument("--families", nargs="+", default=list(FAMILIES), help="Names separated by spaces or commas")
     parser.add_argument("--lookback-months", type=int, default=DEFAULT_LOOKBACK_MONTHS)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument(
@@ -477,25 +309,17 @@ def main(argv=None):
         default=DEFAULT_RAW_DIR,
         help="Read-only FF archive; consensus status is independent of official status",
     )
-    parser.add_argument(
-        "--sanity-bands", type=Path, help="JSON per-indicator max absolute changes"
-    )
+    parser.add_argument("--sanity-bands", type=Path, help="JSON per-indicator max absolute changes")
     args = parser.parse_args(argv)
-    families = list(
-        dict.fromkeys(f for group in args.families for f in group.split(","))
-    )
+    families = list(dict.fromkeys(f for group in args.families for f in group.split(",")))
     if not families or any(f not in FAMILIES for f in families):
         parser.error("--families must contain names from: " + ",".join(FAMILIES))
     if not 1 <= args.lookback_months <= 180:
         parser.error("--lookback-months must be between 1 and 180")
     try:
-        bands = configured_bands(
-            json.loads(args.sanity_bands.read_text()) if args.sanity_bands else None
-        )
+        bands = configured_bands(json.loads(args.sanity_bands.read_text()) if args.sanity_bands else None)
     except (ValueError, OSError):
-        parser.error(
-            "--sanity-bands must be a JSON object of positive per-indicator changes"
-        )
+        parser.error("--sanity-bands must be a JSON object of positive per-indicator changes")
     try:
         summary = execute(
             args.db.resolve(),

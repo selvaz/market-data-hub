@@ -10,7 +10,6 @@ are compatible within the same major (``"1.x"``); a removal or rename of an
 existing field requires a new major and a new ``contracts/v{N}/`` fixture
 set. Never change a field's meaning, unit or timezone convention silently.
 """
-
 from __future__ import annotations
 
 import importlib.metadata

@@ -15,7 +15,6 @@ Key series for the euro-area rate gap (Dalio: cost of credit):
 
 Canonical output for macro_panel (same columns as worldbank.py/imf.py/bis.py).
 """
-
 from __future__ import annotations
 
 import csv
@@ -32,21 +31,9 @@ log = logging.getLogger(__name__)
 
 _BASE = "https://data-api.ecb.europa.eu/service/data"
 
-_COLS = [
-    "date",
-    "country_iso3",
-    "indicator_id",
-    "value",
-    "indicator_name",
-    "pillar",
-    "orientation",
-    "source",
-    "provider_dataset",
-    "provider_code",
-    "unit",
-    "frequency",
-    "status",
-]
+_COLS = ["date", "country_iso3", "indicator_id", "value", "indicator_name",
+         "pillar", "orientation", "source", "provider_dataset",
+         "provider_code", "unit", "frequency", "status"]
 
 
 def _period_end(period: str) -> Optional[pd.Timestamp]:
@@ -75,29 +62,24 @@ def _get_csv(url: str, timeout: int, retries: int, base_sleep: float) -> Optiona
     last = None
     for attempt in range(retries):
         try:
-            r = requests.get(url, timeout=timeout, headers={"Accept": "text/csv"})
-            if r.status_code == 404:  # no data for this key -> not an error
+            r = requests.get(url, timeout=timeout,
+                             headers={"Accept": "text/csv"})
+            if r.status_code == 404:      # no data for this key -> not an error
                 return None
             r.raise_for_status()
             return r.text
         except Exception as e:
             last = e
             if attempt < retries - 1:
-                time.sleep(base_sleep * (2**attempt))
+                time.sleep(base_sleep * (2 ** attempt))
     if last:
         raise last
     return None
 
 
-def fetch_ecb(
-    spec: Dict,
-    countries: List[Dict],
-    *,
-    start_year: int = 1990,
-    timeout: int = 60,
-    retries: int = 3,
-    base_sleep: float = 1.0,
-) -> pd.DataFrame:
+def fetch_ecb(spec: Dict, countries: List[Dict], *,
+              start_year: int = 1990, timeout: int = 60,
+              retries: int = 3, base_sleep: float = 1.0) -> pd.DataFrame:
     """Download an ECB indicator (SDMX 2.1) for the requested countries.
 
     The spec must contain:
@@ -118,18 +100,15 @@ def fetch_ecb(
     wanted = set(iso2_to_iso3)
 
     wild_key = key_tpl.replace("{iso2}", "")
-    url = f"{_BASE}/{dataset}/{wild_key}?startPeriod={start_year}-01&format=csvdata"
+    url = (f"{_BASE}/{dataset}/{wild_key}"
+           f"?startPeriod={start_year}-01&format=csvdata")
     try:
         text = _get_csv(url, timeout, retries, base_sleep)
     except Exception as e:
         # exhausted retries: without this line a total fetch failure is
         # indistinguishable from "no data for this key" (404 -> None)
-        log.warning(
-            "ecb: %s (%s) fetch failed after retries: %s",
-            spec.get("id"),
-            spec.get("name"),
-            e,
-        )
+        log.warning("ecb: %s (%s) fetch failed after retries: %s",
+                    spec.get("id"), spec.get("name"), e)
         return pd.DataFrame(columns=_COLS)
     if not text:
         return pd.DataFrame(columns=_COLS)
@@ -146,23 +125,14 @@ def fetch_ecb(
         dt = _period_end(per)
         if dt is None or dt.year < start_year:
             continue
-        rows.append(
-            {
-                "date": dt.date(),
-                "country_iso3": iso2_to_iso3[iso2],
-                "indicator_id": spec["id"],
-                "value": float(val),
-                "indicator_name": spec["name"],
-                "pillar": spec["pillar"],
-                "orientation": spec.get("orientation", 0),
-                "source": "ecb",
-                "provider_dataset": dataset,
-                "provider_code": key_tpl,
-                "unit": spec.get("unit"),
-                "frequency": freq,
-                "status": "ok",
-            }
-        )
+        rows.append({
+            "date": dt.date(), "country_iso3": iso2_to_iso3[iso2],
+            "indicator_id": spec["id"], "value": float(val),
+            "indicator_name": spec["name"], "pillar": spec["pillar"],
+            "orientation": spec.get("orientation", 0), "source": "ecb",
+            "provider_dataset": dataset, "provider_code": key_tpl,
+            "unit": spec.get("unit"), "frequency": freq, "status": "ok",
+        })
 
     if not rows:
         return pd.DataFrame(columns=_COLS)

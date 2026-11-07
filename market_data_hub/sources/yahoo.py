@@ -12,7 +12,6 @@ This module keeps the source-level logic on top of it:
 Canonical output for prices_daily:
   [date, symbol, open, high, low, close, adj_close, volume, source]
 """
-
 from __future__ import annotations
 
 from datetime import timedelta
@@ -22,9 +21,8 @@ import pandas as pd
 
 
 # ---------------------------------------------------------------- incremental
-def effective_start(
-    last_date: Optional[pd.Timestamp], global_start: str, tail_refresh_days: int
-) -> str:
+def effective_start(last_date: Optional[pd.Timestamp], global_start: str,
+                    tail_refresh_days: int) -> str:
     """Next start date: last_date - tail (revisions) or global_start."""
     if last_date is None or pd.isna(last_date):
         return global_start
@@ -36,9 +34,8 @@ def effective_start(
 
 
 # ---------------------------------------------------------------- batch fetch
-def yahoo_batch(
-    tickers: List[str], start: str, end: str, **kwargs
-) -> Dict[str, pd.DataFrame]:
+def yahoo_batch(tickers: List[str], start: str, end: str,
+                **kwargs) -> Dict[str, pd.DataFrame]:
     """Download multiple tickers; returns {symbol: OHLCV frame}.
 
     Delegates to the direct chart API (sources.yahoo_direct), which does NOT use
@@ -46,7 +43,6 @@ def yahoo_batch(
     blocked cache, 'str' object, 429 on crumb). ~1-2s for 100+ tickers in parallel.
     """
     from market_data_hub.sources import yahoo_direct as _yd
-
     return _yd.yahoo_batch(tickers, start, end, **kwargs)
 
 
@@ -54,13 +50,11 @@ def yahoo_batch(
 def get_live_prices_batch(tickers: List[str]) -> Dict[str, float]:
     """Last intraday price for many tickers (via direct chart API, no yfinance)."""
     from market_data_hub.sources import yahoo_direct as _yd
-
     return _yd.get_live_prices_batch(tickers)
 
 
-def adjusted_live_price(
-    live: float, adj_close_eod: float, close_eod: float
-) -> Optional[float]:
+def adjusted_live_price(live: float, adj_close_eod: float,
+                        close_eod: float) -> Optional[float]:
     """
     Map the live (raw) price into adjusted space via the EOD adjustment ratio:
         adj_live = live * (adj_close_eod / close_eod)

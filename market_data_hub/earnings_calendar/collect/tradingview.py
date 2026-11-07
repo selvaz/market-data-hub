@@ -10,7 +10,6 @@ modes: ``next`` looks forward and is what the weekly watchlist runs on,
 ``last`` looks back and is what turns an expectation into an outcome. Anything
 older than roughly one reporting cycle exists only if we stored it.
 """
-
 from __future__ import annotations
 
 from datetime import datetime, time, timezone
@@ -25,33 +24,19 @@ URL = "https://scanner.tradingview.com/global/scan"
 # The forward field carries next quarter's forecast; the backward one carries
 # the figures for the quarter that just reported, alongside its own forecast.
 _CAMPI = {
-    "next": (
-        "earnings_release_next_date",
-        "earnings_per_share_forecast_next_fq",
-        "revenue_forecast_next_fq",
-        None,
-        None,
-    ),
-    "last": (
-        "earnings_release_date",
-        "earnings_per_share_forecast_fq",
-        "revenue_forecast_fq",
-        "earnings_per_share_fq",
-        "revenue_fq",
-    ),
+    "next": ("earnings_release_next_date",
+             "earnings_per_share_forecast_next_fq", "revenue_forecast_next_fq",
+             None, None),
+    "last": ("earnings_release_date",
+             "earnings_per_share_forecast_fq", "revenue_forecast_fq",
+             "earnings_per_share_fq", "revenue_fq"),
 }
 _PAGINA = 500
 _MEZZANOTTE = time(0, 0)
 
 
-def scarica(
-    da: datetime,
-    a: datetime,
-    *,
-    mode: str = "next",
-    min_market_cap: float = 0,
-    timeout: int = 30,
-) -> pd.DataFrame:
+def scarica(da: datetime, a: datetime, *, mode: str = "next",
+            min_market_cap: float = 0, timeout: int = 30) -> pd.DataFrame:
     """Every scheduled or published release in the window, one row per company.
 
     ``is_primary`` keeps a company to its primary listing: without it a single
@@ -61,20 +46,10 @@ def scarica(
         raise ValueError(f"unknown mode {mode!r}; expected 'next' or 'last'")
     campo_data, campo_eps_att, campo_rev_att, campo_eps, campo_rev = _CAMPI[mode]
 
-    colonne = [
-        "name",
-        "description",
-        "market_cap_basic",
-        campo_data,
-        "country",
-        "exchange",
-        "sector",
-        "industry",
-        "currency",
-        "fundamental_currency_code",
-        campo_eps_att,
-        campo_rev_att,
-    ]
+    colonne = ["name", "description", "market_cap_basic", campo_data, "country",
+               "exchange", "sector", "industry", "currency",
+               "fundamental_currency_code",
+               campo_eps_att, campo_rev_att]
     if campo_eps:
         colonne += [campo_eps, campo_rev]
 
@@ -83,33 +58,21 @@ def scarica(
         # here. The difference is not cosmetic: day-precision releases land on
         # midnight, and a window ending on a Monday midnight collected 65
         # Chinese companies into that week AND the next one.
-        {
-            "left": campo_data,
-            "operation": "in_range",
-            "right": [_unix(da), _unix(a) - 1],
-        },
+        {"left": campo_data, "operation": "in_range",
+         "right": [_unix(da), _unix(a) - 1]},
         {"left": "is_primary", "operation": "equal", "right": True},
     ]
     if min_market_cap:
-        filtri.append(
-            {
-                "left": "market_cap_basic",
-                "operation": "egreater",
-                "right": min_market_cap,
-            }
-        )
+        filtri.append({"left": "market_cap_basic", "operation": "egreater",
+                       "right": min_market_cap})
 
     righe, inizio = [], 0
     while True:
         risposta = requests.post(
-            URL,
-            timeout=timeout,
-            json={
-                "filter": filtri,
-                "columns": colonne,
-                "sort": {"sortBy": "market_cap_basic", "sortOrder": "desc"},
-                "range": [inizio, inizio + _PAGINA],
-            },
+            URL, timeout=timeout,
+            json={"filter": filtri, "columns": colonne,
+                  "sort": {"sortBy": "market_cap_basic", "sortOrder": "desc"},
+                  "range": [inizio, inizio + _PAGINA]},
         )
         risposta.raise_for_status()
         corpo = risposta.json()
@@ -124,21 +87,15 @@ def scarica(
 
     tabella = pd.DataFrame([dict(zip(colonne, r["d"])) for r in righe])
     tabella.insert(0, "tv_ticker", [r["s"] for r in righe])
-    tabella = tabella.rename(
-        columns={
-            "name": "symbol",
-            "description": "company_name",
-            "market_cap_basic": "market_cap",
-            campo_data: "release_ts",
-            "fundamental_currency_code": "estimate_currency",
-            campo_eps_att: "eps_estimate",
-            campo_rev_att: "revenue_estimate",
-        }
-    )
+    tabella = tabella.rename(columns={
+        "name": "symbol", "description": "company_name",
+        "market_cap_basic": "market_cap", campo_data: "release_ts",
+        "fundamental_currency_code": "estimate_currency",
+        campo_eps_att: "eps_estimate", campo_rev_att: "revenue_estimate",
+    })
     if campo_eps:
-        tabella = tabella.rename(
-            columns={campo_eps: "eps_actual", campo_rev: "revenue_actual"}
-        )
+        tabella = tabella.rename(columns={campo_eps: "eps_actual",
+                                          campo_rev: "revenue_actual"})
     tabella["status"] = "occurred" if mode == "last" else "estimated"
     return tabella
 
@@ -154,9 +111,8 @@ def leggi(percorso, *, vintage_date=None) -> list:
 
     percorso = Path(percorso)
     if vintage_date is None:
-        vintage_date = datetime.fromtimestamp(
-            percorso.stat().st_mtime, tz=timezone.utc
-        ).date()
+        vintage_date = datetime.fromtimestamp(percorso.stat().st_mtime,
+                                              tz=timezone.utc).date()
     # Tickers are not missing values. Pandas reads "NA" -- National Bank of
     # Canada -- as NaN by default, and the company reached the report as a
     # row symbolled 'nan'. The same applies to NULL, NONE and a dozen others.
@@ -166,36 +122,31 @@ def leggi(percorso, *, vintage_date=None) -> list:
         istante = _istante(r.get("release_ts"))
         if istante is None:
             continue
-        osservazioni.append(
-            EarningsObservation(
-                symbol=str(r["symbol"]),
-                exchange=str(r["exchange"]),
-                source="tradingview",
-                status=str(r["status"]),
-                release_ts_utc=istante,
-                # Midnight UTC is what the scanner reports when it knows the day
-                # but not the hour; recording it as a minute-precise time would
-                # place an Asian release on the previous local day.
-                release_precision="day" if istante.time() == _MEZZANOTTE else "minute",
-                tv_ticker=_testo(r.get("tv_ticker")),
-                company_name=_testo(r.get("company_name")),
-                country=_testo(r.get("country")),
-                sector=_testo(r.get("sector")),
-                industry=_testo(r.get("industry")),
-                market_cap=_numero(r.get("market_cap")),
-                eps_estimate=_numero(r.get("eps_estimate")),
-                eps_actual=_numero(r.get("eps_actual")),
-                revenue_estimate=_numero(r.get("revenue_estimate")),
-                revenue_actual=_numero(r.get("revenue_actual")),
-                currency=_testo(r.get("currency")),
-                # Currency of the eps/revenue figures: TradingView reports them in
-                # a "fundamental currency" that is often not the listing currency
-                # (TSE:7011 lists in JPY, its estimates are in USD). Absent in old
-                # CSVs -> None (unknown); never inferred from `currency`.
-                estimate_currency=_testo(r.get("estimate_currency")),
-                vintage_date=vintage_date,
-            )
-        )
+        osservazioni.append(EarningsObservation(
+            symbol=str(r["symbol"]), exchange=str(r["exchange"]),
+            source="tradingview", status=str(r["status"]),
+            release_ts_utc=istante,
+            # Midnight UTC is what the scanner reports when it knows the day
+            # but not the hour; recording it as a minute-precise time would
+            # place an Asian release on the previous local day.
+            release_precision="day" if istante.time() == _MEZZANOTTE else "minute",
+            tv_ticker=_testo(r.get("tv_ticker")),
+            company_name=_testo(r.get("company_name")),
+            country=_testo(r.get("country")),
+            sector=_testo(r.get("sector")), industry=_testo(r.get("industry")),
+            market_cap=_numero(r.get("market_cap")),
+            eps_estimate=_numero(r.get("eps_estimate")),
+            eps_actual=_numero(r.get("eps_actual")),
+            revenue_estimate=_numero(r.get("revenue_estimate")),
+            revenue_actual=_numero(r.get("revenue_actual")),
+            currency=_testo(r.get("currency")),
+            # Currency of the eps/revenue figures: TradingView reports them in
+            # a "fundamental currency" that is often not the listing currency
+            # (TSE:7011 lists in JPY, its estimates are in USD). Absent in old
+            # CSVs -> None (unknown); never inferred from `currency`.
+            estimate_currency=_testo(r.get("estimate_currency")),
+            vintage_date=vintage_date,
+        ))
     return osservazioni
 
 

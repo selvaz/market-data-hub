@@ -14,7 +14,6 @@ Reference-only identities (``cik:``, ``isin:``) raise
 :class:`NotResolvableError`: they are entity identities (EDGAR / LazyFin), not
 market-data rows in DuckDB.
 """
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -34,10 +33,10 @@ class NotResolvableError(ValueError):
 class ResolvedRef:
     """The physical coordinates of an instrument in the DuckDB warehouse."""
 
-    dataset: str  # logical dataset name (reader vocabulary)
-    table: str  # DuckDB table
+    dataset: str                       # logical dataset name (reader vocabulary)
+    table: str                         # DuckDB table
     filters: Dict[str, str] = field(default_factory=dict)  # column -> value
-    reader: str = ""  # matching reader.py function name
+    reader: str = ""                   # matching reader.py function name
 
 
 def to_duckdb(instrument: "str | InstrumentId") -> ResolvedRef:
@@ -48,37 +47,28 @@ def to_duckdb(instrument: "str | InstrumentId") -> ResolvedRef:
     # TICKER (and its 'price' alias, normalised to ticker) is prices_daily.
     if domain in (Domain.TICKER, Domain.PRICE):
         return ResolvedRef(
-            dataset="prices",
-            table="prices_daily",
-            filters={"symbol": iid.key},
-            reader="read_prices",
+            dataset="prices", table="prices_daily",
+            filters={"symbol": iid.key}, reader="read_prices",
         )
 
     if domain is Domain.CRYPTO:
         return ResolvedRef(
-            dataset="crypto",
-            table="crypto_ohlcv",
-            filters={
-                "symbol": iid.key,
-                "timeframe": iid.qualifier or _DEFAULT_TIMEFRAME,
-            },
+            dataset="crypto", table="crypto_ohlcv",
+            filters={"symbol": iid.key, "timeframe": iid.qualifier or _DEFAULT_TIMEFRAME},
             reader="read_crypto",
         )
 
     if domain is Domain.MACRO:
         return ResolvedRef(
-            dataset="macro",
-            table="macro_series",
-            filters={"series_id": iid.key},
-            reader="read_macro",
+            dataset="macro", table="macro_series",
+            filters={"series_id": iid.key}, reader="read_macro",
         )
 
     if domain is Domain.MACRO_PANEL:
         # Composite key "COUNTRY/INDICATOR", e.g. "USA/real_gdp_growth".
         country, indicator = _split_pair(iid.key, "macro_panel", "country/indicator")
         return ResolvedRef(
-            dataset="macro_panel",
-            table="macro_panel",
+            dataset="macro_panel", table="macro_panel",
             filters={"country_iso3": country, "indicator_id": indicator},
             reader="read_macro_panel",
         )
@@ -87,8 +77,7 @@ def to_duckdb(instrument: "str | InstrumentId") -> ResolvedRef:
         # Composite key "FACTOR_SET/FACTOR", e.g. "FF5_daily/Mkt-RF".
         factor_set, factor = _split_pair(iid.key, "factor", "factor_set/factor")
         return ResolvedRef(
-            dataset="factors",
-            table="factor_returns",
+            dataset="factors", table="factor_returns",
             filters={"factor_set": factor_set, "factor": factor},
             reader="read_factors",
         )
@@ -103,5 +92,7 @@ def to_duckdb(instrument: "str | InstrumentId") -> ResolvedRef:
 def _split_pair(key: str, domain: str, shape: str) -> "tuple[str, str]":
     parts = key.split("/")
     if len(parts) != 2 or not all(parts):
-        raise NotResolvableError(f"{domain} key must be '{shape}', got {key!r}")
+        raise NotResolvableError(
+            f"{domain} key must be '{shape}', got {key!r}"
+        )
     return parts[0], parts[1]

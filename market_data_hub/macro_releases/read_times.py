@@ -1,5 +1,4 @@
 """Tolerant timestamp boundary for stored evidence; write contracts stay strict."""
-
 from datetime import datetime, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -33,9 +32,7 @@ def normalize(row, fields):
     for name, zone in fields.items():
         if row.get(name) is not None:
             try:
-                row[name], precisions[name] = timestamp(
-                    row[name], assumed_timezone=zone
-                )
+                row[name], precisions[name] = timestamp(row[name], assumed_timezone=zone)
             except (ValueError, TypeError, KeyError, OverflowError) as exc:
                 raise ValueError(f"invalid {name}") from exc
     row["timestamp_precisions"] = precisions
@@ -63,26 +60,16 @@ def stored_rows(rows, fields, *, known_at, cutoff, limitations, table):
                 if row["timestamp_precisions"]["expected_at"] != "exact":
                     row["precision"] = row["timestamp_precisions"]["expected_at"]
             elif table == "consensus_readings":
-                if (
-                    row["timestamp_precisions"].get("release_cutoff_at", "exact")
-                    != "exact"
-                ):
-                    row["cutoff_precision"] = row["timestamp_precisions"][
-                        "release_cutoff_at"
-                    ]
+                if row["timestamp_precisions"].get("release_cutoff_at", "exact") != "exact":
+                    row["cutoff_precision"] = row["timestamp_precisions"]["release_cutoff_at"]
             elif table == "collect_run_families":
                 # Fetch bounds are dates/months, never arbitrary wall times.
                 row["fetch_start"] = timestamp(row["fetch_since"] + "-01")[0]
                 end, _ = timestamp(row["fetch_until"])
-                row["fetch_end"] = (
-                    datetime.fromisoformat(end)
-                    + timedelta(days=1)
-                    - timedelta(microseconds=1)
-                ).isoformat(timespec="microseconds")
+                row["fetch_end"] = (datetime.fromisoformat(end) + timedelta(days=1) -
+                                    timedelta(microseconds=1)).isoformat(timespec="microseconds")
             result.append(row)
         except (ValueError, TypeError, KeyError, OverflowError) as exc:
             key = raw.get("id", raw.get("reading_id", raw.get("run_id", "unknown")))
-            limitations.append(
-                f"Skipped {table}:{key}: invalid stored timestamp ({exc})."
-            )
+            limitations.append(f"Skipped {table}:{key}: invalid stored timestamp ({exc}).")
     return result

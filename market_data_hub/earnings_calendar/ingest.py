@@ -4,7 +4,6 @@
 ``earnings_observations`` keeps what each source said, stamped with the day we
 saw it. ``earnings_events`` is derived from those and can always be rebuilt.
 """
-
 from __future__ import annotations
 
 import hashlib
@@ -17,16 +16,8 @@ import duckdb
 
 # Closed vocabulary. A country nobody mapped lands in 'unknown' rather than in
 # a plausible-looking region: audit() counts those so the map can be grown.
-REGIONS = (
-    "us",
-    "europe",
-    "japan",
-    "china_hk",
-    "apac_ex_jp_cn",
-    "americas_ex_us",
-    "emea_other",
-    "unknown",
-)
+REGIONS = ("us", "europe", "japan", "china_hk", "apac_ex_jp_cn",
+           "americas_ex_us", "emea_other", "unknown")
 
 # Later evidence outranks earlier: a release that happened cannot go back to
 # being expected, whatever a stale forward run says about the same quarter.
@@ -41,88 +32,30 @@ _PAESI_PER_REGIONE = {
     "japan": ["Japan"],
     "china_hk": ["China", "Hong Kong", "Macau"],
     "europe": [
-        "Austria",
-        "Belgium",
-        "Bulgaria",
-        "Croatia",
-        "Cyprus",
-        "Czech Republic",
-        "Denmark",
-        "Estonia",
-        "Finland",
-        "France",
-        "Germany",
-        "Greece",
-        "Hungary",
-        "Iceland",
-        "Ireland",
-        "Italy",
-        "Latvia",
-        "Lithuania",
-        "Luxembourg",
-        "Malta",
-        "Netherlands",
-        "Norway",
-        "Poland",
-        "Portugal",
-        "Romania",
-        "Slovakia",
-        "Slovenia",
-        "Spain",
-        "Sweden",
-        "Switzerland",
-        "United Kingdom",
+        "Austria", "Belgium", "Bulgaria", "Croatia", "Cyprus", "Czech Republic",
+        "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary",
+        "Iceland", "Ireland", "Italy", "Latvia", "Lithuania", "Luxembourg", "Malta",
+        "Netherlands", "Norway", "Poland", "Portugal", "Romania", "Slovakia",
+        "Slovenia", "Spain", "Sweden", "Switzerland", "United Kingdom",
     ],
     "apac_ex_jp_cn": [
-        "Australia",
-        "Bangladesh",
-        "India",
-        "Indonesia",
-        "Malaysia",
-        "New Zealand",
-        "Pakistan",
-        "Philippines",
-        "Singapore",
-        "South Korea",
-        "Sri Lanka",
-        "Taiwan",
-        "Thailand",
-        "Vietnam",
+        "Australia", "Bangladesh", "India", "Indonesia", "Malaysia", "New Zealand",
+        "Pakistan", "Philippines", "Singapore", "South Korea", "Sri Lanka",
+        "Taiwan", "Thailand", "Vietnam",
     ],
     "americas_ex_us": [
-        "Argentina",
-        "Bermuda",
-        "Brazil",
-        "Canada",
-        "Cayman Islands",
-        "Chile",
-        "Colombia",
-        "Mexico",
-        "Panama",
-        "Peru",
-        "Uruguay",
+        "Argentina", "Bermuda", "Brazil", "Canada", "Cayman Islands", "Chile",
+        "Colombia", "Mexico", "Panama", "Peru", "Uruguay",
     ],
     "emea_other": [
-        "Bahrain",
-        "Egypt",
-        "Israel",
-        "Jordan",
-        "Kenya",
-        "Kuwait",
-        "Morocco",
-        "Nigeria",
-        "Oman",
-        "Qatar",
-        "Russia",
-        "Saudi Arabia",
-        "South Africa",
-        "Turkey",
-        "United Arab Emirates",
+        "Bahrain", "Egypt", "Israel", "Jordan", "Kenya", "Kuwait", "Morocco",
+        "Nigeria", "Oman", "Qatar", "Russia", "Saudi Arabia", "South Africa",
+        "Turkey", "United Arab Emirates",
     ],
 }
-_REGION_BY_COUNTRY = {
-    paese: regione for regione, paesi in _PAESI_PER_REGIONE.items() for paese in paesi
-}
+_REGION_BY_COUNTRY = {paese: regione
+                      for regione, paesi in _PAESI_PER_REGIONE.items()
+                      for paese in paesi}
 
 _THEMES_PATH = Path(__file__).resolve().parents[1] / "config" / "earnings_themes.yaml"
 _themes_cache: Optional[dict] = None
@@ -140,7 +73,6 @@ def theme_of(industry: Optional[str]) -> Optional[str]:
         mappa: dict = {}
         try:
             import yaml
-
             caricato = yaml.safe_load(_THEMES_PATH.read_text(encoding="utf-8")) or {}
             for tema, industrie in (caricato.get("themes") or {}).items():
                 for i in industrie or ():
@@ -149,8 +81,7 @@ def theme_of(industry: Optional[str]) -> Optional[str]:
                     if not isinstance(i, str):
                         raise ValueError(
                             f"{_THEMES_PATH.name}: theme {tema!r} has a non-string "
-                            f"entry {i!r} -- quote industries containing a colon"
-                        )
+                            f"entry {i!r} -- quote industries containing a colon")
                     mappa[i.strip().lower()] = tema
         except FileNotFoundError:
             pass
@@ -170,14 +101,9 @@ def make_event_id(exchange: str, symbol: str, release: datetime) -> str:
     return hashlib.sha1(impronta).hexdigest()[:16]
 
 
-def resolve_event_id(
-    con: duckdb.DuckDBPyConnection,
-    exchange: str,
-    symbol: str,
-    release: datetime,
-    *,
-    tolerance_days: int = _TOLLERANZA_GIORNI,
-) -> str:
+def resolve_event_id(con: duckdb.DuckDBPyConnection, exchange: str, symbol: str,
+                     release: datetime, *,
+                     tolerance_days: int = _TOLLERANZA_GIORNI) -> str:
     """Identity for a release, reusing a stored event when one is close enough.
 
     A date that slips from 30 September to 2 October is the same release, and
@@ -211,7 +137,7 @@ class EarningsObservation:
     symbol: str
     exchange: str
     source: str
-    status: str  # 'estimated' | 'confirmed' | 'occurred'
+    status: str                          # 'estimated' | 'confirmed' | 'occurred'
     release_ts_utc: datetime
     tv_ticker: Optional[str] = None
     company_name: Optional[str] = None
@@ -219,27 +145,22 @@ class EarningsObservation:
     sector: Optional[str] = None
     industry: Optional[str] = None
     market_cap: Optional[float] = None
-    release_precision: str = "minute"  # 'minute' | 'day'
+    release_precision: str = "minute"    # 'minute' | 'day'
     eps_estimate: Optional[float] = None
     eps_actual: Optional[float] = None
     revenue_estimate: Optional[float] = None
     revenue_actual: Optional[float] = None
-    currency: Optional[str] = None  # listing currency
+    currency: Optional[str] = None           # listing currency
     estimate_currency: Optional[str] = None  # currency of eps/revenue figures
-    vintage_date: date = field(
-        default_factory=lambda: datetime.now(timezone.utc).date()
-    )
+    vintage_date: date = field(default_factory=lambda: datetime.now(timezone.utc).date())
 
     def __post_init__(self) -> None:
         if self.status not in STATUS_RANK:
-            raise ValueError(
-                f"unknown status: {self.status!r}; "
-                f"expected one of {sorted(STATUS_RANK)}"
-            )
+            raise ValueError(f"unknown status: {self.status!r}; "
+                             f"expected one of {sorted(STATUS_RANK)}")
         if self.release_ts_utc.tzinfo is not None:
-            self.release_ts_utc = self.release_ts_utc.astimezone(timezone.utc).replace(
-                tzinfo=None
-            )
+            self.release_ts_utc = (self.release_ts_utc.astimezone(timezone.utc)
+                                   .replace(tzinfo=None))
 
     @property
     def region(self) -> str:
@@ -270,15 +191,9 @@ def ingest_observations(
     ancore: dict[tuple, list] = {}
     for o in righe:
         chiave = (o.exchange, o.symbol)
-        eid = next(
-            (
-                e
-                for istante, e in ancore.get(chiave, ())
-                if abs((o.release_ts_utc - istante).total_seconds())
-                <= _TOLLERANZA_GIORNI * 86400
-            ),
-            None,
-        )
+        eid = next((e for istante, e in ancore.get(chiave, ())
+                    if abs((o.release_ts_utc - istante).total_seconds())
+                    <= _TOLLERANZA_GIORNI * 86400), None)
         if eid is None:
             eid = resolve_event_id(con, o.exchange, o.symbol, o.release_ts_utc)
             ancore.setdefault(chiave, []).append((o.release_ts_utc, eid))
@@ -295,29 +210,11 @@ def ingest_observations(
                  currency, estimate_currency, run_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            [
-                identita[id(o)],
-                o.source,
-                o.vintage_date,
-                o.symbol,
-                o.exchange,
-                o.tv_ticker,
-                o.company_name,
-                o.country,
-                o.sector,
-                o.industry,
-                o.market_cap,
-                o.release_ts_utc,
-                o.release_precision,
-                o.status,
-                o.eps_estimate,
-                o.eps_actual,
-                o.revenue_estimate,
-                o.revenue_actual,
-                o.currency,
-                o.estimate_currency,
-                run_id,
-            ],
+            [identita[id(o)], o.source, o.vintage_date, o.symbol, o.exchange, o.tv_ticker,
+             o.company_name, o.country, o.sector, o.industry, o.market_cap,
+             o.release_ts_utc, o.release_precision, o.status,
+             o.eps_estimate, o.eps_actual, o.revenue_estimate, o.revenue_actual,
+             o.currency, o.estimate_currency, run_id],
         )
 
     toccati = sorted(set(identita.values()))
@@ -325,7 +222,8 @@ def ingest_observations(
     return {"observations": len(righe), "events": len(toccati)}
 
 
-def consolidate_events(con: duckdb.DuckDBPyConnection, event_ids: Iterable[str]) -> int:
+def consolidate_events(con: duckdb.DuckDBPyConnection,
+                       event_ids: Iterable[str]) -> int:
     """Rebuild ``earnings_events`` from the stored observations."""
     scritti = 0
     for eid in event_ids:
@@ -367,13 +265,9 @@ def consolidate_events(con: duckdb.DuckDBPyConnection, event_ids: Iterable[str])
         # date, because the local reporting day straddles midnight UTC.
         release, precisione = principale[9], principale[10]
         if precisione == "day" and release is not None:
-            al_minuto = [
-                r[9]
-                for r in ordinate
-                if r[10] == "minute"
-                and r[9] is not None
-                and abs((r[9] - release).total_seconds()) <= 86400
-            ]
+            al_minuto = [r[9] for r in ordinate
+                         if r[10] == "minute" and r[9] is not None
+                         and abs((r[9] - release).total_seconds()) <= 86400]
             if al_minuto:
                 release, precisione = al_minuto[0], "minute"
 
@@ -393,32 +287,12 @@ def consolidate_events(con: duckdb.DuckDBPyConnection, event_ids: Iterable[str])
                     COALESCE((SELECT first_seen_at FROM earnings_events WHERE event_id = ?),
                              ?), ?)
             """,
-            [
-                eid,
-                principale[1],
-                principale[2],
-                primo(3),
-                primo(4),
-                paese,
-                region_of(paese),
-                primo(6),
-                primo(7),
-                theme_of(primo(7)),
-                primo(8),
-                release,
-                precisione,
-                principale[11],
-                primo(12),
-                primo(13),
-                primo(14),
-                primo(15),
-                primo(16),
-                primo(17),
-                len(osservazioni),
-                eid,
-                datetime.now(timezone.utc),
-                datetime.now(timezone.utc),
-            ],
+            [eid, principale[1], principale[2], primo(3), primo(4), paese,
+             region_of(paese), primo(6), primo(7), theme_of(primo(7)), primo(8),
+             release, precisione, principale[11],
+             primo(12), primo(13), primo(14), primo(15), primo(16), primo(17),
+             len(osservazioni),
+             eid, datetime.now(timezone.utc), datetime.now(timezone.utc)],
         )
         scritti += 1
     return scritti
@@ -426,7 +300,6 @@ def consolidate_events(con: duckdb.DuckDBPyConnection, event_ids: Iterable[str])
 
 def audit(con: duckdb.DuckDBPyConnection) -> dict:
     """Counts of invariant violations, not of rows. Never fatal."""
-
     def conta(sql: str) -> int:
         try:
             return con.execute(sql).fetchone()[0]
@@ -437,18 +310,14 @@ def audit(con: duckdb.DuckDBPyConnection) -> dict:
         # An event with no surviving observation cannot be regenerated.
         "orphan_events": conta(
             "SELECT count(*) FROM earnings_events e WHERE NOT EXISTS ("
-            "SELECT 1 FROM earnings_observations o WHERE o.event_id = e.event_id)"
-        ),
+            "SELECT 1 FROM earnings_observations o WHERE o.event_id = e.event_id)"),
         "unknown_region": conta(
-            "SELECT count(*) FROM earnings_events WHERE region = 'unknown'"
-        ),
+            "SELECT count(*) FROM earnings_events WHERE region = 'unknown'"),
         "unmapped_industry": conta(
             "SELECT count(DISTINCT industry) FROM earnings_events "
-            "WHERE theme IS NULL AND industry IS NOT NULL"
-        ),
+            "WHERE theme IS NULL AND industry IS NOT NULL"),
         "missing_market_cap": conta(
-            "SELECT count(*) FROM earnings_events WHERE market_cap IS NULL"
-        ),
+            "SELECT count(*) FROM earnings_events WHERE market_cap IS NULL"),
         # is_primary drops secondary venues but not an issuer's second share
         # class, and identity is per symbol, so GOOG and GOOGL would count as
         # two companies and their capitalisation twice. Counted rather than
@@ -456,16 +325,13 @@ def audit(con: duckdb.DuckDBPyConnection) -> dict:
         "same_day_same_issuer": conta(
             "SELECT count(*) FROM (SELECT company_name, country, "
             "date_trunc('day', release_ts_utc) AS g FROM earnings_events "
-            "WHERE company_name IS NOT NULL GROUP BY 1, 2, 3 HAVING count(*) > 1)"
-        ),
+            "WHERE company_name IS NOT NULL GROUP BY 1, 2, 3 HAVING count(*) > 1)"),
         # A release that happened without a figure, or one that has not yet
         # happened but already carries one: both mean a source contradicted itself.
         "occurred_without_actual": conta(
             "SELECT count(*) FROM earnings_events WHERE status = 'occurred' "
-            "AND eps_actual IS NULL AND revenue_actual IS NULL"
-        ),
+            "AND eps_actual IS NULL AND revenue_actual IS NULL"),
         "pending_with_actual": conta(
             "SELECT count(*) FROM earnings_events WHERE status <> 'occurred' "
-            "AND (eps_actual IS NOT NULL OR revenue_actual IS NOT NULL)"
-        ),
+            "AND (eps_actual IS NOT NULL OR revenue_actual IS NOT NULL)"),
     }

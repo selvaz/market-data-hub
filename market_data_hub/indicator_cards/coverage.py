@@ -1,5 +1,4 @@
 """Offline coverage of configured universes; no live database is opened."""
-
 from __future__ import annotations
 
 import argparse
@@ -21,9 +20,7 @@ DRAFT_TIMING_PATH = DATA_DIR / "timing_v2.2-draft.json"
 
 def tier1_ids() -> list[str]:
     """Portable snapshot of the external tier-1 catalogue, not the code catalogue."""
-    snapshot = json.loads(
-        files(__package__).joinpath("tier1_v1.json").read_text(encoding="utf-8")
-    )
+    snapshot = json.loads(files(__package__).joinpath("tier1_v1.json").read_text(encoding="utf-8"))
     ids = snapshot["ids"]
     if len(ids) != 86 or len(set(ids)) != len(ids):
         raise ValueError("Tier-1 snapshot must contain 86 distinct ids")
@@ -31,27 +28,21 @@ def tier1_ids() -> list[str]:
 
 
 def load_draft_cards(
-    psv_path: Path = DRAFT_PSV_PATH,
-    timing_path: Path = DRAFT_TIMING_PATH,
+    psv_path: Path = DRAFT_PSV_PATH, timing_path: Path = DRAFT_TIMING_PATH,
 ) -> tuple[IndicatorCard, ...]:
     """Validate proposed cards for offline review only; never alter the shipped index."""
     timing = json.loads(timing_path.read_text(encoding="utf-8"))
     version = timing["classification_version"]
     if not re.fullmatch(r"v\d+\.\d+-draft", version):
         raise ValueError("Expected draft classification version in timing evidence")
-    if (
-        timing["source_table_sha256"]
-        != hashlib.sha256(psv_path.read_bytes()).hexdigest()
-    ):
+    if timing["source_table_sha256"] != hashlib.sha256(psv_path.read_bytes()).hexdigest():
         raise ValueError("Draft timing belongs to a different PSV")
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         header = next(csv.reader(f, delimiter="|"))
     with psv_path.open(encoding="utf-8-sig", newline="") as f:
         reader = csv.DictReader(f, delimiter="|")
         if reader.fieldnames != header:
-            raise ValueError(
-                "Draft rows must have the same 19 columns as the approved table"
-            )
+            raise ValueError("Draft rows must have the same 19 columns as the approved table")
         rows = list(reader)
     keys = [row["key"] for row in rows]
     if len(set(keys)) != len(keys) or set(timing["rows"]) != set(keys):
@@ -64,92 +55,43 @@ def load_draft_cards(
     for row in rows:
         if None in row or any(value is None for value in row.values()):
             raise ValueError("Draft row must contain exactly 19 values")
-        if re.search(
-            r"\b(?:approved\b|(?:pending|awaiting|needs|requires?)\s+(?:owner\s+)?approval\b|owner\s+approval\b|draft\s+v\d)",
-            row["flag"],
-            re.I,
-        ):
-            raise ValueError(
-                "Draft flags must contain real caveats, not approval state"
-            )
-        if (
-            row["timing_class"],
-            row["timing_basis"],
-            row["vkeys"],
-            row["class_pair"],
-        ) != (
-            "UNKNOWN",
-            "—",
-            "",
-            "",
+        if re.search(r"\b(?:approved\b|(?:pending|awaiting|needs|requires?)\s+(?:owner\s+)?approval\b|owner\s+approval\b|draft\s+v\d)", row["flag"], re.I):
+            raise ValueError("Draft flags must contain real caveats, not approval state")
+        if (row["timing_class"], row["timing_basis"], row["vkeys"], row["class_pair"]) != (
+            "UNKNOWN", "—", "", "",
         ) or timing["rows"][row["key"]] != {
-            "descriptive_peak": "not estimated",
-            "predictive_screen": "not tested",
+            "descriptive_peak": "not estimated", "predictive_screen": "not tested",
         }:
-            raise ValueError(
-                "Unvalidated draft timing must remain unknown and untested"
-            )
+            raise ValueError("Unvalidated draft timing must remain unknown and untested")
         if row["theme"] not in approved_themes or row["nature"] not in {"HARD", "SOFT"}:
             raise ValueError("Draft theme and nature must use the approved vocabulary")
         ids = parse_ids(row["ids"])
         # Proposed ids are context ids only; do not invent store ingestion ids.
-        if not ids.cat or any(
-            getattr(ids, store)
-            for store in (
-                "ms",
-                "es",
-                "cal",
-                "pan",
-                "hub",
-                "derived_ms",
-                "notes",
-            )
-        ):
+        if not ids.cat or any(getattr(ids, store) for store in (
+            "ms", "es", "cal", "pan", "hub", "derived_ms", "notes",
+        )):
             raise ValueError("Draft ids must be explicit catalogue context ids")
         identities = [row["key"], *ids.cat, *(f"cat:{value}" for value in ids.cat)]
-        if any(
-            "*" in identity or identity in seen or indicator_card(identity) is not None
-            for identity in identities
-        ):
+        if any("*" in identity or identity in seen or indicator_card(identity) is not None
+               for identity in identities):
             raise ValueError("Draft identity duplicates or overlaps an approved card")
         seen.update(identities)
-        cards.append(
-            IndicatorCard(
-                key=row["key"],
-                concept=row["concept"],
-                country=row["country"],
-                ids=ids,
-                raw_ids=row["ids"],
-                theme=row["theme"],
-                secondary=tuple(
-                    s.strip() for s in row["secondary"].split(";") if s.strip()
-                ),
-                nature=row["nature"],
-                timing=Timing(
-                    timing_class=row["timing_class"],
-                    basis=None,
-                    reference=row["reference"],
-                    class_pair=None,
-                    relationship_keys=(),
-                    predictive_screen=(),
-                    screen_note="not tested",
-                    descriptive_peak=None,
-                ),
-                evidence=Evidence(
-                    measurement=row["ev_meas"],
-                    mechanism=row["ev_mech"],
-                    local_timing=row["ev_timing"],
-                ),
-                revision_behaviour="Not specified in draft row.",
-                known_failure_modes=tuple(
-                    s.strip() for s in row["flag"].split(";") if s.strip()
-                ),
-                flag=row["flag"],
-                rationale=row["rationale"],
-                source=row["source"],
-                frequency=row["freq"],
-            )
-        )
+        cards.append(IndicatorCard(
+            key=row["key"], concept=row["concept"], country=row["country"], ids=ids,
+            raw_ids=row["ids"], theme=row["theme"],
+            secondary=tuple(s.strip() for s in row["secondary"].split(";") if s.strip()),
+            nature=row["nature"],
+            timing=Timing(
+                timing_class=row["timing_class"], basis=None, reference=row["reference"],
+                class_pair=None, relationship_keys=(), predictive_screen=(),
+                screen_note="not tested", descriptive_peak=None,
+            ),
+            evidence=Evidence(measurement=row["ev_meas"], mechanism=row["ev_mech"], local_timing=row["ev_timing"]),
+            revision_behaviour="Not specified in draft row.",
+            known_failure_modes=tuple(s.strip() for s in row["flag"].split(";") if s.strip()),
+            flag=row["flag"], rationale=row["rationale"],
+            source=row["source"], frequency=row["freq"],
+        ))
     return tuple(cards)
 
 
@@ -161,11 +103,7 @@ def draft_cards() -> tuple[IndicatorCard, ...]:
         version = psv_path.stem.removeprefix("draft_rows_")
         timing_path = psv_path.with_name(f"timing_{version}-draft.json")
         for card in load_draft_cards(psv_path, timing_path):
-            identities = {
-                card.key,
-                *card.ids.cat,
-                *(f"cat:{value}" for value in card.ids.cat),
-            }
+            identities = {card.key, *card.ids.cat, *(f"cat:{value}" for value in card.ids.cat)}
             if seen.intersection(identities):
                 raise ValueError("Duplicate identity across draft files")
             seen.update(identities)
@@ -175,19 +113,8 @@ def draft_cards() -> tuple[IndicatorCard, ...]:
 
 def tier1_coverage(with_drafts: bool = False) -> dict:
     """Resolve actual cards, keeping approved and proposed coverage explicit."""
-    drafts = (
-        {
-            identity: card
-            for card in draft_cards()
-            for identity in {
-                card.key,
-                *card.ids.cat,
-                *(f"cat:{value}" for value in card.ids.cat),
-            }
-        }
-        if with_drafts
-        else {}
-    )
+    drafts = {identity: card for card in draft_cards() for identity in
+              {card.key, *card.ids.cat, *(f"cat:{value}" for value in card.ids.cat)}} if with_drafts else {}
     resolutions = {}
     missing = []
     for identity in tier1_ids():
@@ -201,13 +128,10 @@ def tier1_coverage(with_drafts: bool = False) -> dict:
         else:
             resolutions[identity] = {"status": status, "key": card.key}
     return {
-        "mapped": len(resolutions),
-        "total": len(tier1_ids()),
-        "unmapped": missing,
+        "mapped": len(resolutions), "total": len(tier1_ids()), "unmapped": missing,
         "approved": sum(r["status"] == "approved" for r in resolutions.values()),
         "draft": sum(r["status"] == "draft" for r in resolutions.values()),
-        "with_drafts": with_drafts,
-        "resolutions": resolutions,
+        "with_drafts": with_drafts, "resolutions": resolutions,
     }
 
 
@@ -228,85 +152,39 @@ def mapping_ambiguities() -> dict[str, dict]:
                     candidates[value].add(card.key)
     return {
         identity: {"candidates": sorted(keys), "selected": indicator_card(identity).key}
-        for identity, keys in sorted(candidates.items())
-        if len(keys) > 1
+        for identity, keys in sorted(candidates.items()) if len(keys) > 1
     }
 
 
 def coverage_report(with_drafts: bool = False) -> dict:
     from market_data_hub.config_loader import get_macro_series
     from market_data_hub.econ_calendar.catalog import load_catalog_rows
-    from market_data_hub.macro_releases.catalogue import (
-        INDICATORS,
-        UK_FAMILIES,
-        US_MONTHLY,
-        EMPLOYMENT_FAMILIES,
-        REMAINING_FAMILIES,
-        CENTRAL_BANKS,
-        HOUSING_FAMILIES,
-        ASIA_FAMILIES,
-        LATAM_FAMILIES,
-    )
+    from market_data_hub.macro_releases.catalogue import INDICATORS, UK_FAMILIES, US_MONTHLY, EMPLOYMENT_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES
 
     catalogue = sorted(f"cat:{key}" for key in INDICATORS)
-    calendar = sorted(
-        {
-            f"cal:{r['indicator_key']}"
-            for r in load_catalog_rows()
-            if r["criticality"] == "T1" and r["active"]
-        }
-    )
-    macro = sorted(
-        {f"ms:{r['symbol']}" for r in get_macro_series() if r.get("enabled", True)}
-    )
+    calendar = sorted({f"cal:{r['indicator_key']}" for r in load_catalog_rows()
+                       if r["criticality"] == "T1" and r["active"]})
+    macro = sorted({f"ms:{r['symbol']}" for r in get_macro_series() if r.get("enabled", True)})
     families = {
-        **{
-            family: sorted(f"cat:{m.id}" for m in measures)
-            for family, measures in LATAM_FAMILIES.items()
-        },
-        **{
-            family: sorted(f"cat:{m.id}" for m in measures)
-            for family, measures in ASIA_FAMILIES.items()
-        },
-        **{
-            family: sorted(f"cat:{m.id}" for m in measures)
-            for family, measures in EMPLOYMENT_FAMILIES.items()
-        },
-        **{
-            family: sorted(f"cat:{m.id}" for m in measures)
-            for family, measures in HOUSING_FAMILIES.items()
-        },
-        **{
-            family: sorted(f"cat:{m.id}" for m in measures)
-            for family, measures in CENTRAL_BANKS.items()
-        },
-        **{
-            family: sorted(f"cat:{m.id}" for m in measures)
-            for family, measures in REMAINING_FAMILIES.items()
-        },
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in LATAM_FAMILIES.items()},
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in ASIA_FAMILIES.items()},
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in EMPLOYMENT_FAMILIES.items()},
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in HOUSING_FAMILIES.items()},
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in CENTRAL_BANKS.items()},
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in REMAINING_FAMILIES.items()},
         "us_cpi": [i for i in catalogue if i.startswith("cat:us_cpi_")],
         "us_payrolls": ["cat:us_payrolls_change"],
         "us_gdp": ["cat:us_gdp_qq_saar"],
         "ea_hicp": [i for i in catalogue if "hicp" in i],
         "uk_gdp": [i for i in catalogue if i.startswith("cat:uk_gdp_")],
         # M9a-1 (24/10): the US monthly families list their own measures.
-        **{
-            family: sorted(f"cat:{m.id}" for m in measures)
-            for family, measures in US_MONTHLY.items()
-        },
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in US_MONTHLY.items()},
         # M9a-2 (24/10): UK families, euro-area GDP and weekly claims.
-        **{
-            family: sorted(f"cat:{m.id}" for m in measures)
-            for family, measures in UK_FAMILIES.items()
-        },
+        **{family: sorted(f"cat:{m.id}" for m in measures) for family, measures in UK_FAMILIES.items()},
         "ea_gdp": [i for i in catalogue if i.startswith("cat:ea21_gdp_")],
         "us_jobless_claims": ["cat:us_initial_jobless_claims"],
     }
-    aliases = json.loads(
-        files(__package__)
-        .joinpath(f"aliases_{CLASSIFICATION_VERSION}.json")
-        .read_text(encoding="utf-8")
-    )
+    aliases = json.loads(files(__package__).joinpath(f"aliases_{CLASSIFICATION_VERSION}.json").read_text(encoding="utf-8"))
     report = {
         "classification_version": dataset().classification_version,
         "cards": len(dataset().cards),
@@ -321,36 +199,17 @@ def coverage_report(with_drafts: bool = False) -> dict:
     if with_drafts:
         # Review-only proposals do not inflate the 86-id tier-1 universe or
         # approved catalogue counts. Their caveats stay separate from status.
-        report["draft_cards"] = [
-            dict(
-                key=card.key,
-                approval_status="pending_owner_approval",
-                ids=["cat:" + identity for identity in card.ids.cat],
-                timing_class=card.timing.timing_class,
-                flag=card.flag,
-                rationale=card.rationale,
-            )
-            for card in draft_cards()
-        ]
+        report["draft_cards"] = [dict(key=card.key, approval_status="pending_owner_approval",
+            ids=["cat:" + identity for identity in card.ids.cat], timing_class=card.timing.timing_class,
+            flag=card.flag, rationale=card.rationale) for card in draft_cards()]
     return report
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument(
-        "--with-drafts",
-        action="store_true",
-        help="Include pending draft_rows_*.psv cards for review; keep approved coverage separate",
-    )
+    parser.add_argument("--with-drafts", action="store_true", help="Include pending draft_rows_*.psv cards for review; keep approved coverage separate")
     args = parser.parse_args()
-    print(
-        json.dumps(
-            coverage_report(with_drafts=args.with_drafts),
-            ensure_ascii=False,
-            indent=2,
-            sort_keys=True,
-        )
-    )
+    print(json.dumps(coverage_report(with_drafts=args.with_drafts), ensure_ascii=False, indent=2, sort_keys=True))
 
 
 if __name__ == "__main__":

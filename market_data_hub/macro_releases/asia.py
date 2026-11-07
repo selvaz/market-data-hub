@@ -1,5 +1,4 @@
 """Edition-bound official Asian publications, using only issuer-printed rates."""
-
 from dataclasses import replace
 from urllib.parse import parse_qsl, urlsplit, urlunsplit
 from zipfile import BadZipFile
@@ -19,22 +18,11 @@ def in_window(period, since):
 def observation(doc, family, edition, indicator, printed, method="html", *, value=None):
     period, stage, clock = reviewed(family, edition)
     measure = INDICATORS[indicator]
-    return Observation(
-        indicator,
-        family,
-        period,
-        float(printed.replace(",", "")) if value is None else value,
-        printed,
-        indicator + ":published:" + stage,
-        measure.issuer_id,
-        doc,
-        edition,
-        **local_release(edition, clock, ZONES[family]),
-        stage=stage,
-        precision="exact",
-        method=method,
-        provider_vintage=edition,
-    )
+    return Observation(indicator, family, period,
+        float(printed.replace(",", "")) if value is None else value, printed,
+        indicator + ":published:" + stage, measure.issuer_id, doc, edition,
+        **local_release(edition, clock, ZONES[family]), stage=stage,
+        precision="exact", method=method, provider_vintage=edition)
 
 
 def fetch_archives(client, family, since, provider, archives, parse):
@@ -44,20 +32,14 @@ def fetch_archives(client, family, since, provider, archives, parse):
     urls = dict(archives)
     cache = {}
     from .asia_discovery import publication_url
-
     for edition, (period, _, _) in due(EDITIONS[family], family=family).items():
         if not in_window(period, since):
             continue
         try:
             url = publication_url(client, family, edition, urls.get(edition), cache)
             if url is None:
-                mark_pending(
-                    family,
-                    edition,
-                    "not_yet_published"
-                    if publication_grace(family, edition)
-                    else "scheduled_unreviewed",
-                )
+                mark_pending(family, edition, "not_yet_published" if publication_grace(family, edition)
+                             else "scheduled_unreviewed")
                 continue
             urls[edition] = url
             doc = get_edition(client, provider, url, family, edition)
@@ -66,30 +48,13 @@ def fetch_archives(client, family, since, provider, archives, parse):
             rows = parse(doc, family, since, archives=urls)
             if not rows or {r.edition for r in rows} != {edition}:
                 raise FetchError("Asia requested publication edition needs review")
-        except (
-            FetchError,
-            ValueError,
-            KeyError,
-            TypeError,
-            IndexError,
-            BadZipFile,
-        ) as exc:
+        except (FetchError, ValueError, KeyError, TypeError, IndexError, BadZipFile) as exc:
             # Reject this edition without losing successfully validated editions.
             # Transport/authentication failures still stop the issuer family.
-            if (
-                isinstance(exc, FetchError)
-                and str(exc).startswith(provider + ": ")
-                and str(exc) != provider + ": HTTP 404"
-            ):
+            if isinstance(exc, FetchError) and str(exc).startswith(provider + ": ") and str(exc) != provider + ": HTTP 404":
                 raise
-            mark_pending(
-                family,
-                edition,
-                "not_yet_published"
-                if str(exc) == provider + ": HTTP 404"
-                and publication_grace(family, edition)
-                else "needs_review",
-            )
+            mark_pending(family, edition, "not_yet_published" if
+                str(exc) == provider + ": HTTP 404" and publication_grace(family, edition) else "needs_review")
             continue
         out.extend(rows)
     return out
@@ -101,9 +66,7 @@ class AsiaAdapter:
 
     def fetch(self, families, since):
         from . import nbs_macro, japan_macro
-
         client = self.client
-
         class PublicClient:
             def get(self, provider, url, params=None):
                 requested = url
@@ -113,11 +76,5 @@ class AsiaAdapter:
                     url = urlunsplit(parts._replace(query=""))
                 doc = client.get(provider, url, params)
                 return replace(doc, url=requested) if parts.query else doc
-
-        return [
-            row
-            for family in families
-            for row in (japan_macro if family.startswith("jp_") else nbs_macro).fetch(
-                PublicClient(), family, since
-            )
-        ]
+        return [row for family in families for row in (
+            japan_macro if family.startswith("jp_") else nbs_macro).fetch(PublicClient(), family, since)]

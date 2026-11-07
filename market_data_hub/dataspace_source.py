@@ -24,7 +24,6 @@ Example:
     space.require_ready()
     px = read_prices(["SPY", "TLT"])       # the repo's own API, unchanged
 """
-
 from __future__ import annotations
 
 import os
@@ -121,9 +120,7 @@ class MarketDataSource:
         try:
             path = resolve_db_path(self._db_path)
         except Exception as exc:
-            return Health(
-                ready=False, detail=f"path resolution raised {type(exc).__name__}"
-            )
+            return Health(ready=False, detail=f"path resolution raised {type(exc).__name__}")
 
         if not os.path.exists(path):
             return Health(
@@ -145,9 +142,7 @@ class MarketDataSource:
                 con.close()
         except Exception as exc:
             # Type only: DuckDB errors quote the full file path.
-            return Health(
-                ready=False, detail=f"cannot open database: {type(exc).__name__}"
-            )
+            return Health(ready=False, detail=f"cannot open database: {type(exc).__name__}")
 
         if not rows:
             return Health(

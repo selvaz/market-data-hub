@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Collect Forex Factory's public current-week JSON calendar feed."""
-
 import hashlib
 import json
 import os
@@ -16,34 +15,24 @@ import requests
 
 from .myfxbook import COLONNE
 
-URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
-HEADERS = {"User-Agent": "market-data-hub economic-calendar collector"}
-DEFAULT_RAW_DIR = Path(r"C:\ProgramData\InvestmentCommittee\econ_calendar\raw")
+URL = 'https://nfs.faireconomy.media/ff_calendar_thisweek.json'
+HEADERS = {'User-Agent': 'market-data-hub economic-calendar collector'}
+DEFAULT_RAW_DIR = Path(r'C:\ProgramData\InvestmentCommittee\econ_calendar\raw')
 VALUTA_PAESE = {
-    "USD": "US",
-    "EUR": "EU",
-    "GBP": "GB",
-    "JPY": "JP",
-    "AUD": "AU",
-    "NZD": "NZ",
-    "CAD": "CA",
-    "CHF": "CH",
-    "CNY": "CN",
+    'USD': 'US', 'EUR': 'EU', 'GBP': 'GB', 'JPY': 'JP', 'AUD': 'AU',
+    'NZD': 'NZ', 'CAD': 'CA', 'CHF': 'CH', 'CNY': 'CN',
 }
 EUR_ISSUER_PREFIXES = {
-    "German ": "DE",
-    "French ": "FR",
-    "Italian ": "IT",
-    "Spanish ": "ES",
+    'German ': 'DE', 'French ': 'FR', 'Italian ': 'IT', 'Spanish ': 'ES',
 }
 
 
-MANIFEST_NAME = "manifest.jsonl"
-MAX_ATTEMPTS = 2  # one try plus exactly one retry: never a loop
-RETRY_BACKOFF_S = 60  # the feed 429s after ~4 calls in 30 minutes
-_SNAPSHOT_NAME = re.compile(r"^\d{4}-\d{2}-\d{2}(\.\d{6})?\.json$")
-_URL = re.compile(r"https?://\S+")
-_parse_iso = datetime.fromisoformat  # bound at import: tests patch `datetime`
+MANIFEST_NAME = 'manifest.jsonl'
+MAX_ATTEMPTS = 2          # one try plus exactly one retry: never a loop
+RETRY_BACKOFF_S = 60      # the feed 429s after ~4 calls in 30 minutes
+_SNAPSHOT_NAME = re.compile(r'^\d{4}-\d{2}-\d{2}(\.\d{6})?\.json$')
+_URL = re.compile(r'https?://\S+')
+_parse_iso = datetime.fromisoformat   # bound at import: tests patch `datetime`
 
 
 def _sleep(seconds):
@@ -52,14 +41,14 @@ def _sleep(seconds):
 
 def _redact(text, limit=200):
     """Short, single-line error text with URLs (which may carry tokens) removed."""
-    text = _URL.sub("<url>", " ".join(str(text).split()))
+    text = _URL.sub('<url>', ' '.join(str(text).split()))
     return text[:limit]
 
 
 def _utc_z(moment):
     """ISO 8601 UTC with a Z suffix; a naive moment is read as local time."""
     # Microseconds kept: two captures in the same second must stay ordered.
-    return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+    return moment.astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
 
 def _feed_week(feed):
@@ -67,7 +56,7 @@ def _feed_week(feed):
     days = []
     for event in feed:
         try:
-            days.append(_parse_iso(event["date"]).date())
+            days.append(_parse_iso(event['date']).date())
         except (KeyError, TypeError, ValueError):
             continue
     if not days:
@@ -78,8 +67,8 @@ def _feed_week(feed):
 def _append_manifest(directory, record):
     """Append one JSON line; earlier lines are never rewritten."""
     directory.mkdir(parents=True, exist_ok=True)
-    line = json.dumps(record, ensure_ascii=True) + "\n"
-    with open(directory / MANIFEST_NAME, "a", encoding="utf-8", newline="\n") as stream:
+    line = json.dumps(record, ensure_ascii=True) + '\n'
+    with open(directory / MANIFEST_NAME, 'a', encoding='utf-8', newline='\n') as stream:
         stream.write(line)
         stream.flush()
         os.fsync(stream.fileno())
@@ -95,22 +84,22 @@ def _fetch(record):
         try:
             response = requests.get(URL, headers=HEADERS, timeout=30)
         except requests.RequestException as e:
-            record["http_status"] = None
-            failure = RuntimeError(f"Forex Factory feed request failed: {e}")
+            record['http_status'] = None
+            failure = RuntimeError(f'Forex Factory feed request failed: {e}')
             failure.__cause__ = e
             retryable = True
         else:
             status = response.status_code
-            record["http_status"] = status
+            record['http_status'] = status
             if status == 200:
                 return response
-            body = getattr(response, "content", None)
+            body = getattr(response, 'content', None)
             if isinstance(body, bytes):
-                record["sha256"] = hashlib.sha256(body).hexdigest()
-                record["bytes"] = len(body)
-            failure = RuntimeError(f"Forex Factory feed returned HTTP {status}")
+                record['sha256'] = hashlib.sha256(body).hexdigest()
+                record['bytes'] = len(body)
+            failure = RuntimeError(f'Forex Factory feed returned HTTP {status}')
             retryable = status == 429 or status >= 500
-        record["_clock"] = datetime.now()
+        record['_clock'] = datetime.now()
         if not retryable or attempt == MAX_ATTEMPTS:
             raise failure
         _sleep(RETRY_BACKOFF_S)
@@ -129,60 +118,50 @@ def archive_raw(directory=DEFAULT_RAW_DIR) -> int:
     rename refuses an existing destination, including a concurrent writer's.
     """
     directory = Path(directory)
-    record = {
-        "outcome": "failed",
-        "file": None,
-        "sha256": None,
-        "bytes": None,
-        "http_status": None,
-        "error": None,
-        "feed_week_start": None,
-        "feed_week_end": None,
-        "_clock": datetime.now(),
-    }
+    record = {'outcome': 'failed', 'file': None, 'sha256': None, 'bytes': None,
+              'http_status': None, 'error': None,
+              'feed_week_start': None, 'feed_week_end': None,
+              '_clock': datetime.now()}
     try:
         code = _archive(directory, record)
     except Exception as e:
-        record["outcome"] = "failed"
-        record["file"] = None
-        record["error"] = _redact(f"{type(e).__name__}: {e}")
+        record['outcome'] = 'failed'
+        record['file'] = None
+        record['error'] = _redact(f'{type(e).__name__}: {e}')
         try:
             _append_manifest(directory, _manifest_line(record))
         except OSError as manifest_error:
             # The original failure is the one the caller must see.
-            print(
-                f"manifest append FAILED: {_redact(manifest_error)}",
-                file=sys.stderr,
-                flush=True,
-            )
+            print(f'manifest append FAILED: {_redact(manifest_error)}',
+                  file=sys.stderr, flush=True)
         raise
     _append_manifest(directory, _manifest_line(record))
     return code
 
 
 def _manifest_line(record):
-    clock = record["_clock"]
+    clock = record['_clock']
     return {
-        "captured_at_utc": _utc_z(clock),
-        "local_date": clock.strftime("%Y-%m-%d"),
-        "outcome": record["outcome"],
-        "file": record["file"],
-        "sha256": record["sha256"],
-        "bytes": record["bytes"],
-        "http_status": record["http_status"],
-        "error": record["error"],
-        "feed_week_start": record["feed_week_start"],
-        "feed_week_end": record["feed_week_end"],
+        'captured_at_utc': _utc_z(clock),
+        'local_date': clock.strftime('%Y-%m-%d'),
+        'outcome': record['outcome'],
+        'file': record['file'],
+        'sha256': record['sha256'],
+        'bytes': record['bytes'],
+        'http_status': record['http_status'],
+        'error': record['error'],
+        'feed_week_start': record['feed_week_start'],
+        'feed_week_end': record['feed_week_end'],
     }
 
 
 def _archive(directory, record) -> int:
     response = _fetch(record)
     # Captured at the moment the successful response arrived.
-    fetched = record["_clock"] = datetime.now()
+    fetched = record['_clock'] = datetime.now()
     content = response.content
-    record["sha256"] = hashlib.sha256(content).hexdigest()
-    record["bytes"] = len(content)
+    record['sha256'] = hashlib.sha256(content).hexdigest()
+    record['bytes'] = len(content)
     # Bytes are stored unchanged; this only refuses a block page or empty body
     # that would otherwise become the day's snapshot.
     try:
@@ -190,26 +169,25 @@ def _archive(directory, record) -> int:
     except ValueError:
         feed = None
     if not isinstance(feed, list):
-        raise RuntimeError("Forex Factory feed is not a JSON list; nothing archived")
-    record["feed_week_start"], record["feed_week_end"] = _feed_week(feed)
-    day = fetched.strftime("%Y-%m-%d")
-    base = directory / f"{day}.json"
-    revisions = sorted(directory.glob(f"{day}.[0-9][0-9][0-9][0-9][0-9][0-9].json"))
+        raise RuntimeError('Forex Factory feed is not a JSON list; nothing archived')
+    record['feed_week_start'], record['feed_week_end'] = _feed_week(feed)
+    day = fetched.strftime('%Y-%m-%d')
+    base = directory / f'{day}.json'
+    revisions = sorted(directory.glob(f'{day}.[0-9][0-9][0-9][0-9][0-9][0-9].json'))
     latest = revisions[-1] if revisions else base
     if latest.exists() and latest.read_bytes() == content:
-        record["outcome"] = "unchanged"
-        record["file"] = str(latest)
+        record['outcome'] = 'unchanged'
+        record['file'] = str(latest)
         return 3
-    target = directory / f"{day}.{fetched:%H%M%S}.json" if base.exists() else base
+    target = directory / f'{day}.{fetched:%H%M%S}.json' if base.exists() else base
     # A second different feed in the same second must never erase a snapshot.
     if target.exists():
-        raise FileExistsError(f"archive snapshot already exists: {target}")
+        raise FileExistsError(f'archive snapshot already exists: {target}')
     directory.mkdir(parents=True, exist_ok=True)
     temporary = None
     try:
-        with tempfile.NamedTemporaryFile(
-            dir=directory, prefix=f".{day}.", suffix=".tmp", delete=False
-        ) as stream:
+        with tempfile.NamedTemporaryFile(dir=directory, prefix=f'.{day}.',
+                                         suffix='.tmp', delete=False) as stream:
             temporary = Path(stream.name)
             stream.write(content)
             stream.flush()
@@ -218,8 +196,8 @@ def _archive(directory, record) -> int:
     finally:
         if temporary is not None and temporary.exists():
             temporary.unlink()
-    record["outcome"] = "written"
-    record["file"] = str(target)
+    record['outcome'] = 'written'
+    record['file'] = str(target)
     return 0
 
 
@@ -234,20 +212,18 @@ class Snapshot(tuple):
     def __new__(cls, captured_at_utc, path, captured_at_source):
         self = super().__new__(cls, (captured_at_utc, path))
         self.captured_at_source = captured_at_source
-        self.order = float(
-            "inf"
-        )  # manifest line index; files without one sort last on ties
+        self.order = float('inf')  # manifest line index; files without one sort last on ties
         return self
 
 
 def _parse_captured(text):
     """UTC datetime from a manifest timestamp, with or without microseconds."""
-    for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"):
+    for fmt in ('%Y-%m-%dT%H:%M:%S.%fZ', '%Y-%m-%dT%H:%M:%SZ'):
         try:
             return datetime.strptime(text, fmt).replace(tzinfo=timezone.utc)
         except ValueError:
             continue
-    raise ValueError(f"bad captured_at_utc: {text!r}")
+    raise ValueError(f'bad captured_at_utc: {text!r}')
 
 
 def load_snapshots(directory=DEFAULT_RAW_DIR):
@@ -264,22 +240,15 @@ def load_snapshots(directory=DEFAULT_RAW_DIR):
     found = {}
     manifest = directory / MANIFEST_NAME
     if manifest.exists():
-        for order, raw_line in enumerate(
-            manifest.read_text(encoding="utf-8").splitlines()
-        ):
+        for order, raw_line in enumerate(manifest.read_text(encoding='utf-8').splitlines()):
             try:
                 entry = json.loads(raw_line)
                 # 'unchanged' also proves the file's content was seen then.
-                if (
-                    entry["outcome"] not in ("written", "unchanged")
-                    or not entry["file"]
-                ):
+                if entry['outcome'] not in ('written', 'unchanged') or not entry['file']:
                     continue
-                moment = _parse_captured(entry["captured_at_utc"])
+                moment = _parse_captured(entry['captured_at_utc'])
                 # Windows-written paths must resolve on any OS: split on both separators.
-                path = (
-                    directory / str(entry["file"]).replace("\\", "/").rsplit("/", 1)[-1]
-                )
+                path = directory / str(entry['file']).replace('\\', '/').rsplit('/', 1)[-1]
             except (ValueError, KeyError, TypeError):
                 continue
             if not path.exists():
@@ -287,21 +256,21 @@ def load_snapshots(directory=DEFAULT_RAW_DIR):
             earlier = found.get(path.name)
             # Earliest evidence wins; manifest line order breaks exact ties.
             if earlier is None or (moment, order) < (earlier[0], earlier.order):
-                snap = Snapshot(moment, path, "manifest")
+                snap = Snapshot(moment, path, 'manifest')
                 snap.order = order
                 found[path.name] = snap
     if directory.is_dir():
         for path in directory.iterdir():
             if _SNAPSHOT_NAME.match(path.name) and path.name not in found:
                 moment = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc)
-                found[path.name] = Snapshot(moment, path, "mtime")
+                found[path.name] = Snapshot(moment, path, 'mtime')
     return sorted(found.values(), key=lambda s: (s[0], s.order, s[1].name))
 
 
 def paese_iso(country, title):
     """Forex Factory uses EUR for both EMU and member-state releases."""
     paese = VALUTA_PAESE.get(country)
-    if country == "EUR":
+    if country == 'EUR':
         for prefisso, iso2 in EUR_ISSUER_PREFIXES.items():
             if str(title).startswith(prefisso):
                 return iso2
@@ -309,45 +278,39 @@ def paese_iso(country, title):
 
 
 def _righe(eventi, da, a):
-    inizio = datetime.strptime(da, "%Y-%m-%d").date()
-    fine = datetime.strptime(a, "%Y-%m-%d").date()
+    inizio = datetime.strptime(da, '%Y-%m-%d').date()
+    fine = datetime.strptime(a, '%Y-%m-%d').date()
     righe = []
     for evento in eventi:
         if not isinstance(evento, dict):
-            raise ValueError("Forex Factory feed contains a non-object event")
-        mancanti = set(
-            ("title", "country", "date", "impact", "forecast", "previous")
-        ) - set(evento)
+            raise ValueError('Forex Factory feed contains a non-object event')
+        mancanti = set(('title', 'country', 'date', 'impact', 'forecast', 'previous')) - set(evento)
         if mancanti:
             raise ValueError(f"Forex Factory feed event lacks keys: {sorted(mancanti)}")
-        if evento["country"] == "All" or evento["impact"] == "Holiday":
+        if evento['country'] == 'All' or evento['impact'] == 'Holiday':
             continue
         try:
-            istante = datetime.fromisoformat(evento["date"]).astimezone(timezone.utc)
+            istante = datetime.fromisoformat(evento['date']).astimezone(timezone.utc)
         except (TypeError, ValueError) as e:
-            raise ValueError(
-                f"invalid Forex Factory event date: {evento['date']!r}"
-            ) from e
+            raise ValueError(f"invalid Forex Factory event date: {evento['date']!r}") from e
         if not inizio <= istante.date() <= fine:
             continue
-        paese = paese_iso(evento["country"], evento["title"])
+        paese = paese_iso(evento['country'], evento['title'])
         if paese is None:
             continue
-        righe.append(
-            {
-                "Data_Rilascio": istante.strftime("%Y-%m-%d"),
-                "Orario": istante.strftime("%H:%M"),
-                "Paese": paese,
-                "Importanza": str(evento["impact"]).lower(),
-                "Evento": evento["title"],
-                "Periodo_Riferimento": "N/D",
-                "Attuale": "",
-                "Previsto": evento["forecast"],
-                "Precedente": evento["previous"],
-                "Revisione": "",
-                "Fonte": "ForexFactory",
-            }
-        )
+        righe.append({
+            'Data_Rilascio': istante.strftime('%Y-%m-%d'),
+            'Orario': istante.strftime('%H:%M'),
+            'Paese': paese,
+            'Importanza': str(evento['impact']).lower(),
+            'Evento': evento['title'],
+            'Periodo_Riferimento': 'N/D',
+            'Attuale': '',
+            'Previsto': evento['forecast'],
+            'Precedente': evento['previous'],
+            'Revisione': '',
+            'Fonte': 'ForexFactory',
+        })
     return righe
 
 
@@ -356,24 +319,24 @@ def scarica(da, a, out) -> pd.DataFrame:
     try:
         risposta = requests.get(URL, headers=HEADERS, timeout=30)
     except requests.RequestException as e:
-        raise RuntimeError(f"Forex Factory feed request failed: {e}") from e
+        raise RuntimeError(f'Forex Factory feed request failed: {e}') from e
     if risposta.status_code != 200:
-        raise RuntimeError(f"Forex Factory feed returned HTTP {risposta.status_code}")
+        raise RuntimeError(f'Forex Factory feed returned HTTP {risposta.status_code}')
     try:
         eventi = risposta.json()
     except ValueError as e:
-        raise RuntimeError("Forex Factory feed returned invalid JSON") from e
+        raise RuntimeError('Forex Factory feed returned invalid JSON') from e
     if not isinstance(eventi, list):
-        raise RuntimeError("Forex Factory feed JSON must be an event list")
+        raise RuntimeError('Forex Factory feed JSON must be an event list')
 
     out = Path(out)
     nuovi = pd.DataFrame(_righe(eventi, da, a), columns=COLONNE)
     nuovo_file = not out.exists()
-    nuovi.to_csv(out, mode="a", index=False, header=nuovo_file, encoding="utf-8-sig")
-    raccolti = pd.read_csv(out).fillna("")
+    nuovi.to_csv(out, mode='a', index=False, header=nuovo_file, encoding='utf-8-sig')
+    raccolti = pd.read_csv(out).fillna('')
     raccolti = raccolti.drop_duplicates(
-        subset=["Data_Rilascio", "Paese", "Evento", "Periodo_Riferimento"],
-        keep="last",
+        subset=['Data_Rilascio', 'Paese', 'Evento', 'Periodo_Riferimento'],
+        keep='last',
     ).reset_index(drop=True)
-    raccolti.to_csv(out, index=False, encoding="utf-8-sig")
+    raccolti.to_csv(out, index=False, encoding='utf-8-sig')
     return raccolti

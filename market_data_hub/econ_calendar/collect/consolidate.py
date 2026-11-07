@@ -11,7 +11,6 @@ in the old cross-source matcher. The current public JSON feed is collected
 once per day and accumulated locally, so the rest of this module remains a
 single-source matcher without cross-source reconciliation.
 """
-
 import re
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -23,43 +22,25 @@ from ..aliases import normalize_name
 from .matching import normalizza
 from .timezones import giorno_di, measure
 
-MESI = {
-    m: i
-    for i, m in enumerate(
-        [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "May",
-            "Jun",
-            "Jul",
-            "Aug",
-            "Sep",
-            "Oct",
-            "Nov",
-            "Dec",
-        ],
-        1,
-    )
-}
+MESI = {m: i for i, m in enumerate(
+    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], 1)}
 
 # file scaricato -> (nome fonte, provenienza). Un solo file oggi, ma la forma
 # resta un dict: raccogli() lo legge in un ciclo generico, e run_econ_calendar.py
 # lo usa per sapere sotto quale nome il collettore deve scrivere.
 FONTI = {
-    "forexfactory.csv": ("forexfactory", "aggregator"),
+    'forexfactory.csv': ('forexfactory', 'aggregator'),
 }
 
 
 def regola_ok(nome_norm, richiesti, esclusi):
-    for gruppo in str(richiesti or "").split(";"):
-        alt = [x.strip() for x in gruppo.split("|") if x.strip()]
+    for gruppo in str(richiesti or '').split(';'):
+        alt = [x.strip() for x in gruppo.split('|') if x.strip()]
         if alt and not any(a in nome_norm for a in alt):
             return False
-    return not any(
-        e.strip() and e.strip() in nome_norm for e in str(esclusi or "").split("|")
-    )
+    return not any(e.strip() and e.strip() in nome_norm
+                   for e in str(esclusi or '').split('|'))
 
 
 def istante(data, orario, scarto=0.0):
@@ -73,9 +54,9 @@ def istante(data, orario, scarto=0.0):
     """
     data, orario = str(data).strip(), str(orario).strip()
     try:
-        g = datetime.strptime(data, "%Y-%m-%d")
-        o = datetime.strptime(orario, "%H:%M")
-        return g + timedelta(hours=o.hour + scarto, minutes=o.minute), "minute"
+        g = datetime.strptime(data, '%Y-%m-%d')
+        o = datetime.strptime(orario, '%H:%M')
+        return g + timedelta(hours=o.hour + scarto, minutes=o.minute), 'minute'
     except ValueError:
         pass
     # Nothing parsed as a time, so this is a date and only a date. The offset
@@ -85,26 +66,26 @@ def istante(data, orario, scarto=0.0):
     # about knowing no time.
     giorno = giorno_di(data)
     if giorno is not None:
-        return datetime(giorno.year, giorno.month, giorno.day), "day"
-    return None, "day"
+        return datetime(giorno.year, giorno.month, giorno.day), 'day'
+    return None, 'day'
 
 
 def fine_periodo(periodo, riferimento):
     """'Jul' / 'Q2' -> data di fine periodo, per il join con macro_panel.date."""
-    if not periodo or periodo in ("N/D", "nan", ""):
+    if not periodo or periodo in ('N/D', 'nan', ''):
         return None
     p = str(periodo).strip()
-    if p in ("-", "N/A"):
+    if p in ('-', 'N/A'):
         return None
     anno = riferimento.year
     # 'Jun/27': periodo settimanale (sussidi USA), gia' una data esatta
-    m = re.match(r"^([A-Z][a-z]{2})/(\d{1,2})$", p)
+    m = re.match(r'^([A-Z][a-z]{2})/(\d{1,2})$', p)
     if m and m.group(1) in MESI:
         mese, giorno = MESI[m.group(1)], int(m.group(2))
         if mese > riferimento.month:
             anno -= 1
         return date(anno, mese, giorno)
-    m = re.match(r"^Q([1-4])$", p, re.I)
+    m = re.match(r'^Q([1-4])$', p, re.I)
     if m:
         mese = int(m.group(1)) * 3
     elif p[:3].title() in MESI:
@@ -114,13 +95,13 @@ def fine_periodo(periodo, riferimento):
     # il periodo precede sempre il rilascio: se il mese e' successivo, e' l'anno prima
     if mese > riferimento.month:
         anno -= 1
-    ultimo = date(anno + (mese == 12), (mese % 12) + 1, 1) - timedelta(days=1)
+    ultimo = (date(anno + (mese == 12), (mese % 12) + 1, 1) - timedelta(days=1))
     return ultimo
 
 
 def _pulisci(r, colonna):
-    v = str(r.get(colonna, "")).strip()
-    return None if v in ("", "N/D", "-", "nan") else v
+    v = str(r.get(colonna, '')).strip()
+    return None if v in ('', 'N/D', '-', 'nan') else v
 
 
 def raccogli(catalogo, respinti=frozenset(), legami=None):
@@ -162,22 +143,16 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
     """
     legami = legami or {}
     osservazioni, per_fonte, aggiunti = [], {}, 0
-    conteggi = {
-        "rows": 0,
-        "matched": 0,
-        "ruled_out": 0,
-        "unseen": 0,
-        "unseen_uncovered_country": 0,
-        "per_source": {},
-    }
-    paesi_catalogo = {
-        p.strip() for voce in catalogo for p in str(voce["country_iso2"]).split("|")
-    }
+    conteggi = {'rows': 0, 'matched': 0, 'ruled_out': 0, 'unseen': 0,
+                'unseen_uncovered_country': 0, 'per_source': {}}
+    paesi_catalogo = {p.strip()
+                      for voce in catalogo
+                      for p in str(voce['country_iso2']).split('|')}
     for file, (fonte, prov) in FONTI.items():
         if not Path(file).exists():
-            print(f"  (assente: {file})")
+            print(f'  (assente: {file})')
             continue
-        d = pd.read_csv(file).fillna("").map(str)
+        d = pd.read_csv(file).fillna('').map(str)
         # What timezone this batch is in, asked of the batch rather than assumed.
         # measure() raises when the anchors are absent or disagree, and that
         # refusal is the point: an undated batch ingested anyway is a wrong
@@ -189,19 +164,19 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
         # still be unsafe.
         scarto = 0.0 if d.empty else measure(d, fonte)
         if scarto:
-            print(f"  ({fonte}: {scarto:+.2f} h to UTC, measured from this batch)")
-        d["norm"] = d.Evento.apply(lambda e: " ".join(normalizza(e)))
+            print(f'  ({fonte}: {scarto:+.2f} h to UTC, measured from this batch)')
+        d['norm'] = d.Evento.apply(lambda e: ' '.join(normalizza(e)))
         n = 0
         # Row-level verdicts, keyed on the frame's index so each row is counted
         # once however many catalogue entries look at it.
         agganciate, con_decisione = set(), set()
         for voce in catalogo:
-            iso2 = {p.strip() for p in str(voce["country_iso2"]).split("|")}
+            iso2 = {p.strip() for p in str(voce['country_iso2']).split('|')}
             sub = d[d.Paese.isin(iso2)]
             if sub.empty:
                 continue
             for indice, r in sub.iterrows():
-                terna = (fonte, voce["country_iso3"], normalize_name(r.Evento))
+                terna = (fonte, voce['country_iso3'], normalize_name(r.Evento))
                 if terna in respinti:
                     con_decisione.add(indice)
                     continue
@@ -211,45 +186,39 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
                     # direzioni: il nome entra sull'indicatore deciso anche se
                     # la regex non lo riconosce, e NON entra su nessun altro
                     # anche se la regex lo riconoscerebbe.
-                    if legato != voce["indicator_key"]:
+                    if legato != voce['indicator_key']:
                         # A binding to another indicator is still a decision
                         # somebody took about this row; if no catalogue entry
                         # ends up claiming it, that is why.
                         con_decisione.add(indice)
                         continue
                     aggiunti += 1
-                elif not regola_ok(r.norm, voce["match_rules"], voce["match_excludes"]):
+                elif not regola_ok(r.norm, voce['match_rules'], voce['match_excludes']):
                     continue
                 ist, prec = istante(r.Data_Rilascio, r.Orario, scarto)
                 if ist is None:
                     continue
                 agganciate.add(indice)
-                periodo = r.get("Periodo_Riferimento", "")
-                periodo = None if periodo in ("N/D", "", "nan") else periodo
-                osservazioni.append(
-                    CalendarObservation(
-                        indicator_key=voce["indicator_key"],
-                        country_iso3=voce["country_iso3"],
-                        source=fonte,
-                        provenance=prov,
-                        source_event_name=r.Evento,
-                        release_utc=ist,
-                        release_precision=prec,
-                        reference_period=periodo,
-                        reference_date=fine_periodo(periodo, ist.date()),
-                        actual=_pulisci(r, "Attuale"),
-                        consensus=_pulisci(r, "Previsto"),
-                        previous=_pulisci(r, "Precedente"),
-                        revised_from=_pulisci(r, "Revisione"),
-                        impact=_pulisci(r, "Importanza"),
-                        # vintage_date is deliberately left to its default, which is
-                        # today in UTC. It was pinned to a single collection day,
-                        # so every later run overwrote the same
-                        # (event_id, source, vintage_date) row instead of adding a
-                        # new one -- revisions were invisible and an as-of query
-                        # could return a value from before it had been collected.
-                    )
-                )
+                periodo = r.get('Periodo_Riferimento', '')
+                periodo = None if periodo in ('N/D', '', 'nan') else periodo
+                osservazioni.append(CalendarObservation(
+                    indicator_key=voce['indicator_key'],
+                    country_iso3=voce['country_iso3'],
+                    source=fonte, provenance=prov,
+                    source_event_name=r.Evento,
+                    release_utc=ist, release_precision=prec,
+                    reference_period=periodo,
+                    reference_date=fine_periodo(periodo, ist.date()),
+                    actual=_pulisci(r, 'Attuale'), consensus=_pulisci(r, 'Previsto'),
+                    previous=_pulisci(r, 'Precedente'), revised_from=_pulisci(r, 'Revisione'),
+                    impact=_pulisci(r, 'Importanza'),
+                    # vintage_date is deliberately left to its default, which is
+                    # today in UTC. It was pinned to a single collection day,
+                    # so every later run overwrote the same
+                    # (event_id, source, vintage_date) row instead of adding a
+                    # new one -- revisions were invisible and an as-of query
+                    # could return a value from before it had been collected.
+                ))
                 n += 1
         per_fonte[fonte] = n
 
@@ -257,24 +226,18 @@ def raccogli(catalogo, respinti=frozenset(), legami=None):
         # about it against some other indicator: the buckets are disjoint and
         # 'matched' wins.
         con_decisione -= agganciate
-        non_viste = [
-            i for i in d.index if i not in agganciate and i not in con_decisione
-        ]
-        senza_paese = [i for i in non_viste if d.at[i, "Paese"] not in paesi_catalogo]
-        dettaglio = {
-            "rows": len(d),
-            "matched": len(agganciate),
-            "ruled_out": len(con_decisione),
-            "unseen": len(non_viste),
-            "unseen_uncovered_country": len(senza_paese),
-        }
-        conteggi["per_source"][fonte] = dettaglio
+        non_viste = [i for i in d.index
+                     if i not in agganciate and i not in con_decisione]
+        senza_paese = [i for i in non_viste
+                       if d.at[i, 'Paese'] not in paesi_catalogo]
+        dettaglio = {'rows': len(d), 'matched': len(agganciate),
+                     'ruled_out': len(con_decisione), 'unseen': len(non_viste),
+                     'unseen_uncovered_country': len(senza_paese)}
+        conteggi['per_source'][fonte] = dettaglio
         for chiave, valore in dettaglio.items():
             conteggi[chiave] += valore
 
-    if conteggi["ruled_out"] or aggiunti:
-        print(
-            f"  ({conteggi['ruled_out']} righe respinte da una decisione, "
-            f"{aggiunti} agganciate da decisioni per fonte)"
-        )
+    if conteggi['ruled_out'] or aggiunti:
+        print(f'  ({conteggi["ruled_out"]} righe respinte da una decisione, '
+              f'{aggiunti} agganciate da decisioni per fonte)')
     return osservazioni, per_fonte, conteggi

@@ -1,5 +1,4 @@
 """Shared machinery for narrow, edition-bound public issuer publications."""
-
 from datetime import datetime
 from dataclasses import replace
 from html import unescape
@@ -22,14 +21,7 @@ def plain(raw):
 def publication_text(document):
     if document.body.startswith(b"%PDF"):
         from pypdf import PdfReader
-
-        return re.sub(
-            r"\s+",
-            " ",
-            "\n".join(
-                p.extract_text() for p in PdfReader(BytesIO(document.body)).pages
-            ),
-        ), "pdf_table"
+        return re.sub(r"\s+", " ", "\n".join(p.extract_text() for p in PdfReader(BytesIO(document.body)).pages)), "pdf_table"
     return plain(document.body.decode("utf-8-sig")), "html"
 
 
@@ -50,38 +42,17 @@ def month(period):
     return datetime.strptime(period, "%Y-%m").strftime("%B %Y")
 
 
-def observation(
-    document, family, edition, indicator, period, printed, method="html", *, value=None
-):
+def observation(document, family, edition, indicator, period, printed, method="html", *, value=None):
     head, stage, time = reviewed(family, edition)
     if period > head:
         raise FetchError("Issuer reference period needs review")
     measure = INDICATORS[indicator]
-    zone = (
-        "Europe/Luxembourg"
-        if measure.geography == "EA21"
-        else "Europe/London"
-        if measure.geography == "GBR"
-        else "America/New_York"
-    )
-    return Observation(
-        indicator,
-        family,
-        period,
-        float(printed.replace(",", "")) if value is None else value,
-        printed,
-        indicator + ":published:" + stage,
-        measure.issuer_id,
-        document,
-        edition,
-        **local_release(edition, time, zone),
-        stage=stage,
-        method=method,
-        precision="exact",
-        provider_vintage=edition,
-        composition_id="EA21" if measure.geography == "EA21" else None,
-        revision="initial" if period == head and stage not in ("final",) else "routine",
-    )
+    zone = "Europe/Luxembourg" if measure.geography == "EA21" else "Europe/London" if measure.geography == "GBR" else "America/New_York"
+    return Observation(indicator, family, period, float(printed.replace(",", "")) if value is None else value,
+        printed, indicator + ":published:" + stage, measure.issuer_id, document, edition,
+        **local_release(edition, time, zone), stage=stage, method=method, precision="exact",
+        provider_vintage=edition, composition_id="EA21" if measure.geography == "EA21" else None,
+        revision="initial" if period == head and stage not in ("final",) else "routine")
 
 
 class Tier1Adapter:
@@ -89,18 +60,9 @@ class Tier1Adapter:
         self.client = client
 
     def fetch(self, families, since):
-        from . import (
-            eurostat_activity,
-            ons_retail,
-            census_sales,
-            ons_pay,
-            ec_surveys,
-            umich,
-        )
-
+        from . import eurostat_activity, ons_retail, census_sales, ons_pay, ec_surveys, umich
         out = []
         client = self.client
-
         class PublicClient:
             def get(self, provider, url, params=None):
                 requested_url = url
@@ -111,14 +73,9 @@ class Tier1Adapter:
                 doc = client.get(provider, url, params)
                 # These public document IDs/filenames are provenance, not keys.
                 return replace(doc, url=requested_url) if parts.query else doc
-
         for family in families:
-            adapter = {
-                "uk_retail_sales": ons_retail,
-                "us_new_home_sales": census_sales,
-                "uk_total_pay": ons_pay,
-                "ea_ec_surveys": ec_surveys,
-                "us_umich_sentiment": umich,
-            }.get(family, eurostat_activity)
+            adapter = {"uk_retail_sales": ons_retail, "us_new_home_sales": census_sales,
+                       "uk_total_pay": ons_pay, "ea_ec_surveys": ec_surveys,
+                       "us_umich_sentiment": umich}.get(family, eurostat_activity)
             out += adapter.fetch(PublicClient(), family, since)
         return out

@@ -11,7 +11,6 @@ crumb).
 Canonical output identical to sources/yahoo.py:
   [date, symbol, open, high, low, close, adj_close, volume]
 """
-
 from __future__ import annotations
 
 import threading
@@ -73,32 +72,27 @@ def _parse(symbol: str, j: dict) -> pd.DataFrame:
         adj = adj_block[0].get("adjclose") if adj_block else None
 
         dates = pd.to_datetime(ts, unit="s", utc=True).tz_convert(None).normalize()
-        out = pd.DataFrame(
-            {
-                "date": dates,
-                "symbol": symbol,
-                "open": pd.to_numeric(q.get("open"), errors="coerce"),
-                "high": pd.to_numeric(q.get("high"), errors="coerce"),
-                "low": pd.to_numeric(q.get("low"), errors="coerce"),
-                "close": pd.to_numeric(q.get("close"), errors="coerce"),
-                "adj_close": pd.to_numeric(
-                    adj if adj is not None else q.get("close"), errors="coerce"
-                ),
-                "volume": pd.to_numeric(q.get("volume"), errors="coerce"),
-            }
-        )
+        out = pd.DataFrame({
+            "date": dates,
+            "symbol": symbol,
+            "open":   pd.to_numeric(q.get("open"),   errors="coerce"),
+            "high":   pd.to_numeric(q.get("high"),   errors="coerce"),
+            "low":    pd.to_numeric(q.get("low"),    errors="coerce"),
+            "close":  pd.to_numeric(q.get("close"),  errors="coerce"),
+            "adj_close": pd.to_numeric(adj if adj is not None else q.get("close"),
+                                       errors="coerce"),
+            "volume": pd.to_numeric(q.get("volume"), errors="coerce"),
+        })
         out = out.dropna(subset=["date"])
-        out = out[
-            out[["open", "high", "low", "close", "adj_close"]].notna().any(axis=1)
-        ]
+        out = out[out[["open", "high", "low", "close", "adj_close"]]
+                  .notna().any(axis=1)]
         return out.reset_index(drop=True)
     except Exception:
         return pd.DataFrame(columns=_OUT_COLS)
 
 
-def _fetch_one(
-    symbol: str, params: dict, *, retries: int = 3, base_sleep: float = 1.5
-) -> pd.DataFrame:
+def _fetch_one(symbol: str, params: dict, *, retries: int = 3,
+               base_sleep: float = 1.5) -> pd.DataFrame:
     """Download a single symbol with retry.
 
     Returns an empty frame for a *legitimately* empty symbol (delisted/invalid,
@@ -124,9 +118,8 @@ def _fetch_one(
     return pd.DataFrame(columns=_OUT_COLS)
 
 
-def yahoo_batch(
-    tickers: List[str], start: str, end: str, *, workers: int = 8, retries: int = 3
-) -> Dict[str, pd.DataFrame]:
+def yahoo_batch(tickers: List[str], start: str, end: str, *,
+                workers: int = 8, retries: int = 3) -> Dict[str, pd.DataFrame]:
     """Download daily OHLCV for multiple tickers; returns {symbol: OHLCV frame}.
 
     Drop-in for sources.yahoo.yahoo_batch but via the direct chart API (no yfinance).
@@ -173,7 +166,8 @@ def yahoo_batch(
     return results
 
 
-def get_live_prices_batch(tickers: List[str], *, workers: int = 8) -> Dict[str, float]:
+def get_live_prices_batch(tickers: List[str], *, workers: int = 8
+                          ) -> Dict[str, float]:
     """Last intraday price for many tickers via the 1m chart API (no yfinance)."""
     if not tickers:
         return {}

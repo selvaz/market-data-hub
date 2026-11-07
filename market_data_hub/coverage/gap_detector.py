@@ -9,7 +9,6 @@ Concept ported from:
 For daily series the computation is trading-day-aware: weekends do not count as
 gaps (business days are used as the expected baseline).
 """
-
 from __future__ import annotations
 
 from typing import Tuple

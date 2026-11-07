@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
 """market_data_hub — unified market data downloader with a DuckDB database."""
-
 __version__ = "0.3.26"
 
 # Configure SSL verification (networks with corporate MITM/proxy) before any
 # import of curl_cffi/requests in the submodules.
 from market_data_hub._ssl_bootstrap import ensure_ssl as _ensure_ssl  # noqa: E402
-
 _ensure_ssl()
 
 # Public read / discovery / extraction API for downstream tools and LLMs.
@@ -29,7 +27,6 @@ __all__ = list(_LAZY_SUBMODULES)
 def __getattr__(name: str):
     if name in _LAZY_SUBMODULES:
         import importlib
-
         module = importlib.import_module(f"market_data_hub.{name}")
         globals()[name] = module
         return module

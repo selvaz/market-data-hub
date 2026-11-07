@@ -37,10 +37,7 @@ def _con(db_path: Optional[str]):
 def _resolved_connection(db_path):
     from pathlib import Path
 
-    from market_data_hub.db.connection import (
-        _connect_read_only_waiting,
-        resolve_db_path,
-    )
+    from market_data_hub.db.connection import _connect_read_only_waiting, resolve_db_path
 
     path = resolve_db_path(db_path)
     if not Path(path).is_file():
@@ -67,13 +64,10 @@ def _resolved_business_day_age(observation_date, cutoff):
     import numpy as np
 
     if cutoff < observation_date:
-        raise ValueError("cutoff precedes observation date")
+        raise ValueError('cutoff precedes observation date')
     one_day = timedelta(days=1)
-    return int(
-        np.busday_count(
-            (observation_date + one_day).isoformat(), (cutoff + one_day).isoformat()
-        )
-    )
+    return int(np.busday_count((observation_date + one_day).isoformat(),
+                               (cutoff + one_day).isoformat()))
 
 
 def _resolve_one(con, concept, spec, cutoff, tolerance):
@@ -82,62 +76,44 @@ def _resolve_one(con, concept, spec, cutoff, tolerance):
 
     fresh = []
     reasons = []
-    for source in spec["sources"]:
-        if source["role"] == "history_only":
+    for source in spec['sources']:
+        if source['role'] == 'history_only':
             continue
-        sid = source["series_id"]
+        sid = source['series_id']
         row = con.execute(
-            "SELECT date, value FROM macro_series WHERE series_id = ? AND date <= ? "
-            "AND value IS NOT NULL ORDER BY date DESC LIMIT 1",
-            [sid, cutoff],
+            'SELECT date, value FROM macro_series WHERE series_id = ? AND date <= ? '
+            'AND value IS NOT NULL ORDER BY date DESC LIMIT 1', [sid, cutoff]
         ).fetchone()
         if row is None or not math.isfinite(row[1]):
-            reasons.append(f"{sid}: missing")
+            reasons.append(f'{sid}: missing')
             continue
         age = _resolved_business_day_age(row[0], cutoff)
-        if age > source["max_age_business_days"]:
-            reasons.append(f"{sid}: stale ({age} business days)")
+        if age > source['max_age_business_days']:
+            reasons.append(f'{sid}: stale ({age} business days)')
             continue
-        fresh.append(
-            {
-                "series_id": sid,
-                "value": row[1],
-                "observation_date": row[0],
-                "role": source["role"],
-                "age_business_days": age,
-                "convention": source["convention"],
-                "frequency": source.get("frequency", "D"),
-            }
-        )
-    result = {
-        "concept": concept,
-        "value": None,
-        "observation_date": None,
-        "series_id": None,
-        "role": None,
-        "status": "unavailable",
-        "age_business_days": None,
-        "other_fresh_candidates": [],
-        "alternatives": [],
-        "reason": "; ".join(reasons) or "no eligible fresh source",
-    }
+        fresh.append({'series_id': sid, 'value': row[1], 'observation_date': row[0],
+                      'role': source['role'], 'age_business_days': age,
+                      'convention': source['convention'],
+                      'frequency': source.get('frequency', 'D')})
+    result = {'concept': concept, 'value': None, 'observation_date': None,
+              'series_id': None, 'role': None, 'status': 'unavailable',
+              'age_business_days': None, 'other_fresh_candidates': [], 'alternatives': [],
+              'reason': '; '.join(reasons) or 'no eligible fresh source'}
     if not fresh:
         return result
-    daily = [item for item in fresh if item["frequency"] == "D"]
+    daily = [item for item in fresh if item['frequency'] == 'D']
     pool = daily or fresh
-    latest_date = max(item["observation_date"] for item in pool)
-    same_date = [item for item in pool if item["observation_date"] == latest_date]
+    latest_date = max(item['observation_date'] for item in pool)
+    same_date = [item for item in pool if item['observation_date'] == latest_date]
     chosen = same_date[0]
     disputed = False
-    pair_tolerances = {
-        frozenset(pair["series_ids"]): pair["tolerance_bp"]
-        for pair in spec.get("pair_tolerances", [])
-    }
+    pair_tolerances = {frozenset(pair['series_ids']): pair['tolerance_bp']
+                       for pair in spec.get('pair_tolerances', [])}
 
     def threshold(a, b):
-        if a["frequency"] != b["frequency"] or a["convention"] != b["convention"]:
+        if a['frequency'] != b['frequency'] or a['convention'] != b['convention']:
             return None
-        pair = frozenset((a["series_id"], b["series_id"]))
+        pair = frozenset((a['series_id'], b['series_id']))
         if pair in pair_tolerances:
             return pair_tolerances[pair]
         return tolerance
@@ -147,7 +123,7 @@ def _resolve_one(con, concept, spec, cutoff, tolerance):
     # another source. Build a pairwise comparable set anchored at that source.
     eligible = []
     for candidate in same_date:
-        if candidate["role"] == "fallback":
+        if candidate['role'] == 'fallback':
             if not eligible:
                 eligible.append(candidate)
             break
@@ -156,10 +132,8 @@ def _resolve_one(con, concept, spec, cutoff, tolerance):
     for candidate in eligible[1:]:
         if all(threshold(candidate, previous) is not None for previous in voters):
             voters.append(candidate)
-    disagreement = any(
-        abs(a["value"] - b["value"]) * 100 > threshold(a, b) + 1e-9
-        for a, b in combinations(voters, 2)
-    )
+    disagreement = any(abs(a['value'] - b['value']) * 100 > threshold(a, b) + 1e-9
+                       for a, b in combinations(voters, 2))
     if disagreement:
         # Find all largest pairwise-agreeing groups; ambiguous groups cannot
         # decide which observation to use, even if both contain a majority.
@@ -167,57 +141,31 @@ def _resolve_one(con, concept, spec, cutoff, tolerance):
         for size in range(len(voters), len(voters) // 2, -1):
             if size < 2 or len(voters) < 3:
                 break
-            groups = [
-                group
-                for group in combinations(range(len(voters)), size)
-                if all(
-                    abs(voters[a]["value"] - voters[b]["value"]) * 100
-                    <= threshold(voters[a], voters[b]) + 1e-9
-                    for a, b in combinations(group, 2)
-                )
-            ]
+            groups = [group for group in combinations(range(len(voters)), size)
+                      if all(abs(voters[a]['value'] - voters[b]['value']) * 100
+                             <= threshold(voters[a], voters[b]) + 1e-9
+                             for a, b in combinations(group, 2))]
             if groups:
                 break
         if len(groups) == 1:
             chosen = voters[groups[0][0]]
-            reasons.append(
-                "fresh sources disagree; strict majority agrees within tolerance"
-            )
+            reasons.append('fresh sources disagree; strict majority agrees within tolerance')
         else:
             disputed = True
-            reasons.append("fresh sources disagree without an unambiguous majority")
+            reasons.append('fresh sources disagree without an unambiguous majority')
     result.update(chosen)
-    higher = fresh[: next(i for i, item in enumerate(fresh) if item is chosen)]
-    later_than_higher = any(
-        item["frequency"] == chosen["frequency"]
-        and item["observation_date"] < chosen["observation_date"]
-        for item in higher
-    )
-    result["status"] = (
-        "disputed"
-        if disputed
-        else "primary"
-        if chosen["role"] == "primary"
-        else f"latest:{chosen['series_id']}"
-        if later_than_higher
-        else f"fallback:{chosen['series_id']}"
-    )
-    alternatives = [
-        {
-            **item,
-            "basis_bp": (item["value"] - chosen["value"]) * 100
-            if item["observation_date"] == chosen["observation_date"]
-            else None,
-            "voted": item in voters,
-        }
-        for item in fresh
-        if item is not chosen
-    ]
-    result["other_fresh_candidates"] = alternatives
-    result["alternatives"] = alternatives
-    result["reason"] = (
-        "; ".join(reasons) or "highest-priority source on latest fresh date"
-    )
+    higher = fresh[:next(i for i, item in enumerate(fresh) if item is chosen)]
+    later_than_higher = any(item['frequency'] == chosen['frequency']
+                            and item['observation_date'] < chosen['observation_date'] for item in higher)
+    result['status'] = ('disputed' if disputed else 'primary' if chosen['role'] == 'primary'
+                        else f"latest:{chosen['series_id']}" if later_than_higher
+                        else f"fallback:{chosen['series_id']}")
+    alternatives = [{**item, 'basis_bp': (item['value'] - chosen['value']) * 100
+                     if item['observation_date'] == chosen['observation_date'] else None,
+                     'voted': item in voters} for item in fresh if item is not chosen]
+    result['other_fresh_candidates'] = alternatives
+    result['alternatives'] = alternatives
+    result['reason'] = '; '.join(reasons) or 'highest-priority source on latest fresh date'
     return result
 
 
@@ -230,23 +178,14 @@ def read_resolved_rates(concepts=None, as_of=None, db_path=None):
     from market_data_hub.resolved_rates import load_resolved_rates
 
     config, table = load_resolved_rates()
-    names = (
-        list(table)
-        if concepts is None
-        else [concepts]
-        if isinstance(concepts, str)
-        else list(concepts)
-    )
+    names = list(table) if concepts is None else [concepts] if isinstance(concepts, str) else list(concepts)
     for name in names:
         if name not in table:
-            raise KeyError(f"unknown resolved rate concept: {name}")
+            raise KeyError(f'unknown resolved rate concept: {name}')
     cutoff = _resolved_cutoff(as_of)
     con = _resolved_connection(db_path)
     try:
-        return [
-            _resolve_one(con, name, table[name], cutoff, config["tolerance_bp"])
-            for name in names
-        ]
+        return [_resolve_one(con, name, table[name], cutoff, config['tolerance_bp']) for name in names]
     finally:
         con.close()
 
@@ -258,21 +197,13 @@ def read_resolved_rate(concept, as_of=None, db_path=None):
 
 def _resolved_source_for_date(sources, values):
     """Select the first configured daily source, or the first other source."""
-    available = [source for source in sources if source["series_id"] in values]
-    daily = [source for source in available if source.get("frequency", "D") == "D"]
+    available = [source for source in sources if source['series_id'] in values]
+    daily = [source for source in available if source.get('frequency', 'D') == 'D']
     return (daily or available)[0]
 
 
-def read_resolved_history(
-    concept,
-    series_id=None,
-    start=None,
-    end=None,
-    as_of=None,
-    db_path=None,
-    *,
-    single_source=None,
-):
+def read_resolved_history(concept, series_id=None, start=None, end=None, as_of=None,
+                          db_path=None, *, single_source=None):
     """Compose by date, or select one source; counts are in DataFrame.attrs.
 
     ``series_id`` is the legacy alias for ``single_source``. Basis at a
@@ -285,31 +216,24 @@ def read_resolved_history(
 
     _, table = load_resolved_rates()
     if concept not in table:
-        raise KeyError(f"unknown resolved rate concept: {concept}")
-    sources = table[concept]["sources"]
-    if (
-        series_id is not None
-        and single_source is not None
-        and series_id != single_source
-    ):
-        raise ValueError("series_id and single_source disagree")
+        raise KeyError(f'unknown resolved rate concept: {concept}')
+    sources = table[concept]['sources']
+    if series_id is not None and single_source is not None and series_id != single_source:
+        raise ValueError('series_id and single_source disagree')
     sid = single_source if single_source is not None else series_id
-    by_id = {source["series_id"]: source for source in sources}
+    by_id = {source['series_id']: source for source in sources}
     if sid is not None and sid not in by_id:
-        raise ValueError(f"{sid} is not configured for {concept}")
+        raise ValueError(f'{sid} is not configured for {concept}')
     cutoff = _resolved_cutoff(as_of)
     if end is not None:
         cutoff = min(cutoff, _resolved_cutoff(end))
     con = _resolved_connection(db_path)
     try:
         ids = [sid] if sid is not None else list(by_id)
-        placeholders = ",".join("?" for _ in ids)
-        rows = con.execute(
-            f"SELECT date, series_id, value FROM macro_series "
-            f"WHERE series_id IN ({placeholders}) AND date <= ? "
-            "AND value IS NOT NULL ORDER BY date",
-            [*ids, cutoff],
-        ).fetchall()
+        placeholders = ','.join('?' for _ in ids)
+        rows = con.execute(f'SELECT date, series_id, value FROM macro_series '
+                           f'WHERE series_id IN ({placeholders}) AND date <= ? '
+                           'AND value IS NOT NULL ORDER BY date', [*ids, cutoff]).fetchall()
     finally:
         con.close()
     dates = {}
@@ -320,49 +244,25 @@ def read_resolved_history(
     previous = None
     output = []
     for day, values in sorted(dates.items()):
-        source = _resolved_source_for_date(
-            [by_id[sid]] if sid is not None else sources, values
-        )
-        current = source["series_id"]
-        mixed = previous is not None and previous["convention"] != source["convention"]
+        source = _resolved_source_for_date([by_id[sid]] if sid is not None else sources, values)
+        current = source['series_id']
+        mixed = previous is not None and previous['convention'] != source['convention']
         basis = None
         basis_date = None
         if mixed:
-            old = previous["series_id"]
-            overlaps = [
-                d
-                for d, vals in dates.items()
-                if d <= day and old in vals and current in vals
-            ]
+            old = previous['series_id']
+            overlaps = [d for d, vals in dates.items() if d <= day and old in vals and current in vals]
             if overlaps:
                 basis_date = max(overlaps)
                 basis = (dates[basis_date][current] - dates[basis_date][old]) * 100
         if start_date is None or day >= start_date:
-            output.append(
-                {
-                    "date": day,
-                    "series_id": current,
-                    "value": values[current],
-                    "role": source["role"],
-                    "mixed_source": mixed,
-                    "basis_bp": basis,
-                    "basis_date": basis_date,
-                }
-            )
+            output.append({'date': day, 'series_id': current, 'value': values[current],
+                           'role': source['role'], 'mixed_source': mixed,
+                           'basis_bp': basis, 'basis_date': basis_date})
         previous = source
-    frame = pd.DataFrame(
-        output,
-        columns=[
-            "date",
-            "series_id",
-            "value",
-            "role",
-            "mixed_source",
-            "basis_bp",
-            "basis_date",
-        ],
-    )
-    frame.attrs["source_counts"] = frame["series_id"].value_counts().to_dict()
+    frame = pd.DataFrame(output, columns=['date', 'series_id', 'value', 'role',
+                                          'mixed_source', 'basis_bp', 'basis_date'])
+    frame.attrs['source_counts'] = frame['series_id'].value_counts().to_dict()
     return frame
 
 
@@ -376,137 +276,90 @@ def read_resolved_percentile(concept, as_of=None, window_years=10, db_path=None)
 
     from market_data_hub.resolved_rates import load_resolved_rates
 
-    if (
-        isinstance(window_years, bool)
-        or not isinstance(window_years, int)
-        or window_years <= 0
-    ):
-        raise ValueError("window_years must be a positive integer")
+    if isinstance(window_years, bool) or not isinstance(window_years, int) or window_years <= 0:
+        raise ValueError('window_years must be a positive integer')
     config, table = load_resolved_rates()
     if concept not in table:
-        raise KeyError(f"unknown resolved rate concept: {concept}")
+        raise KeyError(f'unknown resolved rate concept: {concept}')
     cutoff = _resolved_cutoff(as_of)
     start = (pd.Timestamp(cutoff) - pd.DateOffset(years=window_years)).date()
-    sources = table[concept]["sources"]
-    monthly = next(
-        (
-            s
-            for s in sources
-            if s["series_id"].startswith("IRLTLT01") and s.get("frequency") == "M"
-        ),
-        None,
-    )
-    daily = [s for s in sources if s.get("frequency", "D") == "D"]
+    sources = table[concept]['sources']
+    monthly = next((s for s in sources if s['series_id'].startswith('IRLTLT01')
+                    and s.get('frequency') == 'M'), None)
+    daily = [s for s in sources if s.get('frequency', 'D') == 'D']
     con = _resolved_connection(db_path)
     try:
-        current = _resolve_one(
-            con, concept, table[concept], cutoff, config["tolerance_bp"]
-        )
-        ids = [s["series_id"] for s in sources]
-        placeholders = ",".join("?" for _ in ids)
-        rows = con.execute(
-            f"SELECT date, series_id, value FROM macro_series "
-            f"WHERE series_id IN ({placeholders}) AND date >= ? AND date <= ? "
-            "AND value IS NOT NULL ORDER BY date",
-            [*ids, start, cutoff],
-        ).fetchall()
+        current = _resolve_one(con, concept, table[concept], cutoff, config['tolerance_bp'])
+        ids = [s['series_id'] for s in sources]
+        placeholders = ','.join('?' for _ in ids)
+        rows = con.execute(f'SELECT date, series_id, value FROM macro_series '
+                           f'WHERE series_id IN ({placeholders}) AND date >= ? AND date <= ? '
+                           'AND value IS NOT NULL ORDER BY date', [*ids, start, cutoff]).fetchall()
     finally:
         con.close()
     groups = {}
     dates = {}
     for day, sid, value in rows:
         if math.isfinite(value):
-            groups.setdefault(sid, {}).setdefault(day.strftime("%Y-%m"), []).append(
-                value
-            )
+            groups.setdefault(sid, {}).setdefault(day.strftime('%Y-%m'), []).append(value)
             dates.setdefault(day, {})[sid] = value
-    means = {
-        sid: {month: sum(values) / len(values) for month, values in months.items()}
-        for sid, months in groups.items()
-    }
-    result = {
-        "concept": concept,
-        "status": "unavailable",
-        "reason": None,
-        "percentile": None,
-        "window_years": window_years,
-        "window_start": start,
-        "window_end": cutoff,
-        "months_used": 0,
-        "first_month": None,
-        "last_month": None,
-        "history_series_id": None,
-        "history_method": None,
-        "oecd_last_month": None,
-        "current_value": current["value"],
-        "current_date": current["observation_date"],
-        "current_series_id": current["series_id"],
-        "current_status": current["status"],
-        "adjusted_value": None,
-        "basis_bp": None,
-        "basis_month": None,
-        "basis_series": None,
-        "basis_series_id": None,
-        "overlap_months": 0,
-        "basis_reason": None,
-    }
+    means = {sid: {month: sum(values) / len(values) for month, values in months.items()}
+             for sid, months in groups.items()}
+    result = {'concept': concept, 'status': 'unavailable', 'reason': None,
+              'percentile': None, 'window_years': window_years, 'window_start': start,
+              'window_end': cutoff, 'months_used': 0, 'first_month': None, 'last_month': None,
+              'history_series_id': None, 'history_method': None, 'oecd_last_month': None,
+              'current_value': current['value'], 'current_date': current['observation_date'],
+              'current_series_id': current['series_id'], 'current_status': current['status'],
+              'adjusted_value': None, 'basis_bp': None, 'basis_month': None,
+              'basis_series': None, 'basis_series_id': None,
+              'overlap_months': 0, 'basis_reason': None}
     history = {}
     if monthly is not None:
-        result["history_method"] = "OECD monthly"
-        result["history_series_id"] = monthly["series_id"]
-        history = means.get(monthly["series_id"], {})
-        result["oecd_last_month"] = max(history, default=None)
+        result['history_method'] = 'OECD monthly'
+        result['history_series_id'] = monthly['series_id']
+        history = means.get(monthly['series_id'], {})
+        result['oecd_last_month'] = max(history, default=None)
     else:
-        result["history_method"] = "single daily source monthly means"
+        result['history_method'] = 'single daily source monthly means'
         # Longest calendar span first; coverage and chain order break ties.
-        candidates = [(s, means.get(s["series_id"], {})) for s in daily]
+        candidates = [(s, means.get(s['series_id'], {})) for s in daily]
         candidates = [(s, values) for s, values in candidates if values]
         if candidates:
-
             def span(item):
                 months = sorted(item[1])
-                first, last = months[0].split("-"), months[-1].split("-")
-                return (
-                    (int(last[0]) - int(first[0])) * 12 + int(last[1]) - int(first[1]),
-                    len(months),
-                )
-
+                first, last = months[0].split('-'), months[-1].split('-')
+                return ((int(last[0]) - int(first[0])) * 12 + int(last[1]) - int(first[1]), len(months))
             selected, history = max(candidates, key=span)
-            result["history_series_id"] = selected["series_id"]
-    result["months_used"] = len(history)
-    result["first_month"] = min(history, default=None)
-    result["last_month"] = max(history, default=None)
-    if current["value"] is None:
-        result["reason"] = "current resolved rate is unavailable"
+            result['history_series_id'] = selected['series_id']
+    result['months_used'] = len(history)
+    result['first_month'] = min(history, default=None)
+    result['last_month'] = max(history, default=None)
+    if current['value'] is None:
+        result['reason'] = 'current resolved rate is unavailable'
         return result
     if not history:
-        result["reason"] = "no monthly history in the requested window"
+        result['reason'] = 'no monthly history in the requested window'
         return result
     if monthly is None and len(history) < 36:
-        result["reason"] = (
-            "longest daily source has fewer than 36 observed months in the window"
-        )
+        result['reason'] = 'longest daily source has fewer than 36 observed months in the window'
         return result
 
     basis = None
-    current_is_monthly = (
-        monthly is not None and current.get("series_id") == monthly["series_id"]
-    )
+    current_is_monthly = monthly is not None and current.get('series_id') == monthly['series_id']
     if current_is_monthly:
         # The fallback value is already on the monthly history's own basis.
-        result["basis_reason"] = (
-            "current value is the monthly series itself; no correction"
-        )
+        result['basis_reason'] = 'current value is the monthly series itself; no correction'
     elif monthly is not None:
         composed = {}
         counts = {}
         for day, values in sorted(dates.items()):
-            available = [s for s in daily if s["series_id"] in values]
+            available = [s for s in daily if s['series_id'] in values]
             if not available:
                 continue
             source = _resolved_source_for_date(available, values)
-            sid = source["series_id"]
-            month = day.strftime("%Y-%m")
+            sid = source['series_id']
+            month = day.strftime('%Y-%m')
             composed.setdefault(month, []).append(values[sid])
             month_counts = counts.setdefault(month, {})
             month_counts[sid] = month_counts.get(sid, 0) + 1
@@ -514,24 +367,20 @@ def read_resolved_percentile(concept, as_of=None, window_years=10, db_path=None)
         if overlap:
             month = overlap[-1]
             basis = sum(composed[month]) / len(composed[month]) - history[month]
-            result["basis_month"] = month
-            result["basis_series"] = counts[month]
+            result['basis_month'] = month
+            result['basis_series'] = counts[month]
             if len(counts[month]) == 1:
-                result["basis_series_id"] = next(iter(counts[month]))
-            result["overlap_months"] = len(overlap)
+                result['basis_series_id'] = next(iter(counts[month]))
+            result['overlap_months'] = len(overlap)
         if basis is None:
-            result["basis_reason"] = "no common month with composed daily history"
+            result['basis_reason'] = 'no common month with composed daily history'
     else:
-        result["basis_reason"] = "no OECD monthly series in this concept chain"
-    adjusted = current["value"] - basis if basis is not None else current["value"]
-    result["adjusted_value"] = adjusted
-    result["basis_bp"] = basis * 100 if basis is not None else None
-    result["percentile"] = (
-        100.0 * sum(value <= adjusted for value in history.values()) / len(history)
-    )
-    result["status"] = (
-        "ok" if basis is not None or current_is_monthly else "basis_not_estimated"
-    )
+        result['basis_reason'] = 'no OECD monthly series in this concept chain'
+    adjusted = current['value'] - basis if basis is not None else current['value']
+    result['adjusted_value'] = adjusted
+    result['basis_bp'] = basis * 100 if basis is not None else None
+    result['percentile'] = 100.0 * sum(value <= adjusted for value in history.values()) / len(history)
+    result['status'] = 'ok' if basis is not None or current_is_monthly else 'basis_not_estimated'
     return result
 
 
@@ -539,10 +388,7 @@ def read_fred_series_metadata(db_path: Optional[str] = None) -> pd.DataFrame:
     """Latest captured FRED metadata per series; never refreshes or writes."""
     from pathlib import Path
 
-    from market_data_hub.db.connection import (
-        _connect_read_only_waiting,
-        resolve_db_path,
-    )
+    from market_data_hub.db.connection import _connect_read_only_waiting, resolve_db_path
 
     path = resolve_db_path(db_path)
     if not Path(path).is_file():

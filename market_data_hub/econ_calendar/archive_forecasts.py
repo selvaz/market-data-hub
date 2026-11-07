@@ -19,19 +19,9 @@ from market_data_hub.macro_releases.read_times import timestamp
 __all__ = ["ArchivedForecast", "read_archived_forecasts"]
 
 _ISO3 = {
-    "US": "USA",
-    "GB": "GBR",
-    "CA": "CAN",
-    "JP": "JPN",
-    "CN": "CHN",
-    "AU": "AUS",
-    "NZ": "NZL",
-    "CH": "CHE",
-    "EU": "EMU",
-    "DE": "DEU",
-    "FR": "FRA",
-    "IT": "ITA",
-    "ES": "ESP",
+    "US": "USA", "GB": "GBR", "CA": "CAN", "JP": "JPN", "CN": "CHN",
+    "AU": "AUS", "NZ": "NZL", "CH": "CHE", "EU": "EMU", "DE": "DEU",
+    "FR": "FRA", "IT": "ITA", "ES": "ESP",
 }
 
 
@@ -56,11 +46,8 @@ def _utc(value: datetime, name: str) -> datetime:
 
 
 def read_archived_forecasts(
-    raw_dir: Union[str, Path],
-    *,
-    known_at: datetime,
-    release_from: datetime,
-    release_to: datetime,
+    raw_dir: Union[str, Path], *, known_at: datetime,
+    release_from: datetime, release_to: datetime,
 ) -> list[ArchivedForecast]:
     """Return latest verified captures in the inclusive UTC release window.
 
@@ -100,8 +87,7 @@ def read_archived_forecasts(
             country = event.get("country")
             if (
                 not isinstance(title, str)
-                or not isinstance(forecast, str)
-                or not forecast.strip()
+                or not isinstance(forecast, str) or not forecast.strip()
                 or not isinstance(country, str)
             ):
                 continue
@@ -112,9 +98,7 @@ def read_archived_forecasts(
             if precision != "exact":
                 continue
             release_at = datetime.fromisoformat(release)
-            if not (
-                release_from <= release_at <= release_to and captured_at < release_at
-            ):
+            if not (release_from <= release_at <= release_to and captured_at < release_at):
                 continue
             if country == "EUR" and title.startswith("Belgian "):
                 jurisdiction = "BEL"
@@ -128,14 +112,8 @@ def read_archived_forecasts(
             previous = latest.get(key)
             if previous is None or previous.captured_at < captured_at:
                 latest[key] = ArchivedForecast(
-                    jurisdiction=jurisdiction,
-                    title=title,
-                    release_at=release_at,
-                    forecast_raw=forecast,
-                    captured_at=captured_at,
-                    snapshot_path=str(path),
-                    snapshot_sha256=digest,
+                    jurisdiction=jurisdiction, title=title, release_at=release_at,
+                    forecast_raw=forecast, captured_at=captured_at,
+                    snapshot_path=str(path), snapshot_sha256=digest,
                 )
-    return sorted(
-        latest.values(), key=lambda row: (row.release_at, row.jurisdiction, row.title)
-    )
+    return sorted(latest.values(), key=lambda row: (row.release_at, row.jurisdiction, row.title))

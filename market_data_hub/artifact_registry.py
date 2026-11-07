@@ -22,7 +22,6 @@ In every case the calling scheduled script (run_daily.py)
 must keep running: registering a report as an artifact is a nice-to-have
 index entry, never a condition for the download/estimation job's success.
 """
-
 from __future__ import annotations
 
 import sys
@@ -34,9 +33,7 @@ except ImportError:
     register_artifact = None  # type: ignore[assignment]
 
 
-def register_report_artifact(
-    *, title: str, summary: str, tags: list[str], content_uri: str
-) -> str | None:
+def register_report_artifact(*, title: str, summary: str, tags: list[str], content_uri: str) -> str | None:
     """Catalog one report as a ``market-data-hub``/``report`` artifact.
 
     Best-effort only: swallows every exception (import errors, missing/unset
@@ -69,7 +66,5 @@ def register_report_artifact(
             content_uri=content_uri,
         )
     except Exception as e:
-        print(
-            f"WARNING: artifact registration failed (non-fatal): {e}", file=sys.stderr
-        )
+        print(f"WARNING: artifact registration failed (non-fatal): {e}", file=sys.stderr)
         return None

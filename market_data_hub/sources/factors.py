@@ -10,7 +10,6 @@ unit-tested without network access.
 
 Canonical columns: date, factor_set, factor, value, frequency, source.
 """
-
 from __future__ import annotations
 
 import datetime as _dt
@@ -45,9 +44,8 @@ CATALOG: Dict[str, Dict[str, str]] = {
 _COLS = ["date", "factor_set", "factor", "value", "frequency", "source"]
 
 
-def _parse_french_csv(
-    text: str, factor_set: str, frequency: str, source: str = "ken_french"
-) -> pd.DataFrame:
+def _parse_french_csv(text: str, factor_set: str, frequency: str,
+                      source: str = "ken_french") -> pd.DataFrame:
     """Parse the FIRST data block of a Ken French CSV into long factor rows.
 
     French files prepend a free-text preamble and may append a second (e.g.
@@ -60,7 +58,7 @@ def _parse_french_csv(
     for raw in text.splitlines():
         line = raw.strip()
         if not line:
-            if started:  # blank line ends the first block
+            if started:          # blank line ends the first block
                 break
             continue
         cells = [c.strip() for c in line.split(",")]
@@ -71,44 +69,32 @@ def _parse_french_csv(
             continue
         tok = cells[0]
         if not (tok.isdigit() and len(tok) in (6, 8)):
-            if started:  # left the data block
+            if started:          # left the data block
                 break
             continue
         started = True
         if len(tok) == 8:
             d = _dt.date(int(tok[:4]), int(tok[4:6]), int(tok[6:8]))
-        else:  # YYYYMM -> first of month
+        else:                    # YYYYMM -> first of month
             d = _dt.date(int(tok[:4]), int(tok[4:6]), 1)
-        for factor, v in zip(header, cells[1 : 1 + len(header)]):
+        for factor, v in zip(header, cells[1:1 + len(header)]):
             try:
                 fv = float(v)
             except ValueError:
                 continue
-            if fv <= -99.0:  # French sentinel for missing
+            if fv <= -99.0:      # French sentinel for missing
                 continue
-            rows.append(
-                {
-                    "date": d,
-                    "factor_set": factor_set,
-                    "factor": factor,
-                    "value": fv / 100.0,
-                    "frequency": frequency,
-                    "source": source,
-                }
-            )
+            rows.append({"date": d, "factor_set": factor_set, "factor": factor,
+                         "value": fv / 100.0, "frequency": frequency,
+                         "source": source})
     return pd.DataFrame(rows, columns=_COLS)
 
 
-def fetch_french(
-    factor_set: str,
-    *,
-    start: Optional[str] = None,
-    timeout: int = 30,
-    retries: int = 3,
-    base_sleep: float = 1.0,
-) -> pd.DataFrame:
+def fetch_french(factor_set: str, *, start: Optional[str] = None,
+                 timeout: int = 30, retries: int = 3, base_sleep: float = 1.0
+                 ) -> pd.DataFrame:
     """Download and parse one Ken French dataset into the factor_returns shape."""
-    import requests  # lazy: keeps the module (and the parser) importable without it
+    import requests   # lazy: keeps the module (and the parser) importable without it
 
     if factor_set not in CATALOG:
         raise ValueError(f"Unknown factor_set: {factor_set} (have {list(CATALOG)})")
@@ -121,10 +107,10 @@ def fetch_french(
             r.raise_for_status()
             content = r.content
             break
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:                       # noqa: BLE001
             last = e
             if attempt < retries - 1:
-                time.sleep(base_sleep * (2**attempt))
+                time.sleep(base_sleep * (2 ** attempt))
     else:
         raise last if last else RuntimeError("download failed")
 
