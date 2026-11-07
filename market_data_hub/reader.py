@@ -346,7 +346,11 @@ def read_resolved_percentile(concept, as_of=None, window_years=10, db_path=None)
         return result
 
     basis = None
-    if monthly is not None:
+    current_is_monthly = monthly is not None and current.get('series_id') == monthly['series_id']
+    if current_is_monthly:
+        # The fallback value is already on the monthly history's own basis.
+        result['basis_reason'] = 'current value is the monthly series itself; no correction'
+    elif monthly is not None:
         composed = {}
         counts = {}
         for day, values in sorted(dates.items()):
@@ -376,7 +380,7 @@ def read_resolved_percentile(concept, as_of=None, window_years=10, db_path=None)
     result['adjusted_value'] = adjusted
     result['basis_bp'] = basis * 100 if basis is not None else None
     result['percentile'] = 100.0 * sum(value <= adjusted for value in history.values()) / len(history)
-    result['status'] = 'ok' if basis is not None else 'basis_not_estimated'
+    result['status'] = 'ok' if basis is not None or current_is_monthly else 'basis_not_estimated'
     return result
 
 

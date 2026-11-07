@@ -185,3 +185,20 @@ def test_longest_daily_source_is_single_history(percentile_fixture):
     result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', db_path=path)
     assert result['history_series_id'] == 'LONG' and result['months_used'] == 40
     assert result['status'] == 'basis_not_estimated' and result['percentile'] == 100
+
+
+def test_monthly_fallback_current_is_not_basis_corrected(percentile_fixture):
+    # Daily source stale: the current value falls back to the OECD series,
+    # which is already on the history's basis, so no correction is applied.
+    path, con, _ = percentile_fixture
+    rows = []
+    for i, stamp in enumerate(pd.date_range('2024-01-01', periods=24, freq='MS')):
+        rows.extend([(stamp.date(), 'IRLTLT01DEM156N', float(i)),
+                     (stamp.date(), 'DAILY', float(i) + 0.5)])
+    insert(con, rows)
+    con.close()
+    result = reader.read_resolved_percentile('DE_10Y', as_of='2026-02-15', window_years=2, db_path=path)
+    assert result['current_series_id'] == 'IRLTLT01DEM156N'
+    assert result['status'] == 'ok' and result['basis_bp'] is None
+    assert result['adjusted_value'] == 23.0
+    assert 'monthly series itself' in result['basis_reason']
