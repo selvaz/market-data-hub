@@ -193,6 +193,18 @@ series:
     issuer: "BEA"
     sources: [v2, hub]
     reason: Core PCE target; monthly and benchmark revisions.
+  - series_id: PCEC96
+    expected_lag_days: 29
+    frequency: M
+    issuer: "BEA"
+    sources: [hub]
+    reason: Real consumption growth target for the macro framework; monthly and BEA benchmark revisions.
+  - series_id: DSPIC96
+    expected_lag_days: 29
+    frequency: M
+    issuer: "BEA"
+    sources: [hub]
+    reason: Real income growth target for the macro framework; monthly and BEA benchmark revisions.
   - series_id: CES0500000003
     expected_lag_days: 7
     frequency: M

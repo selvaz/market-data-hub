@@ -214,6 +214,27 @@
     },
     {
       "distributor": "ALFRED via FRED API",
+      "expected_lag_days": 29,
+      "frequency": "M",
+      "history_start": "1776-07-04",
+      "id": "DSPIC96",
+      "issuer": "BEA",
+      "jobs": [
+        {
+          "name": "alfred_backfill",
+          "schedule_pt": "manual/on demand; intended hour 22:00 PT, no automatic trigger"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Real disposable personal income",
+      "notes": "Real income growth target for the macro framework; monthly and BEA benchmark revisions. Default observation/vintage floor from alfred_backfill.EARLIEST; --since-vintage can override vintage floor.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "alfred_vintage_observations"
+    },
+    {
+      "distributor": "ALFRED via FRED API",
       "expected_lag_days": 7,
       "frequency": "D",
       "history_start": "1776-07-04",
@@ -501,6 +522,27 @@
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Nonfarm payrolls",
       "notes": "Payroll input and activity target; monthly and benchmark revisions. Default observation/vintage floor from alfred_backfill.EARLIEST; --since-vintage can override vintage floor.",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "alfred_vintage_observations"
+    },
+    {
+      "distributor": "ALFRED via FRED API",
+      "expected_lag_days": 29,
+      "frequency": "M",
+      "history_start": "1776-07-04",
+      "id": "PCEC96",
+      "issuer": "BEA",
+      "jobs": [
+        {
+          "name": "alfred_backfill",
+          "schedule_pt": "manual/on demand; intended hour 22:00 PT, no automatic trigger"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Real personal consumption expenditures",
+      "notes": "Real consumption growth target for the macro framework; monthly and BEA benchmark revisions. Default observation/vintage floor from alfred_backfill.EARLIEST; --since-vintage can override vintage floor.",
       "status": "active",
       "status_reason": "",
       "store": "hub",
@@ -40722,7 +40764,7 @@
         "date",
         "as_of"
       ],
-      "series_count": 41,
+      "series_count": 43,
       "status": "active",
       "status_reason": "",
       "store": "hub",
