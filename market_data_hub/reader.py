@@ -195,6 +195,13 @@ def read_resolved_rate(concept, as_of=None, db_path=None):
     return read_resolved_rates([concept], as_of=as_of, db_path=db_path)[0]
 
 
+def _resolved_source_for_date(sources, values):
+    """Select the first configured daily source, or the first other source."""
+    available = [source for source in sources if source['series_id'] in values]
+    daily = [source for source in available if source.get('frequency', 'D') == 'D']
+    return (daily or available)[0]
+
+
 def read_resolved_history(concept, series_id=None, start=None, end=None, as_of=None,
                           db_path=None, *, single_source=None):
     """Compose by date, or select one source; counts are in DataFrame.attrs.
@@ -237,11 +244,7 @@ def read_resolved_history(concept, series_id=None, start=None, end=None, as_of=N
     previous = None
     output = []
     for day, values in sorted(dates.items()):
-        available = [source for source in sources if source['series_id'] in values]
-        if sid is not None:
-            available = [by_id[sid]]
-        daily = [source for source in available if source.get('frequency', 'D') == 'D']
-        source = (daily or available)[0]
+        source = _resolved_source_for_date([by_id[sid]] if sid is not None else sources, values)
         current = source['series_id']
         mixed = previous is not None and previous['convention'] != source['convention']
         basis = None
@@ -295,9 +298,11 @@ def read_resolved_percentile(concept, as_of=None, window_years=10, db_path=None)
     finally:
         con.close()
     groups = {}
+    dates = {}
     for day, sid, value in rows:
         if math.isfinite(value):
             groups.setdefault(sid, {}).setdefault(day.strftime('%Y-%m'), []).append(value)
+            dates.setdefault(day, {})[sid] = value
     means = {sid: {month: sum(values) / len(values) for month, values in months.items()}
              for sid, months in groups.items()}
     result = {'concept': concept, 'status': 'unavailable', 'reason': None,
@@ -342,25 +347,29 @@ def read_resolved_percentile(concept, as_of=None, window_years=10, db_path=None)
 
     basis = None
     if monthly is not None:
-        current_id = current['series_id']
-        primary = next((s['series_id'] for s in daily if s['role'] == 'primary'), None)
-        candidates = list(dict.fromkeys(sid for sid in (current_id, primary)
-                                        if sid in {s['series_id'] for s in daily}))
-        for sid in candidates:
-            daily_means = means.get(sid, {})
-            overlap = sorted(set(history) & set(daily_means))
-            if overlap:
-                month = overlap[-1]
-                basis = daily_means[month] - history[month]
-                result['basis_month'] = month
-                result['basis_series'] = sid
-                result['basis_series_id'] = sid
-                result['overlap_months'] = len(overlap)
-                if sid != current_id:
-                    result['basis_reason'] = 'current source has no common month; using daily primary'
-                break
+        composed = {}
+        counts = {}
+        for day, values in sorted(dates.items()):
+            available = [s for s in daily if s['series_id'] in values]
+            if not available:
+                continue
+            source = _resolved_source_for_date(available, values)
+            sid = source['series_id']
+            month = day.strftime('%Y-%m')
+            composed.setdefault(month, []).append(values[sid])
+            month_counts = counts.setdefault(month, {})
+            month_counts[sid] = month_counts.get(sid, 0) + 1
+        overlap = sorted(set(history) & set(composed))
+        if overlap:
+            month = overlap[-1]
+            basis = sum(composed[month]) / len(composed[month]) - history[month]
+            result['basis_month'] = month
+            result['basis_series'] = counts[month]
+            if len(counts[month]) == 1:
+                result['basis_series_id'] = next(iter(counts[month]))
+            result['overlap_months'] = len(overlap)
         if basis is None:
-            result['basis_reason'] = 'no common month with current or daily primary source'
+            result['basis_reason'] = 'no common month with composed daily history'
     else:
         result['basis_reason'] = 'no OECD monthly series in this concept chain'
     adjusted = current['value'] - basis if basis is not None else current['value']

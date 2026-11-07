@@ -42,7 +42,7 @@ def test_basis_estimated_and_window_cutoff(percentile_fixture):
     con.close()
     result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', window_years=1, db_path=path)
     assert result['status'] == 'ok' and result['basis_bp'] == pytest.approx(100)
-    assert result['basis_month'] == '2025-12' and result['basis_series'] == 'DAILY'
+    assert result['basis_month'] == '2025-12' and result['basis_series'] == {'DAILY': 2}
     assert result['overlap_months'] == 12 and result['months_used'] == 12
     assert result['first_month'] == '2025-01' and result['last_month'] == '2025-12'
     assert result['oecd_last_month'] == '2025-12' and result['percentile'] == 100
@@ -102,7 +102,7 @@ def test_all_other_official_series_are_accounted_for():
     assert all(sid in included or f'`{sid}`' in docs for sid in inventory)
 
 
-def test_basis_uses_daily_primary_when_current_has_no_overlap(percentile_fixture):
+def test_basis_uses_composed_history_when_current_has_no_overlap(percentile_fixture):
     path, con, spec = percentile_fixture
     spec['sources'].insert(1, {'series_id': 'SECONDARY', 'role': 'secondary',
                                'convention': 'vendor', 'frequency': 'D',
@@ -116,11 +116,10 @@ def test_basis_uses_daily_primary_when_current_has_no_overlap(percentile_fixture
     result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', db_path=path)
     assert result['current_series_id'] == 'SECONDARY' and result['basis_series_id'] == 'DAILY'
     assert result['status'] == 'ok' and result['basis_bp'] == pytest.approx(25)
-    assert result['basis_month'] == '2025-11' and result['basis_series'] == 'DAILY'
-    assert 'using daily primary' in result['basis_reason']
+    assert result['basis_month'] == '2025-11' and result['basis_series'] == {'DAILY': 1}
 
 
-def test_current_source_one_common_month_beats_longer_primary_overlap(percentile_fixture):
+def test_composed_history_uses_latest_month_even_when_current_source_is_absent(percentile_fixture):
     path, con, spec = percentile_fixture
     spec['sources'].insert(1, {'series_id': 'SECONDARY', 'role': 'secondary',
                                'convention': 'vendor', 'frequency': 'D',
@@ -136,9 +135,41 @@ def test_current_source_one_common_month_beats_longer_primary_overlap(percentile
     insert(con, rows)
     con.close()
     result = reader.read_resolved_percentile('DE_10Y', as_of='2025-12-31', db_path=path)
-    assert result['status'] == 'ok' and result['basis_series'] == 'SECONDARY'
-    assert result['basis_month'] == '2025-10' and result['overlap_months'] == 1
-    assert result['basis_bp'] == pytest.approx(60) and result['basis_reason'] is None
+    assert result['status'] == 'ok' and result['basis_series'] == {'DAILY': 1}
+    assert result['basis_month'] == '2025-11' and result['overlap_months'] == 11
+    assert result['basis_bp'] == pytest.approx(25) and result['basis_reason'] is None
+
+
+def test_italian_history_levels_with_composed_daily_sources(tmp_path, monkeypatch):
+    path = str(tmp_path / 'italy.duckdb')
+    con = duckdb.connect(path)
+    con.execute('CREATE TABLE macro_series (date DATE, series_id VARCHAR, value DOUBLE)')
+    rows = [
+        ('2026-08-01', 'IRLTLT01ITM156N', 3.0),
+        ('2026-08-03', 'CB_IT_10Y', 3.1),
+        ('2026-08-04', 'CB_IT_10Y', 3.2),
+        ('2026-08-04', 'ITA_BTP10_MOT', 3.4),
+        ('2026-08-05', 'CB_IT_10Y', 3.2),
+        ('2026-09-30', 'CB_IT_10Y', 3.3),
+        ('2026-10-09', 'ITA_BTP10_MOT', 3.5),
+        ('2026-11-06', 'TV_IT_10Y', 4.0),
+    ]
+    con.executemany('INSERT INTO macro_series VALUES (?, ?, ?)', rows)
+    con.close()
+    sources = [dict(series_id=sid, role=role, frequency=frequency, convention='yield',
+                    max_age_business_days=90)
+               for sid, role, frequency in [
+                   ('ITA_BTP10_MOT', 'primary', 'D'), ('TV_IT_10Y', 'secondary', 'D'),
+                   ('CB_IT_10Y', 'history_only', 'D'), ('IRLTLT01ITM156N', 'fallback', 'M')]]
+    spec = {'concept': 'IT_10Y', 'sources': sources}
+    monkeypatch.setattr(resolved_rates, 'load_resolved_rates',
+                        lambda: ({'tolerance_bp': 10}, {'IT_10Y': spec}))
+    result = reader.read_resolved_percentile('IT_10Y', as_of='2026-11-06', db_path=path)
+    assert result['current_series_id'] == 'TV_IT_10Y' and result['basis_month'] == '2026-08'
+    assert result['basis_series'] == {'CB_IT_10Y': 2, 'ITA_BTP10_MOT': 1}
+    assert result['basis_series_id'] is None
+    assert result['basis_bp'] == pytest.approx(((3.1 + 3.4 + 3.2) / 3 - 3.0) * 100)
+    assert result['status'] == 'ok'
 
 
 def test_longest_daily_source_is_single_history(percentile_fixture):

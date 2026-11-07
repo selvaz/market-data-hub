@@ -91,12 +91,14 @@ no OECD series, the longest single daily series in the window is aggregated to
 monthly means; fewer than 36 observed months makes the percentile unavailable.
 The selected history series, method, window and month count are returned.
 
-For OECD history, use the latest month within the window in which both the
-current daily source and OECD have observations. Subtract that month's daily
-mean minus the OECD observation from the current value before ranking. When
-the current source has no common month, try the daily primary instead and
-report that fallback. The returned basis identifies the month, source and
-overlap count. One common month is sufficient.
+For OECD history, compose daily observations by date using the same priority
+rule as `read_resolved_history`, including history-only sources and excluding
+monthly points. Use the latest month within the window in which both this
+composed daily history and OECD have observations. Subtract the composed daily
+mean minus the OECD observation for that month from the current value before
+ranking. `basis_series` maps each contributing source to its count of selected
+daily points in that month. The returned basis also identifies the month and
+number of overlapping months. One common month is sufficient.
 When no qualifying overlap exists, no correction is applied and the status is
 `basis_not_estimated`. The same status applies to the daily-history fallback,
 where an OECD basis cannot be estimated. Dates are restricted to the cutoff,
