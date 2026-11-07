@@ -146,7 +146,7 @@ def test_validation_reports_both_counts_and_checks_both_contracts(monkeypatch, c
     assert validate_config.main() == 0
     output = capsys.readouterr().out
     assert (
-        "fred=111" in output
+        "fred=113" in output
         and "nyfed_acm=2" in output
         and "sovereign_yields=42" in output
     )
