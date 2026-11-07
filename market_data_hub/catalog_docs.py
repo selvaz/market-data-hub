@@ -237,7 +237,10 @@ def _row(
         expected_lag_days=lag,
         lag_basis="declared; 2026-10-31 inventory estimate",
         history_start=str(
-            entry.get("backfill_start") or entry.get("history_start") or history
+            entry.get("history_description")
+            or entry.get("backfill_start")
+            or entry.get("history_start")
+            or history
         ),
         jobs=_job(entry, job),
         status=status,

@@ -1,0 +1,3 @@
+FREQ;Frequency;TENOR;Tenor;INSTRUMENT_TYPE;Instrument Type;DECIMALS;Decimals;TIME_PERIOD;OBS_VALUE
+B;Business;10Y;10 years;GBON;Government bonds;3;Three;2026-11-04;4.367
+B;Business;10Y;10 years;GBON;Government bonds;3;Three;2026-11-05;4.31

@@ -50,7 +50,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 307 |
+| hub | [macro_series](#catalog-hub-macro_series) | 309 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
@@ -1756,6 +1756,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | MOF_JGB_7Y | Japan MoF 7Y constant maturity YTM, semiannual compounding | Japan MoF | Japan MoF direct | D | 1 | 1974-09-24 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | MOF_JGB_8Y | Japan MoF 8Y constant maturity YTM, semiannual compounding | Japan MoF | Japan MoF direct | D | 1 | 1974-09-24 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | MOF_JGB_9Y | Japan MoF 9Y constant maturity YTM, semiannual compounding | Japan MoF | Japan MoF direct | D | 1 | 1974-09-24 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| NB_NO_10Y | Norges Bank 10Y generic government bond yield | Norges Bank | Norges Bank direct | D | 1 | 2019-01-02 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | NFCI | RISK \| US \| Chicago Fed National Financial Conditions Index | Chicago Fed | FRED | W | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | NW2_EPG0_SWO_R48_BCF | CMDTY \| Energy \| Lower 48 Working Natural Gas in Storage | EIA | EIA direct | W | 7 | 1982-01-01 (requested; provider availability varies) | eia_inventories daily 14:00 PT (proposed, disabled) | active |
 | NYFED_ACM_TP10_DAILY | RATES \| US \| NY Fed ACM 10-Year Term Premium Daily | NY Fed (model) | NY Fed direct | D | 2 | 1961-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
@@ -1769,6 +1770,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | PPIFIS | MACRO \| US \| PPI Final Demand (Index Nov 2009=100, SA) | BLS | FRED | M | 14 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | RRPONTSYD | LIQ \| US \| Overnight Reverse Repo (RRP, net liquidity) | NY Fed | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | RSAFS | MACRO \| US \| Retail Sales (Total) | Census | FRED | M | 15 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| SNB_CH_10Y | SNB 10Y NSS-fitted zero-coupon spot yield | Swiss National Bank | Swiss National Bank direct | D | 1 | Rolling current window; observations retained from collection; SNB cube history in CB_CH_10Y | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | STLFSI4 | RISK \| US \| St. Louis Fed Financial Stress Index | St. Louis Fed | FRED | W | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | T10Y2Y | RATES \| US \| 10Y minus 2Y Treasury Spread | Federal Reserve Bank of St. Louis | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | T10YIE | RATES \| US \| 10-Year Breakeven Inflation Rate | Fed Board | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
