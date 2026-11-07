@@ -516,7 +516,7 @@ Operational download run outcomes, timings, row counts and errors; not an extern
 
 ## hub / earnings_events
 
-Earnings release calendar events by exchange, symbol and release day, including timing and market metadata; dynamic company universe.
+Earnings release calendar events by exchange, symbol and release day, including timing and market metadata; eps_*/revenue_* are in estimate_currency (not the listing currency; NULL = unknown); dynamic company universe.
 
 - Store: `hub`; table: `earnings_events`.
 - Primary key: `event_id`.
@@ -529,7 +529,7 @@ Earnings release calendar events by exchange, symbol and release day, including 
 
 ## hub / earnings_observations
 
-TradingView earnings actuals, estimates and prior values captured per provider and hub vintage date; dynamic company universe.
+TradingView earnings actuals, estimates and prior values captured per provider and hub vintage date; eps_*/revenue_* are in estimate_currency (not the listing currency; NULL = unknown); dynamic company universe.
 
 - Store: `hub`; table: `earnings_observations`.
 - Primary key: `event_id`, `source`, `vintage_date`.

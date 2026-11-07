@@ -48,6 +48,7 @@ def scarica(da: datetime, a: datetime, *, mode: str = "next",
 
     colonne = ["name", "description", "market_cap_basic", campo_data, "country",
                "exchange", "sector", "industry", "currency",
+               "fundamental_currency_code",
                campo_eps_att, campo_rev_att]
     if campo_eps:
         colonne += [campo_eps, campo_rev]
@@ -89,6 +90,7 @@ def scarica(da: datetime, a: datetime, *, mode: str = "next",
     tabella = tabella.rename(columns={
         "name": "symbol", "description": "company_name",
         "market_cap_basic": "market_cap", campo_data: "release_ts",
+        "fundamental_currency_code": "estimate_currency",
         campo_eps_att: "eps_estimate", campo_rev_att: "revenue_estimate",
     })
     if campo_eps:
@@ -138,6 +140,11 @@ def leggi(percorso, *, vintage_date=None) -> list:
             revenue_estimate=_numero(r.get("revenue_estimate")),
             revenue_actual=_numero(r.get("revenue_actual")),
             currency=_testo(r.get("currency")),
+            # Currency of the eps/revenue figures: TradingView reports them in
+            # a "fundamental currency" that is often not the listing currency
+            # (TSE:7011 lists in JPY, its estimates are in USD). Absent in old
+            # CSVs -> None (unknown); never inferred from `currency`.
+            estimate_currency=_testo(r.get("estimate_currency")),
             vintage_date=vintage_date,
         ))
     return osservazioni

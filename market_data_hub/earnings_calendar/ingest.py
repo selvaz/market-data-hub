@@ -150,7 +150,8 @@ class EarningsObservation:
     eps_actual: Optional[float] = None
     revenue_estimate: Optional[float] = None
     revenue_actual: Optional[float] = None
-    currency: Optional[str] = None
+    currency: Optional[str] = None           # listing currency
+    estimate_currency: Optional[str] = None  # currency of eps/revenue figures
     vintage_date: date = field(default_factory=lambda: datetime.now(timezone.utc).date())
 
     def __post_init__(self) -> None:
@@ -206,14 +207,14 @@ def ingest_observations(
                  company_name, country, sector, industry, market_cap,
                  release_ts_utc, release_precision, status,
                  eps_estimate, eps_actual, revenue_estimate, revenue_actual,
-                 currency, run_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                 currency, estimate_currency, run_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             [identita[id(o)], o.source, o.vintage_date, o.symbol, o.exchange, o.tv_ticker,
              o.company_name, o.country, o.sector, o.industry, o.market_cap,
              o.release_ts_utc, o.release_precision, o.status,
              o.eps_estimate, o.eps_actual, o.revenue_estimate, o.revenue_actual,
-             o.currency, run_id],
+             o.currency, o.estimate_currency, run_id],
         )
 
     toccati = sorted(set(identita.values()))
@@ -231,7 +232,8 @@ def consolidate_events(con: duckdb.DuckDBPyConnection,
             SELECT source, symbol, exchange, tv_ticker, company_name, country,
                    sector, industry, market_cap,
                    release_ts_utc, release_precision, status, eps_estimate,
-                   eps_actual, revenue_estimate, revenue_actual, currency
+                   eps_actual, revenue_estimate, revenue_actual, currency,
+                   estimate_currency
             FROM (
                 SELECT *, row_number() OVER (
                            PARTITION BY source ORDER BY vintage_date DESC) AS rn
@@ -280,15 +282,15 @@ def consolidate_events(con: duckdb.DuckDBPyConnection,
                  region, sector, industry, theme, market_cap,
                  release_ts_utc, release_precision, status, eps_estimate,
                  eps_actual, revenue_estimate, revenue_actual, currency,
-                 n_sources, first_seen_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                 estimate_currency, n_sources, first_seen_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                     COALESCE((SELECT first_seen_at FROM earnings_events WHERE event_id = ?),
                              ?), ?)
             """,
             [eid, principale[1], principale[2], primo(3), primo(4), paese,
              region_of(paese), primo(6), primo(7), theme_of(primo(7)), primo(8),
              release, precisione, principale[11],
-             primo(12), primo(13), primo(14), primo(15), primo(16),
+             primo(12), primo(13), primo(14), primo(15), primo(16), primo(17),
              len(osservazioni),
              eid, datetime.now(timezone.utc), datetime.now(timezone.utc)],
         )

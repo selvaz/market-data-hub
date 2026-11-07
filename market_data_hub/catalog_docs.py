@@ -91,8 +91,8 @@ HUB_TABLES = {
     "calendar_observations": "Retired economic-calendar actual, consensus and prior readings by provider and hub vintage date.",
     "calendar_indicator_aliases": "Retired economic-calendar provider name aliases and matching provenance.",
     "calendar_event_notes": "Retired generated economic-event enrichment notes and review metadata.",
-    "earnings_events": "Earnings release calendar events by exchange, symbol and release day, including timing and market metadata; dynamic company universe.",
-    "earnings_observations": "TradingView earnings actuals, estimates and prior values captured per provider and hub vintage date; dynamic company universe.",
+    "earnings_events": "Earnings release calendar events by exchange, symbol and release day, including timing and market metadata; eps_*/revenue_* are in estimate_currency (not the listing currency; NULL = unknown); dynamic company universe.",
+    "earnings_observations": "TradingView earnings actuals, estimates and prior values captured per provider and hub vintage date; eps_*/revenue_* are in estimate_currency (not the listing currency; NULL = unknown); dynamic company universe.",
 }
 MACRO_TABLES = {
     "indicators": "Exact-measure catalogue: issuer, geography, transformation, unit and activation state.",

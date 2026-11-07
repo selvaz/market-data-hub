@@ -23,7 +23,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 31
+SCHEMA_VERSION = 32
 
 
 class DatabaseNotConfigured(RuntimeError):
@@ -162,6 +162,14 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
             )
             con.execute(
                 f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS prior_value DOUBLE"
+            )
+
+    # v31 -> v32: estimate_currency must exist before apply_schema() re-creates
+    # v_earnings_surprise, which selects it. Old rows stay NULL (unknown).
+    for table in ("earnings_events", "earnings_observations"):
+        if _table_exists(con, table):
+            con.execute(
+                f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS estimate_currency VARCHAR"
             )
 
     # v3 -> v4: drop the run_id indexes that v3 briefly introduced. On duckdb
@@ -510,6 +518,10 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
     if current < 31:
         # The new table is created by apply_schema above.
         current = 31
+    if current < 32:
+        # earnings estimate_currency columns are added before apply_schema()
+        # above; old rows stay NULL (unknown), never backfilled.
+        current = 32
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
