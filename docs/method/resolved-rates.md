@@ -58,6 +58,16 @@ in `basis_date`; both are null when no overlap exists. No adjustment is applied,
 and a missing overlap does not imply a zero basis. A `start` filter does not
 hide preceding observations used to identify a change or historical overlap.
 
+## New daily sources
+
+| Concept | Primary | Remaining chain | Convention and history |
+|---|---|---|---|
+| `NO_10Y` | `NB_NO_10Y` | OECD monthly fallback | Norges Bank generic yield of the government bond closest to 10Y, not constant maturity; daily history starts 2019-01-02. |
+| `CH_10Y` | `SNB_CH_10Y` | `TV_CH_10Y`, `CB_CH_10Y` history only, OECD monthly fallback | SNB NSS-fitted zero-coupon spot yield differs from the benchmark bond in compounding, selection and fixing. The current feed is a rolling window; the existing SNB cube supplies history. |
+
+`SNB_CH_10Y` and `CB_CH_10Y` share the SNB origin. The cube series is
+history-only and cannot vote, so the two feeds never count as independent votes.
+
 ## Official-source inventory
 
 The remaining configured official sovereign series are excluded deliberately:

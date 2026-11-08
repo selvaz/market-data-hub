@@ -30385,6 +30385,31 @@
       "table": "macro_series"
     },
     {
+      "distributor": "Norges Bank direct",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "2019-01-02",
+      "id": "NB_NO_10Y",
+      "issuer": "Norges Bank",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Norges Bank 10Y generic government bond yield",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
       "distributor": "FRED",
       "expected_lag_days": 7,
       "frequency": "W",
@@ -30753,6 +30778,31 @@
       "name": "MACRO | US | Retail Sales (Total)",
       "notes": "",
       "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "Swiss National Bank direct",
+      "expected_lag_days": 1,
+      "frequency": "D",
+      "history_start": "Rolling current window; observations retained from collection; SNB cube history in CB_CH_10Y",
+      "id": "SNB_CH_10Y",
+      "issuer": "Swiss National Bank",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "SNB 10Y NSS-fitted zero-coupon spot yield",
+      "notes": "",
       "status": "active",
       "status_reason": "",
       "store": "hub",
@@ -41195,7 +41245,7 @@
         "date",
         "series_id"
       ],
-      "series_count": 307,
+      "series_count": 309,
       "status": "active",
       "status_reason": "",
       "store": "hub",

@@ -1,4 +1,5 @@
 """Issuer histories and a separate, dated TradingView snapshot. Never splice."""
+
 from __future__ import annotations
 
 import csv
@@ -13,10 +14,16 @@ from typing import Optional
 import pandas as pd
 import requests
 
-from .sovereign_yields import USER_AGENT, SourceUnavailable, _normalize, _request, parse_response
+from .sovereign_yields import (
+    USER_AGENT,
+    SourceUnavailable,
+    _normalize,
+    _request,
+    parse_response,
+)
 
-TREASURY = 'https://home.treasury.gov/resource-center/data-chart-center/interest-rates'
-SCANNER = 'https://scanner.tradingview.com/global/scan'
+TREASURY = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates"
+SCANNER = "https://scanner.tradingview.com/global/scan"
 _gate = threading.Lock()
 _last_request = 0.0
 
@@ -24,51 +31,92 @@ _last_request = 0.0
 def parse_official(meta: dict, body: bytes) -> pd.DataFrame:
     """Reject changed schemas, missing series, non-daily dates and non-finite data."""
     try:
-        if meta['provider'] == 'mof':
+        if meta["provider"] == "mof":
             return parse_response(meta, body)
-        if meta['provider'] == 'boe':
-            reader = csv.DictReader(StringIO(body.decode('utf-8-sig')))
-            code = meta['provider_code']
-            if not reader.fieldnames or reader.fieldnames[0] != 'DATE' or code not in reader.fieldnames:
-                raise SourceUnavailable('unexpected BoE CSV series')
-            rows = [(datetime.strptime(r['DATE'], '%d %b %Y').date().isoformat(), r[code])
-                    for r in reader]
-        elif meta['provider'] == 'ust':
-            reader = csv.DictReader(StringIO(body.decode('utf-8-sig')))
-            if not reader.fieldnames or reader.fieldnames[0] != 'Date':
-                raise SourceUnavailable('unexpected Treasury CSV header')
-            code = meta['provider_code']
+        if meta["provider"] == "snb_current":
+            return parse_response({**meta, "provider": "snb"}, body)
+        if meta["provider"] == "norges":
+            reader = csv.DictReader(StringIO(body.decode("utf-8-sig")), delimiter=";")
+            if not {
+                "FREQ",
+                "TENOR",
+                "INSTRUMENT_TYPE",
+                "TIME_PERIOD",
+                "OBS_VALUE",
+            } <= set(reader.fieldnames or ()):
+                raise SourceUnavailable("unexpected Norges Bank CSV header")
+            rows = []
+            for row in reader:
+                if (row["FREQ"], row["TENOR"], row["INSTRUMENT_TYPE"]) != (
+                    "B",
+                    "10Y",
+                    "GBON",
+                ):
+                    raise SourceUnavailable("unexpected Norges Bank series")
+                rows.append((row["TIME_PERIOD"], row["OBS_VALUE"]))
+        elif meta["provider"] == "boe":
+            reader = csv.DictReader(StringIO(body.decode("utf-8-sig")))
+            code = meta["provider_code"]
+            if (
+                not reader.fieldnames
+                or reader.fieldnames[0] != "DATE"
+                or code not in reader.fieldnames
+            ):
+                raise SourceUnavailable("unexpected BoE CSV series")
+            rows = [
+                (datetime.strptime(r["DATE"], "%d %b %Y").date().isoformat(), r[code])
+                for r in reader
+            ]
+        elif meta["provider"] == "ust":
+            reader = csv.DictReader(StringIO(body.decode("utf-8-sig")))
+            if not reader.fieldnames or reader.fieldnames[0] != "Date":
+                raise SourceUnavailable("unexpected Treasury CSV header")
+            code = meta["provider_code"]
             # New tenors did not exist in earlier annual exports.
             if code not in reader.fieldnames:
                 return _normalize(meta, [])
-            rows = [(datetime.strptime(r['Date'], '%m/%d/%Y').date().isoformat(), r[code])
-                    for r in reader]
-        elif meta['provider'] == 'boc':
+            rows = [
+                (datetime.strptime(r["Date"], "%m/%d/%Y").date().isoformat(), r[code])
+                for r in reader
+            ]
+        elif meta["provider"] == "boc":
             data = json.loads(body)
-            code = meta['provider_code']
-            detail = data['seriesDetail'][code]
-            if detail['dimension']['key'] != 'd':
-                raise SourceUnavailable('BoC is not a daily series')
-            metadata = detail.get('metadata', {})
-            if metadata.get('unit', 'Percent') != 'Percent':
-                raise SourceUnavailable('BoC unit changed')
-            rows = [(r['d'], r.get(code, {}).get('v')) for r in data['observations']]
+            code = meta["provider_code"]
+            detail = data["seriesDetail"][code]
+            if detail["dimension"]["key"] != "d":
+                raise SourceUnavailable("BoC is not a daily series")
+            metadata = detail.get("metadata", {})
+            if metadata.get("unit", "Percent") != "Percent":
+                raise SourceUnavailable("BoC unit changed")
+            rows = [(r["d"], r.get(code, {}).get("v")) for r in data["observations"]]
         else:
-            raise SourceUnavailable('unrecognized official provider')
+            raise SourceUnavailable("unrecognized official provider")
         return _normalize(meta, rows)
     except (ValueError, KeyError, TypeError, UnicodeError) as exc:
-        raise SourceUnavailable(f'changed official response ({type(exc).__name__})') from None
+        raise SourceUnavailable(
+            f"changed official response ({type(exc).__name__})"
+        ) from None
 
 
-def fetch_official(meta: dict, start: str, end: str, *, cache: Optional[dict] = None,
-                   timeout: int = 30, retries: int = 3, base_sleep: float = 1) -> pd.DataFrame:
+def fetch_official(
+    meta: dict,
+    start: str,
+    end: str,
+    *,
+    cache: Optional[dict] = None,
+    timeout: int = 30,
+    retries: int = 3,
+    base_sleep: float = 1,
+) -> pd.DataFrame:
     """Full source history on first run; seven-day revision tail thereafter.
 
     Shared response cache downloads each curve once, even with many tenors.
     A failed chunk raises before returning any rows for this series.
     """
     # Even an explicit --start cannot precede the publisher's series floor.
-    start = max(pd.Timestamp(start), pd.Timestamp(meta['history_start'])).date().isoformat()
+    start = (
+        max(pd.Timestamp(start), pd.Timestamp(meta["history_start"])).date().isoformat()
+    )
     if pd.Timestamp(start) > pd.Timestamp(end):
         return _normalize(meta, [])
     cache = {} if cache is None else cache
@@ -77,41 +125,89 @@ def fetch_official(meta: dict, start: str, end: str, *, cache: Optional[dict] = 
         key = (url, json.dumps(params, sort_keys=True))
         if key not in cache:
             try:
-                cache[key] = _request(url, params=params, timeout=timeout, retries=retries,
-                                      base_sleep=base_sleep).content
+                response = _request(
+                    url,
+                    params=params,
+                    timeout=timeout,
+                    retries=retries,
+                    base_sleep=base_sleep,
+                )
+                if (
+                    meta["provider"] in {"norges", "snb_current"}
+                    and response.status_code != 200
+                ):
+                    raise SourceUnavailable(
+                        f"official source returned HTTP {response.status_code}"
+                    )
+                cache[key] = response.content
             except SourceUnavailable as exc:
                 cache[key] = exc
         if isinstance(cache[key], Exception):
             raise cache[key]
         return cache[key]
 
-    provider = meta['provider']
-    if provider == 'ust':
-        bodies = [get(f'{TREASURY}/daily-treasury-rates.csv/{year}/all',
-                      {'type': 'daily_treasury_yield_curve', 'field_tdr_date_value': year,
-                       '_format': 'csv'})
-                  for year in range(max(1990, pd.Timestamp(start).year), pd.Timestamp(end).year + 1)]
-    elif provider == 'mof':
-        month = pd.Timestamp(utc_now()).tz_convert('UTC').tz_localize(None).normalize().replace(day=1)
-        bodies = ([get(meta['history_endpoint'])] if pd.Timestamp(start) < month else [])
+    provider = meta["provider"]
+    if provider == "ust":
+        bodies = [
+            get(
+                f"{TREASURY}/daily-treasury-rates.csv/{year}/all",
+                {
+                    "type": "daily_treasury_yield_curve",
+                    "field_tdr_date_value": year,
+                    "_format": "csv",
+                },
+            )
+            for year in range(
+                max(1990, pd.Timestamp(start).year), pd.Timestamp(end).year + 1
+            )
+        ]
+    elif provider == "mof":
+        month = (
+            pd.Timestamp(utc_now())
+            .tz_convert("UTC")
+            .tz_localize(None)
+            .normalize()
+            .replace(day=1)
+        )
+        bodies = [get(meta["history_endpoint"])] if pd.Timestamp(start) < month else []
         if pd.Timestamp(end) >= month:
-            bodies.append(get(meta['endpoint']))
-    elif provider == 'boe':
-        bodies = [get(meta['endpoint'], {'csv.x': 'yes',
-                  'Datefrom': pd.Timestamp(start).strftime('%d/%b/%Y'),
-                  'Dateto': pd.Timestamp(end).strftime('%d/%b/%Y'),
-                  'SeriesCodes': meta['provider_code'], 'CSVF': 'TN', 'UsingCodes': 'Y',
-                  'VPD': 'Y', 'VFD': 'N'})]
-    elif provider == 'boc':
-        bodies = [get(f"{meta['endpoint']}/{meta['provider_code']}/json",
-                      {'start_date': start, 'end_date': end})]
+            bodies.append(get(meta["endpoint"]))
+    elif provider == "boe":
+        bodies = [
+            get(
+                meta["endpoint"],
+                {
+                    "csv.x": "yes",
+                    "Datefrom": pd.Timestamp(start).strftime("%d/%b/%Y"),
+                    "Dateto": pd.Timestamp(end).strftime("%d/%b/%Y"),
+                    "SeriesCodes": meta["provider_code"],
+                    "CSVF": "TN",
+                    "UsingCodes": "Y",
+                    "VPD": "Y",
+                    "VFD": "N",
+                },
+            )
+        ]
+    elif provider == "norges":
+        bodies = [get(meta["endpoint"], {"format": "csv", "startPeriod": start})]
+    elif provider == "snb_current":
+        bodies = [get(meta["endpoint"])]
+    elif provider == "boc":
+        bodies = [
+            get(
+                f"{meta['endpoint']}/{meta['provider_code']}/json",
+                {"start_date": start, "end_date": end},
+            )
+        ]
     else:
-        raise SourceUnavailable('unrecognized official provider')
+        raise SourceUnavailable("unrecognized official provider")
     frames = [parse_official(meta, body) for body in bodies]
     if not frames:
         return _normalize(meta, [])
-    frame = pd.concat(frames, ignore_index=True).drop_duplicates('date', keep='last')
-    return frame[(frame.date >= pd.Timestamp(start)) & (frame.date <= pd.Timestamp(end))]
+    frame = pd.concat(frames, ignore_index=True).drop_duplicates("date", keep="last")
+    return frame[
+        (frame.date >= pd.Timestamp(start)) & (frame.date <= pd.Timestamp(end))
+    ]
 
 
 def scan(tickers: list[str], *, timeout: int = 30, min_interval: float = 1) -> dict:
@@ -123,16 +219,24 @@ def scan(tickers: list[str], *, timeout: int = 30, min_interval: float = 1) -> d
             time.sleep(delay)
         _last_request = time.monotonic()
         try:
-            r = requests.post(SCANNER, json={'symbols': {'tickers': tickers},
-                              'columns': ['close', 'time|1', 'timezone']}, timeout=timeout,
-                              headers={'User-Agent': USER_AGENT})
+            r = requests.post(
+                SCANNER,
+                json={
+                    "symbols": {"tickers": tickers},
+                    "columns": ["close", "time|1", "timezone"],
+                },
+                timeout=timeout,
+                headers={"User-Agent": USER_AGENT},
+            )
             r.raise_for_status()
             data: dict = r.json()
-            if not isinstance(data.get('data'), list):
-                raise ValueError('missing scanner data')
+            if not isinstance(data.get("data"), list):
+                raise ValueError("missing scanner data")
             return data
         except (requests.RequestException, ValueError, AttributeError):
-            raise SourceUnavailable('TradingView scanner failed or schema changed') from None
+            raise SourceUnavailable(
+                "TradingView scanner failed or schema changed"
+            ) from None
 
 
 def parse_snapshot(meta: dict, row: dict, now: datetime) -> pd.DataFrame:
@@ -145,25 +249,31 @@ def parse_snapshot(meta: dict, row: dict, now: datetime) -> pd.DataFrame:
     No timestamp means no write; never guess Friday by subtracting weekdays.
     """
     try:
-        if row['s'] != meta['provider_code'] or len(row['d']) != 3:
-            raise ValueError('ticker/columns changed')
-        value, stamp, quote_zone = row['d']
+        if row["s"] != meta["provider_code"] or len(row["d"]) != 3:
+            raise ValueError("ticker/columns changed")
+        value, stamp, quote_zone = row["d"]
         if isinstance(value, bool) or not math.isfinite(float(value)):
-            raise ValueError('invalid close')
-        if isinstance(stamp, bool) or not isinstance(stamp, (int, float)) or not math.isfinite(stamp):
-            raise ValueError('missing bar timestamp')
-        if quote_zone != meta['timestamp_timezone']:
-            raise ValueError('provider session timezone changed')
-        bar = pd.Timestamp(stamp, unit='s', tz='UTC').tz_convert(quote_zone)
+            raise ValueError("invalid close")
+        if (
+            isinstance(stamp, bool)
+            or not isinstance(stamp, (int, float))
+            or not math.isfinite(stamp)
+        ):
+            raise ValueError("missing bar timestamp")
+        if quote_zone != meta["timestamp_timezone"]:
+            raise ValueError("provider session timezone changed")
+        bar = pd.Timestamp(stamp, unit="s", tz="UTC").tz_convert(quote_zone)
         if bar > pd.Timestamp(now):
-            raise ValueError('invalid trading date')
+            raise ValueError("invalid trading date")
         if bar.weekday() >= 5:
             # A Sunday-evening reopened session is not a completed daily point.
             # Skip it normally rather than degrading every weekend refresh.
             return _normalize(meta, [])
         return _normalize(meta, [(bar.date().isoformat(), value)])
     except (ValueError, TypeError, KeyError, OverflowError):
-        raise SourceUnavailable('TradingView missing/invalid close or trading timestamp') from None
+        raise SourceUnavailable(
+            "TradingView missing/invalid close or trading timestamp"
+        ) from None
 
 
 def utc_now() -> datetime:
