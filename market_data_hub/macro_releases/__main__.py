@@ -42,9 +42,12 @@ def main(argv=None):
             return 0
         with open_reader(args.db) as store:
             if args.command == "review-queue":
-                tables = {r[0] for r in store.conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+                tables = {r[0] for r in store.conn.execute(
+                    "SELECT name FROM sqlite_master WHERE type IN ('table','view')")}
+                # review_queue_current carries the effective status (pending/resolved).
+                source = "review_queue_current" if "review_queue_current" in tables else "review_queue"
                 rows = [] if "review_queue" not in tables else [dict(r) for r in store.conn.execute(
-                    "SELECT * FROM review_queue" + (" WHERE family=?" if args.family else "") +
+                    f"SELECT * FROM {source}" + (" WHERE family=?" if args.family else "") +
                     " ORDER BY recorded_at,id", (args.family,) if args.family else ())]
                 for row in rows:
                     row["reasons"] = json.loads(row["reasons"])

@@ -257,9 +257,13 @@ class Snapshot:
                 else [
                     dict(r)
                     for r in conn.execute(
-                        "SELECT f.*,r.started_at FROM collect_run_families f JOIN collect_runs r "
+                        "SELECT f.*,r.started_at"
+                        + (",v.error_category,v.review_reasons" if "collect_run_family_reviews" in tables else "")
+                        + " FROM collect_run_families f JOIN collect_runs r "
                         "ON r.run_id=f.run_id AND r.status='running' "
-                        "ORDER BY f.finished_at DESC,f.rowid DESC"
+                        + ("LEFT JOIN collect_run_family_reviews v ON v.run_id=f.run_id AND v.family=f.family "
+                           if "collect_run_family_reviews" in tables else "")
+                        + "ORDER BY f.finished_at DESC,f.rowid DESC"
                     )
                 ]
             )

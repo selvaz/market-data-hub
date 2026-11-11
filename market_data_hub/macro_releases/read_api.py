@@ -5,6 +5,7 @@ from __future__ import annotations
 from calendar import monthrange
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
+import json
 import re
 from zoneinfo import ZoneInfo
 
@@ -296,6 +297,45 @@ def latest_period(snapshot, indicator, period, *, policy="revised_history"):
     return (min if policy == "first_release" else max)(resolved, key=order).to_dict()
 
 
+DUE_LABELS = {
+    "parser_rejected": "parser-rejected",
+    "not_yet_listed": "not yet listed",
+    "issuer_http_error": "not yet listed",
+    "issuer_unavailable": "not yet listed",
+    "calendar_exhausted": "not yet listed",
+    "issuer_gap": "issuer did not publish",
+}
+
+
+def _reasons(raw):
+    try:
+        value = json.loads(raw) if raw else []
+    except (TypeError, ValueError):
+        return []
+    return value if isinstance(value, list) else []
+
+
+def due_without_vintage(latest, cutoff):
+    """Due editions the latest family outcome could not store, and issuer gaps."""
+    from .issuer_gaps import due_issuer_gaps
+    rows = []
+    for family in sorted(latest):
+        for entry in latest[family]["review_reasons"]:
+            if isinstance(entry, dict) and entry.get("edition"):
+                category = entry.get("category") or "parser_rejected"
+                rows.append({"family": family, "edition": entry["edition"], "indicator_id": None,
+                             "reference_period": None, "category": category,
+                             "label": DUE_LABELS.get(category, "parser-rejected"),
+                             "reason": entry.get("message") or entry.get("reason"),
+                             "run_id": latest[family]["run_id"], "finished_at": latest[family]["finished_at"]})
+    for gap in due_issuer_gaps(cutoff[:10]):
+        rows.append({"family": gap["family"], "edition": gap["due"], "indicator_id": gap["indicator_id"],
+                     "reference_period": gap["reference_period"], "category": "issuer_gap",
+                     "label": DUE_LABELS["issuer_gap"], "reason": gap["reason"], "run_id": None,
+                     "finished_at": None})
+    return rows
+
+
 class ReadAPI:
     def __init__(self, store):
         self.store = store
@@ -433,6 +473,30 @@ class ReadAPI:
         snapshot = Snapshot.load(self.store, cutoff)
         return self._cards(snapshot, start, end, indicators, geography, policy=policy)
 
+    def open_review_queue(self, *, as_known_at=None):
+        """Review requests recorded and not resolved by the cutoff, with reasons.
+
+        A row resolved after the cutoff is still open at that cutoff.
+        """
+        cutoff = utc(as_known_at or datetime.now(timezone.utc).isoformat())
+        conn = self.store.conn
+        tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table','view')")}
+        if "review_queue" not in tables:
+            return []
+        resolved = ("LEFT JOIN review_queue_resolutions r ON r.review_id=q.id AND r.resolved_at<=? "
+                    if "review_queue_resolutions" in tables else "")
+        rows = conn.execute(
+            "SELECT q.id,q.family,q.run_id,q.document_hash,q.reasons,q.recorded_at,d.url "
+            "FROM review_queue q LEFT JOIN documents d ON d.document_hash=q.document_hash "
+            + resolved + "WHERE q.recorded_at<=? "
+            + ("AND r.review_id IS NULL " if resolved else "")
+            + "ORDER BY q.family,q.recorded_at,q.id",
+            ((cutoff, cutoff) if resolved else (cutoff,))).fetchall()
+        return [{"id": r["id"], "family": r["family"], "run_id": r["run_id"],
+                 "document_hash": r["document_hash"], "document_url": r["url"],
+                 "reasons": json.loads(r["reasons"]), "recorded_at": r["recorded_at"], "status": "pending"}
+                for r in rows]
+
     def first_seen_release_cards(self, since, until, *, as_known_at=None, policy="new_release"):
         """Issuer actuals first captured in [since, until), known at the cutoff.
 
@@ -455,10 +519,14 @@ class ReadAPI:
         latest = {}
         for row in snapshot.collect_families:
             latest.setdefault(row["family"], row)
+        for family, row in latest.items():
+            latest[family] = dict(row, review_reasons=_reasons(row.get("review_reasons")),
+                                  error_category=row.get("error_category"))
         result["collection_issues"] = [
             latest[family] for family in sorted(latest)
             if latest[family]["status"] not in {"ok", "no_change"}
         ]
+        result["due_without_vintage"] = due_without_vintage(latest, cutoff)
         result["window_basis"] = "first_official_seen_at"
         return result
 

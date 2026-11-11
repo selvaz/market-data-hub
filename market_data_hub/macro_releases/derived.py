@@ -6,9 +6,12 @@ from dataclasses import replace
 from .adapters import persist
 from .bls import shift_month
 from .catalogue import INDICATORS
+from .issuer_gaps import issuer_gap
 
 
 def percent_change(store, template, previous_id, current_id):
+    if issuer_gap(template.indicator_id, template.period):
+        raise ValueError("Issuer did not publish this period; it is never computed")
     rows = [store.conn.execute("SELECT * FROM value_vintages WHERE id=?", (i,)).fetchone()
             for i in (previous_id, current_id)]
     if any(r is None for r in rows):

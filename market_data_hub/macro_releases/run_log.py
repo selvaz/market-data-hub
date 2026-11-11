@@ -38,6 +38,34 @@ def family_result(store, run_id, family, result):
             (run_id, family, result["status"], now(), result.get("error_type"), result.get("error_message"),
              result["vintages_added"], result["readings_added"], result["readings_skipped"],
              result["fetch_since"], result["fetch_until"]))
+        reasons = review_entries(result)
+        if (reasons or result.get("error_category")) and _has_review_table(store):
+            store.conn.execute(
+                "INSERT INTO collect_run_family_reviews (run_id,family,error_category,review_reasons,recorded_at) "
+                "VALUES (?,?,?,?,?)",
+                (run_id, family, result.get("error_category"), json.dumps(reasons, sort_keys=True), now()))
+
+
+def _has_review_table(store):
+    return store.conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='collect_run_family_reviews'").fetchone() is not None
+
+
+def review_entries(result):
+    """Structured reasons: each needs-review reason, with its edition detail when known."""
+    details = {d["edition"]: d for d in result.get("review_details", [])}
+    entries = []
+    for reason in result.get("review_reasons", []):
+        edition = reason.removeprefix("edition_needs_review:") if reason.startswith("edition_needs_review:") else None
+        detail = details.pop(edition, {}) if edition else {}
+        entries.append({"reason": reason, "edition": edition,
+                        "category": detail.get("category", "parser_rejected" if edition else "verification"),
+                        "message": detail.get("message")})
+    # Due editions that did not make the family needs_review (e.g. not yet listed).
+    for edition, detail in sorted(details.items()):
+        entries.append({"reason": "edition_" + detail["status"] + ":" + edition, "edition": edition,
+                        "category": detail["category"], "message": detail.get("message")})
+    return entries
 
 
 def consensus_result(store, run_id, result):

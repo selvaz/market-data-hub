@@ -6,7 +6,7 @@ from .http import FetchError
 from .latam import fetch_editions, observation
 from .latam_editions import reviewed
 from .nbs_housing import Page
-from .schedule import get_edition, mark_pending, publication_grace
+from .schedule import get_edition, mark_pending, note_review, publication_grace
 from .tier1_publications import plain, publication_text, require
 
 HOST = "https://www.banxico.org.mx"
@@ -55,6 +55,63 @@ def publication_url(document, edition):
     return next(iter(urls), None)
 
 
+ACTIONS = r"(mantener|disminuir|reducir|incrementar)"
+DECISION = (r"{action}(?: en (\d+) puntos base)? el objetivo para la Tasa de Interés "
+            r"Interbancaria a un día (?:en|a un nivel de) ([\d.]+)%")
+BOARD_SIZE = 5
+
+
+def rejoin_numbers(text):
+    """pypdf can split a printed rate across text runs ('6. 25%'); rejoin it."""
+    return re.sub(r"\b(\d{1,2})\.\s+(\d{1,2})\s*%", r"\1.\2%", text)
+
+
+def board_names(clause):
+    names = [n.strip() for n in re.split(r",\s*|\s+y\s+", clause.strip()) if n.strip()]
+    if not names or len(names) != len(set(names)) or any(
+            not re.fullmatch(r"[A-ZÁÉÍÓÚÑ][\w.\-]+(?: [A-ZÁÉÍÓÚÑa-z][\w.\-]+){0,5}", n) for n in names):
+        raise FetchError("Banxico board member list needs review")
+    return names
+
+
+def vote(text, kind, action):
+    """Record the printed vote: unanimous or majority, counts and dissenters.
+
+    A majority statement names the dissenting members ("Votó/Votaron en contra
+    ..." or "Votó/Votaron por/a favor de <other action> ... <names>"). Members
+    voting with the decision may be listed too; when listed, counts must add up
+    to the full board, which the statement says was present.
+    """
+    if kind == "unanimidad":
+        if re.search(r"\bVot(?:ó|aron) en contra\b", text):
+            raise FetchError("Banxico unanimous statement lists dissent; needs review")
+        return dict(decision="unanimous", **{"for": BOARD_SIZE, "against": 0}, dissenters=[],
+                    dissent_preference=None)
+    majority = None
+    dissent = []
+    preference = None
+    for sentence in re.findall(r"\bVot(?:ó|aron) ([^.]+(?:\.\d[^.]*)*)\.", text):
+        favour = re.fullmatch(r"a favor(?: de (?:esta|la) decisión)? (.+)", sentence)
+        against = re.fullmatch(r"en contra (.+?)(?:,? quien(?:es)? (?:prefería|preferían|votó|votaron|se pronunció|"
+                               r"se pronunciaron) (?:por |a favor de )?" + ACTIONS + r".*)?", sentence)
+        other = re.fullmatch(r"(?:por|a favor de) " + ACTIONS + r" el objetivo[^,]*? (?:en|a un nivel de) "
+                             r"[\d.]+%,? (.+)", sentence)
+        if against:
+            dissent += board_names(against[1])
+            preference = against[2] or preference
+        elif other and other[1] != action:
+            dissent += board_names(other[2])
+            preference = other[1]
+        elif favour:
+            majority = board_names(favour[1])
+    if not dissent or len(dissent) >= BOARD_SIZE / 2 or (majority and set(majority) & set(dissent)):
+        raise FetchError("Banxico majority vote/dissenters needs review")
+    if majority is not None and len(majority) + len(dissent) != BOARD_SIZE:
+        raise FetchError("Banxico vote count disagreement needs review")
+    return dict(decision="majority", **{"for": BOARD_SIZE - len(dissent), "against": len(dissent)},
+                dissenters=dissent, dissent_preference=preference)
+
+
 def parse(doc, family="banxico_policy", since="1900-01", *, archives=None):
     archives = ARCHIVES if archives is None else archives
     if doc.url not in archives.values() or not doc.body.startswith(b"%PDF"):
@@ -63,26 +120,27 @@ def parse(doc, family="banxico_policy", since="1900-01", *, archives=None):
         text, method = publication_text(doc)
     except Exception:
         raise FetchError("Banxico PDF format needs review") from None
-    stamp = require(r"Anuncio de Política Monetaria Comunicado de Prensa (\d+) de (\w+) de (2026)", text)
+    text = rejoin_numbers(text)
+    stamp = require(r"Anuncio de Política Monetaria Comunicado de Prensa (\d+) de (\w+) de (\d{4})", text)
     edition = spanish_date(*stamp.groups())
     reviewed(family, edition)
     if archives.get(edition) != doc.url:
         raise FetchError("Banxico URL/edition needs review")
     decision = require(r"La Junta de Gobierno del Banco de México decidió "
-        r"(mantener|disminuir|incrementar)(?: en (\d+) puntos base)? el objetivo para la Tasa de Interés "
-        r"Interbancaria a un día (?:en|a un nivel de) ([\d.]+)%", text)
+                       + DECISION.format(action=ACTIONS), text)
     action, delta, printed = decision.groups()
     if action != "mantener" and delta is None:
         raise FetchError("Banxico statement change needs review")
-    repeated = require(r"con la presencia de todos sus miembros, decidió por unanimidad "
-        r"(mantener|disminuir|incrementar)(?: en (\d+) puntos base)? el objetivo para la Tasa de "
-        r"Interés Interbancaria a un día (?:en|a un nivel de) ([\d.]+)%", text)
-    if repeated.groups() != decision.groups() or not 0 <= float(printed) <= 100:
+    repeated = require(r"con la presencia de todos sus miembros, decidió por (unanimidad|mayor[íi]a) "
+                       + DECISION.format(action=ACTIONS), text)
+    if repeated.groups()[1:] != decision.groups() or not 0 <= float(printed) <= 100:
         raise FetchError("Banxico statement rate/vote disagreement needs review")
+    votes = vote(text, "unanimidad" if repeated[1] == "unanimidad" else "mayoria", action)
     delta = 0 if action == "mantener" else int(delta) * (1 if action == "incrementar" else -1)
     row = observation(doc, family, edition, "banxico_overnight_rate_decision", printed, method=method,
         policy=dict(rates={"overnight_target": dict(rate=float(printed), change_bp=delta,
-                    change_basis="issuer_statement")}, vote_split={"for": 5, "against": 0}))
+                    change_basis="issuer_statement")},
+                    vote_split={"for": votes["for"], "against": votes["against"]}, vote=votes))
     return [row] if edition >= since else []
 
 
@@ -96,8 +154,12 @@ def fetch(client, family, since):
                 listing = client.get("banxico", INDEX)
             url = publication_url(listing, edition)
             if url is None:
-                mark_pending(family, edition, "not_yet_published" if publication_grace(family, edition)
-                             else "scheduled_unreviewed")
+                if publication_grace(family, edition):
+                    mark_pending(family, edition, "not_yet_published")
+                else:
+                    mark_pending(family, edition, "scheduled_unreviewed")
+                    note_review(family, edition, "not_yet_listed",
+                                "Statement not yet listed on the Banxico decisions page")
                 return None
             urls[edition] = url
         doc = get_edition(client, "banxico", urls[edition], family, edition)

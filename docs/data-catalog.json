@@ -41600,6 +41600,26 @@
       "table": "collect_run_families"
     },
     {
+      "description": "Why a family run needed review or failed: an error category and per-edition reasons, append-only.",
+      "doc": "macro-releases.md",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "point_in_time": "Use the macro ReadAPI with news_cutoff/as_known_at and first-seen/recorded-at filters before selection. Published time alone does not prove the hub knew a value. Raw readings and mirror evidence are not automatically official. Append-only vintages, schedules, consensus and resolution history preserve evidence; registry/worklist tables describe current state.",
+      "primary_key": [
+        "run_id",
+        "family"
+      ],
+      "series_count": 0,
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "collect_run_family_reviews"
+    },
+    {
       "description": "Append-only official collection start and terminal outcomes.",
       "doc": "macro-releases.md",
       "jobs": [
@@ -41891,6 +41911,25 @@
       "status_reason": "",
       "store": "macro_releases.sqlite",
       "table": "review_queue"
+    },
+    {
+      "description": "Append-only closure of review requests superseded by a later clean run of the same edition.",
+      "doc": "macro-releases.md",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "point_in_time": "Use the macro ReadAPI with news_cutoff/as_known_at and first-seen/recorded-at filters before selection. Published time alone does not prove the hub knew a value. Raw readings and mirror evidence are not automatically official. Append-only vintages, schedules, consensus and resolution history preserve evidence; registry/worklist tables describe current state.",
+      "primary_key": [
+        "review_id"
+      ],
+      "series_count": 0,
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "review_queue_resolutions"
     },
     {
       "description": "Successive recorded versions of expected issuer release instants and their time precision.",

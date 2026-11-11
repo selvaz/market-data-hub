@@ -293,13 +293,33 @@ def test_unreviewed_origin_and_format_fail_closed(case):
             parse(case, changed)
 
 
-def test_horizon_fail_closed():
-    token = RUN_INSTANT.set("2027-01-01T00:00:00Z")
+class Recorded(Replay):
+    """Replay; editions without a recorded issuer document return 404."""
+    def get(self, provider, url, params=None):
+        try:
+            return super().get(provider, url, params)
+        except AssertionError:
+            raise FetchError(provider + ": HTTP 404") from None
+
+
+@pytest.mark.parametrize("instant,exhausted", [
+    ("2027-01-01T00:00:00Z", set()),
+    ("2027-03-01T00:00:00Z", set(LATAM_FAMILIES)),
+])
+def test_horizon_is_the_reviewed_calendar_not_a_year(instant, exhausted):
+    """After 2026 reviewed editions still collect; an exhausted calendar is a notice."""
+    from market_data_hub.macro_releases.schedule import PENDING_DETAILS
+    details = {}
+    token = PENDING_DETAILS.set(details)
     try:
-        with pytest.raises(FetchError, match="needs review"):
-            LatamAdapter(Replay()).fetch(list(LATAM_FAMILIES), "2026-01")
+        with run_at(instant) as notices:
+            rows = LatamAdapter(Recorded()).fetch(list(LATAM_FAMILIES), "2026-01")
     finally:
-        RUN_INSTANT.reset(token)
+        PENDING_DETAILS.reset(token)
+    assert {r.family for r in rows} == set(LATAM_FAMILIES)
+    calendar = {f for (f, e), d in details.items() if d["category"] == "calendar_exhausted"}
+    assert calendar == exhausted
+    assert all(notices[f, "after:" + max(EDITIONS[f])] == "needs_review" for f in exhausted)
 
 
 def test_bcb_statement_meeting_and_rate_disagreement_fail_closed():
