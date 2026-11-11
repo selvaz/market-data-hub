@@ -1,0 +1,97 @@
+concepts:
+- concept: DFII5
+  family: real_inflation
+  label: US 5Y real yield
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: DFII5
+    role: primary
+    max_age_business_days: 3
+    convention: published yield or term premium
+- concept: DFII10
+  family: real_inflation
+  label: US 10Y real yield
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: DFII10
+    role: primary
+    max_age_business_days: 3
+    convention: published yield or term premium
+- concept: T5YIE
+  family: real_inflation
+  label: US 5Y breakeven
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: T5YIE
+    role: primary
+    max_age_business_days: 3
+    convention: published yield spread
+- concept: T10YIE
+  family: real_inflation
+  label: US 10Y breakeven
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: T10YIE
+    role: primary
+    max_age_business_days: 3
+    convention: published yield spread
+- concept: T5YIFR
+  family: real_inflation
+  label: US 5Y5Y forward inflation
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: T5YIFR
+    role: primary
+    max_age_business_days: 3
+    convention: published yield spread
+- concept: T10Y2Y
+  family: real_inflation
+  label: US 10Y minus 2Y
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: T10Y2Y
+    role: primary
+    max_age_business_days: 3
+    convention: published yield spread
+- concept: THREEFYTP10
+  family: real_inflation
+  label: US 10Y Kim-Wright term premium
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: THREEFYTP10
+    role: primary
+    max_age_business_days: 10
+    convention: published yield or term premium
+- concept: NYFED_ACM_TP10_MONTHLY
+  family: real_inflation
+  label: US 10Y ACM term premium
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: NYFED_ACM_TP10_MONTHLY
+    role: primary
+    max_age_business_days: 35
+    convention: published yield or term premium

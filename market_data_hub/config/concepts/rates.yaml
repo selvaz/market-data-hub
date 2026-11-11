@@ -1,0 +1,2052 @@
+tolerance_bp: 10
+concepts:
+- concept: AT_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_AT_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01ATM156N
+  family: rates
+  label: AT 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:AT
+- concept: AT_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_AT_2Y
+  family: rates
+  label: AT 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:AT
+- concept: AT_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_AT_30Y
+  family: rates
+  label: AT 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:AT
+- concept: AT_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_AT_5Y
+  family: rates
+  label: AT 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:AT
+- concept: AU_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_AU_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01AUM156N
+  family: rates
+  label: AU 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:AU
+- concept: AU_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_AU_2Y
+  family: rates
+  label: AU 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:AU
+- concept: AU_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_AU_30Y
+  family: rates
+  label: AU 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:AU
+- concept: AU_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_AU_5Y
+  family: rates
+  label: AU 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:AU
+- concept: BE_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: fixed residual term bond yield
+    role: primary
+    kind: macro
+    id: CB_BE_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal BE_10Y sovereign yields; the official source
+      uses fixed residual term bond yield, while TradingView uses a vendor benchmark
+      with unspecified selection and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_BE_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01BEM156N
+  family: rates
+  label: BE 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:BE
+  check:
+    ids:
+    - CB_BE_10Y
+    - TV_BE_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: BE_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: fixed residual term bond yield
+    role: primary
+    kind: macro
+    id: CB_BE_2Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal BE_2Y sovereign yields; the official source
+      uses fixed residual term bond yield, while TradingView uses a vendor benchmark
+      with unspecified selection and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_BE_2Y
+  family: rates
+  label: BE 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:BE
+  check:
+    ids:
+    - CB_BE_2Y
+    - TV_BE_2Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: BE_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_BE_30Y
+  family: rates
+  label: BE 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:BE
+- concept: BE_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_BE_5Y
+  family: rates
+  label: BE 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:BE
+- concept: BR_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_BR_10Y
+  family: rates
+  label: BR 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:BR
+- concept: BR_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_BR_2Y
+  family: rates
+  label: BR 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:BR
+- concept: BR_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_BR_5Y
+  family: rates
+  label: BR 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:BR
+- concept: CA_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM
+    role: primary
+    kind: macro
+    id: BOC_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal CA_10Y sovereign yields; the official source
+      uses benchmark bond YTM, while TradingView uses a vendor benchmark with unspecified
+      selection and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_CA_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01CAM156N
+  family: rates
+  label: CA 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:CA
+  check:
+    ids:
+    - BOC_10Y
+    - TV_CA_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: CA_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM
+    role: primary
+    kind: macro
+    id: BOC_2Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal CA_2Y sovereign yields; the official source
+      uses benchmark bond YTM, while TradingView uses a vendor benchmark with unspecified
+      selection and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_CA_2Y
+  family: rates
+  label: CA 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:CA
+  check:
+    ids:
+    - BOC_2Y
+    - TV_CA_2Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: CA_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CA_30Y
+  family: rates
+  label: CA 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:CA
+- concept: CA_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM
+    role: primary
+    kind: macro
+    id: BOC_5Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal CA_5Y sovereign yields; the official source
+      uses benchmark bond YTM, while TradingView uses a vendor benchmark with unspecified
+      selection and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_CA_5Y
+  family: rates
+  label: CA 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:CA
+  check:
+    ids:
+    - BOC_5Y
+    - TV_CA_5Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: CH_10Y
+  spot_bond_justification: Owner-approved Swiss spot and benchmark yields share the
+    tenor but can have material curve and compounding basis; they are not interchangeable
+    observations.
+  sources:
+  - max_age_business_days: 3
+    convention: SNB NSS-fitted zero-coupon spot yield
+    role: primary
+    kind: macro
+    id: SNB_CH_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Observed benchmark YTM differs from the SNB spot curve in
+      security selection, compounding, and fixing; no adjustment is implied.
+    kind: macro
+    id: TV_CH_10Y
+  - max_age_business_days: 3
+    convention: SNB NSS-fitted zero-coupon spot yield
+    role: history_only
+    comparability_note: SNB cube history and current SNB spot feed share the same
+      NSS origin; history only, never an independent vote.
+    kind: macro
+    id: CB_CH_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01CHM156N
+  family: rates
+  label: CH 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:CH
+  check:
+    ids:
+    - SNB_CH_10Y
+    - TV_CH_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: CH_2Y
+  spot_bond_justification: Owner-approved historical Swiss spot yield and benchmark
+    bond yield share a tenor but differ in curve and compounding basis.
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CH_2Y
+  - max_age_business_days: 3
+    convention: Swiss Confederation spot yield
+    role: history_only
+    comparability_note: Discontinued SNB spot curve differs from the benchmark bond
+      YTM in compounding and selection; history only.
+    kind: macro
+    id: CB_CH_2Y
+  family: rates
+  label: CH 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:CH
+- concept: CH_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CH_30Y
+  family: rates
+  label: CH 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:CH
+- concept: CH_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CH_5Y
+  family: rates
+  label: CH 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:CH
+- concept: CL_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CL_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01CLM156N
+  family: rates
+  label: CL 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:CL
+- concept: CL_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CL_2Y
+  family: rates
+  label: CL 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:CL
+- concept: CL_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CL_30Y
+  family: rates
+  label: CL 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:CL
+- concept: CL_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CL_5Y
+  family: rates
+  label: CL 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:CL
+- concept: CN_10Y
+  spot_bond_justification: Owner-approved ChinaBond curve and benchmark bond yield
+    share a tenor but can differ in curve construction and fixing.
+  sources:
+  - max_age_business_days: 3
+    convention: ChinaBond zero-coupon government yield curve
+    role: primary
+    kind: macro
+    id: CB_CN_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Vendor benchmark YTM differs from the ChinaBond curve in bond
+      selection, compounding, and fixing; no adjustment is implied.
+    kind: macro
+    id: TV_CN_10Y
+  family: rates
+  label: CN 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:CN
+  check:
+    ids:
+    - CB_CN_10Y
+    - TV_CN_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: CN_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CN_2Y
+  family: rates
+  label: CN 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:CN
+- concept: CN_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CN_30Y
+  family: rates
+  label: CN 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:CN
+- concept: CN_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CN_5Y
+  family: rates
+  label: CN 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:CN
+- concept: CO_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CO_10Y
+  family: rates
+  label: CO 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:CO
+- concept: CO_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_CO_5Y
+  family: rates
+  label: CO 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:CO
+- concept: CZ_10Y
+  sources:
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01CZM156N
+  family: rates
+  label: CZ 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:CZ
+- concept: DE_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: nearest residual maturity observed bond YTM
+    role: primary
+    kind: macro
+    id: DEU_BUND10_FA
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal DE_10Y sovereign yields; the official source
+      uses nearest residual maturity observed bond YTM, while TradingView uses a vendor
+      benchmark with unspecified selection and fixing time. These differences can
+      create a basis.
+    kind: macro
+    id: TV_DE_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01DEM156N
+  family: rates
+  label: DE 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:DE
+  check:
+    ids:
+    - DEU_BUND10_FA
+    - TV_DE_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: DE_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_DE_2Y
+  family: rates
+  label: DE 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:DE
+- concept: DE_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_DE_30Y
+  family: rates
+  label: DE 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:DE
+- concept: DE_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_DE_5Y
+  family: rates
+  label: DE 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:DE
+- concept: DK_10Y
+  sources:
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01DKM156N
+  family: rates
+  label: DK 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:DK
+- concept: ES_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: secondary market bond yield
+    role: primary
+    kind: macro
+    id: CB_ES_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal ES_10Y sovereign yields; the official source
+      uses secondary market bond yield, while TradingView uses a vendor benchmark
+      with unspecified selection and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_ES_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01ESM156N
+  family: rates
+  label: ES 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:ES
+  check:
+    ids:
+    - CB_ES_10Y
+    - TV_ES_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: ES_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_ES_2Y
+  family: rates
+  label: ES 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:ES
+- concept: ES_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_ES_30Y
+  family: rates
+  label: ES 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:ES
+- concept: ES_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_ES_5Y
+  family: rates
+  label: ES 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:ES
+- concept: FI_10Y
+  sources:
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01FIM156N
+  family: rates
+  label: FI 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:FI
+- concept: FR_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: constant maturity bond yield
+    role: primary
+    kind: macro
+    id: CB_FR_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal FR_10Y sovereign yields; the official source
+      uses constant maturity bond yield, while TradingView uses a vendor benchmark
+      with unspecified selection and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_FR_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01FRM156N
+  family: rates
+  label: FR 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:FR
+  check:
+    ids:
+    - CB_FR_10Y
+    - TV_FR_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: FR_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_FR_2Y
+  family: rates
+  label: FR 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:FR
+- concept: FR_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_FR_30Y
+  family: rates
+  label: FR 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:FR
+- concept: FR_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_FR_5Y
+  family: rates
+  label: FR 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:FR
+- concept: GB_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: par yield
+    role: primary
+    kind: macro
+    id: BOE_GILT_PAR_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal GB_10Y sovereign yields; the official source
+      uses par yield, while TradingView uses a vendor benchmark with unspecified selection
+      and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_GB_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01GBM156N
+  family: rates
+  label: GB 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:GB
+  check:
+    ids:
+    - BOE_GILT_PAR_10Y
+    - TV_GB_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: GB_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_GB_2Y
+  family: rates
+  label: GB 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:GB
+- concept: GB_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_GB_30Y
+  family: rates
+  label: GB 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:GB
+- concept: GB_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: par yield
+    role: primary
+    kind: macro
+    id: BOE_GILT_PAR_5Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal GB_5Y sovereign yields; the official source
+      uses par yield, while TradingView uses a vendor benchmark with unspecified selection
+      and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_GB_5Y
+  family: rates
+  label: GB 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:GB
+  check:
+    ids:
+    - BOE_GILT_PAR_5Y
+    - TV_GB_5Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: GR_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_GR_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01GRM156N
+  family: rates
+  label: GR 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:GR
+- concept: GR_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_GR_2Y
+  family: rates
+  label: GR 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:GR
+- concept: GR_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_GR_30Y
+  family: rates
+  label: GR 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:GR
+- concept: GR_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_GR_5Y
+  family: rates
+  label: GR 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:GR
+- concept: HU_10Y
+  sources:
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01HUM156N
+  family: rates
+  label: HU 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:HU
+- concept: ID_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_ID_10Y
+  family: rates
+  label: ID 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:ID
+- concept: ID_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_ID_30Y
+  family: rates
+  label: ID 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:ID
+- concept: ID_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_ID_5Y
+  family: rates
+  label: ID 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:ID
+- concept: IE_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IE_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01IEM156N
+  family: rates
+  label: IE 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:IE
+- concept: IE_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IE_2Y
+  family: rates
+  label: IE 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:IE
+- concept: IE_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IE_30Y
+  family: rates
+  label: IE 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:IE
+- concept: IE_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IE_5Y
+  family: rates
+  label: IE 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:IE
+- concept: IL_10Y
+  sources:
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01ILM156N
+  family: rates
+  label: IL 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:IL
+- concept: IN_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IN_10Y
+  family: rates
+  label: IN 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:IN
+- concept: IN_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IN_2Y
+  family: rates
+  label: IN 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:IN
+- concept: IN_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IN_30Y
+  family: rates
+  label: IN 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:IN
+- concept: IN_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IN_5Y
+  family: rates
+  label: IN 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:IN
+- concept: IT_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: nearest residual maturity observed bond YTM
+    role: primary
+    kind: macro
+    id: ITA_BTP10_MOT
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal IT_10Y sovereign yields; the official source
+      uses nearest residual maturity observed bond YTM, while TradingView uses a vendor
+      benchmark with unspecified selection and fixing time. These differences can
+      create a basis.
+    kind: macro
+    id: TV_IT_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM
+    role: history_only
+    comparability_note: 'Historical comparison only: benchmark selection or curve
+      construction may differ.'
+    kind: macro
+    id: CB_IT_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01ITM156N
+  family: rates
+  label: IT 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:IT
+  check:
+    ids:
+    - ITA_BTP10_MOT
+    - TV_IT_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: IT_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IT_2Y
+  family: rates
+  label: IT 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:IT
+- concept: IT_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IT_30Y
+  family: rates
+  label: IT 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:IT
+- concept: IT_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_IT_5Y
+  family: rates
+  label: IT 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:IT
+- concept: JP_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: constant maturity YTM, semiannual compounding
+    role: primary
+    kind: macro
+    id: MOF_JGB_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal JP_10Y sovereign yields; the official source
+      uses constant maturity YTM, semiannual compounding, while TradingView uses a
+      vendor benchmark with unspecified selection and fixing time. These differences
+      can create a basis.
+    kind: macro
+    id: TV_JP_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01JPM156N
+  family: rates
+  label: JP 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:JP
+  check:
+    ids:
+    - MOF_JGB_10Y
+    - TV_JP_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: JP_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: constant maturity YTM, semiannual compounding
+    role: primary
+    kind: macro
+    id: MOF_JGB_2Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal JP_2Y sovereign yields; the official source
+      uses constant maturity YTM, semiannual compounding, while TradingView uses a
+      vendor benchmark with unspecified selection and fixing time. These differences
+      can create a basis.
+    kind: macro
+    id: TV_JP_2Y
+  family: rates
+  label: JP 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:JP
+  check:
+    ids:
+    - MOF_JGB_2Y
+    - TV_JP_2Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: JP_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: constant maturity YTM, semiannual compounding
+    role: primary
+    kind: macro
+    id: MOF_JGB_30Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal JP_30Y sovereign yields; the official source
+      uses constant maturity YTM, semiannual compounding, while TradingView uses a
+      vendor benchmark with unspecified selection and fixing time. These differences
+      can create a basis.
+    kind: macro
+    id: TV_JP_30Y
+  family: rates
+  label: JP 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:JP
+  check:
+    ids:
+    - MOF_JGB_30Y
+    - TV_JP_30Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: JP_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: constant maturity YTM, semiannual compounding
+    role: primary
+    kind: macro
+    id: MOF_JGB_5Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal JP_5Y sovereign yields; the official source
+      uses constant maturity YTM, semiannual compounding, while TradingView uses a
+      vendor benchmark with unspecified selection and fixing time. These differences
+      can create a basis.
+    kind: macro
+    id: TV_JP_5Y
+  family: rates
+  label: JP 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:JP
+  check:
+    ids:
+    - MOF_JGB_5Y
+    - TV_JP_5Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: KR_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_KR_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01KRM156N
+  family: rates
+  label: KR 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:KR
+- concept: KR_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_KR_2Y
+  family: rates
+  label: KR 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:KR
+- concept: KR_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_KR_30Y
+  family: rates
+  label: KR 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:KR
+- concept: KR_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_KR_5Y
+  family: rates
+  label: KR 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:KR
+- concept: LU_10Y
+  sources:
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01LUM156N
+  family: rates
+  label: LU 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:LU
+- concept: MX_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_MX_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01MXM156N
+  family: rates
+  label: MX 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:MX
+- concept: MX_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_MX_30Y
+  family: rates
+  label: MX 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:MX
+- concept: MX_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_MX_5Y
+  family: rates
+  label: MX 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:MX
+- concept: NL_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_NL_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01NLM156N
+  family: rates
+  label: NL 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:NL
+- concept: NL_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_NL_2Y
+  family: rates
+  label: NL 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:NL
+- concept: NL_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_NL_30Y
+  family: rates
+  label: NL 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:NL
+- concept: NL_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_NL_5Y
+  family: rates
+  label: NL 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:NL
+- concept: NO_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: generic yield of the government bond closest to 10Y, not constant
+      maturity
+    role: primary
+    kind: macro
+    id: NB_NO_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01NOM156N
+  family: rates
+  label: NO 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:NO
+- concept: NZ_10Y
+  sources:
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01NZM156N
+  family: rates
+  label: NZ 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:NZ
+- concept: PE_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_PE_10Y
+  family: rates
+  label: PE 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:PE
+- concept: PE_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_PE_30Y
+  family: rates
+  label: PE 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:PE
+- concept: PE_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_PE_5Y
+  family: rates
+  label: PE 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:PE
+- concept: PL_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_PL_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01PLM156N
+  family: rates
+  label: PL 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:PL
+- concept: PL_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_PL_2Y
+  family: rates
+  label: PL 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:PL
+- concept: PL_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_PL_5Y
+  family: rates
+  label: PL 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:PL
+- concept: PT_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_PT_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01PTM156N
+  family: rates
+  label: PT 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:PT
+- concept: PT_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_PT_2Y
+  family: rates
+  label: PT 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:PT
+- concept: PT_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_PT_30Y
+  family: rates
+  label: PT 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:PT
+- concept: PT_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_PT_5Y
+  family: rates
+  label: PT 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:PT
+- concept: SE_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM
+    role: primary
+    kind: macro
+    id: CB_SE_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal SE_10Y sovereign yields; the official source
+      uses benchmark bond YTM, while TradingView uses a vendor benchmark with unspecified
+      selection and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_SE_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01SEM156N
+  family: rates
+  label: SE 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:SE
+  check:
+    ids:
+    - CB_SE_10Y
+    - TV_SE_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: SE_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM
+    role: primary
+    kind: macro
+    id: CB_SE_2Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal SE_2Y sovereign yields; the official source
+      uses benchmark bond YTM, while TradingView uses a vendor benchmark with unspecified
+      selection and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_SE_2Y
+  family: rates
+  label: SE 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:SE
+  check:
+    ids:
+    - CB_SE_2Y
+    - TV_SE_2Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: SE_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_SE_5Y
+  family: rates
+  label: SE 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:SE
+- concept: SI_10Y
+  sources:
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01SIM156N
+  family: rates
+  label: SI 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:SI
+- concept: SK_10Y
+  sources:
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01SKM156N
+  family: rates
+  label: SK 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:SK
+- concept: TR_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_TR_10Y
+  family: rates
+  label: TR 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:TR
+- concept: TR_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_TR_2Y
+  family: rates
+  label: TR 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:TR
+- concept: TR_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_TR_5Y
+  family: rates
+  label: TR 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:TR
+- concept: US_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: par yield
+    role: primary
+    kind: macro
+    id: UST_PAR_10Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal US_10Y sovereign yields; the official source
+      uses par yield, while TradingView uses a vendor benchmark with unspecified selection
+      and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_US_10Y
+  - max_age_business_days: 3
+    convention: Treasury constant maturity yield
+    role: history_only
+    comparability_note: 'Historical comparison only: benchmark selection or curve
+      construction may differ.'
+    kind: macro
+    id: DGS10
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01USM156N
+  family: rates
+  label: US 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:US
+  check:
+    ids:
+    - UST_PAR_10Y
+    - TV_US_10Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: US_2Y
+  sources:
+  - max_age_business_days: 3
+    convention: par yield
+    role: primary
+    kind: macro
+    id: UST_PAR_2Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal US_2Y sovereign yields; the official source
+      uses par yield, while TradingView uses a vendor benchmark with unspecified selection
+      and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_US_2Y
+  - max_age_business_days: 3
+    convention: Treasury constant maturity yield
+    role: history_only
+    comparability_note: 'Historical comparison only: benchmark selection or curve
+      construction may differ.'
+    kind: macro
+    id: DGS2
+  family: rates
+  label: US 2Y
+  unit: '%'
+  frequency: D
+  calendar: country:US
+  check:
+    ids:
+    - UST_PAR_2Y
+    - TV_US_2Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: US_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: par yield
+    role: primary
+    kind: macro
+    id: UST_PAR_30Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal US_30Y sovereign yields; the official source
+      uses par yield, while TradingView uses a vendor benchmark with unspecified selection
+      and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_US_30Y
+  - max_age_business_days: 3
+    convention: Treasury constant maturity yield
+    role: history_only
+    comparability_note: 'Historical comparison only: benchmark selection or curve
+      construction may differ.'
+    kind: macro
+    id: DGS30
+  family: rates
+  label: US 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:US
+  check:
+    ids:
+    - UST_PAR_30Y
+    - TV_US_30Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: US_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: par yield
+    role: primary
+    kind: macro
+    id: UST_PAR_5Y
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: secondary
+    comparability_note: Both are nominal US_5Y sovereign yields; the official source
+      uses par yield, while TradingView uses a vendor benchmark with unspecified selection
+      and fixing time. These differences can create a basis.
+    kind: macro
+    id: TV_US_5Y
+  family: rates
+  label: US 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:US
+  check:
+    ids:
+    - UST_PAR_5Y
+    - TV_US_5Y
+    tolerance: 10
+    unit: bp
+    note: Official fixing versus vendor benchmark; timing and selection may create
+      a basis.
+    basis: rolling
+    window: 60
+- concept: ZA_10Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_ZA_10Y
+  - max_age_business_days: 90
+    convention: monthly long-term government bond yield
+    role: fallback
+    comparability_note: Monthly OECD long-term government yield; averaging, maturity,
+      selection and publication timing differ from daily benchmarks.
+    kind: macro
+    id: IRLTLT01ZAM156N
+  family: rates
+  label: ZA 10Y
+  unit: '%'
+  frequency: D
+  calendar: country:ZA
+- concept: ZA_30Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_ZA_30Y
+  family: rates
+  label: ZA 30Y
+  unit: '%'
+  frequency: D
+  calendar: country:ZA
+- concept: ZA_5Y
+  sources:
+  - max_age_business_days: 3
+    convention: benchmark bond YTM (vendor methodology not specified)
+    role: primary
+    kind: macro
+    id: TV_ZA_5Y
+  family: rates
+  label: ZA 5Y
+  unit: '%'
+  frequency: D
+  calendar: country:ZA
+- concept: IT_DE_10Y
+  family: rates
+  label: Italy minus Germany 10Y
+  unit: bp
+  frequency: D
+  calendar: target2
+  sources: []
+  kind: derived
+  expression: IT_10Y - DE_10Y
+  alignment: same_date
+  scale: 100

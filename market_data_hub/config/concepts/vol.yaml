@@ -1,0 +1,100 @@
+concepts:
+- concept: VIX
+  family: vol
+  label: VIX close
+  unit: index
+  frequency: D
+  calendar: nyse
+  sources:
+  - kind: price
+    id: ^VIX
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+  - kind: macro
+    id: VIXCLS
+    role: secondary
+    max_age_business_days: 3
+    convention: CBOE VIX close
+  history:
+    mode: single
+    id: VIXCLS
+  check:
+    ids:
+    - ^VIX
+    - VIXCLS
+    tolerance: 0.1
+    unit: absolute
+    note: CBOE VIX closing index through Yahoo and FRED.
+- concept: VXN
+  family: vol
+  label: VXN close
+  unit: index
+  frequency: D
+  calendar: nyse
+  sources:
+  - kind: price
+    id: ^VXN
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+- concept: VIX9D
+  family: vol
+  label: VIX9D close
+  unit: index
+  frequency: D
+  calendar: nyse
+  sources:
+  - kind: price
+    id: ^VIX9D
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+- concept: VIX3M
+  family: vol
+  label: VIX3M close
+  unit: index
+  frequency: D
+  calendar: nyse
+  sources:
+  - kind: price
+    id: ^VIX3M
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+- concept: VIX6M
+  family: vol
+  label: VIX6M close
+  unit: index
+  frequency: D
+  calendar: nyse
+  sources:
+  - kind: price
+    id: ^VIX6M
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+- concept: VVIX
+  family: vol
+  label: VVIX close
+  unit: index
+  frequency: D
+  calendar: nyse
+  sources:
+  - kind: price
+    id: ^VVIX
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close

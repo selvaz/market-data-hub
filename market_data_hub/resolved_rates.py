@@ -8,23 +8,7 @@ from pathlib import Path
 import yaml
 
 from market_data_hub.config_loader import _CONFIG_DIR, _load_yaml
-
-
-class _UniqueLoader(yaml.SafeLoader):
-    pass
-
-
-def _mapping(loader, node, deep=False):
-    result = {}
-    for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=deep)
-        if key in result:
-            raise ValueError(f'duplicate configuration key: {key}')
-        result[key] = loader.construct_object(value_node, deep=deep)
-    return result
-
-
-_UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _mapping)
+from market_data_hub.concepts import _UniqueLoader, load_concepts
 
 
 def validate_resolved_rates(config, known_series):
@@ -119,9 +103,25 @@ def validate_resolved_rates(config, known_series):
 
 
 def load_resolved_rates(path=None):
-    """Load and validate against the configured sovereign and macro catalogues."""
-    path = Path(path) if path is not None else _CONFIG_DIR / 'resolved_rates.yaml'
-    config = yaml.load(path.read_text(encoding='utf-8'), Loader=_UniqueLoader)
+    """Compatibility projection of the registry; explicit legacy files still work."""
+    if path is not None:
+        config = yaml.load(Path(path).read_text(encoding='utf-8'), Loader=_UniqueLoader)
+    else:
+        registry = load_concepts()
+        rates = yaml.load((_CONFIG_DIR / 'concepts' / 'rates.yaml').read_text(encoding='utf-8'),
+                          Loader=_UniqueLoader)
+        entries = []
+        for entry in registry.values():
+            if entry['family'] != 'rates' or entry.get('kind') == 'derived':
+                continue
+            legacy = {key: entry[key] for key in ('concept', 'spot_bond_justification', 'pair_tolerances')
+                      if key in entry}
+            legacy['sources'] = [
+                {**{key: value for key, value in source.items() if key not in {'kind', 'id'}},
+                 'series_id': source['id']} for source in entry['sources']
+            ]
+            entries.append(legacy)
+        config = {'tolerance_bp': rates['tolerance_bp'], 'concepts': entries}
     known = {}
     for filename in ('sovereign_layers.yaml', 'sovereign_yields.yaml'):
         for item in _load_yaml(filename).get('series', []):

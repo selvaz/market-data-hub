@@ -50,7 +50,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 309 |
+| hub | [macro_series](#catalog-hub-macro_series) | 311 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
@@ -1686,9 +1686,11 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | DFII10 | RATES \| US \| 10-Year TIPS Real Yield | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DFII5 | RATES \| US \| 5-Year TIPS Real Yield | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS10 | RATES \| US \| 10-Year Treasury Constant Maturity | Fed Board H.15; OECD MEI | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| DGS1MO | RATES \| US \| 1-Month Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS2 | RATES \| US \| 2-Year Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS30 | RATES \| US \| 30-Year Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS3MO | RATES \| US \| 3-Month Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| DGS6MO | RATES \| US \| 6-Month Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DTWEXBGS | FX \| USD \| Trade Weighted US Dollar Index: Broad | Fed H.10 | FRED | D | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ECBDFR | RATES \| ECB \| Deposit Facility Rate | ECB | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ECBMLFR | RATES \| ECB \| Marginal Lending Facility Rate | ECB | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |

@@ -1,0 +1,125 @@
+concepts:
+- concept: US_1M
+  family: money_market
+  label: UST 1m
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: UST_PAR_1M
+    role: primary
+    max_age_business_days: 3
+    convention: par yield
+  - kind: macro
+    id: DGS1MO
+    role: fallback
+    max_age_business_days: 3
+    convention: constant maturity Treasury yield
+    comparability_note: FRED H.15 Treasury constant maturity yield; published after
+      the Treasury par curve.
+  history:
+    mode: single
+    id: DGS1MO
+- concept: US_3M
+  family: money_market
+  label: UST 3m
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: UST_PAR_3M
+    role: primary
+    max_age_business_days: 3
+    convention: par yield
+  - kind: macro
+    id: DGS3MO
+    role: fallback
+    max_age_business_days: 3
+    convention: constant maturity Treasury yield
+    comparability_note: FRED H.15 Treasury constant maturity yield; published after
+      the Treasury par curve.
+  history:
+    mode: single
+    id: DGS3MO
+- concept: US_6M
+  family: money_market
+  label: UST 6m
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: UST_PAR_6M
+    role: primary
+    max_age_business_days: 3
+    convention: par yield
+  - kind: macro
+    id: DGS6MO
+    role: fallback
+    max_age_business_days: 3
+    convention: constant maturity Treasury yield
+    comparability_note: FRED H.15 Treasury constant maturity yield; published after
+      the Treasury par curve.
+  history:
+    mode: single
+    id: DGS6MO
+- concept: EFFR
+  family: money_market
+  label: Effective federal funds rate
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: EFFR
+    role: primary
+    max_age_business_days: 3
+    convention: effective overnight rate
+- concept: ECBDFR
+  family: money_market
+  label: ECB deposit facility rate
+  unit: '%'
+  frequency: D
+  calendar: target2
+  sources:
+  - kind: macro
+    id: ECBDFR
+    role: primary
+    max_age_business_days: 3
+    convention: policy rate
+- concept: ECBMLFR
+  family: money_market
+  label: ECB marginal lending facility rate
+  unit: '%'
+  frequency: D
+  calendar: target2
+  sources:
+  - kind: macro
+    id: ECBMLFR
+    role: primary
+    max_age_business_days: 3
+    convention: policy rate
+- concept: ECBMRRFR
+  family: money_market
+  label: ECB main refinancing rate
+  unit: '%'
+  frequency: D
+  calendar: target2
+  sources:
+  - kind: macro
+    id: ECBMRRFR
+    role: primary
+    max_age_business_days: 3
+    convention: policy rate
+- concept: EUR_STR
+  family: money_market
+  label: Euro short-term rate
+  unit: '%'
+  frequency: D
+  calendar: target2
+  sources: []
+  status: pending_source
+  pending_reason: ESTR is absent from the hub catalogue. Add the collector in H1b
+    before declaring a source.
