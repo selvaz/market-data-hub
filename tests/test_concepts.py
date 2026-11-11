@@ -85,3 +85,185 @@ def test_declared_cross_convention_check_and_derived_spread():
     spread = registry["IT_DE_10Y"]
     assert spread["kind"] == "derived" and spread["unit"] == "bp"
     assert spread["expression"] == "IT_10Y - DE_10Y"
+
+
+@pytest.fixture
+def simple_concept():
+    return {
+        "concept": "TEST", "family": "money_market", "label": "Test rate",
+        "unit": "%", "frequency": "D", "calendar": "us_govt",
+        "sources": [{"kind": "macro", "id": "EFFR", "role": "primary",
+                     "max_age_business_days": 3, "convention": "effective overnight rate"}],
+    }
+
+
+@pytest.fixture
+def catalogues():
+    return {"macro": {"EFFR": {}, "OTHER": {}}, "price": {"SPY": {}},
+            "release": {"us_cpi_headline_mm": {}}}
+
+
+@pytest.mark.parametrize("field,value,message", [
+    ("kind", "not_a_kind", "source kind"),
+    ("id", "ESTR", "unknown macro source"),
+    ("role", "best", "source role"),
+    ("max_age_business_days", -1, "max_age_business_days"),
+    ("max_age_business_days", True, "max_age_business_days"),
+    ("max_age_business_days", 1.5, "max_age_business_days"),
+    ("convention", "", "missing convention"),
+    ("comparability_note", "", "comparability_note"),
+])
+def test_concept_rejects_invalid_source_metadata(simple_concept, catalogues, field, value, message):
+    simple_concept["sources"][0][field] = value
+    with pytest.raises(ValueError, match=message):
+        concepts.validate_concepts([simple_concept], catalogues)
+
+
+@pytest.mark.parametrize("field,value,message", [
+    ("family", "unknown", "family"), ("unit", "", "missing unit"),
+    ("calendar", None, "missing calendar"), ("label", " ", "missing label"),
+    ("frequency", "", "missing frequency"), ("sources", [], "nonempty"),
+    ("status", "disabled", "status"),
+])
+def test_concept_rejects_invalid_metadata(simple_concept, catalogues, field, value, message):
+    simple_concept[field] = value
+    with pytest.raises(ValueError, match=message):
+        concepts.validate_concepts([simple_concept], catalogues)
+
+
+def test_concept_primary_order_and_duplicate_sources(simple_concept, catalogues):
+    source = simple_concept["sources"][0]
+    simple_concept["sources"].append(dict(source, id="OTHER", role="secondary"))
+    concepts.validate_concepts([simple_concept], catalogues)
+    simple_concept["sources"].reverse()
+    with pytest.raises(ValueError, match="primary first"):
+        concepts.validate_concepts([simple_concept], catalogues)
+    simple_concept["sources"].reverse()
+    simple_concept["sources"][1]["role"] = "primary"
+    with pytest.raises(ValueError, match="primary first"):
+        concepts.validate_concepts([simple_concept], catalogues)
+    simple_concept["sources"][1].update(id="EFFR", role="secondary")
+    with pytest.raises(ValueError, match="duplicate source"):
+        concepts.validate_concepts([simple_concept], catalogues)
+
+
+@pytest.mark.parametrize("field,value,message", [
+    ("ids", ["EFFR", "MISSING"], "declared pair"),
+    ("ids", ["EFFR", "EFFR"], "declared pair"),
+    ("ids", ["EFFR"], "declared pair"),
+    ("tolerance", -1, "tolerance"), ("tolerance", float("nan"), "tolerance"),
+    ("tolerance", float("inf"), "tolerance"), ("tolerance", True, "tolerance"),
+    ("unit", "unknown", "unit"), ("note", "", "note"),
+    ("basis", "unknown", "basis"), ("window", 0, "window"),
+])
+def test_concept_check_validates_declared_pairs(simple_concept, catalogues, field, value, message):
+    simple_concept["sources"].append(dict(simple_concept["sources"][0], id="OTHER", role="secondary",
+                                          convention="different convention"))
+    simple_concept["check"] = {"ids": ["EFFR", "OTHER"], "tolerance": 1, "unit": "bp",
+                               "note": "Declared comparable despite different conventions."}
+    concepts.validate_concepts([simple_concept], catalogues)
+    simple_concept["check"][field] = value
+    with pytest.raises(ValueError, match=message):
+        concepts.validate_concepts([simple_concept], catalogues)
+
+
+def test_concept_price_release_and_derived_source_ids(simple_concept, catalogues):
+    price = deepcopy(simple_concept)
+    price["sources"][0].update(kind="price", id="SPY", field="adj_close", live="post_close")
+    release = deepcopy(simple_concept)
+    release["sources"][0].update(kind="release", id="us_cpi_headline_mm")
+    derived = deepcopy(simple_concept)
+    derived.update(concept="DERIVED")
+    derived["sources"][0].update(kind="derived", id="TEST")
+    for entry in (price, release):
+        concepts.validate_concepts([entry], catalogues)
+        entry["sources"][0]["id"] = "MISSING"
+        with pytest.raises(ValueError, match="unknown .* source"):
+            concepts.validate_concepts([entry], catalogues)
+    concepts.validate_concepts([derived, simple_concept], catalogues)
+    derived["sources"][0]["id"] = "MISSING"
+    with pytest.raises(ValueError, match="unknown derived source"):
+        concepts.validate_concepts([derived, simple_concept], catalogues)
+
+
+@pytest.mark.parametrize("field,value,message", [
+    ("field", "open", "price field"), ("live", "any", "live policy"),
+    ("role", "proxy", "proxy requires its own unit"),
+])
+def test_concept_price_policies(simple_concept, catalogues, field, value, message):
+    simple_concept["sources"][0].update(kind="price", id="SPY", field="adj_close", live="post_close")
+    simple_concept["sources"][0][field] = value
+    with pytest.raises(ValueError, match=message):
+        concepts.validate_concepts([simple_concept], catalogues)
+
+
+def test_concept_derived_forward_inputs_missing_inputs_and_cycles(simple_concept, catalogues):
+    derived = dict(simple_concept, concept="SPREAD", kind="derived", sources=[],
+                   expression="TEST - TEST", alignment="same_date", scale=100)
+    concepts.validate_concepts([derived, simple_concept], catalogues)
+    derived["expression"] = "TEST - MISSING"
+    with pytest.raises(ValueError, match="unknown derived inputs"):
+        concepts.validate_concepts([derived, simple_concept], catalogues)
+    derived["expression"] = "TEST - SPREAD"
+    with pytest.raises(ValueError, match="cycle"):
+        concepts.validate_concepts([derived, simple_concept], catalogues)
+    derived["expression"] = "TEST - SECOND"
+    second = dict(derived, concept="SECOND", expression="TEST - SPREAD")
+    with pytest.raises(ValueError, match="cycle"):
+        concepts.validate_concepts([derived, second, simple_concept], catalogues)
+    derived["expression"] = "TEST * TEST"
+    with pytest.raises(ValueError, match="difference/sum"):
+        concepts.validate_concepts([derived, simple_concept], catalogues)
+
+
+def test_concept_pending_and_history_cannot_hide_missing_ids(simple_concept, catalogues):
+    simple_concept.update(status="pending_source", pending_reason="Collector not yet available")
+    with pytest.raises(ValueError, match="pending_source requires no sources"):
+        concepts.validate_concepts([simple_concept], catalogues)
+    simple_concept.pop("status")
+    simple_concept["history"] = {"mode": "single", "id": "MISSING"}
+    with pytest.raises(ValueError, match="history must name a declared source"):
+        concepts.validate_concepts([simple_concept], catalogues)
+
+
+def test_concept_catalogue_conventions_are_enforced(simple_concept, catalogues):
+    catalogues["macro"]["EFFR"]["convention"] = "different convention"
+    with pytest.raises(ValueError, match="convention does not match EFFR"):
+        concepts.validate_concepts([simple_concept], catalogues)
+
+
+def test_concept_duplicate_yaml_keys_and_empty_directory(tmp_path):
+    with pytest.raises(ValueError, match="no concept family files"):
+        concepts.load_concepts(tmp_path)
+    path = tmp_path / "rates.yaml"
+    path.write_text("concepts: []\nconcepts: []\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="duplicate configuration key"):
+        concepts.load_concepts(tmp_path)
+
+
+def test_concept_generated_ids_also_participate_in_uniqueness(tmp_path):
+    spec = concepts.load_concepts()["PX:SPY"]
+    (tmp_path / "equity.yaml").write_text(
+        yaml.safe_dump({"generate": "yahoo_prices", "concepts": [spec]}), encoding="utf-8"
+    )
+    with pytest.raises(ValueError, match="duplicate concept: PX:SPY"):
+        concepts.load_concepts(tmp_path)
+
+
+def test_concept_validation_does_not_mutate_inputs(simple_concept, catalogues):
+    before = deepcopy(simple_concept)
+    registry = concepts.validate_concepts([simple_concept], catalogues)
+    registry["TEST"]["sources"][0]["id"] = "CHANGED"
+    assert simple_concept == before
+
+
+def test_concept_offline_loader_does_not_connect_to_databases(monkeypatch):
+    import duckdb
+    import sqlite3
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("The concept registry must load without a database connection")
+
+    monkeypatch.setattr(duckdb, "connect", forbidden)
+    monkeypatch.setattr(sqlite3, "connect", forbidden)
+    assert concepts.load_concepts()["US_3M"]
