@@ -10,6 +10,7 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 ### Added
 - Earnings calendar records the currency of the estimates and actuals: new nullable `estimate_currency` column (schema 32) on `earnings_events` and `earnings_observations`, filled from the TradingView `fundamental_currency_code` field. `eps_estimate`, `eps_actual`, `revenue_estimate` and `revenue_actual` are in `estimate_currency`, which is often not the listing `currency` (TSE:7011 lists in JPY, its estimates are in USD). Exposed by `events_between`, `event_history` and `v_earnings_surprise`. Old rows stay NULL (unknown); nothing is backfilled by guessing.
 - Norges Bank 10Y generic bond yield and SNB 10Y spot yield daily collectors, with resolved-rate chains and SNB cube history.
+- US real consumption and real income FRED series in `macro_series`: `PCEC96` (real personal consumption expenditures) and `DSPIC96` (real disposable personal income), both monthly, SAAR, chained 2017 dollars, BEA, lag 29 days; the nominal `PI`/`PCE` stay as they are. Two new indicator cards, `us_real_personal_spending` and `us_real_disposable_income`, cover them (429 cards). Both are also in the ALFRED vintage backfill universe (`alfred_backfill.yaml`); `docs/alfred-backfill-estimate.json` is a dated capture and is not extended.
 
 ## [0.3.26] — 2026-11-06
 
