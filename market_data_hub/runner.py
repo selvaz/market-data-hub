@@ -17,6 +17,7 @@ Flow for each source:
 """
 from __future__ import annotations
 
+import re
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -527,10 +528,38 @@ def run_factors(con, cfg: dict, run_id: str) -> None:
 
 # --------------------------------------------------------------- LIVE
 SUPERSEDED_LIVE_ROWS_SQL = (
-    "DELETE FROM prices_daily AS p WHERE p.is_live = TRUE AND p.date <= ("
-    "SELECT max(s.date) FROM prices_daily s "
-    "WHERE s.listing_id = p.listing_id AND s.is_live = FALSE)"
+    "DELETE FROM prices_daily AS p USING _live_settled AS s "
+    "WHERE p.is_live = TRUE AND p.listing_id = s.listing_id AND p.date <= s.date"
 )
+
+
+def _uses_us_cash_session(entry: dict, exchange: Optional[str]) -> bool:
+    """Conservative scope for the configured Yahoo universe, not a calendar.
+
+    Its unsuffixed stock/ETF tickers are US listings; foreign listings have
+    Yahoo venue suffixes. Explicit venue metadata takes precedence. Cash
+    indices need an allowlist because a caret alone says nothing about venue.
+    Asset class is exposure, not instrument type (UUP is an FX ETF).
+    """
+    symbol = entry["symbol"]
+    if entry.get("instrument_type") in {"history_proxy", "futures_continuous"}:
+        return False
+    if entry.get("asset_class") in {"CRYPTO", "FUTURES"}:
+        return False
+    if exchange and exchange.upper() not in {
+        "NYSE", "NYSEARCA", "NYSE ARCA", "NASDAQ", "NASDAQGS", "NASDAQGM",
+        "NASDAQCM", "AMEX", "NYSEAMERICAN", "CBOE", "BATS",
+        "XNYS", "XNAS", "ARCX", "XASE", "XCBO", "BTS", "NMS", "NGM", "NCM", "PCX",
+    }:
+        return False
+    if symbol.startswith("^"):
+        return symbol in {
+            "^GSPC", "^DJI", "^IXIC", "^NDX", "^RUT", "^VIX", "^VIX9D",
+            "^VIX3M", "^VIX6M", "^VVIX", "^VXN",
+        }
+    # Also accepts US class-share tickers such as BRK-B, but excludes crypto
+    # pairs (BTC-USD), futures (=F), FX (=X) and foreign venue suffixes (.DE).
+    return re.fullmatch(r"[A-Z]+(?:-[A-Z])?", symbol) is not None
 
 
 def live_rows(eod_map: dict, quotes: dict, now=None) -> list[dict]:
@@ -563,32 +592,69 @@ def live_rows(eod_map: dict, quotes: dict, now=None) -> list[dict]:
 
 
 def run_live(con, cfg: dict, run_id: str) -> None:
-    """Update the 'today' row with live prices mapped into the adjusted space."""
+    """Inject provisional US session rows; retain clock dating elsewhere."""
     if not cfg.get("live", {}).get("enabled", False):
         _log("LIVE: disabled in settings")
         return
     t_start = time.perf_counter()
     allowed = set(cfg["live"]["asset_classes"])
     tickers = [e for e in get_yahoo_tickers() if e.get("asset_class") in allowed]
-    # latest settled EOD (date, adj_close, close) per symbol
+    if not tickers:
+        return
+    # Reuse the upsert resolver *before* reading any baseline or deleting rows:
+    # inactive mappings are excluded and ambiguous active symbols still raise.
+    from market_data_hub.db.upsert import _attach_listing_ids
+    requested = _attach_listing_ids(con, pd.DataFrame(tickers))
+    listing_ids = dict(zip(requested.symbol, requested.listing_id))
+    venues = dict(con.execute(
+        "SELECT listing_id, exchange FROM listings WHERE active_to IS NULL").fetchall())
+    scoped = {e["symbol"] for e in tickers
+              if _uses_us_cash_session(e, venues.get(listing_ids[e["symbol"]]))}
+    placeholders = ",".join("?" for _ in listing_ids)
+    # Each symbol's adjustment ratio and freshness baseline come from exactly
+    # the listing that will receive the live row, never retired symbol history.
     eod = con.execute(
-        "SELECT p.symbol, p.date, p.adj_close, p.close FROM prices_daily p "
-        "JOIN (SELECT symbol, max(date) d FROM prices_daily "
-        "      WHERE is_live = FALSE GROUP BY symbol) m "
-        "  ON p.symbol = m.symbol AND p.date = m.d "
-        "WHERE p.is_live = FALSE").fetch_df()
-    eod_map = {r.symbol: (pd.Timestamp(r.date).date(), r.adj_close, r.close)
-               for r in eod.itertuples()}
+        "SELECT p.listing_id, p.date, p.adj_close, p.close FROM prices_daily p "
+        "JOIN (SELECT listing_id, max(date) d FROM prices_daily "
+        f"      WHERE is_live = FALSE AND listing_id IN ({placeholders}) GROUP BY listing_id) m "
+        "  ON p.listing_id = m.listing_id AND p.date = m.d "
+        "WHERE p.is_live = FALSE", list(listing_ids.values())).fetch_df()
+    by_listing = {r.listing_id: (pd.Timestamp(r.date).date(), r.adj_close, r.close)
+                  for r in eod.itertuples()}
+    eod_map = {sym: by_listing[lid] for sym, lid in listing_ids.items() if lid in by_listing}
+    session_syms = [s for s in eod_map if s in scoped]
+    rows = live_rows(eod_map, yh.get_live_quotes_batch(session_syms)) if session_syms else []
 
-    syms = [e["symbol"] for e in tickers if e["symbol"] in eod_map]
-    rows = live_rows(eod_map, yh.get_live_quotes_batch(syms))
+    # H2 will map FX, overnight futures and crypto to instrument-aware
+    # sessions. Until then keep their pre-PR behavior: UTC collector date,
+    # prior live-price API, no new date guard and no cleanup.
+    legacy_syms = [s for s in eod_map if s not in scoped]
+    legacy_prices = yh.get_live_prices_batch(legacy_syms) if legacy_syms else {}
+    for sym in legacy_syms:
+        price = legacy_prices.get(sym)
+        if price is None:
+            continue
+        _, adj_eod, close_eod = eod_map[sym]
+        adj_live = yh.adjusted_live_price(price, adj_eod, close_eod)
+        if adj_live is not None:
+            rows.append({"date": date.fromisoformat(_today()), "symbol": sym,
+                         "close": price, "adj_close": adj_live, "source": "yahoo",
+                         "is_live": True, "updated_at": datetime.now(timezone.utc)})
+    for row in rows:
+        row["listing_id"] = listing_ids[row["symbol"]]
     n_ok = len(rows)
 
     st = datetime.now(timezone.utc)
     # A live row is only a stand-in until the settled bar of its session
     # arrives. Drop the ones a settled bar has superseded, including the
     # clock-dated weekend rows older runs left behind.
-    con.execute(SUPERSEDED_LIVE_ROWS_SQL)
+    settled = eod[eod.listing_id.isin([listing_ids[s] for s in scoped])]
+    if not settled.empty:
+        con.register("_live_settled", settled)
+        try:
+            con.execute(SUPERSEDED_LIVE_ROWS_SQL)
+        finally:
+            con.unregister("_live_settled")
     if rows:
         upsert(con, "prices_daily", pd.DataFrame(rows))
     _log(f"LIVE: updated {n_ok}/{len(tickers)} symbols")
