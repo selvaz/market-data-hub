@@ -15,9 +15,8 @@ concepts:
     id: DGS1MO
     role: fallback
     max_age_business_days: 3
-    convention: constant maturity Treasury yield
-    comparability_note: FRED H.15 Treasury constant maturity yield; published after
-      the Treasury par curve.
+    convention: par yield
+    comparability_note: Same Treasury CMT series via FRED H.15, published T+1.
   history:
     mode: single
     id: DGS1MO
@@ -37,9 +36,8 @@ concepts:
     id: DGS3MO
     role: fallback
     max_age_business_days: 3
-    convention: constant maturity Treasury yield
-    comparability_note: FRED H.15 Treasury constant maturity yield; published after
-      the Treasury par curve.
+    convention: par yield
+    comparability_note: Same Treasury CMT series via FRED H.15, published T+1.
   history:
     mode: single
     id: DGS3MO
@@ -59,9 +57,8 @@ concepts:
     id: DGS6MO
     role: fallback
     max_age_business_days: 3
-    convention: constant maturity Treasury yield
-    comparability_note: FRED H.15 Treasury constant maturity yield; published after
-      the Treasury par curve.
+    convention: par yield
+    comparability_note: Same Treasury CMT series via FRED H.15, published T+1.
   history:
     mode: single
     id: DGS6MO

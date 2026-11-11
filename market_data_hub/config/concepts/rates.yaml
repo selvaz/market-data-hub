@@ -2050,3 +2050,15 @@ concepts:
   expression: IT_10Y - DE_10Y
   alignment: same_date
   scale: 100
+- concept: T10Y2Y
+  family: rates
+  label: US 10Y minus 2Y
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: T10Y2Y
+    role: primary
+    max_age_business_days: 3
+    convention: published yield spread

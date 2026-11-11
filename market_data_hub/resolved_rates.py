@@ -11,7 +11,8 @@ import yaml
 
 from market_data_hub.config_loader import _CONFIG_DIR
 from market_data_hub.concepts import (
-    _UniqueLoader, _file_versions, load_macro_catalogue, validate_concepts,
+    PAIR_TOLERANCE_KEYS, _UniqueLoader, _file_versions, _reject_unknown_keys,
+    _validate_family_config, load_macro_catalogue, validate_concepts,
 )
 
 
@@ -19,6 +20,7 @@ def validate_resolved_rates(config, known_series):
     """Validate the full table and return a concept-to-spec mapping."""
     if not isinstance(config, dict) or not isinstance(config.get('concepts'), list):
         raise ValueError('concepts must be a list')
+    _reject_unknown_keys(config, {'concepts', 'tolerance_bp'}, 'resolved rates')
     tolerance = config.get('tolerance_bp')
     if isinstance(tolerance, bool) or not isinstance(tolerance, (int, float)) or not math.isfinite(tolerance) or tolerance < 0:
         raise ValueError('invalid tolerance_bp')
@@ -26,6 +28,8 @@ def validate_resolved_rates(config, known_series):
     for entry in config['concepts']:
         if not isinstance(entry, dict):
             raise ValueError('invalid concept entry')
+        _reject_unknown_keys(entry, {'concept', 'sources', 'spot_bond_justification', 'pair_tolerances'},
+                             'resolved rate concept')
         name = entry.get('concept')
         if not isinstance(name, str) or not re.fullmatch(r'[A-Z]{2}_[0-9]+[MY]', name):
             raise ValueError(f'invalid concept: {name}')
@@ -40,6 +44,8 @@ def validate_resolved_rates(config, known_series):
         for index, source in enumerate(sources):
             if not isinstance(source, dict):
                 raise ValueError(f'{name}: invalid source')
+            _reject_unknown_keys(source, {'series_id', 'role', 'max_age_business_days', 'convention',
+                                          'comparability_note', 'frequency'}, f'{name} source')
             sid = source.get('series_id')
             if sid not in known_series:
                 raise ValueError(f'{name}: unknown series id {sid}')
@@ -85,6 +91,8 @@ def validate_resolved_rates(config, known_series):
             raise ValueError(f'{name}: pair_tolerances must be a list')
         seen_pairs = set()
         for pair in pairs:
+            if isinstance(pair, dict):
+                _reject_unknown_keys(pair, PAIR_TOLERANCE_KEYS, f'{name} pair tolerance')
             ids = pair.get('series_ids') if isinstance(pair, dict) else None
             if not isinstance(ids, list) or len(ids) != 2 or any(sid not in seen for sid in ids) or ids[0] == ids[1]:
                 raise ValueError(f'{name}: invalid pair series_ids')
@@ -128,6 +136,7 @@ def _load_resolved_rates_cached(family, dependencies, legacy):
     else:
         # Runtime rates do not depend on tickers, releases or other families.
         # CI/validate_config.py validates the complete cross-file registry.
+        _validate_family_config(rates, path.name)
         registry = validate_concepts(rates['concepts'], {'macro': known, 'price': {}, 'release': {}})
         entries = []
         for entry in registry.values():

@@ -480,11 +480,11 @@ concepts:
     convention: Federal Reserve broad trade-weighted dollar index
   - kind: price
     id: DX-Y.NYB
-    role: proxy
+    role: history_only
     max_age_business_days: 2
     convention: unadjusted close
     field: close
     live: post_close
     unit: index (DXY basket)
-    comparability_note: DXY uses a different basket from the broad trade-weighted
-      index.
+    comparability_note: Different basket from the Federal Reserve broad trade-weighted
+      index; DXY is historical context only and must not supply its current value.

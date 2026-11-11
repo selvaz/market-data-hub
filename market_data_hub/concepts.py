@@ -17,6 +17,30 @@ FAMILIES = {
     "rates", "money_market", "real_inflation", "credit", "vol", "fx",
     "commodities", "equity", "conditions", "releases",
 }
+FAMILY_KEYS = {"concepts", "generate", "tolerance_bp"}
+CONCEPT_KEYS = {
+    "concept", "family", "label", "unit", "frequency", "calendar", "sources",
+    "kind", "status", "pending_reason", "expression", "alignment", "scale",
+    "check", "history", "spot_bond_justification", "pair_tolerances",
+}
+SOURCE_KEYS = {
+    "kind", "id", "role", "max_age_business_days", "convention", "comparability_note", "unit",
+}
+CHECK_KEYS = {"ids", "tolerance", "unit", "note", "basis", "window"}
+HISTORY_KEYS = {"mode", "id"}
+PAIR_TOLERANCE_KEYS = {"series_ids", "tolerance_bp", "note"}
+
+
+def _reject_unknown_keys(mapping, allowed, context):
+    unknown = mapping.keys() - allowed
+    if unknown:
+        raise ValueError(f"{context}: unknown keys {sorted(unknown, key=str)}")
+
+
+def _validate_family_config(config, context):
+    if not isinstance(config, dict) or not isinstance(config.get("concepts"), list):
+        raise ValueError(f"{context}: concepts must be a list")
+    _reject_unknown_keys(config, FAMILY_KEYS, context)
 
 
 class _UniqueLoader(yaml.SafeLoader):
@@ -78,6 +102,8 @@ def _validate_check(entry, sources):
     check = entry.get("check")
     if check is None:
         return
+    if isinstance(check, dict):
+        _reject_unknown_keys(check, CHECK_KEYS, f"{name} check")
     ids = check.get("ids") if isinstance(check, dict) else None
     declared = {s["id"] for s in sources}
     if (not isinstance(ids, list) or len(ids) != 2
@@ -97,6 +123,8 @@ def _validate_check(entry, sources):
 def _validate_source(name, source, catalogues, result):
     if not isinstance(source, dict) or source.get("kind") not in SOURCE_KINDS:
         raise ValueError(f"{name}: invalid source kind")
+    allowed = SOURCE_KEYS | {"field", "live"} if source["kind"] == "price" else SOURCE_KEYS
+    _reject_unknown_keys(source, allowed, f"{name} source")
     kind, sid = source["kind"], source.get("id")
     known = result if kind == "derived" else catalogues[kind]
     if not _text(sid) or sid not in known:
@@ -124,6 +152,7 @@ def _validate_source(name, source, catalogues, result):
 
 def _validate_entry(entry, catalogues, result):
     name = entry["concept"]
+    _reject_unknown_keys(entry, CONCEPT_KEYS, name)
     if entry.get("family") not in FAMILIES:
         raise ValueError(f"{name}: invalid family")
     for key in ("label", "unit", "frequency", "calendar"):
@@ -170,10 +199,19 @@ def _validate_entry(entry, catalogues, result):
                                   or sum(s["role"] == "primary" for s in sources) != 1):
             raise ValueError(f"{name}: expected one primary first")
     _validate_check(entry, sources)
+    if "pair_tolerances" in entry:
+        pairs = entry["pair_tolerances"]
+        if not isinstance(pairs, list):
+            raise ValueError(f"{name}: pair_tolerances must be a list")
+        for pair in pairs:
+            if not isinstance(pair, dict):
+                raise ValueError(f"{name}: invalid pair tolerance")
+            _reject_unknown_keys(pair, PAIR_TOLERANCE_KEYS, f"{name} pair tolerance")
     if "history" in entry:
         history = entry["history"]
         if not isinstance(history, dict) or history.get("mode") not in {"single", "chain"}:
             raise ValueError(f"{name}: invalid history mode")
+        _reject_unknown_keys(history, HISTORY_KEYS, f"{name} history")
         if history["mode"] == "single" and history.get("id") not in {s["id"] for s in sources}:
             raise ValueError(f"{name}: history must name a declared source")
     return dependencies
@@ -202,8 +240,7 @@ def _load_concepts_cached(families, dependencies):
     entries = []
     for path, *_ in families:
         config = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueLoader)
-        if not isinstance(config, dict) or not isinstance(config.get("concepts"), list):
-            raise ValueError(f"{path.name}: concepts must be a list")
+        _validate_family_config(config, path.name)
         entries.extend(config["concepts"])
         if "generate" in config:
             if path.stem != "equity" or config["generate"] != "yahoo_prices":

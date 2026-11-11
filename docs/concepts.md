@@ -18,6 +18,9 @@ Source ids must exist in the macro/sovereign catalogues, the effective Yahoo
 universe, other registered concepts, or the macro-release `INDICATORS` catalogue,
 respectively. Unknown ids, duplicate concept ids across files, duplicate YAML
 keys, missing units, invalid age limits, and derived cycles fail at load time.
+Allowed-key lists reject unknown fields at the family, concept, source, check,
+history, and legacy pair-tolerance levels, so a typo such as `pair_tolerance`
+cannot silently disable disagreement handling.
 `EUR_STR` has `status: pending_source`, an explanatory `pending_reason`, and no
 sources until H1b adds its collector. Pending concepts cannot hide source ids.
 
@@ -56,3 +59,12 @@ It preserves all source attributes and ordering. Explicit paths to legacy
 configuration files remain supported until H5. The original packaged
 `resolved_rates.yaml` has moved to `concepts/rates.yaml`; a frozen test fixture
 guards compatibility.
+
+Validated loads are cached per process by absolute file paths and modification
+times, including the source catalogue dependencies, and return deep copies.
+The resolved-rate reader validates `rates.yaml` only against macro catalogues;
+unrelated family, price-universe, or release declarations cannot block it.
+`load_concepts()` and CI/`validate_config.py` validate the complete union.
+`T10Y2Y` belongs to the nominal rates/curve family, outside the 116-chain
+compatibility projection. `DTWEXBGS` retains DXY only as `history_only` context:
+its different currency basket prevents substituting its current index level.

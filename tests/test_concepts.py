@@ -44,6 +44,20 @@ def test_us_3m_primary_is_ust_par_and_bill_curve(tenor, fred):
     assert [(s["id"], s["role"]) for s in spec["sources"]] == [
         (f"UST_PAR_{tenor}", "primary"), (fred, "fallback")
     ]
+    assert [s["convention"] for s in spec["sources"]] == ["par yield", "par yield"]
+    assert "same treasury cmt series" in spec["sources"][1]["comparability_note"].lower()
+    assert spec["history"] == {"mode": "single", "id": fred}
+
+
+def test_nominal_curve_and_broad_dollar_concepts():
+    registry = concepts.load_concepts()
+    assert registry["T10Y2Y"]["family"] == "rates"
+    assert registry["T10Y2Y"]["sources"][0]["id"] == "T10Y2Y"
+    broad = registry["DTWEXBGS"]
+    assert [(s["id"], s["role"]) for s in broad["sources"]] == [
+        ("DTWEXBGS", "primary"), ("DX-Y.NYB", "history_only"),
+    ]
+    assert "different basket" in broad["sources"][1]["comparability_note"].lower()
 
 
 def test_concept_ids_unique_across_files(tmp_path):
@@ -130,6 +144,49 @@ def test_concept_rejects_invalid_metadata(simple_concept, catalogues, field, val
     simple_concept[field] = value
     with pytest.raises(ValueError, match=message):
         concepts.validate_concepts([simple_concept], catalogues)
+
+
+@pytest.mark.parametrize("level,key", [
+    ("concept", "pair_tolerance"), ("concept", "spot_bond_justfication"),
+    ("source", "max_age_business_day"), ("check", "tolerence"),
+    ("history", "source_id"), ("pair_tolerance", "tolerence_bp"),
+])
+def test_concept_rejects_unknown_keys_at_every_level(simple_concept, catalogues, level, key):
+    simple_concept["sources"].append(dict(simple_concept["sources"][0], id="OTHER", role="secondary"))
+    simple_concept["check"] = {"ids": ["EFFR", "OTHER"], "tolerance": 1, "unit": "bp", "note": "Checked"}
+    simple_concept["history"] = {"mode": "single", "id": "EFFR"}
+    simple_concept["pair_tolerances"] = [
+        {"series_ids": ["EFFR", "OTHER"], "tolerance_bp": 10, "note": "Checked"},
+    ]
+    target = {
+        "concept": simple_concept, "source": simple_concept["sources"][0],
+        "check": simple_concept["check"], "history": simple_concept["history"],
+        "pair_tolerance": simple_concept["pair_tolerances"][0],
+    }[level]
+    target[key] = 1
+    with pytest.raises(ValueError, match=f"unknown keys.*{key}"):
+        concepts.validate_concepts([simple_concept], catalogues)
+
+
+def test_concept_family_rejects_unknown_keys(tmp_path, simple_concept):
+    (tmp_path / "money_market.yaml").write_text(
+        yaml.safe_dump({"concepts": [simple_concept], "tolerence_bp": 10}), encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unknown keys.*tolerence_bp"):
+        concepts.load_concepts(tmp_path)
+
+
+@pytest.mark.parametrize("level", ["root", "concept", "source", "pair"])
+def test_legacy_rates_reject_unknown_keys(level):
+    source = {"series_id": "EFFR", "role": "primary", "convention": "yield", "max_age_business_days": 3}
+    pair = {"series_ids": ["EFFR", "OTHER"], "tolerance_bp": 10, "note": "Checked"}
+    entry = {"concept": "US_10Y", "sources": [source, dict(source, series_id="OTHER", role="secondary")],
+             "pair_tolerances": [pair]}
+    config = {"concepts": [entry], "tolerance_bp": 10}
+    target = {"root": config, "concept": entry, "source": source, "pair": pair}[level]
+    target["typo"] = 1
+    with pytest.raises(ValueError, match="unknown keys.*typo"):
+        resolved_rates.validate_resolved_rates(config, {"EFFR": {}, "OTHER": {}})
 
 
 def test_concept_primary_order_and_duplicate_sources(simple_concept, catalogues):
