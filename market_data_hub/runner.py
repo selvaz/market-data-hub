@@ -611,14 +611,31 @@ def run_live(con, cfg: dict, run_id: str) -> None:
     scoped = {e["symbol"] for e in tickers
               if _uses_us_cash_session(e, venues.get(listing_ids[e["symbol"]]))}
     placeholders = ",".join("?" for _ in listing_ids)
+    parameters = list(listing_ids.values())
+    completed = ""
+    if scoped:
+        scope_ids = [listing_ids[s] for s in sorted(scoped)]
+        scope_placeholders = ",".join("?" for _ in scope_ids)
+        # Production TIMESTAMP values are naive PACIFIC wall time. Give both
+        # sides explicit zones so neither the server nor connection timezone
+        # changes the comparison. A morning daily download remains partial
+        # even after the clock passes close; only a later ingestion settles it.
+        # NULL ingestion times cannot prove completion, so are excluded here.
+        completed = (
+            f"AND (listing_id NOT IN ({scope_placeholders}) OR "
+            "timezone('America/Los_Angeles', updated_at) >= "
+            "timezone('America/New_York', date + INTERVAL '16 hours')) "
+        )
+        parameters.extend(scope_ids)
     # Each symbol's adjustment ratio and freshness baseline come from exactly
     # the listing that will receive the live row, never retired symbol history.
     eod = con.execute(
         "SELECT p.listing_id, p.date, p.adj_close, p.close FROM prices_daily p "
         "JOIN (SELECT listing_id, max(date) d FROM prices_daily "
-        f"      WHERE is_live = FALSE AND listing_id IN ({placeholders}) GROUP BY listing_id) m "
+        f"      WHERE is_live = FALSE AND listing_id IN ({placeholders}) "
+        f"      {completed} GROUP BY listing_id) m "
         "  ON p.listing_id = m.listing_id AND p.date = m.d "
-        "WHERE p.is_live = FALSE", list(listing_ids.values())).fetch_df()
+        "WHERE p.is_live = FALSE", parameters).fetch_df()
     by_listing = {r.listing_id: (pd.Timestamp(r.date).date(), r.adj_close, r.close)
                   for r in eod.itertuples()}
     eod_map = {sym: by_listing[lid] for sym, lid in listing_ids.items() if lid in by_listing}
@@ -645,9 +662,8 @@ def run_live(con, cfg: dict, run_id: str) -> None:
     n_ok = len(rows)
 
     st = datetime.now(timezone.utc)
-    # A live row is only a stand-in until the settled bar of its session
-    # arrives. Drop the ones a settled bar has superseded, including the
-    # clock-dated weekend rows older runs left behind.
+    # Use the very same completed-session baselines for cleanup and the
+    # freshness guard. Only requested, active US cash listings participate.
     settled = eod[eod.listing_id.isin([listing_ids[s] for s in scoped])]
     if not settled.empty:
         con.register("_live_settled", settled)
