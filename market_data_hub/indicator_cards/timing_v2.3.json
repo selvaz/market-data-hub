@@ -32,7 +32,7 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "f3c0d3a51dd3a8154b601de0810de20072b65ecfc66d0919e185c6e88403eddf"
+      "source_table_sha256": "15ce8899119a5957b12caed5cd0baf860f7b79f90421de98fbd92c645df81de9"
     },
     {
       "approval": "approved v2.3 by owner 2026-10-25",
@@ -53,7 +53,7 @@
         "cn_new_home_prices_tiers"
       ],
       "source": "PR #130, M9f housing drafts at 5e04a4b; independent Codex review",
-      "source_table_sha256": "f3c0d3a51dd3a8154b601de0810de20072b65ecfc66d0919e185c6e88403eddf"
+      "source_table_sha256": "15ce8899119a5957b12caed5cd0baf860f7b79f90421de98fbd92c645df81de9"
     }
   ],
   "rows": {
@@ -1701,6 +1701,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "us_ust_1m": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "us_ust_2y": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -1710,6 +1714,10 @@
       "predictive_screen": "not tested"
     },
     "us_ust_3m": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "us_ust_6m": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -1766,7 +1774,7 @@
       "predictive_screen": "not tested"
     }
   },
-  "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated",
+  "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated; plus H1 1-month and 6-month Treasury context rows, not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "f3c0d3a51dd3a8154b601de0810de20072b65ecfc66d0919e185c6e88403eddf"
+  "source_table_sha256": "15ce8899119a5957b12caed5cd0baf860f7b79f90421de98fbd92c645df81de9"
 }
