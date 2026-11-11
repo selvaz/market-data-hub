@@ -1,11 +1,12 @@
 """Offline H1 contract: catalogued sources and unchanged legacy rate chains."""
 from copy import deepcopy
+import os
 from pathlib import Path
 
 import pytest
 import yaml
 
-from market_data_hub import concepts, resolved_rates
+from market_data_hub import concepts, config_loader, resolved_rates
 from market_data_hub.config_loader import _CONFIG_DIR, get_yahoo_tickers
 
 
@@ -267,3 +268,95 @@ def test_concept_offline_loader_does_not_connect_to_databases(monkeypatch):
     monkeypatch.setattr(duckdb, "connect", forbidden)
     monkeypatch.setattr(sqlite3, "connect", forbidden)
     assert concepts.load_concepts()["US_3M"]
+
+
+def _write_changed_yaml(path, config):
+    previous = path.stat().st_mtime_ns if path.exists() else 0
+    path.write_text(yaml.safe_dump(config), encoding="utf-8")
+    # Make invalidation deterministic even on filesystems with coarse timestamps.
+    changed = max(path.stat().st_mtime_ns, previous + 1_000_000_000)
+    os.utime(path, ns=(changed, changed))
+
+
+def test_registry_cache_isolated_returns_and_file_invalidation(
+    tmp_path, monkeypatch, simple_concept, catalogues,
+):
+    calls = []
+
+    def sources():
+        calls.append(True)
+        return catalogues
+
+    monkeypatch.setattr(concepts, "load_source_catalogues", sources)
+    path = tmp_path / "money_market.yaml"
+    _write_changed_yaml(path, {"concepts": [simple_concept]})
+    first = concepts.load_concepts(tmp_path)
+    first["TEST"]["sources"][0]["id"] = "MUTATED"
+    assert concepts.load_concepts(tmp_path)["TEST"]["sources"][0]["id"] == "EFFR"
+    assert len(calls) == 1
+    simple_concept["label"] = "Updated rate"
+    _write_changed_yaml(path, {"concepts": [simple_concept]})
+    assert concepts.load_concepts(tmp_path)["TEST"]["label"] == "Updated rate"
+    assert len(calls) == 2
+
+
+@pytest.mark.parametrize("changed_file", ["concepts/rates.yaml", "macro_series.yaml"])
+def test_rates_cache_validates_only_macro_and_tracks_dependencies(
+    tmp_path, monkeypatch, simple_concept, changed_file,
+):
+    (tmp_path / "concepts").mkdir()
+    simple_concept.update(concept="US_10Y", family="rates")
+    rates = {"tolerance_bp": 10, "concepts": [simple_concept]}
+    _write_changed_yaml(tmp_path / "concepts/rates.yaml", rates)
+    _write_changed_yaml(tmp_path / "macro_series.yaml", {"fred": [{"symbol": "EFFR", "frequency": "D"}]})
+    for filename in ("sovereign_layers.yaml", "sovereign_yields.yaml"):
+        _write_changed_yaml(tmp_path / filename, {"series": []})
+    # Broken unrelated families/tickers must not affect sovereign rate reads.
+    (tmp_path / "concepts/fx.yaml").write_text("invalid: [", encoding="utf-8")
+    (tmp_path / "tickers.yaml").write_text("invalid: [", encoding="utf-8")
+    monkeypatch.setattr(concepts, "_CONFIG_DIR", tmp_path)
+    monkeypatch.setattr(config_loader, "_CONFIG_DIR", tmp_path)
+    monkeypatch.setattr(resolved_rates, "_CONFIG_DIR", tmp_path)
+    calls = []
+    original = resolved_rates.validate_concepts
+
+    def validate(*args):
+        calls.append(True)
+        return original(*args)
+
+    def forbidden():
+        pytest.fail("Runtime rates must not load the complete registry/catalogues")
+
+    monkeypatch.setattr(resolved_rates, "validate_concepts", validate)
+    monkeypatch.setattr(concepts, "load_concepts", forbidden)
+    monkeypatch.setattr(concepts, "load_source_catalogues", forbidden)
+    config, table = resolved_rates.load_resolved_rates()
+    assert config["concepts"][0] is table["US_10Y"]
+    table["US_10Y"]["sources"][0]["frequency"] = "MUTATED"
+    assert resolved_rates.load_resolved_rates()[1]["US_10Y"]["sources"][0]["frequency"] == "D"
+    assert len(calls) == 1
+    if changed_file == "concepts/rates.yaml":
+        rates["tolerance_bp"] = 20
+        _write_changed_yaml(tmp_path / changed_file, rates)
+        assert resolved_rates.load_resolved_rates()[0]["tolerance_bp"] == 20
+    else:
+        _write_changed_yaml(tmp_path / changed_file,
+                            {"fred": [{"symbol": "EFFR", "frequency": "M"}]})
+        assert resolved_rates.load_resolved_rates()[1]["US_10Y"]["sources"][0]["frequency"] == "M"
+    assert len(calls) == 2
+
+
+def test_registry_cache_tracks_catalogue_edits(tmp_path, monkeypatch, simple_concept):
+    (tmp_path / "concepts").mkdir()
+    _write_changed_yaml(tmp_path / "concepts/money_market.yaml", {"concepts": [simple_concept]})
+    macro = tmp_path / "macro_series.yaml"
+    _write_changed_yaml(macro, {"fred": [{"symbol": "EFFR"}]})
+    for filename in ("sovereign_layers.yaml", "sovereign_yields.yaml"):
+        _write_changed_yaml(tmp_path / filename, {"series": []})
+    _write_changed_yaml(tmp_path / "tickers.yaml", {"yahoo": []})
+    monkeypatch.setattr(concepts, "_CONFIG_DIR", tmp_path)
+    monkeypatch.setattr(config_loader, "_CONFIG_DIR", tmp_path)
+    assert concepts.load_concepts()["TEST"]
+    _write_changed_yaml(macro, {"fred": []})
+    with pytest.raises(ValueError, match="unknown macro source EFFR"):
+        concepts.load_concepts()

@@ -3,12 +3,16 @@ from __future__ import annotations
 
 import math
 import re
+from copy import deepcopy
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
 
-from market_data_hub.config_loader import _CONFIG_DIR, _load_yaml
-from market_data_hub.concepts import _UniqueLoader, load_concepts
+from market_data_hub.config_loader import _CONFIG_DIR
+from market_data_hub.concepts import (
+    _UniqueLoader, _file_versions, load_macro_catalogue, validate_concepts,
+)
 
 
 def validate_resolved_rates(config, known_series):
@@ -104,15 +108,31 @@ def validate_resolved_rates(config, known_series):
 
 def load_resolved_rates(path=None):
     """Compatibility projection of the registry; explicit legacy files still work."""
-    if path is not None:
-        config = yaml.load(Path(path).read_text(encoding='utf-8'), Loader=_UniqueLoader)
+    legacy = path is not None
+    path = Path(path) if legacy else _CONFIG_DIR / 'concepts' / 'rates.yaml'
+    dependencies = [_CONFIG_DIR / filename for filename in (
+        'sovereign_layers.yaml', 'sovereign_yields.yaml', 'macro_series.yaml',
+    )]
+    return deepcopy(_load_resolved_rates_cached(
+        _file_versions([path]), _file_versions(dependencies), legacy,
+    ))
+
+
+@lru_cache(maxsize=8)
+def _load_resolved_rates_cached(family, dependencies, legacy):
+    path = family[0][0]
+    known = load_macro_catalogue()
+    rates = yaml.load(path.read_text(encoding='utf-8'), Loader=_UniqueLoader)
+    if legacy:
+        config = rates
     else:
-        registry = load_concepts()
-        rates = yaml.load((_CONFIG_DIR / 'concepts' / 'rates.yaml').read_text(encoding='utf-8'),
-                          Loader=_UniqueLoader)
+        # Runtime rates do not depend on tickers, releases or other families.
+        # CI/validate_config.py validates the complete cross-file registry.
+        registry = validate_concepts(rates['concepts'], {'macro': known, 'price': {}, 'release': {}})
         entries = []
         for entry in registry.values():
-            if entry['family'] != 'rates' or entry.get('kind') == 'derived':
+            if (entry['family'] != 'rates' or entry.get('kind') == 'derived'
+                    or not re.fullmatch(r'[A-Z]{2}_[0-9]+[MY]', entry['concept'])):
                 continue
             legacy = {key: entry[key] for key in ('concept', 'spot_bond_justification', 'pair_tolerances')
                       if key in entry}
@@ -122,13 +142,6 @@ def load_resolved_rates(path=None):
             ]
             entries.append(legacy)
         config = {'tolerance_bp': rates['tolerance_bp'], 'concepts': entries}
-    known = {}
-    for filename in ('sovereign_layers.yaml', 'sovereign_yields.yaml'):
-        for item in _load_yaml(filename).get('series', []):
-            known[item['symbol']] = item
-    for group in _load_yaml('macro_series.yaml').values():
-        for item in group:
-            known[item['symbol']] = item
     table = validate_resolved_rates(config, known)
     for entry in table.values():
         for source in entry['sources']:

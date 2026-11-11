@@ -4,11 +4,12 @@ from __future__ import annotations
 import math
 import re
 from copy import deepcopy
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
 
-from market_data_hub.config_loader import _CONFIG_DIR, _load_yaml, get_yahoo_tickers
+from market_data_hub.config_loader import _CONFIG_DIR, _load_yaml
 
 SOURCE_KINDS = {"macro", "price", "derived", "release"}
 ROLES = {"primary", "secondary", "fallback", "proxy", "history_only"}
@@ -35,18 +36,26 @@ def _mapping(loader, node, deep=False):
 _UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _mapping)
 
 
-def load_source_catalogues():
-    """Return static source metadata without opening a DB or downloading data."""
+def load_macro_catalogue():
+    """Return only the macro metadata needed by the sovereign rate reader."""
     macro = {}
     for filename in ("sovereign_layers.yaml", "sovereign_yields.yaml"):
         macro.update({e["symbol"]: e for e in _load_yaml(filename).get("series", [])})
     for group in _load_yaml("macro_series.yaml").values():
         macro.update({e["symbol"]: e for e in group})
+    return macro
+
+
+def load_source_catalogues():
+    """Return static source metadata without opening a DB or downloading data."""
+    macro = load_macro_catalogue()
+    fred = {e["symbol"] for e in _load_yaml("macro_series.yaml").get("fred", [])}
     from market_data_hub.macro_releases.catalogue import INDICATORS
 
     return {
         "macro": macro,
-        "price": {e["symbol"]: e for e in get_yahoo_tickers()},
+        "price": {e["symbol"]: e for e in _load_yaml("tickers.yaml").get("yahoo", [])
+                  if e["symbol"] not in fred},
         "release": INDICATORS,
     }
 
@@ -176,8 +185,22 @@ def load_concepts(directory=None):
     paths = sorted(directory.glob("*.yaml"))
     if not paths:
         raise ValueError(f"no concept family files in {directory}")
+    dependencies = [_CONFIG_DIR / filename for filename in (
+        "macro_series.yaml", "sovereign_layers.yaml", "sovereign_yields.yaml", "tickers.yaml",
+    )]
+    return deepcopy(_load_concepts_cached(_file_versions(paths), _file_versions(dependencies)))
+
+
+def _file_versions(paths):
+    """Cache identity includes absolute paths and nanosecond file modification times."""
+    return tuple((path.resolve(), path.stat().st_mtime_ns, path.stat().st_size) for path in paths)
+
+
+@lru_cache(maxsize=8)
+def _load_concepts_cached(families, dependencies):
+    catalogues = load_source_catalogues()
     entries = []
-    for path in paths:
+    for path, *_ in families:
         config = yaml.load(path.read_text(encoding="utf-8"), Loader=_UniqueLoader)
         if not isinstance(config, dict) or not isinstance(config.get("concepts"), list):
             raise ValueError(f"{path.name}: concepts must be a list")
@@ -185,12 +208,12 @@ def load_concepts(directory=None):
         if "generate" in config:
             if path.stem != "equity" or config["generate"] != "yahoo_prices":
                 raise ValueError(f"{path.name}: invalid concept generator")
-            entries.extend(_price_concepts())
-    return validate_concepts(entries)
+            entries.extend(_price_concepts(catalogues["price"].values()))
+    return validate_concepts(entries, catalogues)
 
 
-def _price_concepts():
-    for ticker in get_yahoo_tickers():
+def _price_concepts(tickers):
+    for ticker in tickers:
         symbol = ticker["symbol"]
         quoted = symbol.startswith("^") or symbol.endswith(("=F", "=X", "-USD")) or symbol == "DX-Y.NYB"
         yield {
