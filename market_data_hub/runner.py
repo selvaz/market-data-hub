@@ -20,7 +20,7 @@ from __future__ import annotations
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 from typing import Dict, List, Optional
 
 import pandas as pd
@@ -526,6 +526,42 @@ def run_factors(con, cfg: dict, run_id: str) -> None:
 
 
 # --------------------------------------------------------------- LIVE
+SUPERSEDED_LIVE_ROWS_SQL = (
+    "DELETE FROM prices_daily AS p WHERE p.is_live = TRUE AND p.date <= ("
+    "SELECT max(s.date) FROM prices_daily s "
+    "WHERE s.listing_id = p.listing_id AND s.is_live = FALSE)"
+)
+
+
+def live_rows(eod_map: dict, quotes: dict, now=None) -> list[dict]:
+    """Live rows dated by the session that produced each price.
+
+    ``eod_map``: symbol -> (latest settled date, adj_close, close).
+    ``quotes``: symbol -> (regular-session price, session date ISO).
+    A quote whose session is not newer than the settled bar is skipped: the
+    settled bar already holds that session and must never be overwritten by
+    a live row (the 23:45 PT FRED-only run and weekend runs used to write
+    rows dated by the UTC clock, e.g. a Friday close dated Saturday).
+    """
+    now = now or datetime.now(timezone.utc)
+    rows = []
+    for sym, (price, day) in quotes.items():
+        if sym not in eod_map:
+            continue
+        settled_day, adj_eod, close_eod = eod_map[sym]
+        session = date.fromisoformat(day)
+        if session <= settled_day:
+            continue
+        adj_live = yh.adjusted_live_price(price, adj_eod, close_eod)
+        if adj_live is None:
+            continue
+        rows.append({"date": session, "symbol": sym, "open": None,
+                     "high": None, "low": None, "close": price,
+                     "adj_close": adj_live, "volume": None,
+                     "source": "yahoo", "is_live": True, "updated_at": now})
+    return rows
+
+
 def run_live(con, cfg: dict, run_id: str) -> None:
     """Update the 'today' row with live prices mapped into the adjusted space."""
     if not cfg.get("live", {}).get("enabled", False):
@@ -534,39 +570,25 @@ def run_live(con, cfg: dict, run_id: str) -> None:
     t_start = time.perf_counter()
     allowed = set(cfg["live"]["asset_classes"])
     tickers = [e for e in get_yahoo_tickers() if e.get("asset_class") in allowed]
-    today = pd.Timestamp(_today())
-
-    # latest EOD (adj_close, close) per symbol
+    # latest settled EOD (date, adj_close, close) per symbol
     eod = con.execute(
-        "SELECT p.symbol, p.adj_close, p.close FROM prices_daily p "
+        "SELECT p.symbol, p.date, p.adj_close, p.close FROM prices_daily p "
         "JOIN (SELECT symbol, max(date) d FROM prices_daily "
         "      WHERE is_live = FALSE GROUP BY symbol) m "
         "  ON p.symbol = m.symbol AND p.date = m.d "
         "WHERE p.is_live = FALSE").fetch_df()
-    eod_map = {r.symbol: (r.adj_close, r.close) for r in eod.itertuples()}
+    eod_map = {r.symbol: (pd.Timestamp(r.date).date(), r.adj_close, r.close)
+               for r in eod.itertuples()}
 
-    # live prices in a SINGLE download batch (no per-ticker loop -> no 429)
     syms = [e["symbol"] for e in tickers if e["symbol"] in eod_map]
-    live_prices = yh.get_live_prices_batch(syms)
-
-    rows = []
-    n_ok = 0
-    for sym in syms:
-        live = live_prices.get(sym)
-        if live is None:
-            continue
-        adj_eod, close_eod = eod_map[sym]
-        adj_live = yh.adjusted_live_price(live, adj_eod, close_eod)
-        if adj_live is None:
-            continue
-        rows.append({"date": today.date(), "symbol": sym, "open": None,
-                     "high": None, "low": None, "close": live,
-                     "adj_close": adj_live, "volume": None,
-                     "source": "yahoo", "is_live": True,
-                     "updated_at": datetime.now(timezone.utc)})
-        n_ok += 1
+    rows = live_rows(eod_map, yh.get_live_quotes_batch(syms))
+    n_ok = len(rows)
 
     st = datetime.now(timezone.utc)
+    # A live row is only a stand-in until the settled bar of its session
+    # arrives. Drop the ones a settled bar has superseded, including the
+    # clock-dated weekend rows older runs left behind.
+    con.execute(SUPERSEDED_LIVE_ROWS_SQL)
     if rows:
         upsert(con, "prices_daily", pd.DataFrame(rows))
     _log(f"LIVE: updated {n_ok}/{len(tickers)} symbols")
