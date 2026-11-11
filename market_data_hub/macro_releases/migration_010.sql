@@ -31,7 +31,7 @@ SELECT q.id, q.family, q.run_id, q.document_hash, q.reasons, q.recorded_at,
        r.basis AS resolution_basis
 FROM review_queue q LEFT JOIN review_queue_resolutions r ON r.review_id=q.id;
 -- A review row is superseded by a later clean (ok/no_change) run of its family
--- once every (measure, edition) read from the reviewed document has a verified
+-- once every (measure, edition, period) read from the reviewed document has a verified
 -- issuer reading or vintage known by that run (a clean re-read of identical
 -- bytes adds a verified vintage; the original reading row stays unverified); a document that yielded no readings is
 -- superseded by a verified reading from the same issuer URL first seen after
@@ -50,10 +50,11 @@ WHERE (
     SELECT 1 FROM readings d WHERE d.content_hash=q.document_hash
       AND NOT EXISTS (
         SELECT 1 FROM readings v WHERE v.indicator_id IS d.indicator_id AND v.edition=d.edition
+          AND v.reference_period IS d.reference_period
           AND v.verification_status='verified' AND v.first_seen_at<=f.finished_at)
       AND NOT EXISTS (
         SELECT 1 FROM value_vintages w WHERE w.indicator_id=d.indicator_id
-          AND w.release_event_id=d.release_event_id
+          AND w.release_event_id=d.release_event_id AND w.reference_period=d.reference_period
           AND w.verification_status='verified' AND w.first_seen_at<=f.finished_at))
 ) OR (
   NOT EXISTS (SELECT 1 FROM readings d WHERE d.content_hash=q.document_hash)

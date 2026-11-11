@@ -137,10 +137,16 @@ def parse(doc, family="banxico_policy", since="1900-01", *, archives=None):
         raise FetchError("Banxico statement rate/vote disagreement needs review")
     votes = vote(text, "unanimidad" if repeated[1] == "unanimidad" else "mayoria", action)
     delta = 0 if action == "mantener" else int(delta) * (1 if action == "incrementar" else -1)
+    policy = dict(rates={"overnight_target": dict(rate=float(printed), change_bp=delta,
+                  change_basis="issuer_statement")},
+                  vote_split={"for": votes["for"], "against": votes["against"]})
+    if votes["decision"] == "majority":
+        # Unanimous decisions keep the policy facts already stored for them
+        # (vote_split 5-0): a re-read must not change a stored vintage's
+        # semantics. Majority decisions add the printed detail.
+        policy["vote"] = votes
     row = observation(doc, family, edition, "banxico_overnight_rate_decision", printed, method=method,
-        policy=dict(rates={"overnight_target": dict(rate=float(printed), change_bp=delta,
-                    change_basis="issuer_statement")},
-                    vote_split={"for": votes["for"], "against": votes["against"]}, vote=votes))
+        policy=policy)
     return [row] if edition >= since else []
 
 

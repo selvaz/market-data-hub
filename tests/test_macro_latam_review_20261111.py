@@ -159,8 +159,19 @@ def test_banxico_unanimous_statements_keep_full_board_vote():
     doc = stored("m9i", "banxico-sep.pdf")
     row, = banxico_policy.parse(doc)
     assert row.policy_decision["vote_split"] == {"for": 5, "against": 0}
-    assert row.policy_decision["vote"]["decision"] == "unanimous"
-    assert row.policy_decision["vote"]["dissenters"] == []
+    assert "vote" not in row.policy_decision  # unchanged stored facts for unanimous decisions
+
+
+def test_banxico_reread_of_already_stored_unanimous_statement_is_idempotent(tmp_path):
+    """A vintage stored before this change must not conflict with a re-read."""
+    doc = stored("m9i", "banxico-sep.pdf")
+    row, = banxico_policy.parse(doc)
+    with open_writer(tmp_path / "reread.sqlite") as store:
+        # Policy facts as stored by the previous parser (no 'vote' key).
+        legacy = {k: v for k, v in row.policy_decision.items() if k != "vote"}
+        first = persist(store, [replace(row, policy_decision=legacy)])
+        assert persist(store, [banxico_policy.parse(doc)[0]]) == first
+        assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 1
 
 
 def test_banxico_rejoins_only_split_rates():
@@ -263,6 +274,31 @@ def test_clean_run_resolves_superseded_review_rows(tmp_path, monkeypatch):
     later = collect_report(target, now=datetime(2099, 1, 2, tzinfo=timezone.utc))
     assert [r["id"] for r in later["open_reviews"]] == ["rev-2"]
     assert "unrelated_later" in render_html(later)
+
+
+def test_supersession_requires_every_reviewed_period(tmp_path):
+    """One verified period does not close a review whose document had others."""
+    target = tmp_path / "periods.sqlite"
+    with open_writer(target) as store:
+        flagged_review(store)
+        digest = store.conn.execute("SELECT document_hash FROM review_queue WHERE id='rev-1'").fetchone()[0]
+        reading = dict(store.conn.execute("SELECT * FROM readings WHERE content_hash=? LIMIT 1",
+                                          (digest,)).fetchone())
+        # The same document also carried an older period that is never verified.
+        reading.update(id=None, period_key="2025-09", reference_period="2025-09")
+        columns = [k for k in reading if k != "id"]
+        store.conn.execute(f"INSERT INTO readings ({','.join(columns)}) VALUES ({','.join('?' * len(columns))})",
+                           [reading[k] for k in columns])
+        store.conn.execute("INSERT INTO collect_runs VALUES ('clean','2026-10-28T00:00:00.000000+00:00',NULL,"
+                           "'running','[]','{}','test','host')")
+        store.conn.execute("INSERT INTO collect_run_families (run_id,family,status,finished_at,vintages_added,"
+                           "readings_added,readings_skipped,fetch_since,fetch_until) VALUES "
+                           "('clean','mx_cpi','ok','2099-01-01T00:00:00.000000+00:00',0,0,0,'2026-01','2026-10-28')")
+        # Verify every period except the older one.
+        store.conn.execute("DROP TRIGGER IF EXISTS readings_no_update")
+        store.conn.execute("UPDATE readings SET verification_status='verified' "
+                           "WHERE content_hash=? AND reference_period!='2025-09'", (digest,))
+        assert [r[0] for r in store.conn.execute("SELECT review_id FROM review_queue_supersessions")] == []
 
 
 def test_migration_backfill_closes_already_superseded_rows(tmp_path, monkeypatch):
