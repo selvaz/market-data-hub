@@ -36,6 +36,12 @@ different conventions: the declaration makes the intended comparison explicit.
 These checks are metadata for H2 and do not change the existing rate reader's
 disagreement behavior.
 
+Legacy `pair_tolerances` remains authoritative for the sovereign resolver's
+pair-specific disagreement tolerances until H2 replaces it. Where an entry
+declares both `check` and `pair_tolerances`, the existing reader uses
+`pair_tolerances`; `check` remains descriptive H2 metadata. Both declarations
+are intentionally retained during H1, with no change to runtime voting.
+
 `history` optionally declares `mode: chain` or `mode: single` with the id of a
 declared source. A derived concept declares `kind: derived`, an `expression`
 of the form `CONCEPT_A - CONCEPT_B` (or `+`), `alignment: same_date`, and an
