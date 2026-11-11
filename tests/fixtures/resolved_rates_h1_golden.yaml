@@ -1,0 +1,1657 @@
+{
+  "tolerance_bp": 10,
+  "concepts": [
+    {
+      "concept": "AT_10Y",
+      "sources": [
+        {
+          "series_id": "TV_AT_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01ATM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "AT_2Y",
+      "sources": [
+        {
+          "series_id": "TV_AT_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "AT_30Y",
+      "sources": [
+        {
+          "series_id": "TV_AT_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "AT_5Y",
+      "sources": [
+        {
+          "series_id": "TV_AT_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "AU_10Y",
+      "sources": [
+        {
+          "series_id": "TV_AU_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01AUM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "AU_2Y",
+      "sources": [
+        {
+          "series_id": "TV_AU_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "AU_30Y",
+      "sources": [
+        {
+          "series_id": "TV_AU_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "AU_5Y",
+      "sources": [
+        {
+          "series_id": "TV_AU_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "BE_10Y",
+      "sources": [
+        {
+          "series_id": "CB_BE_10Y",
+          "max_age_business_days": 3,
+          "convention": "fixed residual term bond yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_BE_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal BE_10Y sovereign yields; the official source uses fixed residual term bond yield, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "IRLTLT01BEM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "BE_2Y",
+      "sources": [
+        {
+          "series_id": "CB_BE_2Y",
+          "max_age_business_days": 3,
+          "convention": "fixed residual term bond yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_BE_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal BE_2Y sovereign yields; the official source uses fixed residual term bond yield, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        }
+      ]
+    },
+    {
+      "concept": "BE_30Y",
+      "sources": [
+        {
+          "series_id": "TV_BE_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "BE_5Y",
+      "sources": [
+        {
+          "series_id": "TV_BE_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "BR_10Y",
+      "sources": [
+        {
+          "series_id": "TV_BR_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "BR_2Y",
+      "sources": [
+        {
+          "series_id": "TV_BR_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "BR_5Y",
+      "sources": [
+        {
+          "series_id": "TV_BR_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CA_10Y",
+      "sources": [
+        {
+          "series_id": "BOC_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_CA_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal CA_10Y sovereign yields; the official source uses benchmark bond YTM, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "IRLTLT01CAM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "CA_2Y",
+      "sources": [
+        {
+          "series_id": "BOC_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_CA_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal CA_2Y sovereign yields; the official source uses benchmark bond YTM, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        }
+      ]
+    },
+    {
+      "concept": "CA_30Y",
+      "sources": [
+        {
+          "series_id": "TV_CA_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CA_5Y",
+      "sources": [
+        {
+          "series_id": "BOC_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_CA_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal CA_5Y sovereign yields; the official source uses benchmark bond YTM, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        }
+      ]
+    },
+    {
+      "concept": "CH_10Y",
+      "spot_bond_justification": "Owner-approved Swiss spot and benchmark yields share the tenor but can have material curve and compounding basis; they are not interchangeable observations.",
+      "sources": [
+        {
+          "series_id": "SNB_CH_10Y",
+          "max_age_business_days": 3,
+          "convention": "SNB NSS-fitted zero-coupon spot yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_CH_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Observed benchmark YTM differs from the SNB spot curve in security selection, compounding, and fixing; no adjustment is implied."
+        },
+        {
+          "series_id": "CB_CH_10Y",
+          "max_age_business_days": 3,
+          "convention": "SNB NSS-fitted zero-coupon spot yield",
+          "role": "history_only",
+          "comparability_note": "SNB cube history and current SNB spot feed share the same NSS origin; history only, never an independent vote."
+        },
+        {
+          "series_id": "IRLTLT01CHM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "CH_2Y",
+      "spot_bond_justification": "Owner-approved historical Swiss spot yield and benchmark bond yield share a tenor but differ in curve and compounding basis.",
+      "sources": [
+        {
+          "series_id": "TV_CH_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "CB_CH_2Y",
+          "max_age_business_days": 3,
+          "convention": "Swiss Confederation spot yield",
+          "role": "history_only",
+          "comparability_note": "Discontinued SNB spot curve differs from the benchmark bond YTM in compounding and selection; history only."
+        }
+      ]
+    },
+    {
+      "concept": "CH_30Y",
+      "sources": [
+        {
+          "series_id": "TV_CH_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CH_5Y",
+      "sources": [
+        {
+          "series_id": "TV_CH_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CL_10Y",
+      "sources": [
+        {
+          "series_id": "TV_CL_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01CLM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "CL_2Y",
+      "sources": [
+        {
+          "series_id": "TV_CL_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CL_30Y",
+      "sources": [
+        {
+          "series_id": "TV_CL_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CL_5Y",
+      "sources": [
+        {
+          "series_id": "TV_CL_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CN_10Y",
+      "spot_bond_justification": "Owner-approved ChinaBond curve and benchmark bond yield share a tenor but can differ in curve construction and fixing.",
+      "sources": [
+        {
+          "series_id": "CB_CN_10Y",
+          "max_age_business_days": 3,
+          "convention": "ChinaBond zero-coupon government yield curve",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_CN_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Vendor benchmark YTM differs from the ChinaBond curve in bond selection, compounding, and fixing; no adjustment is implied."
+        }
+      ]
+    },
+    {
+      "concept": "CN_2Y",
+      "sources": [
+        {
+          "series_id": "TV_CN_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CN_30Y",
+      "sources": [
+        {
+          "series_id": "TV_CN_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CN_5Y",
+      "sources": [
+        {
+          "series_id": "TV_CN_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CO_10Y",
+      "sources": [
+        {
+          "series_id": "TV_CO_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CO_5Y",
+      "sources": [
+        {
+          "series_id": "TV_CO_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "CZ_10Y",
+      "sources": [
+        {
+          "series_id": "IRLTLT01CZM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "DE_10Y",
+      "sources": [
+        {
+          "series_id": "DEU_BUND10_FA",
+          "max_age_business_days": 3,
+          "convention": "nearest residual maturity observed bond YTM",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_DE_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal DE_10Y sovereign yields; the official source uses nearest residual maturity observed bond YTM, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "IRLTLT01DEM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "DE_2Y",
+      "sources": [
+        {
+          "series_id": "TV_DE_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "DE_30Y",
+      "sources": [
+        {
+          "series_id": "TV_DE_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "DE_5Y",
+      "sources": [
+        {
+          "series_id": "TV_DE_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "DK_10Y",
+      "sources": [
+        {
+          "series_id": "IRLTLT01DKM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "ES_10Y",
+      "sources": [
+        {
+          "series_id": "CB_ES_10Y",
+          "max_age_business_days": 3,
+          "convention": "secondary market bond yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_ES_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal ES_10Y sovereign yields; the official source uses secondary market bond yield, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "IRLTLT01ESM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "ES_2Y",
+      "sources": [
+        {
+          "series_id": "TV_ES_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "ES_30Y",
+      "sources": [
+        {
+          "series_id": "TV_ES_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "ES_5Y",
+      "sources": [
+        {
+          "series_id": "TV_ES_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "FI_10Y",
+      "sources": [
+        {
+          "series_id": "IRLTLT01FIM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "FR_10Y",
+      "sources": [
+        {
+          "series_id": "CB_FR_10Y",
+          "max_age_business_days": 3,
+          "convention": "constant maturity bond yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_FR_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal FR_10Y sovereign yields; the official source uses constant maturity bond yield, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "IRLTLT01FRM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "FR_2Y",
+      "sources": [
+        {
+          "series_id": "TV_FR_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "FR_30Y",
+      "sources": [
+        {
+          "series_id": "TV_FR_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "FR_5Y",
+      "sources": [
+        {
+          "series_id": "TV_FR_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "GB_10Y",
+      "sources": [
+        {
+          "series_id": "BOE_GILT_PAR_10Y",
+          "max_age_business_days": 3,
+          "convention": "par yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_GB_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal GB_10Y sovereign yields; the official source uses par yield, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "IRLTLT01GBM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "GB_2Y",
+      "sources": [
+        {
+          "series_id": "TV_GB_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "GB_30Y",
+      "sources": [
+        {
+          "series_id": "TV_GB_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "GB_5Y",
+      "sources": [
+        {
+          "series_id": "BOE_GILT_PAR_5Y",
+          "max_age_business_days": 3,
+          "convention": "par yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_GB_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal GB_5Y sovereign yields; the official source uses par yield, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        }
+      ]
+    },
+    {
+      "concept": "GR_10Y",
+      "sources": [
+        {
+          "series_id": "TV_GR_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01GRM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "GR_2Y",
+      "sources": [
+        {
+          "series_id": "TV_GR_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "GR_30Y",
+      "sources": [
+        {
+          "series_id": "TV_GR_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "GR_5Y",
+      "sources": [
+        {
+          "series_id": "TV_GR_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "HU_10Y",
+      "sources": [
+        {
+          "series_id": "IRLTLT01HUM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "ID_10Y",
+      "sources": [
+        {
+          "series_id": "TV_ID_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "ID_30Y",
+      "sources": [
+        {
+          "series_id": "TV_ID_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "ID_5Y",
+      "sources": [
+        {
+          "series_id": "TV_ID_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "IE_10Y",
+      "sources": [
+        {
+          "series_id": "TV_IE_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01IEM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "IE_2Y",
+      "sources": [
+        {
+          "series_id": "TV_IE_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "IE_30Y",
+      "sources": [
+        {
+          "series_id": "TV_IE_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "IE_5Y",
+      "sources": [
+        {
+          "series_id": "TV_IE_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "IL_10Y",
+      "sources": [
+        {
+          "series_id": "IRLTLT01ILM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "IN_10Y",
+      "sources": [
+        {
+          "series_id": "TV_IN_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "IN_2Y",
+      "sources": [
+        {
+          "series_id": "TV_IN_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "IN_30Y",
+      "sources": [
+        {
+          "series_id": "TV_IN_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "IN_5Y",
+      "sources": [
+        {
+          "series_id": "TV_IN_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "IT_10Y",
+      "sources": [
+        {
+          "series_id": "ITA_BTP10_MOT",
+          "max_age_business_days": 3,
+          "convention": "nearest residual maturity observed bond YTM",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_IT_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal IT_10Y sovereign yields; the official source uses nearest residual maturity observed bond YTM, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "CB_IT_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM",
+          "role": "history_only",
+          "comparability_note": "Historical comparison only: benchmark selection or curve construction may differ."
+        },
+        {
+          "series_id": "IRLTLT01ITM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "IT_2Y",
+      "sources": [
+        {
+          "series_id": "TV_IT_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "IT_30Y",
+      "sources": [
+        {
+          "series_id": "TV_IT_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "IT_5Y",
+      "sources": [
+        {
+          "series_id": "TV_IT_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "JP_10Y",
+      "sources": [
+        {
+          "series_id": "MOF_JGB_10Y",
+          "max_age_business_days": 3,
+          "convention": "constant maturity YTM, semiannual compounding",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_JP_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal JP_10Y sovereign yields; the official source uses constant maturity YTM, semiannual compounding, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "IRLTLT01JPM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "JP_2Y",
+      "sources": [
+        {
+          "series_id": "MOF_JGB_2Y",
+          "max_age_business_days": 3,
+          "convention": "constant maturity YTM, semiannual compounding",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_JP_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal JP_2Y sovereign yields; the official source uses constant maturity YTM, semiannual compounding, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        }
+      ]
+    },
+    {
+      "concept": "JP_30Y",
+      "sources": [
+        {
+          "series_id": "MOF_JGB_30Y",
+          "max_age_business_days": 3,
+          "convention": "constant maturity YTM, semiannual compounding",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_JP_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal JP_30Y sovereign yields; the official source uses constant maturity YTM, semiannual compounding, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        }
+      ]
+    },
+    {
+      "concept": "JP_5Y",
+      "sources": [
+        {
+          "series_id": "MOF_JGB_5Y",
+          "max_age_business_days": 3,
+          "convention": "constant maturity YTM, semiannual compounding",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_JP_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal JP_5Y sovereign yields; the official source uses constant maturity YTM, semiannual compounding, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        }
+      ]
+    },
+    {
+      "concept": "KR_10Y",
+      "sources": [
+        {
+          "series_id": "TV_KR_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01KRM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "KR_2Y",
+      "sources": [
+        {
+          "series_id": "TV_KR_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "KR_30Y",
+      "sources": [
+        {
+          "series_id": "TV_KR_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "KR_5Y",
+      "sources": [
+        {
+          "series_id": "TV_KR_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "LU_10Y",
+      "sources": [
+        {
+          "series_id": "IRLTLT01LUM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "MX_10Y",
+      "sources": [
+        {
+          "series_id": "TV_MX_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01MXM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "MX_30Y",
+      "sources": [
+        {
+          "series_id": "TV_MX_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "MX_5Y",
+      "sources": [
+        {
+          "series_id": "TV_MX_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "NL_10Y",
+      "sources": [
+        {
+          "series_id": "TV_NL_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01NLM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "NL_2Y",
+      "sources": [
+        {
+          "series_id": "TV_NL_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "NL_30Y",
+      "sources": [
+        {
+          "series_id": "TV_NL_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "NL_5Y",
+      "sources": [
+        {
+          "series_id": "TV_NL_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "NO_10Y",
+      "sources": [
+        {
+          "series_id": "NB_NO_10Y",
+          "max_age_business_days": 3,
+          "convention": "generic yield of the government bond closest to 10Y, not constant maturity",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01NOM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "NZ_10Y",
+      "sources": [
+        {
+          "series_id": "IRLTLT01NZM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "PE_10Y",
+      "sources": [
+        {
+          "series_id": "TV_PE_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "PE_30Y",
+      "sources": [
+        {
+          "series_id": "TV_PE_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "PE_5Y",
+      "sources": [
+        {
+          "series_id": "TV_PE_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "PL_10Y",
+      "sources": [
+        {
+          "series_id": "TV_PL_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01PLM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "PL_2Y",
+      "sources": [
+        {
+          "series_id": "TV_PL_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "PL_5Y",
+      "sources": [
+        {
+          "series_id": "TV_PL_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "PT_10Y",
+      "sources": [
+        {
+          "series_id": "TV_PT_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01PTM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "PT_2Y",
+      "sources": [
+        {
+          "series_id": "TV_PT_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "PT_30Y",
+      "sources": [
+        {
+          "series_id": "TV_PT_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "PT_5Y",
+      "sources": [
+        {
+          "series_id": "TV_PT_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "SE_10Y",
+      "sources": [
+        {
+          "series_id": "CB_SE_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_SE_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal SE_10Y sovereign yields; the official source uses benchmark bond YTM, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "IRLTLT01SEM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "SE_2Y",
+      "sources": [
+        {
+          "series_id": "CB_SE_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_SE_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal SE_2Y sovereign yields; the official source uses benchmark bond YTM, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        }
+      ]
+    },
+    {
+      "concept": "SE_5Y",
+      "sources": [
+        {
+          "series_id": "TV_SE_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "SI_10Y",
+      "sources": [
+        {
+          "series_id": "IRLTLT01SIM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "SK_10Y",
+      "sources": [
+        {
+          "series_id": "IRLTLT01SKM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "TR_10Y",
+      "sources": [
+        {
+          "series_id": "TV_TR_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "TR_2Y",
+      "sources": [
+        {
+          "series_id": "TV_TR_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "TR_5Y",
+      "sources": [
+        {
+          "series_id": "TV_TR_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "US_10Y",
+      "sources": [
+        {
+          "series_id": "UST_PAR_10Y",
+          "max_age_business_days": 3,
+          "convention": "par yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_US_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal US_10Y sovereign yields; the official source uses par yield, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "DGS10",
+          "max_age_business_days": 3,
+          "convention": "Treasury constant maturity yield",
+          "role": "history_only",
+          "comparability_note": "Historical comparison only: benchmark selection or curve construction may differ."
+        },
+        {
+          "series_id": "IRLTLT01USM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "US_2Y",
+      "sources": [
+        {
+          "series_id": "UST_PAR_2Y",
+          "max_age_business_days": 3,
+          "convention": "par yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_US_2Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal US_2Y sovereign yields; the official source uses par yield, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "DGS2",
+          "max_age_business_days": 3,
+          "convention": "Treasury constant maturity yield",
+          "role": "history_only",
+          "comparability_note": "Historical comparison only: benchmark selection or curve construction may differ."
+        }
+      ]
+    },
+    {
+      "concept": "US_30Y",
+      "sources": [
+        {
+          "series_id": "UST_PAR_30Y",
+          "max_age_business_days": 3,
+          "convention": "par yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_US_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal US_30Y sovereign yields; the official source uses par yield, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        },
+        {
+          "series_id": "DGS30",
+          "max_age_business_days": 3,
+          "convention": "Treasury constant maturity yield",
+          "role": "history_only",
+          "comparability_note": "Historical comparison only: benchmark selection or curve construction may differ."
+        }
+      ]
+    },
+    {
+      "concept": "US_5Y",
+      "sources": [
+        {
+          "series_id": "UST_PAR_5Y",
+          "max_age_business_days": 3,
+          "convention": "par yield",
+          "role": "primary"
+        },
+        {
+          "series_id": "TV_US_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "secondary",
+          "comparability_note": "Both are nominal US_5Y sovereign yields; the official source uses par yield, while TradingView uses a vendor benchmark with unspecified selection and fixing time. These differences can create a basis."
+        }
+      ]
+    },
+    {
+      "concept": "ZA_10Y",
+      "sources": [
+        {
+          "series_id": "TV_ZA_10Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        },
+        {
+          "series_id": "IRLTLT01ZAM156N",
+          "max_age_business_days": 90,
+          "convention": "monthly long-term government bond yield",
+          "role": "fallback",
+          "comparability_note": "Monthly OECD long-term government yield; averaging, maturity, selection and publication timing differ from daily benchmarks."
+        }
+      ]
+    },
+    {
+      "concept": "ZA_30Y",
+      "sources": [
+        {
+          "series_id": "TV_ZA_30Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    },
+    {
+      "concept": "ZA_5Y",
+      "sources": [
+        {
+          "series_id": "TV_ZA_5Y",
+          "max_age_business_days": 3,
+          "convention": "benchmark bond YTM (vendor methodology not specified)",
+          "role": "primary"
+        }
+      ]
+    }
+  ]
+}
