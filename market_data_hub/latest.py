@@ -167,14 +167,7 @@ def _prior_key(ordered, position, transform, frequency):
     return ordered[position - 1] if position else None
 
 
-def _refreshed_together(newest, prior):
-    """Both rows come from one refresh (updated_at within a day); unknown passes."""
-    if newest is None or prior is None:
-        return True
-    return abs(newest - prior) <= timedelta(days=1)
-
-
-def apply_transform(rows, transform, frequency, scale=1.0, refreshed=None):
+def apply_transform(rows, transform, frequency, scale=1.0):
     """Return [(stored_date, value)] after ``transform`` and ``scale``.
 
     ``rows`` are ascending (stored_date, value) pairs. Changes compare with the
@@ -183,9 +176,6 @@ def apply_transform(rows, transform, frequency, scale=1.0, refreshed=None):
     Daily series compare with the previous stored row. Arithmetic is decimal on
     the stored values, so half-up rounding of the result is not skewed by binary
     error (100 -> 100.25 is exactly 0.25 %).
-
-    ``refreshed`` maps stored_date -> updated_at; when given, a change whose two
-    rows were not refreshed together (mixed vintages) yields no value.
     """
     transform = transform or "level"
     if transform not in TRANSFORMS:
@@ -202,9 +192,6 @@ def apply_transform(rows, transform, frequency, scale=1.0, refreshed=None):
         else:
             prior_key = _prior_key(ordered, position, transform, frequency)
             if prior_key is None or prior_key not in by_date:
-                continue
-            if refreshed is not None and not _refreshed_together(
-                    refreshed.get(stored), refreshed.get(prior_key)):
                 continue
             prior = _decimal(by_date[prior_key])
             if transform == "diff":
@@ -380,27 +367,13 @@ def _candidate(source, rank, **fields):
 
 
 def _macro_rows(con, series_id, cutoff, limit=None):
-    """(date, value, updated_at) rows ascending; updated_at is None when the table
-    has no such column (fixtures)."""
+    """(date, value) rows ascending, dated on or before ``cutoff`` (the newest
+    ``limit`` rows when given)."""
     order = "DESC LIMIT ?" if limit else "ASC"
     params = [series_id, cutoff] + ([limit] if limit else [])
-    where = "WHERE series_id = ? AND date <= ? AND value IS NOT NULL"
-    try:
-        rows = con.execute(f"SELECT date, value, updated_at FROM macro_series {where} "
-                           f"ORDER BY date {order}", params).fetchall()
-    except duckdb_errors() as exc:
-        if "updated_at" not in str(exc):
-            raise
-        rows = [(d, v, None) for d, v in con.execute(
-            f"SELECT date, value FROM macro_series {where} ORDER BY date {order}", params).fetchall()]
-    rows = [(_to_date(d), float(v), u) for d, v, u in rows if v is not None and math.isfinite(v)]
-    return sorted(rows)
-
-
-def duckdb_errors():
-    import duckdb
-
-    return (duckdb.BinderException, duckdb.CatalogException)
+    rows = con.execute("SELECT date, value FROM macro_series WHERE series_id = ? AND date <= ? "
+                       f"AND value IS NOT NULL ORDER BY date {order}", params).fetchall()
+    return sorted((_to_date(d), float(v)) for d, v in rows if v is not None and math.isfinite(v))
 
 
 def _macro_candidate(ctx, source, rank):
@@ -409,20 +382,12 @@ def _macro_candidate(ctx, source, rank):
     if not rows:
         return _candidate(source, rank, reason="no observation on or before as_of")
     transform = source.get("transform", "level")
-    pairs = [(d, v) for d, v, _ in rows]
-    values = apply_transform(pairs, transform, frequency, source.get("scale", 1.0))
+    values = apply_transform(rows, transform, frequency, source.get("scale", 1.0))
     if ctx.obs_cap is not None:
         values = [(d, v) for d, v in values if _observation_date(d, frequency) <= ctx.obs_cap]
     if not values:
         return _candidate(source, rank, reason=f"transform {transform} has no prior period")
     stored, value = values[-1]
-    if transform != "level":
-        refreshed = {d: u for d, _, u in rows}
-        coherent = apply_transform(pairs, transform, frequency, source.get("scale", 1.0), refreshed)
-        if not any(d == stored for d, _ in coherent):
-            return _candidate(source, rank, reason=(
-                f"mixed vintages: the comparison value for {stored.isoformat()} was not "
-                "refreshed with it; transformed value rejected"))
     return _candidate(source, rank, value=value,
                       observation_date=_observation_date(stored, frequency))
 
@@ -757,11 +722,8 @@ def read_concept_history(concept, start=None, end=None, *, as_of=None, con=None,
     finally:
         if own:
             con.close()
-    transform = source.get("transform", "level")
-    # Changes whose two rows come from different refreshes are dropped (mixed vintages).
-    refreshed = {d: u for d, _, u in rows} if transform != "level" else None
-    values = apply_transform([(d, v) for d, v, _ in rows], transform, frequency,
-                             source.get("scale", 1.0), refreshed)
+    values = apply_transform(rows, source.get("transform", "level"),
+                             frequency, source.get("scale", 1.0))
     start_date = _to_date(start) if start is not None else None
     out = [{"date": _observation_date(d, frequency), "value": v, "source_id": source["id"]}
            for d, v in values]

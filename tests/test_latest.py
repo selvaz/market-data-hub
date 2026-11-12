@@ -394,25 +394,49 @@ def test_transform_is_decimal_so_half_up_rounding_is_exact():
     assert result["value"] == 0.3 and result["value_raw"] == 0.25
 
 
-def _pce_con(updated_prior):
+def _pce_con():
     con = duckdb.connect(":memory:")
-    con.execute("CREATE TABLE macro_series (date DATE, series_id VARCHAR, value DOUBLE, "
-                "updated_at TIMESTAMP)")
-    con.executemany("INSERT INTO macro_series VALUES (?, 'PCEPI', ?, ?)", [
-        ("2025-09-01", 120.0, updated_prior), ("2026-09-01", 105.0, "2026-10-30 12:00:00")])
+    con.execute("CREATE TABLE macro_series (date DATE, series_id VARCHAR, value DOUBLE)")
+    con.executemany("INSERT INTO macro_series VALUES (?, 'PCEPI', ?)",
+                    [("2025-09-01", 120.0), ("2026-09-01", 105.0)])
     return con
 
 
-def test_yy_over_mixed_vintages_is_rejected():
-    stale_base = latest.read_latest("us_pce_price_index_yy", as_of="2026-10-31",
-                                    con=_pce_con("2025-10-31 12:00:00"))
-    assert stale_base["status"] == "unavailable"
-    assert "mixed vintages" in stale_base["alternatives"][-1]["reason"]
-    coherent = latest.read_latest("us_pce_price_index_yy", as_of="2026-10-31",
-                                  con=_pce_con("2026-10-30 12:01:00"))
-    assert coherent["status"] == "newer_secondary" and coherent["value"] == -12.5
-    history = latest.read_concept_history("us_pce_price_index_yy", con=_pce_con("2025-10-31"))
-    assert history.empty
+def test_yy_concepts_have_no_fred_current_value():
+    registry = concepts.load_concepts()
+    for name in ("us_pce_price_index_yy", "us_core_pce_yy", "us_avg_hourly_earnings_yy"):
+        active = [s for s in registry[name]["sources"] if s["role"] != "history_only"]
+        assert [(s["kind"], s["role"]) for s in active] == [("release", "primary")]
+        assert registry[name]["history"]["mode"] == "single"
+    for spec in registry.values():
+        for source in spec.get("sources", []):
+            if source.get("transform") == "pct_change_yy":
+                assert source["role"] == "history_only"
+    result = latest.read_latest("us_pce_price_index_yy", as_of="2026-10-31", con=_pce_con())
+    assert result["status"] == "unavailable"
+    assert [a["source_id"] for a in result["alternatives"]] == ["us_pce_price_index_yy"]
+    history = latest.read_concept_history("us_pce_price_index_yy", con=_pce_con())
+    assert list(history["value"]) == [-12.5] and list(history["source_id"]) == ["PCEPI"]
+
+
+@pytest.mark.parametrize("role", ["primary", "secondary", "fallback", "proxy"])
+def test_validator_rejects_yy_on_current_sources(macro_entry, transform_catalogues, role):
+    source = {"kind": "macro", "id": "CPIAUCSL", "role": role, "max_age_business_days": 38,
+              "convention": "FRED index", "transform": "pct_change_yy", "unit": "%"}
+    if role == "primary":
+        macro_entry["sources"] = [source]
+    else:
+        macro_entry["sources"].append(source)
+    with pytest.raises(ValueError, match="pct_change_yy is allowed only on history_only"):
+        concepts.validate_concepts([macro_entry], transform_catalogues)
+
+
+def test_validator_accepts_yy_on_history_only(macro_entry, transform_catalogues):
+    macro_entry["sources"][0]["transform"] = "level"
+    macro_entry["sources"].append({"kind": "macro", "id": "GDPC1", "role": "history_only",
+                                   "max_age_business_days": 38, "convention": "FRED level",
+                                   "transform": "pct_change_yy"})
+    assert concepts.validate_concepts([macro_entry], transform_catalogues)["TEST"]
 
 
 def test_fred_refresh_rewrites_the_comparison_window(tmp_db, monkeypatch):

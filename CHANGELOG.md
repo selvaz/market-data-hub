@@ -16,9 +16,10 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   Macro sources gain optional `transform` and `scale`; concepts gain optional
   `decimals` (published precision, applied to the returned values; the raw
   number stays in `value_raw`).
-  Release values include revisions known at `as_known_at`; transformed FRED
-  values are rejected over mixed vintages, and the FRED collector widens its
-  tail refresh to each transformed series' comparison window.
+  Release values include revisions known at `as_known_at`. Year-on-year FRED
+  transforms are history-only (single-source rule: y/y concepts resolve from
+  the issuer release alone), and the FRED collector widens its tail refresh to
+  each transformed series' comparison window.
 - 24 US release concepts in `concepts/releases.yaml` (issuer primary, FRED
   secondary where units match), `US_OECD_CLI`, and the derived
   `US_CURVE_10Y3M`. FRED `USALOLITOAASTSAM` and `UMCSENT` in `macro_series.yaml`;

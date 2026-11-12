@@ -64,7 +64,8 @@ a stored index or level feeds a percentage or change concept in the release
 unit (for example `ICSA` claims times 0.001 gives thousands). Validation
 requires a monthly series for `pct_change_mm`, a quarterly one for
 `pct_change_qq_saar`, and a monthly, quarterly or weekly one for
-`pct_change_yy`; other source kinds reject both keys. Where the issuer publishes
+`pct_change_yy`, which is further limited to `history_only` sources; other
+source kinds reject both keys. Where the issuer publishes
 a change from a non-seasonally-adjusted index that macro_series does not hold
 (CPI and PPI y/y), the FRED secondary is omitted and a comment says why.
 `max_age_business_days` follows `ceil((period_days + issuer_lag_days + 7) * 5 / 7)`
@@ -100,16 +101,16 @@ knowledge-filtered snapshot. `consensus` prefers an eligible survey consensus
 over an FF forecast and returns `provider`, `value`, `kind` and
 `surprise_eligible`.
 
-Change transforms compare two stored rows. A transformed value is rejected
-(reason "mixed vintages") when those two rows were not refreshed together,
-judged by `macro_series.updated_at` within one day, because a revised newest
-value over an old-vintage comparison value gives a wrong change marked fresh.
-Rows without `updated_at` are not judged. To keep transformed sources usable,
-the FRED collector widens its tail refresh for each transformed series to
-`concepts.comparison_window_days()` (one comparison period plus 35 days, for
-example 407 days for monthly y/y), so both rows are rewritten in the same run.
-History applies the same rule and drops incoherent points. Transforms are
-computed in decimal from the stored values, so half-up rounding is exact.
+Single-source rule for year-on-year: a y/y compares two rows a year apart
+that can come from different refreshes, so `transform: pct_change_yy` is
+allowed only on `history_only` sources (the validator rejects it elsewhere).
+The y/y concepts (`us_pce_price_index_yy`, `us_core_pce_yy`,
+`us_avg_hourly_earnings_yy`) resolve from the issuer release alone and keep the
+FRED series for `history: single`. The FRED collector still widens its tail
+refresh for each transformed series to `concepts.comparison_window_days()`
+(one comparison period plus 35 days, for example 407 days for monthly y/y), so
+history rewrites both rows in the same run. Transforms are computed in decimal
+from the stored values, so half-up rounding is exact.
 
 Derived concepts evaluate their `expression` over resolved inputs at a common
 date (re-resolving both inputs with observation dates bounded by the older

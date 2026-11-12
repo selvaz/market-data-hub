@@ -2,6 +2,8 @@
 # catalogue indicator_id. Chain: primary = issuer release (macro_releases), then
 # an optional FRED secondary from the indicator card's ms: ids, transformed into
 # the release unit. history = that single FRED series (never spliced).
+# y/y concepts keep only the issuer release as a current source: their FRED
+# series is history_only (the validator rejects pct_change_yy elsewhere).
 #
 # max_age_business_days rule (same for every source of a concept):
 #   ceil((period_days + issuer_lag_days + 7) * 5 / 7)
@@ -111,12 +113,12 @@ concepts:
     convention: issuer published value (BEA, yy, SA)
   - kind: macro
     id: PCEPI
-    role: secondary
+    role: history_only
     max_age_business_days: 48
     convention: FRED pct_change_yy of PCEPI
     transform: pct_change_yy
     scale: 1
-    comparability_note: "Computed from the SA index level; BEA rounds the published change to one decimal."
+    comparability_note: "History only (single-source rule): a y/y from FRED is never a current value, because its two rows can come from different refreshes. Computed from the SA index level; BEA rounds the published change to one decimal."
   history:
     mode: single
     id: PCEPI
@@ -136,12 +138,12 @@ concepts:
     convention: issuer published value (BEA, yy, SA)
   - kind: macro
     id: PCEPILFE
-    role: secondary
+    role: history_only
     max_age_business_days: 48
     convention: FRED pct_change_yy of PCEPILFE
     transform: pct_change_yy
     scale: 1
-    comparability_note: "Computed from the SA index level; BEA rounds the published change to one decimal."
+    comparability_note: "History only (single-source rule): a y/y from FRED is never a current value, because its two rows can come from different refreshes. Computed from the SA index level; BEA rounds the published change to one decimal."
   history:
     mode: single
     id: PCEPILFE
@@ -211,12 +213,12 @@ concepts:
     convention: issuer published value (BLS, yy, SA)
   - kind: macro
     id: CES0500000003
-    role: secondary
+    role: history_only
     max_age_business_days: 33
     convention: FRED pct_change_yy of CES0500000003
     transform: pct_change_yy
     scale: 1
-    comparability_note: "Computed from the SA dollar level; BLS rounds the published change to one decimal."
+    comparability_note: "History only (single-source rule): a y/y from FRED is never a current value, because its two rows can come from different refreshes. Computed from the SA dollar level; BLS rounds the published change to one decimal."
   history:
     mode: single
     id: CES0500000003

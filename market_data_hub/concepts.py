@@ -193,6 +193,10 @@ def _validate_transform(name, source, catalogue_entry):
     if transform is not None:
         if transform not in TRANSFORMS:
             raise ValueError(f"{name}: invalid transform {transform}")
+        # Single-source rule: a y/y compares rows that may come from different
+        # refreshes, so it may feed history but never a current value.
+        if transform == "pct_change_yy" and source.get("role") != "history_only":
+            raise ValueError(f"{name}: transform pct_change_yy is allowed only on history_only sources")
         required = TRANSFORM_FREQUENCIES[transform]
         frequency = catalogue_entry.get("frequency")
         if required is not None and frequency not in required:
