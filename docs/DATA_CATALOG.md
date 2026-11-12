@@ -22,7 +22,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 |---|---|---:|
 | hub | [alfred_backfill_pending](#catalog-hub-alfred_backfill_pending) | 0 |
 | hub | [alfred_backfill_progress](#catalog-hub-alfred_backfill_progress) | 0 |
-| hub | [alfred_vintage_observations](#catalog-hub-alfred_vintage_observations) | 41 |
+| hub | [alfred_vintage_observations](#catalog-hub-alfred_vintage_observations) | 43 |
 | hub | [calendar_event_notes](#catalog-hub-calendar_event_notes) | 0 |
 | hub | [calendar_events](#catalog-hub-calendar_events) | 0 |
 | hub | [calendar_indicator_aliases](#catalog-hub-calendar_indicator_aliases) | 0 |
@@ -50,7 +50,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 311 |
+| hub | [macro_series](#catalog-hub-macro_series) | 313 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
@@ -145,6 +145,7 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 | CPIAUCSL | CPI-U all items | BLS | ALFRED via FRED API | M | 14 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | CPILFESL | CPI ex food and energy | BLS | ALFRED via FRED API | M | 14 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | DRTSCILM | Quarterly lending standards lead from SLOOS; retain vendor publication history. | Federal Reserve Board SLOOS | ALFRED via FRED API | Q | 45 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| DSPIC96 | Real disposable personal income | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | DTWEXBGS | Broad trade-weighted dollar | Fed H.10 | ALFRED via FRED API | D | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | EUNNGDP | Nominal GDP | Eurostat | ALFRED via FRED API | Q | 30 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | GACDFSA066MSFRBPHI | Philadelphia Fed soft activity input; preserve actual archived depth without inventing early vintages. | Federal Reserve Bank of Philadelphia | ALFRED via FRED API | M | 0 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
@@ -159,6 +160,7 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 | NEWORDER | Nondefense capital goods orders lead; monthly and benchmark revisions. | US Census Bureau | ALFRED via FRED API | M | 27 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | NFCI | Chicago Fed NFCI | Chicago Fed | ALFRED via FRED API | W | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PAYEMS | Nonfarm payrolls | BLS CES | ALFRED via FRED API | M | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| PCEC96 | Real personal consumption expenditures | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PCEPI | PCE price index (headline) | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PCEPILFE | Core PCE price index | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PERMIT | Building permits | US Census Bureau | ALFRED via FRED API | M | 20 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
@@ -1691,6 +1693,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | DGS30 | RATES \| US \| 30-Year Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS3MO | RATES \| US \| 3-Month Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS6MO | RATES \| US \| 6-Month Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| DSPIC96 | MACRO \| US \| Real Disposable Personal Income (Billions of Chained 2017 Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DTWEXBGS | FX \| USD \| Trade Weighted US Dollar Index: Broad | Fed H.10 | FRED | D | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ECBDFR | RATES \| ECB \| Deposit Facility Rate | ECB | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ECBMLFR | RATES \| ECB \| Marginal Lending Facility Rate | ECB | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
@@ -1765,6 +1768,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | NYFED_ACM_TP10_MONTHLY | RATES \| US \| NY Fed ACM 10-Year Term Premium Monthly | NY Fed (model) | NY Fed direct | M | 30 | 1961-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | PAYEMS | MACRO \| US \| Nonfarm Payrolls (Total) | BLS CES | FRED | M | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCE | MACRO \| US \| Personal Consumption Expenditures (Billions of Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| PCEC96 | MACRO \| US \| Real Personal Consumption Expenditures (Billions of Chained 2017 Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCEPI | MACRO \| US \| PCE Price Index | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCEPILFE | MACRO \| US \| Core PCE Price Index | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PERMIT | MACRO \| US \| Building Permits (Thousands of Units, SAAR) | Census | FRED | M | 20 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |

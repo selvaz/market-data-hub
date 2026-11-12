@@ -267,7 +267,7 @@
       "key": "us_personal_income",
       "known_failure_modes": [],
       "nature": "HARD",
-      "rationale": "NBER uses real income ex transfers (W875RX1, not held: gap register).",
+      "rationale": "NBER uses real income ex transfers (W875RX1, not held: gap register); real disposable income (DSPIC96) is held as us_real_disposable_income.",
       "raw_ids": "cal:us_personal_income_mm",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
@@ -312,7 +312,7 @@
       "key": "us_personal_spending",
       "known_failure_modes": [],
       "nature": "HARD",
-      "rationale": "Nominal; real PCE (PCEC96) not held.",
+      "rationale": "Nominal; real PCE is the separate card us_real_personal_spending (PCEC96).",
       "raw_ids": "cal:us_personal_spending_mm",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
@@ -326,6 +326,92 @@
         "matched_turning_point_leads": "not estimated",
         "predictive_screen": [],
         "reference": "real PCE (NBER)",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Real personal consumption expenditures",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "H",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "PCEC96"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_real_personal_spending",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "Chained 2017 dollars, SAAR; revised with monthly and benchmark BEA estimates.",
+      "raw_ids": "ms:PCEC96",
+      "revision_behaviour": "revised with monthly and benchmark BEA estimates.",
+      "secondary": [],
+      "source": "BEA",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "real PCE (NBER)",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Real disposable personal income",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "H",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "DSPIC96"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_real_disposable_income",
+      "known_failure_modes": [],
+      "nature": "HARD",
+      "rationale": "Chained 2017 dollars, SAAR; includes transfers, so not the NBER ex-transfers measure (W875RX1); revised with monthly and benchmark BEA estimates.",
+      "raw_ids": "ms:DSPIC96",
+      "revision_behaviour": "revised with monthly and benchmark BEA estimates.",
+      "secondary": [],
+      "source": "BEA",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "real income (NBER uses real income ex transfers)",
         "relationship_keys": [],
         "screen_note": "not tested"
       }
@@ -20205,6 +20291,6 @@
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "15ce8899119a5957b12caed5cd0baf860f7b79f90421de98fbd92c645df81de9",
-  "timing_extract_sha256": "8f46dc9b5e2532c7c799f3a3f09fbfb5c3949ab6ff5cf26732c42029c5033de8"
+  "source_table_sha256": "2af948a54c39df76eb407cb352f82c9b2de67a77ce248ecbbfd89fdca994d078",
+  "timing_extract_sha256": "279933963c22c2aa5a85c0b5596c33506b61d8dbce144fe4ad39056ad525b183"
 }
