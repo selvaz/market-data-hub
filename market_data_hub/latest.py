@@ -51,6 +51,20 @@ REDISTRIBUTOR_RELEASE_STATUSES = USABLE_RELEASE_STATUSES | {"provisional"}
 def _release_statuses(source):
     return (REDISTRIBUTOR_RELEASE_STATUSES if source.get("evidence") == "redistributor"
             else USABLE_RELEASE_STATUSES)
+
+
+def _passed_validation(resolution):
+    """A provisional (mirror-only) resolution counts only when it selected a value vintage.
+
+    The daily verification gate (sanity bands, absolute bounds) marks failing
+    observations needs_review: their reading is kept as evidence but no
+    vintage is written. Official/private statuses already require verified
+    issuer evidence; a mirror reading without a vintage was held or rejected.
+    """
+    if (resolution or {}).get("status") != "provisional":
+        return True
+    selected = str(((resolution or {}).get("source") or {}).get("selected_evidence_id") or "")
+    return selected.startswith("vintage:")
 RESULT_KEYS = (
     "concept", "label", "family", "unit", "value", "value_raw", "observation_date", "reference_period",
     "source_id", "source_kind", "role", "status", "age_bd", "max_age_bd", "released_at",
@@ -406,6 +420,8 @@ def _usable_cards(ctx, cards, statuses=USABLE_RELEASE_STATUSES):
         resolution = card.get("resolution") or {}
         if resolution.get("value") is None or resolution.get("status") not in statuses:
             continue
+        if not _passed_validation(resolution):
+            continue
         if period_start_date(card["reference_period"]) > ctx.as_of:
             continue
         if ctx.obs_cap is not None and period_end_date(card["reference_period"]) > ctx.obs_cap:
@@ -446,7 +462,7 @@ def _release_candidate(ctx, source, rank, release_ids):
     # cutoff (revisions) are resolved across the whole knowledge-filtered snapshot.
     revised = _latest_period(snapshot, source["id"], period)
     if (revised and revised.get("value") is not None
-            and revised.get("status") in statuses):
+            and revised.get("status") in statuses and _passed_validation(revised)):
         if float(revised["value"]) != value:
             reason = f"revised from {value:g} (edition {revised.get('edition')})"
         value = float(revised["value"])

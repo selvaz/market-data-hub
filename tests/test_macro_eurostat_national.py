@@ -424,3 +424,48 @@ def test_release_evidence_value_is_validated():
     spec["sources"] = [dict(spec["sources"][0], evidence="mirror")]
     with pytest.raises(ValueError, match="evidence"):
         validate_concepts([spec])
+
+
+def _verified_persist(path, rows):
+    from market_data_hub.macro_releases.discovery import FamilyFetch
+    from market_data_hub.macro_releases.verification import configured_bands, verify
+    with open_writer(path) as store:
+        batch = verify(store, FamilyFetch(observations=rows), configured_bands())
+        persist(store, batch.observations)
+        return batch.issues
+
+
+def _esi_with_de_head(value, updated=None):
+    def mutate(payload):
+        if updated:
+            payload["updated"] = updated
+    rows = parse(document("ei_bssi_m_r2", mutate), "ea_big4_esi", "2026-01")
+    head = max((o for o in rows if o.indicator_id == "de_economic_sentiment_indicator"), key=lambda o: o.period)
+    return [replace(o, value=value, printed=str(value)) if o is head else o for o in rows], head
+
+
+def test_mirror_reading_held_by_verification_is_not_returned(tmp_path):
+    from market_data_hub import latest
+    rows, _ = _esi_with_de_head(250.0)
+    path = tmp_path / "macro.sqlite"
+    assert _verified_persist(path, rows) == ["absolute_sanity_bound_exceeded:de_economic_sentiment_indicator"]
+    result = latest.read_latest("de_economic_sentiment_indicator", as_of="2026-11-12", releases_db=str(path),
+                                as_known_at="2026-11-12T12:00:00Z")
+    assert result["value"] != 250.0
+    assert result["status"] == "unavailable"
+
+
+def test_held_revision_does_not_replace_a_validated_mirror_value(tmp_path):
+    from market_data_hub import latest
+    path = tmp_path / "macro.sqlite"
+    good, head = _esi_with_de_head(None)
+    good = [replace(o, value=head.value, printed=head.printed) if o.indicator_id == head.indicator_id
+            and o.period == head.period else o for o in good]
+    assert _verified_persist(path, good) == []
+    held, _ = _esi_with_de_head(250.0, updated="2026-11-05T23:00:00+0100")
+    held = [replace(o, document=replace(o.document, retrieved_at="2026-11-06T08:00:00Z")) for o in held]
+    assert _verified_persist(path, held) == ["absolute_sanity_bound_exceeded:de_economic_sentiment_indicator"]
+    result = latest.read_latest("de_economic_sentiment_indicator", as_of="2026-11-12", releases_db=str(path),
+                                as_known_at="2026-11-12T12:00:00Z")
+    assert (result["reference_period"], result["value"]) == (head.period, head.value)
+    assert "revised" not in (result["reason"] or "")
