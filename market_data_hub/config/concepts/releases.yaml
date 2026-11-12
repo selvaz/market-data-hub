@@ -1,2 +1,505 @@
-# Release source ids are validated against INDICATORS. Declarations arrive in H4.
-concepts: []
+# US macro release concepts (H2). The concept id is the macro_releases
+# catalogue indicator_id. Chain: primary = issuer release (macro_releases), then
+# an optional FRED secondary from the indicator card's ms: ids, transformed into
+# the release unit. history = that single FRED series (never spliced).
+#
+# max_age_business_days rule (same for every source of a concept):
+#   ceil((period_days + issuer_lag_days + 7) * 5 / 7)
+# period_days: M 31, W 7, Q 92, E 49 (longest gap between FOMC meetings);
+# issuer_lag_days: macro_releases.catalogue.EXPECTED_LAG_DAYS of the family;
+# 7 days of grace. Age is counted from the reference period end in Mon-Fri
+# business days (no holiday calendar yet).
+concepts:
+- concept: us_cpi_headline_yy
+  family: releases
+  label: US CPI-U all items, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 14d issuer lag + 7d grace
+  # FRED CPIAUCSL is seasonally adjusted; BLS publishes the headline 12-month change from the NSA index (CUUR0000SA0), which is not in macro_series. No FRED secondary.
+  sources:
+  - kind: release
+    id: us_cpi_headline_yy
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (BLS, yy, NSA)
+- concept: us_cpi_headline_mm
+  family: releases
+  label: US CPI-U all items, m/m (SA)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 14d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_cpi_headline_mm
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (BLS, mm, SA)
+  - kind: macro
+    id: CPIAUCSL
+    role: secondary
+    max_age_business_days: 38
+    convention: FRED pct_change_mm of CPIAUCSL
+    transform: pct_change_mm
+    scale: 1
+    comparability_note: "Computed from the unrounded SA index; BLS rounds the published change to one decimal."
+  history:
+    mode: single
+    id: CPIAUCSL
+- concept: us_cpi_core_yy
+  family: releases
+  label: US CPI ex food and energy, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 14d issuer lag + 7d grace
+  # FRED CPILFESL is seasonally adjusted; BLS publishes the 12-month change from the NSA index (CUUR0000SA0L1E), not in macro_series. No FRED secondary.
+  sources:
+  - kind: release
+    id: us_cpi_core_yy
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (BLS, yy, NSA)
+- concept: us_cpi_core_mm
+  family: releases
+  label: US CPI ex food and energy, m/m (SA)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 14d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_cpi_core_mm
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (BLS, mm, SA)
+  - kind: macro
+    id: CPILFESL
+    role: secondary
+    max_age_business_days: 38
+    convention: FRED pct_change_mm of CPILFESL
+    transform: pct_change_mm
+    scale: 1
+    comparability_note: "Computed from the unrounded SA index; BLS rounds the published change to one decimal."
+  history:
+    mode: single
+    id: CPILFESL
+- concept: us_pce_price_index_yy
+  family: releases
+  label: US PCE price index, y/y
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 29d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_pce_price_index_yy
+    role: primary
+    max_age_business_days: 48
+    convention: issuer published value (BEA, yy, SA)
+  - kind: macro
+    id: PCEPI
+    role: secondary
+    max_age_business_days: 48
+    convention: FRED pct_change_yy of PCEPI
+    transform: pct_change_yy
+    scale: 1
+    comparability_note: "Computed from the SA index level; BEA rounds the published change to one decimal."
+  history:
+    mode: single
+    id: PCEPI
+- concept: us_core_pce_yy
+  family: releases
+  label: US core PCE price index, y/y
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 29d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_core_pce_yy
+    role: primary
+    max_age_business_days: 48
+    convention: issuer published value (BEA, yy, SA)
+  - kind: macro
+    id: PCEPILFE
+    role: secondary
+    max_age_business_days: 48
+    convention: FRED pct_change_yy of PCEPILFE
+    transform: pct_change_yy
+    scale: 1
+    comparability_note: "Computed from the SA index level; BEA rounds the published change to one decimal."
+  history:
+    mode: single
+    id: PCEPILFE
+- concept: us_payrolls_change
+  family: releases
+  label: US nonfarm payrolls, monthly change
+  unit: thousands of persons
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 7d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_payrolls_change
+    role: primary
+    max_age_business_days: 33
+    convention: issuer published value (BLS, change, SA)
+  - kind: macro
+    id: PAYEMS
+    role: secondary
+    max_age_business_days: 33
+    convention: FRED diff of PAYEMS
+    transform: diff
+    scale: 1
+    comparability_note: "PAYEMS is the SA employment level in thousands of persons; its monthly difference is the published net change in the same unit."
+  history:
+    mode: single
+    id: PAYEMS
+- concept: us_unemployment_rate
+  family: releases
+  label: US unemployment rate (U-3)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 7d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_unemployment_rate
+    role: primary
+    max_age_business_days: 33
+    convention: issuer published value (BLS, level, SA)
+  - kind: macro
+    id: UNRATE
+    role: secondary
+    max_age_business_days: 33
+    convention: FRED level of UNRATE
+    transform: level
+    scale: 1
+    comparability_note: "Same CPS U-3 SA rate."
+  history:
+    mode: single
+    id: UNRATE
+- concept: us_avg_hourly_earnings_yy
+  family: releases
+  label: US average hourly earnings, total private, y/y
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 7d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_avg_hourly_earnings_yy
+    role: primary
+    max_age_business_days: 33
+    convention: issuer published value (BLS, yy, SA)
+  - kind: macro
+    id: CES0500000003
+    role: secondary
+    max_age_business_days: 33
+    convention: FRED pct_change_yy of CES0500000003
+    transform: pct_change_yy
+    scale: 1
+    comparability_note: "Computed from the SA dollar level; BLS rounds the published change to one decimal."
+  history:
+    mode: single
+    id: CES0500000003
+- concept: us_gdp_qq_saar
+  family: releases
+  label: US real GDP, q/q SAAR
+  unit: '%'
+  frequency: Q
+  calendar: us_govt
+  # max age: Q period + 29d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_gdp_qq_saar
+    role: primary
+    max_age_business_days: 92
+    convention: issuer published value (BEA, qq_saar, SA)
+  - kind: macro
+    id: GDPC1
+    role: secondary
+    max_age_business_days: 92
+    convention: FRED pct_change_qq_saar of GDPC1
+    transform: pct_change_qq_saar
+    scale: 1
+    comparability_note: "Compounded from the chained-dollar level; BEA computes the published rate from unrounded data and rounds to one decimal."
+  history:
+    mode: single
+    id: GDPC1
+- concept: us_retail_sales_mm
+  family: releases
+  label: US retail and food services sales, m/m
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 15d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_retail_sales_mm
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (Census, mm, SA)
+  - kind: macro
+    id: RSAFS
+    role: secondary
+    max_age_business_days: 38
+    convention: FRED pct_change_mm of RSAFS
+    transform: pct_change_mm
+    scale: 1
+    comparability_note: "Computed from the SA dollar level. Card defect D1: hub RSAFS history is a vintage mix until a consistent refresh."
+  history:
+    mode: single
+    id: RSAFS
+- concept: us_retail_sales_ex_auto_mm
+  family: releases
+  label: US retail sales ex motor vehicles and parts, m/m
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 15d issuer lag + 7d grace
+  # The card carries only RSAFS (total retail sales); no ex-auto FRED level is stored. No FRED secondary.
+  sources:
+  - kind: release
+    id: us_retail_sales_ex_auto_mm
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (Census, mm, SA)
+- concept: us_industrial_production_mm
+  family: releases
+  label: US industrial production, m/m
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 16d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_industrial_production_mm
+    role: primary
+    max_age_business_days: 39
+    convention: issuer published value (Federal Reserve, mm, SA)
+  - kind: macro
+    id: INDPRO
+    role: secondary
+    max_age_business_days: 39
+    convention: FRED pct_change_mm of INDPRO
+    transform: pct_change_mm
+    scale: 1
+    comparability_note: "Computed from the SA index; the Fed rounds the published change to one decimal."
+  history:
+    mode: single
+    id: INDPRO
+- concept: us_capacity_utilization
+  family: releases
+  label: US capacity utilisation, total industry
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 16d issuer lag + 7d grace
+  # The card has no ms: id (FRED TCU is not stored). No FRED secondary.
+  sources:
+  - kind: release
+    id: us_capacity_utilization
+    role: primary
+    max_age_business_days: 39
+    convention: issuer published value (Federal Reserve, level, SA)
+- concept: us_durable_goods_orders_mm
+  family: releases
+  label: US durable goods orders, m/m
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 27d issuer lag + 7d grace
+  # The card has no ms: id (FRED DGORDER is not stored). No FRED secondary.
+  sources:
+  - kind: release
+    id: us_durable_goods_orders_mm
+    role: primary
+    max_age_business_days: 47
+    convention: issuer published value (Census, mm, SA)
+- concept: us_housing_starts
+  family: releases
+  label: US housing starts, total, SAAR
+  unit: thousands of units
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 20d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_housing_starts
+    role: primary
+    max_age_business_days: 42
+    convention: issuer published value (Census, level, SA)
+  - kind: macro
+    id: HOUST
+    role: secondary
+    max_age_business_days: 42
+    convention: FRED level of HOUST
+    transform: level
+    scale: 1
+    comparability_note: "HOUST is in thousands of units SAAR, the release unit."
+  history:
+    mode: single
+    id: HOUST
+- concept: us_building_permits
+  family: releases
+  label: US building permits, total, SAAR
+  unit: thousands of units
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 20d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_building_permits
+    role: primary
+    max_age_business_days: 42
+    convention: issuer published value (Census, level, SA)
+  - kind: macro
+    id: PERMIT
+    role: secondary
+    max_age_business_days: 42
+    convention: FRED level of PERMIT
+    transform: level
+    scale: 1
+    comparability_note: "PERMIT is in thousands of units SAAR, the release unit. Stored in macro_series although the card still says 'FRED PERMIT not stored'."
+  history:
+    mode: single
+    id: PERMIT
+- concept: us_existing_home_sales
+  family: releases
+  label: US existing home sales, SAAR
+  unit: millions of units
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 23d issuer lag + 7d grace
+  # The card has no ms: id (NAR data is not redistributed on FRED in full history). No FRED secondary.
+  sources:
+  - kind: release
+    id: us_existing_home_sales
+    role: primary
+    max_age_business_days: 44
+    convention: issuer published value (NAR, level, SA)
+- concept: us_new_home_sales
+  family: releases
+  label: US new single-family home sales, SAAR
+  unit: thousands of units
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 27d issuer lag + 7d grace
+  # The card has no ms: id (FRED HSN1F is not stored). No FRED secondary.
+  sources:
+  - kind: release
+    id: us_new_home_sales
+    role: primary
+    max_age_business_days: 47
+    convention: issuer published value (Census, level, SA)
+- concept: us_trade_balance
+  family: releases
+  label: US goods and services trade balance (BoP basis)
+  unit: USD billions
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 36d issuer lag + 7d grace
+  # The card has no ms: id (FRED BOPGSTB is not stored). No FRED secondary.
+  sources:
+  - kind: release
+    id: us_trade_balance
+    role: primary
+    max_age_business_days: 53
+    convention: issuer published value (Census/BEA, level, SA)
+- concept: us_umich_consumer_sentiment
+  family: releases
+  label: US University of Michigan consumer sentiment
+  unit: index (1966 Q1 = 100)
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 0d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_umich_consumer_sentiment
+    role: primary
+    max_age_business_days: 28
+    convention: issuer published value (University of Michigan, level, NSA)
+  - kind: macro
+    id: UMCSENT
+    role: secondary
+    max_age_business_days: 28
+    convention: FRED level of UMCSENT
+    transform: level
+    scale: 1
+    comparability_note: "FRED republishes the final reading with a one-month delay; preliminary readings appear only in the release store."
+  history:
+    mode: single
+    id: UMCSENT
+- concept: us_ppi_yy
+  family: releases
+  label: US PPI final demand, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  # max age: M period + 15d issuer lag + 7d grace
+  # FRED PPIFIS is seasonally adjusted; BLS publishes the 12-month change from the NSA index (WPUFD4), not in macro_series. No FRED secondary.
+  sources:
+  - kind: release
+    id: us_ppi_yy
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (BLS, yy, NSA)
+- concept: us_initial_jobless_claims
+  family: releases
+  label: US initial jobless claims (SA)
+  unit: thousands of claims
+  frequency: W
+  calendar: us_govt
+  # max age: W period + 5d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_initial_jobless_claims
+    role: primary
+    max_age_business_days: 14
+    convention: issuer published value (DOL, level, SA)
+  - kind: macro
+    id: ICSA
+    role: secondary
+    max_age_business_days: 14
+    convention: FRED level of ICSA
+    transform: level
+    scale: 0.001
+    comparability_note: "ICSA is a count of claims; scale 0.001 converts it to thousands, the release unit. Week-ending Saturday dates match the release reference period."
+  history:
+    mode: single
+    id: ICSA
+- concept: fed_funds_rate_decision
+  family: releases
+  label: FOMC federal funds target range, upper bound
+  unit: '%'
+  frequency: E
+  calendar: us_govt
+  # max age: E period + 0d issuer lag + 7d grace
+  # Event series: the observation is the decision date. No FRED secondary (DFEDTARU is not stored).
+  sources:
+  - kind: release
+    id: fed_funds_rate_decision
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (Federal Reserve, level, n/a)
+# OECD composite leading indicator via FRED: a model composite with no issuer
+# release card; max age: M period + 45d lag + 7d grace.
+- concept: US_OECD_CLI
+  family: releases
+  label: OECD composite leading indicator, USA (amplitude adjusted)
+  unit: index (long-term average = 100)
+  frequency: M
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: USALOLITOAASTSAM
+    role: primary
+    max_age_business_days: 60
+    convention: OECD amplitude-adjusted composite leading indicator
+  history:
+    mode: single
+    id: USALOLITOAASTSAM
