@@ -7,6 +7,8 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.28] — 2026-11-12
+
 ### Added
 - Euro-area national macro coverage for Germany, France and Italy from the
   Eurostat API (one collector, `eurostat_national`; each family fails closed on
