@@ -28,7 +28,7 @@ def test_combined_catalog_retains_every_declared_series(tmp_db):
     dataset = next(d for d in catalog.list_datasets() if d["domain"] == "macro")
     # Includes the DGS1MO and DGS6MO Treasury fallbacks added in H1 and the
     # PCEC96 and DSPIC96 real consumption and income series.
-    assert dataset["n_series"] == len(declared) == 315
+    assert dataset["n_series"] == len(declared) == 318
     assert dataset["frequency"] == "D/W/M/Q/A"
     assert all(
         name in dataset["description"] for name in ("FRED", "NY Fed ACM", "sovereign")
@@ -147,7 +147,7 @@ def test_validation_reports_both_counts_and_checks_both_contracts(monkeypatch, c
     assert validate_config.main() == 0
     output = capsys.readouterr().out
     assert (
-        "fred=117" in output
+        "fred=120" in output
         and "nyfed_acm=2" in output
         and "sovereign_yields=42" in output
     )
