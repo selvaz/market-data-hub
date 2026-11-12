@@ -539,8 +539,12 @@ def build_rows(config_dir=CONFIG_DIR):
         row["families"] = families
         from .macro_releases.fred import MAPPINGS
 
+        from .macro_releases.eurostat_national import MIRRORED as EUROSTAT_MIRRORED
+
         row["distributor"] = (
-            indicator.issuer_id
+            "Eurostat API (redistributor; issuer prints not collected)"
+            if id in EUROSTAT_MIRRORED
+            else indicator.issuer_id
             + " direct"
             + ("; FRED/ALFRED mirror" if id in MAPPINGS else "")
         )

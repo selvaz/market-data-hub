@@ -28,6 +28,12 @@ SOURCE_KEYS = {
 }
 # Optional on macro sources: how a stored level/index becomes the concept value.
 MACRO_SOURCE_KEYS = {"transform", "scale"}
+# Optional on release sources. ``evidence: redistributor`` accepts a release
+# store reading resolved from mirror evidence (status ``provisional``), e.g. a
+# national headline collected from the Eurostat API; omitted, only verified
+# issuer readings (``official``/``private``) are current values.
+RELEASE_SOURCE_KEYS = {"evidence"}
+RELEASE_EVIDENCE = {"issuer", "redistributor"}
 TRANSFORMS = {"level", "diff", "pct_change_mm", "pct_change_qq_saar", "pct_change_yy"}
 # Native series frequency each change transform requires (None: any frequency).
 TRANSFORM_FREQUENCIES = {
@@ -132,7 +138,8 @@ def _validate_source(name, source, catalogues, result):
     if not isinstance(source, dict) or source.get("kind") not in SOURCE_KINDS:
         raise ValueError(f"{name}: invalid source kind")
     allowed = (SOURCE_KEYS | {"field", "live"} if source["kind"] == "price"
-               else SOURCE_KEYS | MACRO_SOURCE_KEYS if source["kind"] == "macro" else SOURCE_KEYS)
+               else SOURCE_KEYS | MACRO_SOURCE_KEYS if source["kind"] == "macro"
+               else SOURCE_KEYS | RELEASE_SOURCE_KEYS if source["kind"] == "release" else SOURCE_KEYS)
     _reject_unknown_keys(source, allowed, f"{name} source")
     kind, sid = source["kind"], source.get("id")
     known = result if kind == "derived" else catalogues[kind]
@@ -151,6 +158,8 @@ def _validate_source(name, source, catalogues, result):
         if convention and convention != source["convention"]:
             raise ValueError(f"{name}: convention does not match {sid}")
         _validate_transform(name, source, known[sid])
+    if kind == "release" and source.get("evidence", "issuer") not in RELEASE_EVIDENCE:
+        raise ValueError(f"{name}: invalid release evidence")
     if kind == "price":
         if source.get("field") not in {"close", "adj_close"}:
             raise ValueError(f"{name}: invalid price field")

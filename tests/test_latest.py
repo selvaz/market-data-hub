@@ -228,7 +228,7 @@ def test_us_release_concepts_cover_catalogue_ids():
     registry = concepts.load_concepts()
     releases = {k: v for k, v in registry.items() if v["family"] == "releases"}
     for name, spec in releases.items():
-        if name == "US_OECD_CLI":
+        if name.endswith("_OECD_CLI"):
             continue
         assert spec["sources"][0] == {**spec["sources"][0], "kind": "release", "id": name,
                                       "role": "primary"}

@@ -405,6 +405,42 @@ fred:
   name: MACRO | US | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
   priority: 2
   country: US
+- symbol: DEULOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: Germany
+  name: MACRO | DE | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: DE
+- symbol: FRALOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: France
+  name: MACRO | FR | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: FR
+- symbol: ITALOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: Italy
+  name: MACRO | IT | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: IT
+- symbol: ESPLOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: Spain
+  name: MACRO | ES | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: ES
 - symbol: UMCSENT
   expected_lag_days: 35
   frequency: M

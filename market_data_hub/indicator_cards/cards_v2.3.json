@@ -5676,7 +5676,7 @@
       }
     },
     {
-      "concept": "HICP and core HICP",
+      "concept": "HICP, harmonised (headline and core)",
       "country": "DEU",
       "evidence": {
         "local_timing": "n.a.",
@@ -5692,7 +5692,10 @@
           "de_hicp_yy",
           "de_core_hicp_flash_yy"
         ],
-        "cat": [],
+        "cat": [
+          "de_hicp_yy",
+          "de_hicp_mm"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -5705,8 +5708,8 @@
         "short capture"
       ],
       "nature": "HARD",
-      "rationale": "Harmonised measure differs from national CPI: not a duplicate (review §6.1).",
-      "raw_ids": "cal:de_hicp_flash_yy,de_hicp_mm,de_hicp_yy,de_core_hicp_flash_yy",
+      "rationale": "Harmonised measure differs from national CPI: not a duplicate (review §6.1). Current source: Eurostat API redistribution of the national release (macro release store, mirror provenance).",
+      "raw_ids": "cal:de_hicp_flash_yy,de_hicp_mm,de_hicp_yy,de_core_hicp_flash_yy; cat:de_hicp_yy,de_hicp_mm",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
       "source": "Destatis",
@@ -6006,7 +6009,7 @@
       }
     },
     {
-      "concept": "HICP flash and final",
+      "concept": "HICP, harmonised, flash and final",
       "country": "ESP",
       "evidence": {
         "local_timing": "n.a.",
@@ -6021,7 +6024,10 @@
           "es_hicp_flash_yy",
           "es_hicp_final_yy"
         ],
-        "cat": [],
+        "cat": [
+          "es_hicp_yy",
+          "es_hicp_mm"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -6034,8 +6040,8 @@
         "short capture"
       ],
       "nature": "HARD",
-      "rationale": "Separate concept from national CPI.",
-      "raw_ids": "cal:es_hicp_flash_mm,es_hicp_flash_yy,es_hicp_final_yy",
+      "rationale": "Separate concept from national CPI. Current source: Eurostat API redistribution of the national release (macro release store, mirror provenance).",
+      "raw_ids": "cal:es_hicp_flash_mm,es_hicp_flash_yy,es_hicp_final_yy; cat:es_hicp_yy,es_hicp_mm",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
       "source": "INE",
@@ -6197,7 +6203,7 @@
       }
     },
     {
-      "concept": "HICP and core HICP",
+      "concept": "HICP, harmonised (headline and core)",
       "country": "ITA",
       "evidence": {
         "local_timing": "n.a.",
@@ -6215,7 +6221,10 @@
           "it_hicp_core_mm",
           "it_hicp_core_yy"
         ],
-        "cat": [],
+        "cat": [
+          "it_hicp_yy",
+          "it_hicp_mm"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -6228,8 +6237,8 @@
         "short capture"
       ],
       "nature": "HARD",
-      "rationale": "Harmonised; separate from NIC.",
-      "raw_ids": "cal:it_hicp_flash_mm,it_hicp_flash_yy,it_hicp_mm,it_hicp_yy,it_hicp_core_mm,it_hicp_core_yy",
+      "rationale": "Harmonised; separate from NIC. Current source: Eurostat API redistribution of the national release (macro release store, mirror provenance).",
+      "raw_ids": "cal:it_hicp_flash_mm,it_hicp_flash_yy,it_hicp_mm,it_hicp_yy,it_hicp_core_mm,it_hicp_core_yy; cat:it_hicp_yy,it_hicp_mm",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
       "source": "Istat",
@@ -10662,7 +10671,7 @@
       }
     },
     {
-      "concept": "HICP final",
+      "concept": "HICP, harmonised, final",
       "country": "POL",
       "evidence": {
         "local_timing": "n.a.",
@@ -10676,7 +10685,10 @@
           "pl_hicp_final_mm",
           "pl_hicp_final_yy"
         ],
-        "cat": [],
+        "cat": [
+          "pl_hicp_yy",
+          "pl_hicp_mm"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -10689,8 +10701,8 @@
         "short capture"
       ],
       "nature": "HARD",
-      "rationale": "Harmonised, separate concept.",
-      "raw_ids": "cal:pl_hicp_final_mm,pl_hicp_final_yy",
+      "rationale": "Harmonised, separate concept from the national CPI (pl_cpi). Current source: Eurostat API redistribution of the national release (macro release store, mirror provenance); no flash estimate outside the euro area.",
+      "raw_ids": "cal:pl_hicp_final_mm,pl_hicp_final_yy; cat:pl_hicp_yy,pl_hicp_mm",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
       "source": "GUS/Eurostat",
@@ -10767,7 +10779,9 @@
           "pl_nbp",
           "pl_nbp_minutes"
         ],
-        "cat": [],
+        "cat": [
+          "nbp_reference_rate_decision"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -10780,8 +10794,8 @@
         "short capture"
       ],
       "nature": "POLICY",
-      "rationale": "Current state.",
-      "raw_ids": "cal:pl_nbp,pl_nbp_minutes",
+      "rationale": "Current state. Reference rate read from the NBP interest-rate table (static.nbp.pl stopy_procentowe.xml); decision date is the effective date (obowiazuje_od).",
+      "raw_ids": "cal:pl_nbp,pl_nbp_minutes; cat:nbp_reference_rate_decision",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
       "source": "NBP",
@@ -15005,7 +15019,7 @@
       }
     },
     {
-      "concept": "HICP headline, provisional and final",
+      "concept": "HICP, harmonised, provisional and final",
       "country": "FRA",
       "evidence": {
         "local_timing": "n.a.",
@@ -15016,7 +15030,10 @@
       "frequency": "M",
       "ids": {
         "cal": [],
-        "cat": [],
+        "cat": [
+          "fr_hicp_yy",
+          "fr_hicp_mm"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -15027,8 +15044,8 @@
       "key": "fr_hicp",
       "known_failure_modes": [],
       "nature": "HARD",
-      "rationale": "Provisional and final stages; national CPI is a separate index. INSEE publishes provisional results around month-end and definitive results around the 13th of the next month; dates can vary. Source: https://www.insee.fr/en/metadonnees/source/indicateur/p1654/processus-statistique",
-      "raw_ids": "",
+      "rationale": "Provisional and final stages; national CPI is a separate index. INSEE publishes provisional results around month-end and definitive results around the 13th of the next month; dates can vary. Source: https://www.insee.fr/en/metadonnees/source/indicateur/p1654/processus-statistique Current source: Eurostat API redistribution of the national release (macro release store, mirror provenance).",
+      "raw_ids": "cat:fr_hicp_yy,fr_hicp_mm",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
       "source": "INSEE",
@@ -18683,7 +18700,9 @@
         "cal": [
           "de_indprod"
         ],
-        "cat": [],
+        "cat": [
+          "de_industrial_production_mm"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -18696,8 +18715,8 @@
         "release details and local timing unverified"
       ],
       "nature": "HARD",
-      "rationale": "The seed records German Industrial Production m/m; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.destatis.de/EN/",
-      "raw_ids": "cal:de_indprod",
+      "rationale": "The seed records German Industrial Production m/m; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.destatis.de/EN/ Eurostat sts_inpr_m PRD B-D SCA PCH_PRE is the current source.",
+      "raw_ids": "cal:de_indprod; cat:de_industrial_production_mm",
       "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
       "secondary": [],
       "source": "Destatis",
@@ -18728,7 +18747,9 @@
         "cal": [
           "de_retail"
         ],
-        "cat": [],
+        "cat": [
+          "de_retail_sales_mm"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
@@ -18741,8 +18762,8 @@
         "release details and local timing unverified"
       ],
       "nature": "HARD",
-      "rationale": "The seed records German Retail Sales m/m; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.destatis.de/EN/",
-      "raw_ids": "cal:de_retail",
+      "rationale": "The seed records German Retail Sales m/m; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.destatis.de/EN/ Eurostat sts_trtu_m VOL_SLS G47 SCA PCH_PRE (retail volume excluding motor vehicles) is the current source.",
+      "raw_ids": "cal:de_retail; cat:de_retail_sales_mm",
       "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
       "secondary": [],
       "source": "Destatis",
@@ -20332,10 +20353,857 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "France retail trade volume, m/m",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "fr_retail_sales_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_retail",
+      "known_failure_modes": [
+        "local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Retail trade volume excluding motor vehicles (NACE G47), SCA, m/m; not nominal sales. Current source: Eurostat sts_trtu_m VOL_SLS redistribution of the INSEE release. No local timing test. Source: https://ec.europa.eu/eurostat/databrowser/view/sts_trtu_m/",
+      "raw_ids": "cat:fr_retail_sales_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INSEE",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "French consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Italy retail trade volume, m/m",
+      "country": "ITA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "it_retail_sales_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "it_retail",
+      "known_failure_modes": [
+        "local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Retail trade volume excluding motor vehicles (NACE G47), SCA, m/m; not nominal sales. Current source: Eurostat sts_trtu_m VOL_SLS redistribution of the Istat release. No local timing test. Source: https://ec.europa.eu/eurostat/databrowser/view/sts_trtu_m/",
+      "raw_ids": "cat:it_retail_sales_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Istat",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Italian consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Germany economic sentiment indicator (EC)",
+      "country": "DEU",
+      "evidence": {
+        "local_timing": "lit-local",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "short capture",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "de_economic_sentiment_indicator"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "de_esi",
+      "known_failure_modes": [
+        "short capture"
+      ],
+      "nature": "SOFT",
+      "rationale": "National ESI from the EC business and consumer surveys, SA, long-term mean 100; mixes current assessments and expectations, as ea_esi. Current source: Eurostat ei_bssi_m_r2 BS-ESI-I. Source: https://ec.europa.eu/eurostat/databrowser/view/ei_bssi_m_r2/",
+      "raw_ids": "cat:de_economic_sentiment_indicator",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "DG ECFIN",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "German GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "France economic sentiment indicator (EC)",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "lit-local",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "short capture",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "fr_economic_sentiment_indicator"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_esi",
+      "known_failure_modes": [
+        "short capture"
+      ],
+      "nature": "SOFT",
+      "rationale": "National ESI from the EC business and consumer surveys, SA, long-term mean 100; mixes current assessments and expectations, as ea_esi. Current source: Eurostat ei_bssi_m_r2 BS-ESI-I. Source: https://ec.europa.eu/eurostat/databrowser/view/ei_bssi_m_r2/",
+      "raw_ids": "cat:fr_economic_sentiment_indicator",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "DG ECFIN",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "French GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Italy economic sentiment indicator (EC)",
+      "country": "ITA",
+      "evidence": {
+        "local_timing": "lit-local",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "short capture",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "it_economic_sentiment_indicator"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "it_esi",
+      "known_failure_modes": [
+        "short capture"
+      ],
+      "nature": "SOFT",
+      "rationale": "National ESI from the EC business and consumer surveys, SA, long-term mean 100; mixes current assessments and expectations, as ea_esi. Current source: Eurostat ei_bssi_m_r2 BS-ESI-I. Source: https://ec.europa.eu/eurostat/databrowser/view/ei_bssi_m_r2/",
+      "raw_ids": "cat:it_economic_sentiment_indicator",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "DG ECFIN",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Italian GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Germany unemployment rate (ILO, monthly, trend)",
+      "country": "DEU",
+      "evidence": {
+        "local_timing": "analogy",
+        "measurement": "M",
+        "mechanism": "strong"
+      },
+      "flag": "monthly ILO estimate",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "de_unemployment_ilo_rate"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "de_unemployment_ilo",
+      "known_failure_modes": [
+        "monthly ILO estimate"
+      ],
+      "nature": "HARD",
+      "rationale": "ILO harmonised rate, 15-74, monthly trend series (Eurostat une_rt_m s_adj=SA carries the trend for Germany); not the Bundesagentur registered rate (de_unemployment_ba), which stays a separate concept. Current source: Eurostat une_rt_m redistribution. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
+      "raw_ids": "cat:de_unemployment_ilo_rate",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Destatis",
+      "theme": "Labour",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "LAG",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "German output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "France unemployment rate (ILO, monthly)",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "analogy",
+        "measurement": "M",
+        "mechanism": "strong"
+      },
+      "flag": "monthly ILO estimate",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "fr_unemployment_ilo_rate"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_unemployment_ilo",
+      "known_failure_modes": [
+        "monthly ILO estimate"
+      ],
+      "nature": "HARD",
+      "rationale": "Monthly harmonised ILO rate, 15-74, SA; INSEE's quarterly ILO rate (fr_unemployment) stays a separate concept. Compiled by Eurostat from INSEE inputs (une_rt_m methodology, p. 3): Eurostat is the issuer, INSEE the input provider. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
+      "raw_ids": "cat:fr_unemployment_ilo_rate",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Eurostat",
+      "theme": "Labour",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "LAG",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "French output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "OECD composite leading indicator (amplitude adjusted)",
+      "country": "DEU",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "DEULOLITOAASTSAM"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "de_oecd_cli",
+      "known_failure_modes": [],
+      "nature": "SOFT",
+      "rationale": "Built by the OECD to anticipate turning points of the reference series by about 6-9 months; not tested in this repository.",
+      "raw_ids": "ms:DEULOLITOAASTSAM",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "OECD",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "LEAD",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "business cycle (OECD reference series)",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "OECD composite leading indicator (amplitude adjusted)",
+      "country": "FRA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "FRALOLITOAASTSAM"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "fr_oecd_cli",
+      "known_failure_modes": [],
+      "nature": "SOFT",
+      "rationale": "Built by the OECD to anticipate turning points of the reference series by about 6-9 months; not tested in this repository.",
+      "raw_ids": "ms:FRALOLITOAASTSAM",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "OECD",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "LEAD",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "business cycle (OECD reference series)",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "OECD composite leading indicator (amplitude adjusted)",
+      "country": "ITA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "ITALOLITOAASTSAM"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "it_oecd_cli",
+      "known_failure_modes": [],
+      "nature": "SOFT",
+      "rationale": "Built by the OECD to anticipate turning points of the reference series by about 6-9 months; not tested in this repository.",
+      "raw_ids": "ms:ITALOLITOAASTSAM",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "OECD",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "LEAD",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "business cycle (OECD reference series)",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Spain unemployment rate (ILO, monthly)",
+      "country": "ESP",
+      "evidence": {
+        "local_timing": "analogy",
+        "measurement": "M",
+        "mechanism": "strong"
+      },
+      "flag": "monthly ILO estimate",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "es_unemployment_ilo_rate"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "es_unemployment_ilo",
+      "known_failure_modes": [
+        "monthly ILO estimate"
+      ],
+      "nature": "HARD",
+      "rationale": "Monthly harmonised ILO rate, 15-74, SA; INE's quarterly EPA rate (es_unemployment) stays a separate concept. Compiled by Eurostat from INE inputs (une_rt_m methodology, p. 3): Eurostat is the issuer, INE the input provider. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
+      "raw_ids": "cat:es_unemployment_ilo_rate",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Eurostat",
+      "theme": "Labour",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "LAG",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Spanish output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Spain retail trade volume, m/m",
+      "country": "ESP",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "es_retail_sales_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "es_retail",
+      "known_failure_modes": [
+        "local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Retail trade volume excluding motor vehicles (NACE G47), SCA, m/m; not nominal sales. Current source: Eurostat sts_trtu_m VOL_SLS redistribution of the INE release. No local timing test. Source: https://ec.europa.eu/eurostat/databrowser/view/sts_trtu_m/",
+      "raw_ids": "cat:es_retail_sales_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "INE",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Spanish consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Spain economic sentiment indicator (EC)",
+      "country": "ESP",
+      "evidence": {
+        "local_timing": "lit-local",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "short capture",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "es_economic_sentiment_indicator"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "es_esi",
+      "known_failure_modes": [
+        "short capture"
+      ],
+      "nature": "SOFT",
+      "rationale": "National ESI from the EC business and consumer surveys, SA, long-term mean 100; mixes current assessments and expectations, as ea_esi. Current source: Eurostat ei_bssi_m_r2 BS-ESI-I. Source: https://ec.europa.eu/eurostat/databrowser/view/ei_bssi_m_r2/",
+      "raw_ids": "cat:es_economic_sentiment_indicator",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "DG ECFIN",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Spanish GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "OECD composite leading indicator (amplitude adjusted)",
+      "country": "ESP",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "ESPLOLITOAASTSAM"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "es_oecd_cli",
+      "known_failure_modes": [],
+      "nature": "SOFT",
+      "rationale": "Built by the OECD to anticipate turning points of the reference series by about 6-9 months; not tested in this repository.",
+      "raw_ids": "ms:ESPLOLITOAASTSAM",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "OECD",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "LEAD",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "business cycle (OECD reference series)",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Poland real GDP, q/q",
+      "country": "POL",
+      "evidence": {
+        "local_timing": "n.a.",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "issuer flash not collected",
+      "frequency": "Q",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "pl_gdp_qq"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "pl_gdp_real",
+      "known_failure_modes": [
+        "issuer flash not collected"
+      ],
+      "nature": "HARD",
+      "rationale": "Real GDP, chain-linked volumes, q/q, SCA. Issuer: GUS (Statistics Poland). Current source: Eurostat namq_10_gdp redistribution (mirror provenance). No local timing evidence. Source: https://ec.europa.eu/eurostat/databrowser/view/namq_10_gdp/",
+      "raw_ids": "cat:pl_gdp_qq",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "GUS",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "DEFINITION",
+        "class": "COIN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "itself (national growth reference)",
+        "relationship_keys": [],
+        "screen_note": "n.a. (reference or measurement identity)"
+      }
+    },
+    {
+      "concept": "Poland industrial production, m/m",
+      "country": "POL",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "pl_industrial_production_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "pl_indpro",
+      "known_failure_modes": [
+        "local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Industrial production volume, B-D, SCA, m/m (Eurostat definition, not the GUS headline sold-production y/y). Issuer: GUS (Statistics Poland). Current source: Eurostat sts_inpr_m redistribution. Source: https://ec.europa.eu/eurostat/databrowser/view/sts_inpr_m/",
+      "raw_ids": "cat:pl_industrial_production_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "GUS",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Polish output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Poland unemployment rate (ILO, monthly)",
+      "country": "POL",
+      "evidence": {
+        "local_timing": "analogy",
+        "measurement": "M",
+        "mechanism": "strong"
+      },
+      "flag": "monthly ILO estimate",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "pl_unemployment_ilo_rate"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "pl_unemployment_ilo",
+      "known_failure_modes": [
+        "monthly ILO estimate"
+      ],
+      "nature": "HARD",
+      "rationale": "Monthly harmonised ILO rate, 15-74, SA; the GUS registered unemployment rate (pl_unemployment) stays a separate concept. Compiled by Eurostat from GUS inputs (une_rt_m methodology, p. 3): Eurostat is the issuer, GUS the input provider. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
+      "raw_ids": "cat:pl_unemployment_ilo_rate",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Eurostat",
+      "theme": "Labour",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "LAG",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Polish output",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Poland retail trade volume, m/m",
+      "country": "POL",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "local timing unverified",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "pl_retail_sales_mm"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "pl_retail",
+      "known_failure_modes": [
+        "local timing unverified"
+      ],
+      "nature": "HARD",
+      "rationale": "Retail trade volume excluding motor vehicles (NACE G47), SCA, m/m; not nominal sales and not the GUS constant-price y/y headline. Current source: Eurostat sts_trtu_m VOL_SLS redistribution of the GUS release. No local timing test. Source: https://ec.europa.eu/eurostat/databrowser/view/sts_trtu_m/",
+      "raw_ids": "cat:pl_retail_sales_mm",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "GUS",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Polish consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Poland economic sentiment indicator (EC)",
+      "country": "POL",
+      "evidence": {
+        "local_timing": "lit-local",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "short capture",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "pl_economic_sentiment_indicator"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "pl_esi",
+      "known_failure_modes": [
+        "short capture"
+      ],
+      "nature": "SOFT",
+      "rationale": "National ESI from the EC business and consumer surveys, SA, long-term mean 100; mixes current assessments and expectations, as ea_esi. Poland's leading indicator here: the OECD CLI for Poland on FRED is stale. Current source: Eurostat ei_bssi_m_r2 BS-ESI-I. Source: https://ec.europa.eu/eurostat/databrowser/view/ei_bssi_m_r2/",
+      "raw_ids": "cat:pl_economic_sentiment_indicator",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "DG ECFIN",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Polish GDP",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "5811d4a2723ff28797647e4128c96e4c6aa746e5ed5f5fec7f0bda97e3632cec",
-  "timing_extract_sha256": "dec9377425b5c03dbd89828670e2c7e11532f6d2789d5e3c83dd5daaa7fad403"
+  "source_table_sha256": "605fd87a5b5d9461076c01f04ca328eb29637bba87fc109697767b6412b9bc7e",
+  "timing_extract_sha256": "2f19428959a3e28e3ebce52c8eddd13e98518bf05ef97db4377a00f7e2a9d63b"
 }

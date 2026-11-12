@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 
 from market_data_hub.indicator_cards import indicator_card, render_card
 
-from .catalogue import CENTRAL_BANKS, INDICATORS, LATAM_FAMILIES
+from .catalogue import CENTRAL_BANKS, INDICATORS, LATAM_FAMILIES, NBP_FAMILIES
 from .models import utc
 from .read_api import ReadAPI
 from .report_style import REPORT_CSS, REPORT_SCRIPT
@@ -26,7 +26,7 @@ EURO_COUNTRIES = {
     "IRL", "ITA", "LTU", "LUX", "LVA", "MLT", "NLD", "PRT", "SVK", "SVN",
 }
 POLICY_INDICATORS = {
-    i.id for measures in {**CENTRAL_BANKS, **LATAM_FAMILIES}.values()
+    i.id for measures in {**CENTRAL_BANKS, **LATAM_FAMILIES, **NBP_FAMILIES}.values()
     for i in measures if i.frequency == "E"
 }
 

@@ -1,0 +1,99 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "Sentiment indicators - monthly data",
+ "source": "ESTAT",
+ "updated": "2026-10-30T11:00:00+0100",
+ "value": {
+  "0": 94.1,
+  "1": 105.1,
+  "2": 96.1,
+  "3": 100.2,
+  "4": 99.0
+ },
+ "id": [
+  "freq",
+  "indic",
+  "s_adj",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  1,
+  1,
+  5,
+  1
+ ],
+ "dimension": {
+  "freq": {
+   "label": "freq",
+   "category": {
+    "index": {
+     "M": 0
+    },
+    "label": {
+     "M": "M"
+    }
+   }
+  },
+  "indic": {
+   "label": "indic",
+   "category": {
+    "index": {
+     "BS-ESI-I": 0
+    },
+    "label": {
+     "BS-ESI-I": "BS-ESI-I"
+    }
+   }
+  },
+  "s_adj": {
+   "label": "s_adj",
+   "category": {
+    "index": {
+     "SA": 0
+    },
+    "label": {
+     "SA": "SA"
+    }
+   }
+  },
+  "geo": {
+   "label": "geo",
+   "category": {
+    "index": {
+     "DE": 0,
+     "ES": 1,
+     "FR": 2,
+     "IT": 3,
+     "PL": 4
+    },
+    "label": {
+     "DE": "DE",
+     "ES": "ES",
+     "FR": "FR",
+     "IT": "IT",
+     "PL": "PL"
+    }
+   }
+  },
+  "time": {
+   "label": "time",
+   "category": {
+    "index": {
+     "2026-10": 0
+    },
+    "label": {
+     "2026-10": "2026-10"
+    }
+   }
+  }
+ },
+ "extension": {
+  "lang": "EN",
+  "id": "EI_BSSI_M_R2",
+  "agencyId": "ESTAT",
+  "version": "1.0"
+ }
+}

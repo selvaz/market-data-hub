@@ -1,0 +1,125 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "Turnover and volume of sales in wholesale and retail trade - monthly data",
+ "source": "ESTAT",
+ "updated": "2026-11-06T23:00:00+0100",
+ "value": {
+  "0": -2.0,
+  "1": -0.4,
+  "2": -0.6,
+  "3": 0.1,
+  "4": -0.2
+ },
+ "id": [
+  "freq",
+  "indic_bt",
+  "nace_r2",
+  "s_adj",
+  "unit",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  1,
+  1,
+  1,
+  1,
+  5,
+  1
+ ],
+ "dimension": {
+  "freq": {
+   "label": "freq",
+   "category": {
+    "index": {
+     "M": 0
+    },
+    "label": {
+     "M": "M"
+    }
+   }
+  },
+  "indic_bt": {
+   "label": "indic_bt",
+   "category": {
+    "index": {
+     "VOL_SLS": 0
+    },
+    "label": {
+     "VOL_SLS": "VOL_SLS"
+    }
+   }
+  },
+  "nace_r2": {
+   "label": "nace_r2",
+   "category": {
+    "index": {
+     "G47": 0
+    },
+    "label": {
+     "G47": "G47"
+    }
+   }
+  },
+  "s_adj": {
+   "label": "s_adj",
+   "category": {
+    "index": {
+     "SCA": 0
+    },
+    "label": {
+     "SCA": "SCA"
+    }
+   }
+  },
+  "unit": {
+   "label": "unit",
+   "category": {
+    "index": {
+     "PCH_PRE": 0
+    },
+    "label": {
+     "PCH_PRE": "PCH_PRE"
+    }
+   }
+  },
+  "geo": {
+   "label": "geo",
+   "category": {
+    "index": {
+     "DE": 0,
+     "ES": 1,
+     "FR": 2,
+     "IT": 3,
+     "PL": 4
+    },
+    "label": {
+     "DE": "DE",
+     "ES": "ES",
+     "FR": "FR",
+     "IT": "IT",
+     "PL": "PL"
+    }
+   }
+  },
+  "time": {
+   "label": "time",
+   "category": {
+    "index": {
+     "2026-09": 0
+    },
+    "label": {
+     "2026-09": "2026-09"
+    }
+   }
+  }
+ },
+ "extension": {
+  "lang": "EN",
+  "id": "STS_TRTU_M",
+  "agencyId": "ESTAT",
+  "version": "1.0"
+ }
+}
