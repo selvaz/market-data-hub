@@ -28816,6 +28816,36 @@
     },
     {
       "distributor": "FRED",
+      "expected_lag_days": 45,
+      "frequency": "M",
+      "history_start": "1776-07-04",
+      "id": "ESPLOLITOAASTSAM",
+      "issuer": "OECD (via FRED)",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MACRO | ES | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
       "expected_lag_days": 30,
       "frequency": "Q",
       "history_start": "1776-07-04",
@@ -39753,6 +39783,30 @@
     },
     {
       "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 1,
+      "families": [
+        "ea_big4_esi"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "es_economic_sentiment_indicator",
+      "issuer": "ECFIN",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Spain Economic Sentiment Indicator, DG ECFIN business and consumer surveys composite, seasonally adjusted, long-term mean 100; Eurostat ei_bssi_m_r2 BS-ESI-I",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
       "expected_lag_days": 35,
       "families": [
         "ea_big4_gdp"
@@ -39777,6 +39831,56 @@
     },
     {
       "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 18,
+      "families": [
+        "ea_big4_hicp",
+        "ea_hicp"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "es_hicp_mm",
+      "issuer": "INE",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Spain HICP (harmonised, ECOICOP v2), all items, published monthly rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_M (flash: prc_hicp_fpd FLS); not the national CPI",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 18,
+      "families": [
+        "ea_big4_hicp",
+        "ea_hicp"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "es_hicp_yy",
+      "issuer": "INE",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Spain HICP (harmonised, ECOICOP v2), all items, published annual rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_A (flash: prc_hicp_fpd FLS); not the national CPI",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
       "expected_lag_days": 45,
       "families": [
         "ea_big4_industrial_production"
@@ -39793,6 +39897,54 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Spain industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 40,
+      "families": [
+        "ea_big4_retail"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "es_retail_sales_mm",
+      "issuer": "INE",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Spain retail trade volume of sales, except motor vehicles and motorcycles (NACE G47), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_trtu_m VOL_SLS PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 35,
+      "families": [
+        "ea_big4_unemployment"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "es_unemployment_ilo_rate",
+      "issuer": "INE",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Spain ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT; not the INE quarterly EPA rate",
       "notes": "",
       "status": "active",
       "status_reason": "",
@@ -40380,6 +40532,30 @@
       "table": "value_vintages"
     },
     {
+      "distributor": "NBP direct",
+      "expected_lag_days": 0,
+      "families": [
+        "nbp_policy"
+      ],
+      "frequency": "E",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "nbp_reference_rate_decision",
+      "issuer": "NBP",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "NBP reference rate (minimum money market intervention rate) set by the Monetary Policy Council; value and effective date from the NBP interest-rate table",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
       "distributor": "PBOC/NIFC direct",
       "expected_lag_days": 0,
       "families": [
@@ -40397,6 +40573,176 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "1-year and over-5-year Loan Prime Rates published by NIFC under PBOC authorization; scalar is 1Y",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 1,
+      "families": [
+        "ea_big4_esi"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "pl_economic_sentiment_indicator",
+      "issuer": "ECFIN",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Poland Economic Sentiment Indicator, DG ECFIN business and consumer surveys composite, seasonally adjusted, long-term mean 100; Eurostat ei_bssi_m_r2 BS-ESI-I",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 35,
+      "families": [
+        "ea_big4_gdp"
+      ],
+      "frequency": "Q",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "pl_gdp_qq",
+      "issuer": "GUS",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Poland real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 18,
+      "families": [
+        "ea_big4_hicp",
+        "ea_hicp"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "pl_hicp_mm",
+      "issuer": "GUS",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Poland HICP (harmonised, ECOICOP v2), all items, published monthly rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_M; not the national CPI",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 18,
+      "families": [
+        "ea_big4_hicp",
+        "ea_hicp"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "pl_hicp_yy",
+      "issuer": "GUS",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Poland HICP (harmonised, ECOICOP v2), all items, published annual rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_A; not the national CPI",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 45,
+      "families": [
+        "ea_big4_industrial_production"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "pl_industrial_production_mm",
+      "issuer": "GUS",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Poland industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 40,
+      "families": [
+        "ea_big4_retail"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "pl_retail_sales_mm",
+      "issuer": "GUS",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Poland retail trade volume of sales, except motor vehicles and motorcycles (NACE G47), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_trtu_m VOL_SLS PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 35,
+      "families": [
+        "ea_big4_unemployment"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "pl_unemployment_ilo_rate",
+      "issuer": "GUS",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Poland ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT; not the GUS registered unemployment rate",
       "notes": "",
       "status": "active",
       "status_reason": "",
@@ -42115,7 +42461,7 @@
         "date",
         "series_id"
       ],
-      "series_count": 318,
+      "series_count": 319,
       "status": "active",
       "status_reason": "",
       "store": "hub",
@@ -42832,7 +43178,7 @@
       "primary_key": [
         "id"
       ],
-      "series_count": 120,
+      "series_count": 133,
       "status": "active",
       "status_reason": "",
       "store": "macro_releases.sqlite",

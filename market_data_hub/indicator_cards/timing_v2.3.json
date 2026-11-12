@@ -32,7 +32,7 @@
         "ca_retail_sales"
       ],
       "source": "PR #125, feat/cards-tier1-complete at 41de0e1",
-      "source_table_sha256": "42e87a4185f69fda7c7461ed8cdb9f1d9c5a2d4a924c92abdda5359b082024ad"
+      "source_table_sha256": "05de748700933cc91a7068379fbb5af6d1a8cf4b17becc618873fb04786163bd"
     },
     {
       "approval": "approved v2.3 by owner 2026-10-25",
@@ -53,7 +53,7 @@
         "cn_new_home_prices_tiers"
       ],
       "source": "PR #130, M9f housing drafts at 5e04a4b; independent Codex review",
-      "source_table_sha256": "42e87a4185f69fda7c7461ed8cdb9f1d9c5a2d4a924c92abdda5359b082024ad"
+      "source_table_sha256": "05de748700933cc91a7068379fbb5af6d1a8cf4b17becc618873fb04786163bd"
     }
   ],
   "rows": {
@@ -549,6 +549,10 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "es_esi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "es_gdp_real": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
@@ -561,6 +565,10 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "es_oecd_cli": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "es_pmi_mfg": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
@@ -569,7 +577,15 @@
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "es_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "es_unemployment": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "es_unemployment_ilo": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -1149,15 +1165,35 @@
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
     },
+    "pl_esi": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "pl_gdp_real": {
+      "descriptive_peak": "n.a.",
+      "predictive_screen": "n.a. (reference or measurement identity)"
+    },
     "pl_hicp": {
       "descriptive_peak": "n.a.",
       "predictive_screen": "n.a. (reference or measurement identity)"
+    },
+    "pl_indpro": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
     },
     "pl_nbp": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
+    "pl_retail": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
     "pl_unemployment": {
+      "descriptive_peak": "not estimated",
+      "predictive_screen": "not tested"
+    },
+    "pl_unemployment_ilo": {
       "descriptive_peak": "not estimated",
       "predictive_screen": "not tested"
     },
@@ -1828,5 +1864,5 @@
   },
   "source": "04-classification-v2.md, section 3, columns (a) and (b); plus 24 tier-1 timing entries from PR #125: seven reference identities aligned with approved twins, seventeen not tested / not estimated; plus H1 1-month and 6-month Treasury context rows, not tested / not estimated",
   "source_guide_sha256": "75ff7506a4e84b640cfcacabfb4a0b9562b193f1fa07d2b8b985f90a96d97c93",
-  "source_table_sha256": "42e87a4185f69fda7c7461ed8cdb9f1d9c5a2d4a924c92abdda5359b082024ad"
+  "source_table_sha256": "05de748700933cc91a7068379fbb5af6d1a8cf4b17becc618873fb04786163bd"
 }
