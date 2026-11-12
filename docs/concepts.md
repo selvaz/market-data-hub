@@ -93,8 +93,27 @@ wins and ties go to the higher-ranked source. Status is `primary`,
 stale observation is returned as `stale`, and without any as `unavailable`.
 Sources are never averaged or reconciled.
 
+A release value is the resolution of the selected reference period across every
+edition known at `as_known_at`, so a later revision of that period replaces its
+first print. The release cards and that resolution come from one
+knowledge-filtered snapshot. `consensus` prefers an eligible survey consensus
+over an FF forecast and returns `provider`, `value`, `kind` and
+`surprise_eligible`.
+
+Change transforms compare two stored rows. A transformed value is rejected
+(reason "mixed vintages") when those two rows were not refreshed together,
+judged by `macro_series.updated_at` within one day, because a revised newest
+value over an old-vintage comparison value gives a wrong change marked fresh.
+Rows without `updated_at` are not judged. To keep transformed sources usable,
+the FRED collector widens its tail refresh for each transformed series to
+`concepts.comparison_window_days()` (one comparison period plus 35 days, for
+example 407 days for monthly y/y), so both rows are rewritten in the same run.
+History applies the same rule and drops incoherent points. Transforms are
+computed in decimal from the stored values, so half-up rounding is exact.
+
 Derived concepts evaluate their `expression` over resolved inputs at a common
-date (re-resolving at the older input date when needed) and report each
+date (re-resolving both inputs with observation dates bounded by the older
+input date, step by step, until they match) and report each
 input's source; a price input makes the result `unavailable`.
 `read_concept_history(concept, start, end)` reads the single `history` source
 (or the primary macro source), applying its transform; chains are not spliced.

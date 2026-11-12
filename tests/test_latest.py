@@ -102,7 +102,8 @@ def test_release_primary_fresh_wins_tie_and_carries_consensus(con, releases):
     assert result["observation_date"] == date(2026, 9, 30)
     assert result["age_bd"] == 14 and result["max_age_bd"] == 33
     assert result["released_at"].startswith("2026-10-02")
-    assert result["consensus"] == {"provider": "Survey", "value": 25}
+    assert result["consensus"] == {"provider": "Survey", "value": 25,
+                                   "kind": "survey_consensus", "surprise_eligible": True}
     [fred] = result["alternatives"]
     # Same reference period on FRED: the tie goes to the higher-ranked release.
     assert fred["source_id"] == "PAYEMS" and fred["value"] == 30 and fred["fresh"]
@@ -343,3 +344,114 @@ def test_decimals_validation(macro_entry, transform_catalogues, value):
     macro_entry["decimals"] = value
     with pytest.raises(ValueError, match="decimals"):
         concepts.validate_concepts([macro_entry], transform_catalogues)
+
+
+# --- independent review round (head 351acd5) ---------------------------------
+
+@pytest.fixture
+def revised_releases(tmp_path):
+    """August payrolls print 22 on 2026-09-04 and are revised to 23 on 2026-10-02."""
+    path = tmp_path / "revised.sqlite"
+    with open_writer(path) as store:
+        persist(store, [_observation("us_payrolls_change", "us_payrolls", "2026-08", 22, "2026-09-04")])
+        persist(store, [_observation("us_payrolls_change", "us_payrolls", "2026-09", 29, "2026-10-02"),
+                        _observation("us_payrolls_change", "us_payrolls", "2026-08", 23, "2026-10-02")])
+    return path
+
+
+def test_release_value_includes_revision_known_at_cutoff(con, revised_releases):
+    later = latest.read_latest("us_payrolls_change", as_of="2026-08-31", con=con,
+                               releases_db=revised_releases, as_known_at="2026-10-20T00:00:00Z")
+    assert later["reference_period"] == "2026-08" and later["value"] == 23
+    assert later["source_kind"] == "release"
+    before = latest.read_latest("us_payrolls_change", as_of="2026-08-31", con=con,
+                                releases_db=revised_releases, as_known_at="2026-09-20T00:00:00Z")
+    assert before["value"] == 22
+
+
+def test_derived_alignment_bounds_observation_dates_monthly_vs_daily():
+    con = duckdb.connect(":memory:")
+    con.execute("CREATE TABLE macro_series (date DATE, series_id VARCHAR, value DOUBLE)")
+    con.executemany("INSERT INTO macro_series VALUES (?, ?, ?)", [
+        ("2026-09-01", "IRLTLT01ITM156N", 3.60), ("2026-10-01", "IRLTLT01ITM156N", 3.70),
+        ("2026-09-30", "DEU_BUND10_FA", 2.70), ("2026-10-19", "DEU_BUND10_FA", 2.80),
+    ])
+    result = latest.read_latest("IT_DE_10Y", as_of="2026-10-19", con=con)
+    assert result["observation_date"] == date(2026, 9, 30)
+    assert math.isclose(result["value_raw"], 90.0)
+    assert [i["source_id"] for i in result["inputs"]] == ["IRLTLT01ITM156N", "DEU_BUND10_FA"]
+
+
+def test_transform_is_decimal_so_half_up_rounding_is_exact():
+    rows = [(date(2026, 8, 1), 100.0), (date(2026, 9, 1), 100.25)]
+    [(_, value)] = latest.apply_transform(rows, "pct_change_mm", "M")
+    assert value == 0.25 and latest.round_published(value, 1) == 0.3
+    con = duckdb.connect(":memory:")
+    con.execute("CREATE TABLE macro_series (date DATE, series_id VARCHAR, value DOUBLE)")
+    con.executemany("INSERT INTO macro_series VALUES (?, 'CPIAUCSL', ?)",
+                    [("2026-08-01", 100.0), ("2026-09-01", 100.25)])
+    result = latest.read_latest("us_cpi_headline_mm", as_of="2026-10-20", con=con)
+    assert result["value"] == 0.3 and result["value_raw"] == 0.25
+
+
+def _pce_con(updated_prior):
+    con = duckdb.connect(":memory:")
+    con.execute("CREATE TABLE macro_series (date DATE, series_id VARCHAR, value DOUBLE, "
+                "updated_at TIMESTAMP)")
+    con.executemany("INSERT INTO macro_series VALUES (?, 'PCEPI', ?, ?)", [
+        ("2025-09-01", 120.0, updated_prior), ("2026-09-01", 105.0, "2026-10-30 12:00:00")])
+    return con
+
+
+def test_yy_over_mixed_vintages_is_rejected():
+    stale_base = latest.read_latest("us_pce_price_index_yy", as_of="2026-10-31",
+                                    con=_pce_con("2025-10-31 12:00:00"))
+    assert stale_base["status"] == "unavailable"
+    assert "mixed vintages" in stale_base["alternatives"][-1]["reason"]
+    coherent = latest.read_latest("us_pce_price_index_yy", as_of="2026-10-31",
+                                  con=_pce_con("2026-10-30 12:01:00"))
+    assert coherent["status"] == "newer_secondary" and coherent["value"] == -12.5
+    history = latest.read_concept_history("us_pce_price_index_yy", con=_pce_con("2025-10-31"))
+    assert history.empty
+
+
+def test_fred_refresh_rewrites_the_comparison_window(tmp_db, monkeypatch):
+    from contextlib import closing
+
+    import pandas as pd
+
+    from market_data_hub import runner
+    from market_data_hub.config_loader import get_settings
+    from market_data_hub.db.connection import get_conn
+    from market_data_hub.db.upsert import upsert
+
+    assert concepts.comparison_window_days()["PCEPI"] == 12 * 31 + 35
+    assert "UNRATE" not in concepts.comparison_window_days()  # level: plain tail
+    cfg = {**get_settings(), "parallelism": {"fred_sleep": 0}}
+    monkeypatch.setattr(runner, "get_fred_series", lambda: [{"symbol": "PCEPI"}, {"symbol": "UNRATE"}])
+    starts = {}
+
+    def fetch(sid, start, end, **kwargs):
+        starts[sid] = start
+        return pd.DataFrame()
+
+    monkeypatch.setattr(runner.fr, "fetch_fred", fetch)
+    with closing(get_conn()) as con:
+        upsert(con, "macro_series", pd.DataFrame({
+            "date": pd.to_datetime(["2026-09-01", "2026-09-01"]),
+            "series_id": ["PCEPI", "UNRATE"], "value": [125.0, 4.3]}))
+        runner.run_fred(con, cfg, "daily", end="2026-10-31")
+    assert starts == {"PCEPI": "2025-07-21", "UNRATE": "2026-05-29"}
+
+
+def test_consensus_prefers_eligible_survey_and_keeps_policy_fields():
+    rows = [
+        {"provider": "FF", "normalized_value": 20, "kind": "ff_forecast", "surprise_eligible": False},
+        {"provider": "Survey", "normalized_value": 25, "kind": "survey_consensus",
+         "surprise_eligible": True},
+    ]
+    assert latest._choose_consensus(rows) == {
+        "provider": "Survey", "value": 25, "kind": "survey_consensus", "surprise_eligible": True}
+    assert latest._choose_consensus(rows[:1]) == {
+        "provider": "FF", "value": 20, "kind": "ff_forecast", "surprise_eligible": False}
+    assert latest._choose_consensus([]) is None

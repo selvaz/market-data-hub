@@ -160,6 +160,34 @@ def _validate_source(name, source, catalogues, result):
         raise ValueError(f"{name}: proxy requires its own unit")
 
 
+_PERIOD_DAYS = {"D": 1, "W": 7, "M": 31, "Q": 92, "A": 366}
+_PERIODS_PER_YEAR = {"D": 1, "W": 52, "M": 12, "Q": 4, "A": 1}
+# Margin beyond the comparison period: publication dating and month lengths.
+_WINDOW_MARGIN_DAYS = 35
+
+
+def comparison_window_days(registry=None):
+    """Days a macro refresh must rewrite so each declared transform compares values
+    from the same refresh: {series_id: days}, only for sources with a change transform.
+
+    A tail refresh shorter than this leaves the comparison value (e.g. the year-ago
+    index for ``pct_change_yy``) from an older vintage than the revised newest value.
+    """
+    registry = load_concepts() if registry is None else registry
+    catalogue = load_macro_catalogue()
+    windows = {}
+    for entry in registry.values():
+        for source in entry.get("sources", []):
+            transform = source.get("transform", "level")
+            if source.get("kind") != "macro" or transform == "level":
+                continue
+            frequency = catalogue.get(source["id"], {}).get("frequency", "D")
+            periods = _PERIODS_PER_YEAR.get(frequency, 1) if transform == "pct_change_yy" else 1
+            days = periods * _PERIOD_DAYS.get(frequency, 1) + _WINDOW_MARGIN_DAYS
+            windows[source["id"]] = max(days, windows.get(source["id"], 0))
+    return windows
+
+
 def _validate_transform(name, source, catalogue_entry):
     transform = source.get("transform")
     if transform is not None:

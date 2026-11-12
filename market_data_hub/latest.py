@@ -152,32 +152,61 @@ def _year_periods(frequency):
 # Transforms
 # --------------------------------------------------------------------------
 
-def apply_transform(rows, transform, frequency, scale=1.0):
+def _decimal(value):
+    """Exact decimal of a stored float's shortest repr (no binary artefacts)."""
+    return Decimal(repr(float(value)))
+
+
+def _prior_key(ordered, position, transform, frequency):
+    stored = ordered[position]
+    periods = _year_periods(frequency) if transform == "pct_change_yy" else 1
+    if frequency in {"M", "Q", "A", "W"}:
+        return _prior_date(stored, frequency, periods)
+    if transform == "pct_change_yy":
+        return None
+    return ordered[position - 1] if position else None
+
+
+def _refreshed_together(newest, prior):
+    """Both rows come from one refresh (updated_at within a day); unknown passes."""
+    if newest is None or prior is None:
+        return True
+    return abs(newest - prior) <= timedelta(days=1)
+
+
+def apply_transform(rows, transform, frequency, scale=1.0, refreshed=None):
     """Return [(stored_date, value)] after ``transform`` and ``scale``.
 
     ``rows`` are ascending (stored_date, value) pairs. Changes compare with the
     exact prior period (one period, or one year for ``pct_change_yy``); a
     missing prior period yields no value instead of comparing across a gap.
-    Daily series compare with the previous stored row.
+    Daily series compare with the previous stored row. Arithmetic is decimal on
+    the stored values, so half-up rounding of the result is not skewed by binary
+    error (100 -> 100.25 is exactly 0.25 %).
+
+    ``refreshed`` maps stored_date -> updated_at; when given, a change whose two
+    rows were not refreshed together (mixed vintages) yields no value.
     """
     transform = transform or "level"
     if transform not in TRANSFORMS:
         raise ValueError(f"unknown transform {transform}")
     by_date = dict(rows)
     ordered = sorted(by_date)
+    factor = _decimal(scale)
+    hundred = Decimal(100)
     out = []
     for position, stored in enumerate(ordered):
-        value = by_date[stored]
+        value = _decimal(by_date[stored])
         if transform == "level":
             result = value
         else:
-            periods = _year_periods(frequency) if transform == "pct_change_yy" else 1
-            prior_key = _prior_date(stored, frequency, periods) if periods else None
-            if prior_key is None and frequency not in {"M", "Q", "A", "W"} and transform != "pct_change_yy":
-                prior_key = ordered[position - 1] if position else None
-            prior = by_date.get(prior_key) if prior_key is not None else None
-            if prior is None:
+            prior_key = _prior_key(ordered, position, transform, frequency)
+            if prior_key is None or prior_key not in by_date:
                 continue
+            if refreshed is not None and not _refreshed_together(
+                    refreshed.get(stored), refreshed.get(prior_key)):
+                continue
+            prior = _decimal(by_date[prior_key])
             if transform == "diff":
                 result = value - prior
             elif prior == 0:
@@ -186,12 +215,12 @@ def apply_transform(rows, transform, frequency, scale=1.0):
                 ratio = value / prior
                 if ratio <= 0:
                     continue
-                result = (ratio ** 4 - 1) * 100
+                result = (ratio ** 4 - 1) * hundred
             else:
-                result = (value / prior - 1) * 100
-        result *= scale
-        if math.isfinite(result):
-            out.append((stored, result))
+                result = (value / prior - 1) * hundred
+        number = float(result * factor)
+        if math.isfinite(number):
+            out.append((stored, number))
     return out
 
 
@@ -252,6 +281,8 @@ class _Context:
         self.db_path = db_path
         self.releases_db = releases_db if releases_db is not None else os.environ.get("MACRO_RELEASES_DB")
         self._cards = None
+        self.snapshot = None
+        self.obs_cap = None
         self._full_history = {}
         self._release_error = None
         self.registry = load_concepts()
@@ -288,7 +319,7 @@ class _Context:
         until = self.as_known_at.astimezone(timezone.utc).date()
         since = min(until, self.as_of) - timedelta(days=_RELEASE_WINDOW_DAYS)
         try:
-            self._cards = self._query_cards(indicators, since)
+            self._cards, self.snapshot = self._query_cards(indicators, since)
         except Exception as exc:  # store missing, schema range, sqlite errors
             self._release_error = f"macro releases store unreadable: {exc}"
 
@@ -297,26 +328,29 @@ class _Context:
         stopped updating long ago still yields its newest observation as stale."""
         if indicator not in self._full_history:
             try:
-                cards = self._query_cards([indicator], date(1900, 1, 1))
+                cards, snapshot = self._query_cards([indicator], date(1900, 1, 1))
             except Exception:  # noqa: BLE001 - same failure modes as _load_cards
-                cards = {}
-            self._full_history[indicator] = cards.get(indicator, [])
+                cards, snapshot = {}, None
+            self._full_history[indicator] = (cards.get(indicator, []), snapshot)
         return self._full_history[indicator]
 
     def _query_cards(self, indicators, since):
-        from market_data_hub.macro_releases.read_api import ReadAPI
+        """One knowledge-filtered snapshot; cards come from ReadAPI on that snapshot."""
+        from market_data_hub.macro_releases.models import utc
+        from market_data_hub.macro_releases.read_api import ReadAPI, window
+        from market_data_hub.macro_releases.resolve import Snapshot
         from market_data_hub.macro_releases.store import open_reader
 
-        cutoff = self.as_known_at.astimezone(timezone.utc)
+        cutoff = utc(self.as_known_at.astimezone(timezone.utc).isoformat().replace("+00:00", "Z"))
+        start, end = window(since.isoformat(), self.as_known_at.astimezone(timezone.utc).date().isoformat())
         with open_reader(self.releases_db) as store:
-            result = ReadAPI(store).release_cards(
-                since.isoformat(), cutoff.date().isoformat(), indicators=sorted(indicators),
-                as_known_at=cutoff.isoformat().replace("+00:00", "Z"),
-            )
+            snapshot = Snapshot.load(store, cutoff)
+            result = ReadAPI(store)._cards(snapshot, start, end, sorted(indicators), None,
+                                           policy="revised_history")
         cards = {}
         for card in result["cards"]:
             cards.setdefault(card["indicator_id"], []).append(card)
-        return cards
+        return cards, snapshot
 
 
 def _parse_instant(value):
@@ -345,21 +379,50 @@ def _candidate(source, rank, **fields):
     return item
 
 
+def _macro_rows(con, series_id, cutoff, limit=None):
+    """(date, value, updated_at) rows ascending; updated_at is None when the table
+    has no such column (fixtures)."""
+    order = "DESC LIMIT ?" if limit else "ASC"
+    params = [series_id, cutoff] + ([limit] if limit else [])
+    where = "WHERE series_id = ? AND date <= ? AND value IS NOT NULL"
+    try:
+        rows = con.execute(f"SELECT date, value, updated_at FROM macro_series {where} "
+                           f"ORDER BY date {order}", params).fetchall()
+    except duckdb_errors() as exc:
+        if "updated_at" not in str(exc):
+            raise
+        rows = [(d, v, None) for d, v in con.execute(
+            f"SELECT date, value FROM macro_series {where} ORDER BY date {order}", params).fetchall()]
+    rows = [(_to_date(d), float(v), u) for d, v, u in rows if v is not None and math.isfinite(v)]
+    return sorted(rows)
+
+
+def duckdb_errors():
+    import duckdb
+
+    return (duckdb.BinderException, duckdb.CatalogException)
+
+
 def _macro_candidate(ctx, source, rank):
     frequency = ctx.macro_catalogue.get(source["id"], {}).get("frequency", "D")
-    rows = ctx.con.execute(
-        "SELECT date, value FROM macro_series WHERE series_id = ? AND date <= ? "
-        "AND value IS NOT NULL ORDER BY date DESC LIMIT ?",
-        [source["id"], ctx.as_of, _MACRO_ROWS],
-    ).fetchall()
-    rows = [(_to_date(d), float(v)) for d, v in rows if v is not None and math.isfinite(v)]
+    rows = _macro_rows(ctx.con, source["id"], ctx.as_of, _MACRO_ROWS)
     if not rows:
         return _candidate(source, rank, reason="no observation on or before as_of")
-    values = apply_transform(sorted(rows), source.get("transform", "level"), frequency,
-                             source.get("scale", 1.0))
+    transform = source.get("transform", "level")
+    pairs = [(d, v) for d, v, _ in rows]
+    values = apply_transform(pairs, transform, frequency, source.get("scale", 1.0))
+    if ctx.obs_cap is not None:
+        values = [(d, v) for d, v in values if _observation_date(d, frequency) <= ctx.obs_cap]
     if not values:
-        return _candidate(source, rank, reason=f"transform {source.get('transform')} has no prior period")
+        return _candidate(source, rank, reason=f"transform {transform} has no prior period")
     stored, value = values[-1]
+    if transform != "level":
+        refreshed = {d: u for d, _, u in rows}
+        coherent = apply_transform(pairs, transform, frequency, source.get("scale", 1.0), refreshed)
+        if not any(d == stored for d, _ in coherent):
+            return _candidate(source, rank, reason=(
+                f"mixed vintages: the comparison value for {stored.isoformat()} was not "
+                "refreshed with it; transformed value rejected"))
     return _candidate(source, rank, value=value,
                       observation_date=_observation_date(stored, frequency))
 
@@ -372,29 +435,58 @@ def _usable_cards(ctx, cards):
             continue
         if period_start_date(card["reference_period"]) > ctx.as_of:
             continue
+        if ctx.obs_cap is not None and period_end_date(card["reference_period"]) > ctx.obs_cap:
+            continue
         usable.append(card)
     return usable
+
+
+def _choose_consensus(rows):
+    """Prefer an eligible survey consensus over an FF forecast; keep its policy fields."""
+    usable = [row for row in rows or [] if row.get("normalized_value") is not None]
+    if not usable:
+        return None
+    row = min(usable, key=lambda r: (not r.get("surprise_eligible"),
+                                     r.get("kind") != "survey_consensus",
+                                     str(r.get("provider"))))
+    return {"provider": row.get("provider"), "value": row["normalized_value"],
+            "kind": row.get("kind"), "surprise_eligible": row.get("surprise_eligible")}
 
 
 def _release_candidate(ctx, source, rank, release_ids):
     cards, error = ctx.release_cards(release_ids)
     if error:
         return _candidate(source, rank, reason=error)
+    snapshot = ctx.snapshot
     usable = _usable_cards(ctx, cards.get(source["id"], []))
     if not usable:
-        usable = _usable_cards(ctx, ctx.full_history_cards(source["id"]))
+        history, snapshot = ctx.full_history_cards(source["id"])
+        usable = _usable_cards(ctx, history)
     if not usable:
         return _candidate(source, rank, reason="no official release known at as_known_at")
     card = max(usable, key=lambda c: (period_end_date(c["reference_period"]), c["released_at"]))
-    consensus = None
-    for row in card.get("consensus") or []:
-        if row.get("normalized_value") is not None:
-            consensus = {"provider": row.get("provider"), "value": row["normalized_value"]}
-            break
-    return _candidate(source, rank, value=float(card["resolution"]["value"]),
-                      observation_date=period_end_date(card["reference_period"]),
-                      reference_period=card["reference_period"], released_at=card["released_at"],
-                      consensus=consensus)
+    period = card["reference_period"]
+    value = float(card["resolution"]["value"])
+    reason = None
+    # The headline card holds the first print; later editions known at the
+    # cutoff (revisions) are resolved across the whole knowledge-filtered snapshot.
+    revised = _latest_period(snapshot, source["id"], period)
+    if (revised and revised.get("value") is not None
+            and revised.get("status") in USABLE_RELEASE_STATUSES):
+        if float(revised["value"]) != value:
+            reason = f"revised from {value:g} (edition {revised.get('edition')})"
+        value = float(revised["value"])
+    return _candidate(source, rank, value=value, observation_date=period_end_date(period),
+                      reference_period=period, released_at=card["released_at"],
+                      consensus=_choose_consensus(card.get("consensus")), reason=reason)
+
+
+def _latest_period(snapshot, indicator, period):
+    if snapshot is None:
+        return None
+    from market_data_hub.macro_releases.read_api import latest_period
+
+    return latest_period(snapshot, indicator, period, policy="revised_history")
 
 
 # --------------------------------------------------------------------------
@@ -420,8 +512,9 @@ def _derived_inputs(spec):
     return (match[1], match[3]), match[2]
 
 
-def _resolve(ctx, name, release_ids, as_of=None):
-    key = (name, as_of or ctx.as_of)
+def _resolve(ctx, name, release_ids, as_of=None, cap=None):
+    """``cap`` bounds observation dates (period ends), used by same_date alignment."""
+    key = (name, as_of or ctx.as_of, cap)
     if key in ctx.cache:
         return ctx.cache[key]
     spec = ctx.registry.get(name)
@@ -430,15 +523,16 @@ def _resolve(ctx, name, release_ids, as_of=None):
     kind = concept_kind(spec)
     if kind == "price":
         raise NotImplementedError(PRICE_NOT_IMPLEMENTED)
-    saved = ctx.as_of
+    saved, saved_cap = ctx.as_of, ctx.obs_cap
     ctx.as_of = as_of or saved
+    ctx.obs_cap = cap
     try:
         if kind == "derived":
             result = _resolve_derived(ctx, name, spec, release_ids)
         else:
             result = _resolve_cascade(ctx, name, spec, release_ids)
     finally:
-        ctx.as_of = saved
+        ctx.as_of, ctx.obs_cap = saved, saved_cap
     ctx.cache[key] = result
     return result
 
@@ -457,7 +551,7 @@ def _resolve_cascade(ctx, name, spec, release_ids):
         elif source["kind"] == "price":
             item = _candidate(source, rank, reason=PRICE_NOT_IMPLEMENTED)
         else:
-            inner = _resolve(ctx, source["id"], release_ids)
+            inner = _resolve(ctx, source["id"], release_ids, cap=ctx.obs_cap)
             item = _candidate(source, rank, value=inner["value_raw"],
                               observation_date=_to_date(inner["observation_date"]),
                               reason=None if inner["value"] is not None else inner["reason"])
@@ -551,8 +645,11 @@ def _resolve_derived(ctx, name, spec, release_ids):
     for _ in range(_ALIGN_STEPS):
         if len(dates) == 1:
             break
+        # Bound observation dates (not just stored dates) so each step moves back:
+        # a monthly row stored on 10-01 is dated 10-31 and must not be re-read.
         common = min(dates)
-        resolved = [_resolve(ctx, item["concept"], release_ids, as_of=common) for item in resolved]
+        resolved = [_resolve(ctx, item["concept"], release_ids, as_of=common, cap=common)
+                    for item in resolved]
         if any(item["value"] is None for item in resolved):
             break
         dates = {_to_date(item["observation_date"]) for item in resolved}
@@ -656,14 +753,15 @@ def read_concept_history(concept, start=None, end=None, *, as_of=None, con=None,
 
         con = _resolved_connection(db_path)
     try:
-        rows = con.execute(
-            "SELECT date, value FROM macro_series WHERE series_id = ? AND date <= ? "
-            "AND value IS NOT NULL ORDER BY date", [source["id"], cutoff]).fetchall()
+        rows = _macro_rows(con, source["id"], cutoff)
     finally:
         if own:
             con.close()
-    rows = [(_to_date(d), float(v)) for d, v in rows if math.isfinite(v)]
-    values = apply_transform(rows, source.get("transform", "level"), frequency, source.get("scale", 1.0))
+    transform = source.get("transform", "level")
+    # Changes whose two rows come from different refreshes are dropped (mixed vintages).
+    refreshed = {d: u for d, _, u in rows} if transform != "level" else None
+    values = apply_transform([(d, v) for d, v, _ in rows], transform, frequency,
+                             source.get("scale", 1.0), refreshed)
     start_date = _to_date(start) if start is not None else None
     out = [{"date": _observation_date(d, frequency), "value": v, "source_id": source["id"]}
            for d, v in values]

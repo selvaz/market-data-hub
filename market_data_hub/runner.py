@@ -163,6 +163,20 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
 
 
 # --------------------------------------------------------------- FRED
+def _comparison_windows() -> Dict[str, int]:
+    """Refresh window per series from the concept registry's transforms.
+
+    A registry problem must not stop collection: fall back to the plain tail.
+    """
+    try:
+        from market_data_hub.concepts import comparison_window_days
+
+        return comparison_window_days()
+    except Exception as exc:  # noqa: BLE001 - collection outranks the window widening
+        _log(f"FRED: comparison windows unavailable ({exc}); using fred_tail_days only")
+        return {}
+
+
 def run_fred(con, cfg: dict, run_id: str, *, start_override: Optional[str] = None,
              end: Optional[str] = None) -> None:
     end = end or _today()
@@ -173,6 +187,7 @@ def run_fred(con, cfg: dict, run_id: str, *, start_override: Optional[str] = Non
     sleep = cfg["parallelism"]["fred_sleep"]
     tail_days = int(cfg.get("incremental", {}).get("fred_tail_days", 95))
     last = _last_macro(con)
+    windows = _comparison_windows()
 
     _log(f"FRED: {len(series)} series (api_key={'yes' if api_key else 'no/CSV'}, "
          f"tail={tail_days}d)")
@@ -182,8 +197,10 @@ def run_fred(con, cfg: dict, run_id: str, *, start_override: Optional[str] = Non
         if start_override:
             s = start_override
         elif sid in last:
-            # tail refresh to cover macro revisions (configurable: fred_tail_days)
-            s = max(gstart, (last[sid] - timedelta(days=tail_days)).date().isoformat())
+            # tail refresh to cover macro revisions (configurable: fred_tail_days),
+            # widened so a transformed concept compares values of one refresh.
+            days = max(tail_days, windows.get(sid, 0))
+            s = max(gstart, (last[sid] - timedelta(days=days)).date().isoformat())
         else:
             s = gstart
 
