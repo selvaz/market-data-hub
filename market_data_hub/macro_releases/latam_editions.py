@@ -1,7 +1,7 @@
 """Reviewed Latin American editions; dates never prove values.
 
 The horizon is the last edition listed here, not a calendar year: once the run
-date passes it (see latam.CALENDAR_SLACK_DAYS) the family reports a
+date passes it by the family's shortest edition gap it reports a
 needs-review notice until the issuer calendar for the next year is added.
 """
 SCHEDULES = {

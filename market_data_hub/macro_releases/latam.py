@@ -9,10 +9,6 @@ from .latam_editions import ZONES, reviewed
 from .publication_times import local_release
 from .schedule import due, mark_pending, note_review, publication_grace, run_date
 
-# A family whose last reviewed edition is this far behind the run date has an
-# unlisted edition due; collection continues but the gap is reported.
-CALENDAR_SLACK_DAYS = 60
-
 
 def fetch_editions(family, since, provider, load):
     """Keep validated editions when another publication is missing or malformed."""
@@ -53,10 +49,17 @@ def review_detail(exc, http_404=False):
 
 
 def calendar_exhausted(family):
-    """The reviewed edition list has run out; the next edition is not yet listed."""
+    """The reviewed edition list has run out; the next edition is not yet listed.
+
+    The next edition can be due as soon as the shortest gap between listed
+    editions after the last one, so the notice starts then: a run never reports
+    a quiet no_change while an unlisted edition may be due.
+    """
     from .latam_editions import EDITIONS
-    last = max(EDITIONS[family])
-    if date.fromisoformat(run_date()) > date.fromisoformat(last) + timedelta(days=CALENDAR_SLACK_DAYS):
+    dates = sorted(date.fromisoformat(d) for d in EDITIONS[family])
+    gap = min((b - a for a, b in zip(dates, dates[1:])), default=timedelta(days=28))
+    if date.fromisoformat(run_date()) > dates[-1] + gap:
+        last = dates[-1].isoformat()
         edition = "after:" + last
         mark_pending(family, edition, "needs_review")
         note_review(family, edition, "calendar_exhausted",

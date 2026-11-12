@@ -19,7 +19,7 @@ CREATE TABLE review_queue_resolutions (
  status TEXT NOT NULL DEFAULT 'resolved' CHECK(status='resolved'),
  resolved_at TEXT NOT NULL,
  run_id TEXT NOT NULL,
- basis TEXT NOT NULL CHECK(basis IN ('same_edition_verified','same_url_verified'))
+ basis TEXT NOT NULL CHECK(basis='same_edition_verified')
 );
 CREATE TRIGGER review_queue_resolutions_no_update BEFORE UPDATE ON review_queue_resolutions
 BEGIN SELECT RAISE(ABORT, 'review_queue_resolutions is append-only'); END;
@@ -31,41 +31,34 @@ SELECT q.id, q.family, q.run_id, q.document_hash, q.reasons, q.recorded_at,
        r.basis AS resolution_basis
 FROM review_queue q LEFT JOIN review_queue_resolutions r ON r.review_id=q.id;
 -- A review row is superseded by a later clean (ok/no_change) run of its family
--- once every (measure, edition, period) read from the reviewed document has a verified
--- issuer reading or vintage known by that run (a clean re-read of identical
--- bytes adds a verified vintage; the original reading row stays unverified); a document that yielded no readings is
--- superseded by a verified reading from the same issuer URL first seen after
--- the review was recorded.
+-- once every (measure, edition, period) read from the reviewed document has a
+-- verified issuer reading or vintage first seen AFTER the review was recorded
+-- and by the end of that run. Evidence that predates the review (e.g. the
+-- verified vintage the flagged capture contradicted) never closes it. A clean
+-- re-read of identical bytes adds a verified vintage, so it counts; the
+-- original unverified reading row stays as it was. A document that yielded no
+-- readings cannot be tied to an edition and stays open for manual review.
 CREATE VIEW review_queue_supersessions AS
 SELECT q.id AS review_id, f.run_id AS clean_run_id, f.finished_at AS clean_finished_at,
-       CASE WHEN EXISTS (SELECT 1 FROM readings d WHERE d.content_hash=q.document_hash)
-            THEN 'same_edition_verified' ELSE 'same_url_verified' END AS basis
+       'same_edition_verified' AS basis
 FROM review_queue q
 JOIN collect_run_families f
   ON f.family=q.family AND f.status IN ('ok','no_change') AND f.finished_at>q.recorded_at
  AND f.run_id IS NOT q.run_id
-WHERE (
-  EXISTS (SELECT 1 FROM readings d WHERE d.content_hash=q.document_hash)
+WHERE EXISTS (SELECT 1 FROM readings d WHERE d.content_hash=q.document_hash)
   AND NOT EXISTS (
     SELECT 1 FROM readings d WHERE d.content_hash=q.document_hash
       AND NOT EXISTS (
         SELECT 1 FROM readings v WHERE v.indicator_id IS d.indicator_id AND v.edition=d.edition
-          AND v.reference_period IS d.reference_period
-          AND v.verification_status='verified' AND v.first_seen_at<=f.finished_at)
+          AND v.reference_period IS d.reference_period AND v.verification_status='verified'
+          AND v.first_seen_at>q.recorded_at AND v.first_seen_at<=f.finished_at)
       AND NOT EXISTS (
         SELECT 1 FROM value_vintages w WHERE w.indicator_id=d.indicator_id
           AND w.release_event_id=d.release_event_id AND w.reference_period=d.reference_period
-          AND w.verification_status='verified' AND w.first_seen_at<=f.finished_at))
-) OR (
-  NOT EXISTS (SELECT 1 FROM readings d WHERE d.content_hash=q.document_hash)
-  AND EXISTS (
-    SELECT 1 FROM documents doc JOIN readings v ON v.url=doc.url
-    WHERE doc.document_hash=q.document_hash AND v.verification_status='verified'
-      AND v.first_seen_at>q.recorded_at AND v.first_seen_at<=f.finished_at)
-);
+          AND w.verification_status='verified'
+          AND w.first_seen_at>q.recorded_at AND w.first_seen_at<=f.finished_at));
 CREATE INDEX IF NOT EXISTS readings_content_hash ON readings(content_hash);
 CREATE INDEX IF NOT EXISTS readings_indicator_edition ON readings(indicator_id, edition);
-CREATE INDEX IF NOT EXISTS readings_url ON readings(url);
 CREATE INDEX IF NOT EXISTS value_vintages_indicator_event ON value_vintages(indicator_id, release_event_id);
 -- One-off backfill: close rows already superseded by the earliest such run.
 INSERT INTO review_queue_resolutions (review_id,status,resolved_at,run_id,basis)

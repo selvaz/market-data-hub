@@ -61,9 +61,21 @@ DECISION = (r"{action}(?: en (\d+) puntos base)? el objetivo para la Tasa de Int
 BOARD_SIZE = 5
 
 
+# Synonyms the statements use for the same action.
+CANONICAL = {"reducir": "disminuir"}
+
+
+def canonical(action):
+    return CANONICAL.get(action, action)
+
+
 def rejoin_numbers(text):
-    """pypdf can split a printed rate across text runs ('6. 25%'); rejoin it."""
-    return re.sub(r"\b(\d{1,2})\.\s+(\d{1,2})\s*%", r"\1.\2%", text)
+    """pypdf can split a printed rate across text runs ('6. 25%'); rejoin it.
+
+    Only a rate printed after 'a un nivel de' or 'en' is repaired, so separate
+    numbers elsewhere (e.g. a year then a figure) never merge.
+    """
+    return re.sub(r"\b((?:a un nivel de|en) \d{1,2})\.\s+(\d{1,2})\s*%", r"\1.\2%", text)
 
 
 def board_names(clause):
@@ -74,39 +86,49 @@ def board_names(clause):
     return names
 
 
-def vote(text, kind, action):
+def vote(text, kind, action, rate):
     """Record the printed vote: unanimous or majority, counts and dissenters.
 
-    A majority statement names the dissenting members ("Votó/Votaron en contra
-    ..." or "Votó/Votaron por/a favor de <other action> ... <names>"). Members
-    voting with the decision may be listed too; when listed, counts must add up
-    to the full board, which the statement says was present.
+    Dissent is "Votó/Votaron en contra <names>" or "Votó/Votaron por/a favor de
+    <action> el objetivo ... <rate>% <names>" naming a different action or rate
+    (synonyms such as reducir/disminuir are the same action). Members voting
+    with the decision may be listed too; then counts must cover the full board,
+    which the statement says was present. A repeated identical sentence (a
+    duplicated text layer) counts once; a name in two clauses needs review.
     """
-    if kind == "unanimidad":
-        if re.search(r"\bVot(?:ó|aron) en contra\b", text):
-            raise FetchError("Banxico unanimous statement lists dissent; needs review")
-        return dict(decision="unanimous", **{"for": BOARD_SIZE, "against": 0}, dissenters=[],
-                    dissent_preference=None)
-    majority = None
+    decision = (canonical(action), float(rate))
+    sentences = list(dict.fromkeys(re.findall(r"\bVot(?:ó|aron) ([^.]+(?:\.\d[^.]*)*)\.", text)))
+    majority = []
     dissent = []
     preference = None
-    for sentence in re.findall(r"\bVot(?:ó|aron) ([^.]+(?:\.\d[^.]*)*)\.", text):
+    for sentence in sentences:
         favour = re.fullmatch(r"a favor(?: de (?:esta|la) decisión)? (.+)", sentence)
         against = re.fullmatch(r"en contra (.+?)(?:,? quien(?:es)? (?:prefería|preferían|votó|votaron|se pronunció|"
                                r"se pronunciaron) (?:por |a favor de )?" + ACTIONS + r".*)?", sentence)
-        other = re.fullmatch(r"(?:por|a favor de) " + ACTIONS + r" el objetivo[^,]*? (?:en|a un nivel de) "
-                             r"[\d.]+%,? (.+)", sentence)
+        other = re.fullmatch(r"(?:por|a favor de) " + ACTIONS + r"(?: en \d+ puntos base)? el objetivo[^,]*? "
+                             r"(?:en|a un nivel de) ([\d.]+)%,? (.+)", sentence)
         if against:
             dissent += board_names(against[1])
-            preference = against[2] or preference
-        elif other and other[1] != action:
-            dissent += board_names(other[2])
-            preference = other[1]
+            preference = canonical(against[2]) if against[2] else preference
+        elif other and (canonical(other[1]), float(other[2])) != decision:
+            dissent += board_names(other[3])
+            preference = canonical(other[1])
+        elif other:
+            majority += board_names(other[3])
         elif favour:
-            majority = board_names(favour[1])
-    if not dissent or len(dissent) >= BOARD_SIZE / 2 or (majority and set(majority) & set(dissent)):
+            majority += board_names(favour[1])
+        else:
+            raise FetchError("Banxico vote sentence needs review")
+    if len(majority + dissent) != len(set(majority + dissent)):
+        raise FetchError("Banxico board member named twice; needs review")
+    if kind == "unanimidad":
+        if dissent or (majority and len(majority) != BOARD_SIZE):
+            raise FetchError("Banxico unanimous statement lists dissent; needs review")
+        return dict(decision="unanimous", **{"for": BOARD_SIZE, "against": 0}, dissenters=[],
+                    dissent_preference=None)
+    if not dissent or len(dissent) >= BOARD_SIZE / 2:
         raise FetchError("Banxico majority vote/dissenters needs review")
-    if majority is not None and len(majority) + len(dissent) != BOARD_SIZE:
+    if majority and len(majority) + len(dissent) != BOARD_SIZE:
         raise FetchError("Banxico vote count disagreement needs review")
     return dict(decision="majority", **{"for": BOARD_SIZE - len(dissent), "against": len(dissent)},
                 dissenters=dissent, dissent_preference=preference)
@@ -135,7 +157,7 @@ def parse(doc, family="banxico_policy", since="1900-01", *, archives=None):
                        + DECISION.format(action=ACTIONS), text)
     if repeated.groups()[1:] != decision.groups() or not 0 <= float(printed) <= 100:
         raise FetchError("Banxico statement rate/vote disagreement needs review")
-    votes = vote(text, "unanimidad" if repeated[1] == "unanimidad" else "mayoria", action)
+    votes = vote(text, "unanimidad" if repeated[1] == "unanimidad" else "mayoria", action, printed)
     delta = 0 if action == "mantener" else int(delta) * (1 if action == "incrementar" else -1)
     policy = dict(rates={"overnight_target": dict(rate=float(printed), change_bp=delta,
                   change_basis="issuer_statement")},

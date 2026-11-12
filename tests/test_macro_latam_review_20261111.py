@@ -318,3 +318,121 @@ def test_migration_backfill_closes_already_superseded_rows(tmp_path, monkeypatch
         resolved = [dict(r) for r in store.conn.execute("SELECT * FROM review_queue_resolutions")]
     assert [(r["review_id"], r["run_id"], r["status"]) for r in resolved] == [
         ("rev-1", result["run_id"], "resolved")]
+
+
+# Independent review follow-up.
+HOLD_DISSENT = ("Votaron por mantener el objetivo para la Tasa de Interés Interbancaria a un día en 6.50% "
+                "Galia Borja y Jonathan Heath.")
+
+
+def nov_text(monkeypatch, replacement, *, unanimous=False):
+    _, _, data = banxico_doc(monkeypatch)
+    text = data["text"].replace(HOLD_DISSENT, replacement)
+    if unanimous:
+        text = text.replace("decidió por mayoría", "decidió por unanimidad")
+    return text
+
+
+def test_banxico_unanimity_header_with_alternative_action_dissent_needs_review(monkeypatch):
+    doc, archives, _ = banxico_doc(monkeypatch, nov_text(monkeypatch, HOLD_DISSENT, unanimous=True))
+    with pytest.raises(FetchError, match="needs review"):
+        banxico_policy.parse(doc, archives=archives)
+
+
+def test_banxico_synonym_action_at_the_same_rate_is_not_dissent(monkeypatch):
+    favour = ("Votaron por reducir el objetivo para la Tasa de Interés Interbancaria a un día a un nivel de "
+              "6.25% Victoria Rodríguez Ceja, Omar Mejía Castelazo y José Gabriel Cuadra García. ")
+    doc, archives, _ = banxico_doc(monkeypatch, nov_text(monkeypatch, favour + HOLD_DISSENT))
+    row, = banxico_policy.parse(doc, archives=archives)
+    assert row.policy_decision["vote"]["dissenters"] == ["Galia Borja", "Jonathan Heath"]
+    assert row.policy_decision["vote_split"] == {"for": 3, "against": 2}
+
+
+def test_banxico_same_action_at_another_rate_is_dissent(monkeypatch):
+    deeper = ("Votó por disminuir en 50 puntos base el objetivo para la Tasa de Interés Interbancaria a un día "
+              "a un nivel de 6.00% Jonathan Heath.")
+    doc, archives, _ = banxico_doc(monkeypatch, nov_text(monkeypatch, deeper))
+    row, = banxico_policy.parse(doc, archives=archives)
+    assert row.policy_decision["vote"]["dissenters"] == ["Jonathan Heath"]
+    assert row.policy_decision["vote"]["dissent_preference"] == "disminuir"
+    assert row.policy_decision["vote_split"] == {"for": 4, "against": 1}
+
+
+def test_banxico_duplicated_text_layer_counts_a_dissenter_once(monkeypatch):
+    once = "Votó en contra Jonathan Heath. "
+    doc, archives, _ = banxico_doc(monkeypatch, nov_text(monkeypatch, once + once))
+    row, = banxico_policy.parse(doc, archives=archives)
+    assert row.policy_decision["vote_split"] == {"for": 4, "against": 1}
+
+
+def test_banxico_member_named_in_two_clauses_needs_review(monkeypatch):
+    text = nov_text(monkeypatch, HOLD_DISSENT + " Votó en contra Jonathan Heath, quien prefería mantener el objetivo.")
+    doc, archives, _ = banxico_doc(monkeypatch, text)
+    with pytest.raises(FetchError, match="needs review"):
+        banxico_policy.parse(doc, archives=archives)
+
+
+def test_banxico_number_repair_only_touches_printed_rates():
+    assert banxico_policy.rejoin_numbers("en 6. 25% y a un nivel de 7. 0%") == "en 6.25% y a un nivel de 7.0%"
+    # A sentence ending in a figure, then a percentage: never one fabricated rate.
+    assert banxico_policy.rejoin_numbers("el índice subió 3. 25% de los hogares") == (
+        "el índice subió 3. 25% de los hogares")
+    assert banxico_policy.rejoin_numbers("de 3. 10 a 3.42%") == "de 3. 10 a 3.42%"
+
+
+def clean_run_row(store, finished_at="2099-01-01T00:00:00.000000+00:00"):
+    store.conn.execute("INSERT INTO collect_runs VALUES ('clean','2026-10-28T00:00:00.000000+00:00',NULL,"
+                       "'running','[]','{}','test','host')")
+    store.conn.execute("INSERT INTO collect_run_families (run_id,family,status,finished_at,vintages_added,"
+                       "readings_added,readings_skipped,fetch_since,fetch_until) VALUES "
+                       "('clean','mx_cpi','ok',?,0,0,0,'2026-10','2026-10-28')", (finished_at,))
+
+
+def test_verified_evidence_older_than_the_review_does_not_close_it(tmp_path):
+    """A capture contradicting an already verified vintage stays open."""
+    original = document(INEGI_SEP["fixture"])
+    body = original.body + b"\n% recaptured"
+    contradicting = Document(body, original.url, "2026-10-29T01:00:00.000000+00:00",
+                             hashlib.sha256(body).hexdigest())
+    with open_writer(tmp_path / "older.sqlite") as store:
+        with store.batch():
+            persist(store, inegi_cpi.parse(original))  # verified, first seen 2026-10-28
+            flagged = [replace(r, document=contradicting, value=r.value + 0.1, printed=str(r.value + 0.1),
+                               needs_review=True) for r in inegi_cpi.parse(original)]
+            persist(store, flagged)
+            store.conn.execute("INSERT INTO review_queue VALUES ('rev-old','mx_cpi','r',?,?,?,'pending')",
+                               (contradicting.identity_hash, json.dumps(["sanity_band_exceeded:mx_cpi_yy"]),
+                                "2026-10-29T02:00:00.000000+00:00"))
+            clean_run_row(store)  # a later clean run that stored nothing new for September
+        assert store.conn.execute("SELECT COUNT(*) FROM review_queue_supersessions").fetchone()[0] == 0
+
+
+def test_document_without_readings_is_never_closed_by_url_alone(tmp_path):
+    from market_data_hub.macro_releases.documents import put_document
+    original = document(INEGI_SEP["fixture"])
+    unparsed = Document(b"%PDF garbled", original.url, "2026-10-27T00:00:00.000000+00:00",
+                        hashlib.sha256(b"%PDF garbled").hexdigest())
+    with open_writer(tmp_path / "url.sqlite") as store:
+        with store.batch():
+            digest = put_document(store, unparsed)
+            store.conn.execute("INSERT INTO review_queue VALUES ('rev-url','mx_cpi','r',?,?,?,'pending')",
+                               (digest, json.dumps(["parse_failed"]), "2026-10-27T01:00:00.000000+00:00"))
+            persist(store, inegi_cpi.parse(original))  # verified readings later, same URL
+            clean_run_row(store)
+        assert store.conn.execute("SELECT COUNT(*) FROM review_queue_supersessions").fetchone()[0] == 0
+
+
+def test_calendar_exhaustion_starts_at_the_shortest_edition_gap():
+    from test_macro_m9i import Recorded, run_at
+
+    from market_data_hub.macro_releases.catalogue import LATAM_FAMILIES
+    from market_data_hub.macro_releases.latam import LatamAdapter
+    from market_data_hub.macro_releases.schedule import PENDING_DETAILS
+    details = {}
+    token = PENDING_DETAILS.set(details)
+    try:
+        with run_at("2027-01-08T12:00:00Z"):
+            LatamAdapter(Recorded()).fetch(list(LATAM_FAMILIES), "2026-01")
+    finally:
+        PENDING_DETAILS.reset(token)
+    assert {f for (f, e), d in details.items() if d["category"] == "calendar_exhausted"} == {"mx_cpi"}
