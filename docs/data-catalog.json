@@ -38892,6 +38892,30 @@
       "table": "value_vintages"
     },
     {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 35,
+      "families": [
+        "ea_big4_gdp"
+      ],
+      "frequency": "Q",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "de_gdp_qq",
+      "issuer": "Destatis",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Germany real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
       "distributor": "Eurostat direct",
       "expected_lag_days": 2,
       "families": [
@@ -39372,6 +39396,54 @@
       "table": "value_vintages"
     },
     {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 35,
+      "families": [
+        "ea_big4_gdp"
+      ],
+      "frequency": "Q",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "es_gdp_qq",
+      "issuer": "INE",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Spain real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 45,
+      "families": [
+        "ea_big4_industrial_production"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "es_industrial_production_mm",
+      "issuer": "INE",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Spain industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
       "distributor": "FederalReserve direct",
       "expected_lag_days": 0,
       "families": [
@@ -39389,6 +39461,126 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "FOMC federal funds target range; scalar value is upper bound, complete range in policy_decision",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 35,
+      "families": [
+        "ea_big4_gdp"
+      ],
+      "frequency": "Q",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "fr_gdp_qq",
+      "issuer": "INSEE",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "France real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 45,
+      "families": [
+        "ea_big4_industrial_production"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "fr_industrial_production_mm",
+      "issuer": "INSEE",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "France industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 35,
+      "families": [
+        "ea_big4_gdp"
+      ],
+      "frequency": "Q",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "it_gdp_qq",
+      "issuer": "Istat",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Italy real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 45,
+      "families": [
+        "ea_big4_industrial_production"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "it_industrial_production_mm",
+      "issuer": "Istat",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Italy industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "expected_lag_days": 35,
+      "families": [
+        "ea_big4_unemployment"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "it_unemployment_rate",
+      "issuer": "Istat",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Italy ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT",
       "notes": "",
       "status": "active",
       "status_reason": "",
@@ -42064,7 +42256,7 @@
       "primary_key": [
         "id"
       ],
-      "series_count": 97,
+      "series_count": 105,
       "status": "active",
       "status_reason": "",
       "store": "macro_releases.sqlite",

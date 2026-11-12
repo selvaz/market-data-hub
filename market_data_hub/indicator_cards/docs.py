@@ -158,6 +158,7 @@ def _expand(pattern: str, universe: Iterable[str]) -> List[str]:
 
 def build_rows() -> List[Row]:
     from market_data_hub.macro_releases.catalogue import INDICATORS
+    from market_data_hub.macro_releases.eurostat_national import MAPPED as EUROSTAT_MIRRORED
     family_of = _family_of_indicator()
     consensus = _ff_alias_cards()
     calendar = _calendar_rows()
@@ -188,6 +189,8 @@ def build_rows() -> List[Row]:
         via = sorted({feeds[v] for v in card.ids.ms if v in feeds})
         if set(indicators) & fred_indicators:
             via.append("FRED (redistributor)")
+        if set(indicators) & set(EUROSTAT_MIRRORED):
+            via.append("Eurostat API (redistributor)")
         via += [f"{name} (redistributor)" for name in source_via]
         if via:
             issuer.append("feed: " + ", ".join(sorted(set(via))))
@@ -314,8 +317,8 @@ How to read the tables:
 - **Issuer / source**: `issuer` is the original publisher named in the card's source column, with any
   redistributor removed; `—` when the source column does not name one. `certified issuer` is the issuer of the
   official family. `calendar agency` is the agency named by the calendar catalogue. `feed` is where the hub
-  downloads from, or a redistributor named in the card's source column: FRED and ALFRED are redistributors,
-  never the issuer.
+  downloads from, or a redistributor named in the card's source column: FRED, ALFRED and the Eurostat API
+  (for national big-four headlines) are redistributors, never the issuer.
 - **Freq**: D daily, W weekly, 2W fortnightly, M monthly, Q quarterly, A annual, E scheduled events (policy
   meetings), as recorded on the card.
 - **Release time**: local issuer time and zone from the reviewed edition calendars of the official family;

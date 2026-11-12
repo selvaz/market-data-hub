@@ -1,0 +1,127 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "Gross domestic product (GDP) and main components (output, expenditure and income) - quarterly data",
+ "source": "ESTAT",
+ "updated": "2026-08-14T23:00:00+0200",
+ "value": {
+  "0": 0.0,
+  "1": 0.3,
+  "2": 0.4,
+  "3": 0.2,
+  "4": 0.6,
+  "5": 0.8,
+  "6": 0.6,
+  "7": 0.7,
+  "8": 0.4,
+  "9": 0.3,
+  "10": -0.1,
+  "11": 0.2,
+  "12": 0.2,
+  "13": 0.3,
+  "14": 0.3,
+  "15": 0.2
+ },
+ "id": [
+  "freq",
+  "unit",
+  "s_adj",
+  "na_item",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  1,
+  1,
+  1,
+  4,
+  4
+ ],
+ "dimension": {
+  "freq": {
+   "label": "freq",
+   "category": {
+    "index": {
+     "Q": 0
+    },
+    "label": {
+     "Q": "Q"
+    }
+   }
+  },
+  "unit": {
+   "label": "unit",
+   "category": {
+    "index": {
+     "CLV_PCH_PRE": 0
+    },
+    "label": {
+     "CLV_PCH_PRE": "CLV_PCH_PRE"
+    }
+   }
+  },
+  "s_adj": {
+   "label": "s_adj",
+   "category": {
+    "index": {
+     "SCA": 0
+    },
+    "label": {
+     "SCA": "SCA"
+    }
+   }
+  },
+  "na_item": {
+   "label": "na_item",
+   "category": {
+    "index": {
+     "B1GQ": 0
+    },
+    "label": {
+     "B1GQ": "B1GQ"
+    }
+   }
+  },
+  "geo": {
+   "label": "Geopolitical entity (reporting)",
+   "category": {
+    "index": {
+     "DE": 0,
+     "ES": 1,
+     "FR": 2,
+     "IT": 3
+    },
+    "label": {
+     "DE": "DE",
+     "ES": "ES",
+     "FR": "FR",
+     "IT": "IT"
+    }
+   }
+  },
+  "time": {
+   "label": "Time",
+   "category": {
+    "index": {
+     "2025-Q3": 0,
+     "2025-Q4": 1,
+     "2026-Q1": 2,
+     "2026-Q2": 3
+    },
+    "label": {
+     "2025-Q3": "2025-Q3",
+     "2025-Q4": "2025-Q4",
+     "2026-Q1": "2026-Q1",
+     "2026-Q2": "2026-Q2"
+    }
+   }
+  }
+ },
+ "extension": {
+  "lang": "EN",
+  "id": "NAMQ_10_GDP",
+  "agencyId": "ESTAT",
+  "version": "1.0"
+ }
+}

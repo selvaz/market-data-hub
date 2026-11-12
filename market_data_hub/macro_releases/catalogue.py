@@ -235,7 +235,24 @@ LATAM_FAMILIES = {
         definition="Copom Selic target, percent per annum, from the decision statement; not the realized overnight rate", frequency="E")],
 }
 INDICATORS.update((m.id, m) for measures in LATAM_FAMILIES.values() for m in measures)
-FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES, *ASIA_FAMILIES, *LATAM_FAMILIES)
+# Big-four national headlines redistributed by the Eurostat API. The national
+# statistical office is the issuer; Eurostat is the distributor (mirror
+# provenance, see eurostat_national). Only cards whose concept matches the
+# Eurostat definition are mapped.
+EA_BIG4_FAMILIES = {
+    "ea_big4_gdp": [measure(f"{cc}_gdp_qq", issuer, geo, "qq", "SCA", frequency="Q",
+        definition=f"{name} real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE")
+        for cc, issuer, geo, name in (("de", "Destatis", "DEU", "Germany"), ("fr", "INSEE", "FRA", "France"),
+                                      ("it", "Istat", "ITA", "Italy"), ("es", "INE", "ESP", "Spain"))],
+    "ea_big4_unemployment": [measure("it_unemployment_rate", "Istat", "ITA", "level", "SA",
+        definition="Italy ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT")],
+    "ea_big4_industrial_production": [measure(f"{cc}_industrial_production_mm", issuer, geo, "mm", "SCA",
+        definition=f"{name} industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE")
+        for cc, issuer, geo, name in (("fr", "INSEE", "FRA", "France"), ("it", "Istat", "ITA", "Italy"),
+                                      ("es", "INE", "ESP", "Spain"))],
+}
+INDICATORS.update((m.id, m) for measures in EA_BIG4_FAMILIES.values() for m in measures)
+FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES, *ASIA_FAMILIES, *LATAM_FAMILIES, *EA_BIG4_FAMILIES)
 
 # Declared days from reference-period end to hub availability, initialized from
 # the owner's 2026-10-31 release inventory. Estimates, never live measurements.
@@ -261,6 +278,8 @@ EXPECTED_LAG_DAYS = {
     "jp_tankan": 1, "jp_tokyo_cpi": 0, "jp_cpi": 22, "jp_gdp": 47,
     "cn_gdp": 19, "cn_activity": 19, "cn_nbs_pmi": 0, "cn_cpi": 14,
     "mx_cpi": 8, "banxico_policy": 0, "bcb_policy": 0,
+    # Eurostat refreshes national datasets after the national releases.
+    "ea_big4_gdp": 35, "ea_big4_unemployment": 35, "ea_big4_industrial_production": 45,
 }
 
 

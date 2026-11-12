@@ -61,6 +61,9 @@ def main(argv=None):
     from .asia import AsiaAdapter
     adapters.append((AsiaAdapter(client), [f for f in families if f in ASIA_FAMILIES]))
     adapters.append((LatamAdapter(client), [f for f in families if f in LATAM_FAMILIES]))
+    from .catalogue import EA_BIG4_FAMILIES
+    from .eurostat_national import EurostatNationalAdapter
+    adapters.append((EurostatNationalAdapter(client), [f for f in families if f in EA_BIG4_FAMILIES]))
     for adapter, selected in adapters:
         if not selected:
             continue

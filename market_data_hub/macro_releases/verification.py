@@ -130,6 +130,10 @@ ABSOLUTE_BOUNDS["us_existing_home_sales"] = 20
 ABSOLUTE_BOUNDS["us_pmms_30y"] = 25
 ABSOLUTE_BOUNDS["ea_cost_borrow_house"] = 25
 ABSOLUTE_BOUNDS["uk_mortgage_approvals"] = 2000000
+SANITY_BANDS.update({"de_gdp_qq": 20, "fr_gdp_qq": 20, "it_gdp_qq": 20, "es_gdp_qq": 20,
+                     "it_unemployment_rate": 5,
+                     "fr_industrial_production_mm": 30, "it_industrial_production_mm": 30,
+                     "es_industrial_production_mm": 30})
 
 
 def configured_bands(overrides=None):

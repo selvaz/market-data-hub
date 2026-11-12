@@ -8,7 +8,7 @@ from decimal import Decimal
 import re
 from zoneinfo import ZoneInfo
 
-from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, EMPLOYMENT_FAMILIES, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES
+from .catalogue import FAMILIES, INDICATORS, US_MONTHLY, EMPLOYMENT_FAMILIES, UK_FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES, EA_BIG4_FAMILIES
 from .models import utc
 from .read_times import stored_rows
 from .source_classes import source_class
@@ -38,6 +38,7 @@ FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in CENTRAL
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in HOUSING_FAMILIES.items()})
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in ASIA_FAMILIES.items()})
 FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in LATAM_FAMILIES.items()})
+FAMILY_INDICATORS.update({f: {i.id for i in measures} for f, measures in EA_BIG4_FAMILIES.items()})
 
 
 def indicators_for_stage(family, stage):

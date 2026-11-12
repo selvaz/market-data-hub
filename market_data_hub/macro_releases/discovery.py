@@ -336,7 +336,7 @@ def _ons(client, family, since):
 
 def fetch_daily(client, family, since):
     from .us_editions import EDITIONS
-    from .catalogue import REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES
+    from .catalogue import REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES, EA_BIG4_FAMILIES
     strategy = {"us_cpi": _bls, "us_payrolls": _bls, "us_gdp": _bea,
                 "us_unemployment": _employment, "us_ahe": _employment,
                 "ea_hicp": _eurostat, "uk_gdp": _ons, "uk_cpi": _ons_rates,
@@ -346,7 +346,8 @@ def fetch_daily(client, family, since):
                 **{f: _policy for f in CENTRAL_BANKS},
                 **{f: _housing for f in HOUSING_FAMILIES},
                 **{f: _asia for f in ASIA_FAMILIES},
-                **{f: _latam for f in LATAM_FAMILIES}}[family]
+                **{f: _latam for f in LATAM_FAMILIES},
+                **{f: _ea_big4 for f in EA_BIG4_FAMILIES}}[family]
     documents = []
     reasons = []
     class Capture:
@@ -412,6 +413,11 @@ def _remaining(client, family, since):
 def _latam(client, family, since):
     from .latam import LatamAdapter
     return FamilyFetch(observations=LatamAdapter(client).fetch([family], since))
+
+
+def _ea_big4(client, family, since):
+    from .eurostat_national import EurostatNationalAdapter
+    return FamilyFetch(observations=EurostatNationalAdapter(client).fetch([family], since))
 
 
 def _asia(client, family, since):
