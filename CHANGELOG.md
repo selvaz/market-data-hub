@@ -7,6 +7,22 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Euro-area national macro coverage for Germany, France and Italy from the
+  Eurostat API (one collector, `eurostat_national`; each family fails closed on
+  its own): German industrial production, German and French monthly ILO
+  unemployment, retail trade volume (`sts_trtu_m`), harmonised HICP y/y and m/m
+  (`prc_hicp_minr`, with `prc_hicp_fpd` flashes for months not yet final) and
+  the EC economic sentiment indicator (`ei_bssi_m_r2`). The national office
+  (DG ECFIN for the ESI) is the issuer and Eurostat the distributor. Release
+  concepts for every national indicator plus `DE_OECD_CLI`, `FR_OECD_CLI` and
+  `IT_OECD_CLI` (FRED `DEULOLITOAASTSAM`, `FRALOLITOAASTSAM`,
+  `ITALOLITOAASTSAM`). Release sources may declare `evidence: redistributor`
+  so the cascade returns these mirror readings. National HICP maps onto the
+  harmonised `de_hicp`/`fr_hicp`/`it_hicp` cards, not the CPI cards; new cards
+  `de_unemployment_ilo`, `fr_unemployment_ilo`, `fr_retail`, `it_retail`,
+  `de_esi`, `fr_esi`, `it_esi` and `de/fr/it_oecd_cli` (442 cards).
+
 ## [0.3.27] — 2026-11-12
 
 ### Added
@@ -22,20 +38,6 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   transforms are history-only (single-source rule: y/y concepts resolve from
   the issuer release alone), and the FRED collector widens its tail refresh to
   each transformed series' comparison window.
-- Euro-area national macro coverage for Germany, France and Italy from the
-  Eurostat API (one collector, `eurostat_national`; each family fails closed on
-  its own): German industrial production, German and French monthly ILO
-  unemployment, retail trade volume (`sts_trtu_m`), harmonised HICP y/y and m/m
-  (`prc_hicp_minr`, with `prc_hicp_fpd` flashes for months not yet final) and
-  the EC economic sentiment indicator (`ei_bssi_m_r2`). The national office
-  (DG ECFIN for the ESI) is the issuer and Eurostat the distributor. Release
-  concepts for every national indicator plus `DE_OECD_CLI`, `FR_OECD_CLI` and
-  `IT_OECD_CLI` (FRED `DEULOLITOAASTSAM`, `FRALOLITOAASTSAM`,
-  `ITALOLITOAASTSAM`). Release sources may declare `evidence: redistributor`
-  so the cascade returns these mirror readings. National HICP maps onto the
-  harmonised `de_hicp`/`fr_hicp`/`it_hicp` cards, not the CPI cards; new cards
-  `de_unemployment_ilo`, `fr_unemployment_ilo`, `fr_retail`, `it_retail`,
-  `de_esi`, `fr_esi`, `it_esi` and `de/fr/it_oecd_cli` (442 cards).
 - 24 US release concepts in `concepts/releases.yaml` (issuer primary, FRED
   secondary where units match), `US_OECD_CLI`, and the derived
   `US_CURVE_10Y3M`. FRED `USALOLITOAASTSAM` and `UMCSENT` in `macro_series.yaml`;
