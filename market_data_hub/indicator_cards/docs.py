@@ -158,7 +158,7 @@ def _expand(pattern: str, universe: Iterable[str]) -> List[str]:
 
 def build_rows() -> List[Row]:
     from market_data_hub.macro_releases.catalogue import INDICATORS
-    from market_data_hub.macro_releases.eurostat_national import MAPPED as EUROSTAT_MIRRORED
+    from market_data_hub.macro_releases.eurostat_national import MIRRORED as EUROSTAT_MIRRORED
     family_of = _family_of_indicator()
     consensus = _ff_alias_cards()
     calendar = _calendar_rows()

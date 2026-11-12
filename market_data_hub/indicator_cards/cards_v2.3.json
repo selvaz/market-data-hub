@@ -20580,7 +20580,7 @@
       }
     },
     {
-      "concept": "Germany unemployment rate (ILO, monthly)",
+      "concept": "Germany unemployment rate (ILO, monthly, trend)",
       "country": "DEU",
       "evidence": {
         "local_timing": "analogy",
@@ -20606,7 +20606,7 @@
         "monthly ILO estimate"
       ],
       "nature": "HARD",
-      "rationale": "ILO harmonised rate, 15-74, SA, monthly; not the Bundesagentur registered rate (de_unemployment_ba), which stays a separate concept. Current source: Eurostat une_rt_m redistribution. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
+      "rationale": "ILO harmonised rate, 15-74, monthly trend series (Eurostat une_rt_m s_adj=SA carries the trend for Germany); not the Bundesagentur registered rate (de_unemployment_ba), which stays a separate concept. Current source: Eurostat une_rt_m redistribution. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
       "raw_ids": "cat:de_unemployment_ilo_rate",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
@@ -20651,11 +20651,11 @@
         "monthly ILO estimate"
       ],
       "nature": "HARD",
-      "rationale": "Monthly harmonised ILO rate, 15-74, SA; INSEE's quarterly ILO rate (fr_unemployment) stays a separate concept. Current source: Eurostat une_rt_m redistribution. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
+      "rationale": "Monthly harmonised ILO rate, 15-74, SA; INSEE's quarterly ILO rate (fr_unemployment) stays a separate concept. Compiled by Eurostat from INSEE inputs (une_rt_m methodology, p. 3): Eurostat is the issuer, INSEE the input provider. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
       "raw_ids": "cat:fr_unemployment_ilo_rate",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
-      "source": "INSEE",
+      "source": "Eurostat",
       "theme": "Labour",
       "timing": {
         "basis": "HYPOTHESIS",
@@ -20825,11 +20825,11 @@
         "monthly ILO estimate"
       ],
       "nature": "HARD",
-      "rationale": "Monthly harmonised ILO rate, 15-74, SA; INE's quarterly EPA rate (es_unemployment) stays a separate concept. Current source: Eurostat une_rt_m redistribution. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
+      "rationale": "Monthly harmonised ILO rate, 15-74, SA; INE's quarterly EPA rate (es_unemployment) stays a separate concept. Compiled by Eurostat from INE inputs (une_rt_m methodology, p. 3): Eurostat is the issuer, INE the input provider. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
       "raw_ids": "cat:es_unemployment_ilo_rate",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
-      "source": "INE",
+      "source": "Eurostat",
       "theme": "Labour",
       "timing": {
         "basis": "HYPOTHESIS",
@@ -21093,11 +21093,11 @@
         "monthly ILO estimate"
       ],
       "nature": "HARD",
-      "rationale": "Monthly harmonised ILO rate, 15-74, SA; the GUS registered unemployment rate (pl_unemployment) stays a separate concept. Current source: Eurostat une_rt_m redistribution. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
+      "rationale": "Monthly harmonised ILO rate, 15-74, SA; the GUS registered unemployment rate (pl_unemployment) stays a separate concept. Compiled by Eurostat from GUS inputs (une_rt_m methodology, p. 3): Eurostat is the issuer, GUS the input provider. Source: https://ec.europa.eu/eurostat/databrowser/view/une_rt_m/",
       "raw_ids": "cat:pl_unemployment_ilo_rate",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
-      "source": "GUS",
+      "source": "Eurostat",
       "theme": "Labour",
       "timing": {
         "basis": "HYPOTHESIS",
@@ -21204,6 +21204,6 @@
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "05de748700933cc91a7068379fbb5af6d1a8cf4b17becc618873fb04786163bd",
-  "timing_extract_sha256": "2f04c8a48a831c7b997709c2297a30e52322077e5a57bc3ef24d3fc941ec1c93"
+  "source_table_sha256": "605fd87a5b5d9461076c01f04ca328eb29637bba87fc109697767b6412b9bc7e",
+  "timing_extract_sha256": "2f19428959a3e28e3ebce52c8eddd13e98518bf05ef97db4377a00f7e2a9d63b"
 }

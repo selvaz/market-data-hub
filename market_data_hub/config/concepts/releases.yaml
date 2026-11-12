@@ -637,7 +637,7 @@ concepts:
     evidence: redistributor
 - concept: de_unemployment_ilo_rate
   family: releases
-  label: Germany ILO unemployment rate, monthly (SA)
+  label: Germany ILO unemployment rate, monthly (trend)
   unit: '%'
   frequency: M
   calendar: country:DE
@@ -648,7 +648,7 @@ concepts:
     id: de_unemployment_ilo_rate
     role: primary
     max_age_business_days: 53
-    convention: issuer published value (Destatis via Eurostat, level, SA)
+    convention: issuer published value (Destatis via Eurostat, level, trend; une_rt_m s_adj=SA is the trend series for DE)
     evidence: redistributor
 - concept: fr_unemployment_ilo_rate
   family: releases
@@ -663,8 +663,7 @@ concepts:
     id: fr_unemployment_ilo_rate
     role: primary
     max_age_business_days: 53
-    convention: issuer published value (INSEE via Eurostat, level, SA)
-    evidence: redistributor
+    convention: Eurostat monthly estimate compiled from INSEE inputs (level, SA)
 - concept: de_industrial_production_mm
   family: releases
   label: Germany industrial production ex construction, m/m (SCA)
@@ -921,8 +920,7 @@ concepts:
     id: es_unemployment_ilo_rate
     role: primary
     max_age_business_days: 53
-    convention: issuer published value (INE via Eurostat, level, SA)
-    evidence: redistributor
+    convention: Eurostat monthly estimate compiled from INE inputs (level, SA)
 - concept: es_retail_sales_mm
   family: releases
   label: Spain retail trade volume ex motor vehicles, m/m (SCA)
@@ -1011,8 +1009,7 @@ concepts:
     id: pl_unemployment_ilo_rate
     role: primary
     max_age_business_days: 53
-    convention: issuer published value (GUS via Eurostat, level, SA)
-    evidence: redistributor
+    convention: Eurostat monthly estimate compiled from GUS inputs (level, SA)
 - concept: pl_industrial_production_mm
   family: releases
   label: Poland industrial production volume, B-D, m/m (SCA)

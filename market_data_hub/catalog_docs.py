@@ -539,7 +539,7 @@ def build_rows(config_dir=CONFIG_DIR):
         row["families"] = families
         from .macro_releases.fred import MAPPINGS
 
-        from .macro_releases.eurostat_national import MAPPED as EUROSTAT_MIRRORED
+        from .macro_releases.eurostat_national import MIRRORED as EUROSTAT_MIRRORED
 
         row["distributor"] = (
             "Eurostat API (redistributor; issuer prints not collected)"

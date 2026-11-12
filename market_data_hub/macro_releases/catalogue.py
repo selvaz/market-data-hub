@@ -253,10 +253,16 @@ EA_BIG4_FAMILIES = {
         for cc, issuer, geo, name in NATIONAL],
     "ea_big4_unemployment": [measure("it_unemployment_rate", "Istat", "ITA", "level", "SA",
         definition="Italy ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT"),
-        *[measure(f"{cc}_unemployment_ilo_rate", issuer, geo, "level", "SA",
-          definition=f"{name} ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT; not the {other}")
-          for (cc, issuer, geo, name), other in (
-              (DE, "Bundesagentur registered unemployment rate"),
+        # Germany: une_rt_m s_adj=SA carries the trend series for DE (Eurostat
+        # une_rt_m methodology, p. 9); the measure is labelled trend.
+        measure("de_unemployment_ilo_rate", "Destatis", "DEU", "level", "trend",
+            definition="Germany ILO unemployment rate, percent of labour force, total, age 15-74, monthly, trend series (Eurostat une_rt_m s_adj=SA carries the trend for Germany); Eurostat une_rt_m PC_ACT; not the Bundesagentur registered unemployment rate"),
+        # France, Spain, Poland: Eurostat compiles these monthly estimates from
+        # national inputs (une_rt_m methodology, p. 3). Eurostat is the issuer;
+        # the national office is the input provider, not a redistributed print.
+        *[measure(f"{cc}_unemployment_ilo_rate", "Eurostat", geo, "level", "SA",
+          definition=f"{name} ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly estimate compiled by Eurostat from {provider} inputs; Eurostat une_rt_m PC_ACT; not the {other}")
+          for (cc, provider, geo, name), other in (
               (FR, "INSEE quarterly ILO rate"),
               (ES, "INE quarterly EPA rate"),
               (PL, "GUS registered unemployment rate"))]],

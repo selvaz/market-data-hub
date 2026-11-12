@@ -13,6 +13,7 @@ from market_data_hub.macro_releases import open_writer
 from market_data_hub.macro_releases.adapters import persist
 from market_data_hub.macro_releases.catalogue import EA_BIG4_FAMILIES, EXPECTED_LAG_DAYS, FAMILIES, INDICATORS
 from market_data_hub.macro_releases.eurostat_national import (
+    EUROSTAT_COMPILED, MIRRORED,
     BASE, MAPPED, SPECS, EurostatNationalAdapter, parse,
 )
 from market_data_hub.macro_releases.http import Document, FetchError
@@ -261,8 +262,9 @@ def test_mapping_covers_only_definition_matched_tier1_cards():
             assert indicator in tier1
         assert indicator_card(indicator).key == cards[indicator]
         measure = INDICATORS[indicator]
-        expected = "ECFIN" if family == "ea_big4_esi" else issuers[indicator[:2]]
-        assert measure.issuer_id == expected != "Eurostat"
+        expected = ("ECFIN" if family == "ea_big4_esi" else
+                    "Eurostat" if indicator in EUROSTAT_COMPILED else issuers[indicator[:2]])
+        assert measure.issuer_id == expected
         assert (measure.tier, measure.catalogue_status, measure.active) == ("T1", "supported", True)
         assert indicator in FAMILY_INDICATORS[family] and indicator in SANITY_BANDS
     # Card concepts that differ from the Eurostat measure stay unmapped.
@@ -374,7 +376,8 @@ def test_every_national_indicator_has_a_release_concept():
         spec = registry[indicator]
         [source] = spec["sources"]
         assert (source["kind"], source["id"], source["role"]) == ("release", indicator, "primary")
-        assert source["evidence"] == "redistributor"
+        # Mirror readings need the opt-in; Eurostat-compiled measures are issuer evidence.
+        assert source.get("evidence") == (None if indicator in EUROSTAT_COMPILED else "redistributor")
         assert spec["calendar"] == "country:" + indicator[:2].upper()
         period_days = 92 if INDICATORS[indicator].frequency == "Q" else 31
         lag = EXPECTED_LAG_DAYS[family]
@@ -469,3 +472,41 @@ def test_held_revision_does_not_replace_a_validated_mirror_value(tmp_path):
                                 as_known_at="2026-11-12T12:00:00Z")
     assert (result["reference_period"], result["value"]) == (head.period, head.value)
     assert "revised" not in (result["reason"] or "")
+
+
+def test_eurostat_compiles_the_fr_es_pl_monthly_unemployment_estimates(tmp_path):
+    # une_rt_m methodology, p. 3: Eurostat compiles these monthly estimates
+    # from national inputs. Eurostat is the issuer, not a redistributor.
+    assert EUROSTAT_COMPILED == {"fr_unemployment_ilo_rate", "es_unemployment_ilo_rate", "pl_unemployment_ilo_rate"}
+    assert set(MIRRORED) == set(MAPPED) - EUROSTAT_COMPILED
+    for indicator, provider in (("fr_unemployment_ilo_rate", "INSEE"), ("es_unemployment_ilo_rate", "INE"),
+                                ("pl_unemployment_ilo_rate", "GUS")):
+        measure = INDICATORS[indicator]
+        assert measure.issuer_id == "Eurostat"
+        assert f"compiled by Eurostat from {provider} inputs" in measure.definition
+        card = indicator_card(indicator)
+        assert card.source == "Eurostat" and f"{provider} the input provider" in card.rationale
+    rows = parse(document("une_rt_m"), "ea_big4_unemployment")
+    with open_writer(tmp_path / "macro.sqlite") as store:
+        persist(store, rows)
+        roles = {r[0]: tuple(r[1:]) for r in store.conn.execute(
+            "SELECT indicator_id, issuer_id, source_id, evidence_role FROM source_series")}
+    for indicator in EUROSTAT_COMPILED:
+        assert roles[indicator] == ("Eurostat", "Eurostat", "issuer")
+    assert roles["it_unemployment_rate"] == ("Istat", "Eurostat", "mirror")
+    assert roles["de_unemployment_ilo_rate"] == ("Destatis", "Eurostat", "mirror")
+
+
+def test_german_une_rt_m_measure_is_labelled_trend():
+    # une_rt_m methodology, p. 9: for Germany the s_adj=SA series is the trend.
+    from market_data_hub.concepts import load_concepts
+    assert SPECS["ea_big4_unemployment"]["filters"]["s_adj"] == "SA"
+    measure = INDICATORS["de_unemployment_ilo_rate"]
+    assert measure.seasonal_adjustment == "trend" and "trend series" in measure.definition
+    assert "trend" in indicator_card("de_unemployment_ilo_rate").concept
+    spec = load_concepts()["de_unemployment_ilo_rate"]
+    assert "(trend)" in spec["label"] and "trend" in spec["sources"][0]["convention"]
+    # Only Germany is relabelled; the other countries keep SA.
+    for indicator in ("it_unemployment_rate", "fr_unemployment_ilo_rate", "es_unemployment_ilo_rate",
+                      "pl_unemployment_ilo_rate"):
+        assert INDICATORS[indicator].seasonal_adjustment == "SA"

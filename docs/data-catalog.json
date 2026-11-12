@@ -39294,7 +39294,7 @@
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
-      "name": "Germany ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT; not the Bundesagentur registered unemployment rate",
+      "name": "Germany ILO unemployment rate, percent of labour force, total, age 15-74, monthly, trend series (Eurostat une_rt_m s_adj=SA carries the trend for Germany); Eurostat une_rt_m PC_ACT; not the Bundesagentur registered unemployment rate",
       "notes": "",
       "status": "active",
       "status_reason": "",
@@ -39928,7 +39928,7 @@
       "table": "value_vintages"
     },
     {
-      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "distributor": "Eurostat direct",
       "expected_lag_days": 35,
       "families": [
         "ea_big4_unemployment"
@@ -39936,7 +39936,7 @@
       "frequency": "M",
       "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
       "id": "es_unemployment_ilo_rate",
-      "issuer": "INE",
+      "issuer": "Eurostat",
       "jobs": [
         {
           "name": "macro_releases_daily",
@@ -39944,7 +39944,7 @@
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
-      "name": "Spain ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT; not the INE quarterly EPA rate",
+      "name": "Spain ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly estimate compiled by Eurostat from INE inputs; Eurostat une_rt_m PC_ACT; not the INE quarterly EPA rate",
       "notes": "",
       "status": "active",
       "status_reason": "",
@@ -40122,7 +40122,7 @@
       "table": "value_vintages"
     },
     {
-      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "distributor": "Eurostat direct",
       "expected_lag_days": 35,
       "families": [
         "ea_big4_unemployment"
@@ -40130,7 +40130,7 @@
       "frequency": "M",
       "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
       "id": "fr_unemployment_ilo_rate",
-      "issuer": "INSEE",
+      "issuer": "Eurostat",
       "jobs": [
         {
           "name": "macro_releases_daily",
@@ -40138,7 +40138,7 @@
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
-      "name": "France ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT; not the INSEE quarterly ILO rate",
+      "name": "France ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly estimate compiled by Eurostat from INSEE inputs; Eurostat une_rt_m PC_ACT; not the INSEE quarterly ILO rate",
       "notes": "",
       "status": "active",
       "status_reason": "",
@@ -40726,7 +40726,7 @@
       "table": "value_vintages"
     },
     {
-      "distributor": "Eurostat API (redistributor; issuer prints not collected)",
+      "distributor": "Eurostat direct",
       "expected_lag_days": 35,
       "families": [
         "ea_big4_unemployment"
@@ -40734,7 +40734,7 @@
       "frequency": "M",
       "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
       "id": "pl_unemployment_ilo_rate",
-      "issuer": "GUS",
+      "issuer": "Eurostat",
       "jobs": [
         {
           "name": "macro_releases_daily",
@@ -40742,7 +40742,7 @@
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
-      "name": "Poland ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT; not the GUS registered unemployment rate",
+      "name": "Poland ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly estimate compiled by Eurostat from GUS inputs; Eurostat une_rt_m PC_ACT; not the GUS registered unemployment rate",
       "notes": "",
       "status": "active",
       "status_reason": "",

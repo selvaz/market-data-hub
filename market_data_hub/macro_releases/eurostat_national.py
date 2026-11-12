@@ -5,7 +5,11 @@ GUS; DG ECFIN for the economic sentiment indicator); Eurostat is only the
 distributor. This is the single Eurostat JSON-stat downloader for national
 headlines: GDP, ILO unemployment, industrial production, retail volume,
 harmonised HICP (current edition plus first-released flash) and ESI. Readings therefore carry mirror provenance
-and stay unverified: a Eurostat snapshot never becomes an issuer print.
+and stay unverified: a Eurostat snapshot never becomes an issuer print. The
+exception is ``EUROSTAT_COMPILED``: Eurostat compiles the monthly ILO
+unemployment estimates for France, Spain and Poland from national inputs
+(une_rt_m methodology, p. 3), so Eurostat is their issuer. For Germany the
+une_rt_m ``s_adj=SA`` series is the trend series (methodology, p. 9).
 
 Each card is mapped only where the card's concept matches the Eurostat
 dataset definition (see ``MAPPED``). Card concepts that differ -- Germany's
@@ -106,6 +110,10 @@ def indicator_ids(spec):
 
 MAPPED = {indicator: (family, geo) for family, spec in SPECS.items()
           for (geo, _), indicator in indicator_ids(spec).items()}
+# Monthly ILO estimates Eurostat compiles itself from national inputs
+# (une_rt_m methodology, p. 3): Eurostat is their issuer, not a redistributor.
+EUROSTAT_COMPILED = frozenset({"fr_unemployment_ilo_rate", "es_unemployment_ilo_rate", "pl_unemployment_ilo_rate"})
+MIRRORED = {indicator: spec for indicator, spec in MAPPED.items() if indicator not in EUROSTAT_COMPILED}
 
 
 def params(family, since, flash=False):
