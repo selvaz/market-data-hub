@@ -130,16 +130,16 @@ ABSOLUTE_BOUNDS["us_existing_home_sales"] = 20
 ABSOLUTE_BOUNDS["us_pmms_30y"] = 25
 ABSOLUTE_BOUNDS["ea_cost_borrow_house"] = 25
 ABSOLUTE_BOUNDS["uk_mortgage_approvals"] = 2000000
-SANITY_BANDS.update({"de_gdp_qq": 20, "fr_gdp_qq": 20, "it_gdp_qq": 20, "es_gdp_qq": 20,
+NATIONAL_CC = ("de", "fr", "it", "es", "pl")
+SANITY_BANDS.update({**{f"{cc}_gdp_qq": 20 for cc in NATIONAL_CC},
                      "it_unemployment_rate": 5,
-                     "fr_industrial_production_mm": 30, "it_industrial_production_mm": 30,
-                     "es_industrial_production_mm": 30,
-                     "de_industrial_production_mm": 30,
-                     "de_unemployment_ilo_rate": 5, "fr_unemployment_ilo_rate": 5,
-                     **{f"{cc}_retail_sales_mm": 30 for cc in ("de", "fr", "it")},
-                     **{f"{cc}_hicp_{b}": band for cc in ("de", "fr", "it") for b, band in (("yy", 5), ("mm", 3))},
-                     **{f"{cc}_economic_sentiment_indicator": 40 for cc in ("de", "fr", "it")}})
-ABSOLUTE_BOUNDS.update({f"{cc}_economic_sentiment_indicator": 200 for cc in ("de", "fr", "it")})
+                     **{f"{cc}_industrial_production_mm": 30 for cc in NATIONAL_CC},
+                     **{f"{cc}_unemployment_ilo_rate": 5 for cc in ("de", "fr", "es", "pl")},
+                     **{f"{cc}_retail_sales_mm": 30 for cc in NATIONAL_CC},
+                     **{f"{cc}_hicp_{b}": band for cc in NATIONAL_CC for b, band in (("yy", 5), ("mm", 3))},
+                     **{f"{cc}_economic_sentiment_indicator": 40 for cc in NATIONAL_CC},
+                     "nbp_reference_rate_decision": 5})
+ABSOLUTE_BOUNDS.update({f"{cc}_economic_sentiment_indicator": 200 for cc in NATIONAL_CC})
 
 
 def configured_bands(overrides=None):

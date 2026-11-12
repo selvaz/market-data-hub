@@ -1,7 +1,7 @@
-"""Euro-area big-four national headlines redistributed by the Eurostat API.
+"""National headlines (DE, FR, IT, ES, PL) redistributed by the Eurostat API.
 
-The national statistical office is the issuer (Destatis, INSEE, Istat, INE;
-DG ECFIN for the economic sentiment indicator); Eurostat is only the
+The national statistical office is the issuer (Destatis, INSEE, Istat, INE,
+GUS; DG ECFIN for the economic sentiment indicator); Eurostat is only the
 distributor. This is the single Eurostat JSON-stat downloader for national
 headlines: GDP, ILO unemployment, industrial production, retail volume,
 harmonised HICP (current edition plus first-released flash) and ESI. Readings therefore carry mirror provenance
@@ -11,8 +11,9 @@ Each card is mapped only where the card's concept matches the Eurostat
 dataset definition (see ``MAPPED``). Card concepts that differ -- Germany's
 registered (BA) unemployment, the quarterly ILO/EPA rates of France and Spain,
 the national CPIs -- are deliberately absent and need issuer collectors. The
-monthly ILO rates of Germany and France and the national HICPs have their own
-cards.
+monthly ILO rates of Germany, France, Spain and Poland and the national HICPs
+have their own cards. Poland is outside the euro area: it has no HICP flash
+estimate, so the flash request covers only the euro-area countries.
 
 JSON-stat ``updated`` is a DATASET timestamp, not the national release date.
 It is the edition of the snapshot (date-only precision), recorded as provider
@@ -37,7 +38,8 @@ SPECS = {
         "dataset": "namq_10_gdp", "frequency": "Q",
         # Real GDP, chain-linked volumes, % change on previous quarter, SCA.
         "filters": {"unit": "CLV_PCH_PRE", "s_adj": "SCA", "na_item": "B1GQ"},
-        "indicators": {"DE": "de_gdp_qq", "FR": "fr_gdp_qq", "IT": "it_gdp_qq", "ES": "es_gdp_qq"},
+        "indicators": {"DE": "de_gdp_qq", "FR": "fr_gdp_qq", "IT": "it_gdp_qq", "ES": "es_gdp_qq",
+                       "PL": "pl_gdp_qq"},
     },
     "ea_big4_unemployment": {
         "dataset": "une_rt_m", "frequency": "M",
@@ -45,24 +47,28 @@ SPECS = {
         # age=TOTAL is labelled "Total" and covers ages 15-74; Y15-74 is not a
         # code of this dataset (verified live by the owner, 2026-11-12).
         "filters": {"s_adj": "SA", "age": "TOTAL", "unit": "PC_ACT", "sex": "T"},
-        # Italy's card is Istat's monthly ILO rate. Germany and France get
-        # separate monthly ILO cards: their BA-registered and INSEE quarterly
-        # cards are different concepts and stay unmapped.
+        # Italy's card is Istat's monthly ILO rate. Germany, France, Spain and
+        # Poland get separate monthly ILO cards: their BA-registered, INSEE
+        # quarterly, EPA quarterly and GUS registered cards are different
+        # concepts and stay unmapped.
         "indicators": {"DE": "de_unemployment_ilo_rate", "FR": "fr_unemployment_ilo_rate",
-                       "IT": "it_unemployment_rate"},
+                       "IT": "it_unemployment_rate", "ES": "es_unemployment_ilo_rate",
+                       "PL": "pl_unemployment_ilo_rate"},
     },
     "ea_big4_industrial_production": {
         "dataset": "sts_inpr_m", "frequency": "M",
         # Production volume, B-D (industry excluding construction), SCA, m/m.
         "filters": {"indic_bt": "PRD", "nace_r2": "B-D", "s_adj": "SCA", "unit": "PCH_PRE"},
         "indicators": {"DE": "de_industrial_production_mm", "FR": "fr_industrial_production_mm",
-                       "IT": "it_industrial_production_mm", "ES": "es_industrial_production_mm"},
+                       "IT": "it_industrial_production_mm", "ES": "es_industrial_production_mm",
+                       "PL": "pl_industrial_production_mm"},
     },
     "ea_big4_retail": {
         "dataset": "sts_trtu_m", "frequency": "M",
         # Retail trade except motor vehicles (G47), volume of sales, SCA, m/m.
         "filters": {"indic_bt": "VOL_SLS", "nace_r2": "G47", "s_adj": "SCA", "unit": "PCH_PRE"},
-        "indicators": {"DE": "de_retail_sales_mm", "FR": "fr_retail_sales_mm", "IT": "it_retail_sales_mm"},
+        "indicators": {"DE": "de_retail_sales_mm", "FR": "fr_retail_sales_mm", "IT": "it_retail_sales_mm",
+                       "ES": "es_retail_sales_mm", "PL": "pl_retail_sales_mm"},
     },
     "ea_big4_hicp": {
         # ECOICOP v2 monthly rates (current edition). The national HICP is a
@@ -70,9 +76,12 @@ SPECS = {
         "dataset": "prc_hicp_minr", "frequency": "M",
         "filters": {"coicop18": "TOTAL"},
         "split": ("unit", {"RCH_A": "yy", "RCH_M": "mm"}),
-        "indicators": {"DE": "de_hicp_{}", "FR": "fr_hicp_{}", "IT": "it_hicp_{}"},
+        "indicators": {"DE": "de_hicp_{}", "FR": "fr_hicp_{}", "IT": "it_hicp_{}", "ES": "es_hicp_{}",
+                       "PL": "pl_hicp_{}"},
         # First-released flash estimates fill only months not yet in minr.
-        "flash": {"dataset": "prc_hicp_fpd", "filters": {"release": "FLS"}},
+        # Flash estimates exist only for euro-area members (not Poland).
+        "flash": {"dataset": "prc_hicp_fpd", "filters": {"release": "FLS"},
+                  "geo": ("DE", "ES", "FR", "IT")},
     },
     "ea_big4_esi": {
         # DG ECFIN Economic Sentiment Indicator by country, redistributed by
@@ -80,7 +89,8 @@ SPECS = {
         "dataset": "ei_bssi_m_r2", "frequency": "M",
         "filters": {"indic": "BS-ESI-I", "s_adj": "SA"},
         "indicators": {"DE": "de_economic_sentiment_indicator", "FR": "fr_economic_sentiment_indicator",
-                       "IT": "it_economic_sentiment_indicator"},
+                       "IT": "it_economic_sentiment_indicator", "ES": "es_economic_sentiment_indicator",
+                       "PL": "pl_economic_sentiment_indicator"},
     },
 }
 
@@ -106,7 +116,8 @@ def params(family, since, flash=False):
         out.update(spec["flash"]["filters"])
     if spec.get("split"):
         out[spec["split"][0]] = sorted(spec["split"][1])
-    return {**out, "geo": sorted(spec["indicators"]), "sinceTimePeriod": start}
+    geos = spec["flash"]["geo"] if flash else spec["indicators"]
+    return {**out, "geo": sorted(geos), "sinceTimePeriod": start}
 
 
 def period_end(period):
@@ -152,7 +163,8 @@ def parse(document, family, since="1900-01", flash=False, after=None):
     for dim, codes in expected.items():
         if set(payload["dimension"][dim]["category"]["index"]) != codes:
             raise FetchError("Eurostat national units, adjustment or coverage need review")
-    if not set(payload["dimension"]["geo"]["category"]["index"]) <= set(spec["indicators"]):
+    geos = spec["flash"]["geo"] if flash else spec["indicators"]
+    if not set(payload["dimension"]["geo"]["category"]["index"]) <= set(geos):
         raise FetchError("Eurostat national geography needs review")
     edition = snapshot_date(payload)
     ids = indicator_ids(spec)

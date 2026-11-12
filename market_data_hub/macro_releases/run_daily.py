@@ -16,10 +16,11 @@ from .asia import AsiaAdapter
 from .latam import LatamAdapter
 from .bea import BEAAdapter
 from .bls import BLSAdapter, shift_month
-from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES, EA_BIG4_FAMILIES
+from .catalogue import FAMILIES, REMAINING_FAMILIES, CENTRAL_BANKS, HOUSING_FAMILIES, ASIA_FAMILIES, LATAM_FAMILIES, EA_BIG4_FAMILIES, NBP_FAMILIES
 from .consensus import DEFAULT_RAW_DIR, ingest
 from .eurostat import EurostatAdapter
 from .eurostat_national import EurostatNationalAdapter
+from .nbp_policy import NBPAdapter
 from .fred import USRedistributorAdapter
 from .dol import DOLAdapter
 from .discovery import FamilyFetch, fetch_daily
@@ -58,6 +59,8 @@ ADAPTERS.update({f: AsiaAdapter for f in ASIA_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: AsiaAdapter for f in ASIA_FAMILIES})
 ADAPTERS.update({f: EurostatNationalAdapter for f in EA_BIG4_FAMILIES})
 DISCOVERY_ADAPTERS.update({f: EurostatNationalAdapter for f in EA_BIG4_FAMILIES})
+ADAPTERS.update({f: NBPAdapter for f in NBP_FAMILIES})
+DISCOVERY_ADAPTERS.update({f: NBPAdapter for f in NBP_FAMILIES})
 
 
 def fetch_windows(families, lookback, today):

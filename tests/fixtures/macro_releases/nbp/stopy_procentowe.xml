@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<stopy_procentowe data_publikacji="2026-03-05">
+<tabela id="stoproc" nazwa="Podstawowe stopy procentowe NBP" name="NBP basic interest rates">
+<pozycja id="ref" nazwa="Stopa referencyjna" name="Reference rate (minimum money market intervention rate)" odnosnik="1" oprocentowanie="3,75" trend = "spadek" obowiazuje_od="2026-03-05" />
+<pozycja id="lom" nazwa="Stopa lombardowa" name="Lombard rate" odnosnik="0" oprocentowanie="4,25" trend = "spadek" obowiazuje_od="2026-03-05" />
+<pozycja id="dep" nazwa="Stopa depozytowa" name="Deposit rate" odnosnik="0" oprocentowanie="3,25" trend = "spadek" obowiazuje_od="2026-03-05" />
+<pozycja id="red" nazwa="Stopa redyskonta weksli" name="Rediscount rate" odnosnik="0" oprocentowanie="3,80" trend = "spadek" obowiazuje_od="2026-03-05" />
+<pozycja id="dys" nazwa="Stopa dyskontowa weksli" name="Discount rate" odnosnik="0" oprocentowanie="3,85" trend = "spadek" obowiazuje_od="2026-03-05" />
+</tabela>
+</stopy_procentowe>

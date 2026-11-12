@@ -67,6 +67,9 @@ def main(argv=None):
     # drop the other, valid datasets. Each family fails closed on its own.
     national = EurostatNationalAdapter(client)
     adapters += [(national, [f], f"EurostatNationalAdapter:{f}") for f in families if f in EA_BIG4_FAMILIES]
+    from .catalogue import NBP_FAMILIES
+    from .nbp_policy import NBPAdapter
+    adapters.append((NBPAdapter(client), [f for f in families if f in NBP_FAMILIES]))
     for adapter, selected, *label in adapters:
         if not selected:
             continue
