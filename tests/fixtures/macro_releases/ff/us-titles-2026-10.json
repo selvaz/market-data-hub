@@ -1,0 +1,12 @@
+[
+  {"title": "CPI y/y", "country": "USD", "date": "2026-10-14T08:30:00-04:00", "impact": "High", "forecast": "3.6%", "previous": "3.4%"},
+  {"title": "Core CPI y/y", "country": "USD", "date": "2026-10-14T08:30:00-04:00", "impact": "High", "forecast": "2.5%", "previous": "2.4%"},
+  {"title": "Retail Sales m/m", "country": "USD", "date": "2026-10-15T08:30:00-04:00", "impact": "High", "forecast": "0.4%", "previous": "0.6%"},
+  {"title": "Core Retail Sales m/m", "country": "USD", "date": "2026-10-15T08:30:00-04:00", "impact": "High", "forecast": "0.3%", "previous": "0.7%"},
+  {"title": "Industrial Production m/m", "country": "USD", "date": "2026-10-16T09:15:00-04:00", "impact": "Low", "forecast": "0.1%", "previous": "-0.1%"},
+  {"title": "Capacity Utilization Rate", "country": "USD", "date": "2026-10-16T09:15:00-04:00", "impact": "Low", "forecast": "77.4%", "previous": "77.5%"},
+  {"title": "Average Hourly Earnings m/m", "country": "USD", "date": "2026-11-06T08:30:00-05:00", "impact": "High", "forecast": "0.3%", "previous": "0.3%"},
+  {"title": "Industrial Production y/y", "country": "USD", "date": "2026-10-16T09:15:00-04:00", "impact": "Low", "forecast": "0.9%", "previous": "0.8%"},
+  {"title": "Average Hourly Earnings y/y", "country": "USD", "date": "2026-11-06T08:30:00-05:00", "impact": "Low", "forecast": "3.8%", "previous": "3.9%"},
+  {"title": "Core Retail Sales y/y", "country": "USD", "date": "2026-10-15T08:30:00-04:00", "impact": "Low", "forecast": "3.1%", "previous": "3.0%"}
+]
