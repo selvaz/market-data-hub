@@ -26,6 +26,14 @@ CONCEPT_KEYS = {
 SOURCE_KEYS = {
     "kind", "id", "role", "max_age_business_days", "convention", "comparability_note", "unit",
 }
+# Optional on macro sources: how a stored level/index becomes the concept value.
+MACRO_SOURCE_KEYS = {"transform", "scale"}
+TRANSFORMS = {"level", "diff", "pct_change_mm", "pct_change_qq_saar", "pct_change_yy"}
+# Native series frequency each change transform requires (None: any frequency).
+TRANSFORM_FREQUENCIES = {
+    "level": None, "diff": None, "pct_change_mm": {"M"}, "pct_change_qq_saar": {"Q"},
+    "pct_change_yy": {"M", "Q", "W"},
+}
 CHECK_KEYS = {"ids", "tolerance", "unit", "note", "basis", "window"}
 HISTORY_KEYS = {"mode", "id"}
 PAIR_TOLERANCE_KEYS = {"series_ids", "tolerance_bp", "note"}
@@ -123,7 +131,8 @@ def _validate_check(entry, sources):
 def _validate_source(name, source, catalogues, result):
     if not isinstance(source, dict) or source.get("kind") not in SOURCE_KINDS:
         raise ValueError(f"{name}: invalid source kind")
-    allowed = SOURCE_KEYS | {"field", "live"} if source["kind"] == "price" else SOURCE_KEYS
+    allowed = (SOURCE_KEYS | {"field", "live"} if source["kind"] == "price"
+               else SOURCE_KEYS | MACRO_SOURCE_KEYS if source["kind"] == "macro" else SOURCE_KEYS)
     _reject_unknown_keys(source, allowed, f"{name} source")
     kind, sid = source["kind"], source.get("id")
     known = result if kind == "derived" else catalogues[kind]
@@ -141,6 +150,7 @@ def _validate_source(name, source, catalogues, result):
         convention = known[sid].get("convention")
         if convention and convention != source["convention"]:
             raise ValueError(f"{name}: convention does not match {sid}")
+        _validate_transform(name, source, known[sid])
     if kind == "price":
         if source.get("field") not in {"close", "adj_close"}:
             raise ValueError(f"{name}: invalid price field")
@@ -148,6 +158,23 @@ def _validate_source(name, source, catalogues, result):
             raise ValueError(f"{name}: invalid live policy")
     if source["role"] == "proxy" and not _text(source.get("unit")):
         raise ValueError(f"{name}: proxy requires its own unit")
+
+
+def _validate_transform(name, source, catalogue_entry):
+    transform = source.get("transform")
+    if transform is not None:
+        if transform not in TRANSFORMS:
+            raise ValueError(f"{name}: invalid transform {transform}")
+        required = TRANSFORM_FREQUENCIES[transform]
+        frequency = catalogue_entry.get("frequency")
+        if required is not None and frequency not in required:
+            raise ValueError(f"{name}: transform {transform} needs a {sorted(required)} series, "
+                             f"{source['id']} is {frequency}")
+    if "scale" in source:
+        scale = source["scale"]
+        if (isinstance(scale, bool) or not isinstance(scale, (int, float))
+                or not math.isfinite(scale) or scale <= 0):
+            raise ValueError(f"{name}: invalid source scale")
 
 
 def _validate_entry(entry, catalogues, result):
