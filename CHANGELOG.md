@@ -8,6 +8,16 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 ## [Unreleased]
 
 ### Added
+- `market_data_hub.latest` (H2): `read_latest`, `read_latest_many`,
+  `read_concept_history` and a CLI return the most recent correct value of a
+  macro, derived or release concept through its ordered cascade, with the
+  declared source and status (`primary`, `newer_secondary`, `fallback`,
+  `proxy`, `stale`, `unavailable`). Price concepts raise `NotImplementedError`.
+  Macro sources gain optional `transform` and `scale`.
+- 24 US release concepts in `concepts/releases.yaml` (issuer primary, FRED
+  secondary where units match), `US_OECD_CLI`, and the derived
+  `US_CURVE_10Y3M`. FRED `USALOLITOAASTSAM` and `UMCSENT` in `macro_series.yaml`;
+  new card `us_oecd_cli` and `ms:UMCSENT` on `us_umich_sentiment` (432 cards).
 - H1 concept registry in `config/concepts/*.yaml`, with ordered source cascades,
   generated `PX:*` price concepts, offline validation, and the 116 existing
   sovereign chains preserved through the compatibility loader (#189).

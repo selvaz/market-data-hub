@@ -55,9 +55,63 @@ canonical listing supplies the currency and session calendar (`calendar:
 listing`); units are `quote_currency/share` or `quote_currency`. Price sources
 declare `live: post_close` for H2's provisional-current-value behavior.
 
-`releases.yaml` reserves the release family; release declarations and the
-adapter are deferred to H4. No value resolver, reader API, session/calendar
-implementation, or point-in-time schema migration is included here.
+`releases.yaml` declares the United States release concepts (H2). Each id is
+the `macro_releases.catalogue` indicator id; the primary is the issuer release,
+the optional secondary is a FRED series from the indicator card's `ms:` ids.
+Macro sources may declare `transform` (`level`, `diff`, `pct_change_mm`,
+`pct_change_qq_saar` or `pct_change_yy`) and a positive `scale` multiplier, so
+a stored index or level feeds a percentage or change concept in the release
+unit (for example `ICSA` claims times 0.001 gives thousands). Validation
+requires a monthly series for `pct_change_mm`, a quarterly one for
+`pct_change_qq_saar`, and a monthly, quarterly or weekly one for
+`pct_change_yy`; other source kinds reject both keys. Where the issuer publishes
+a change from a non-seasonally-adjusted index that macro_series does not hold
+(CPI and PPI y/y), the FRED secondary is omitted and a comment says why.
+`max_age_business_days` follows `ceil((period_days + issuer_lag_days + 7) * 5 / 7)`
+with period days M 31, W 7, Q 92 and E 49, and the issuer lag from
+`EXPECTED_LAG_DAYS`; every source of a concept shares it.
+
+## Latest value (`market_data_hub.latest`)
+
+`read_latest(concept, *, as_of=None, as_known_at=None, con=None)` returns the
+most recent correct value of a `macro`, `derived` or `release` concept with its
+declared source; `read_latest_many` resolves a list with one DuckDB connection
+and one release snapshot. `price` concepts raise `NotImplementedError` until a
+later PR adds live/post-close rules and exchange calendars. The legacy
+`read_resolved_*` rate readers are unchanged.
+
+For each non-`history_only` source the resolver takes the newest usable
+observation: a `macro_series` row dated on or before `as_of` (after its
+transform), or an official/private release card released by `as_known_at`
+(default: end of the `as_of` day) whose reference period has started by
+`as_of`. Monthly and quarterly observations are dated at the period end. A
+source is fresh when its age in business days is at most its
+`max_age_business_days`. The tier is the first non-empty fresh set among
+{primary, secondary}, {fallback}, {proxy}; inside it the newest observation
+wins and ties go to the higher-ranked source. Status is `primary`,
+`newer_secondary`, `fallback` or `proxy`; without a fresh source the newest
+stale observation is returned as `stale`, and without any as `unavailable`.
+Sources are never averaged or reconciled.
+
+Derived concepts evaluate their `expression` over resolved inputs at a common
+date (re-resolving at the older input date when needed) and report each
+input's source; a price input makes the result `unavailable`.
+`read_concept_history(concept, start, end)` reads the single `history` source
+(or the primary macro source), applying its transform; chains are not spliced.
+
+The output keys are stable: `concept`, `label`, `family`, `unit`, `value`,
+`observation_date`, `reference_period`, `source_id`, `source_kind`, `role`,
+`status`, `age_bd`, `max_age_bd`, `released_at`, `consensus`, `alternatives`,
+`inputs`, `reason` and `registry_version` (a hash of the concept files).
+
+`python -m market_data_hub.latest --as-of YYYY-MM-DD [--concept X ...]
+[--family releases] [--db PATH] [--releases-db PATH] [--json]` prints a table.
+The release store defaults to `MACRO_RELEASES_DB`.
+
+Known limits: business days are Monday to Friday with no holiday calendar, so
+ages around holidays are overstated by the holidays. Macro rows are read as
+currently stored: `as_known_at` applies only to release cards, so FRED values
+may include later revisions.
 
 `resolved_rates.load_resolved_rates()` projects the registry's 116 existing
 sovereign concepts back to the legacy shape, including catalogue frequencies.
