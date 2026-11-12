@@ -17,3 +17,7 @@ recorded Eurostat euro-indicator release already in this repository:
 The dataset envelope (`source`, `class`, `extension.id`, dimension order) follows
 the recorded `../m9a2/ea-gdp.json` API capture. Replace these files with raw API
 captures when the API is reachable.
+
+The `une_rt_m` age code is `TOTAL` ("Total", ages 15-74 in this dataset).
+`Y15-74` is not a code of `une_rt_m`. The owner's live check on 2026-11-12
+confirmed this, and it is the code the collector requests.

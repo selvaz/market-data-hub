@@ -63,11 +63,14 @@ def main(argv=None):
     adapters.append((LatamAdapter(client), [f for f in families if f in LATAM_FAMILIES]))
     from .catalogue import EA_BIG4_FAMILIES
     from .eurostat_national import EurostatNationalAdapter
-    adapters.append((EurostatNationalAdapter(client), [f for f in families if f in EA_BIG4_FAMILIES]))
-    for adapter, selected in adapters:
+    # One entry per family: a definition drift in one Eurostat dataset must not
+    # drop the other, valid datasets. Each family fails closed on its own.
+    national = EurostatNationalAdapter(client)
+    adapters += [(national, [f], f"EurostatNationalAdapter:{f}") for f in families if f in EA_BIG4_FAMILIES]
+    for adapter, selected, *label in adapters:
         if not selected:
             continue
-        name = type(adapter).__name__
+        name = label[0] if label else type(adapter).__name__
         try:
             observations = adapter.fetch(selected, args.since)
             if not observations:

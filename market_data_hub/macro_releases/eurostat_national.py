@@ -36,8 +36,10 @@ SPECS = {
     },
     "ea_big4_unemployment": {
         "dataset": "une_rt_m", "frequency": "M",
-        # ILO unemployment, % of active population, total, 15-74, SA.
-        "filters": {"s_adj": "SA", "age": "Y15-74", "unit": "PC_ACT", "sex": "T"},
+        # ILO unemployment, % of active population, both sexes, SA. In une_rt_m
+        # age=TOTAL is labelled "Total" and covers ages 15-74; Y15-74 is not a
+        # code of this dataset (verified live by the owner, 2026-11-12).
+        "filters": {"s_adj": "SA", "age": "TOTAL", "unit": "PC_ACT", "sex": "T"},
         "indicators": {"IT": "it_unemployment_rate"},
     },
     "ea_big4_industrial_production": {

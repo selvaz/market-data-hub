@@ -55,10 +55,10 @@
    "label": "age",
    "category": {
     "index": {
-     "Y15-74": 0
+     "TOTAL": 0
     },
     "label": {
-     "Y15-74": "Y15-74"
+     "TOTAL": "TOTAL"
     }
    }
   },

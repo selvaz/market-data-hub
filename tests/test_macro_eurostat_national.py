@@ -74,7 +74,7 @@ def test_gdp_parses_latest_two_quarters_per_country():
 def test_unemployment_parses_italy_ilo_rate():
     rows = parse(document("une_rt_m"), "ea_big4_unemployment")
     assert values(rows) == {("it_unemployment_rate", "2026-07"): 6.0, ("it_unemployment_rate", "2026-08"): 6.2}
-    assert {o.series_key for o in rows} == {"une_rt_m:IT:SA:Y15-74:PC_ACT:T"}
+    assert {o.series_key for o in rows} == {"une_rt_m:IT:SA:TOTAL:PC_ACT:T"}
     assert {o.edition for o in rows} == {"2026-10-01"}
 
 
@@ -130,7 +130,7 @@ def test_adapter_requests_exact_filters_without_network():
     by_dataset = {c[1].rsplit("/", 1)[-1]: c[2] for c in client.calls}
     assert by_dataset["namq_10_gdp"] == {"lang": "EN", "unit": "CLV_PCH_PRE", "s_adj": "SCA", "na_item": "B1GQ",
                                          "geo": ["DE", "ES", "FR", "IT"], "sinceTimePeriod": "2026-Q2"}
-    assert by_dataset["une_rt_m"] == {"lang": "EN", "s_adj": "SA", "age": "Y15-74", "unit": "PC_ACT", "sex": "T",
+    assert by_dataset["une_rt_m"] == {"lang": "EN", "s_adj": "SA", "age": "TOTAL", "unit": "PC_ACT", "sex": "T",
                                       "geo": ["IT"], "sinceTimePeriod": "2026-05"}
     assert by_dataset["sts_inpr_m"]["nace_r2"] == "B-D" and by_dataset["sts_inpr_m"]["geo"] == ["ES", "FR", "IT"]
     assert {o.indicator_id for o in rows} == set(MAPPED)
@@ -196,3 +196,27 @@ def test_persisted_as_unverified_eurostat_mirror_of_national_issuer(tmp_path):
         before = store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0]
         persist(store, [replace(o, document=replace(o.document, retrieved_at="2026-11-12T09:00:00Z")) for o in rows])
         assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == before
+
+
+def test_manual_collect_isolates_a_failing_family(tmp_path, monkeypatch, capsys):
+    from market_data_hub.macro_releases import collect
+
+    class DriftedUnemployment(FakeClient):
+        def __init__(self, *args, **kwargs):
+            super().__init__()
+
+        def get(self, provider, url, params=None):
+            if url.endswith("une_rt_m"):
+                # The live failure: a wrong age filter yields another age dimension.
+                return document("une_rt_m", lambda p: p["dimension"]["age"]["category"].update(index={"Y15-24": 0}))
+            return super().get(provider, url, params)
+
+    monkeypatch.setattr(collect, "HttpClient", DriftedUnemployment)
+    families = ",".join(EA_BIG4_FAMILIES)
+    assert collect.main(["--db", str(tmp_path / "macro.sqlite"), "--families", families, "--since", "2026-01"]) == 1
+    result = json.loads(capsys.readouterr().out)
+    assert result["family_failures"] == {"ea_big4_unemployment": ["EurostatNationalAdapter:ea_big4_unemployment"]}
+    assert set(result["families"]) == {"EurostatNationalAdapter:ea_big4_gdp",
+                                       "EurostatNationalAdapter:ea_big4_industrial_production"}
+    assert result["families"]["EurostatNationalAdapter:ea_big4_gdp"]["new_vintages"] == 8
+    assert result["families"]["EurostatNationalAdapter:ea_big4_industrial_production"]["new_vintages"] == 6
