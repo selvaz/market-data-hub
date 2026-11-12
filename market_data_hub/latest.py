@@ -211,14 +211,13 @@ def _active_sources(spec):
 
 
 def concept_kind(spec):
-    """``derived``, ``price`` (every active source is a price), ``release`` or ``macro``."""
+    """Kind of the first active source (``price`` concepts start with a price), or ``derived``."""
     if spec.get("kind") == "derived":
         return "derived"
     active = _active_sources(spec)
-    kinds = {s["kind"] for s in active}
-    if kinds == {"price"}:
-        return "price"
-    return active[0]["kind"] if active else "macro"
+    first = active[0]["kind"] if active else "macro"
+    # A cascade whose first source is another concept resolves like macro.
+    return "macro" if first == "derived" else first
 
 
 def _empty_result(name, spec, version):
