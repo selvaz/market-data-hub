@@ -21,7 +21,21 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   so the cascade returns these mirror readings. National HICP maps onto the
   harmonised `de_hicp`/`fr_hicp`/`it_hicp` cards, not the CPI cards; new cards
   `de_unemployment_ilo`, `fr_unemployment_ilo`, `fr_retail`, `it_retail`,
-  `de_esi`, `fr_esi`, `it_esi` and `de/fr/it_oecd_cli` (442 cards).
+  `de_esi`, `fr_esi`, `it_esi` and `de/fr/it_oecd_cli`.
+- Spain and Poland on the same collector: GDP q/q (PL), monthly ILO
+  unemployment, industrial production (PL), retail trade volume, harmonised
+  HICP y/y and m/m and the ESI. Poland's issuer is GUS (Statistics Poland);
+  Poland has no HICP flash, so the flash request covers only euro-area
+  countries. Cards `es_hicp`/`pl_hicp` (harmonised) gain the Eurostat ids; new
+  cards `es_unemployment_ilo` (monthly ILO, separate from the EPA card),
+  `es_retail`, `es_esi`, `es_oecd_cli`, `pl_gdp_real`, `pl_indpro`,
+  `pl_unemployment_ilo`, `pl_retail` and `pl_esi`. `ES_OECD_CLI` (FRED
+  `ESPLOLITOAASTSAM`); no Polish CLI, as FRED's stopped in 2022.
+- `nbp_policy`: the National Bank of Poland reference rate
+  (`nbp_reference_rate_decision`, T1) from the issuer's rate table
+  `static.nbp.pl/dane/stopy/stopy_procentowe.xml`; decimal comma parsed, the
+  effective date (`obowiazuje_od`) is the decision date, and a missing or
+  malformed `ref` row fails closed. Attached to the `pl_nbp` card.
 
 ## [0.3.27] — 2026-11-12
 

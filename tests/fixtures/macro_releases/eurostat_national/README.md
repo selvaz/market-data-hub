@@ -1,4 +1,4 @@
-# Eurostat national (big-four) JSON-stat fixtures
+# Eurostat national (DE, FR, IT, ES, PL) JSON-stat fixtures
 
 Small JSON-stat 2.0 documents in the shape of the Eurostat dissemination API
 (`/api/dissemination/statistics/1.0/data/<dataset>`), restricted to the exact
@@ -31,6 +31,22 @@ The live run confirmed the HICP datasets and filters (data to October 2026)
 but recorded no national HICP values, so those numbers are placeholders for
 the parser, not observations. The `updated` timestamps of the added and
 extended files are plausible dataset dates, not captured ones.
+
+Added for Spain and Poland, built offline the same way. Values are the owner's
+live Eurostat run of 2026-11-12, except the HICP m/m rates:
+
+| Fixture | Values added |
+|---|---|
+| `namq_10_gdp.json` | ES 0.6 (2026-Q3), PL 1.1 (2026-Q2); `updated` moved to 2026-11-06 |
+| `une_rt_m.json` | ES 10.3, PL 3.4 (Sep 2026) |
+| `sts_inpr_m.json` | ES 0.9, PL 2.9 (Sep 2026) |
+| `sts_trtu_m.json` | ES -0.4, PL -0.2 (Sep 2026) |
+| `ei_bssi_m_r2.json` | ES 105.1, PL 99.0 (Oct 2026) |
+| `prc_hicp_minr.json` | RCH_A ES 4.9 (Oct 2026), PL 4.0 (Sep 2026); RCH_M ES 0.5, PL 0.1 synthetic; `updated` moved to 2026-11-11 |
+| `prc_hicp_fpd.json` | ES Oct 2026 flash, a copy of the regular values (the collector drops it because minr already has October) |
+
+Poland is outside the euro area: `prc_hicp_fpd` has no Polish flash and the
+collector does not request one.
 
 The dataset envelope (`source`, `class`, `extension.id`, dimension order) follows
 the recorded `../m9a2/ea-gdp.json` API capture. Replace these files with raw API
