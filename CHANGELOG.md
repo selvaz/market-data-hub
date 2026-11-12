@@ -7,6 +7,8 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.27] — 2026-11-12
+
 ### Added
 - `market_data_hub.latest` (H2): `read_latest`, `read_latest_many`,
   `read_concept_history` and a CLI return the most recent correct value of a
