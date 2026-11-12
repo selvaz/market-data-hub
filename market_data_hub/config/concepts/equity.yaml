@@ -1,0 +1,4 @@
+# Generate PX:<symbol> for the effective Yahoo universe; listing metadata supplies
+# currency and calendar. See docs/concepts.md for field and live policies.
+generate: yahoo_prices
+concepts: []

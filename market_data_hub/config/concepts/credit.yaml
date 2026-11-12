@@ -1,0 +1,97 @@
+concepts:
+- concept: BAMLH0A0HYM2
+  family: credit
+  label: US high yield OAS
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: BAMLH0A0HYM2
+    role: primary
+    max_age_business_days: 3
+    convention: option-adjusted spread
+- concept: BAMLC0A0CM
+  family: credit
+  label: US investment grade OAS
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: BAMLC0A0CM
+    role: primary
+    max_age_business_days: 3
+    convention: option-adjusted spread
+- concept: BAMLC0A4CBBB
+  family: credit
+  label: US BBB OAS
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: BAMLC0A4CBBB
+    role: primary
+    max_age_business_days: 3
+    convention: option-adjusted spread
+- concept: BAMLH0A3HYC
+  family: credit
+  label: US CCC and lower OAS
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: BAMLH0A3HYC
+    role: primary
+    max_age_business_days: 3
+    convention: option-adjusted spread
+- concept: BAMLEMCBPIOAS
+  family: credit
+  label: Emerging markets corporate OAS
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: BAMLEMCBPIOAS
+    role: primary
+    max_age_business_days: 3
+    convention: option-adjusted spread
+- concept: BAMLEMHBHYCRPIOAS
+  family: credit
+  label: Emerging markets high yield OAS
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: BAMLEMHBHYCRPIOAS
+    role: primary
+    max_age_business_days: 3
+    convention: option-adjusted spread
+- concept: AAA
+  family: credit
+  label: Moodys seasoned Aaa corporate yield
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: AAA
+    role: primary
+    max_age_business_days: 35
+    convention: monthly seasoned corporate yield
+- concept: BAA
+  family: credit
+  label: Moodys seasoned Baa corporate yield
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: BAA
+    role: primary
+    max_age_business_days: 35
+    convention: monthly seasoned corporate yield

@@ -211,7 +211,7 @@ configured-id context coverage, not live ingestion or historical completeness.
 | External tier-1 measures | 86 / 86 |
 | Release catalogue | 97 / 97 |
 | Active tier-1 calendar | 65 / 65 |
-| Enabled hub macro series | 117 / 117 |
+| Enabled hub macro series | 125 / 125 |
 
 UK monthly GDP (`uk_gdp_mm`, `uk_gdp_index`) is covered by the owner-approved
 row `uk_gdp_monthly` (added 18/10/2026, mirroring the US GDP row: COIN by
@@ -233,6 +233,11 @@ the exact saved USD titles `Unemployment Rate` and `Average Hourly Earnings m/m`
 ALFRED outage values keep BLS as issuer and `source_class=redistributor`;
 their release resolution stays provisional. Concept-card approval does not
 certify a redistributed value as official.
+
+H1 adds separate `us_ust_1m` and `us_ust_6m` context cards for DGS1MO and
+DGS6MO. They carry no forecasting claim: local timing is not tested or
+estimated. Both identify the Treasury CMT par-yield series via FRED H.15,
+published T+1, matching the money-market registry declarations.
 
 Catalogue aliases attach **concept context**, never numerical equivalence:
 levels, changes, seasonal adjustments and stages retain their original ids.

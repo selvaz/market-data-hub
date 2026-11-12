@@ -3,34 +3,24 @@ from __future__ import annotations
 
 import math
 import re
+from copy import deepcopy
+from functools import lru_cache
 from pathlib import Path
 
 import yaml
 
-from market_data_hub.config_loader import _CONFIG_DIR, _load_yaml
-
-
-class _UniqueLoader(yaml.SafeLoader):
-    pass
-
-
-def _mapping(loader, node, deep=False):
-    result = {}
-    for key_node, value_node in node.value:
-        key = loader.construct_object(key_node, deep=deep)
-        if key in result:
-            raise ValueError(f'duplicate configuration key: {key}')
-        result[key] = loader.construct_object(value_node, deep=deep)
-    return result
-
-
-_UniqueLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _mapping)
+from market_data_hub.config_loader import _CONFIG_DIR
+from market_data_hub.concepts import (
+    PAIR_TOLERANCE_KEYS, _UniqueLoader, _file_versions, _reject_unknown_keys,
+    _validate_family_config, load_macro_catalogue, validate_concepts,
+)
 
 
 def validate_resolved_rates(config, known_series):
     """Validate the full table and return a concept-to-spec mapping."""
     if not isinstance(config, dict) or not isinstance(config.get('concepts'), list):
         raise ValueError('concepts must be a list')
+    _reject_unknown_keys(config, {'concepts', 'tolerance_bp'}, 'resolved rates')
     tolerance = config.get('tolerance_bp')
     if isinstance(tolerance, bool) or not isinstance(tolerance, (int, float)) or not math.isfinite(tolerance) or tolerance < 0:
         raise ValueError('invalid tolerance_bp')
@@ -38,6 +28,8 @@ def validate_resolved_rates(config, known_series):
     for entry in config['concepts']:
         if not isinstance(entry, dict):
             raise ValueError('invalid concept entry')
+        _reject_unknown_keys(entry, {'concept', 'sources', 'spot_bond_justification', 'pair_tolerances'},
+                             'resolved rate concept')
         name = entry.get('concept')
         if not isinstance(name, str) or not re.fullmatch(r'[A-Z]{2}_[0-9]+[MY]', name):
             raise ValueError(f'invalid concept: {name}')
@@ -52,6 +44,8 @@ def validate_resolved_rates(config, known_series):
         for index, source in enumerate(sources):
             if not isinstance(source, dict):
                 raise ValueError(f'{name}: invalid source')
+            _reject_unknown_keys(source, {'series_id', 'role', 'max_age_business_days', 'convention',
+                                          'comparability_note', 'frequency'}, f'{name} source')
             sid = source.get('series_id')
             if sid not in known_series:
                 raise ValueError(f'{name}: unknown series id {sid}')
@@ -97,6 +91,8 @@ def validate_resolved_rates(config, known_series):
             raise ValueError(f'{name}: pair_tolerances must be a list')
         seen_pairs = set()
         for pair in pairs:
+            if isinstance(pair, dict):
+                _reject_unknown_keys(pair, PAIR_TOLERANCE_KEYS, f'{name} pair tolerance')
             ids = pair.get('series_ids') if isinstance(pair, dict) else None
             if not isinstance(ids, list) or len(ids) != 2 or any(sid not in seen for sid in ids) or ids[0] == ids[1]:
                 raise ValueError(f'{name}: invalid pair series_ids')
@@ -119,16 +115,42 @@ def validate_resolved_rates(config, known_series):
 
 
 def load_resolved_rates(path=None):
-    """Load and validate against the configured sovereign and macro catalogues."""
-    path = Path(path) if path is not None else _CONFIG_DIR / 'resolved_rates.yaml'
-    config = yaml.load(path.read_text(encoding='utf-8'), Loader=_UniqueLoader)
-    known = {}
-    for filename in ('sovereign_layers.yaml', 'sovereign_yields.yaml'):
-        for item in _load_yaml(filename).get('series', []):
-            known[item['symbol']] = item
-    for group in _load_yaml('macro_series.yaml').values():
-        for item in group:
-            known[item['symbol']] = item
+    """Compatibility projection of the registry; explicit legacy files still work."""
+    legacy = path is not None
+    path = Path(path) if legacy else _CONFIG_DIR / 'concepts' / 'rates.yaml'
+    dependencies = [_CONFIG_DIR / filename for filename in (
+        'sovereign_layers.yaml', 'sovereign_yields.yaml', 'macro_series.yaml',
+    )]
+    return deepcopy(_load_resolved_rates_cached(
+        _file_versions([path]), _file_versions(dependencies), legacy,
+    ))
+
+
+@lru_cache(maxsize=8)
+def _load_resolved_rates_cached(family, dependencies, legacy):
+    path = family[0][0]
+    known = load_macro_catalogue()
+    rates = yaml.load(path.read_text(encoding='utf-8'), Loader=_UniqueLoader)
+    if legacy:
+        config = rates
+    else:
+        # Runtime rates do not depend on tickers, releases or other families.
+        # CI/validate_config.py validates the complete cross-file registry.
+        _validate_family_config(rates, path.name)
+        registry = validate_concepts(rates['concepts'], {'macro': known, 'price': {}, 'release': {}})
+        entries = []
+        for entry in registry.values():
+            if (entry['family'] != 'rates' or entry.get('kind') == 'derived'
+                    or not re.fullmatch(r'[A-Z]{2}_[0-9]+[MY]', entry['concept'])):
+                continue
+            legacy = {key: entry[key] for key in ('concept', 'spot_bond_justification', 'pair_tolerances')
+                      if key in entry}
+            legacy['sources'] = [
+                {**{key: value for key, value in source.items() if key not in {'kind', 'id'}},
+                 'series_id': source['id']} for source in entry['sources']
+            ]
+            entries.append(legacy)
+        config = {'tolerance_bp': rates['tolerance_bp'], 'concepts': entries}
     table = validate_resolved_rates(config, known)
     for entry in table.values():
         for source in entry['sources']:

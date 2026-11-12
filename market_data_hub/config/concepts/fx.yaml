@@ -1,0 +1,490 @@
+concepts:
+- concept: EURUSD
+  family: fx
+  label: EURUSD exchange rate
+  unit: USD/EUR
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: price
+    id: EURUSD=X
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+  - kind: macro
+    id: DEXUSEU
+    role: fallback
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+    comparability_note: H.10 fixing time differs from Yahoo close; daily observations
+      are published weekly. Same quote direction.
+- concept: GBPUSD
+  family: fx
+  label: GBPUSD exchange rate
+  unit: USD/GBP
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: price
+    id: GBPUSD=X
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+  - kind: macro
+    id: DEXUSUK
+    role: fallback
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+    comparability_note: H.10 fixing time differs from Yahoo close; daily observations
+      are published weekly. Same quote direction.
+- concept: USDJPY
+  family: fx
+  label: USDJPY exchange rate
+  unit: JPY/USD
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: price
+    id: USDJPY=X
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+  - kind: macro
+    id: DEXJPUS
+    role: fallback
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+    comparability_note: H.10 fixing time differs from Yahoo close; daily observations
+      are published weekly. Same quote direction.
+- concept: AUDUSD
+  family: fx
+  label: AUDUSD exchange rate
+  unit: USD/AUD
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: price
+    id: AUDUSD=X
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+  - kind: macro
+    id: DEXUSAL
+    role: fallback
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+    comparability_note: H.10 fixing time differs from Yahoo close; daily observations
+      are published weekly. Same quote direction.
+- concept: USDCAD
+  family: fx
+  label: USDCAD exchange rate
+  unit: CAD/USD
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: price
+    id: USDCAD=X
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+  - kind: macro
+    id: DEXCAUS
+    role: fallback
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+    comparability_note: H.10 fixing time differs from Yahoo close; daily observations
+      are published weekly. Same quote direction.
+- concept: USDCHF
+  family: fx
+  label: USDCHF exchange rate
+  unit: CHF/USD
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: price
+    id: USDCHF=X
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+  - kind: macro
+    id: DEXSZUS
+    role: fallback
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+    comparability_note: H.10 fixing time differs from Yahoo close; daily observations
+      are published weekly. Same quote direction.
+- concept: EURGBP
+  family: fx
+  label: EURGBP exchange rate
+  unit: GBP/EUR
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: price
+    id: EURGBP=X
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+- concept: EURJPY
+  family: fx
+  label: EURJPY exchange rate
+  unit: JPY/EUR
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: price
+    id: EURJPY=X
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+- concept: EURCHF
+  family: fx
+  label: EURCHF exchange rate
+  unit: CHF/EUR
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: price
+    id: EURCHF=X
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+- concept: DEXMXUS
+  family: fx
+  label: FX | MXN | H.10 Spot Exchange Rate (MXN per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXMXUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXBZUS
+  family: fx
+  label: FX | BRL | H.10 Spot Exchange Rate (BRL per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXBZUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXINUS
+  family: fx
+  label: FX | INR | H.10 Spot Exchange Rate (INR per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXINUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXCHUS
+  family: fx
+  label: FX | CNY | H.10 Spot Exchange Rate (CNY per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXCHUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXKOUS
+  family: fx
+  label: FX | KRW | H.10 Spot Exchange Rate (KRW per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXKOUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXJPUS
+  family: fx
+  label: FX | JPY | H.10 Spot Exchange Rate (JPY per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXJPUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXSZUS
+  family: fx
+  label: FX | CHF | H.10 Spot Exchange Rate (CHF per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXSZUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXCAUS
+  family: fx
+  label: FX | CAD | H.10 Spot Exchange Rate (CAD per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXCAUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXUSUK
+  family: fx
+  label: FX | GBP | H.10 Spot Exchange Rate (USD per GBP)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXUSUK
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXUSEU
+  family: fx
+  label: FX | EUR | H.10 Spot Exchange Rate (USD per EUR)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXUSEU
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXUSAL
+  family: fx
+  label: FX | AUD | H.10 Spot Exchange Rate (USD per AUD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXUSAL
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXSFUS
+  family: fx
+  label: FX | ZAR | H.10 Spot Exchange Rate (ZAR per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXSFUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXTAUS
+  family: fx
+  label: FX | TWD | H.10 Spot Exchange Rate (TWD per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXTAUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXHKUS
+  family: fx
+  label: FX | HKD | H.10 Spot Exchange Rate (HKD per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXHKUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXMAUS
+  family: fx
+  label: FX | MYR | H.10 Spot Exchange Rate (MYR per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXMAUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXTHUS
+  family: fx
+  label: FX | THB | H.10 Spot Exchange Rate (THB per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXTHUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXSIUS
+  family: fx
+  label: FX | SGD | H.10 Spot Exchange Rate (SGD per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXSIUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXNOUS
+  family: fx
+  label: FX | NOK | H.10 Spot Exchange Rate (NOK per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXNOUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXSDUS
+  family: fx
+  label: FX | SEK | H.10 Spot Exchange Rate (SEK per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXSDUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXDNUS
+  family: fx
+  label: FX | DKK | H.10 Spot Exchange Rate (DKK per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXDNUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXUSNZ
+  family: fx
+  label: FX | NZD | H.10 Spot Exchange Rate (USD per NZD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXUSNZ
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXVZUS
+  family: fx
+  label: FX | VES | H.10 Spot Exchange Rate (VES per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXVZUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DEXSLUS
+  family: fx
+  label: FX | LKR | H.10 Spot Exchange Rate (LKR per USD)
+  unit: published FX quote
+  frequency: D
+  calendar: fx
+  sources:
+  - kind: macro
+    id: DEXSLUS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve H.10 fixing
+- concept: DXY
+  family: fx
+  label: US Dollar Index
+  unit: index
+  frequency: D
+  calendar: ice_us
+  sources:
+  - kind: price
+    id: DX-Y.NYB
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+  - kind: price
+    id: UUP
+    role: proxy
+    max_age_business_days: 2
+    convention: adjusted close
+    field: adj_close
+    live: post_close
+    unit: USD/share
+    comparability_note: ETF tracks dollar futures; not the index level.
+- concept: DTWEXBGS
+  family: fx
+  label: Broad trade-weighted US dollar
+  unit: index
+  frequency: D
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: DTWEXBGS
+    role: primary
+    max_age_business_days: 10
+    convention: Federal Reserve broad trade-weighted dollar index
+  - kind: price
+    id: DX-Y.NYB
+    role: history_only
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+    unit: index (DXY basket)
+    comparability_note: Different basket from the Federal Reserve broad trade-weighted
+      index; DXY is historical context only and must not supply its current value.
