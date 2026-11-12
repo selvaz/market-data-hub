@@ -157,7 +157,7 @@ def test_energy_geopolitical_and_term_premium_series_are_distinct():
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 442
+    assert len(rows) == len(dataset().cards) == 451
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -674,7 +674,7 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
         assert report["certified_families"][family]["unmapped"] == []
     assert report["documented_certified_gaps"] == {}
     assert report["macro_releases"] == {
-        "mapped": 120,
+        "mapped": 133,
         "total": len(INDICATORS),
         "unmapped": [],
     }
@@ -682,8 +682,8 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
         report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     )
     assert report["macro_series"] == {
-        "mapped": 132,
-        "total": 132,
+        "mapped": 133,
+        "total": 133,
         "unmapped": [],
     }
     assert "macro_releases" in capsys.readouterr().out
@@ -826,7 +826,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 442
+    assert dataset() is shipped and len(shipped.cards) == 451
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -916,7 +916,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 442
+        assert report["cards"] == 451
         assert ("draft_cards" in report) == bool(args)
 
 
