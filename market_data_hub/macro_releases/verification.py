@@ -277,3 +277,22 @@ def persist_review(store, batch, family, run_id):
         identity = hashlib.sha256((family + digest + reasons).encode()).hexdigest()
         store.conn.execute("INSERT INTO review_queue VALUES (?,?,?,?,?,?,'pending') ON CONFLICT DO NOTHING",
                            (identity, family, run_id, digest, reasons, now()))
+
+
+def resolve_reviews(store, family, run_id):
+    """Close pending review rows that this clean family run has superseded.
+
+    The rule lives in the review_queue_supersessions view (migration 010), so
+    the one-off backfill and every later run apply the same definition.
+    """
+    tables = {r[0] for r in store.conn.execute("SELECT name FROM sqlite_master WHERE type IN ('table','view')")}
+    if "review_queue_supersessions" not in tables:
+        return 0
+    cursor = store.conn.execute(
+        "INSERT INTO review_queue_resolutions (review_id,status,resolved_at,run_id,basis) "
+        "SELECT s.review_id,'resolved',s.clean_finished_at,s.clean_run_id,s.basis "
+        "FROM review_queue_supersessions s JOIN review_queue q ON q.id=s.review_id "
+        "WHERE q.family=? AND s.clean_run_id=? "
+        "AND NOT EXISTS (SELECT 1 FROM review_queue_resolutions r WHERE r.review_id=s.review_id)",
+        (family, run_id))
+    return cursor.rowcount

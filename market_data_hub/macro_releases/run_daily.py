@@ -29,12 +29,12 @@ from .lease import LeaseBusy, LeaseLost, RunLease
 from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
-from .schedule import RUN_INSTANT, PENDING_EDITIONS, edition_status, family_editions, run_instant
+from .schedule import RUN_INSTANT, PENDING_DETAILS, PENDING_EDITIONS, edition_status, family_editions, run_instant
 from .policy import PolicyAdapter
 from .tier1_publications import Tier1Adapter
 from .housing import HousingAdapter
 from .store import Store, open_writer
-from .verification import configured_bands, persist_review, verify
+from .verification import configured_bands, persist_review, resolve_reviews, verify
 
 DEFAULT_LOOKBACK_MONTHS = 24
 ADAPTERS = {"us_cpi": BLSAdapter, "us_payrolls": BLSAdapter, "us_gdp": BEAAdapter,
@@ -144,6 +144,26 @@ def safe_error(exc):
     return {"error_type": type(exc).__name__, "error_message": message}
 
 
+def error_category(exc):
+    """A short, controlled class of a family failure for the report."""
+    text = str(exc) if isinstance(exc, FetchError) else ""
+    if isinstance(exc, (LeaseBusy, LeaseLost)):
+        return "lease"
+    if text.startswith("Missing credential"):
+        return "credential"
+    if re.fullmatch(r"\w+: HTTP \d{3}", text):
+        return "issuer_http_error"
+    if "needs review" in text or "metadata" in text:
+        return "parser_rejected"
+    if "quota" in text or "transport" in text or "rate ledger" in text:
+        return "transport"
+    if isinstance(exc, FetchError):
+        return "fetch_failed"
+    if isinstance(exc, (ValueError, KeyError, TypeError)):
+        return "validation"
+    return "unknown"
+
+
 def persist_counts(store, observations):
     before = {table: store.conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
               for table in ("value_vintages", "readings")}
@@ -246,12 +266,21 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
         instant = run_instant(run_at if run_at is not None else result["fetch_until"])
         token = RUN_INSTANT.set(instant)
         pending_token = PENDING_EDITIONS.set({})
+        details_token = PENDING_DETAILS.set({})
         try:
             batch = (fetch_daily(client, family, result["fetch_since"]) if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
                      else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
             calendar = family_editions(family)
+            pending = PENDING_EDITIONS.get()
+            details = PENDING_DETAILS.get()
+            result["review_details"] = [
+                dict(edition=e, status=pending.get((f, e), "needs_review"), **detail)
+                for (f, e), detail in sorted(details.items()) if f == family]
+            # Editions outside the reviewed calendar (an exhausted calendar).
+            result["unlisted_reviews"] = sorted(
+                e for (f, e), reason in pending.items()
+                if f == family and e not in calendar and reason == "needs_review")
             if calendar:
-                pending = PENDING_EDITIONS.get()
                 result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t,
                     status=pending.get((family, d)) if pending.get((family, d)) in
                         {"scheduled_unreviewed", "needs_review"} else "scheduled",
@@ -262,6 +291,7 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
             batch.observations = [o for o in batch.observations if o.edition not in calendar or
                 edition_status(o.edition, metadata=calendar[o.edition], family=family) == "due"]
         finally:
+            PENDING_DETAILS.reset(details_token)
             PENDING_EDITIONS.reset(pending_token)
             RUN_INSTANT.reset(token)
             STORED_EDITIONS.reset(collected_token)
@@ -280,16 +310,25 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
                 result.update(persist_counts(store, observations))
                 edition_reviews = ["edition_needs_review:" + e["edition"] for e in
                     result.get("scheduled_editions", []) if e["status"] == "needs_review"]
+                edition_reviews += ["edition_needs_review:" + e for e in result.pop("unlisted_reviews", [])]
                 result["status"] = "needs_review" if batch.issues or edition_reviews else "ok" if result["vintages_added"] else "no_change"
                 if batch.issues:
                     result["review_reasons"] = batch.issues
                 if edition_reviews:
                     result["review_reasons"] = result.get("review_reasons", []) + edition_reviews
+                if result["status"] == "needs_review":
+                    result["error_category"] = "verification" if batch.issues else next(
+                        (d["category"] for d in result["review_details"] if d["status"] == "needs_review"),
+                        "parser_rejected")
+                if not result["review_details"]:
+                    result.pop("review_details")
                 if not dry_run:
                     run_log.family_result(store, run_id, family, result)
+                    if result["status"] in {"ok", "no_change"}:
+                        resolve_reviews(store, family, run_id)
     except Exception as exc:
         result.update(status="failed", vintages_added=0, readings_added=0, readings_skipped=0,
-                      **safe_error(exc))
+                      error_category=error_category(exc), **safe_error(exc))
         if not dry_run:
             with writer() as store:
                 if lease:

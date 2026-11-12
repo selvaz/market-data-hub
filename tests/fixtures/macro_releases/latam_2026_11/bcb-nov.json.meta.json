@@ -1,0 +1,10 @@
+{
+ "url": "https://www.bcb.gov.br/api/servico/sitebcb/copom/comunicados_detalhes?nro_reuniao=282",
+ "retrieved_at": "2026-11-11T12:00:00+00:00",
+ "document_hash": "c763e1e0d83ae4adb7714334f3f3cd7dd44fef2d8c9d8b8f1d8c81b7ec73fc15",
+ "provenance": "Reconstructed text extract, NOT a live capture: the session network blocked the issuer host on 2026-11-11. Structure and untested cells are copied from the stored meeting 281 (2026-09-16) API response capture; only the cells named in 'tested' come from the 2026-11-11 diagnosis of the live document. Replace with a live extract when the host is reachable.",
+ "tested": [
+  "titulo 'Copom mantém a taxa Selic em 13,75% a.a.'",
+  "decision sentence wording 'taxa Selic'"
+ ]
+}

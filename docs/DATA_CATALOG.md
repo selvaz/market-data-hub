@@ -70,6 +70,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | macro_releases.sqlite | [claims](#catalog-macro_releases-sqlite-claims) | 0 |
 | macro_releases.sqlite | [collect_run_consensus](#catalog-macro_releases-sqlite-collect_run_consensus) | 0 |
 | macro_releases.sqlite | [collect_run_families](#catalog-macro_releases-sqlite-collect_run_families) | 0 |
+| macro_releases.sqlite | [collect_run_family_reviews](#catalog-macro_releases-sqlite-collect_run_family_reviews) | 0 |
 | macro_releases.sqlite | [collect_runs](#catalog-macro_releases-sqlite-collect_runs) | 0 |
 | macro_releases.sqlite | [consensus_link_versions](#catalog-macro_releases-sqlite-consensus_link_versions) | 0 |
 | macro_releases.sqlite | [consensus_readings](#catalog-macro_releases-sqlite-consensus_readings) | 0 |
@@ -85,6 +86,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | macro_releases.sqlite | [release_events](#catalog-macro_releases-sqlite-release_events) | 0 |
 | macro_releases.sqlite | [resolution_versions](#catalog-macro_releases-sqlite-resolution_versions) | 0 |
 | macro_releases.sqlite | [review_queue](#catalog-macro_releases-sqlite-review_queue) | 0 |
+| macro_releases.sqlite | [review_queue_resolutions](#catalog-macro_releases-sqlite-review_queue_resolutions) | 0 |
 | macro_releases.sqlite | [schedule_versions](#catalog-macro_releases-sqlite-schedule_versions) | 0 |
 | macro_releases.sqlite | [schema_compatibility](#catalog-macro_releases-sqlite-schema_compatibility) | 0 |
 | macro_releases.sqlite | [source_series](#catalog-macro_releases-sqlite-source_series) | 0 |
@@ -2346,6 +2348,19 @@ Per-family collection outcomes and fetched windows, including needs-review failu
 - Collection: macro_releases_daily daily 06:30 PT.
 - Guide: [macro-releases.md](macro-releases.md).
 
+<a id="catalog-macro_releases-sqlite-collect_run_family_reviews"></a>
+
+## macro_releases.sqlite / collect_run_family_reviews
+
+Why a family run needed review or failed: an error category and per-edition reasons, append-only.
+
+- Store: `macro_releases.sqlite`; table: `collect_run_family_reviews`.
+- Primary key: `run_id`, `family`.
+- Status: active.
+- Point-in-time / vintages: Use the macro ReadAPI with news_cutoff/as_known_at and first-seen/recorded-at filters before selection. Published time alone does not prove the hub knew a value. Raw readings and mirror evidence are not automatically official. Append-only vintages, schedules, consensus and resolution history preserve evidence; registry/worklist tables describe current state.
+- Collection: macro_releases_daily daily 06:30 PT.
+- Guide: [macro-releases.md](macro-releases.md).
+
 <a id="catalog-macro_releases-sqlite-collect_runs"></a>
 
 ## macro_releases.sqlite / collect_runs
@@ -2536,6 +2551,19 @@ Append-only family/document review requests; review flags are not official actua
 
 - Store: `macro_releases.sqlite`; table: `review_queue`.
 - Primary key: `id`.
+- Status: active.
+- Point-in-time / vintages: Use the macro ReadAPI with news_cutoff/as_known_at and first-seen/recorded-at filters before selection. Published time alone does not prove the hub knew a value. Raw readings and mirror evidence are not automatically official. Append-only vintages, schedules, consensus and resolution history preserve evidence; registry/worklist tables describe current state.
+- Collection: macro_releases_daily daily 06:30 PT.
+- Guide: [macro-releases.md](macro-releases.md).
+
+<a id="catalog-macro_releases-sqlite-review_queue_resolutions"></a>
+
+## macro_releases.sqlite / review_queue_resolutions
+
+Append-only closure of review requests superseded by a later clean run of the same edition.
+
+- Store: `macro_releases.sqlite`; table: `review_queue_resolutions`.
+- Primary key: `review_id`.
 - Status: active.
 - Point-in-time / vintages: Use the macro ReadAPI with news_cutoff/as_known_at and first-seen/recorded-at filters before selection. Published time alone does not prove the hub knew a value. Raw readings and mirror evidence are not automatically official. Append-only vintages, schedules, consensus and resolution history preserve evidence; registry/worklist tables describe current state.
 - Collection: macro_releases_daily daily 06:30 PT.
