@@ -55,9 +55,91 @@ canonical listing supplies the currency and session calendar (`calendar:
 listing`); units are `quote_currency/share` or `quote_currency`. Price sources
 declare `live: post_close` for H2's provisional-current-value behavior.
 
-`releases.yaml` reserves the release family; release declarations and the
-adapter are deferred to H4. No value resolver, reader API, session/calendar
-implementation, or point-in-time schema migration is included here.
+`releases.yaml` declares the United States release concepts (H2). Each id is
+the `macro_releases.catalogue` indicator id; the primary is the issuer release,
+the optional secondary is a FRED series from the indicator card's `ms:` ids.
+Macro sources may declare `transform` (`level`, `diff`, `pct_change_mm`,
+`pct_change_qq_saar` or `pct_change_yy`) and a positive `scale` multiplier, so
+a stored index or level feeds a percentage or change concept in the release
+unit (for example `ICSA` claims times 0.001 gives thousands). Validation
+requires a monthly series for `pct_change_mm`, a quarterly one for
+`pct_change_qq_saar`, and a monthly, quarterly or weekly one for
+`pct_change_yy`, which is further limited to `history_only` sources; other
+source kinds reject both keys. Where the issuer publishes
+a change from a non-seasonally-adjusted index that macro_series does not hold
+(CPI and PPI y/y), the FRED secondary is omitted and a comment says why.
+`max_age_business_days` follows `ceil((period_days + issuer_lag_days + 7) * 5 / 7)`
+with period days M 31, W 7, Q 92 and E 49, and the issuer lag from
+`EXPECTED_LAG_DAYS`; every source of a concept shares it.
+
+## Latest value (`market_data_hub.latest`)
+
+`read_latest(concept, *, as_of=None, as_known_at=None, con=None)` returns the
+most recent correct value of a `macro`, `derived` or `release` concept with its
+declared source; `read_latest_many` resolves a list with one DuckDB connection
+and one release snapshot. `price` concepts raise `NotImplementedError` until a
+later PR adds live/post-close rules and exchange calendars. The legacy
+`read_resolved_*` rate readers are unchanged.
+
+For each non-`history_only` source the resolver takes the newest usable
+observation: a `macro_series` row dated on or before `as_of` (after its
+transform), or an official/private release card released by `as_known_at`
+(default: end of the `as_of` day) whose reference period has started by
+`as_of`. Monthly and quarterly observations are dated at the period end. A
+source is fresh when its age in business days is at most its
+`max_age_business_days`. The tier is the first non-empty fresh set among
+{primary, secondary}, {fallback}, {proxy}; inside it the newest observation
+wins and ties go to the higher-ranked source. Status is `primary`,
+`newer_secondary`, `fallback` or `proxy`; without a fresh source the newest
+stale observation is returned as `stale`, and without any as `unavailable`.
+Sources are never averaged or reconciled.
+
+A release value is the resolution of the selected reference period across every
+edition known at `as_known_at`, so a later revision of that period replaces its
+first print. The release cards and that resolution come from one
+knowledge-filtered snapshot. `consensus` prefers an eligible survey consensus
+over an FF forecast and returns `provider`, `value`, `kind` and
+`surprise_eligible`.
+
+Single-source rule for year-on-year: a y/y compares two rows a year apart
+that can come from different refreshes, so `transform: pct_change_yy` is
+allowed only on `history_only` sources (the validator rejects it elsewhere).
+The y/y concepts (`us_pce_price_index_yy`, `us_core_pce_yy`,
+`us_avg_hourly_earnings_yy`) resolve from the issuer release alone and keep the
+FRED series for `history: single`. The FRED collector still widens its tail
+refresh for each transformed series to `concepts.comparison_window_days()`
+(one comparison period plus 35 days, for example 407 days for monthly y/y), so
+history rewrites both rows in the same run. Transforms are computed in decimal
+from the stored values, so half-up rounding is exact.
+
+Derived concepts evaluate their `expression` over resolved inputs at a common
+date (re-resolving both inputs with observation dates bounded by the older
+input date, step by step, until they match) and report each
+input's source; a price input makes the result `unavailable`.
+`read_concept_history(concept, start, end)` reads the single `history` source
+(or the primary macro source), applying its transform; chains are not spliced.
+
+A concept may declare `decimals` (0 to 6), the issuer's published precision.
+The chosen value and every alternative are rounded half up to it, so a FRED
+fallback reads as the issuer would print it (CPI m/m 0.35028 becomes 0.4);
+`value_raw` keeps the unrounded number and derived concepts compute from raw
+inputs. The US release concepts declare it: one decimal for percentages, whole
+thousands for payrolls, claims, starts, permits and new home sales, two
+decimals for existing home sales (millions) and the FOMC upper bound.
+
+The output keys are stable: `concept`, `label`, `family`, `unit`, `value`,
+`value_raw`, `observation_date`, `reference_period`, `source_id`, `source_kind`, `role`,
+`status`, `age_bd`, `max_age_bd`, `released_at`, `consensus`, `alternatives`,
+`inputs`, `reason` and `registry_version` (a hash of the concept files).
+
+`python -m market_data_hub.latest --as-of YYYY-MM-DD [--concept X ...]
+[--family releases] [--db PATH] [--releases-db PATH] [--json]` prints a table.
+The release store defaults to `MACRO_RELEASES_DB`.
+
+Known limits: business days are Monday to Friday with no holiday calendar, so
+ages around holidays are overstated by the holidays. Macro rows are read as
+currently stored: `as_known_at` applies only to release cards, so FRED values
+may include later revisions.
 
 `resolved_rates.load_resolved_rates()` projects the registry's 116 existing
 sovereign concepts back to the legacy shape, including catalogue frequencies.

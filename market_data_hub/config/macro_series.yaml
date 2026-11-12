@@ -396,6 +396,24 @@ fred:
   name: MACRO | US | Initial Claims (Number, SA)
   priority: 2
   country: US
+- symbol: USALOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: US
+- symbol: UMCSENT
+  expected_lag_days: 35
+  frequency: M
+  issuer: "U. Michigan (via FRED, one-month delayed)"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | University of Michigan Consumer Sentiment (Index 1966:Q1 = 100)
+  priority: 2
+  country: US
 - symbol: CCSA
   expected_lag_days: 12
   frequency: W

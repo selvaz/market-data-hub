@@ -1236,7 +1236,7 @@
         "measurement": "M",
         "mechanism": "mixed"
       },
-      "flag": "no hub history",
+      "flag": "FRED history one month delayed",
       "frequency": "M",
       "ids": {
         "cal": [
@@ -1249,17 +1249,19 @@
         "derived_ms": [],
         "es": [],
         "hub": [],
-        "ms": [],
+        "ms": [
+          "UMCSENT"
+        ],
         "notes": [],
         "pan": []
       },
       "key": "us_umich_sentiment",
       "known_failure_modes": [
-        "no hub history"
+        "FRED history one month delayed"
       ],
       "nature": "SOFT",
       "rationale": "Overall index mixes current and expected conditions; partisan and gasoline effects.",
-      "raw_ids": "cal:us_umich,us_umich_prelim; cat:us_umich_consumer_sentiment",
+      "raw_ids": "ms:UMCSENT; cal:us_umich,us_umich_prelim; cat:us_umich_consumer_sentiment",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
       "source": "U. Michigan",
@@ -1365,6 +1367,49 @@
         "matched_turning_point_leads": "not estimated",
         "predictive_screen": [],
         "reference": "consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "OECD composite leading indicator (amplitude adjusted)",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "USALOLITOAASTSAM"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_oecd_cli",
+      "known_failure_modes": [],
+      "nature": "SOFT",
+      "rationale": "Built by the OECD to anticipate turning points of the reference series by about 6-9 months; not tested in this repository.",
+      "raw_ids": "ms:USALOLITOAASTSAM",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "OECD",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "LEAD",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "business cycle (OECD reference series)",
         "relationship_keys": [],
         "screen_note": "not tested"
       }
@@ -20291,6 +20336,6 @@
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "2af948a54c39df76eb407cb352f82c9b2de67a77ce248ecbbfd89fdca994d078",
-  "timing_extract_sha256": "279933963c22c2aa5a85c0b5596c33506b61d8dbce144fe4ad39056ad525b183"
+  "source_table_sha256": "5811d4a2723ff28797647e4128c96e4c6aa746e5ed5f5fec7f0bda97e3632cec",
+  "timing_extract_sha256": "dec9377425b5c03dbd89828670e2c7e11532f6d2789d5e3c83dd5daaa7fad403"
 }
