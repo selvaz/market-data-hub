@@ -53,6 +53,8 @@ _ROLE_STATUS = {"primary": "primary", "secondary": "newer_secondary",
 # Look-back for release cards: covers quarterly data and eight-week policy gaps.
 _RELEASE_WINDOW_DAYS = 400
 _MACRO_ROWS = 80
+# Bound on backward same_date alignment steps for derived concepts.
+_ALIGN_STEPS = 30
 
 
 # --------------------------------------------------------------------------
@@ -249,6 +251,7 @@ class _Context:
         self.db_path = db_path
         self.releases_db = releases_db if releases_db is not None else os.environ.get("MACRO_RELEASES_DB")
         self._cards = None
+        self._full_history = {}
         self._release_error = None
         self.registry = load_concepts()
         self.macro_catalogue = load_macro_catalogue()
@@ -281,25 +284,38 @@ class _Context:
         if not self.releases_db:
             self._release_error = "macro releases store not configured (MACRO_RELEASES_DB)"
             return
+        until = self.as_known_at.astimezone(timezone.utc).date()
+        since = min(until, self.as_of) - timedelta(days=_RELEASE_WINDOW_DAYS)
+        try:
+            self._cards = self._query_cards(indicators, since)
+        except Exception as exc:  # store missing, schema range, sqlite errors
+            self._release_error = f"macro releases store unreadable: {exc}"
+
+    def full_history_cards(self, indicator):
+        """Cards for one indicator without the look-back window, so a store that
+        stopped updating long ago still yields its newest observation as stale."""
+        if indicator not in self._full_history:
+            try:
+                cards = self._query_cards([indicator], date(1900, 1, 1))
+            except Exception:  # noqa: BLE001 - same failure modes as _load_cards
+                cards = {}
+            self._full_history[indicator] = cards.get(indicator, [])
+        return self._full_history[indicator]
+
+    def _query_cards(self, indicators, since):
         from market_data_hub.macro_releases.read_api import ReadAPI
         from market_data_hub.macro_releases.store import open_reader
 
         cutoff = self.as_known_at.astimezone(timezone.utc)
-        until = cutoff.date()
-        since = min(until, self.as_of) - timedelta(days=_RELEASE_WINDOW_DAYS)
-        try:
-            with open_reader(self.releases_db) as store:
-                result = ReadAPI(store).release_cards(
-                    since.isoformat(), until.isoformat(), indicators=sorted(indicators),
-                    as_known_at=cutoff.isoformat().replace("+00:00", "Z"),
-                )
-        except Exception as exc:  # store missing, schema range, sqlite errors
-            self._release_error = f"macro releases store unreadable: {exc}"
-            return
+        with open_reader(self.releases_db) as store:
+            result = ReadAPI(store).release_cards(
+                since.isoformat(), cutoff.date().isoformat(), indicators=sorted(indicators),
+                as_known_at=cutoff.isoformat().replace("+00:00", "Z"),
+            )
         cards = {}
         for card in result["cards"]:
             cards.setdefault(card["indicator_id"], []).append(card)
-        self._cards = cards
+        return cards
 
 
 def _parse_instant(value):
@@ -347,18 +363,25 @@ def _macro_candidate(ctx, source, rank):
                       observation_date=_observation_date(stored, frequency))
 
 
-def _release_candidate(ctx, source, rank, release_ids):
-    cards, error = ctx.release_cards(release_ids)
-    if error:
-        return _candidate(source, rank, reason=error)
+def _usable_cards(ctx, cards):
     usable = []
-    for card in cards.get(source["id"], []):
+    for card in cards:
         resolution = card.get("resolution") or {}
         if resolution.get("value") is None or resolution.get("status") not in USABLE_RELEASE_STATUSES:
             continue
         if period_start_date(card["reference_period"]) > ctx.as_of:
             continue
         usable.append(card)
+    return usable
+
+
+def _release_candidate(ctx, source, rank, release_ids):
+    cards, error = ctx.release_cards(release_ids)
+    if error:
+        return _candidate(source, rank, reason=error)
+    usable = _usable_cards(ctx, cards.get(source["id"], []))
+    if not usable:
+        usable = _usable_cards(ctx, ctx.full_history_cards(source["id"]))
     if not usable:
         return _candidate(source, rank, reason="no official release known at as_known_at")
     card = max(usable, key=lambda c: (period_end_date(c["reference_period"]), c["released_at"]))
@@ -510,15 +533,20 @@ def _resolve_derived(ctx, name, spec, release_ids):
         result["reason"] = f"input unavailable: {', '.join(missing)}"
         return result
     dates = {_to_date(item["observation_date"]) for item in resolved}
-    if len(dates) > 1:
-        # same_date alignment: re-resolve both inputs at the older date.
+    # same_date alignment: re-resolve both inputs at the older date until the
+    # dates match or an input runs out (staggered gaps can need several steps).
+    for _ in range(_ALIGN_STEPS):
+        if len(dates) == 1:
+            break
         common = min(dates)
         resolved = [_resolve(ctx, item["concept"], release_ids, as_of=common) for item in resolved]
-        if any(item["value"] is None for item in resolved) or \
-                len({_to_date(item["observation_date"]) for item in resolved}) > 1:
-            result["inputs"] = [_input(item) for item in resolved]
-            result["reason"] = "inputs have no common observation date (same_date alignment)"
-            return result
+        if any(item["value"] is None for item in resolved):
+            break
+        dates = {_to_date(item["observation_date"]) for item in resolved}
+    if any(item["value"] is None for item in resolved) or len(dates) > 1:
+        result["inputs"] = [_input(item) for item in resolved]
+        result["reason"] = "inputs have no common observation date (same_date alignment)"
+        return result
     observation = _to_date(resolved[0]["observation_date"])
     value = resolved[0]["value"] + (resolved[1]["value"] if operator == "+" else -resolved[1]["value"])
     value *= spec.get("scale", 1)
@@ -623,6 +651,8 @@ def read_concept_history(concept, start=None, end=None, *, as_of=None, con=None,
     start_date = _to_date(start) if start is not None else None
     out = [{"date": _observation_date(d, frequency), "value": v, "source_id": source["id"]}
            for d, v in values]
+    # Stored dates are period starts: bound the normalized period ends too.
+    out = [row for row in out if row["date"] <= cutoff]
     if start_date is not None:
         out = [row for row in out if row["date"] >= start_date]
     return pd.DataFrame(out, columns=["date", "value", "source_id"])

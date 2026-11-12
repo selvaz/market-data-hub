@@ -278,3 +278,28 @@ def test_transform_only_on_macro_sources(macro_entry, transform_catalogues):
                                  "transform": "level"}
     with pytest.raises(ValueError, match="unknown keys"):
         concepts.validate_concepts([macro_entry], transform_catalogues)
+
+
+def test_derived_alignment_walks_back_over_staggered_gaps(tmp_path):
+    con = duckdb.connect(":memory:")
+    con.execute("CREATE TABLE macro_series (date DATE, series_id VARCHAR, value DOUBLE)")
+    con.executemany("INSERT INTO macro_series VALUES (?, ?, ?)", [
+        ("2026-10-15", "UST_PAR_10Y", 4.00), ("2026-10-19", "UST_PAR_10Y", 4.20),
+        ("2026-10-15", "UST_PAR_3M", 3.80), ("2026-10-16", "UST_PAR_3M", 3.85),
+    ])
+    result = latest.read_latest("US_CURVE_10Y3M", as_of="2026-10-19", con=con)
+    assert result["observation_date"] == date(2026, 10, 15)
+    assert math.isclose(result["value"], 0.20)
+
+
+def test_history_end_bound_applies_to_period_end(con):
+    frame = latest.read_concept_history("us_payrolls_change", end="2026-09-15", con=con)
+    assert list(frame["date"]) == [date(2026, 8, 31)]
+
+
+def test_release_older_than_window_is_stale_not_unavailable(con, releases, monkeypatch):
+    monkeypatch.setattr(latest, "_RELEASE_WINDOW_DAYS", 10)
+    result = latest.read_latest("us_payrolls_change", as_of="2026-12-31", con=con,
+                                releases_db=releases)
+    assert result["status"] == "stale" and result["source_kind"] == "release"
+    assert result["value"] == 29
