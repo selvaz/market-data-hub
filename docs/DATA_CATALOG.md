@@ -50,7 +50,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 313 |
+| hub | [macro_series](#catalog-hub-macro_series) | 315 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
@@ -171,7 +171,7 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 | STLENI | St. Louis economic news index descriptive benchmark; evolving estimates. | Federal Reserve Bank of St. Louis | ALFRED via FRED API | W | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | STLFSI4 | St. Louis Fed Financial Stress Index | St. Louis Fed | ALFRED via FRED API | W | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | THREEFYTP10 | Kim-Wright 10y term premium | Fed Board (model) | ALFRED via FRED API | D | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
-| UMCSENT | Soft sentiment input; preliminary/final estimates. | University of Michigan | ALFRED via FRED API | M | 0 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| UMCSENT | UMich consumer sentiment (overall) | University of Michigan | ALFRED via FRED API | M | 0 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | UNRATE | Unemployment rate | BLS CPS | ALFRED via FRED API | M | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | USREC | NBER recession labels are assigned retrospectively; avoid hindsight labels. | NBER (recession chronology distributed by St. Louis Fed) | ALFRED via FRED API | M | 300 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | W875RX1 | Real personal income excluding transfers; revised BEA income and deflators. | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
@@ -1889,7 +1889,9 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | TV_ZA_10Y | TradingView ZA 10Y sovereign yield | market:tradingview | TradingView | D | 1 | first successful capture | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | TV_ZA_30Y | TradingView ZA 30Y sovereign yield | market:tradingview | TradingView | D | 1 | first successful capture | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | TV_ZA_5Y | TradingView ZA 5Y sovereign yield | market:tradingview | TradingView | D | 1 | first successful capture | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| UMCSENT | MACRO \| US \| University of Michigan Consumer Sentiment (Index 1966:Q1 = 100) | U. Michigan (via FRED, one-month delayed) | FRED | M | 35 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | UNRATE | MACRO \| US \| Unemployment Rate | BLS CPS | FRED | M | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| USALOLITOAASTSAM | MACRO \| US \| OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100) | OECD (via FRED) | FRED | M | 45 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | UST_PAR_10Y | US Treasury 10Y par yield | US Treasury | US Treasury direct | D | 1 | 1990-01-02 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | UST_PAR_1M | US Treasury 1M par yield | US Treasury | US Treasury direct | D | 1 | 2001-07-31 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | UST_PAR_1Y | US Treasury 1Y par yield | US Treasury | US Treasury direct | D | 1 | 1990-01-02 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |

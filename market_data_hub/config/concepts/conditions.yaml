@@ -23,3 +23,15 @@ concepts:
     role: primary
     max_age_business_days: 10
     convention: published financial conditions index
+# Declared here, not in rates.yaml: US_3M lives in money_market.yaml and the
+# resolved-rate reader validates rates.yaml on its own. Percentage points.
+- concept: US_CURVE_10Y3M
+  family: conditions
+  label: US Treasury curve 10Y minus 3M
+  unit: '%'
+  frequency: D
+  calendar: us_govt
+  sources: []
+  kind: derived
+  expression: US_10Y - US_3M
+  alignment: same_date

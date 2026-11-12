@@ -21,10 +21,18 @@ FAMILY_KEYS = {"concepts", "generate", "tolerance_bp"}
 CONCEPT_KEYS = {
     "concept", "family", "label", "unit", "frequency", "calendar", "sources",
     "kind", "status", "pending_reason", "expression", "alignment", "scale",
-    "check", "history", "spot_bond_justification", "pair_tolerances",
+    "check", "history", "spot_bond_justification", "pair_tolerances", "decimals",
 }
 SOURCE_KEYS = {
     "kind", "id", "role", "max_age_business_days", "convention", "comparability_note", "unit",
+}
+# Optional on macro sources: how a stored level/index becomes the concept value.
+MACRO_SOURCE_KEYS = {"transform", "scale"}
+TRANSFORMS = {"level", "diff", "pct_change_mm", "pct_change_qq_saar", "pct_change_yy"}
+# Native series frequency each change transform requires (None: any frequency).
+TRANSFORM_FREQUENCIES = {
+    "level": None, "diff": None, "pct_change_mm": {"M"}, "pct_change_qq_saar": {"Q"},
+    "pct_change_yy": {"M", "Q", "W"},
 }
 CHECK_KEYS = {"ids", "tolerance", "unit", "note", "basis", "window"}
 HISTORY_KEYS = {"mode", "id"}
@@ -123,7 +131,8 @@ def _validate_check(entry, sources):
 def _validate_source(name, source, catalogues, result):
     if not isinstance(source, dict) or source.get("kind") not in SOURCE_KINDS:
         raise ValueError(f"{name}: invalid source kind")
-    allowed = SOURCE_KEYS | {"field", "live"} if source["kind"] == "price" else SOURCE_KEYS
+    allowed = (SOURCE_KEYS | {"field", "live"} if source["kind"] == "price"
+               else SOURCE_KEYS | MACRO_SOURCE_KEYS if source["kind"] == "macro" else SOURCE_KEYS)
     _reject_unknown_keys(source, allowed, f"{name} source")
     kind, sid = source["kind"], source.get("id")
     known = result if kind == "derived" else catalogues[kind]
@@ -141,6 +150,7 @@ def _validate_source(name, source, catalogues, result):
         convention = known[sid].get("convention")
         if convention and convention != source["convention"]:
             raise ValueError(f"{name}: convention does not match {sid}")
+        _validate_transform(name, source, known[sid])
     if kind == "price":
         if source.get("field") not in {"close", "adj_close"}:
             raise ValueError(f"{name}: invalid price field")
@@ -148,6 +158,55 @@ def _validate_source(name, source, catalogues, result):
             raise ValueError(f"{name}: invalid live policy")
     if source["role"] == "proxy" and not _text(source.get("unit")):
         raise ValueError(f"{name}: proxy requires its own unit")
+
+
+_PERIOD_DAYS = {"D": 1, "W": 7, "M": 31, "Q": 92, "A": 366}
+_PERIODS_PER_YEAR = {"D": 1, "W": 52, "M": 12, "Q": 4, "A": 1}
+# Margin beyond the comparison period: publication dating and month lengths.
+_WINDOW_MARGIN_DAYS = 35
+
+
+def comparison_window_days(registry=None):
+    """Days a macro refresh must rewrite so each declared transform compares values
+    from the same refresh: {series_id: days}, only for sources with a change transform.
+
+    A tail refresh shorter than this leaves the comparison value (e.g. the year-ago
+    index for ``pct_change_yy``) from an older vintage than the revised newest value.
+    """
+    registry = load_concepts() if registry is None else registry
+    catalogue = load_macro_catalogue()
+    windows = {}
+    for entry in registry.values():
+        for source in entry.get("sources", []):
+            transform = source.get("transform", "level")
+            if source.get("kind") != "macro" or transform == "level":
+                continue
+            frequency = catalogue.get(source["id"], {}).get("frequency", "D")
+            periods = _PERIODS_PER_YEAR.get(frequency, 1) if transform == "pct_change_yy" else 1
+            days = periods * _PERIOD_DAYS.get(frequency, 1) + _WINDOW_MARGIN_DAYS
+            windows[source["id"]] = max(days, windows.get(source["id"], 0))
+    return windows
+
+
+def _validate_transform(name, source, catalogue_entry):
+    transform = source.get("transform")
+    if transform is not None:
+        if transform not in TRANSFORMS:
+            raise ValueError(f"{name}: invalid transform {transform}")
+        # Single-source rule: a y/y compares rows that may come from different
+        # refreshes, so it may feed history but never a current value.
+        if transform == "pct_change_yy" and source.get("role") != "history_only":
+            raise ValueError(f"{name}: transform pct_change_yy is allowed only on history_only sources")
+        required = TRANSFORM_FREQUENCIES[transform]
+        frequency = catalogue_entry.get("frequency")
+        if required is not None and frequency not in required:
+            raise ValueError(f"{name}: transform {transform} needs a {sorted(required)} series, "
+                             f"{source['id']} is {frequency}")
+    if "scale" in source:
+        scale = source["scale"]
+        if (isinstance(scale, bool) or not isinstance(scale, (int, float))
+                or not math.isfinite(scale) or scale <= 0):
+            raise ValueError(f"{name}: invalid source scale")
 
 
 def _validate_entry(entry, catalogues, result):
@@ -158,6 +217,10 @@ def _validate_entry(entry, catalogues, result):
     for key in ("label", "unit", "frequency", "calendar"):
         if not _text(entry.get(key)):
             raise ValueError(f"{name}: missing {key}")
+    if "decimals" in entry and (isinstance(entry["decimals"], bool)
+                                or not isinstance(entry["decimals"], int)
+                                or not 0 <= entry["decimals"] <= 6):
+        raise ValueError(f"{name}: decimals must be an integer from 0 to 6")
     if "status" in entry and entry["status"] != "pending_source":
         raise ValueError(f"{name}: invalid status")
     sources = entry.get("sources", [])
