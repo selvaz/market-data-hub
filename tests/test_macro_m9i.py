@@ -322,6 +322,28 @@ def test_horizon_is_the_reviewed_calendar_not_a_year(instant, exhausted):
     assert all(notices[f, "after:" + max(EDITIONS[f])] == "needs_review" for f in exhausted)
 
 
+def test_calendar_ending_dec_9_warns_in_january_once_the_next_edition_is_past():
+    """mx_cpi and bcb_policy end on 2026-12-09; their next editions were due in early January 2027."""
+    from market_data_hub.macro_releases.latam import calendar_exhausted, next_expected_edition
+    from market_data_hub.macro_releases.schedule import PENDING_DETAILS
+    assert {f for f in LATAM_FAMILIES if max(EDITIONS[f]) == "2026-12-09"} == {"mx_cpi", "bcb_policy"}
+    assert next_expected_edition(EDITIONS["mx_cpi"]).isoformat() == "2027-01-07"
+    assert next_expected_edition(EDITIONS["bcb_policy"]).isoformat() == "2027-01-13"
+    for instant, warned in (("2027-01-07T12:00:00Z", set()),  # mx_cpi due today, not yet past
+                            ("2027-01-08T12:00:00Z", {"mx_cpi"}),
+                            ("2027-01-15T12:00:00Z", {"mx_cpi", "bcb_policy"})):
+        details = {}
+        token = PENDING_DETAILS.set(details)
+        try:
+            with run_at(instant) as notices:
+                assert {f for f in LATAM_FAMILIES if calendar_exhausted(f)} == warned
+        finally:
+            PENDING_DETAILS.reset(token)
+        assert {f for (f, e), d in details.items() if d["category"] == "calendar_exhausted"} == warned
+        assert all(notices[f, "after:2026-12-09"] == "needs_review" for f in warned)
+    assert "expected by 2027-01-13" in details["bcb_policy", "after:2026-12-09"]["message"]
+
+
 def test_bcb_statement_meeting_and_rate_disagreement_fail_closed():
     case = next(c for c in GOLDEN if c["family"] == "bcb_policy" and c["edition"] == "2026-09-16")
     doc = document(case["fixture"])

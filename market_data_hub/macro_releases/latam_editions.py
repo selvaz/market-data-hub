@@ -1,8 +1,9 @@
 """Reviewed Latin American editions; dates never prove values.
 
 The horizon is the last edition listed here, not a calendar year: once the run
-date passes it by the family's shortest edition gap it reports a
-needs-review notice until the issuer calendar for the next year is added.
+date passes the next expected edition date (the last edition plus the shortest
+listed gap, see latam.next_expected_edition) the family reports a needs-review
+notice until the issuer calendar for the next year is added.
 """
 SCHEDULES = {
     "bcb_policy": "https://www.bcb.gov.br/detalhenoticia/20739/nota",

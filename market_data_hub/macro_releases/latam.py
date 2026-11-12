@@ -10,6 +10,7 @@ from .publication_times import local_release
 from .schedule import due, mark_pending, note_review, publication_grace, run_date
 
 
+
 def fetch_editions(family, since, provider, load):
     """Keep validated editions when another publication is missing or malformed."""
     from .latam_editions import EDITIONS
@@ -48,22 +49,29 @@ def review_detail(exc, http_404=False):
     return "parser_rejected", type(exc).__name__ + ": issuer document failed validation"
 
 
-def calendar_exhausted(family):
-    """The reviewed edition list has run out; the next edition is not yet listed.
+def next_expected_edition(editions):
+    """The earliest date the edition after the listed ones can fall due.
 
-    The next edition can be due as soon as the shortest gap between listed
-    editions after the last one, so the notice starts then: a run never reports
-    a quiet no_change while an unlisted edition may be due.
+    The issuer's own cadence: the last listed edition plus the shortest gap
+    between consecutive listed editions. With a single listed edition there
+    is no cadence, so the next one is treated as due right after it.
     """
+    dates = sorted(date.fromisoformat(e) for e in editions)
+    gaps = [b - a for a, b in zip(dates, dates[1:])]
+    return dates[-1] + (min(gaps) if gaps else timedelta(days=1))
+
+
+def calendar_exhausted(family):
+    """No listed edition covers the next expected edition date, which is past."""
     from .latam_editions import EDITIONS
-    dates = sorted(date.fromisoformat(d) for d in EDITIONS[family])
-    gap = min((b - a for a, b in zip(dates, dates[1:])), default=timedelta(days=28))
-    if date.fromisoformat(run_date()) > dates[-1] + gap:
-        last = dates[-1].isoformat()
+    last = max(EDITIONS[family])
+    expected = next_expected_edition(EDITIONS[family])
+    if date.fromisoformat(run_date()) > expected:
         edition = "after:" + last
         mark_pending(family, edition, "needs_review")
         note_review(family, edition, "calendar_exhausted",
-                    f"No reviewed {family} edition after {last}; add the issuer calendar")
+                    f"No reviewed {family} edition after {last}; the next was expected by "
+                    f"{expected.isoformat()}; add the issuer calendar")
         return True
     return False
 

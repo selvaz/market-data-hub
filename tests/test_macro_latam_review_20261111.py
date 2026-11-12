@@ -174,9 +174,77 @@ def test_banxico_reread_of_already_stored_unanimous_statement_is_idempotent(tmp_
         assert store.conn.execute("SELECT COUNT(*) FROM value_vintages").fetchone()[0] == 1
 
 
-def test_banxico_rejoins_only_split_rates():
-    assert banxico_policy.rejoin_numbers("a un nivel de 6. 25%.") == "a un nivel de 6.25%."
-    assert banxico_policy.rejoin_numbers("trimestre de 2026. 25 puntos") == "trimestre de 2026. 25 puntos"
+HOLD_VOTE = ("Votaron por mantener el objetivo para la Tasa de Interés Interbancaria a un día en 6.50% "
+             "Galia Borja y Jonathan Heath.")
+
+
+def banxico_text(monkeypatch, old, new):
+    _, _, data = banxico_doc(monkeypatch)
+    assert old in data["text"]
+    return data["text"].replace(old, new)
+
+
+def test_banxico_unanimity_with_alternative_action_dissent_needs_review(monkeypatch):
+    text = banxico_text(monkeypatch, "decidió por mayoría", "decidió por unanimidad")
+    assert HOLD_VOTE in text  # no 'Votó/Votaron en contra' anywhere
+    doc, archives, _ = banxico_doc(monkeypatch, text)
+    with pytest.raises(FetchError, match="needs review"):
+        banxico_policy.parse(doc, archives=archives)
+
+
+def test_banxico_synonym_action_at_the_decided_rate_is_not_dissent(monkeypatch):
+    text = banxico_text(monkeypatch, HOLD_VOTE, HOLD_VOTE + " Votaron por reducir el objetivo para la Tasa de "
+                        "Interés Interbancaria a un día a un nivel de 6.25% Victoria Rodríguez Ceja, "
+                        "Omar Mejía Castelazo y José Gabriel Cuadra García.")
+    doc, archives, _ = banxico_doc(monkeypatch, text)
+    row, = banxico_policy.parse(doc, archives=archives)
+    assert row.policy_decision["vote"]["dissenters"] == ["Galia Borja", "Jonathan Heath"]
+    assert row.policy_decision["vote_split"] == {"for": 3, "against": 2}
+
+
+def test_banxico_same_action_at_another_rate_is_dissent(monkeypatch):
+    text = banxico_text(monkeypatch, HOLD_VOTE,
+                        "Votó por mantener el objetivo para la Tasa de Interés Interbancaria a un día en 6.50% "
+                        "Galia Borja. Votó por disminuir el objetivo para la Tasa de Interés Interbancaria a un "
+                        "día a un nivel de 6.00% Jonathan Heath.")
+    doc, archives, _ = banxico_doc(monkeypatch, text)
+    row, = banxico_policy.parse(doc, archives=archives)
+    assert row.policy_decision["vote"]["dissenters"] == ["Galia Borja", "Jonathan Heath"]
+    assert row.policy_decision["vote_split"] == {"for": 3, "against": 2}
+
+
+def test_banxico_dissenter_repeated_in_the_extract_counts_once(monkeypatch):
+    text = banxico_text(monkeypatch, HOLD_VOTE, "Votó en contra Jonathan Heath. [...] Votó en contra Jonathan Heath.")
+    doc, archives, _ = banxico_doc(monkeypatch, text)
+    row, = banxico_policy.parse(doc, archives=archives)
+    assert row.policy_decision["vote"]["dissenters"] == ["Jonathan Heath"]
+    assert row.policy_decision["vote_split"] == {"for": 4, "against": 1}
+
+
+def test_banxico_split_rate_repair_stays_inside_decision_and_vote_passages(monkeypatch):
+    # A split rate inside a vote sentence is repaired there.
+    text = banxico_text(monkeypatch, "en 6.50% Galia Borja", "en 6. 50% Galia Borja")
+    doc, archives, _ = banxico_doc(monkeypatch, text)
+    row, = banxico_policy.parse(doc, archives=archives)
+    assert (row.printed, row.policy_decision["vote"]["dissenters"]) == ("6.25", ["Galia Borja", "Jonathan Heath"])
+    # A vote sentence ends at its full stop even when the next sentence opens with a percentage.
+    text = banxico_text(monkeypatch, HOLD_VOTE, "Votó en contra Jonathan Heath. 25% de los analistas esperaba un recorte.")
+    doc, archives, _ = banxico_doc(monkeypatch, text)
+    row, = banxico_policy.parse(doc, archives=archives)
+    assert row.policy_decision["vote"]["dissenters"] == ["Jonathan Heath"]
+    # A rate cut by a line break is a sentence boundary, not a split run: review.
+    text = banxico_text(monkeypatch, "decidió disminuir en 25 puntos base el objetivo para la Tasa de Interés "
+                        "Interbancaria a un día a un nivel de 6. 25%",
+                        "decidió disminuir en 25 puntos base el objetivo para la Tasa de Interés "
+                        "Interbancaria a un día a un nivel de 6.\n25%")
+    doc, archives, _ = banxico_doc(monkeypatch, text)
+    with pytest.raises(FetchError, match="needs review"):
+        banxico_policy.parse(doc, archives=archives)
+    # Numbers outside the matched passages are never merged into a rate.
+    text = banxico_text(monkeypatch, "[...]", "Inflación de 2026. 25% de los rubros. [...]")
+    doc, archives, _ = banxico_doc(monkeypatch, text)
+    row, = banxico_policy.parse(doc, archives=archives)
+    assert row.printed == "6.25"
 
 
 # 4-6. Reason trail, review-queue closure and the report.
@@ -320,6 +388,107 @@ def test_migration_backfill_closes_already_superseded_rows(tmp_path, monkeypatch
         ("rev-1", result["run_id"], "resolved")]
 
 
+def clean_family_run(store, run_id, finished_at, family="mx_cpi"):
+    store.conn.execute("INSERT INTO collect_runs VALUES (?,?,NULL,'running','[]','{}','test','host')",
+                       (run_id, finished_at))
+    store.conn.execute("INSERT INTO collect_run_families (run_id,family,status,finished_at,vintages_added,"
+                       "readings_added,readings_skipped,fetch_since,fetch_until) VALUES "
+                       "(?,?,'ok',?,0,0,0,'2026-01','2026-12')", (run_id, family, finished_at))
+
+
+def copy_row(store, table, row, **changes):
+    row = dict(row)
+    row.update(id=None, **changes)
+    columns = [k for k in row if k != "id"]
+    store.conn.execute(f"INSERT INTO {table} ({','.join(columns)}) VALUES ({','.join('?' * len(columns))})",
+                       [row[k] for k in columns])
+
+
+def rewind_to_schema_9(target):
+    with sqlite3.connect(target) as conn:
+        for statement in ("DROP VIEW review_queue_current", "DROP VIEW review_queue_supersessions",
+                          "DROP TABLE review_queue_resolutions", "DROP TABLE collect_run_family_reviews",
+                          "DELETE FROM schema_compatibility WHERE schema_version=10", "PRAGMA user_version=9"):
+            conn.execute(statement)
+
+
+def test_verified_vintage_older_than_review_and_other_period_run_keep_review_open(tmp_path, monkeypatch):
+    """Verified September exists; a later capture is flagged; a clean run then sees only October."""
+    from market_data_hub.macro_releases import verification
+    target = tmp_path / "older.sqlite"
+    monkeypatch.setattr(run_daily, "HttpClient", Replay)
+    clock(monkeypatch, datetime(2026, 10, 28, 18, tzinfo=timezone.utc))
+    run_daily.execute(target, ["mx_cpi"], 24, False, raw_dir=tmp_path / "none")
+    with open_writer(target) as store:
+        sep = dict(store.conn.execute(
+            "SELECT * FROM value_vintages WHERE indicator_id='mx_cpi_yy' AND reference_period='2026-09' "
+            "AND verification_status='verified'").fetchone())
+        assert sep["first_seen_at"] < "2026-10-29"
+        digest = document(INEGI_SEP["fixture"]).identity_hash
+        with store.batch():
+            store.conn.execute("INSERT INTO review_queue VALUES ('rev-sep','mx_cpi','flag-run',?,?,?,'pending')",
+                               (digest, json.dumps(["sanity_band_exceeded:mx_cpi_yy"]),
+                                "2026-10-29T12:00:00.000000+00:00"))
+            event = dict(store.conn.execute("SELECT * FROM release_events WHERE id=?",
+                                            (sep["release_event_id"],)).fetchone())
+            store.conn.execute("INSERT INTO release_events VALUES (?,?,?,?,?) ON CONFLICT DO NOTHING",
+                               ("oct-event", event["issuer_id"], event["family"], event["estimate_stage"],
+                                "2026-11-09"))
+            oct_event = store.conn.execute(
+                "SELECT id FROM release_events WHERE issuer_id=? AND family=? AND estimate_stage=? "
+                "AND edition='2026-11-09'", (event["issuer_id"], event["family"], event["estimate_stage"])
+            ).fetchone()[0]
+            copy_row(store, "value_vintages", sep, reference_period="2026-10", release_event_id=oct_event,
+                     first_seen_at="2026-11-10T00:00:00.000000+00:00",
+                     retrieved_at="2026-11-10T00:00:00.000000+00:00", document_hash="oct-doc")
+            clean_family_run(store, "clean-oct", "2026-11-10T01:00:00.000000+00:00")
+            assert verification.resolve_reviews(store, "mx_cpi", "clean-oct") == 0
+        assert [r[0] for r in store.conn.execute(
+            "SELECT review_id FROM review_queue_supersessions WHERE review_id='rev-sep'")] == []
+    rewind_to_schema_9(target)
+    with open_writer(target) as store:
+        assert store.conn.execute(
+            "SELECT status FROM review_queue_current WHERE id='rev-sep'").fetchone()[0] == "pending"
+        # Control: September evidence first seen after the review, in a later clean run, closes it.
+        with store.batch():
+            for vintage in store.conn.execute("SELECT * FROM value_vintages WHERE document_hash=?",
+                                              (sep["document_hash"],)).fetchall():
+                copy_row(store, "value_vintages", vintage, first_seen_at="2026-11-11T00:00:00.000000+00:00",
+                         retrieved_at="2026-11-11T00:00:00.000000+00:00", document_hash="sep-reread")
+            clean_family_run(store, "clean-sep", "2026-11-11T01:00:00.000000+00:00")
+            assert verification.resolve_reviews(store, "mx_cpi", "clean-sep") == 1
+        row = store.conn.execute("SELECT * FROM review_queue_current WHERE id='rev-sep'").fetchone()
+        assert (row["status"], row["resolved_run_id"]) == ("resolved", "clean-sep")
+
+
+def test_unparseable_document_is_not_closed_by_a_later_reading_at_the_same_url(tmp_path, monkeypatch):
+    """A rolling URL later serving another period or family proves nothing about the flagged bytes."""
+    from market_data_hub.macro_releases.documents import put_document
+    target = tmp_path / "rolling.sqlite"
+    body = b"unknown format"
+    junk = Document(body, INEGI_SEP["source_url"], "2026-10-27T18:30:00.000000+00:00",
+                    hashlib.sha256(body).hexdigest())
+    with open_writer(target) as store:
+        with store.batch():
+            digest = put_document(store, junk)
+            store.conn.execute("INSERT INTO review_queue VALUES ('rev-junk','mx_cpi','flag-run',?,?,?,'pending')",
+                               (digest, json.dumps(["edition_needs_review:2026-10-08"]),
+                                "2026-10-27T19:00:00.000000+00:00"))
+    monkeypatch.setattr(run_daily, "HttpClient", Replay)
+    clock(monkeypatch, datetime(2026, 10, 28, 18, tzinfo=timezone.utc))
+    result = run_daily.execute(target, ["mx_cpi"], 24, False, raw_dir=tmp_path / "none")
+    assert result["families"]["mx_cpi"]["status"] == "ok", result
+    with open_writer(target) as store:
+        assert store.conn.execute(
+            "SELECT COUNT(*) FROM readings WHERE url=? AND verification_status='verified' AND first_seen_at>?",
+            (INEGI_SEP["source_url"], "2026-10-27T19:00:00.000000+00:00")).fetchone()[0] > 0
+        assert store.conn.execute(
+            "SELECT status FROM review_queue_current WHERE id='rev-junk'").fetchone()[0] == "pending"
+    rewind_to_schema_9(target)
+    with open_writer(target) as store:
+        assert store.conn.execute("SELECT COUNT(*) FROM review_queue_resolutions").fetchone()[0] == 0
+
+
 # Independent review follow-up.
 HOLD_DISSENT = ("Votaron por mantener el objetivo para la Tasa de Interés Interbancaria a un día en 6.50% "
                 "Galia Borja y Jonathan Heath.")
@@ -333,22 +502,7 @@ def nov_text(monkeypatch, replacement, *, unanimous=False):
     return text
 
 
-def test_banxico_unanimity_header_with_alternative_action_dissent_needs_review(monkeypatch):
-    doc, archives, _ = banxico_doc(monkeypatch, nov_text(monkeypatch, HOLD_DISSENT, unanimous=True))
-    with pytest.raises(FetchError, match="needs review"):
-        banxico_policy.parse(doc, archives=archives)
-
-
-def test_banxico_synonym_action_at_the_same_rate_is_not_dissent(monkeypatch):
-    favour = ("Votaron por reducir el objetivo para la Tasa de Interés Interbancaria a un día a un nivel de "
-              "6.25% Victoria Rodríguez Ceja, Omar Mejía Castelazo y José Gabriel Cuadra García. ")
-    doc, archives, _ = banxico_doc(monkeypatch, nov_text(monkeypatch, favour + HOLD_DISSENT))
-    row, = banxico_policy.parse(doc, archives=archives)
-    assert row.policy_decision["vote"]["dissenters"] == ["Galia Borja", "Jonathan Heath"]
-    assert row.policy_decision["vote_split"] == {"for": 3, "against": 2}
-
-
-def test_banxico_same_action_at_another_rate_is_dissent(monkeypatch):
+def test_banxico_deeper_cut_in_basis_points_is_dissent(monkeypatch):
     deeper = ("Votó por disminuir en 50 puntos base el objetivo para la Tasa de Interés Interbancaria a un día "
               "a un nivel de 6.00% Jonathan Heath.")
     doc, archives, _ = banxico_doc(monkeypatch, nov_text(monkeypatch, deeper))
@@ -358,26 +512,20 @@ def test_banxico_same_action_at_another_rate_is_dissent(monkeypatch):
     assert row.policy_decision["vote_split"] == {"for": 4, "against": 1}
 
 
-def test_banxico_duplicated_text_layer_counts_a_dissenter_once(monkeypatch):
-    once = "Votó en contra Jonathan Heath. "
-    doc, archives, _ = banxico_doc(monkeypatch, nov_text(monkeypatch, once + once))
-    row, = banxico_policy.parse(doc, archives=archives)
-    assert row.policy_decision["vote_split"] == {"for": 4, "against": 1}
-
-
-def test_banxico_member_named_in_two_clauses_needs_review(monkeypatch):
+def test_banxico_dissenter_named_in_two_clauses_counts_once(monkeypatch):
     text = nov_text(monkeypatch, HOLD_DISSENT + " Votó en contra Jonathan Heath, quien prefería mantener el objetivo.")
+    doc, archives, _ = banxico_doc(monkeypatch, text)
+    row, = banxico_policy.parse(doc, archives=archives)
+    assert row.policy_decision["vote"]["dissenters"] == ["Galia Borja", "Jonathan Heath"]
+    assert row.policy_decision["vote_split"] == {"for": 3, "against": 2}
+
+
+def test_banxico_member_both_for_and_against_needs_review(monkeypatch):
+    text = nov_text(monkeypatch, HOLD_DISSENT + " Votaron a favor Victoria Rodríguez Ceja, Omar Mejía Castelazo "
+                    "y Jonathan Heath.")
     doc, archives, _ = banxico_doc(monkeypatch, text)
     with pytest.raises(FetchError, match="needs review"):
         banxico_policy.parse(doc, archives=archives)
-
-
-def test_banxico_number_repair_only_touches_printed_rates():
-    assert banxico_policy.rejoin_numbers("en 6. 25% y a un nivel de 7. 0%") == "en 6.25% y a un nivel de 7.0%"
-    # A sentence ending in a figure, then a percentage: never one fabricated rate.
-    assert banxico_policy.rejoin_numbers("el índice subió 3. 25% de los hogares") == (
-        "el índice subió 3. 25% de los hogares")
-    assert banxico_policy.rejoin_numbers("de 3. 10 a 3.42%") == "de 3. 10 a 3.42%"
 
 
 def clean_run_row(store, finished_at="2099-01-01T00:00:00.000000+00:00"):

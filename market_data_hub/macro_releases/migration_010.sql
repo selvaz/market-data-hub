@@ -31,13 +31,14 @@ SELECT q.id, q.family, q.run_id, q.document_hash, q.reasons, q.recorded_at,
        r.basis AS resolution_basis
 FROM review_queue q LEFT JOIN review_queue_resolutions r ON r.review_id=q.id;
 -- A review row is superseded by a later clean (ok/no_change) run of its family
--- once every (measure, edition, period) read from the reviewed document has a
--- verified issuer reading or vintage first seen AFTER the review was recorded
--- and by the end of that run. Evidence that predates the review (e.g. the
--- verified vintage the flagged capture contradicted) never closes it. A clean
--- re-read of identical bytes adds a verified vintage, so it counts; the
--- original unverified reading row stays as it was. A document that yielded no
--- readings cannot be tied to an edition and stays open for manual review.
+-- once every (indicator, edition, reference period) read from the reviewed
+-- document has verified evidence of the same family and the same scope, first
+-- seen after the review was recorded and no later than that run finished (a
+-- clean re-read of identical bytes adds such a verified vintage; the original
+-- reading row stays unverified). Evidence that predates the review never closes
+-- it. A document whose scope cannot be established (no readings, or a reading
+-- without an indicator, a release event or a reference period) stays open: a
+-- verified reading from the same URL alone does not identify the same edition.
 CREATE VIEW review_queue_supersessions AS
 SELECT q.id AS review_id, f.run_id AS clean_run_id, f.finished_at AS clean_finished_at,
        'same_edition_verified' AS basis
@@ -48,15 +49,21 @@ JOIN collect_run_families f
 WHERE EXISTS (SELECT 1 FROM readings d WHERE d.content_hash=q.document_hash)
   AND NOT EXISTS (
     SELECT 1 FROM readings d WHERE d.content_hash=q.document_hash
-      AND NOT EXISTS (
-        SELECT 1 FROM readings v WHERE v.indicator_id IS d.indicator_id AND v.edition=d.edition
-          AND v.reference_period IS d.reference_period AND v.verification_status='verified'
-          AND v.first_seen_at>q.recorded_at AND v.first_seen_at<=f.finished_at)
-      AND NOT EXISTS (
-        SELECT 1 FROM value_vintages w WHERE w.indicator_id=d.indicator_id
-          AND w.release_event_id=d.release_event_id AND w.reference_period=d.reference_period
-          AND w.verification_status='verified'
-          AND w.first_seen_at>q.recorded_at AND w.first_seen_at<=f.finished_at));
+      AND (d.indicator_id IS NULL OR d.release_event_id IS NULL OR d.reference_period IS NULL
+           OR NOT EXISTS (SELECT 1 FROM release_events e
+                          WHERE e.id=d.release_event_id AND e.family=q.family AND e.edition=d.edition)
+           OR (NOT EXISTS (
+                 SELECT 1 FROM readings v JOIN release_events ve ON ve.id=v.release_event_id
+                 WHERE ve.family=q.family AND v.indicator_id=d.indicator_id AND v.edition=d.edition
+                   AND v.reference_period=d.reference_period
+                   AND v.verification_status='verified'
+                   AND v.first_seen_at>q.recorded_at AND v.first_seen_at<=f.finished_at)
+               AND NOT EXISTS (
+                 SELECT 1 FROM value_vintages w JOIN release_events we ON we.id=w.release_event_id
+                 WHERE we.family=q.family AND w.indicator_id=d.indicator_id
+                   AND w.release_event_id=d.release_event_id AND w.reference_period=d.reference_period
+                   AND w.verification_status='verified'
+                   AND w.first_seen_at>q.recorded_at AND w.first_seen_at<=f.finished_at))));
 CREATE INDEX IF NOT EXISTS readings_content_hash ON readings(content_hash);
 CREATE INDEX IF NOT EXISTS readings_indicator_edition ON readings(indicator_id, edition);
 CREATE INDEX IF NOT EXISTS value_vintages_indicator_event ON value_vintages(indicator_id, release_event_id);
