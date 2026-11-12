@@ -133,7 +133,13 @@ ABSOLUTE_BOUNDS["uk_mortgage_approvals"] = 2000000
 SANITY_BANDS.update({"de_gdp_qq": 20, "fr_gdp_qq": 20, "it_gdp_qq": 20, "es_gdp_qq": 20,
                      "it_unemployment_rate": 5,
                      "fr_industrial_production_mm": 30, "it_industrial_production_mm": 30,
-                     "es_industrial_production_mm": 30})
+                     "es_industrial_production_mm": 30,
+                     "de_industrial_production_mm": 30,
+                     "de_unemployment_ilo_rate": 5, "fr_unemployment_ilo_rate": 5,
+                     **{f"{cc}_retail_sales_mm": 30 for cc in ("de", "fr", "it")},
+                     **{f"{cc}_hicp_{b}": band for cc in ("de", "fr", "it") for b, band in (("yy", 5), ("mm", 3))},
+                     **{f"{cc}_economic_sentiment_indicator": 40 for cc in ("de", "fr", "it")}})
+ABSOLUTE_BOUNDS.update({f"{cc}_economic_sentiment_indicator": 200 for cc in ("de", "fr", "it")})
 
 
 def configured_bands(overrides=None):

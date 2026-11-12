@@ -239,17 +239,33 @@ INDICATORS.update((m.id, m) for measures in LATAM_FAMILIES.values() for m in mea
 # statistical office is the issuer; Eurostat is the distributor (mirror
 # provenance, see eurostat_national). Only cards whose concept matches the
 # Eurostat definition are mapped.
+BIG3 = (("de", "Destatis", "DEU", "Germany"), ("fr", "INSEE", "FRA", "France"), ("it", "Istat", "ITA", "Italy"))
 EA_BIG4_FAMILIES = {
     "ea_big4_gdp": [measure(f"{cc}_gdp_qq", issuer, geo, "qq", "SCA", frequency="Q",
         definition=f"{name} real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE")
         for cc, issuer, geo, name in (("de", "Destatis", "DEU", "Germany"), ("fr", "INSEE", "FRA", "France"),
                                       ("it", "Istat", "ITA", "Italy"), ("es", "INE", "ESP", "Spain"))],
     "ea_big4_unemployment": [measure("it_unemployment_rate", "Istat", "ITA", "level", "SA",
-        definition="Italy ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT")],
+        definition="Italy ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT"),
+        *[measure(f"{cc}_unemployment_ilo_rate", issuer, geo, "level", "SA",
+          definition=f"{name} ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT; not the {other}")
+          for cc, issuer, geo, name, other in (
+              ("de", "Destatis", "DEU", "Germany", "Bundesagentur registered unemployment rate"),
+              ("fr", "INSEE", "FRA", "France", "INSEE quarterly ILO rate"))]],
     "ea_big4_industrial_production": [measure(f"{cc}_industrial_production_mm", issuer, geo, "mm", "SCA",
         definition=f"{name} industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE")
-        for cc, issuer, geo, name in (("fr", "INSEE", "FRA", "France"), ("it", "Istat", "ITA", "Italy"),
-                                      ("es", "INE", "ESP", "Spain"))],
+        for cc, issuer, geo, name in (("de", "Destatis", "DEU", "Germany"), ("fr", "INSEE", "FRA", "France"),
+                                      ("it", "Istat", "ITA", "Italy"), ("es", "INE", "ESP", "Spain"))],
+    "ea_big4_retail": [measure(f"{cc}_retail_sales_mm", issuer, geo, "mm", "SCA",
+        definition=f"{name} retail trade volume of sales, except motor vehicles and motorcycles (NACE G47), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_trtu_m VOL_SLS PCH_PRE")
+        for cc, issuer, geo, name in BIG3],
+    "ea_big4_hicp": [measure(f"{cc}_hicp_{basis}", issuer, geo, basis, "NSA",
+        definition=f"{name} HICP (harmonised, ECOICOP v2), all items, published {label}, not seasonally adjusted; Eurostat prc_hicp_minr {unit} (flash: prc_hicp_fpd FLS); not the national CPI")
+        for cc, issuer, geo, name in BIG3
+        for basis, unit, label in (("yy", "RCH_A", "annual rate of change"), ("mm", "RCH_M", "monthly rate of change"))],
+    "ea_big4_esi": [measure(f"{cc}_economic_sentiment_indicator", "ECFIN", geo, "level", "SA", "index",
+        definition=f"{name} Economic Sentiment Indicator, DG ECFIN business and consumer surveys composite, seasonally adjusted, long-term mean 100; Eurostat ei_bssi_m_r2 BS-ESI-I")
+        for cc, _, geo, name in BIG3],
 }
 INDICATORS.update((m.id, m) for measures in EA_BIG4_FAMILIES.values() for m in measures)
 FAMILIES = ("us_cpi", "us_payrolls", "us_gdp", "ea_hicp", "uk_gdp", *US_MONTHLY, *EMPLOYMENT_FAMILIES, *UK_FAMILIES, "ea_gdp", "us_jobless_claims", *REMAINING_FAMILIES, *CENTRAL_BANKS, *HOUSING_FAMILIES, *ASIA_FAMILIES, *LATAM_FAMILIES, *EA_BIG4_FAMILIES)
@@ -280,6 +296,7 @@ EXPECTED_LAG_DAYS = {
     "mx_cpi": 8, "banxico_policy": 0, "bcb_policy": 0,
     # Eurostat refreshes national datasets after the national releases.
     "ea_big4_gdp": 35, "ea_big4_unemployment": 35, "ea_big4_industrial_production": 45,
+    "ea_big4_retail": 40, "ea_big4_hicp": 18, "ea_big4_esi": 1,
 }
 
 

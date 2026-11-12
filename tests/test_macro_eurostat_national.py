@@ -23,7 +23,8 @@ from market_data_hub.macro_releases.verification import SANITY_BANDS
 FIXTURES = Path(__file__).parent / "fixtures" / "macro_releases" / "eurostat_national"
 RETRIEVED = "2026-11-12T08:00:00Z"
 DATASET_FIXTURE = {"ea_big4_gdp": "namq_10_gdp", "ea_big4_unemployment": "une_rt_m",
-                   "ea_big4_industrial_production": "sts_inpr_m"}
+                   "ea_big4_industrial_production": "sts_inpr_m", "ea_big4_retail": "sts_trtu_m",
+                   "ea_big4_hicp": "prc_hicp_minr", "ea_big4_esi": "ei_bssi_m_r2"}
 
 
 @pytest.fixture(autouse=True)
@@ -71,16 +72,19 @@ def test_gdp_parses_latest_two_quarters_per_country():
     assert de.composition_id is None
 
 
-def test_unemployment_parses_italy_ilo_rate():
+def test_unemployment_parses_monthly_ilo_rates():
     rows = parse(document("une_rt_m"), "ea_big4_unemployment")
-    assert values(rows) == {("it_unemployment_rate", "2026-07"): 6.0, ("it_unemployment_rate", "2026-08"): 6.2}
-    assert {o.series_key for o in rows} == {"une_rt_m:IT:SA:TOTAL:PC_ACT:T"}
-    assert {o.edition for o in rows} == {"2026-10-01"}
+    assert values(rows) == {("it_unemployment_rate", "2026-07"): 6.0, ("it_unemployment_rate", "2026-08"): 6.2,
+                            ("de_unemployment_ilo_rate", "2026-09"): 4.1,
+                            ("fr_unemployment_ilo_rate", "2026-09"): 8.5}
+    assert {o.series_key for o in rows} == {f"une_rt_m:{geo}:SA:TOTAL:PC_ACT:T" for geo in ("DE", "FR", "IT")}
+    assert {o.edition for o in rows} == {"2026-11-02"}
 
 
-def test_industrial_production_parses_france_italy_spain():
+def test_industrial_production_parses_germany_france_italy_spain():
     rows = parse(document("sts_inpr_m"), "ea_big4_industrial_production")
     assert values(rows) == {
+        ("de_industrial_production_mm", "2026-09"): 1.3,
         ("es_industrial_production_mm", "2026-07"): 0.6, ("es_industrial_production_mm", "2026-08"): -0.8,
         ("fr_industrial_production_mm", "2026-07"): -0.7, ("fr_industrial_production_mm", "2026-08"): -0.3,
         ("it_industrial_production_mm", "2026-07"): 0.6, ("it_industrial_production_mm", "2026-08"): -1.3,
@@ -92,7 +96,7 @@ def test_industrial_production_parses_france_italy_spain():
 def test_since_cuts_by_period_end():
     rows = parse(document("namq_10_gdp"), "ea_big4_gdp", since="2026-04")
     assert {o.period for o in rows} == {"2026-Q2"}
-    assert parse(document("sts_inpr_m"), "ea_big4_industrial_production", since="2026-09") == []
+    assert parse(document("sts_inpr_m"), "ea_big4_industrial_production", since="2026-10") == []
 
 
 @pytest.mark.parametrize("name,family,mutate,message", [
@@ -105,7 +109,15 @@ def test_since_cuts_by_period_end():
     ("sts_inpr_m", "ea_big4_industrial_production",
      lambda p: p.update(extension=dict(p["extension"], id="STS_INPR_Q")), "identity"),
     ("namq_10_gdp", "ea_big4_gdp", lambda p: p["id"].append("extra"), "dimensions"),
-    ("une_rt_m", "ea_big4_unemployment", lambda p: p.update(status={"3": "s"}), "status"),
+    ("une_rt_m", "ea_big4_unemployment", lambda p: p.update(status={next(iter(p["value"])): "s"}), "status"),
+    ("sts_trtu_m", "ea_big4_retail",
+     lambda p: p["dimension"]["indic_bt"]["category"].update(index={"NETTUR": 0}), "coverage"),
+    ("ei_bssi_m_r2", "ea_big4_esi",
+     lambda p: p["dimension"]["indic"]["category"].update(index={"BS-CSMCI": 0}), "coverage"),
+    ("prc_hicp_minr", "ea_big4_hicp",
+     lambda p: p["dimension"]["coicop18"]["category"].update(index={"CP01": 0}), "coverage"),
+    ("prc_hicp_minr", "ea_big4_hicp",
+     lambda p: p["dimension"]["unit"]["category"].update(index={"RCH_A": 0, "I25": 1}), "units"),
     ("namq_10_gdp", "ea_big4_gdp",
      lambda p: p.update(value={k: v for k, v in p["value"].items() if int(k) >= 4}), "missing"),
     ("namq_10_gdp", "ea_big4_gdp", lambda p: p.update(updated="yesterday"), "timestamp"),
@@ -116,46 +128,119 @@ def test_definition_drift_fails_closed(name, family, mutate, message):
 
 
 def test_unmapped_country_in_payload_is_rejected():
-    def add_de(payload):
-        payload["dimension"]["geo"]["category"]["index"] = {"DE": 0, "IT": 1}
-        payload["size"][-2] = 2
+    def add_es(payload):
+        payload["dimension"]["geo"]["category"]["index"] = {"DE": 0, "ES": 1, "FR": 2, "IT": 3}
+        payload["size"][-2] = 4
     with pytest.raises(FetchError, match="geography"):
-        parse(document("une_rt_m", add_de), "ea_big4_unemployment")
+        parse(document("une_rt_m", add_es), "ea_big4_unemployment")
+
+
+def test_retail_volume_parses_three_countries():
+    rows = parse(document("sts_trtu_m"), "ea_big4_retail")
+    assert values(rows) == {("de_retail_sales_mm", "2026-09"): -2.0, ("fr_retail_sales_mm", "2026-09"): -0.6,
+                            ("it_retail_sales_mm", "2026-09"): 0.1}
+    assert {o.series_key for o in rows if o.indicator_id.startswith("de_")} == {
+        "sts_trtu_m:DE:VOL_SLS:G47:SCA:PCH_PRE"}
+
+
+def test_esi_parses_three_countries_with_dg_ecfin_as_issuer():
+    rows = parse(document("ei_bssi_m_r2"), "ea_big4_esi")
+    assert values(rows) == {("de_economic_sentiment_indicator", "2026-10"): 94.1,
+                            ("fr_economic_sentiment_indicator", "2026-10"): 96.1,
+                            ("it_economic_sentiment_indicator", "2026-10"): 100.2}
+    assert {INDICATORS[o.indicator_id].issuer_id for o in rows} == {"ECFIN"}
+    assert {o.edition for o in rows} == {"2026-10-30"}
+
+
+def test_hicp_splits_annual_and_monthly_rates_per_country():
+    rows = parse(document("prc_hicp_minr"), "ea_big4_hicp")
+    got = values(rows)
+    assert got[("de_hicp_yy", "2026-09")] == 2.4 and got[("de_hicp_mm", "2026-09")] == 0.2
+    assert got[("it_hicp_yy", "2026-08")] == 1.7 and got[("fr_hicp_mm", "2026-09")] == -0.9
+    assert {i for i, _ in got} == {f"{cc}_hicp_{b}" for cc in ("de", "fr", "it") for b in ("yy", "mm")}
+    assert {o.stage for o in rows} == {"regular"}
+    de = next(o for o in rows if o.indicator_id == "de_hicp_yy" and o.period == "2026-09")
+    assert de.series_key == "prc_hicp_minr:DE:TOTAL:RCH_A"
+
+
+def test_hicp_flash_fills_only_months_after_the_regular_edition():
+    client = FakeClient()
+    rows = EurostatNationalAdapter(client).fetch(["ea_big4_hicp"], "2026-08")
+    assert [c[1].rsplit("/", 1)[-1] for c in client.calls] == ["prc_hicp_minr", "prc_hicp_fpd"]
+    assert client.calls[0][2] == {"lang": "EN", "coicop18": "TOTAL", "unit": ["RCH_A", "RCH_M"],
+                                  "geo": ["DE", "FR", "IT"], "sinceTimePeriod": "2026-08"}
+    assert client.calls[1][2]["release"] == "FLS"
+    flash = [o for o in rows if o.stage == "flash"]
+    assert values(flash) == {("de_hicp_yy", "2026-10"): 2.3, ("de_hicp_mm", "2026-10"): 0.3,
+                             ("fr_hicp_yy", "2026-10"): 0.9, ("fr_hicp_mm", "2026-10"): 0.1,
+                             ("it_hicp_yy", "2026-10"): 1.6, ("it_hicp_mm", "2026-10"): -0.2}
+    assert {o.series_key for o in flash if o.indicator_id == "de_hicp_yy"} == {"prc_hicp_fpd:DE:TOTAL:FLS:RCH_A"}
+    assert {o.edition for o in flash} == {"2026-10-31"}
+    # September is already in the regular edition: the flash copy is not re-emitted.
+    assert not any(o.period == "2026-09" for o in flash)
+
+
+def test_hicp_flash_definition_drift_fails_closed():
+    with pytest.raises(FetchError, match="coverage"):
+        parse(document("prc_hicp_fpd", lambda p: p["dimension"]["release"]["category"].update(index={"FRS": 0})),
+              "ea_big4_hicp", flash=True)
 
 
 def test_adapter_requests_exact_filters_without_network():
     client = FakeClient()
     rows = EurostatNationalAdapter(client).fetch(list(EA_BIG4_FAMILIES) + ["ea_hicp"], "2026-05")
-    assert {c[1] for c in client.calls} == {BASE + d for d in DATASET_FIXTURE.values()}
+    assert {c[1] for c in client.calls} == {BASE + d for d in DATASET_FIXTURE.values()} | {BASE + "prc_hicp_fpd"}
     by_dataset = {c[1].rsplit("/", 1)[-1]: c[2] for c in client.calls}
     assert by_dataset["namq_10_gdp"] == {"lang": "EN", "unit": "CLV_PCH_PRE", "s_adj": "SCA", "na_item": "B1GQ",
                                          "geo": ["DE", "ES", "FR", "IT"], "sinceTimePeriod": "2026-Q2"}
     assert by_dataset["une_rt_m"] == {"lang": "EN", "s_adj": "SA", "age": "TOTAL", "unit": "PC_ACT", "sex": "T",
-                                      "geo": ["IT"], "sinceTimePeriod": "2026-05"}
-    assert by_dataset["sts_inpr_m"]["nace_r2"] == "B-D" and by_dataset["sts_inpr_m"]["geo"] == ["ES", "FR", "IT"]
+                                      "geo": ["DE", "FR", "IT"], "sinceTimePeriod": "2026-05"}
+    assert by_dataset["sts_inpr_m"]["nace_r2"] == "B-D" and by_dataset["sts_inpr_m"]["geo"] == ["DE", "ES", "FR", "IT"]
+    assert by_dataset["sts_trtu_m"] == {"lang": "EN", "indic_bt": "VOL_SLS", "nace_r2": "G47", "s_adj": "SCA",
+                                        "unit": "PCH_PRE", "geo": ["DE", "FR", "IT"], "sinceTimePeriod": "2026-05"}
+    assert by_dataset["ei_bssi_m_r2"] == {"lang": "EN", "indic": "BS-ESI-I", "s_adj": "SA",
+                                          "geo": ["DE", "FR", "IT"], "sinceTimePeriod": "2026-05"}
     assert {o.indicator_id for o in rows} == set(MAPPED)
 
 
 def test_mapping_covers_only_definition_matched_tier1_cards():
+    big3 = {"DE": "de", "FR": "fr", "IT": "it"}
     assert MAPPED == {
         "de_gdp_qq": ("ea_big4_gdp", "DE"), "fr_gdp_qq": ("ea_big4_gdp", "FR"),
         "it_gdp_qq": ("ea_big4_gdp", "IT"), "es_gdp_qq": ("ea_big4_gdp", "ES"),
         "it_unemployment_rate": ("ea_big4_unemployment", "IT"),
+        "de_unemployment_ilo_rate": ("ea_big4_unemployment", "DE"),
+        "fr_unemployment_ilo_rate": ("ea_big4_unemployment", "FR"),
+        "de_industrial_production_mm": ("ea_big4_industrial_production", "DE"),
         "fr_industrial_production_mm": ("ea_big4_industrial_production", "FR"),
         "it_industrial_production_mm": ("ea_big4_industrial_production", "IT"),
         "es_industrial_production_mm": ("ea_big4_industrial_production", "ES"),
+        **{f"{cc}_retail_sales_mm": ("ea_big4_retail", geo) for geo, cc in big3.items()},
+        **{f"{cc}_hicp_{b}": ("ea_big4_hicp", geo) for geo, cc in big3.items() for b in ("yy", "mm")},
+        **{f"{cc}_economic_sentiment_indicator": ("ea_big4_esi", geo) for geo, cc in big3.items()},
     }
     cards = {"de_gdp_qq": "de_gdp_real", "fr_gdp_qq": "fr_gdp_real", "it_gdp_qq": "it_gdp_real",
              "es_gdp_qq": "es_gdp_real", "it_unemployment_rate": "it_unemployment",
+             "de_unemployment_ilo_rate": "de_unemployment_ilo", "fr_unemployment_ilo_rate": "fr_unemployment_ilo",
+             "de_industrial_production_mm": "de_indprod",
              "fr_industrial_production_mm": "fr_indpro", "it_industrial_production_mm": "it_indpro",
-             "es_industrial_production_mm": "es_indpro"}
+             "es_industrial_production_mm": "es_indpro",
+             "de_retail_sales_mm": "de_retail", "fr_retail_sales_mm": "fr_retail", "it_retail_sales_mm": "it_retail",
+             **{f"{cc}_hicp_{b}": f"{cc}_hicp" for cc in big3.values() for b in ("yy", "mm")},
+             **{f"{cc}_economic_sentiment_indicator": f"{cc}_esi" for cc in big3.values()}}
     issuers = {"de": "Destatis", "fr": "INSEE", "it": "Istat", "es": "INE"}
     tier1 = set(tier1_ids())
+    original = {"ea_big4_gdp": set(SPECS["ea_big4_gdp"]["indicators"].values()),
+                "it": {"it_unemployment_rate", "fr_industrial_production_mm", "it_industrial_production_mm",
+                       "es_industrial_production_mm"}}
     for indicator, (family, geo) in MAPPED.items():
-        assert indicator in tier1
+        # The #192 headlines are in the Tier-1 snapshot; the additions are new cards.
+        if indicator in original["ea_big4_gdp"] | original["it"]:
+            assert indicator in tier1
         assert indicator_card(indicator).key == cards[indicator]
         measure = INDICATORS[indicator]
-        assert measure.issuer_id == issuers[indicator[:2]] != "Eurostat"
+        expected = "ECFIN" if family == "ea_big4_esi" else issuers[indicator[:2]]
+        assert measure.issuer_id == expected != "Eurostat"
         assert (measure.tier, measure.catalogue_status, measure.active) == ("T1", "supported", True)
         assert indicator in FAMILY_INDICATORS[family] and indicator in SANITY_BANDS
     # Card concepts that differ from the Eurostat measure stay unmapped.
@@ -164,8 +249,9 @@ def test_mapping_covers_only_definition_matched_tier1_cards():
                             ("es_unemployment_rate", "es_unemployment")):
         assert indicator_card(indicator).key == card
         assert indicator not in INDICATORS and indicator not in MAPPED
-    # No German industrial production card is in the Tier-1 snapshot.
-    assert not any(i.startswith("de_industrial_production") for i in tier1)
+    # National HICP is not the national CPI: the CPI cards keep their own ids.
+    for indicator, card in (("de_cpi_yy", "de_cpi"), ("fr_cpi_yy", "fr_cpi"), ("it_cpi_yy", "it_cpi_nic")):
+        assert indicator_card(indicator).key == card and indicator not in MAPPED
 
 
 def test_families_are_wired_for_daily_and_manual_collection():
@@ -216,7 +302,11 @@ def test_manual_collect_isolates_a_failing_family(tmp_path, monkeypatch, capsys)
     assert collect.main(["--db", str(tmp_path / "macro.sqlite"), "--families", families, "--since", "2026-01"]) == 1
     result = json.loads(capsys.readouterr().out)
     assert result["family_failures"] == {"ea_big4_unemployment": ["EurostatNationalAdapter:ea_big4_unemployment"]}
-    assert set(result["families"]) == {"EurostatNationalAdapter:ea_big4_gdp",
-                                       "EurostatNationalAdapter:ea_big4_industrial_production"}
+    assert set(result["families"]) == {f"EurostatNationalAdapter:{f}" for f in EA_BIG4_FAMILIES
+                                       if f != "ea_big4_unemployment"}
     assert result["families"]["EurostatNationalAdapter:ea_big4_gdp"]["new_vintages"] == 8
-    assert result["families"]["EurostatNationalAdapter:ea_big4_industrial_production"]["new_vintages"] == 6
+    assert result["families"]["EurostatNationalAdapter:ea_big4_industrial_production"]["new_vintages"] == 7
+    assert result["families"]["EurostatNationalAdapter:ea_big4_retail"]["new_vintages"] == 3
+    assert result["families"]["EurostatNationalAdapter:ea_big4_esi"]["new_vintages"] == 3
+    # Six regular rates for each of August and September, plus six October flashes.
+    assert result["families"]["EurostatNationalAdapter:ea_big4_hicp"]["new_vintages"] == 18
