@@ -10,6 +10,7 @@ import json
 import math
 import os
 import re
+import sys
 from pathlib import Path
 import tempfile
 import time
@@ -31,7 +32,7 @@ class RateLimitBusy(FetchError):
 
 def api_key(name: str) -> str:
     value = os.environ.get(name)
-    if not value and os.name == "nt":
+    if not value and sys.platform == "win32":
         import winreg
 
         try:
