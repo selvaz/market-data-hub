@@ -53,6 +53,12 @@ def get_live_prices_batch(tickers: List[str]) -> Dict[str, float]:
     return _yd.get_live_prices_batch(tickers)
 
 
+def get_live_quotes_batch(tickers: List[str]) -> Dict[str, tuple]:
+    """``{symbol: (regular-session price, session date ISO)}``."""
+    from market_data_hub.sources import yahoo_direct as _yd
+    return _yd.get_live_quotes_batch(tickers)
+
+
 def adjusted_live_price(live: float, adj_close_eod: float,
                         close_eod: float) -> Optional[float]:
     """

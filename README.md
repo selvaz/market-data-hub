@@ -116,6 +116,32 @@ python validate_macro_panel.py            # sample of 5 countries
 python validate_macro_panel.py --full     # all 64 countries
 ```
 
+Live US cash prices carry the exchange-local date of the regular-session
+quote and remain provisional (`is_live=TRUE`), including the post-close price
+for day D used by digests. The scope is the configured universe's US-listed
+stocks/ETFs (including bond, commodity and FX ETFs) and explicitly recognized
+NYSE/Nasdaq/Cboe cash indices. Foreign venue suffixes, history proxies, spot FX,
+futures and crypto stay on the previous live-price API and UTC collector-date
+behavior, without the new date guard or cleanup. **Known limitation:** their
+dates are not reliable trading-session labels; H2's latest-value layer will
+provide instrument-aware session mapping, including London FX date conventions
+and CME Sunday-evening trading belonging to Monday.
+
+The guard resolves each requested symbol to one active listing, rejects
+ambiguous active mappings, and compares the quote with that listing's latest
+completed daily bar. A US daily row qualifies only when `is_live=FALSE` and its
+ingestion time is at or after 16:00 `America/New_York` on the row's date.
+`prices_daily.updated_at` is a naive **America/Los_Angeles** timestamp; the
+comparison assigns that zone explicitly, without changing storage. Missing
+ingestion times cannot establish settlement. This query-time rule also handles
+partial daily bars already stored before this change: a pre-close ingestion
+never becomes settled merely because time passes. A later live quote can
+replace it and remains provisional until a completed daily download arrives.
+Cleanup uses the same baseline and only removes live rows of requested, active,
+in-scope listings dated on or before their latest completed daily bar. The
+16:00 rule is conservative on early-close days; exchange holiday/early-close
+calendars also belong to the later instrument-aware mapping.
+
 The Ray Dalio-style debt-cycle / growth-inflation regime classifier and the
 5-engine country risk architecture live in the separate
 [LazyRay](https://github.com/selvaz/LazyRay) repo, which consumes this hub

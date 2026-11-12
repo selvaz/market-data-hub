@@ -119,27 +119,21 @@ def test_reader_waits_for_a_writer_holding_the_file(tmp_path, monkeypatch):
 
 def test_reader_still_raises_when_the_lock_outlives_the_budget(tmp_path, monkeypatch):
     # Waiting is bounded: a lock that never clears must surface, not hang.
-    import subprocess
-    import sys
-    import time
-
     import duckdb
     import pytest
 
     path = str(tmp_path / "stuck.duckdb")
     duckdb.connect(path).close()
-    holder = subprocess.Popen([
-        sys.executable, "-c",
-        f"import duckdb, time; c = duckdb.connect(r'{path}'); time.sleep(5); c.close()",
-    ])
+    # Wait for confirmed lock acquisition and retain it throughout the read
+    # attempt, even if the child starts slowly or the test is descheduled.
+    holder = _holder(path, read_only=False)
     try:
-        time.sleep(1.0)
         monkeypatch.setattr(C, "_READER_LOCK_WAIT_S", 1.0)
         monkeypatch.setattr(C, "_READER_LOCK_POLL_S", 0.2)
         with pytest.raises(duckdb.IOException):
             C._connect_read_only_waiting(path)
     finally:
-        holder.wait()
+        _release(holder)
 
 
 def _holder(path: str, *, read_only: bool):

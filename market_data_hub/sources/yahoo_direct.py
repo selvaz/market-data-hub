@@ -17,6 +17,7 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from types import ModuleType
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
 import pandas as pd
@@ -208,4 +209,66 @@ def get_live_prices_batch(tickers: List[str], *, workers: int = 8
                 sym, p = futs[fut], None
             if p is not None:
                 out[sym] = p
+    return out
+
+
+def session_date_of(meta: dict) -> Optional[str]:
+    """ISO date of the regular session that produced ``regularMarketPrice``.
+
+    Yahoo gives ``regularMarketTime`` (epoch seconds) and the exchange's
+    ``gmtoffset`` (seconds). The session date is the exchange-local date of
+    that instant, never the date the collector happened to run on.
+    """
+    ts = meta.get("regularMarketTime")
+    if ts is None:
+        return None
+    try:
+        offset = int(meta.get("gmtoffset") or 0)
+        return (datetime.fromtimestamp(int(ts), timezone.utc)
+                + timedelta(seconds=offset)).date().isoformat()
+    except (TypeError, ValueError, OverflowError, OSError):
+        return None
+
+
+def get_live_quotes_batch(tickers: List[str], *, workers: int = 8
+                          ) -> Dict[str, tuple]:
+    """Regular-session price and its session date per ticker.
+
+    Returns ``{symbol: (price, session_date_iso)}``. A ticker whose session
+    date cannot be established is left out rather than dated by the clock.
+    Uses ``meta.regularMarketPrice`` only (no pre/post-market trades).
+    """
+    if not tickers:
+        return {}
+    params = {"range": "1d", "interval": "1m"}
+    out: Dict[str, tuple] = {}
+
+    def _do(sym: str):
+        if _creq is None:
+            return sym, None
+        for base in (_BASE, _BASE2):
+            try:
+                r = _session().get(base + sym, params=params, timeout=20)
+                if r.status_code != 200:
+                    continue
+                res = (r.json().get("chart", {}).get("result") or [None])[0]
+                if not res:
+                    continue
+                meta = res.get("meta", {})
+                price, day = meta.get("regularMarketPrice"), session_date_of(meta)
+                if price is not None and day is not None:
+                    return sym, (float(price), day)
+            except Exception:
+                continue
+        return sym, None
+
+    with ThreadPoolExecutor(max_workers=workers) as ex:
+        futs = {ex.submit(_do, s): s for s in tickers}
+        for fut in as_completed(futs):
+            try:
+                sym, quote = fut.result()
+            except Exception:
+                sym, quote = futs[fut], None
+            if quote is not None:
+                out[sym] = quote
     return out

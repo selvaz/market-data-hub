@@ -17,10 +17,11 @@ Flow for each source:
 """
 from __future__ import annotations
 
+import re
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 from typing import Dict, List, Optional
 
 import pandas as pd
@@ -526,47 +527,150 @@ def run_factors(con, cfg: dict, run_id: str) -> None:
 
 
 # --------------------------------------------------------------- LIVE
+SUPERSEDED_LIVE_ROWS_SQL = (
+    "DELETE FROM prices_daily AS p USING _live_settled AS s "
+    "WHERE p.is_live = TRUE AND p.listing_id = s.listing_id AND p.date <= s.date"
+)
+
+
+def _uses_us_cash_session(entry: dict, exchange: Optional[str]) -> bool:
+    """Conservative scope for the configured Yahoo universe, not a calendar.
+
+    Its unsuffixed stock/ETF tickers are US listings; foreign listings have
+    Yahoo venue suffixes. Explicit venue metadata takes precedence. Cash
+    indices need an allowlist because a caret alone says nothing about venue.
+    Asset class is exposure, not instrument type (UUP is an FX ETF).
+    """
+    symbol = entry["symbol"]
+    if entry.get("instrument_type") in {"history_proxy", "futures_continuous"}:
+        return False
+    if entry.get("asset_class") in {"CRYPTO", "FUTURES"}:
+        return False
+    if exchange and exchange.upper() not in {
+        "NYSE", "NYSEARCA", "NYSE ARCA", "NASDAQ", "NASDAQGS", "NASDAQGM",
+        "NASDAQCM", "AMEX", "NYSEAMERICAN", "CBOE", "BATS",
+        "XNYS", "XNAS", "ARCX", "XASE", "XCBO", "BTS", "NMS", "NGM", "NCM", "PCX",
+    }:
+        return False
+    if symbol.startswith("^"):
+        return symbol in {
+            "^GSPC", "^DJI", "^IXIC", "^NDX", "^RUT", "^VIX", "^VIX9D",
+            "^VIX3M", "^VIX6M", "^VVIX", "^VXN",
+        }
+    # Also accepts US class-share tickers such as BRK-B, but excludes crypto
+    # pairs (BTC-USD), futures (=F), FX (=X) and foreign venue suffixes (.DE).
+    return re.fullmatch(r"[A-Z]+(?:-[A-Z])?", symbol) is not None
+
+
+def live_rows(eod_map: dict, quotes: dict, now=None) -> list[dict]:
+    """Live rows dated by the session that produced each price.
+
+    ``eod_map``: symbol -> (latest settled date, adj_close, close).
+    ``quotes``: symbol -> (regular-session price, session date ISO).
+    A quote whose session is not newer than the settled bar is skipped: the
+    settled bar already holds that session and must never be overwritten by
+    a live row (the 23:45 PT FRED-only run and weekend runs used to write
+    rows dated by the UTC clock, e.g. a Friday close dated Saturday).
+    """
+    now = now or datetime.now(timezone.utc)
+    rows = []
+    for sym, (price, day) in quotes.items():
+        if sym not in eod_map:
+            continue
+        settled_day, adj_eod, close_eod = eod_map[sym]
+        session = date.fromisoformat(day)
+        if session <= settled_day:
+            continue
+        adj_live = yh.adjusted_live_price(price, adj_eod, close_eod)
+        if adj_live is None:
+            continue
+        rows.append({"date": session, "symbol": sym, "open": None,
+                     "high": None, "low": None, "close": price,
+                     "adj_close": adj_live, "volume": None,
+                     "source": "yahoo", "is_live": True, "updated_at": now})
+    return rows
+
+
 def run_live(con, cfg: dict, run_id: str) -> None:
-    """Update the 'today' row with live prices mapped into the adjusted space."""
+    """Inject provisional US session rows; retain clock dating elsewhere."""
     if not cfg.get("live", {}).get("enabled", False):
         _log("LIVE: disabled in settings")
         return
     t_start = time.perf_counter()
     allowed = set(cfg["live"]["asset_classes"])
     tickers = [e for e in get_yahoo_tickers() if e.get("asset_class") in allowed]
-    today = pd.Timestamp(_today())
-
-    # latest EOD (adj_close, close) per symbol
+    if not tickers:
+        return
+    # Reuse the upsert resolver *before* reading any baseline or deleting rows:
+    # inactive mappings are excluded and ambiguous active symbols still raise.
+    from market_data_hub.db.upsert import _attach_listing_ids
+    requested = _attach_listing_ids(con, pd.DataFrame(tickers))
+    listing_ids = dict(zip(requested.symbol, requested.listing_id))
+    venues = dict(con.execute(
+        "SELECT listing_id, exchange FROM listings WHERE active_to IS NULL").fetchall())
+    scoped = {e["symbol"] for e in tickers
+              if _uses_us_cash_session(e, venues.get(listing_ids[e["symbol"]]))}
+    placeholders = ",".join("?" for _ in listing_ids)
+    parameters = list(listing_ids.values())
+    completed = ""
+    if scoped:
+        scope_ids = [listing_ids[s] for s in sorted(scoped)]
+        scope_placeholders = ",".join("?" for _ in scope_ids)
+        # Production TIMESTAMP values are naive PACIFIC wall time. Give both
+        # sides explicit zones so neither the server nor connection timezone
+        # changes the comparison. A morning daily download remains partial
+        # even after the clock passes close; only a later ingestion settles it.
+        # NULL ingestion times cannot prove completion, so are excluded here.
+        completed = (
+            f"AND (listing_id NOT IN ({scope_placeholders}) OR "
+            "timezone('America/Los_Angeles', updated_at) >= "
+            "timezone('America/New_York', date + INTERVAL '16 hours')) "
+        )
+        parameters.extend(scope_ids)
+    # Each symbol's adjustment ratio and freshness baseline come from exactly
+    # the listing that will receive the live row, never retired symbol history.
     eod = con.execute(
-        "SELECT p.symbol, p.adj_close, p.close FROM prices_daily p "
-        "JOIN (SELECT symbol, max(date) d FROM prices_daily "
-        "      WHERE is_live = FALSE GROUP BY symbol) m "
-        "  ON p.symbol = m.symbol AND p.date = m.d "
-        "WHERE p.is_live = FALSE").fetch_df()
-    eod_map = {r.symbol: (r.adj_close, r.close) for r in eod.itertuples()}
+        "SELECT p.listing_id, p.date, p.adj_close, p.close FROM prices_daily p "
+        "JOIN (SELECT listing_id, max(date) d FROM prices_daily "
+        f"      WHERE is_live = FALSE AND listing_id IN ({placeholders}) "
+        f"      {completed} GROUP BY listing_id) m "
+        "  ON p.listing_id = m.listing_id AND p.date = m.d "
+        "WHERE p.is_live = FALSE", parameters).fetch_df()
+    by_listing = {r.listing_id: (pd.Timestamp(r.date).date(), r.adj_close, r.close)
+                  for r in eod.itertuples()}
+    eod_map = {sym: by_listing[lid] for sym, lid in listing_ids.items() if lid in by_listing}
+    session_syms = [s for s in eod_map if s in scoped]
+    rows = live_rows(eod_map, yh.get_live_quotes_batch(session_syms)) if session_syms else []
 
-    # live prices in a SINGLE download batch (no per-ticker loop -> no 429)
-    syms = [e["symbol"] for e in tickers if e["symbol"] in eod_map]
-    live_prices = yh.get_live_prices_batch(syms)
-
-    rows = []
-    n_ok = 0
-    for sym in syms:
-        live = live_prices.get(sym)
-        if live is None:
+    # H2 will map FX, overnight futures and crypto to instrument-aware
+    # sessions. Until then keep their pre-PR behavior: UTC collector date,
+    # prior live-price API, no new date guard and no cleanup.
+    legacy_syms = [s for s in eod_map if s not in scoped]
+    legacy_prices = yh.get_live_prices_batch(legacy_syms) if legacy_syms else {}
+    for sym in legacy_syms:
+        price = legacy_prices.get(sym)
+        if price is None:
             continue
-        adj_eod, close_eod = eod_map[sym]
-        adj_live = yh.adjusted_live_price(live, adj_eod, close_eod)
-        if adj_live is None:
-            continue
-        rows.append({"date": today.date(), "symbol": sym, "open": None,
-                     "high": None, "low": None, "close": live,
-                     "adj_close": adj_live, "volume": None,
-                     "source": "yahoo", "is_live": True,
-                     "updated_at": datetime.now(timezone.utc)})
-        n_ok += 1
+        _, adj_eod, close_eod = eod_map[sym]
+        adj_live = yh.adjusted_live_price(price, adj_eod, close_eod)
+        if adj_live is not None:
+            rows.append({"date": date.fromisoformat(_today()), "symbol": sym,
+                         "close": price, "adj_close": adj_live, "source": "yahoo",
+                         "is_live": True, "updated_at": datetime.now(timezone.utc)})
+    for row in rows:
+        row["listing_id"] = listing_ids[row["symbol"]]
+    n_ok = len(rows)
 
     st = datetime.now(timezone.utc)
+    # Use the very same completed-session baselines for cleanup and the
+    # freshness guard. Only requested, active US cash listings participate.
+    settled = eod[eod.listing_id.isin([listing_ids[s] for s in scoped])]
+    if not settled.empty:
+        con.register("_live_settled", settled)
+        try:
+            con.execute(SUPERSEDED_LIVE_ROWS_SQL)
+        finally:
+            con.unregister("_live_settled")
     if rows:
         upsert(con, "prices_daily", pd.DataFrame(rows))
     _log(f"LIVE: updated {n_ok}/{len(tickers)} symbols")
