@@ -2312,6 +2312,96 @@
       }
     },
     {
+      "concept": "1-month Treasury yield",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "D",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "DGS1MO"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_ust_1m",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "MARKET",
+      "rationale": "Same Treasury CMT par-yield series via FRED H.15, published T+1; current short-rate context, with no forecasting claim.",
+      "raw_ids": "ms:DGS1MO",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Fed Board H.15",
+      "theme": "Monetary policy & rates",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "current short rate",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "6-month Treasury yield",
+      "country": "USA",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "H",
+        "mechanism": "n.a."
+      },
+      "flag": "local timing not tested",
+      "frequency": "D",
+      "ids": {
+        "cal": [],
+        "cat": [],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "DGS6MO"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "us_ust_6m",
+      "known_failure_modes": [
+        "local timing not tested"
+      ],
+      "nature": "MARKET",
+      "rationale": "Same Treasury CMT par-yield series via FRED H.15, published T+1; current short-rate context, with no forecasting claim.",
+      "raw_ids": "ms:DGS6MO",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Fed Board H.15",
+      "theme": "Monetary policy & rates",
+      "timing": {
+        "basis": null,
+        "class": "CTX",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "current short rate",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
       "concept": "2-year Treasury yield",
       "country": "USA",
       "evidence": {
@@ -20201,6 +20291,6 @@
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "a9f158676f938de703acaa05ed5be15f72e46cd5551510e5833fc585d7012830",
-  "timing_extract_sha256": "d9a1104b6bffbe16eafdf05a5e166dc829fc4e7ae6b7fd61c0f1dee54fb8301e"
+  "source_table_sha256": "2af948a54c39df76eb407cb352f82c9b2de67a77ce248ecbbfd89fdca994d078",
+  "timing_extract_sha256": "279933963c22c2aa5a85c0b5596c33506b61d8dbce144fe4ad39056ad525b183"
 }

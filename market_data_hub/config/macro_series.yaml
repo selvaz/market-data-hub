@@ -297,6 +297,24 @@ fred:
   name: RATES | US | 30-Year Treasury Constant Maturity
   priority: 2
   country: US
+- symbol: DGS1MO
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board H.15"
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 1-Month Treasury Constant Maturity
+  priority: 2
+  country: US
+- symbol: DGS6MO
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board H.15"
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 6-Month Treasury Constant Maturity
+  priority: 2
+  country: US
 - symbol: DGS3MO
   expected_lag_days: 2
   frequency: D

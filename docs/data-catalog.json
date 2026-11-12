@@ -28459,6 +28459,36 @@
       "expected_lag_days": 2,
       "frequency": "D",
       "history_start": "1776-07-04",
+      "id": "DGS1MO",
+      "issuer": "Fed Board H.15",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "RATES | US | 1-Month Treasury Constant Maturity",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
+      "expected_lag_days": 2,
+      "frequency": "D",
+      "history_start": "1776-07-04",
       "id": "DGS2",
       "issuer": "Fed Board H.15",
       "jobs": [
@@ -28537,6 +28567,36 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "RATES | US | 3-Month Treasury Constant Maturity",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
+      "expected_lag_days": 2,
+      "frequency": "D",
+      "history_start": "1776-07-04",
+      "id": "DGS6MO",
+      "issuer": "Fed Board H.15",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "RATES | US | 6-Month Treasury Constant Maturity",
       "notes": "",
       "stalled_after_days": null,
       "status": "active",
@@ -41539,7 +41599,7 @@
         "date",
         "series_id"
       ],
-      "series_count": 311,
+      "series_count": 313,
       "status": "active",
       "status_reason": "",
       "store": "hub",

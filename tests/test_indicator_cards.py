@@ -144,6 +144,9 @@ def test_remaining_real_economy_seed_identifiers_resolve():
 
 
 def test_energy_geopolitical_and_term_premium_series_are_distinct():
+    assert indicator_card("ms:DGS1MO").key == "us_ust_1m"
+    assert indicator_card("ms:DGS6MO").key == "us_ust_6m"
+    assert indicator_card("ms:DGS1MO").key != indicator_card("ms:DGS3MO").key
     assert indicator_card("ms:WCESTUS1").key == "us_eia_crude_stocks"
     assert indicator_card("ms:NW2_EPG0_SWO_R48_BCF").frequency == "W"
     assert indicator_card("ms:NYFED_ACM_TP10_DAILY").frequency == "D"
@@ -154,7 +157,7 @@ def test_energy_geopolitical_and_term_premium_series_are_distinct():
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 429
+    assert len(rows) == len(dataset().cards) == 431
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -678,8 +681,8 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
         report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     )
     assert report["macro_series"] == {
-        "mapped": 125,
-        "total": 125,
+        "mapped": 127,
+        "total": 127,
         "unmapped": [],
     }
     assert "macro_releases" in capsys.readouterr().out
@@ -822,7 +825,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 429
+    assert dataset() is shipped and len(shipped.cards) == 431
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -912,7 +915,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 429
+        assert report["cards"] == 431
         assert ("draft_cards" in report) == bool(args)
 
 

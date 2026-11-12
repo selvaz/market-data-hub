@@ -119,12 +119,17 @@ def validate() -> list[str]:
 
     errors.extend(validate_etf_index_map(_y("etf_index_map.yaml")))
 
+    from market_data_hub.concepts import load_concepts
     from market_data_hub.resolved_rates import load_resolved_rates
 
-    try:
-        load_resolved_rates(CFG / "resolved_rates.yaml")
-    except (ValueError, yaml.YAMLError) as exc:
-        errors.append(f"resolved_rates.yaml: {exc}")
+    for label, loader in (
+        ("resolved rates", load_resolved_rates),
+        ("concept registry", load_concepts),
+    ):
+        try:
+            loader()
+        except (OSError, ValueError, yaml.YAMLError) as exc:
+            errors.append(f"{label}: {exc}")
 
     tickers = _y("tickers.yaml").get("yahoo", [])
     fred = _y("macro_series.yaml").get("fred", [])

@@ -1,10 +1,27 @@
 # Resolved sovereign rates
 
 A concept such as `DE_10Y` names a country and tenor. Its ordered source chain
-is configured in `market_data_hub/config/resolved_rates.yaml`; observations
+is configured in `market_data_hub/config/concepts/rates.yaml`; observations
 remain in their original series and retain their dates and provenance. Values
 are yields in percent. A concept is a practical comparison, not a claim that
 every benchmark uses the same security or fixing time.
+
+The H1 concept registry spans `config/concepts/*.yaml` (see
+[`docs/concepts.md`](../concepts.md)). The sovereign reader projects the 116
+existing country/tenor chains from `rates.yaml`; the nominal `T10Y2Y` curve
+slope and derived `IT_DE_10Y` spread are registry declarations for H2 and are
+excluded from this compatibility projection. Runtime loading validates only
+this family against the macro catalogues and caches the result per process by
+file path and modification time, returning independent copies. The full
+cross-file registry validation remains in CI and `validate_config.py`.
+
+`money_market.yaml` declares `US_1M`, `US_3M`, and `US_6M` with Treasury
+`UST_PAR_*` as primary, FRED `DGS1MO`/`DGS3MO`/`DGS6MO` as fallback, and the
+matching FRED series as single-source history. Both sources use `par yield`:
+they are the same Treasury CMT series, republished via FRED H.15 at T+1. The
+comparability note records that publication lag rather than a change of yield
+measure. Adding DGS1MO and DGS6MO to `macro_series.yaml` also adds them to the
+daily collector's FRED fetch universe; no ALFRED backfill is declared.
 
 The reader considers observations dated on or before `as_of`, taking the latest
 non-null observation per source. Age counts Monday through Friday strictly after
