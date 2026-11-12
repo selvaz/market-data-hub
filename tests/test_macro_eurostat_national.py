@@ -310,3 +310,72 @@ def test_manual_collect_isolates_a_failing_family(tmp_path, monkeypatch, capsys)
     assert result["families"]["EurostatNationalAdapter:ea_big4_esi"]["new_vintages"] == 3
     # Six regular rates for each of August and September, plus six October flashes.
     assert result["families"]["EurostatNationalAdapter:ea_big4_hicp"]["new_vintages"] == 18
+
+
+LEAD_LIVE_VALUES = {
+    # Owner's live Eurostat run, 2026-11-12 (the fixtures carry these values).
+    "de_industrial_production_mm": ("2026-09", 1.3),
+    "de_unemployment_ilo_rate": ("2026-09", 4.1), "fr_unemployment_ilo_rate": ("2026-09", 8.5),
+    "de_retail_sales_mm": ("2026-09", -2.0), "fr_retail_sales_mm": ("2026-09", -0.6),
+    "it_retail_sales_mm": ("2026-09", 0.1),
+    "de_economic_sentiment_indicator": ("2026-10", 94.1), "fr_economic_sentiment_indicator": ("2026-10", 96.1),
+    "it_economic_sentiment_indicator": ("2026-10", 100.2),
+    # Synthetic October flash (no national HICP value was recorded live).
+    "de_hicp_yy": ("2026-10", 2.3), "it_hicp_mm": ("2026-10", -0.2),
+}
+
+
+@pytest.fixture
+def national_store(tmp_path, monkeypatch):
+    path = tmp_path / "macro.sqlite"
+    rows = EurostatNationalAdapter(FakeClient()).fetch(list(EA_BIG4_FAMILIES), "2026-01")
+    with open_writer(path) as store:
+        persist(store, rows)
+    return str(path)
+
+
+def test_every_national_indicator_has_a_release_concept():
+    from market_data_hub.concepts import load_concepts
+    registry = load_concepts()
+    for indicator, (family, _) in MAPPED.items():
+        spec = registry[indicator]
+        [source] = spec["sources"]
+        assert (source["kind"], source["id"], source["role"]) == ("release", indicator, "primary")
+        assert source["evidence"] == "redistributor"
+        assert spec["calendar"] == "country:" + indicator[:2].upper()
+        period_days = 92 if INDICATORS[indicator].frequency == "Q" else 31
+        lag = EXPECTED_LAG_DAYS[family]
+        assert source["max_age_business_days"] == -(-(period_days + lag + 7) * 5 // 7)
+    for geo, series in (("DE", "DEULOLITOAASTSAM"), ("FR", "FRALOLITOAASTSAM"), ("IT", "ITALOLITOAASTSAM")):
+        cli = registry[f"{geo}_OECD_CLI"]
+        assert cli["sources"] == [{"kind": "macro", "id": series, "role": "primary",
+                                   "max_age_business_days": 60,
+                                   "convention": "OECD amplitude-adjusted composite leading indicator"}]
+        assert indicator_card(series).key == f"{geo.lower()}_oecd_cli"
+        assert indicator_card(series).timing.timing_class == "LEAD"
+
+
+def test_cascade_reads_eurostat_mirror_as_current_value(national_store):
+    from market_data_hub import latest
+    for indicator, (period, value) in LEAD_LIVE_VALUES.items():
+        result = latest.read_latest(indicator, as_of="2026-11-12", releases_db=national_store,
+                                    as_known_at="2026-11-12T12:00:00Z")
+        assert (result["status"], result["source_kind"]) == ("primary", "release"), (indicator, result)
+        assert (result["reference_period"], result["value"]) == (period, value), indicator
+
+
+def test_mirror_readings_need_the_redistributor_opt_in():
+    from market_data_hub import latest
+    from market_data_hub.concepts import load_concepts
+    source = load_concepts()["de_retail_sales_mm"]["sources"][0]
+    issuer_only = {k: v for k, v in source.items() if k != "evidence"}
+    assert latest._release_statuses(issuer_only) == {"official", "private"}
+    assert latest._release_statuses(source) == {"official", "private", "provisional"}
+
+
+def test_release_evidence_value_is_validated():
+    from market_data_hub.concepts import load_concepts, validate_concepts
+    spec = dict(load_concepts()["de_retail_sales_mm"])
+    spec["sources"] = [dict(spec["sources"][0], evidence="mirror")]
+    with pytest.raises(ValueError, match="evidence"):
+        validate_concepts([spec])

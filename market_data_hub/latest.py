@@ -43,6 +43,14 @@ PRICE_NOT_IMPLEMENTED = "price kind arrives in a later PR"
 TRANSFORMS = ("level", "diff", "pct_change_mm", "pct_change_qq_saar", "pct_change_yy")
 STATUSES = ("primary", "newer_secondary", "fallback", "proxy", "stale", "unavailable")
 USABLE_RELEASE_STATUSES = {"official", "private"}
+# A release source declared ``evidence: redistributor`` also accepts readings
+# resolved only from mirror evidence (the Eurostat national headlines).
+REDISTRIBUTOR_RELEASE_STATUSES = USABLE_RELEASE_STATUSES | {"provisional"}
+
+
+def _release_statuses(source):
+    return (REDISTRIBUTOR_RELEASE_STATUSES if source.get("evidence") == "redistributor"
+            else USABLE_RELEASE_STATUSES)
 RESULT_KEYS = (
     "concept", "label", "family", "unit", "value", "value_raw", "observation_date", "reference_period",
     "source_id", "source_kind", "role", "status", "age_bd", "max_age_bd", "released_at",
@@ -392,11 +400,11 @@ def _macro_candidate(ctx, source, rank):
                       observation_date=_observation_date(stored, frequency))
 
 
-def _usable_cards(ctx, cards):
+def _usable_cards(ctx, cards, statuses=USABLE_RELEASE_STATUSES):
     usable = []
     for card in cards:
         resolution = card.get("resolution") or {}
-        if resolution.get("value") is None or resolution.get("status") not in USABLE_RELEASE_STATUSES:
+        if resolution.get("value") is None or resolution.get("status") not in statuses:
             continue
         if period_start_date(card["reference_period"]) > ctx.as_of:
             continue
@@ -423,10 +431,11 @@ def _release_candidate(ctx, source, rank, release_ids):
     if error:
         return _candidate(source, rank, reason=error)
     snapshot = ctx.snapshot
-    usable = _usable_cards(ctx, cards.get(source["id"], []))
+    statuses = _release_statuses(source)
+    usable = _usable_cards(ctx, cards.get(source["id"], []), statuses)
     if not usable:
         history, snapshot = ctx.full_history_cards(source["id"])
-        usable = _usable_cards(ctx, history)
+        usable = _usable_cards(ctx, history, statuses)
     if not usable:
         return _candidate(source, rank, reason="no official release known at as_known_at")
     card = max(usable, key=lambda c: (period_end_date(c["reference_period"]), c["released_at"]))
@@ -437,10 +446,12 @@ def _release_candidate(ctx, source, rank, release_ids):
     # cutoff (revisions) are resolved across the whole knowledge-filtered snapshot.
     revised = _latest_period(snapshot, source["id"], period)
     if (revised and revised.get("value") is not None
-            and revised.get("status") in USABLE_RELEASE_STATUSES):
+            and revised.get("status") in statuses):
         if float(revised["value"]) != value:
             reason = f"revised from {value:g} (edition {revised.get('edition')})"
         value = float(revised["value"])
+    if reason is None and (card.get("resolution") or {}).get("status") == "provisional":
+        reason = "redistributor reading; issuer print not collected"
     return _candidate(source, rank, value=value, observation_date=period_end_date(period),
                       reference_period=period, released_at=card["released_at"],
                       consensus=_choose_consensus(card.get("consensus")), reason=reason)

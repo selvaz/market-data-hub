@@ -72,6 +72,18 @@ a change from a non-seasonally-adjusted index that macro_series does not hold
 with period days M 31, W 7, Q 92 and E 49, and the issuer lag from
 `EXPECTED_LAG_DAYS`; every source of a concept shares it.
 
+The same file declares the euro-area national headlines for Germany, France
+and Italy (Spain where a card exists): GDP q/q, monthly ILO unemployment,
+industrial production m/m, retail trade volume m/m, harmonised HICP y/y and
+m/m, and the EC economic sentiment indicator, plus `DE_OECD_CLI`,
+`FR_OECD_CLI` and `IT_OECD_CLI` (FRED). Their release primary is the Eurostat
+API redistribution of the national release (`eurostat_national`), which the
+release store keeps as unverified mirror evidence (resolution status
+`provisional`). A release source accepts such readings only when it declares
+`evidence: redistributor`; without it (the default, `issuer`) only verified
+issuer readings (`official`, `private`) are current values. None of these
+concepts has a FRED secondary.
+
 ## Latest value (`market_data_hub.latest`)
 
 `read_latest(concept, *, as_of=None, as_known_at=None, con=None)` returns the
