@@ -2050,16 +2050,6 @@ concepts:
   expression: IT_10Y - DE_10Y
   alignment: same_date
   scale: 100
-- concept: US_CURVE_10Y3M
-  family: rates
-  label: US 10Y minus 3M
-  unit: '%'
-  frequency: D
-  calendar: us_govt
-  sources: []
-  kind: derived
-  expression: US_10Y - US_3M
-  alignment: same_date
 - concept: T10Y2Y
   family: rates
   label: US 10Y minus 2Y
