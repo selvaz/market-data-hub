@@ -9,6 +9,11 @@
 # issuer_lag_days: macro_releases.catalogue.EXPECTED_LAG_DAYS of the family;
 # 7 days of grace. Age is counted from the reference period end in Mon-Fri
 # business days (no holiday calendar yet).
+#
+# decimals: the issuer's published precision in the concept unit. read_latest
+# rounds the chosen value and every alternative to it (half up), so a FRED
+# fallback reads like the issuer would have printed it; value_raw keeps the
+# unrounded number.
 concepts:
 - concept: us_cpi_headline_yy
   family: releases
@@ -16,6 +21,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 14d issuer lag + 7d grace
   # FRED CPIAUCSL is seasonally adjusted; BLS publishes the headline 12-month change from the NSA index (CUUR0000SA0), which is not in macro_series. No FRED secondary.
   sources:
@@ -30,6 +36,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 14d issuer lag + 7d grace
   sources:
   - kind: release
@@ -54,6 +61,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 14d issuer lag + 7d grace
   # FRED CPILFESL is seasonally adjusted; BLS publishes the 12-month change from the NSA index (CUUR0000SA0L1E), not in macro_series. No FRED secondary.
   sources:
@@ -68,6 +76,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 14d issuer lag + 7d grace
   sources:
   - kind: release
@@ -92,6 +101,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 29d issuer lag + 7d grace
   sources:
   - kind: release
@@ -116,6 +126,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 29d issuer lag + 7d grace
   sources:
   - kind: release
@@ -140,6 +151,7 @@ concepts:
   unit: thousands of persons
   frequency: M
   calendar: us_govt
+  decimals: 0
   # max age: M period + 7d issuer lag + 7d grace
   sources:
   - kind: release
@@ -164,6 +176,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 7d issuer lag + 7d grace
   sources:
   - kind: release
@@ -188,6 +201,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 7d issuer lag + 7d grace
   sources:
   - kind: release
@@ -212,6 +226,7 @@ concepts:
   unit: '%'
   frequency: Q
   calendar: us_govt
+  decimals: 1
   # max age: Q period + 29d issuer lag + 7d grace
   sources:
   - kind: release
@@ -236,6 +251,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 15d issuer lag + 7d grace
   sources:
   - kind: release
@@ -260,6 +276,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 15d issuer lag + 7d grace
   # The card carries only RSAFS (total retail sales); no ex-auto FRED level is stored. No FRED secondary.
   sources:
@@ -274,6 +291,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 16d issuer lag + 7d grace
   sources:
   - kind: release
@@ -298,6 +316,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 16d issuer lag + 7d grace
   # The card has no ms: id (FRED TCU is not stored). No FRED secondary.
   sources:
@@ -312,6 +331,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 27d issuer lag + 7d grace
   # The card has no ms: id (FRED DGORDER is not stored). No FRED secondary.
   sources:
@@ -326,6 +346,7 @@ concepts:
   unit: thousands of units
   frequency: M
   calendar: us_govt
+  decimals: 0
   # max age: M period + 20d issuer lag + 7d grace
   sources:
   - kind: release
@@ -350,6 +371,7 @@ concepts:
   unit: thousands of units
   frequency: M
   calendar: us_govt
+  decimals: 0
   # max age: M period + 20d issuer lag + 7d grace
   sources:
   - kind: release
@@ -374,6 +396,7 @@ concepts:
   unit: millions of units
   frequency: M
   calendar: us_govt
+  decimals: 2
   # max age: M period + 23d issuer lag + 7d grace
   # The card has no ms: id (NAR data is not redistributed on FRED in full history). No FRED secondary.
   sources:
@@ -388,6 +411,7 @@ concepts:
   unit: thousands of units
   frequency: M
   calendar: us_govt
+  decimals: 0
   # max age: M period + 27d issuer lag + 7d grace
   # The card has no ms: id (FRED HSN1F is not stored). No FRED secondary.
   sources:
@@ -402,6 +426,7 @@ concepts:
   unit: USD billions
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 36d issuer lag + 7d grace
   # The card has no ms: id (FRED BOPGSTB is not stored). No FRED secondary.
   sources:
@@ -416,6 +441,7 @@ concepts:
   unit: index (1966 Q1 = 100)
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 0d issuer lag + 7d grace
   sources:
   - kind: release
@@ -440,6 +466,7 @@ concepts:
   unit: '%'
   frequency: M
   calendar: us_govt
+  decimals: 1
   # max age: M period + 15d issuer lag + 7d grace
   # FRED PPIFIS is seasonally adjusted; BLS publishes the 12-month change from the NSA index (WPUFD4), not in macro_series. No FRED secondary.
   sources:
@@ -454,6 +481,7 @@ concepts:
   unit: thousands of claims
   frequency: W
   calendar: us_govt
+  decimals: 0
   # max age: W period + 5d issuer lag + 7d grace
   sources:
   - kind: release
@@ -478,6 +506,7 @@ concepts:
   unit: '%'
   frequency: E
   calendar: us_govt
+  decimals: 2
   # max age: E period + 0d issuer lag + 7d grace
   # Event series: the observation is the decision date. No FRED secondary (DFEDTARU is not stored).
   sources:

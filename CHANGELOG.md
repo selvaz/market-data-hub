@@ -13,7 +13,9 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   macro, derived or release concept through its ordered cascade, with the
   declared source and status (`primary`, `newer_secondary`, `fallback`,
   `proxy`, `stale`, `unavailable`). Price concepts raise `NotImplementedError`.
-  Macro sources gain optional `transform` and `scale`.
+  Macro sources gain optional `transform` and `scale`; concepts gain optional
+  `decimals` (published precision, applied to the returned values; the raw
+  number stays in `value_raw`).
 - 24 US release concepts in `concepts/releases.yaml` (issuer primary, FRED
   secondary where units match), `US_OECD_CLI`, and the derived
   `US_CURVE_10Y3M`. FRED `USALOLITOAASTSAM` and `UMCSENT` in `macro_series.yaml`;

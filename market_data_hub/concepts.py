@@ -21,7 +21,7 @@ FAMILY_KEYS = {"concepts", "generate", "tolerance_bp"}
 CONCEPT_KEYS = {
     "concept", "family", "label", "unit", "frequency", "calendar", "sources",
     "kind", "status", "pending_reason", "expression", "alignment", "scale",
-    "check", "history", "spot_bond_justification", "pair_tolerances",
+    "check", "history", "spot_bond_justification", "pair_tolerances", "decimals",
 }
 SOURCE_KEYS = {
     "kind", "id", "role", "max_age_business_days", "convention", "comparability_note", "unit",
@@ -185,6 +185,10 @@ def _validate_entry(entry, catalogues, result):
     for key in ("label", "unit", "frequency", "calendar"):
         if not _text(entry.get(key)):
             raise ValueError(f"{name}: missing {key}")
+    if "decimals" in entry and (isinstance(entry["decimals"], bool)
+                                or not isinstance(entry["decimals"], int)
+                                or not 0 <= entry["decimals"] <= 6):
+        raise ValueError(f"{name}: decimals must be an integer from 0 to 6")
     if "status" in entry and entry["status"] != "pending_source":
         raise ValueError(f"{name}: invalid status")
     sources = entry.get("sources", [])

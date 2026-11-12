@@ -34,6 +34,7 @@ import re
 import sys
 from calendar import monthrange
 from datetime import date, datetime, timedelta, timezone
+from decimal import ROUND_HALF_UP, Decimal
 
 from market_data_hub.concepts import load_concepts, load_macro_catalogue
 from market_data_hub.config_loader import _CONFIG_DIR
@@ -43,7 +44,7 @@ TRANSFORMS = ("level", "diff", "pct_change_mm", "pct_change_qq_saar", "pct_chang
 STATUSES = ("primary", "newer_secondary", "fallback", "proxy", "stale", "unavailable")
 USABLE_RELEASE_STATUSES = {"official", "private"}
 RESULT_KEYS = (
-    "concept", "label", "family", "unit", "value", "observation_date", "reference_period",
+    "concept", "label", "family", "unit", "value", "value_raw", "observation_date", "reference_period",
     "source_id", "source_kind", "role", "status", "age_bd", "max_age_bd", "released_at",
     "consensus", "alternatives", "inputs", "reason", "registry_version",
 )
@@ -457,7 +458,7 @@ def _resolve_cascade(ctx, name, spec, release_ids):
             item = _candidate(source, rank, reason=PRICE_NOT_IMPLEMENTED)
         else:
             inner = _resolve(ctx, source["id"], release_ids)
-            item = _candidate(source, rank, value=inner["value"],
+            item = _candidate(source, rank, value=inner["value_raw"],
                               observation_date=_to_date(inner["observation_date"]),
                               reason=None if inner["value"] is not None else inner["reason"])
         if item["observation_date"] is not None:
@@ -487,14 +488,26 @@ def _resolve_cascade(ctx, name, spec, release_ids):
     result.update({key: chosen[key] for key in (
         "value", "observation_date", "reference_period", "source_id", "source_kind", "role",
         "age_bd", "max_age_bd", "released_at", "consensus")})
+    decimals = spec.get("decimals")
+    result["value_raw"] = chosen["value"]
+    result["value"] = round_published(chosen["value"], decimals)
     result["status"] = status
-    result["alternatives"] = [_alternative(c) for c in candidates if c is not chosen]
+    result["alternatives"] = [_alternative(c, decimals) for c in candidates if c is not chosen]
     result["reason"] = _reason(status, chosen, candidates)
     return result
 
 
-def _alternative(candidate):
-    return {"source_id": candidate["source_id"], "value": candidate["value"],
+def round_published(value, decimals):
+    """Round half up to the issuer's published precision; None passes through."""
+    if value is None or decimals is None:
+        return value
+    quantum = Decimal(1).scaleb(-decimals)
+    return float(Decimal(repr(value)).quantize(quantum, rounding=ROUND_HALF_UP))
+
+
+def _alternative(candidate, decimals=None):
+    return {"source_id": candidate["source_id"],
+            "value": round_published(candidate["value"], decimals),
             "observation_date": candidate["observation_date"], "role": candidate["role"],
             "fresh": candidate["fresh"], "reason": candidate["reason"]}
 
@@ -548,7 +561,9 @@ def _resolve_derived(ctx, name, spec, release_ids):
         result["reason"] = "inputs have no common observation date (same_date alignment)"
         return result
     observation = _to_date(resolved[0]["observation_date"])
-    value = resolved[0]["value"] + (resolved[1]["value"] if operator == "+" else -resolved[1]["value"])
+    # Compute from unrounded inputs; only the output is rounded.
+    left_value, right_value = resolved[0]["value_raw"], resolved[1]["value_raw"]
+    value = left_value + (right_value if operator == "+" else -right_value)
     value *= spec.get("scale", 1)
     age = business_day_age(observation, ctx.as_of)
     max_age = min(item["max_age_bd"] for item in resolved)
@@ -556,7 +571,8 @@ def _resolve_derived(ctx, name, spec, release_ids):
     status = max(statuses, key=lambda s: _STATUS_ORDER[s])
     if age > max_age:
         status = "stale"
-    result.update(value=value, observation_date=observation, age_bd=age, max_age_bd=max_age,
+    result.update(value=round_published(value, spec.get("decimals")), value_raw=value,
+                  observation_date=observation, age_bd=age, max_age_bd=max_age,
                   status=status, inputs=[_input(item) for item in resolved],
                   reason=f"{spec['expression']} on {observation.isoformat()}")
     return result

@@ -303,3 +303,43 @@ def test_release_older_than_window_is_stale_not_unavailable(con, releases, monke
                                 releases_db=releases)
     assert result["status"] == "stale" and result["source_kind"] == "release"
     assert result["value"] == 29
+
+
+def test_fallback_value_rounded_to_issuer_precision(con, stale_releases):
+    # 2026-09 payrolls only on FRED: 159030.4 - 159000 = 30.4, issuer prints whole thousands.
+    con2 = duckdb.connect(":memory:")
+    con2.execute("CREATE TABLE macro_series (date DATE, series_id VARCHAR, value DOUBLE)")
+    con2.executemany("INSERT INTO macro_series VALUES (?, ?, ?)", [
+        ("2026-08-01", "PAYEMS", 159000.0), ("2026-09-01", "PAYEMS", 159030.6),
+        ("2026-08-01", "CPIAUCSL", 320.0), ("2026-09-01", "CPIAUCSL", 321.12),
+    ])
+    payrolls = latest.read_latest("us_payrolls_change", as_of="2026-10-20", con=con2,
+                                  releases_db=stale_releases)
+    assert payrolls["status"] == "newer_secondary"
+    assert payrolls["value"] == 31.0 and math.isclose(payrolls["value_raw"], 30.6, abs_tol=1e-6)
+    cpi = latest.read_latest("us_cpi_headline_mm", as_of="2026-10-20", con=con2)
+    assert math.isclose(cpi["value_raw"], 0.35) and cpi["value"] == 0.4  # half up, not banker's
+    assert cpi["alternatives"][0]["value"] is None
+
+
+def test_primary_value_and_alternatives_rounded(con, releases):
+    result = latest.read_latest("us_payrolls_change", as_of="2026-10-20", con=con,
+                                releases_db=releases)
+    assert result["value"] == result["value_raw"] == 29
+    assert result["alternatives"][0]["value"] == 30.0
+
+
+def test_round_published():
+    assert latest.round_published(0.35028, 1) == 0.4
+    assert latest.round_published(0.25, 1) == 0.3
+    assert latest.round_published(-0.25, 1) == -0.3
+    assert latest.round_published(4.0625, 2) == 4.06
+    assert latest.round_published(None, 1) is None
+    assert latest.round_published(1.23456, None) == 1.23456
+
+
+@pytest.mark.parametrize("value", [-1, 7, 1.5, True, "1"])
+def test_decimals_validation(macro_entry, transform_catalogues, value):
+    macro_entry["decimals"] = value
+    with pytest.raises(ValueError, match="decimals"):
+        concepts.validate_concepts([macro_entry], transform_catalogues)

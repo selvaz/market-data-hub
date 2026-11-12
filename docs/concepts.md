@@ -99,8 +99,16 @@ input's source; a price input makes the result `unavailable`.
 `read_concept_history(concept, start, end)` reads the single `history` source
 (or the primary macro source), applying its transform; chains are not spliced.
 
+A concept may declare `decimals` (0 to 6), the issuer's published precision.
+The chosen value and every alternative are rounded half up to it, so a FRED
+fallback reads as the issuer would print it (CPI m/m 0.35028 becomes 0.4);
+`value_raw` keeps the unrounded number and derived concepts compute from raw
+inputs. The US release concepts declare it: one decimal for percentages, whole
+thousands for payrolls, claims, starts, permits and new home sales, two
+decimals for existing home sales (millions) and the FOMC upper bound.
+
 The output keys are stable: `concept`, `label`, `family`, `unit`, `value`,
-`observation_date`, `reference_period`, `source_id`, `source_kind`, `role`,
+`value_raw`, `observation_date`, `reference_period`, `source_id`, `source_kind`, `role`,
 `status`, `age_bd`, `max_age_bd`, `released_at`, `consensus`, `alternatives`,
 `inputs`, `reason` and `registry_version` (a hash of the concept files).
 
