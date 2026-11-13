@@ -7,6 +7,7 @@ import pytest
 from market_data_hub.macro_releases import open_writer, run_daily
 from market_data_hub.macro_releases.catalogue import HOUSING_FAMILIES
 from market_data_hub.macro_releases.consensus import ingest
+from market_data_hub.macro_releases.migrations import SCHEMA_VERSION
 from market_data_hub.macro_releases.housing_editions import EDITIONS, SCHEDULES
 from market_data_hub.macro_releases.read_api import indicators_for_stage
 from market_data_hub.macro_releases.schedule import release_instant
@@ -45,13 +46,13 @@ def test_current_snapshot_schema_is_checked_before_private_migration(tmp_path):
         conn.execute("PRAGMA user_version=8")
     before = old.read_bytes()
     with pytest.raises(RuntimeError, match="required schema"):
-        with run_daily.preview_store(old, expected_schema=9):
+        with run_daily.preview_store(old, expected_schema=SCHEMA_VERSION):
             pytest.fail("An old backup must not be silently migrated into current-source evidence")
     assert old.read_bytes() == before
     current = tmp_path / "current.sqlite"
     with open_writer(current):
         pass
     before = current.read_bytes()
-    with run_daily.preview_store(current, expected_schema=9) as copy:
-        assert copy.conn.execute("PRAGMA user_version").fetchone()[0] == 9
+    with run_daily.preview_store(current, expected_schema=SCHEMA_VERSION) as copy:
+        assert copy.conn.execute("PRAGMA user_version").fetchone()[0] == SCHEMA_VERSION
     assert current.read_bytes() == before

@@ -10,6 +10,7 @@ import json
 import math
 import os
 import re
+import sys
 from pathlib import Path
 import tempfile
 import time
@@ -31,7 +32,7 @@ class RateLimitBusy(FetchError):
 
 def api_key(name: str) -> str:
     value = os.environ.get(name)
-    if not value and os.name == "nt":
+    if not value and sys.platform == "win32":
         import winreg
 
         try:
@@ -149,7 +150,7 @@ class HttpClient:
         self.limiters = {p: RateLimiter(p, rate_directory, interval=15.0 if p == "eurostat" else 1.0,
                                      daily_limit=500 if p == "bls" else None,
                                      persistent=persistent_rates)
-                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich", "fed", "ecb", "boe", "boj", "pboc", "boc", "fhfa", "nar", "spglobal", "freddiemac", "destatis", "cmhc", "mlit", "nbs", "esri", "statjp", "mof", "bcb", "banxico", "inegi")}
+                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich", "fed", "ecb", "boe", "boj", "pboc", "boc", "fhfa", "nar", "spglobal", "freddiemac", "destatis", "cmhc", "mlit", "nbs", "esri", "statjp", "mof", "bcb", "banxico", "inegi", "nbp")}
 
     def request(self, provider, url, *, params=None, payload=None) -> Document:
         safe_url = urlsplit(url)

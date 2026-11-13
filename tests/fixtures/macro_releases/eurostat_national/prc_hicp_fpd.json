@@ -1,0 +1,131 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "Harmonised index of consumer prices (HICP) - ECOICOP ver.2 - first released data",
+ "source": "ESTAT",
+ "updated": "2026-10-31T11:00:00+0100",
+ "value": {
+  "0": 2.4,
+  "1": 2.3,
+  "3": 4.9,
+  "4": 1.1,
+  "5": 0.9,
+  "6": 1.8,
+  "7": 1.6,
+  "8": 0.2,
+  "9": 0.3,
+  "11": 0.5,
+  "12": -0.9,
+  "13": 0.1,
+  "14": 1.5,
+  "15": -0.2
+ },
+ "status": {
+  "1": "e",
+  "5": "e",
+  "7": "e",
+  "9": "e",
+  "13": "e",
+  "15": "e"
+ },
+ "id": [
+  "freq",
+  "unit",
+  "coicop18",
+  "release",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  2,
+  1,
+  1,
+  4,
+  2
+ ],
+ "dimension": {
+  "freq": {
+   "label": "freq",
+   "category": {
+    "index": {
+     "M": 0
+    },
+    "label": {
+     "M": "M"
+    }
+   }
+  },
+  "unit": {
+   "label": "unit",
+   "category": {
+    "index": {
+     "RCH_A": 0,
+     "RCH_M": 1
+    },
+    "label": {
+     "RCH_A": "RCH_A",
+     "RCH_M": "RCH_M"
+    }
+   }
+  },
+  "coicop18": {
+   "label": "coicop18",
+   "category": {
+    "index": {
+     "TOTAL": 0
+    },
+    "label": {
+     "TOTAL": "TOTAL"
+    }
+   }
+  },
+  "release": {
+   "label": "release",
+   "category": {
+    "index": {
+     "FLS": 0
+    },
+    "label": {
+     "FLS": "FLS"
+    }
+   }
+  },
+  "geo": {
+   "label": "geo",
+   "category": {
+    "index": {
+     "DE": 0,
+     "ES": 1,
+     "FR": 2,
+     "IT": 3
+    },
+    "label": {
+     "DE": "DE",
+     "ES": "ES",
+     "FR": "FR",
+     "IT": "IT"
+    }
+   }
+  },
+  "time": {
+   "label": "time",
+   "category": {
+    "index": {
+     "2026-09": 0,
+     "2026-10": 1
+    },
+    "label": {
+     "2026-09": "2026-09",
+     "2026-10": "2026-10"
+    }
+   }
+  }
+ },
+ "extension": {
+  "lang": "EN",
+  "id": "PRC_HICP_FPD",
+  "agencyId": "ESTAT",
+  "version": "1.0"
+ }
+}

@@ -5,6 +5,8 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
+import pytest
+
 import validate_config as V
 from market_data_hub.config_loader import (
     get_yahoo_tickers, get_fred_series, get_macro_panel_specs, get_countries,
@@ -15,10 +17,25 @@ def test_live_config_is_valid():
     assert V.validate() == []
 
 
+@pytest.mark.parametrize("module,loader,label", [
+    ("concepts", "load_concepts", "concept registry"),
+    ("resolved_rates", "load_resolved_rates", "resolved rates"),
+])
+def test_validator_reports_registry_io_errors(monkeypatch, module, loader, label):
+    from market_data_hub import concepts, resolved_rates
+
+    def unavailable():
+        raise OSError("unreadable configuration")
+
+    monkeypatch.setattr({"concepts": concepts, "resolved_rates": resolved_rates}[module],
+                        loader, unavailable)
+    assert f"{label}: unreadable configuration" in V.validate()
+
+
 def test_catalog_counts():
     # Yahoo list (FRED IDs filtered out by get_yahoo_tickers)
     assert len(get_yahoo_tickers()) == 163  # +5 F05 commodity futures, -1 KBUY, +5 prompt-askb P4 (1321.T, 2800.HK, GOVT, AGGG.L, SYBA.DE), +5 long-history proxies 31/10 (VEIEX, VUSTX, VWEHX, VFINX, ^SPGSCI)
-    assert len(get_fred_series()) == 111  # +6 US claims, prices, housing, income and spending
+    assert len(get_fred_series()) == 121  # +DGS1MO and DGS6MO Treasury fallbacks; +2 real PCE and real disposable income; +2 OECD CLI and UMich sentiment; +3 DE/FR/IT OECD CLI; +ES OECD CLI
     assert len(get_macro_panel_specs()) == 83   # ...+imf_policy_rate +iip_net/ext_debt_nonres/fx_debt (IMF SDMX)
     assert len(get_countries()) == 64
 

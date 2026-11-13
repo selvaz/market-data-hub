@@ -11,7 +11,7 @@ from contextlib import contextmanager
 from pathlib import Path
 import json
 import sqlite3
-from typing import Optional, Union
+from typing import Any, Optional, Union, cast
 
 from filelock import FileLock
 
@@ -148,10 +148,10 @@ class Store:
                 same_policy = not policy or previous and _policy_facts(previous["raw_payload_json"]) == policy
                 if previous and same_policy and all(previous[key] == value for key, value in data.items()
                                     if key not in volatile):
-                    return previous["id"]
+                    return cast(Union[int, str], previous["id"])
             if isinstance(record, m.ValueVintage):
                 value_semantics = ("indicator_id", "value", "unit", "scale", "estimate_stage")
-                semantics = value_semantics
+                semantics: tuple[str, ...] = value_semantics
                 if record.policy_decision_json is not None:
                     semantics += ("policy_decision_json", "issuer_published_at", "publication_precision")
                 provenance = ("verification_status", "extraction_method")
@@ -187,7 +187,7 @@ class Store:
                         )
                     if boj:
                         record_time(self.conn, same_document, data)
-                    return same_document["id"]
+                    return cast(Union[int, str], same_document["id"])
                 previous = self.conn.execute(
                     "SELECT * FROM value_vintages WHERE source_series_id=? AND reference_period=? "
                     "AND release_event_id=? ORDER BY id DESC LIMIT 1",
@@ -202,7 +202,7 @@ class Store:
                         raise ValueError(
                             "publication re-read has conflicting verification/extraction provenance"
                         )
-                    return previous["id"]
+                    return cast(Union[int, str], previous["id"])
             columns = ", ".join(data)
             placeholders = ", ".join("?" for _ in data)
             cursor = self.conn.execute(
@@ -210,7 +210,7 @@ class Store:
                 tuple(data.values()),
             )
             if cursor.rowcount:
-                return data.get("id", cursor.lastrowid)
+                return cast(Union[int, str], data.get("id", cursor.lastrowid))
             # Return the original record id on a retry, never the stale lastrowid.
             if "id" in data:
                 row = self.conn.execute(
@@ -218,7 +218,8 @@ class Store:
                 ).fetchone()
                 if row is None or any(row[key] != value for key, value in data.items()):
                     raise ValueError(f"conflicting {table} identity")
-                return row["id"]
+                return cast(Union[int, str], row["id"])
+            keys: tuple[str, ...]
             if isinstance(record, m.Reading):
                 keys = (
                     "source_id",
@@ -238,7 +239,7 @@ class Store:
             ).fetchone()
             if row is None:
                 raise ValueError(f"conflicting {table} identity")
-            return row["id"]
+            return cast(Union[int, str], row["id"])
 
     def first_release(self, indicator_id: Optional[str] = None) -> list[dict]:
         return self._view("first_release", indicator_id)
@@ -283,7 +284,7 @@ class Store:
             )
         ])
 
-    def _classified_rows(self, rows):
+    def _classified_rows(self, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
         """Keep legacy view selection, but never imply public issuer ownership."""
         sources = {r["id"]: dict(r) for r in self.conn.execute("SELECT * FROM source_series")}
         result = []

@@ -11,7 +11,7 @@ from urllib.parse import urlsplit
 
 from market_data_hub.indicator_cards import indicator_card, render_card
 
-from .catalogue import CENTRAL_BANKS, INDICATORS, LATAM_FAMILIES
+from .catalogue import CENTRAL_BANKS, INDICATORS, LATAM_FAMILIES, NBP_FAMILIES
 from .models import utc
 from .read_api import ReadAPI
 from .report_style import REPORT_CSS, REPORT_SCRIPT
@@ -26,7 +26,7 @@ EURO_COUNTRIES = {
     "IRL", "ITA", "LTU", "LUX", "LVA", "MLT", "NLD", "PRT", "SVK", "SVN",
 }
 POLICY_INDICATORS = {
-    i.id for measures in {**CENTRAL_BANKS, **LATAM_FAMILIES}.values()
+    i.id for measures in {**CENTRAL_BANKS, **LATAM_FAMILIES, **NBP_FAMILIES}.values()
     for i in measures if i.frequency == "E"
 }
 
@@ -49,7 +49,9 @@ def collect_report(db_path, *, since_hours=24, now=None):
     end = utc((now or datetime.now(timezone.utc)).isoformat())
     start = utc((datetime.fromisoformat(end) - timedelta(hours=since_hours)).isoformat())
     with open_reader(db_path) as store:
-        result = ReadAPI(store).first_seen_release_cards(start, end, as_known_at=end)
+        api = ReadAPI(store)
+        result = api.first_seen_release_cards(start, end, as_known_at=end)
+        open_reviews = api.open_review_queue(as_known_at=end)
     groups = {label: [] for label in GROUPS}
     for card in result["cards"]:
         resolution = card["resolution"]
@@ -101,6 +103,7 @@ def collect_report(db_path, *, since_hours=24, now=None):
         indicator_card_summary=f"Indicator cards: {card_count} of {count}; {len(missing_cards)} no card yet.",
         groups=[dict(name=label, releases=rows) for label, rows in groups.items() if rows],
         collection_issues=result["collection_issues"], limitations=result["limitations"],
+        due_without_vintage=result["due_without_vintage"], open_reviews=open_reviews,
     )
 
 
@@ -146,6 +149,44 @@ def _change_html(row):
         number + (f' × {row["scale"]:g}' if row["scale"] != 1 else "") + " " + unit
     )
     return f'<span class="release-change{direction}" title="Change versus previous">{_text(label)}</span>'
+
+
+def _issue_reason_html(row):
+    """The stored reason trail; 'No reason recorded' only when nothing was saved."""
+    lines = []
+    for entry in row.get("review_reasons") or []:
+        if not isinstance(entry, dict):
+            continue
+        text = entry.get("reason") or ""
+        if entry.get("category"):
+            text += f' [{entry["category"]}]'
+        if entry.get("message"):
+            text += f': {entry["message"]}'
+        lines.append(text)
+    head = (row["error_type"] + ": " if row.get("error_type") else "") + (row.get("error_message") or "")
+    category = f'<span class="meta">category: {_text(row["error_category"])}</span>' if row.get("error_category") else ""
+    if not head and not lines:
+        head = "No reason recorded"
+    items = "".join(f"<li>{_text(x)}</li>" for x in lines)
+    return (f'<p class="status-reason">{_text(head)}</p>' if head else "") + category + (
+        f'<ul class="status-reason">{items}</ul>' if items else "")
+
+
+def _due_html(row):
+    subject = row["indicator_id"] + " " + row["reference_period"] if row["indicator_id"] else "edition " + row["edition"]
+    return (f'<article class="status-row" data-report-item data-kind="due" data-family="{_text(row["family"])}">'
+            f'<div class="status-name"><span class="n">{_text(row["family"])}</span>'
+            f'<span class="a">{_text(row["label"])}</span></div>'
+            f'<p class="status-reason">{_text(subject)}: {_text(row["reason"] or "No reason recorded")}</p></article>')
+
+
+def _review_html(row):
+    reasons = "; ".join(str(r) for r in row["reasons"]) or "No reason recorded"
+    return (f'<article class="status-row error" data-report-item data-kind="review" data-family="{_text(row["family"])}">'
+            f'<div class="status-name"><span class="n">{_text(row["family"])}</span>'
+            f'<span class="a">{_text(row["status"])}</span></div>'
+            f'<p class="status-reason">{_text(reasons)}</p>'
+            f'<p class="meta">{_document_link(row["document_url"])} · {_text(row["recorded_at"])}</p></article>')
 
 
 def _release_html(row, report):
@@ -202,11 +243,12 @@ def render_html(report):
     issues = "".join(
         f'<article class="status-row error" data-report-item data-kind="issue" data-family="{_text(r["family"])}">'
         f'<div class="status-name"><span class="n">{_text(r["family"])}</span>'
-        f'<span class="a">{_text(r["status"])}</span></div><p class="status-reason">'
-        f'{_text(r["error_type"] + ": " if r["error_type"] else "")}{_text(r["error_message"] or "No reason recorded")}</p>'
+        f'<span class="a">{_text(r["status"])}</span></div>{_issue_reason_html(r)}'
         f'<p class="meta mono">{_text(r["finished_at"])}</p></article>'
         for r in report["collection_issues"]
     )
+    due = "".join(_due_html(r) for r in report.get("due_without_vintage", []))
+    reviews = "".join(_review_html(r) for r in report.get("open_reviews", []))
     return f'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{_text(report["title"])}</title><style>{REPORT_CSS}</style></head><body>
@@ -234,6 +276,14 @@ def render_html(report):
 {f'<div class="status-grid">{issues}</div>' if issues else '<p class="empty-note">No collection issues in the latest family outcomes.</p>'}
 <p class="meta">Collection outcomes describe attempted fetches, not proof that a release was due.
 No-change outcomes are healthy. Missing values are never inferred.</p></section>
+<section id="due-section"><h2>Due editions with no vintage</h2>
+{f'<div class="status-grid">{due}</div>' if due else '<p class="empty-note">Every due edition in the latest outcomes has a vintage.</p>'}
+<p class="meta">parser-rejected: the issuer published and our parser refused the document.
+not yet listed: the edition is not yet on the issuer page or in the reviewed calendar.
+issuer did not publish: an issuer gap, never computed and never a collection error.</p></section>
+<section id="review-section"><h2>Open review queue</h2>
+{f'<div class="status-grid">{reviews}</div>' if reviews else '<p class="empty-note">No open review requests.</p>'}
+<p class="meta">Requests close automatically when a later clean run stores the same edition.</p></section>
 <p class="empty-note" id="filter-empty" hidden>No items match this filter.</p></main>
 <details class="limitations"><summary>Read API limitations</summary><ul>{"".join(f"<li>{_text(x)}</li>" for x in report["limitations"])}</ul></details>
 <footer><span><b>Produced by</b> market_data_hub</span><span><b>Cadence</b> daily</span>

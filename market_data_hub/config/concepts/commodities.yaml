@@ -1,0 +1,171 @@
+concepts:
+- concept: BRENT
+  family: commodities
+  label: Brent crude
+  unit: USD/barrel
+  frequency: D
+  calendar: ice_brent
+  sources:
+  - kind: price
+    id: BZ=F
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+  - kind: macro
+    id: DCOILBRENTEU
+    role: secondary
+    max_age_business_days: 7
+    convention: spot
+    comparability_note: EIA spot versus front-month futures; delivery and fixing time
+      differ.
+  - kind: price
+    id: BNO
+    role: proxy
+    max_age_business_days: 2
+    convention: adjusted close
+    field: adj_close
+    live: post_close
+    unit: USD/share
+    comparability_note: Futures ETF price; not a spot or futures level.
+  history:
+    mode: single
+    id: DCOILBRENTEU
+  check:
+    ids:
+    - BZ=F
+    - DCOILBRENTEU
+    tolerance: 3.0
+    unit: pct
+    note: Front-month future versus EIA spot.
+- concept: WTI
+  family: commodities
+  label: WTI crude
+  unit: USD/barrel
+  frequency: D
+  calendar: nymex
+  sources:
+  - kind: price
+    id: CL=F
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+  - kind: macro
+    id: DCOILWTICO
+    role: secondary
+    max_age_business_days: 7
+    convention: spot
+    comparability_note: EIA spot versus front-month futures; delivery and fixing time
+      differ.
+  - kind: price
+    id: USO
+    role: proxy
+    max_age_business_days: 2
+    convention: adjusted close
+    field: adj_close
+    live: post_close
+    unit: USD/share
+    comparability_note: Futures ETF price; not a spot or futures level.
+  history:
+    mode: single
+    id: DCOILWTICO
+  check:
+    ids:
+    - CL=F
+    - DCOILWTICO
+    tolerance: 3.0
+    unit: pct
+    note: Front-month future versus EIA spot.
+- concept: NATGAS
+  family: commodities
+  label: Henry Hub natural gas
+  unit: USD/MMBtu
+  frequency: D
+  calendar: nymex
+  sources:
+  - kind: price
+    id: NG=F
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+- concept: GOLD
+  family: commodities
+  label: Gold futures
+  unit: USD/troy_oz
+  frequency: D
+  calendar: comex
+  sources:
+  - kind: price
+    id: GC=F
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+- concept: TTF
+  family: commodities
+  label: Dutch TTF natural gas
+  unit: EUR/MWh
+  frequency: D
+  calendar: ice_endex
+  sources:
+  - kind: price
+    id: TTF=F
+    role: primary
+    max_age_business_days: 2
+    convention: unadjusted close
+    field: close
+    live: post_close
+- concept: WCESTUS1
+  family: commodities
+  label: CMDTY | Energy | US Crude Oil Stocks Excluding SPR
+  unit: Thousand Barrels
+  frequency: W
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: WCESTUS1
+    role: primary
+    max_age_business_days: 10
+    convention: weekly EIA inventory
+- concept: WGTSTUS1
+  family: commodities
+  label: CMDTY | Energy | US Total Motor Gasoline Stocks
+  unit: Thousand Barrels
+  frequency: W
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: WGTSTUS1
+    role: primary
+    max_age_business_days: 10
+    convention: weekly EIA inventory
+- concept: WDISTUS1
+  family: commodities
+  label: CMDTY | Energy | US Distillate Fuel Oil Stocks
+  unit: Thousand Barrels
+  frequency: W
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: WDISTUS1
+    role: primary
+    max_age_business_days: 10
+    convention: weekly EIA inventory
+- concept: NW2_EPG0_SWO_R48_BCF
+  family: commodities
+  label: CMDTY | Energy | Lower 48 Working Natural Gas in Storage
+  unit: Bcf
+  frequency: W
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: NW2_EPG0_SWO_R48_BCF
+    role: primary
+    max_age_business_days: 10
+    convention: weekly EIA inventory

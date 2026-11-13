@@ -1,4 +1,10 @@
-"""Reviewed Latin American editions through 2026-12-31; dates never prove values."""
+"""Reviewed Latin American editions; dates never prove values.
+
+The horizon is the last edition listed here, not a calendar year: once the run
+date passes the next expected edition date (the last edition plus the shortest
+listed gap, see latam.next_expected_edition) the family reports a needs-review
+notice until the issuer calendar for the next year is added.
+"""
 SCHEDULES = {
     "bcb_policy": "https://www.bcb.gov.br/detalhenoticia/20739/nota",
     "banxico_policy": "https://www.banxico.org.mx/politica-monetaria/d/{3B4BDA5B-E7E8-E414-2066-DA0CB3F7C36F}.pdf",

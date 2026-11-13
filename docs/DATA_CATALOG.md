@@ -22,7 +22,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 |---|---|---:|
 | hub | [alfred_backfill_pending](#catalog-hub-alfred_backfill_pending) | 0 |
 | hub | [alfred_backfill_progress](#catalog-hub-alfred_backfill_progress) | 0 |
-| hub | [alfred_vintage_observations](#catalog-hub-alfred_vintage_observations) | 41 |
+| hub | [alfred_vintage_observations](#catalog-hub-alfred_vintage_observations) | 43 |
 | hub | [calendar_event_notes](#catalog-hub-calendar_event_notes) | 0 |
 | hub | [calendar_events](#catalog-hub-calendar_events) | 0 |
 | hub | [calendar_indicator_aliases](#catalog-hub-calendar_indicator_aliases) | 0 |
@@ -50,7 +50,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 309 |
+| hub | [macro_series](#catalog-hub-macro_series) | 319 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
@@ -70,6 +70,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | macro_releases.sqlite | [claims](#catalog-macro_releases-sqlite-claims) | 0 |
 | macro_releases.sqlite | [collect_run_consensus](#catalog-macro_releases-sqlite-collect_run_consensus) | 0 |
 | macro_releases.sqlite | [collect_run_families](#catalog-macro_releases-sqlite-collect_run_families) | 0 |
+| macro_releases.sqlite | [collect_run_family_reviews](#catalog-macro_releases-sqlite-collect_run_family_reviews) | 0 |
 | macro_releases.sqlite | [collect_runs](#catalog-macro_releases-sqlite-collect_runs) | 0 |
 | macro_releases.sqlite | [consensus_link_versions](#catalog-macro_releases-sqlite-consensus_link_versions) | 0 |
 | macro_releases.sqlite | [consensus_readings](#catalog-macro_releases-sqlite-consensus_readings) | 0 |
@@ -85,10 +86,11 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | macro_releases.sqlite | [release_events](#catalog-macro_releases-sqlite-release_events) | 0 |
 | macro_releases.sqlite | [resolution_versions](#catalog-macro_releases-sqlite-resolution_versions) | 0 |
 | macro_releases.sqlite | [review_queue](#catalog-macro_releases-sqlite-review_queue) | 0 |
+| macro_releases.sqlite | [review_queue_resolutions](#catalog-macro_releases-sqlite-review_queue_resolutions) | 0 |
 | macro_releases.sqlite | [schedule_versions](#catalog-macro_releases-sqlite-schedule_versions) | 0 |
 | macro_releases.sqlite | [schema_compatibility](#catalog-macro_releases-sqlite-schema_compatibility) | 0 |
 | macro_releases.sqlite | [source_series](#catalog-macro_releases-sqlite-source_series) | 0 |
-| macro_releases.sqlite | [value_vintages](#catalog-macro_releases-sqlite-value_vintages) | 97 |
+| macro_releases.sqlite | [value_vintages](#catalog-macro_releases-sqlite-value_vintages) | 133 |
 | macro_releases.sqlite | [worklist_resolutions](#catalog-macro_releases-sqlite-worklist_resolutions) | 0 |
 | macro_releases.sqlite | [worklist_reverts](#catalog-macro_releases-sqlite-worklist_reverts) | 0 |
 
@@ -145,6 +147,7 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 | CPIAUCSL | CPI-U all items | BLS | ALFRED via FRED API | M | 14 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | CPILFESL | CPI ex food and energy | BLS | ALFRED via FRED API | M | 14 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | DRTSCILM | Quarterly lending standards lead from SLOOS; retain vendor publication history. | Federal Reserve Board SLOOS | ALFRED via FRED API | Q | 45 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| DSPIC96 | Real disposable personal income | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | DTWEXBGS | Broad trade-weighted dollar | Fed H.10 | ALFRED via FRED API | D | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | EUNNGDP | Nominal GDP | Eurostat | ALFRED via FRED API | Q | 30 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | GACDFSA066MSFRBPHI | Philadelphia Fed soft activity input; preserve actual archived depth without inventing early vintages. | Federal Reserve Bank of Philadelphia | ALFRED via FRED API | M | 0 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
@@ -159,6 +162,7 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 | NEWORDER | Nondefense capital goods orders lead; monthly and benchmark revisions. | US Census Bureau | ALFRED via FRED API | M | 27 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | NFCI | Chicago Fed NFCI | Chicago Fed | ALFRED via FRED API | W | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PAYEMS | Nonfarm payrolls | BLS CES | ALFRED via FRED API | M | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| PCEC96 | Real personal consumption expenditures | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PCEPI | PCE price index (headline) | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PCEPILFE | Core PCE price index | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | PERMIT | Building permits | US Census Bureau | ALFRED via FRED API | M | 20 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
@@ -169,7 +173,7 @@ Vendor point-in-time FRED/ALFRED observations; as_of is the vendor availability 
 | STLENI | St. Louis economic news index descriptive benchmark; evolving estimates. | Federal Reserve Bank of St. Louis | ALFRED via FRED API | W | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | STLFSI4 | St. Louis Fed Financial Stress Index | St. Louis Fed | ALFRED via FRED API | W | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | THREEFYTP10 | Kim-Wright 10y term premium | Fed Board (model) | ALFRED via FRED API | D | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
-| UMCSENT | Soft sentiment input; preliminary/final estimates. | University of Michigan | ALFRED via FRED API | M | 0 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
+| UMCSENT | UMich consumer sentiment (overall) | University of Michigan | ALFRED via FRED API | M | 0 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | UNRATE | Unemployment rate | BLS CPS | ALFRED via FRED API | M | 7 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | USREC | NBER recession labels are assigned retrospectively; avoid hindsight labels. | NBER (recession chronology distributed by St. Louis Fed) | ALFRED via FRED API | M | 300 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
 | W875RX1 | Real personal income excluding transfers; revised BEA income and deflators. | BEA | ALFRED via FRED API | M | 29 | 1776-07-04 | alfred_backfill manual/on demand; intended hour 22:00 PT, no automatic trigger | active |
@@ -1659,6 +1663,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | DCOILBRENTEU | CMDTY \| Energy \| Brent Spot Price | EIA | FRED | D | 4 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DCOILWTICO | CMDTY \| Energy \| WTI Spot Price (Cushing OK) | EIA | FRED | D | 4 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DDFUELNYH | CMDTY \| Energy \| NY Harbor Ultra-Low-Sulfur No. 2 Diesel Spot Price | EIA | FRED | D | 4 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| DEULOLITOAASTSAM | MACRO \| DE \| OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100) | OECD (via FRED) | FRED | M | 45 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DEU_BUND10_FA | Nearest 10y conventional nominal Bund, issuer published reference yield | Bundesrepublik Deutschland Finanzagentur | Bundesrepublik Deutschland Finanzagentur direct | D | 3 | 2023-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | DEXBZUS | FX \| BRL \| H.10 Spot Exchange Rate (BRL per USD) | Fed H.10 | FRED | D | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DEXCAUS | FX \| CAD \| H.10 Spot Exchange Rate (CAD per USD) | Fed H.10 | FRED | D | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
@@ -1686,15 +1691,20 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | DFII10 | RATES \| US \| 10-Year TIPS Real Yield | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DFII5 | RATES \| US \| 5-Year TIPS Real Yield | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS10 | RATES \| US \| 10-Year Treasury Constant Maturity | Fed Board H.15; OECD MEI | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| DGS1MO | RATES \| US \| 1-Month Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS2 | RATES \| US \| 2-Year Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS30 | RATES \| US \| 30-Year Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DGS3MO | RATES \| US \| 3-Month Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| DGS6MO | RATES \| US \| 6-Month Treasury Constant Maturity | Fed Board H.15 | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| DSPIC96 | MACRO \| US \| Real Disposable Personal Income (Billions of Chained 2017 Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | DTWEXBGS | FX \| USD \| Trade Weighted US Dollar Index: Broad | Fed H.10 | FRED | D | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ECBDFR | RATES \| ECB \| Deposit Facility Rate | ECB | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ECBMLFR | RATES \| ECB \| Marginal Lending Facility Rate | ECB | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ECBMRRFR | RATES \| ECB \| Main Refinancing Operations Rate (fixed rate tenders) | ECB | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | EFFR | RATES \| US \| Effective Federal Funds Rate | NY Fed | FRED | D | 2 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| ESPLOLITOAASTSAM | MACRO \| ES \| OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100) | OECD (via FRED) | FRED | M | 45 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | EUNNGDP | MACRO \| EA \| GDP (EUR/ECU series nominal) | Eurostat | FRED | Q | 30 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| FRALOLITOAASTSAM | MACRO \| FR \| OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100) | OECD (via FRED) | FRED | M | 45 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | GASDESW | CMDTY \| Energy \| US Retail Diesel Sales Price | EIA | FRED | W | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | GDP | MACRO \| US \| GDP (current $) | BEA | FRED | Q | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | GDPC1 | MACRO \| US \| Real GDP (SAAR chained 2017$) | BEA | FRED | Q | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
@@ -1739,6 +1749,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | IRLTLT01SKM156N | RATES \| SVK \| 10-Year Government Bond Yield (OECD via FRED) | OECD Main Economic Indicators (national source agencies) | FRED | M | 60 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | IRLTLT01USM156N | RATES \| USA \| 10-Year Government Bond Yield (OECD via FRED) | OECD Main Economic Indicators (national source agencies) | FRED | M | 60 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | IRLTLT01ZAM156N | RATES \| ZAF \| 10-Year Government Bond Yield (OECD via FRED) | OECD Main Economic Indicators (national source agencies) | FRED | M | 60 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| ITALOLITOAASTSAM | MACRO \| IT \| OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100) | OECD (via FRED) | FRED | M | 45 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ITA_BTP10_MOT | Nearest 10y nominal fixed-rate BTP, MOT published gross yield | Borsa Italiana | Borsa Italiana direct | D | 3 | 2023-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | M2SL | MACRO \| US \| M2 Money Stock | Fed H.6 | FRED | M | 30 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | MOF_JGB_10Y | Japan MoF 10Y constant maturity YTM, semiannual compounding | Japan MoF | Japan MoF direct | D | 1 | 1986-07-05 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
@@ -1763,6 +1774,7 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | NYFED_ACM_TP10_MONTHLY | RATES \| US \| NY Fed ACM 10-Year Term Premium Monthly | NY Fed (model) | NY Fed direct | M | 30 | 1961-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | PAYEMS | MACRO \| US \| Nonfarm Payrolls (Total) | BLS CES | FRED | M | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCE | MACRO \| US \| Personal Consumption Expenditures (Billions of Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| PCEC96 | MACRO \| US \| Real Personal Consumption Expenditures (Billions of Chained 2017 Dollars, SAAR) | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCEPI | MACRO \| US \| PCE Price Index | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PCEPILFE | MACRO \| US \| Core PCE Price Index | BEA | FRED | M | 29 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | PERMIT | MACRO \| US \| Building Permits (Thousands of Units, SAAR) | Census | FRED | M | 20 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
@@ -1883,7 +1895,9 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | TV_ZA_10Y | TradingView ZA 10Y sovereign yield | market:tradingview | TradingView | D | 1 | first successful capture | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | TV_ZA_30Y | TradingView ZA 30Y sovereign yield | market:tradingview | TradingView | D | 1 | first successful capture | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | TV_ZA_5Y | TradingView ZA 5Y sovereign yield | market:tradingview | TradingView | D | 1 | first successful capture | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| UMCSENT | MACRO \| US \| University of Michigan Consumer Sentiment (Index 1966:Q1 = 100) | U. Michigan (via FRED, one-month delayed) | FRED | M | 35 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | UNRATE | MACRO \| US \| Unemployment Rate | BLS CPS | FRED | M | 7 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| USALOLITOAASTSAM | MACRO \| US \| OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100) | OECD (via FRED) | FRED | M | 45 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | UST_PAR_10Y | US Treasury 10Y par yield | US Treasury | US Treasury direct | D | 1 | 1990-01-02 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | UST_PAR_1M | US Treasury 1M par yield | US Treasury | US Treasury direct | D | 1 | 2001-07-31 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | UST_PAR_1Y | US Treasury 1Y par yield | US Treasury | US Treasury direct | D | 1 | 1990-01-02 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
@@ -2334,6 +2348,19 @@ Per-family collection outcomes and fetched windows, including needs-review failu
 - Collection: macro_releases_daily daily 06:30 PT.
 - Guide: [macro-releases.md](macro-releases.md).
 
+<a id="catalog-macro_releases-sqlite-collect_run_family_reviews"></a>
+
+## macro_releases.sqlite / collect_run_family_reviews
+
+Why a family run needed review or failed: an error category and per-edition reasons, append-only.
+
+- Store: `macro_releases.sqlite`; table: `collect_run_family_reviews`.
+- Primary key: `run_id`, `family`.
+- Status: active.
+- Point-in-time / vintages: Use the macro ReadAPI with news_cutoff/as_known_at and first-seen/recorded-at filters before selection. Published time alone does not prove the hub knew a value. Raw readings and mirror evidence are not automatically official. Append-only vintages, schedules, consensus and resolution history preserve evidence; registry/worklist tables describe current state.
+- Collection: macro_releases_daily daily 06:30 PT.
+- Guide: [macro-releases.md](macro-releases.md).
+
 <a id="catalog-macro_releases-sqlite-collect_runs"></a>
 
 ## macro_releases.sqlite / collect_runs
@@ -2529,6 +2556,19 @@ Append-only family/document review requests; review flags are not official actua
 - Collection: macro_releases_daily daily 06:30 PT.
 - Guide: [macro-releases.md](macro-releases.md).
 
+<a id="catalog-macro_releases-sqlite-review_queue_resolutions"></a>
+
+## macro_releases.sqlite / review_queue_resolutions
+
+Append-only closure of review requests superseded by a later clean run of the same edition.
+
+- Store: `macro_releases.sqlite`; table: `review_queue_resolutions`.
+- Primary key: `review_id`.
+- Status: active.
+- Point-in-time / vintages: Use the macro ReadAPI with news_cutoff/as_known_at and first-seen/recorded-at filters before selection. Published time alone does not prove the hub knew a value. Raw readings and mirror evidence are not automatically official. Append-only vintages, schedules, consensus and resolution history preserve evidence; registry/worklist tables describe current state.
+- Collection: macro_releases_daily daily 06:30 PT.
+- Guide: [macro-releases.md](macro-releases.md).
+
 <a id="catalog-macro_releases-sqlite-schedule_versions"></a>
 
 ## macro_releases.sqlite / schedule_versions
@@ -2602,6 +2642,13 @@ Published numeric measure vintages, preserving reference period, issuer publicat
 | cn_retail_sales_yy | Total retail sales of consumer goods, issuer-published monthly year-over-year percent change | NBS | NBS direct | M | 19 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | de_building_permits | Germany: residential dwellings permitted in new and existing buildings, published monthly total rounded to nearest 100; not a count of buildings or YTD | Destatis | Destatis direct | M | 50 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | de_building_permits_yy | Germany: published annual percent change in total residential dwellings permitted, including new and existing buildings; not recomputed from rounded counts | Destatis | Destatis direct | M | 50 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| de_economic_sentiment_indicator | Germany Economic Sentiment Indicator, DG ECFIN business and consumer surveys composite, seasonally adjusted, long-term mean 100; Eurostat ei_bssi_m_r2 BS-ESI-I | ECFIN | Eurostat API (redistributor; issuer prints not collected) | M | 1 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| de_gdp_qq | Germany real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE | Destatis | Eurostat API (redistributor; issuer prints not collected) | Q | 35 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| de_hicp_mm | Germany HICP (harmonised, ECOICOP v2), all items, published monthly rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_M (flash: prc_hicp_fpd FLS); not the national CPI | Destatis | Eurostat API (redistributor; issuer prints not collected) | M | 18 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| de_hicp_yy | Germany HICP (harmonised, ECOICOP v2), all items, published annual rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_A (flash: prc_hicp_fpd FLS); not the national CPI | Destatis | Eurostat API (redistributor; issuer prints not collected) | M | 18 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| de_industrial_production_mm | Germany industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE | Destatis | Eurostat API (redistributor; issuer prints not collected) | M | 45 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| de_retail_sales_mm | Germany retail trade volume of sales, except motor vehicles and motorcycles (NACE G47), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_trtu_m VOL_SLS PCH_PRE | Destatis | Eurostat API (redistributor; issuer prints not collected) | M | 40 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| de_unemployment_ilo_rate | Germany ILO unemployment rate, percent of labour force, total, age 15-74, monthly, trend series (Eurostat une_rt_m s_adj=SA carries the trend for Germany); Eurostat une_rt_m PC_ACT; not the Bundesagentur registered unemployment rate | Destatis | Eurostat API (redistributor; issuer prints not collected) | M | 35 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | ea21_core_hicp_yy | HICP excluding energy, food, alcohol and tobacco, issuer 12-month rate, EA21 | Eurostat | Eurostat direct | M | 2 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | ea21_gdp_qq | EA21 real GDP, published chain-linked volume percent change, seasonal and calendar adjustment | Eurostat | Eurostat direct | Q | 30 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | ea21_gdp_yy | EA21 real GDP, published chain-linked volume percent change, seasonal and calendar adjustment | Eurostat | Eurostat direct | Q | 30 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
@@ -2622,7 +2669,28 @@ Published numeric measure vintages, preserving reference period, issuer publicat
 | ea_trade_balance | Balance of extra-euro area exports and imports of goods, seasonally adjusted, millions of EUR | Eurostat | Eurostat direct | M | 45 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | ea_unemployment_rate | Unemployed as percent of labour force, age 15-74, EA21 | Eurostat | Eurostat direct | M | 30 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | ecb_deposit_facility_rate_decision | Deposit facility rate set by the ECB Governing Council | ECB | ECB direct | E | 0 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| es_economic_sentiment_indicator | Spain Economic Sentiment Indicator, DG ECFIN business and consumer surveys composite, seasonally adjusted, long-term mean 100; Eurostat ei_bssi_m_r2 BS-ESI-I | ECFIN | Eurostat API (redistributor; issuer prints not collected) | M | 1 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| es_gdp_qq | Spain real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE | INE | Eurostat API (redistributor; issuer prints not collected) | Q | 35 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| es_hicp_mm | Spain HICP (harmonised, ECOICOP v2), all items, published monthly rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_M (flash: prc_hicp_fpd FLS); not the national CPI | INE | Eurostat API (redistributor; issuer prints not collected) | M | 18 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| es_hicp_yy | Spain HICP (harmonised, ECOICOP v2), all items, published annual rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_A (flash: prc_hicp_fpd FLS); not the national CPI | INE | Eurostat API (redistributor; issuer prints not collected) | M | 18 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| es_industrial_production_mm | Spain industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE | INE | Eurostat API (redistributor; issuer prints not collected) | M | 45 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| es_retail_sales_mm | Spain retail trade volume of sales, except motor vehicles and motorcycles (NACE G47), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_trtu_m VOL_SLS PCH_PRE | INE | Eurostat API (redistributor; issuer prints not collected) | M | 40 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| es_unemployment_ilo_rate | Spain ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly estimate compiled by Eurostat from INE inputs; Eurostat une_rt_m PC_ACT; not the INE quarterly EPA rate | Eurostat | Eurostat direct | M | 35 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | fed_funds_rate_decision | FOMC federal funds target range; scalar value is upper bound, complete range in policy_decision | FederalReserve | FederalReserve direct | E | 0 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| fr_economic_sentiment_indicator | France Economic Sentiment Indicator, DG ECFIN business and consumer surveys composite, seasonally adjusted, long-term mean 100; Eurostat ei_bssi_m_r2 BS-ESI-I | ECFIN | Eurostat API (redistributor; issuer prints not collected) | M | 1 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| fr_gdp_qq | France real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE | INSEE | Eurostat API (redistributor; issuer prints not collected) | Q | 35 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| fr_hicp_mm | France HICP (harmonised, ECOICOP v2), all items, published monthly rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_M (flash: prc_hicp_fpd FLS); not the national CPI | INSEE | Eurostat API (redistributor; issuer prints not collected) | M | 18 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| fr_hicp_yy | France HICP (harmonised, ECOICOP v2), all items, published annual rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_A (flash: prc_hicp_fpd FLS); not the national CPI | INSEE | Eurostat API (redistributor; issuer prints not collected) | M | 18 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| fr_industrial_production_mm | France industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE | INSEE | Eurostat API (redistributor; issuer prints not collected) | M | 45 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| fr_retail_sales_mm | France retail trade volume of sales, except motor vehicles and motorcycles (NACE G47), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_trtu_m VOL_SLS PCH_PRE | INSEE | Eurostat API (redistributor; issuer prints not collected) | M | 40 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| fr_unemployment_ilo_rate | France ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly estimate compiled by Eurostat from INSEE inputs; Eurostat une_rt_m PC_ACT; not the INSEE quarterly ILO rate | Eurostat | Eurostat direct | M | 35 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| it_economic_sentiment_indicator | Italy Economic Sentiment Indicator, DG ECFIN business and consumer surveys composite, seasonally adjusted, long-term mean 100; Eurostat ei_bssi_m_r2 BS-ESI-I | ECFIN | Eurostat API (redistributor; issuer prints not collected) | M | 1 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| it_gdp_qq | Italy real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE | Istat | Eurostat API (redistributor; issuer prints not collected) | Q | 35 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| it_hicp_mm | Italy HICP (harmonised, ECOICOP v2), all items, published monthly rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_M (flash: prc_hicp_fpd FLS); not the national CPI | Istat | Eurostat API (redistributor; issuer prints not collected) | M | 18 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| it_hicp_yy | Italy HICP (harmonised, ECOICOP v2), all items, published annual rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_A (flash: prc_hicp_fpd FLS); not the national CPI | Istat | Eurostat API (redistributor; issuer prints not collected) | M | 18 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| it_industrial_production_mm | Italy industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE | Istat | Eurostat API (redistributor; issuer prints not collected) | M | 45 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| it_retail_sales_mm | Italy retail trade volume of sales, except motor vehicles and motorcycles (NACE G47), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_trtu_m VOL_SLS PCH_PRE | Istat | Eurostat API (redistributor; issuer prints not collected) | M | 40 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| it_unemployment_rate | Italy ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly; Eurostat une_rt_m PC_ACT | Istat | Eurostat API (redistributor; issuer prints not collected) | M | 35 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_core_cpi_yy | National Consumer Price Index excluding fresh food, issuer-published 12-month rate of change | StatisticsBureauJP | StatisticsBureauJP direct | M | 22 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_cpi_yy | National all-items Consumer Price Index, issuer-published 12-month rate of change | StatisticsBureauJP | StatisticsBureauJP direct | M | 22 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_gdp_qq | Real GDP, issuer-published quarter-to-quarter percent change, seasonally adjusted; first and second Quarterly Estimates | ESRI | ESRI direct | Q | 47 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
@@ -2632,7 +2700,15 @@ Published numeric measure vintages, preserving reference period, issuer publicat
 | jp_trade_balance | Balance of customs-cleared exports and imports, not seasonally adjusted, billions of JPY; published balance converted from millions; detailed exports with provisional imports remain revised, not final | MOF | MOF direct | M | 20 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | mx_core_cpi_yy | Monthly subyacente INPC, issuer-printed annual percent change; excludes volatile or non-market prices | INEGI | INEGI direct | M | 8 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | mx_cpi_yy | Monthly all-items INPC, issuer-printed annual percent change | INEGI | INEGI direct | M | 8 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| nbp_reference_rate_decision | NBP reference rate (minimum money market intervention rate) set by the Monetary Policy Council; value and effective date from the NBP interest-rate table | NBP | NBP direct | E | 0 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | pboc_lpr_decision | 1-year and over-5-year Loan Prime Rates published by NIFC under PBOC authorization; scalar is 1Y | PBOC/NIFC | PBOC/NIFC direct | E | 0 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| pl_economic_sentiment_indicator | Poland Economic Sentiment Indicator, DG ECFIN business and consumer surveys composite, seasonally adjusted, long-term mean 100; Eurostat ei_bssi_m_r2 BS-ESI-I | ECFIN | Eurostat API (redistributor; issuer prints not collected) | M | 1 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| pl_gdp_qq | Poland real GDP, chain-linked volumes, percent change on previous quarter, seasonally and calendar adjusted; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE | GUS | Eurostat API (redistributor; issuer prints not collected) | Q | 35 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| pl_hicp_mm | Poland HICP (harmonised, ECOICOP v2), all items, published monthly rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_M; not the national CPI | GUS | Eurostat API (redistributor; issuer prints not collected) | M | 18 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| pl_hicp_yy | Poland HICP (harmonised, ECOICOP v2), all items, published annual rate of change, not seasonally adjusted; Eurostat prc_hicp_minr RCH_A; not the national CPI | GUS | Eurostat API (redistributor; issuer prints not collected) | M | 18 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| pl_industrial_production_mm | Poland industrial production volume, total industry excluding construction (NACE B-D), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_inpr_m PRD PCH_PRE | GUS | Eurostat API (redistributor; issuer prints not collected) | M | 45 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| pl_retail_sales_mm | Poland retail trade volume of sales, except motor vehicles and motorcycles (NACE G47), seasonally and calendar adjusted, percent change on previous month; Eurostat sts_trtu_m VOL_SLS PCH_PRE | GUS | Eurostat API (redistributor; issuer prints not collected) | M | 40 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| pl_unemployment_ilo_rate | Poland ILO unemployment rate, percent of labour force, total, age 15-74, seasonally adjusted, monthly estimate compiled by Eurostat from GUS inputs; Eurostat une_rt_m PC_ACT; not the GUS registered unemployment rate | Eurostat | Eurostat direct | M | 35 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | uk_average_weekly_earnings_yy | Average weekly earnings, total pay including bonuses, three-month average y/y growth; reference month is window ending | ONS | ONS direct | M | 50 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | uk_core_cpi_yy | CPI excluding energy, food, alcohol and tobacco, published 12-month rate, DKO8 | ONS | ONS direct | M | 21 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | uk_cpi_yy | CPI all items, published 12-month rate, D7G7 | ONS | ONS direct | M | 21 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |

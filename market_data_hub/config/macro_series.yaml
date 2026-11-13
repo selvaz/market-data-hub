@@ -297,6 +297,24 @@ fred:
   name: RATES | US | 30-Year Treasury Constant Maturity
   priority: 2
   country: US
+- symbol: DGS1MO
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board H.15"
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 1-Month Treasury Constant Maturity
+  priority: 2
+  country: US
+- symbol: DGS6MO
+  expected_lag_days: 2
+  frequency: D
+  issuer: "Fed Board H.15"
+  asset_class: MACRO
+  area: USA
+  name: RATES | US | 6-Month Treasury Constant Maturity
+  priority: 2
+  country: US
 - symbol: DGS3MO
   expected_lag_days: 2
   frequency: D
@@ -378,6 +396,60 @@ fred:
   name: MACRO | US | Initial Claims (Number, SA)
   priority: 2
   country: US
+- symbol: USALOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: US
+- symbol: DEULOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: Germany
+  name: MACRO | DE | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: DE
+- symbol: FRALOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: France
+  name: MACRO | FR | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: FR
+- symbol: ITALOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: Italy
+  name: MACRO | IT | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: IT
+- symbol: ESPLOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: Spain
+  name: MACRO | ES | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: ES
+- symbol: UMCSENT
+  expected_lag_days: 35
+  frequency: M
+  issuer: "U. Michigan (via FRED, one-month delayed)"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | University of Michigan Consumer Sentiment (Index 1966:Q1 = 100)
+  priority: 2
+  country: US
 - symbol: CCSA
   expected_lag_days: 12
   frequency: W
@@ -421,6 +493,24 @@ fred:
   asset_class: MACRO
   area: USA
   name: MACRO | US | Personal Consumption Expenditures (Billions of Dollars, SAAR)
+  priority: 2
+  country: US
+- symbol: PCEC96
+  expected_lag_days: 29
+  frequency: M
+  issuer: "BEA"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Real Personal Consumption Expenditures (Billions of Chained 2017 Dollars, SAAR)
+  priority: 2
+  country: US
+- symbol: DSPIC96
+  expected_lag_days: 29
+  frequency: M
+  issuer: "BEA"
+  asset_class: MACRO
+  area: USA
+  name: MACRO | US | Real Disposable Personal Income (Billions of Chained 2017 Dollars, SAAR)
   priority: 2
   country: US
 - symbol: CPIAUCSL

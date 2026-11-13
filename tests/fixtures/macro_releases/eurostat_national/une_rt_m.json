@@ -1,0 +1,136 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "Unemployment by sex and age - monthly data",
+ "source": "ESTAT",
+ "updated": "2026-11-02T23:00:00+0100",
+ "value": {
+  "4": 4.1,
+  "9": 10.3,
+  "14": 8.5,
+  "15": 5.6,
+  "16": 6.0,
+  "17": 6.0,
+  "18": 6.2,
+  "24": 3.4
+ },
+ "id": [
+  "freq",
+  "s_adj",
+  "age",
+  "unit",
+  "sex",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  1,
+  1,
+  1,
+  1,
+  5,
+  5
+ ],
+ "dimension": {
+  "freq": {
+   "label": "freq",
+   "category": {
+    "index": {
+     "M": 0
+    },
+    "label": {
+     "M": "M"
+    }
+   }
+  },
+  "s_adj": {
+   "label": "s_adj",
+   "category": {
+    "index": {
+     "SA": 0
+    },
+    "label": {
+     "SA": "SA"
+    }
+   }
+  },
+  "age": {
+   "label": "age",
+   "category": {
+    "index": {
+     "TOTAL": 0
+    },
+    "label": {
+     "TOTAL": "TOTAL"
+    }
+   }
+  },
+  "unit": {
+   "label": "unit",
+   "category": {
+    "index": {
+     "PC_ACT": 0
+    },
+    "label": {
+     "PC_ACT": "PC_ACT"
+    }
+   }
+  },
+  "sex": {
+   "label": "sex",
+   "category": {
+    "index": {
+     "T": 0
+    },
+    "label": {
+     "T": "T"
+    }
+   }
+  },
+  "geo": {
+   "label": "geo",
+   "category": {
+    "index": {
+     "DE": 0,
+     "ES": 1,
+     "FR": 2,
+     "IT": 3,
+     "PL": 4
+    },
+    "label": {
+     "DE": "DE",
+     "ES": "ES",
+     "FR": "FR",
+     "IT": "IT",
+     "PL": "PL"
+    }
+   }
+  },
+  "time": {
+   "label": "time",
+   "category": {
+    "index": {
+     "2026-05": 0,
+     "2026-06": 1,
+     "2026-07": 2,
+     "2026-08": 3,
+     "2026-09": 4
+    },
+    "label": {
+     "2026-05": "2026-05",
+     "2026-06": "2026-06",
+     "2026-07": "2026-07",
+     "2026-08": "2026-08",
+     "2026-09": "2026-09"
+    }
+   }
+  }
+ },
+ "extension": {
+  "lang": "EN",
+  "id": "UNE_RT_M",
+  "agencyId": "ESTAT",
+  "version": "1.0"
+ }
+}

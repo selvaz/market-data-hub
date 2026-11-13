@@ -144,6 +144,9 @@ def test_remaining_real_economy_seed_identifiers_resolve():
 
 
 def test_energy_geopolitical_and_term_premium_series_are_distinct():
+    assert indicator_card("ms:DGS1MO").key == "us_ust_1m"
+    assert indicator_card("ms:DGS6MO").key == "us_ust_6m"
+    assert indicator_card("ms:DGS1MO").key != indicator_card("ms:DGS3MO").key
     assert indicator_card("ms:WCESTUS1").key == "us_eia_crude_stocks"
     assert indicator_card("ms:NW2_EPG0_SWO_R48_BCF").frequency == "W"
     assert indicator_card("ms:NYFED_ACM_TP10_DAILY").frequency == "D"
@@ -154,7 +157,7 @@ def test_energy_geopolitical_and_term_premium_series_are_distinct():
 def test_every_approved_row_preserved():
     with PSV_PATH.open(encoding="utf-8-sig", newline="") as f:
         rows = list(csv.DictReader(f, delimiter="|"))
-    assert len(rows) == len(dataset().cards) == 427
+    assert len(rows) == len(dataset().cards) == 451
     for row in rows:
         card = indicator_card(row["key"])
         assert card is not None
@@ -487,6 +490,8 @@ def test_derived_ingredients_are_not_spread_aliases():
     ("ICSA", "us_claims_initial"), ("CCSA", "us_claims_continuing"),
     ("PPIFIS", "us_ppi_final_demand"), ("PERMIT", "us_building_permits"),
     ("PI", "us_personal_income"), ("PCE", "us_personal_spending"),
+    ("PCEC96", "us_real_personal_spending"), ("DSPIC96", "us_real_disposable_income"),
+    ("UMCSENT", "us_umich_sentiment"), ("USALOLITOAASTSAM", "us_oecd_cli"),
 ])
 def test_us_macro_series_resolve_to_matching_cards(symbol, key):
     assert indicator_card("ms:" + symbol).key == key
@@ -669,7 +674,7 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
         assert report["certified_families"][family]["unmapped"] == []
     assert report["documented_certified_gaps"] == {}
     assert report["macro_releases"] == {
-        "mapped": 97,
+        "mapped": 133,
         "total": len(INDICATORS),
         "unmapped": [],
     }
@@ -677,8 +682,8 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
         report["tier_1_calendar"]["mapped"] == report["tier_1_calendar"]["total"] == 65
     )
     assert report["macro_series"] == {
-        "mapped": 123,
-        "total": 123,
+        "mapped": 133,
+        "total": 133,
         "unmapped": [],
     }
     assert "macro_releases" in capsys.readouterr().out
@@ -821,7 +826,7 @@ def test_future_drafts_remain_conservative_and_never_shipped(future_draft):
     assert card.timing.timing_class == "UNKNOWN" and card.timing.basis is None
     assert card.timing.predictive_screen == () and card.timing.descriptive_peak is None
     assert card.timing.screen_note == "not tested"
-    assert dataset() is shipped and len(shipped.cards) == 427
+    assert dataset() is shipped and len(shipped.cards) == 451
 
 
 def test_draft_loader_rejects_stale_timing_and_approved_overlap(future_draft):
@@ -911,7 +916,7 @@ def test_coverage_cli_requires_explicit_draft_opt_in(monkeypatch, capsys):
             == 86
         )
         assert report["tier_1_measures"]["draft"] == 0
-        assert report["cards"] == 427
+        assert report["cards"] == 451
         assert ("draft_cards" in report) == bool(args)
 
 

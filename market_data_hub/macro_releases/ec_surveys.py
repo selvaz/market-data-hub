@@ -14,7 +14,7 @@ from .tier1_publications import month, observation, publication_text, require, r
 
 LATEST = "https://economy-finance.ec.europa.eu/economic-forecast-and-surveys/business-and-consumer-surveys/latest-business-and-consumer-surveys_en"
 BASE = "https://economy-finance.ec.europa.eu"
-STORED_EDITIONS = ContextVar("ecfin_stored_official_editions", default=frozenset())
+STORED_EDITIONS: ContextVar[frozenset[str]] = ContextVar("ecfin_stored_official_editions", default=frozenset())
 ARCHIVES = {
     "2026-09-29": (
         BASE + "/document/download/60c46029-7f60-40f0-b8ef-a9ca8aa46aae_en?filename=bcs_2026_09_en.pdf",

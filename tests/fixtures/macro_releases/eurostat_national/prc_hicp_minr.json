@@ -1,0 +1,116 @@
+{
+ "version": "2.0",
+ "class": "dataset",
+ "label": "HICP - monthly data (monthly rate of change) - ECOICOP ver.2",
+ "source": "ESTAT",
+ "updated": "2026-11-11T23:00:00+0100",
+ "value": {
+  "0": 2.1,
+  "1": 2.4,
+  "5": 4.9,
+  "6": 1.0,
+  "7": 1.1,
+  "9": 1.7,
+  "10": 1.8,
+  "13": 4.0,
+  "15": 0.1,
+  "16": 0.2,
+  "20": 0.5,
+  "21": 0.4,
+  "22": -0.9,
+  "24": 0.3,
+  "25": 1.5,
+  "28": 0.1
+ },
+ "id": [
+  "freq",
+  "unit",
+  "coicop18",
+  "geo",
+  "time"
+ ],
+ "size": [
+  1,
+  2,
+  1,
+  5,
+  3
+ ],
+ "dimension": {
+  "freq": {
+   "label": "freq",
+   "category": {
+    "index": {
+     "M": 0
+    },
+    "label": {
+     "M": "M"
+    }
+   }
+  },
+  "unit": {
+   "label": "unit",
+   "category": {
+    "index": {
+     "RCH_A": 0,
+     "RCH_M": 1
+    },
+    "label": {
+     "RCH_A": "RCH_A",
+     "RCH_M": "RCH_M"
+    }
+   }
+  },
+  "coicop18": {
+   "label": "coicop18",
+   "category": {
+    "index": {
+     "TOTAL": 0
+    },
+    "label": {
+     "TOTAL": "TOTAL"
+    }
+   }
+  },
+  "geo": {
+   "label": "geo",
+   "category": {
+    "index": {
+     "DE": 0,
+     "ES": 1,
+     "FR": 2,
+     "IT": 3,
+     "PL": 4
+    },
+    "label": {
+     "DE": "DE",
+     "ES": "ES",
+     "FR": "FR",
+     "IT": "IT",
+     "PL": "PL"
+    }
+   }
+  },
+  "time": {
+   "label": "time",
+   "category": {
+    "index": {
+     "2026-08": 0,
+     "2026-09": 1,
+     "2026-10": 2
+    },
+    "label": {
+     "2026-08": "2026-08",
+     "2026-09": "2026-09",
+     "2026-10": "2026-10"
+    }
+   }
+  }
+ },
+ "extension": {
+  "lang": "EN",
+  "id": "PRC_HICP_MINR",
+  "agencyId": "ESTAT",
+  "version": "1.0"
+ }
+}

@@ -117,6 +117,8 @@ MACRO_TABLES = {
     "collect_run_families": "Per-family collection outcomes and fetched windows, including needs-review failures.",
     "documents": "Archived issuer HTML/PDF/API document bytes, raw and normalized hashes, URLs and retrieval times.",
     "review_queue": "Append-only family/document review requests; review flags are not official actuals.",
+    "collect_run_family_reviews": "Why a family run needed review or failed: an error category and per-edition reasons, append-only.",
+    "review_queue_resolutions": "Append-only closure of review requests superseded by a later clean run of the same edition.",
     "schema_compatibility": "Schema versions and compatible reader bounds.",
     "consensus_snapshots": "Imported consensus snapshot identities and processing results; raw snapshot files are inputs.",
     "collect_run_consensus": "Consensus ingestion outcomes, separate from official family collection status.",
@@ -546,8 +548,12 @@ def build_rows(config_dir=CONFIG_DIR):
         row["families"] = families
         from .macro_releases.fred import MAPPINGS
 
+        from .macro_releases.eurostat_national import MIRRORED as EUROSTAT_MIRRORED
+
         row["distributor"] = (
-            indicator.issuer_id
+            "Eurostat API (redistributor; issuer prints not collected)"
+            if id in EUROSTAT_MIRRORED
+            else indicator.issuer_id
             + " direct"
             + ("; FRED/ALFRED mirror" if id in MAPPINGS else "")
         )

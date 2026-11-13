@@ -4,7 +4,7 @@ from .http import FetchError
 from .latam import fetch_editions, observation
 from .latam_editions import reviewed
 from .policy import change
-from .schedule import get_edition, mark_pending, publication_grace
+from .schedule import get_edition, mark_pending, note_review, publication_grace
 from .tier1_publications import plain, require
 
 ENDPOINT = "https://www.bcb.gov.br/api/servico/sitebcb/copom/comunicados_detalhes"
@@ -27,7 +27,9 @@ def statement(doc):
             raise ValueError()
         title = require(r"Copom (?:reduz|mantém|eleva) a taxa Selic (?:para|em)\s*([\d,]+)% a\.a\.", row["titulo"])[1]
         text = plain(row["textoComunicado"]).replace("\u200b", "")
-        value = require(r"(?:O Copom decidiu (?:reduzir|manter|elevar)|reduzindo) a taxa básica de juros (?:para|em) ([\d,]+)% a\.a\.", text)[1]
+        # Statements name the rate either as "taxa básica de juros" or "taxa Selic".
+        value = require(r"(?:O Copom decidiu (?:reduzir|manter|elevar)|reduzindo|mantendo|elevando) "
+                        r"a (?:taxa básica de juros|taxa Selic) (?:para|em) ([\d,]+)% a\.a\.", text)[1]
         if title != value or not 0 <= float(value.replace(",", ".")) <= 100:
             raise ValueError()
         return edition, value
@@ -63,8 +65,12 @@ def fetch(client, family, since):
             return None
         prior = get(max(d for d in MEETINGS if d < edition))
         if prior is None:
-            mark_pending(family, edition, "not_yet_published" if publication_grace(family, edition)
-                         else "needs_review")
+            if publication_grace(family, edition):
+                mark_pending(family, edition, "not_yet_published")
+            else:
+                mark_pending(family, edition, "needs_review")
+                note_review(family, edition, "issuer_unavailable",
+                            "Previous Copom statement unavailable; change cannot be certified")
             return None
         return parse(doc, prior, family, since)
     return fetch_editions(family, since, "bcb", load)

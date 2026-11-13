@@ -1,0 +1,12 @@
+{
+ "provenance": "Reconstructed text extract, NOT a live capture: the session network blocked the issuer host on 2026-11-11. Structure and untested cells are copied from the stored 2026-09-24 statement capture; only the cells named in 'tested' come from the 2026-11-11 diagnosis of the live document. Replace with a live extract when the host is reachable.",
+ "tested": [
+  "split digits '6. 25%' as extracted by pypdf",
+  "25 bp cut to 6.25%",
+  "'por mayoría'",
+  "Borja and Heath voted to hold (exact vote-sentence wording is assumed)"
+ ],
+ "url": "https://www.banxico.org.mx/publicaciones-y-prensa/anuncios-de-las-decisiones-de-politica-monetaria/{00000000-0000-0000-0000-000000000000}.pdf",
+ "retrieved_at": "2026-11-11T12:00:00+00:00",
+ "text": "1 Anuncio de Política Monetaria Comunicado de Prensa 5 de noviembre de 2026 La Junta de Gobierno del Banco de México decidió disminuir en 25 puntos base el objetivo para la Tasa de Interés Interbancaria a un día a un nivel de 6. 25%. [...] con la presencia de todos sus miembros, decidió por mayoría disminuir en 25 puntos base el objetivo para la Tasa de Interés Interbancaria a un día a un nivel de 6. 25%. Votaron por mantener el objetivo para la Tasa de Interés Interbancaria a un día en 6.50% Galia Borja y Jonathan Heath. "
+}

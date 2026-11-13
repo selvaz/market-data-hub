@@ -10,9 +10,75 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 ### Removed
 - Hub economic-calendar collector retired (owner decision 2026-11-11; collection had stopped 2026-09-25): the calendar is collected by LazyCommittee, one source per concept. Removed `econ_calendar/collect/` (myfxbook, consolidation, matching, timezones, the FF CSV collector), `aliases`, `ingest`, `reference`, `macro_bridge`, `validate`, `config/econ_calendar_aliases.yaml`, the `calendar` and `validate` extras and their tests. `run_econ_calendar.py` now accepts only `--archive-only`. Kept for live readers: `econ_calendar.catalog` (catalogue and discovery over the frozen `calendar_*` tables), `econ_calendar.archive_forecasts`, and the raw FF archive, moved from `econ_calendar.collect.forexfactory` to `econ_calendar.ff_archive`. The `calendar_*` tables and their data are untouched; the data catalogue marks the dataset retired.
 
+## [0.3.28] — 2026-11-12
+
 ### Added
+- Euro-area national macro coverage for Germany, France and Italy from the
+  Eurostat API (one collector, `eurostat_national`; each family fails closed on
+  its own): German industrial production, German and French monthly ILO
+  unemployment, retail trade volume (`sts_trtu_m`), harmonised HICP y/y and m/m
+  (`prc_hicp_minr`, with `prc_hicp_fpd` flashes for months not yet final) and
+  the EC economic sentiment indicator (`ei_bssi_m_r2`). The national office
+  (DG ECFIN for the ESI) is the issuer and Eurostat the distributor. Release
+  concepts for every national indicator plus `DE_OECD_CLI`, `FR_OECD_CLI` and
+  `IT_OECD_CLI` (FRED `DEULOLITOAASTSAM`, `FRALOLITOAASTSAM`,
+  `ITALOLITOAASTSAM`). Release sources may declare `evidence: redistributor`
+  so the cascade returns these mirror readings. National HICP maps onto the
+  harmonised `de_hicp`/`fr_hicp`/`it_hicp` cards, not the CPI cards; new cards
+  `de_unemployment_ilo`, `fr_unemployment_ilo`, `fr_retail`, `it_retail`,
+  `de_esi`, `fr_esi`, `it_esi` and `de/fr/it_oecd_cli`.
+- Spain and Poland on the same collector: GDP q/q (PL), monthly ILO
+  unemployment, industrial production (PL), retail trade volume, harmonised
+  HICP y/y and m/m and the ESI. Poland's issuer is GUS (Statistics Poland);
+  Poland has no HICP flash, so the flash request covers only euro-area
+  countries. Cards `es_hicp`/`pl_hicp` (harmonised) gain the Eurostat ids; new
+  cards `es_unemployment_ilo` (monthly ILO, separate from the EPA card),
+  `es_retail`, `es_esi`, `es_oecd_cli`, `pl_gdp_real`, `pl_indpro`,
+  `pl_unemployment_ilo`, `pl_retail` and `pl_esi`. `ES_OECD_CLI` (FRED
+  `ESPLOLITOAASTSAM`); no Polish CLI, as FRED's stopped in 2022.
+- `nbp_policy`: the National Bank of Poland reference rate
+  (`nbp_reference_rate_decision`, T1) from the issuer's rate table
+  `static.nbp.pl/dane/stopy/stopy_procentowe.xml`; decimal comma parsed, the
+  effective date (`obowiazuje_od`) is the decision date, and a missing or
+  malformed `ref` row fails closed. Attached to the `pl_nbp` card.
+
+## [0.3.27] — 2026-11-12
+
+### Added
+- `market_data_hub.latest` (H2): `read_latest`, `read_latest_many`,
+  `read_concept_history` and a CLI return the most recent correct value of a
+  macro, derived or release concept through its ordered cascade, with the
+  declared source and status (`primary`, `newer_secondary`, `fallback`,
+  `proxy`, `stale`, `unavailable`). Price concepts raise `NotImplementedError`.
+  Macro sources gain optional `transform` and `scale`; concepts gain optional
+  `decimals` (published precision, applied to the returned values; the raw
+  number stays in `value_raw`).
+  Release values include revisions known at `as_known_at`. Year-on-year FRED
+  transforms are history-only (single-source rule: y/y concepts resolve from
+  the issuer release alone), and the FRED collector widens its tail refresh to
+  each transformed series' comparison window.
+- 24 US release concepts in `concepts/releases.yaml` (issuer primary, FRED
+  secondary where units match), `US_OECD_CLI`, and the derived
+  `US_CURVE_10Y3M`. FRED `USALOLITOAASTSAM` and `UMCSENT` in `macro_series.yaml`;
+  new card `us_oecd_cli` and `ms:UMCSENT` on `us_umich_sentiment` (432 cards).
+- H1 concept registry in `config/concepts/*.yaml`, with ordered source cascades,
+  generated `PX:*` price concepts, offline validation, and the 116 existing
+  sovereign chains preserved through the compatibility loader (#189).
+- DGS1MO and DGS6MO in `macro_series.yaml`: the daily FRED collector will fetch
+  these Treasury fallbacks; no ALFRED backfill is declared (#189).
 - Earnings calendar records the currency of the estimates and actuals: new nullable `estimate_currency` column (schema 32) on `earnings_events` and `earnings_observations`, filled from the TradingView `fundamental_currency_code` field. `eps_estimate`, `eps_actual`, `revenue_estimate` and `revenue_actual` are in `estimate_currency`, which is often not the listing `currency` (TSE:7011 lists in JPY, its estimates are in USD). Exposed by `events_between`, `event_history` and `v_earnings_surprise`. Old rows stay NULL (unknown); nothing is backfilled by guessing.
 - Norges Bank 10Y generic bond yield and SNB 10Y spot yield daily collectors, with resolved-rate chains and SNB cube history.
+- US real consumption and real income FRED series in `macro_series`: `PCEC96` (real personal consumption expenditures) and `DSPIC96` (real disposable personal income), both monthly, SAAR, chained 2017 dollars, BEA, lag 29 days; the nominal `PI`/`PCE` stay as they are. Two new indicator cards, `us_real_personal_spending` and `us_real_disposable_income`, cover them (429 cards). Both are also in the ALFRED vintage backfill universe (`alfred_backfill.yaml`); `docs/alfred-backfill-estimate.json` is a dated capture and is not extended.
+
+### Fixed
+- Config validation uses the concept registry and reports file-access errors;
+  FRED catalogue expectations include all 115 series (#189).
+- Registry loads are cached by file path and modification time; runtime
+  sovereign reads validate only rates and macro catalogues. Unknown keys at
+  every registry level are rejected. US 1M/3M/6M Treasury and FRED sources
+  share the par-yield convention; T10Y2Y is a nominal curve concept; DXY is
+  history-only for the broad trade-weighted dollar because its basket differs
+  (#189).
 
 ## [0.3.26] — 2026-11-06
 

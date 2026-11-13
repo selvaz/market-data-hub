@@ -5,6 +5,10 @@ from zoneinfo import ZoneInfo
 
 RUN_INSTANT = ContextVar("macro_release_run_instant", default=None)
 PENDING_EDITIONS = ContextVar("macro_release_pending_editions", default=None)
+# Why a due edition has no vintage: {(family, edition): {"category", "message"}}.
+PENDING_DETAILS = ContextVar("macro_release_pending_details", default=None)
+REVIEW_CATEGORIES = ("parser_rejected", "not_yet_listed", "issuer_http_error", "issuer_unavailable",
+                     "calendar_exhausted")
 
 
 def run_instant(as_of=None):
@@ -78,6 +82,15 @@ def mark_pending(family, edition, reason="not_yet_published"):
     pending = PENDING_EDITIONS.get()
     if pending is not None:
         pending[family, edition] = reason
+
+
+def note_review(family, edition, category, message):
+    """Keep the controlled reason for a due edition the run could not store."""
+    if category not in REVIEW_CATEGORIES:
+        raise ValueError("unknown review category")
+    details = PENDING_DETAILS.get()
+    if details is not None:
+        details[family, edition] = {"category": category, "message": str(message)[:200]}
 
 
 def get_edition(client, provider, url, family, edition, params=None):

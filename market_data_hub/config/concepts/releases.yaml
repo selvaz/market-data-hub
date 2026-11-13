@@ -1,0 +1,1155 @@
+# US macro release concepts (H2). The concept id is the macro_releases
+# catalogue indicator_id. Chain: primary = issuer release (macro_releases), then
+# an optional FRED secondary from the indicator card's ms: ids, transformed into
+# the release unit. history = that single FRED series (never spliced).
+# y/y concepts keep only the issuer release as a current source: their FRED
+# series is history_only (the validator rejects pct_change_yy elsewhere).
+#
+# max_age_business_days rule (same for every source of a concept):
+#   ceil((period_days + issuer_lag_days + 7) * 5 / 7)
+# period_days: M 31, W 7, Q 92, E 49 (longest gap between FOMC meetings);
+# issuer_lag_days: macro_releases.catalogue.EXPECTED_LAG_DAYS of the family;
+# 7 days of grace. Age is counted from the reference period end in Mon-Fri
+# business days (no holiday calendar yet).
+#
+# decimals: the issuer's published precision in the concept unit. read_latest
+# rounds the chosen value and every alternative to it (half up), so a FRED
+# fallback reads like the issuer would have printed it; value_raw keeps the
+# unrounded number.
+concepts:
+- concept: us_cpi_headline_yy
+  family: releases
+  label: US CPI-U all items, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 14d issuer lag + 7d grace
+  # FRED CPIAUCSL is seasonally adjusted; BLS publishes the headline 12-month change from the NSA index (CUUR0000SA0), which is not in macro_series. No FRED secondary.
+  sources:
+  - kind: release
+    id: us_cpi_headline_yy
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (BLS, yy, NSA)
+- concept: us_cpi_headline_mm
+  family: releases
+  label: US CPI-U all items, m/m (SA)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 14d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_cpi_headline_mm
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (BLS, mm, SA)
+  - kind: macro
+    id: CPIAUCSL
+    role: secondary
+    max_age_business_days: 38
+    convention: FRED pct_change_mm of CPIAUCSL
+    transform: pct_change_mm
+    scale: 1
+    comparability_note: "Computed from the unrounded SA index; BLS rounds the published change to one decimal."
+  history:
+    mode: single
+    id: CPIAUCSL
+- concept: us_cpi_core_yy
+  family: releases
+  label: US CPI ex food and energy, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 14d issuer lag + 7d grace
+  # FRED CPILFESL is seasonally adjusted; BLS publishes the 12-month change from the NSA index (CUUR0000SA0L1E), not in macro_series. No FRED secondary.
+  sources:
+  - kind: release
+    id: us_cpi_core_yy
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (BLS, yy, NSA)
+- concept: us_cpi_core_mm
+  family: releases
+  label: US CPI ex food and energy, m/m (SA)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 14d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_cpi_core_mm
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (BLS, mm, SA)
+  - kind: macro
+    id: CPILFESL
+    role: secondary
+    max_age_business_days: 38
+    convention: FRED pct_change_mm of CPILFESL
+    transform: pct_change_mm
+    scale: 1
+    comparability_note: "Computed from the unrounded SA index; BLS rounds the published change to one decimal."
+  history:
+    mode: single
+    id: CPILFESL
+- concept: us_pce_price_index_yy
+  family: releases
+  label: US PCE price index, y/y
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 29d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_pce_price_index_yy
+    role: primary
+    max_age_business_days: 48
+    convention: issuer published value (BEA, yy, SA)
+  - kind: macro
+    id: PCEPI
+    role: history_only
+    max_age_business_days: 48
+    convention: FRED pct_change_yy of PCEPI
+    transform: pct_change_yy
+    scale: 1
+    comparability_note: "History only (single-source rule): a y/y from FRED is never a current value, because its two rows can come from different refreshes. Computed from the SA index level; BEA rounds the published change to one decimal."
+  history:
+    mode: single
+    id: PCEPI
+- concept: us_core_pce_yy
+  family: releases
+  label: US core PCE price index, y/y
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 29d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_core_pce_yy
+    role: primary
+    max_age_business_days: 48
+    convention: issuer published value (BEA, yy, SA)
+  - kind: macro
+    id: PCEPILFE
+    role: history_only
+    max_age_business_days: 48
+    convention: FRED pct_change_yy of PCEPILFE
+    transform: pct_change_yy
+    scale: 1
+    comparability_note: "History only (single-source rule): a y/y from FRED is never a current value, because its two rows can come from different refreshes. Computed from the SA index level; BEA rounds the published change to one decimal."
+  history:
+    mode: single
+    id: PCEPILFE
+- concept: us_payrolls_change
+  family: releases
+  label: US nonfarm payrolls, monthly change
+  unit: thousands of persons
+  frequency: M
+  calendar: us_govt
+  decimals: 0
+  # max age: M period + 7d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_payrolls_change
+    role: primary
+    max_age_business_days: 33
+    convention: issuer published value (BLS, change, SA)
+  - kind: macro
+    id: PAYEMS
+    role: secondary
+    max_age_business_days: 33
+    convention: FRED diff of PAYEMS
+    transform: diff
+    scale: 1
+    comparability_note: "PAYEMS is the SA employment level in thousands of persons; its monthly difference is the published net change in the same unit."
+  history:
+    mode: single
+    id: PAYEMS
+- concept: us_unemployment_rate
+  family: releases
+  label: US unemployment rate (U-3)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 7d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_unemployment_rate
+    role: primary
+    max_age_business_days: 33
+    convention: issuer published value (BLS, level, SA)
+  - kind: macro
+    id: UNRATE
+    role: secondary
+    max_age_business_days: 33
+    convention: FRED level of UNRATE
+    transform: level
+    scale: 1
+    comparability_note: "Same CPS U-3 SA rate."
+  history:
+    mode: single
+    id: UNRATE
+- concept: us_avg_hourly_earnings_yy
+  family: releases
+  label: US average hourly earnings, total private, y/y
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 7d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_avg_hourly_earnings_yy
+    role: primary
+    max_age_business_days: 33
+    convention: issuer published value (BLS, yy, SA)
+  - kind: macro
+    id: CES0500000003
+    role: history_only
+    max_age_business_days: 33
+    convention: FRED pct_change_yy of CES0500000003
+    transform: pct_change_yy
+    scale: 1
+    comparability_note: "History only (single-source rule): a y/y from FRED is never a current value, because its two rows can come from different refreshes. Computed from the SA dollar level; BLS rounds the published change to one decimal."
+  history:
+    mode: single
+    id: CES0500000003
+- concept: us_gdp_qq_saar
+  family: releases
+  label: US real GDP, q/q SAAR
+  unit: '%'
+  frequency: Q
+  calendar: us_govt
+  decimals: 1
+  # max age: Q period + 29d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_gdp_qq_saar
+    role: primary
+    max_age_business_days: 92
+    convention: issuer published value (BEA, qq_saar, SA)
+  - kind: macro
+    id: GDPC1
+    role: secondary
+    max_age_business_days: 92
+    convention: FRED pct_change_qq_saar of GDPC1
+    transform: pct_change_qq_saar
+    scale: 1
+    comparability_note: "Compounded from the chained-dollar level; BEA computes the published rate from unrounded data and rounds to one decimal."
+  history:
+    mode: single
+    id: GDPC1
+- concept: us_retail_sales_mm
+  family: releases
+  label: US retail and food services sales, m/m
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 15d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_retail_sales_mm
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (Census, mm, SA)
+  - kind: macro
+    id: RSAFS
+    role: secondary
+    max_age_business_days: 38
+    convention: FRED pct_change_mm of RSAFS
+    transform: pct_change_mm
+    scale: 1
+    comparability_note: "Computed from the SA dollar level. Card defect D1: hub RSAFS history is a vintage mix until a consistent refresh."
+  history:
+    mode: single
+    id: RSAFS
+- concept: us_retail_sales_ex_auto_mm
+  family: releases
+  label: US retail sales ex motor vehicles and parts, m/m
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 15d issuer lag + 7d grace
+  # The card carries only RSAFS (total retail sales); no ex-auto FRED level is stored. No FRED secondary.
+  sources:
+  - kind: release
+    id: us_retail_sales_ex_auto_mm
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (Census, mm, SA)
+- concept: us_industrial_production_mm
+  family: releases
+  label: US industrial production, m/m
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 16d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_industrial_production_mm
+    role: primary
+    max_age_business_days: 39
+    convention: issuer published value (Federal Reserve, mm, SA)
+  - kind: macro
+    id: INDPRO
+    role: secondary
+    max_age_business_days: 39
+    convention: FRED pct_change_mm of INDPRO
+    transform: pct_change_mm
+    scale: 1
+    comparability_note: "Computed from the SA index; the Fed rounds the published change to one decimal."
+  history:
+    mode: single
+    id: INDPRO
+- concept: us_capacity_utilization
+  family: releases
+  label: US capacity utilisation, total industry
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 16d issuer lag + 7d grace
+  # The card has no ms: id (FRED TCU is not stored). No FRED secondary.
+  sources:
+  - kind: release
+    id: us_capacity_utilization
+    role: primary
+    max_age_business_days: 39
+    convention: issuer published value (Federal Reserve, level, SA)
+- concept: us_durable_goods_orders_mm
+  family: releases
+  label: US durable goods orders, m/m
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 27d issuer lag + 7d grace
+  # The card has no ms: id (FRED DGORDER is not stored). No FRED secondary.
+  sources:
+  - kind: release
+    id: us_durable_goods_orders_mm
+    role: primary
+    max_age_business_days: 47
+    convention: issuer published value (Census, mm, SA)
+- concept: us_housing_starts
+  family: releases
+  label: US housing starts, total, SAAR
+  unit: thousands of units
+  frequency: M
+  calendar: us_govt
+  decimals: 0
+  # max age: M period + 20d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_housing_starts
+    role: primary
+    max_age_business_days: 42
+    convention: issuer published value (Census, level, SA)
+  - kind: macro
+    id: HOUST
+    role: secondary
+    max_age_business_days: 42
+    convention: FRED level of HOUST
+    transform: level
+    scale: 1
+    comparability_note: "HOUST is in thousands of units SAAR, the release unit."
+  history:
+    mode: single
+    id: HOUST
+- concept: us_building_permits
+  family: releases
+  label: US building permits, total, SAAR
+  unit: thousands of units
+  frequency: M
+  calendar: us_govt
+  decimals: 0
+  # max age: M period + 20d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_building_permits
+    role: primary
+    max_age_business_days: 42
+    convention: issuer published value (Census, level, SA)
+  - kind: macro
+    id: PERMIT
+    role: secondary
+    max_age_business_days: 42
+    convention: FRED level of PERMIT
+    transform: level
+    scale: 1
+    comparability_note: "PERMIT is in thousands of units SAAR, the release unit. Stored in macro_series although the card still says 'FRED PERMIT not stored'."
+  history:
+    mode: single
+    id: PERMIT
+- concept: us_existing_home_sales
+  family: releases
+  label: US existing home sales, SAAR
+  unit: millions of units
+  frequency: M
+  calendar: us_govt
+  decimals: 2
+  # max age: M period + 23d issuer lag + 7d grace
+  # The card has no ms: id (NAR data is not redistributed on FRED in full history). No FRED secondary.
+  sources:
+  - kind: release
+    id: us_existing_home_sales
+    role: primary
+    max_age_business_days: 44
+    convention: issuer published value (NAR, level, SA)
+- concept: us_new_home_sales
+  family: releases
+  label: US new single-family home sales, SAAR
+  unit: thousands of units
+  frequency: M
+  calendar: us_govt
+  decimals: 0
+  # max age: M period + 27d issuer lag + 7d grace
+  # The card has no ms: id (FRED HSN1F is not stored). No FRED secondary.
+  sources:
+  - kind: release
+    id: us_new_home_sales
+    role: primary
+    max_age_business_days: 47
+    convention: issuer published value (Census, level, SA)
+- concept: us_trade_balance
+  family: releases
+  label: US goods and services trade balance (BoP basis)
+  unit: USD billions
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 36d issuer lag + 7d grace
+  # The card has no ms: id (FRED BOPGSTB is not stored). No FRED secondary.
+  sources:
+  - kind: release
+    id: us_trade_balance
+    role: primary
+    max_age_business_days: 53
+    convention: issuer published value (Census/BEA, level, SA)
+- concept: us_umich_consumer_sentiment
+  family: releases
+  label: US University of Michigan consumer sentiment
+  unit: index (1966 Q1 = 100)
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 0d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_umich_consumer_sentiment
+    role: primary
+    max_age_business_days: 28
+    convention: issuer published value (University of Michigan, level, NSA)
+  - kind: macro
+    id: UMCSENT
+    role: secondary
+    max_age_business_days: 28
+    convention: FRED level of UMCSENT
+    transform: level
+    scale: 1
+    comparability_note: "FRED republishes the final reading with a one-month delay; preliminary readings appear only in the release store."
+  history:
+    mode: single
+    id: UMCSENT
+- concept: us_ppi_yy
+  family: releases
+  label: US PPI final demand, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: us_govt
+  decimals: 1
+  # max age: M period + 15d issuer lag + 7d grace
+  # FRED PPIFIS is seasonally adjusted; BLS publishes the 12-month change from the NSA index (WPUFD4), not in macro_series. No FRED secondary.
+  sources:
+  - kind: release
+    id: us_ppi_yy
+    role: primary
+    max_age_business_days: 38
+    convention: issuer published value (BLS, yy, NSA)
+- concept: us_initial_jobless_claims
+  family: releases
+  label: US initial jobless claims (SA)
+  unit: thousands of claims
+  frequency: W
+  calendar: us_govt
+  decimals: 0
+  # max age: W period + 5d issuer lag + 7d grace
+  sources:
+  - kind: release
+    id: us_initial_jobless_claims
+    role: primary
+    max_age_business_days: 14
+    convention: issuer published value (DOL, level, SA)
+  - kind: macro
+    id: ICSA
+    role: secondary
+    max_age_business_days: 14
+    convention: FRED level of ICSA
+    transform: level
+    scale: 0.001
+    comparability_note: "ICSA is a count of claims; scale 0.001 converts it to thousands, the release unit. Week-ending Saturday dates match the release reference period."
+  history:
+    mode: single
+    id: ICSA
+- concept: fed_funds_rate_decision
+  family: releases
+  label: FOMC federal funds target range, upper bound
+  unit: '%'
+  frequency: E
+  calendar: us_govt
+  decimals: 2
+  # max age: E period + 0d issuer lag + 7d grace
+  # Event series: the observation is the decision date. No FRED secondary (DFEDTARU is not stored).
+  sources:
+  - kind: release
+    id: fed_funds_rate_decision
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (Federal Reserve, level, n/a)
+- concept: nbp_reference_rate_decision
+  family: releases
+  label: NBP reference rate
+  unit: '%'
+  frequency: E
+  calendar: country:PL
+  decimals: 2
+  # Event series: the observation is the effective date of the last rate change
+  # (NBP rate table, obowiazuje_od). A hold leaves that date unchanged, so the
+  # rate stays in force until the next change: max age two years, not the
+  # 40-day FOMC rule. No FRED secondary.
+  sources:
+  - kind: release
+    id: nbp_reference_rate_decision
+    role: primary
+    max_age_business_days: 520
+    convention: issuer published value (NBP, level, n/a)
+# OECD composite leading indicator via FRED: a model composite with no issuer
+# release card; max age: M period + 45d lag + 7d grace.
+- concept: US_OECD_CLI
+  family: releases
+  label: OECD composite leading indicator, USA (amplitude adjusted)
+  unit: index (long-term average = 100)
+  frequency: M
+  calendar: us_govt
+  sources:
+  - kind: macro
+    id: USALOLITOAASTSAM
+    role: primary
+    max_age_business_days: 60
+    convention: OECD amplitude-adjusted composite leading indicator
+  history:
+    mode: single
+    id: USALOLITOAASTSAM
+# Euro-area national headlines (DE, FR, IT; ES where the card exists). The
+# issuer is the national statistical office (DG ECFIN for the ESI); the
+# release is the Eurostat API redistribution (eurostat_national, mirror
+# provenance). Same max-age rule as above, issuer lag from EXPECTED_LAG_DAYS of
+# the ea_big4_* family. No FRED secondary: macro_series holds no FRED series
+# with the same definition (FRED's national HICP indices would give only a
+# y/y, which is history-only, or an m/m on another index base).
+# evidence: redistributor lets the cascade return the Eurostat mirror reading
+# (resolution status provisional) as the current value.
+- concept: de_gdp_qq
+  family: releases
+  label: Germany real GDP, q/q (SCA)
+  unit: '%'
+  frequency: Q
+  calendar: country:DE
+  decimals: 1
+  # max age: Q period + 35d issuer lag (ea_big4_gdp) + 7d grace; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE
+  sources:
+  - kind: release
+    id: de_gdp_qq
+    role: primary
+    max_age_business_days: 96
+    convention: issuer published value (Destatis via Eurostat, qq, SCA)
+    evidence: redistributor
+- concept: fr_gdp_qq
+  family: releases
+  label: France real GDP, q/q (SCA)
+  unit: '%'
+  frequency: Q
+  calendar: country:FR
+  decimals: 1
+  # max age: Q period + 35d issuer lag (ea_big4_gdp) + 7d grace; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE
+  sources:
+  - kind: release
+    id: fr_gdp_qq
+    role: primary
+    max_age_business_days: 96
+    convention: issuer published value (INSEE via Eurostat, qq, SCA)
+    evidence: redistributor
+- concept: it_gdp_qq
+  family: releases
+  label: Italy real GDP, q/q (SCA)
+  unit: '%'
+  frequency: Q
+  calendar: country:IT
+  decimals: 1
+  # max age: Q period + 35d issuer lag (ea_big4_gdp) + 7d grace; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE
+  sources:
+  - kind: release
+    id: it_gdp_qq
+    role: primary
+    max_age_business_days: 96
+    convention: issuer published value (Istat via Eurostat, qq, SCA)
+    evidence: redistributor
+- concept: es_gdp_qq
+  family: releases
+  label: Spain real GDP, q/q (SCA)
+  unit: '%'
+  frequency: Q
+  calendar: country:ES
+  decimals: 1
+  # max age: Q period + 35d issuer lag (ea_big4_gdp) + 7d grace; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE
+  sources:
+  - kind: release
+    id: es_gdp_qq
+    role: primary
+    max_age_business_days: 96
+    convention: issuer published value (INE via Eurostat, qq, SCA)
+    evidence: redistributor
+- concept: it_unemployment_rate
+  family: releases
+  label: Italy ILO unemployment rate, monthly (SA)
+  unit: '%'
+  frequency: M
+  calendar: country:IT
+  decimals: 1
+  # max age: M period + 35d issuer lag (ea_big4_unemployment) + 7d grace; Eurostat une_rt_m PC_ACT TOTAL
+  sources:
+  - kind: release
+    id: it_unemployment_rate
+    role: primary
+    max_age_business_days: 53
+    convention: issuer published value (Istat via Eurostat, level, SA)
+    evidence: redistributor
+- concept: de_unemployment_ilo_rate
+  family: releases
+  label: Germany ILO unemployment rate, monthly (trend)
+  unit: '%'
+  frequency: M
+  calendar: country:DE
+  decimals: 1
+  # max age: M period + 35d issuer lag (ea_big4_unemployment) + 7d grace; Eurostat une_rt_m PC_ACT TOTAL
+  sources:
+  - kind: release
+    id: de_unemployment_ilo_rate
+    role: primary
+    max_age_business_days: 53
+    convention: issuer published value (Destatis via Eurostat, level, trend; une_rt_m s_adj=SA is the trend series for DE)
+    evidence: redistributor
+- concept: fr_unemployment_ilo_rate
+  family: releases
+  label: France ILO unemployment rate, monthly (SA)
+  unit: '%'
+  frequency: M
+  calendar: country:FR
+  decimals: 1
+  # max age: M period + 35d issuer lag (ea_big4_unemployment) + 7d grace; Eurostat une_rt_m PC_ACT TOTAL
+  sources:
+  - kind: release
+    id: fr_unemployment_ilo_rate
+    role: primary
+    max_age_business_days: 53
+    convention: Eurostat monthly estimate compiled from INSEE inputs (level, SA)
+- concept: de_industrial_production_mm
+  family: releases
+  label: Germany industrial production ex construction, m/m (SCA)
+  unit: '%'
+  frequency: M
+  calendar: country:DE
+  decimals: 1
+  # max age: M period + 45d issuer lag (ea_big4_industrial_production) + 7d grace; Eurostat sts_inpr_m PRD B-D PCH_PRE
+  sources:
+  - kind: release
+    id: de_industrial_production_mm
+    role: primary
+    max_age_business_days: 60
+    convention: issuer published value (Destatis via Eurostat, mm, SCA)
+    evidence: redistributor
+- concept: fr_industrial_production_mm
+  family: releases
+  label: France industrial production ex construction, m/m (SCA)
+  unit: '%'
+  frequency: M
+  calendar: country:FR
+  decimals: 1
+  # max age: M period + 45d issuer lag (ea_big4_industrial_production) + 7d grace; Eurostat sts_inpr_m PRD B-D PCH_PRE
+  sources:
+  - kind: release
+    id: fr_industrial_production_mm
+    role: primary
+    max_age_business_days: 60
+    convention: issuer published value (INSEE via Eurostat, mm, SCA)
+    evidence: redistributor
+- concept: it_industrial_production_mm
+  family: releases
+  label: Italy industrial production ex construction, m/m (SCA)
+  unit: '%'
+  frequency: M
+  calendar: country:IT
+  decimals: 1
+  # max age: M period + 45d issuer lag (ea_big4_industrial_production) + 7d grace; Eurostat sts_inpr_m PRD B-D PCH_PRE
+  sources:
+  - kind: release
+    id: it_industrial_production_mm
+    role: primary
+    max_age_business_days: 60
+    convention: issuer published value (Istat via Eurostat, mm, SCA)
+    evidence: redistributor
+- concept: es_industrial_production_mm
+  family: releases
+  label: Spain industrial production ex construction, m/m (SCA)
+  unit: '%'
+  frequency: M
+  calendar: country:ES
+  decimals: 1
+  # max age: M period + 45d issuer lag (ea_big4_industrial_production) + 7d grace; Eurostat sts_inpr_m PRD B-D PCH_PRE
+  sources:
+  - kind: release
+    id: es_industrial_production_mm
+    role: primary
+    max_age_business_days: 60
+    convention: issuer published value (INE via Eurostat, mm, SCA)
+    evidence: redistributor
+- concept: de_retail_sales_mm
+  family: releases
+  label: Germany retail trade volume ex motor vehicles, m/m (SCA)
+  unit: '%'
+  frequency: M
+  calendar: country:DE
+  decimals: 1
+  # max age: M period + 40d issuer lag (ea_big4_retail) + 7d grace; Eurostat sts_trtu_m VOL_SLS G47 PCH_PRE
+  sources:
+  - kind: release
+    id: de_retail_sales_mm
+    role: primary
+    max_age_business_days: 56
+    convention: issuer published value (Destatis via Eurostat, mm, SCA)
+    evidence: redistributor
+- concept: fr_retail_sales_mm
+  family: releases
+  label: France retail trade volume ex motor vehicles, m/m (SCA)
+  unit: '%'
+  frequency: M
+  calendar: country:FR
+  decimals: 1
+  # max age: M period + 40d issuer lag (ea_big4_retail) + 7d grace; Eurostat sts_trtu_m VOL_SLS G47 PCH_PRE
+  sources:
+  - kind: release
+    id: fr_retail_sales_mm
+    role: primary
+    max_age_business_days: 56
+    convention: issuer published value (INSEE via Eurostat, mm, SCA)
+    evidence: redistributor
+- concept: it_retail_sales_mm
+  family: releases
+  label: Italy retail trade volume ex motor vehicles, m/m (SCA)
+  unit: '%'
+  frequency: M
+  calendar: country:IT
+  decimals: 1
+  # max age: M period + 40d issuer lag (ea_big4_retail) + 7d grace; Eurostat sts_trtu_m VOL_SLS G47 PCH_PRE
+  sources:
+  - kind: release
+    id: it_retail_sales_mm
+    role: primary
+    max_age_business_days: 56
+    convention: issuer published value (Istat via Eurostat, mm, SCA)
+    evidence: redistributor
+- concept: de_hicp_yy
+  family: releases
+  label: Germany HICP, harmonised, all items, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:DE
+  decimals: 1
+  # max age: M period + 18d issuer lag (ea_big4_hicp) + 7d grace; Eurostat prc_hicp_minr RCH_A, flash prc_hicp_fpd FLS
+  sources:
+  - kind: release
+    id: de_hicp_yy
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (Destatis via Eurostat, yy, NSA)
+    evidence: redistributor
+- concept: de_hicp_mm
+  family: releases
+  label: Germany HICP, harmonised, all items, m/m (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:DE
+  decimals: 1
+  # max age: M period + 18d issuer lag (ea_big4_hicp) + 7d grace; Eurostat prc_hicp_minr RCH_M, flash prc_hicp_fpd FLS
+  sources:
+  - kind: release
+    id: de_hicp_mm
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (Destatis via Eurostat, mm, NSA)
+    evidence: redistributor
+- concept: fr_hicp_yy
+  family: releases
+  label: France HICP, harmonised, all items, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:FR
+  decimals: 1
+  # max age: M period + 18d issuer lag (ea_big4_hicp) + 7d grace; Eurostat prc_hicp_minr RCH_A, flash prc_hicp_fpd FLS
+  sources:
+  - kind: release
+    id: fr_hicp_yy
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (INSEE via Eurostat, yy, NSA)
+    evidence: redistributor
+- concept: fr_hicp_mm
+  family: releases
+  label: France HICP, harmonised, all items, m/m (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:FR
+  decimals: 1
+  # max age: M period + 18d issuer lag (ea_big4_hicp) + 7d grace; Eurostat prc_hicp_minr RCH_M, flash prc_hicp_fpd FLS
+  sources:
+  - kind: release
+    id: fr_hicp_mm
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (INSEE via Eurostat, mm, NSA)
+    evidence: redistributor
+- concept: it_hicp_yy
+  family: releases
+  label: Italy HICP, harmonised, all items, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:IT
+  decimals: 1
+  # max age: M period + 18d issuer lag (ea_big4_hicp) + 7d grace; Eurostat prc_hicp_minr RCH_A, flash prc_hicp_fpd FLS
+  sources:
+  - kind: release
+    id: it_hicp_yy
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (Istat via Eurostat, yy, NSA)
+    evidence: redistributor
+- concept: it_hicp_mm
+  family: releases
+  label: Italy HICP, harmonised, all items, m/m (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:IT
+  decimals: 1
+  # max age: M period + 18d issuer lag (ea_big4_hicp) + 7d grace; Eurostat prc_hicp_minr RCH_M, flash prc_hicp_fpd FLS
+  sources:
+  - kind: release
+    id: it_hicp_mm
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (Istat via Eurostat, mm, NSA)
+    evidence: redistributor
+- concept: de_economic_sentiment_indicator
+  family: releases
+  label: Germany Economic Sentiment Indicator (EC, SA)
+  unit: index (long-term mean = 100)
+  frequency: M
+  calendar: country:DE
+  decimals: 1
+  # max age: M period + 1d issuer lag (ea_big4_esi) + 7d grace; Eurostat ei_bssi_m_r2 BS-ESI-I
+  sources:
+  - kind: release
+    id: de_economic_sentiment_indicator
+    role: primary
+    max_age_business_days: 28
+    convention: issuer published value (DG ECFIN via Eurostat, level, SA)
+    evidence: redistributor
+- concept: fr_economic_sentiment_indicator
+  family: releases
+  label: France Economic Sentiment Indicator (EC, SA)
+  unit: index (long-term mean = 100)
+  frequency: M
+  calendar: country:FR
+  decimals: 1
+  # max age: M period + 1d issuer lag (ea_big4_esi) + 7d grace; Eurostat ei_bssi_m_r2 BS-ESI-I
+  sources:
+  - kind: release
+    id: fr_economic_sentiment_indicator
+    role: primary
+    max_age_business_days: 28
+    convention: issuer published value (DG ECFIN via Eurostat, level, SA)
+    evidence: redistributor
+- concept: it_economic_sentiment_indicator
+  family: releases
+  label: Italy Economic Sentiment Indicator (EC, SA)
+  unit: index (long-term mean = 100)
+  frequency: M
+  calendar: country:IT
+  decimals: 1
+  # max age: M period + 1d issuer lag (ea_big4_esi) + 7d grace; Eurostat ei_bssi_m_r2 BS-ESI-I
+  sources:
+  - kind: release
+    id: it_economic_sentiment_indicator
+    role: primary
+    max_age_business_days: 28
+    convention: issuer published value (DG ECFIN via Eurostat, level, SA)
+    evidence: redistributor
+# Spain and Poland national headlines: same Eurostat redistribution and
+# max-age rule as DE/FR/IT. Poland's issuer is GUS (Statistics Poland); Poland
+# has no HICP flash estimate (outside the euro area).
+- concept: es_unemployment_ilo_rate
+  family: releases
+  label: Spain ILO unemployment rate, monthly (SA)
+  unit: '%'
+  frequency: M
+  calendar: country:ES
+  decimals: 1
+  # max age: M period + 35d issuer lag (ea_big4_unemployment) + 7d grace; Eurostat une_rt_m PC_ACT TOTAL
+  sources:
+  - kind: release
+    id: es_unemployment_ilo_rate
+    role: primary
+    max_age_business_days: 53
+    convention: Eurostat monthly estimate compiled from INE inputs (level, SA)
+- concept: es_retail_sales_mm
+  family: releases
+  label: Spain retail trade volume ex motor vehicles, m/m (SCA)
+  unit: '%'
+  frequency: M
+  calendar: country:ES
+  decimals: 1
+  # max age: M period + 40d issuer lag (ea_big4_retail) + 7d grace; Eurostat sts_trtu_m VOL_SLS G47 PCH_PRE
+  sources:
+  - kind: release
+    id: es_retail_sales_mm
+    role: primary
+    max_age_business_days: 56
+    convention: issuer published value (INE via Eurostat, mm, SCA)
+    evidence: redistributor
+- concept: es_hicp_yy
+  family: releases
+  label: Spain HICP, harmonised, all items, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:ES
+  decimals: 1
+  # max age: M period + 18d issuer lag (ea_big4_hicp) + 7d grace; Eurostat prc_hicp_minr RCH_A, flash prc_hicp_fpd FLS
+  sources:
+  - kind: release
+    id: es_hicp_yy
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (INE via Eurostat, yy, NSA)
+    evidence: redistributor
+- concept: es_hicp_mm
+  family: releases
+  label: Spain HICP, harmonised, all items, m/m (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:ES
+  decimals: 1
+  # max age: M period + 18d issuer lag (ea_big4_hicp) + 7d grace; Eurostat prc_hicp_minr RCH_M, flash prc_hicp_fpd FLS
+  sources:
+  - kind: release
+    id: es_hicp_mm
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (INE via Eurostat, mm, NSA)
+    evidence: redistributor
+- concept: es_economic_sentiment_indicator
+  family: releases
+  label: Spain Economic Sentiment Indicator (EC, SA)
+  unit: index (long-term mean = 100)
+  frequency: M
+  calendar: country:ES
+  decimals: 1
+  # max age: M period + 1d issuer lag (ea_big4_esi) + 7d grace; Eurostat ei_bssi_m_r2 BS-ESI-I
+  sources:
+  - kind: release
+    id: es_economic_sentiment_indicator
+    role: primary
+    max_age_business_days: 28
+    convention: issuer published value (DG ECFIN via Eurostat, level, SA)
+    evidence: redistributor
+- concept: pl_gdp_qq
+  family: releases
+  label: Poland real GDP, q/q (SCA)
+  unit: '%'
+  frequency: Q
+  calendar: country:PL
+  decimals: 1
+  # max age: Q period + 35d issuer lag (ea_big4_gdp) + 7d grace; Eurostat namq_10_gdp B1GQ CLV_PCH_PRE
+  sources:
+  - kind: release
+    id: pl_gdp_qq
+    role: primary
+    max_age_business_days: 96
+    convention: issuer published value (GUS via Eurostat, qq, SCA)
+    evidence: redistributor
+- concept: pl_unemployment_ilo_rate
+  family: releases
+  label: Poland ILO unemployment rate, monthly (SA)
+  unit: '%'
+  frequency: M
+  calendar: country:PL
+  decimals: 1
+  # max age: M period + 35d issuer lag (ea_big4_unemployment) + 7d grace; Eurostat une_rt_m PC_ACT TOTAL
+  sources:
+  - kind: release
+    id: pl_unemployment_ilo_rate
+    role: primary
+    max_age_business_days: 53
+    convention: Eurostat monthly estimate compiled from GUS inputs (level, SA)
+- concept: pl_industrial_production_mm
+  family: releases
+  label: Poland industrial production volume, B-D, m/m (SCA)
+  unit: '%'
+  frequency: M
+  calendar: country:PL
+  decimals: 1
+  # max age: M period + 45d issuer lag (ea_big4_industrial_production) + 7d grace; Eurostat sts_inpr_m PRD B-D PCH_PRE
+  sources:
+  - kind: release
+    id: pl_industrial_production_mm
+    role: primary
+    max_age_business_days: 60
+    convention: issuer published value (GUS via Eurostat, mm, SCA)
+    evidence: redistributor
+- concept: pl_retail_sales_mm
+  family: releases
+  label: Poland retail trade volume ex motor vehicles, m/m (SCA)
+  unit: '%'
+  frequency: M
+  calendar: country:PL
+  decimals: 1
+  # max age: M period + 40d issuer lag (ea_big4_retail) + 7d grace; Eurostat sts_trtu_m VOL_SLS G47 PCH_PRE
+  sources:
+  - kind: release
+    id: pl_retail_sales_mm
+    role: primary
+    max_age_business_days: 56
+    convention: issuer published value (GUS via Eurostat, mm, SCA)
+    evidence: redistributor
+- concept: pl_hicp_yy
+  family: releases
+  label: Poland HICP, harmonised, all items, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:PL
+  decimals: 1
+  # max age: M period + 18d issuer lag (ea_big4_hicp) + 7d grace; Eurostat prc_hicp_minr RCH_A
+  sources:
+  - kind: release
+    id: pl_hicp_yy
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (GUS via Eurostat, yy, NSA)
+    evidence: redistributor
+- concept: pl_hicp_mm
+  family: releases
+  label: Poland HICP, harmonised, all items, m/m (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:PL
+  decimals: 1
+  # max age: M period + 18d issuer lag (ea_big4_hicp) + 7d grace; Eurostat prc_hicp_minr RCH_M
+  sources:
+  - kind: release
+    id: pl_hicp_mm
+    role: primary
+    max_age_business_days: 40
+    convention: issuer published value (GUS via Eurostat, mm, NSA)
+    evidence: redistributor
+- concept: pl_economic_sentiment_indicator
+  family: releases
+  label: Poland Economic Sentiment Indicator (EC, SA)
+  unit: index (long-term mean = 100)
+  frequency: M
+  calendar: country:PL
+  decimals: 1
+  # max age: M period + 1d issuer lag (ea_big4_esi) + 7d grace; Eurostat ei_bssi_m_r2 BS-ESI-I
+  sources:
+  - kind: release
+    id: pl_economic_sentiment_indicator
+    role: primary
+    max_age_business_days: 28
+    convention: issuer published value (DG ECFIN via Eurostat, level, SA)
+    evidence: redistributor
+# OECD composite leading indicator via FRED, as US_OECD_CLI; max age: M period
+# + 45d lag + 7d grace.
+- concept: DE_OECD_CLI
+  family: releases
+  label: OECD composite leading indicator, Germany (amplitude adjusted)
+  unit: index (long-term average = 100)
+  frequency: M
+  calendar: country:DE
+  sources:
+  - kind: macro
+    id: DEULOLITOAASTSAM
+    role: primary
+    max_age_business_days: 60
+    convention: OECD amplitude-adjusted composite leading indicator
+  history:
+    mode: single
+    id: DEULOLITOAASTSAM
+# OECD composite leading indicator via FRED, as US_OECD_CLI; max age: M period
+# + 45d lag + 7d grace.
+- concept: FR_OECD_CLI
+  family: releases
+  label: OECD composite leading indicator, France (amplitude adjusted)
+  unit: index (long-term average = 100)
+  frequency: M
+  calendar: country:FR
+  sources:
+  - kind: macro
+    id: FRALOLITOAASTSAM
+    role: primary
+    max_age_business_days: 60
+    convention: OECD amplitude-adjusted composite leading indicator
+  history:
+    mode: single
+    id: FRALOLITOAASTSAM
+# OECD composite leading indicator via FRED, as US_OECD_CLI; max age: M period
+# + 45d lag + 7d grace.
+- concept: IT_OECD_CLI
+  family: releases
+  label: OECD composite leading indicator, Italy (amplitude adjusted)
+  unit: index (long-term average = 100)
+  frequency: M
+  calendar: country:IT
+  sources:
+  - kind: macro
+    id: ITALOLITOAASTSAM
+    role: primary
+    max_age_business_days: 60
+    convention: OECD amplitude-adjusted composite leading indicator
+  history:
+    mode: single
+    id: ITALOLITOAASTSAM
+# OECD composite leading indicator via FRED, as US_OECD_CLI; max age: M period
+# + 45d lag + 7d grace. Poland has none: its FRED CLI series stopped in 2022.
+- concept: ES_OECD_CLI
+  family: releases
+  label: OECD composite leading indicator, Spain (amplitude adjusted)
+  unit: index (long-term average = 100)
+  frequency: M
+  calendar: country:ES
+  sources:
+  - kind: macro
+    id: ESPLOLITOAASTSAM
+    role: primary
+    max_age_business_days: 60
+    convention: OECD amplitude-adjusted composite leading indicator
+  history:
+    mode: single
+    id: ESPLOLITOAASTSAM
