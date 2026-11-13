@@ -30233,6 +30233,96 @@
     },
     {
       "distributor": "FRED",
+      "expected_lag_days": 45,
+      "frequency": "M",
+      "history_start": "1776-07-04",
+      "id": "JPNLOLITOAASTSAM",
+      "issuer": "OECD (via FRED)",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MACRO | JP | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
+      "expected_lag_days": 70,
+      "frequency": "Q",
+      "history_start": "1776-07-04",
+      "id": "JPNRGDPEXP",
+      "issuer": "Cabinet Office, Japan (via FRED)",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MACRO | JP | Real GDP Expenditure Approach (Billions of Chained 2015 Yen, SA)",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
+      "expected_lag_days": 30,
+      "frequency": "M",
+      "history_start": "1776-07-04",
+      "id": "LRUNTTTTJPM156S",
+      "issuer": "Statistics Bureau Japan (via OECD/FRED)",
+      "jobs": [
+        {
+          "name": "daily_eu18",
+          "schedule_pt": "daily 09:00 PT"
+        },
+        {
+          "name": "daily_usclose",
+          "schedule_pt": "daily 13:15 PT"
+        },
+        {
+          "name": "fred_morning",
+          "schedule_pt": "daily 23:45 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "MACRO | JP | Unemployment Rate Age 15+, SA",
+      "notes": "",
+      "stalled_after_days": null,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "macro_series"
+    },
+    {
+      "distributor": "FRED",
       "expected_lag_days": 30,
       "frequency": "M",
       "history_start": "1776-07-04",
@@ -38676,6 +38766,30 @@
       "table": "treasury_debt_outstanding"
     },
     {
+      "distributor": "OECD direct",
+      "expected_lag_days": 9,
+      "families": [
+        "jp_oecd_cli"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "JP_OECD_CLI",
+      "issuer": "OECD",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "OECD harmonised composite leading indicator, amplitude adjusted, long-run average 100",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
       "distributor": "Banxico direct",
       "expected_lag_days": 0,
       "families": [
@@ -40388,6 +40502,30 @@
       "table": "value_vintages"
     },
     {
+      "distributor": "StatisticsBureauJP direct",
+      "expected_lag_days": 41,
+      "families": [
+        "jp_household_spending"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "jp_household_spending_yy",
+      "issuer": "StatisticsBureauJP",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "FIES real annual change in consumption expenditure, two-or-more-person households",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
       "distributor": "MLIT direct",
       "expected_lag_days": 31,
       "families": [
@@ -40405,6 +40543,54 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "MLIT national new residential housing starts, published unadjusted annual percent change; excludes nonresidential starts and the separate SAAR monthly change",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "METI direct",
+      "expected_lag_days": 30,
+      "families": [
+        "jp_industrial_production"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "jp_industrial_production_mm",
+      "issuer": "METI",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Mining and manufacturing production, issuer-published month-to-month percent change; preliminary status retained",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "BIS/BOJ direct",
+      "expected_lag_days": 7,
+      "families": [
+        "jp_policy_rate"
+      ],
+      "frequency": "D",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "jp_policy_rate",
+      "issuer": "BIS/BOJ",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "BIS WS_CBPOL daily end-of-period state of the BoJ uncollateralised overnight call-rate target",
       "notes": "",
       "status": "active",
       "status_reason": "",
@@ -40477,6 +40663,30 @@
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Balance of customs-cleared exports and imports, not seasonally adjusted, billions of JPY; published balance converted from millions; detailed exports with provisional imports remain revised, not final",
+      "notes": "",
+      "status": "active",
+      "status_reason": "",
+      "store": "macro_releases.sqlite",
+      "table": "value_vintages"
+    },
+    {
+      "distributor": "StatisticsBureauJP direct",
+      "expected_lag_days": 30,
+      "families": [
+        "jp_unemployment"
+      ],
+      "frequency": "M",
+      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
+      "id": "jp_unemployment_rate",
+      "issuer": "StatisticsBureauJP",
+      "jobs": [
+        {
+          "name": "macro_releases_daily",
+          "schedule_pt": "daily 06:30 PT"
+        }
+      ],
+      "lag_basis": "declared; 2026-10-31 inventory estimate",
+      "name": "Labour Force Survey unemployment rate, both sexes, age 15 years and over",
       "notes": "",
       "status": "active",
       "status_reason": "",
@@ -42461,7 +42671,7 @@
         "date",
         "series_id"
       ],
-      "series_count": 319,
+      "series_count": 322,
       "status": "active",
       "status_reason": "",
       "store": "hub",
@@ -43217,7 +43427,7 @@
       "primary_key": [
         "id"
       ],
-      "series_count": 133,
+      "series_count": 138,
       "status": "active",
       "status_reason": "",
       "store": "macro_releases.sqlite",

@@ -1153,3 +1153,141 @@ concepts:
   history:
     mode: single
     id: ESPLOLITOAASTSAM
+
+# Japan tier-1 macro coverage. Current values are edition-bound issuer releases;
+# distributor series are alternatives only where the source review certified the
+# same definition. Histories remain single-source and are never spliced.
+- concept: jp_gdp_qq
+  family: releases
+  label: Japan real GDP, q/q (SA, non-annualised)
+  unit: '%'
+  frequency: Q
+  calendar: country:JP
+  decimals: 1
+  sources:
+  - kind: release
+    id: jp_gdp_qq
+    role: primary
+    max_age_business_days: 121
+    convention: issuer published value (ESRI, qq, SA)
+- concept: jp_industrial_production_mm
+  family: releases
+  label: Japan mining and manufacturing production, m/m (SA)
+  unit: '%'
+  frequency: M
+  calendar: country:JP
+  decimals: 1
+  sources:
+  - kind: release
+    id: jp_industrial_production_mm
+    role: primary
+    max_age_business_days: 49
+    convention: issuer published value (METI, mm, SA; preliminary flag retained)
+- concept: JP_OECD_CLI
+  family: releases
+  label: OECD composite leading indicator, Japan (amplitude adjusted)
+  unit: index (long-term average = 100)
+  frequency: M
+  calendar: country:JP
+  decimals: 4
+  sources:
+  - kind: release
+    id: JP_OECD_CLI
+    role: primary
+    max_age_business_days: 60
+    convention: OECD SDMX amplitude-adjusted composite leading indicator
+  - kind: macro
+    id: JPNLOLITOAASTSAM
+    role: secondary
+    max_age_business_days: 60
+    convention: OECD CLI distributed by FRED; separate vintage, never spliced
+    comparability_note: FRED can carry an older OECD snapshot and is reconciled as an alternative.
+  history:
+    mode: single
+    id: JPNLOLITOAASTSAM
+- concept: jp_tankan_large_manufacturers_di
+  family: releases
+  label: Tankan large manufacturers current business conditions DI
+  unit: diffusion index (percentage points)
+  frequency: Q
+  calendar: country:JP
+  decimals: 0
+  sources:
+  - kind: release
+    id: jp_tankan_large_manufacturers_di
+    role: primary
+    max_age_business_days: 72
+    convention: issuer published value (BoJ API; summary PDF edition evidence)
+- concept: jp_cpi_yy
+  family: releases
+  label: Japan CPI all items, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:JP
+  decimals: 1
+  sources:
+  - kind: release
+    id: jp_cpi_yy
+    role: primary
+    max_age_business_days: 44
+    convention: issuer published value (Statistics Bureau, yy, NSA)
+- concept: jp_core_cpi_yy
+  family: releases
+  label: Japan CPI all items less fresh food, y/y (NSA)
+  unit: '%'
+  frequency: M
+  calendar: country:JP
+  decimals: 1
+  sources:
+  - kind: release
+    id: jp_core_cpi_yy
+    role: primary
+    max_age_business_days: 44
+    convention: issuer published value (Statistics Bureau, yy, NSA; energy retained)
+- concept: jp_unemployment_rate
+  family: releases
+  label: Japan unemployment rate, age 15+, SA
+  unit: '%'
+  frequency: M
+  calendar: country:JP
+  decimals: 1
+  sources:
+  - kind: release
+    id: jp_unemployment_rate
+    role: primary
+    max_age_business_days: 60
+    convention: issuer published value (Statistics Bureau LFS, level, SA)
+  - kind: macro
+    id: LRUNTTTTJPM156S
+    role: secondary
+    max_age_business_days: 60
+    convention: age-15+ SA unemployment rate distributed by OECD/FRED; separate vintage
+  history:
+    mode: single
+    id: LRUNTTTTJPM156S
+- concept: jp_household_spending_yy
+  family: releases
+  label: Japan real household consumption expenditure, y/y
+  unit: '%'
+  frequency: M
+  calendar: country:JP
+  decimals: 1
+  sources:
+  - kind: release
+    id: jp_household_spending_yy
+    role: primary
+    max_age_business_days: 57
+    convention: issuer published FIES real y/y, two-or-more-person households
+- concept: jp_policy_rate
+  family: releases
+  label: BoJ short-term policy target, daily state
+  unit: '% per annum'
+  frequency: D
+  calendar: country:JP
+  decimals: 2
+  sources:
+  - kind: release
+    id: jp_policy_rate
+    role: primary
+    max_age_business_days: 10
+    convention: BIS WS_CBPOL D.JP end-of-period target state sourced from BoJ

@@ -405,6 +405,33 @@ fred:
   name: MACRO | US | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
   priority: 2
   country: US
+- symbol: JPNLOLITOAASTSAM
+  expected_lag_days: 45
+  frequency: M
+  issuer: "OECD (via FRED)"
+  asset_class: MACRO
+  area: Japan
+  name: MACRO | JP | OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100)
+  priority: 2
+  country: JP
+- symbol: JPNRGDPEXP
+  expected_lag_days: 70
+  frequency: Q
+  issuer: "Cabinet Office, Japan (via FRED)"
+  asset_class: MACRO
+  area: Japan
+  name: MACRO | JP | Real GDP Expenditure Approach (Billions of Chained 2015 Yen, SA)
+  priority: 2
+  country: JP
+- symbol: LRUNTTTTJPM156S
+  expected_lag_days: 30
+  frequency: M
+  issuer: "Statistics Bureau Japan (via OECD/FRED)"
+  asset_class: MACRO
+  area: Japan
+  name: MACRO | JP | Unemployment Rate Age 15+, SA
+  priority: 2
+  country: JP
 - symbol: DEULOLITOAASTSAM
   expected_lag_days: 45
   frequency: M

@@ -29,12 +29,17 @@ ARCHIVES = {
         "2026-09-18": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040501410&fileKind=4",
         "2026-10-23": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040513539&fileKind=4",
     },
+    "jp_industrial_production": {"2026-10-30": "https://www.meti.go.jp/english/statistics/tyo/iip/xls/b2020_gsm1e.xlsx"},
+    "jp_oecd_cli": {"2026-11-09": "https://sdmx.oecd.org/public/rest/v1/data/OECD.SDD.STES,DSD_STES@DF_CLI,4.1/JPN.M.LI.IX._Z.AA.IX._Z.H?startPeriod=2026-01&format=csvfilewithlabels"},
+    "jp_unemployment": {"2026-10-30": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000031831358&fileKind=0"},
+    "jp_household_spending": {"2026-11-10": "https://www.stat.go.jp/data/kakei/sokuhou/tsuki/zuhyou/fies_t1.xlsx"},
+    "jp_policy_rate": {"2026-11-10": "https://stats.bis.org/api/v1/data/WS_CBPOL/D.JP?startPeriod=2026-09-01&format=csv"},
     "jp_gdp": {
         "2026-08-17": "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe262/tables/ritu-jk2621.csv",
         "2026-09-08": "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe262_2/tables/ritu-jk2622.csv",
     },
 }
-PROVIDERS = {"jp_gdp": "esri", "jp_cpi": "statjp", "jp_tokyo_cpi": "statjp", "jp_tankan": "boj", "jp_trade_balance": "mof"}
+PROVIDERS = {"jp_industrial_production": "meti", "jp_oecd_cli": "oecd", "jp_unemployment": "statjp", "jp_household_spending": "statjp", "jp_policy_rate": "bis", "jp_gdp": "esri", "jp_cpi": "statjp", "jp_tokyo_cpi": "statjp", "jp_tankan": "boj", "jp_trade_balance": "mof"}
 CPI_LISTINGS = {
     "2026-08-28": "https://www.e-stat.go.jp/en/stat-search/files?page=1&layout=datalist&year=20260&month=23070907&toukei=00200573&tstat=000001243876&tclass1=000001243877&cycle=1&tclass2val=0",
     "2026-10-02": "https://www.e-stat.go.jp/en/stat-search/files?page=1&layout=datalist&lid=000001490251",
@@ -229,6 +234,159 @@ def parse_trade(document, since, archives):
                         value=float(printed.replace(',', '')) / 1000)] if in_window(period, since) else []
 
 
+
+def parse_meti_iip_workbook(body):
+    """Return METI mining/manufacturing SA m/m with its preliminary status."""
+    from openpyxl import load_workbook
+    try:
+        workbook = load_workbook(BytesIO(body), data_only=True, read_only=True)
+    except Exception as exc:
+        raise FetchError("METI IIP workbook format needs review") from exc
+    try:
+        if workbook.sheetnames != ["Production", "Shipments", "Inventory", "Inventory Ratio"]:
+            raise FetchError("METI IIP workbook sheets need review")
+        sheet = workbook["Production"]
+        if sheet.cell(1, 1).value != "Seasonally adjusted Index by Industry : Industrial Production (2020=100.0)" or sheet.cell(3, 1).value != "Item_Number":
+            raise FetchError("METI IIP workbook header needs review")
+        rows = [row for row in sheet.iter_rows(values_only=True)
+                if row[0] == 1000000000 and row[1] == "Mining and manufacturing"]
+        if len(rows) != 1:
+            raise FetchError("METI IIP mining and manufacturing row needs review")
+        headers = [sheet.cell(3, col).value for col in range(1, sheet.max_column + 1)]
+        months = [(i, str(value)) for i, value in enumerate(headers)
+                  if (isinstance(value, int) and 200000 <= value <= 209912) or
+                  (isinstance(value, str) and re.fullmatch(r"p 20\d{4}", value))]
+        if len(months) < 2:
+            raise FetchError("METI IIP monthly columns need review")
+        current_i, current = months[-1]
+        previous_i, previous = months[-2]
+        if current.removeprefix("p ") <= previous.removeprefix("p ") or not current.startswith("p "):
+            raise FetchError("METI IIP preliminary period needs review")
+        values = rows[0]
+        latest, prior = values[current_i], values[previous_i]
+        if any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in (latest, prior)):
+            raise FetchError("METI IIP index values need review")
+        period = current.removeprefix("p ")
+        return period[:4] + "-" + period[4:], round(100 * (latest / prior - 1), 1), True
+    finally:
+        workbook.close()
+
+
+def parse_oecd_sdmx(body, expected):
+    """Parse one exact OECD SDMX-CSV series, rejecting dimension drift."""
+    try:
+        rows = list(csv.DictReader(StringIO(body.decode("utf-8-sig"))))
+    except (UnicodeError, csv.Error) as exc:
+        raise FetchError("OECD SDMX CSV format needs review") from exc
+    dimensions = {key: value for key, value in expected.items() if key != "STRUCTURE_ID"}
+    if not rows or any(row.get(key) != value for row in rows for key, value in dimensions.items()):
+        raise FetchError("OECD SDMX series identity needs review")
+    if expected.get("STRUCTURE_ID") and any(expected["STRUCTURE_ID"] not in row.get("STRUCTURE_ID", "") for row in rows):
+        raise FetchError("OECD SDMX flow version needs review")
+    periods = [row.get("TIME_PERIOD", "") for row in rows]
+    if len(set(periods)) != len(periods) or not all(re.fullmatch(r"\d{4}-\d{2}", p) for p in periods):
+        raise FetchError("OECD SDMX periods need review")
+    try:
+        values = [float(row["OBS_VALUE"]) for row in rows]
+    except (KeyError, TypeError, ValueError) as exc:
+        raise FetchError("OECD SDMX observation needs review") from exc
+    latest = max(range(len(periods)), key=periods.__getitem__)
+    return periods[latest], values[latest]
+
+
+def parse_boj_tankan_api(body):
+    """Parse the exact BoJ Tankan actual large-manufacturer history."""
+    import json
+    try:
+        payload = json.loads(body)
+        series = payload["RESULTSET"]
+    except (UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        raise FetchError("BOJ Tankan JSON format needs review") from exc
+    if (payload.get("STATUS") != 200 or len(series) != 1 or
+            series[0].get("SERIES_CODE") != "TK99F1000601GCQ01000" or
+            series[0].get("NAME_OF_TIME_SERIES") != "D.I./Business Conditions/Large Enterprises/Manufacturing/Actual result" or
+            series[0].get("UNIT") != "% points" or series[0].get("FREQUENCY") != "QUARTERLY"):
+        raise FetchError("BOJ Tankan series identity needs review")
+    dates = series[0].get("VALUES", {}).get("SURVEY_DATES", [])
+    values = series[0].get("VALUES", {}).get("VALUES", [])
+    if len(dates) != len(values) or not dates or dates != sorted(dates) or any(str(d)[-2:] not in {"01", "02", "03", "04"} for d in dates):
+        raise FetchError("BOJ Tankan quarterly observations need review")
+    if isinstance(values[-1], bool) or not isinstance(values[-1], (int, float)):
+        raise FetchError("BOJ Tankan value needs review")
+    stamp = str(dates[-1])
+    return stamp[:4] + "-Q" + str(int(stamp[-2:])), float(values[-1])
+
+
+def parse_statjp_lfs_workbook(body):
+    """Parse the Statistics Bureau SA unemployment rate, both sexes, age 15+."""
+    from openpyxl import load_workbook
+    try:
+        workbook = load_workbook(BytesIO(body), data_only=True, read_only=True)
+    except Exception as exc:
+        raise FetchError("Statistics Bureau LFS workbook format needs review") from exc
+    try:
+        sheet = workbook["季節調整値"]
+        # The public historical table is bilingual only in its notes. Lock the
+        # selected national/both-sexes unemployment-rate column and latest row.
+        if sheet.max_column != 22 or sheet.cell(7, 20).value != "Unemployment rate  (percent)" or sheet.cell(9, 20).value != "Both sexes":
+            raise FetchError("Statistics Bureau LFS measure header needs review")
+        candidates = []
+        year = None
+        for values in sheet.iter_rows(min_row=11, values_only=True):
+            y, month, value = values[0], values[1], values[19]
+            if isinstance(y, int) and 1900 <= y <= 2100:
+                year = y
+            match = re.fullmatch(r"(\d{1,2})月", str(month))
+            if year and match and isinstance(value, (int, float)) and not isinstance(value, bool):
+                candidates.append((f"{year:04d}-{int(match[1]):02d}", float(value)))
+        if not candidates or candidates[-1][0] != max(p for p, _ in candidates):
+            raise FetchError("Statistics Bureau LFS latest period needs review")
+        return candidates[-1]
+    finally:
+        workbook.close()
+
+
+def parse_statjp_fies_workbook(body):
+    """Parse FIES Table 1 real y/y spending for two-or-more-person households."""
+    from openpyxl import load_workbook
+    try:
+        workbook = load_workbook(BytesIO(body), data_only=True, read_only=True)
+    except Exception as exc:
+        raise FetchError("Statistics Bureau FIES workbook format needs review") from exc
+    try:
+        if len(workbook.sheetnames) != 1:
+            raise FetchError("Statistics Bureau FIES Table 1 sheet needs review")
+        sheet = workbook.worksheets[0]
+        text = " ".join(str(v) for row in sheet.iter_rows(min_row=1, max_row=25, values_only=True) for v in row if v is not None)
+        if "Two-or-more-person Households" not in text or "Consumption expenditures" not in text:
+            raise FetchError("Statistics Bureau FIES population or measure needs review")
+        period, value = sheet["I5"].value, sheet["I91"].value
+        if not re.fullmatch(r"20\d{4}", str(period).replace(".", "")) or isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise FetchError("Statistics Bureau FIES period or real annual rate needs review")
+        stamp = str(period).replace(".", "")
+        return stamp[:4] + "-" + stamp[4:], float(value)
+    finally:
+        workbook.close()
+
+
+def parse_bis_policy_csv(body):
+    """Parse BIS WS_CBPOL D.JP as the BoJ policy-target daily state."""
+    try:
+        rows = list(csv.DictReader(StringIO(body.decode("utf-8-sig"))))
+    except (UnicodeError, csv.Error) as exc:
+        raise FetchError("BIS policy CSV format needs review") from exc
+    selected = [r for r in rows if r.get("FREQ") == "D" and r.get("REF_AREA") == "JP"]
+    if not selected or len(selected) != len(rows) or any(r.get("SOURCE_REF") != "Bank of Japan" for r in selected):
+        raise FetchError("BIS Japan policy series identity needs review")
+    periods = [r.get("TIME_PERIOD", "") for r in selected]
+    if periods != sorted(periods) or len(periods) != len(set(periods)) or not all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", p) for p in periods):
+        raise FetchError("BIS Japan policy periods need review")
+    try:
+        return periods[-1], float(selected[-1]["OBS_VALUE"])
+    except (KeyError, ValueError) as exc:
+        raise FetchError("BIS Japan policy value needs review") from exc
+
+
 def parse(document, family, since="1900-01", *, archives=None):
     archives = ARCHIVES[family] if archives is None else archives
     if family == "jp_trade_balance":
@@ -248,6 +406,37 @@ def parse(document, family, since="1900-01", *, archives=None):
         # previous forecast, current actual, change, forecast, change.
         row = require(r"Changes Changes Changes Changes Changes Changes Manufacturing ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+)", body)
         return [observation(document, family, edition, "jp_tankan_large_manufacturers_di", row[3], "pdf_table")] if in_window(period, since) else []
+    if family == "jp_industrial_production":
+        period, value, preliminary = parse_meti_iip_workbook(document.body)
+        edition = next((d for d, u in archives.items() if u == document.url), None)
+        expected, stage, _ = reviewed(family, edition)
+        if period != expected or stage != ("preliminary" if preliminary else "final"):
+            raise FetchError("METI IIP edition needs review")
+        return [observation(document, family, edition, "jp_industrial_production_mm", str(value), "xlsx_table")]
+    if family == "jp_oecd_cli":
+        period, value = parse_oecd_sdmx(document.body, {"STRUCTURE_ID": "DSD_STES@DF_CLI(4.1)", "REF_AREA": "JPN", "FREQ": "M", "MEASURE": "LI", "UNIT_MEASURE": "IX", "ACTIVITY": "_Z", "ADJUSTMENT": "AA", "TRANSFORMATION": "IX", "TIME_HORIZ": "_Z", "METHODOLOGY": "H"})
+        edition = next((d for d, u in archives.items() if u == document.url), None)
+        if reviewed(family, edition)[0] != period:
+            raise FetchError("OECD CLI edition needs review")
+        return [observation(document, family, edition, "JP_OECD_CLI", str(value), "sdmx_csv")]
+    if family == "jp_unemployment":
+        period, value = parse_statjp_lfs_workbook(document.body)
+        edition = next((d for d, u in archives.items() if u == document.url), None)
+        if reviewed(family, edition)[0] != period:
+            raise FetchError("Statistics Bureau LFS edition needs review")
+        return [observation(document, family, edition, "jp_unemployment_rate", str(value), "xlsx_table")]
+    if family == "jp_household_spending":
+        period, value = parse_statjp_fies_workbook(document.body)
+        edition = next((d for d, u in archives.items() if u == document.url), None)
+        if reviewed(family, edition)[0] != period:
+            raise FetchError("Statistics Bureau FIES edition needs review")
+        return [observation(document, family, edition, "jp_household_spending_yy", str(value), "xlsx_table")]
+    if family == "jp_policy_rate":
+        period, value = parse_bis_policy_csv(document.body)
+        edition = next((d for d, u in archives.items() if u == document.url), None)
+        if reviewed(family, edition)[0] != period:
+            raise FetchError("BIS policy state edition needs review")
+        return [observation(document, family, edition, "jp_policy_rate", str(value), "sdmx_csv")]
     if family in {"jp_cpi", "jp_tokyo_cpi"}:
         return parse_cpi(document, family, since, archives)
     if family == "jp_gdp":

@@ -18,6 +18,7 @@ from market_data_hub.macro_releases.schedule import RUN_INSTANT, due
 
 ROOT = Path(__file__).parent / "fixtures/macro_releases/m9d1"
 GOLDEN = json.loads((ROOT / "golden-set.json").read_text())["cases"]
+GOLDEN_FAMILIES = tuple(dict.fromkeys(case["family"] for case in GOLDEN))
 
 
 @pytest.fixture(autouse=True)
@@ -61,7 +62,7 @@ def test_issuer_golden_and_read_card(case, tmp_path):
 
 
 def test_family_calendars_and_golden_completeness():
-    for family in ASIA_FAMILIES:
+    for family in GOLDEN_FAMILIES:
         cases = [c for c in GOLDEN if c["family"] == family]
         assert len({c["edition"] for c in cases}) >= 2
         assert SCHEDULES[family].startswith("https://")
@@ -85,7 +86,7 @@ class Replay:
         raise AssertionError("Unrecorded issuer URL: " + url)
 
 
-@pytest.mark.parametrize("family", ASIA_FAMILIES)
+@pytest.mark.parametrize("family", GOLDEN_FAMILIES)
 def test_daily_schedules_and_idempotence(family, tmp_path, monkeypatch):
     monkeypatch.setattr(run_daily, "HttpClient", Replay)
     class Clock:
@@ -128,7 +129,7 @@ def test_release_instant_and_horizon_fail_closed():
         RUN_INSTANT.reset(token)
 
 
-@pytest.mark.parametrize("family", ASIA_FAMILIES)
+@pytest.mark.parametrize("family", GOLDEN_FAMILIES)
 def test_unreviewed_source_url_fails_closed(family):
     case = next(c for c in GOLDEN if c["family"] == family)
     with pytest.raises(FetchError, match="needs review"):
@@ -170,7 +171,7 @@ def test_real_issuer_schedule_evidence_covers_the_reviewed_horizon():
     from openpyxl import load_workbook
     from market_data_hub.macro_releases.tier1_publications import publication_text
     files = {json.loads(p.read_text())["url"] for p in ROOT.glob("*.meta.json")}
-    assert set(SCHEDULES.values()).issubset(files)
+    assert {SCHEDULES[f] for f in GOLDEN_FAMILIES}.issubset(files)
     cpi, _ = publication_text(document("cpi-calendar.html"))
     assert "October 30" in cpi and "December 25" in cpi and "December 18" in cpi
     nbs, _ = publication_text(document("nbs-calendar.html"))

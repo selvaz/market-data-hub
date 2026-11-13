@@ -41,6 +41,11 @@ EDITIONS = {
         "2026-11-16": ("2026-Q3", "preliminary", "08:50"),
         "2026-12-08": ("2026-Q3", "revised", "08:50"),
     },
+    "jp_industrial_production": {"2026-10-30": ("2026-09", "preliminary", "08:50")},
+    "jp_oecd_cli": {"2026-11-09": ("2026-10", "final", "00:00")},
+    "jp_unemployment": {"2026-10-30": ("2026-09", "final", "08:30")},
+    "jp_household_spending": {"2026-11-10": ("2026-09", "final", "08:30")},
+    "jp_policy_rate": {"2026-11-10": ("2026-11-10", "final", "00:00")},
     "cn_gdp": {
         "2026-07-16": ("2026-Q2", "preliminary", "09:30"),
         "2026-10-19": ("2026-Q3", "preliminary", "10:00"),
@@ -68,6 +73,11 @@ EDITIONS = {
     },
 }
 SCHEDULES = {family: NBS_CALENDAR for family in EDITIONS}
+SCHEDULES["jp_industrial_production"] = "https://www.meti.go.jp/english/statistics/tyo/iip/index.html"
+SCHEDULES["jp_oecd_cli"] = "https://www.oecd.org/en/data/datasets/oecd-composite-leading-indicators-clis.html"
+SCHEDULES["jp_unemployment"] = "https://www.stat.go.jp/english/data/roudou/results/month/index.html"
+SCHEDULES["jp_household_spending"] = "https://www.stat.go.jp/english/data/kakei/156.html"
+SCHEDULES["jp_policy_rate"] = "https://www.bis.org/statistics/cbpol.htm"
 SCHEDULES["jp_gdp"] = "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262/pdf/note_e.pdf"
 SCHEDULES["jp_cpi"] = "https://www.stat.go.jp/english/data/cpi/1582.htm"
 SCHEDULES["jp_tokyo_cpi"] = SCHEDULES["jp_cpi"]
