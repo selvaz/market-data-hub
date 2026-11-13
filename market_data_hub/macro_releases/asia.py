@@ -51,7 +51,8 @@ def fetch_archives(client, family, since, provider, archives, parse):
         editions[item.edition_date] = (item.period, item.stage, item.release_time or "00:00")
         # A generic issuer listing is discovery evidence, not a data file.  In
         # particular, never replace a reviewed e-Stat workbook with HTML.
-        if "stat-search/files" not in item.document_url or item.edition_date not in urls:
+        listing_only = "stat-search/files" in item.document_url
+        if not listing_only:
             urls[item.edition_date] = item.document_url
     token = DISCOVERED_EDITIONS.set({(family, item.edition_date): editions[item.edition_date] for item in live})
     cache = {}

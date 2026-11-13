@@ -42,7 +42,7 @@ def trade_link(document, edition):
             if plain(link.text()) != "XML":
                 continue
             url = urljoin(MOF_INDEX, link.get("href"))
-            if not re.fullmatch(r"https://www\.customs\.go\.jp/toukei/shinbun/trade-st_e/2026/\d{7}e\.xml", url):
+            if not re.fullmatch(r"https://www\.customs\.go\.jp/toukei/shinbun/trade-st_e/" + re.escape(edition[:4]) + r"/\d{7}e\.xml", url):
                 raise FetchError("MOF trade listing format or issuer URL needs review")
             urls.add(url)
     return unique(urls)
@@ -54,7 +54,7 @@ def cpi_link(document, family, edition):
     tokyo = family == "jp_tokyo_cpi"
     survey = shift_month(period, -1) if tokyo else period
     label = "Subgroup Index for Ku-area of Tokyo" if tokyo else "Subgroup Index for Japan"
-    require("2025-Base Consumer Price Index", plain(document.body.decode("utf-8")))
+    require(r"20\d{2}-Base Consumer Price Index", plain(document.body.decode("utf-8")))
     expected = label + " Monthly Survey date " + datetime.strptime(survey, "%Y-%m").strftime("%Y%b.") + " Update date " + edition
     urls = set()
     for group in Page(document.body).root.find_all("ul", {"class": "stat-dataset_list-detail"}):
@@ -158,7 +158,8 @@ def nbs_link(document, family, edition):
         for link in row.find_all("a"):
             title = link.get("title") or re.sub(r"^\d+\.", "", plain(link.text()))
             activity = family == "cn_activity" and title.startswith("National Economy ") and re.search(
-                r"\bin (?:the )?" + datetime.strptime(period, "%Y-%m").strftime("%B") + r"(?: 2026)?$", title)
+                r"\bin (?:the )?" + datetime.strptime(period, "%Y-%m").strftime("%B") +
+                r"(?: " + re.escape(period[:4]) + r")?$", title)
             if not activity and (expected is None or title != expected):
                 continue
             stamps = [plain(s.text()) for s in row.find_all("span")]
@@ -184,7 +185,8 @@ def publication_url(client, family, edition, known, cache):
     if family == "jp_trade_balance":
         url = known or trade_link(get(client, cache, "mof", MOF_INDEX), edition)
         if url:
-            japan_macro.trade_stylesheet(get(client, cache, "mof", japan_macro.TRADE_STYLE))
+            style_url = japan_macro.trade_style_url(edition)
+            japan_macro.trade_stylesheet(get(client, cache, "mof", style_url), edition)
         return url
     if known:
         return known

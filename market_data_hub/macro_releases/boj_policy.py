@@ -99,7 +99,7 @@ def fetch(client, family, since):
 
     current_year = index_statements(listing, year)
     indexed.update(current_year)
-    if year > 2026:
+    if year > max(int(d[:4]) for d in EDITIONS[family]):
         previous_year = year - 1
         previous_listing = client.get(
             "boj", f"{HOST}/en/mopo/mpmdeci/mpr_{previous_year}/index.htm"

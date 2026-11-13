@@ -268,3 +268,212 @@ def test_2027_q4_gdp_editions_resolve_period_derived_csv_links():
         ("2027-03-09", "2026-Q4", 0.7),
     ]
     assert csv_urls <= set(client.requested)
+
+@pytest.mark.parametrize("family,edition,period,tokyo", [
+    ("jp_cpi", "2026-11-20", "2026-10", False),
+    ("jp_cpi", "2027-04-23", "2027-03", False),
+    ("jp_tokyo_cpi", "2027-04-30", "2027-04", True),
+])
+def test_cpi_listing_discovery_resolves_workbook_and_produces_observations(
+        monkeypatch, family, edition, period, tokyo):
+    """A discovery listing is evidence, never the edition's known data file."""
+    from openpyxl import load_workbook
+    from market_data_hub.macro_releases.asia_discovery import CPI_INDEX
+
+    root = Path(__file__).parent / "fixtures/macro_releases/m9d1"
+    workbook = load_workbook(root / "jp-cpi-sep.xlsx")
+    sheet = next(s for s in workbook if s["H8"].value == "Monthly, % Change over the year")
+    source_row = next(row for row in range(1, sheet.max_row + 1)
+                      if str(sheet.cell(row, 2).value).strip() == "202609"
+                      and str(sheet.cell(row, 3).value).strip() == "03")
+    sheet.cell(source_row, 2).value = period.replace("-", "")
+    sheet["I6"] = ("Table 1-2 Subgroup Index for Ku-area of Tokyo" if tokyo
+                   else "Table 1-1 Subgroup Index for Japan")
+    if tokyo:
+        # The captured national workbook has no preliminary note.
+        sheet.cell(1, 1).value = "Note) Latest monthly figures are preliminary ones."
+    output = BytesIO()
+    workbook.save(output)
+    workbook.close()
+
+    listing_url = "https://www.e-stat.go.jp/en/stat-search/files?synthetic=1"
+    file_url = ("https://www.e-stat.go.jp/en/stat-search/file-download?"
+                "statInfId=999999999999&fileKind=4")
+    survey = period
+    if tokyo:
+        from market_data_hub.macro_releases.bls import shift_month
+        survey = shift_month(period, -1)
+    label = ("Subgroup Index for Ku-area of Tokyo" if tokyo
+             else "Subgroup Index for Japan")
+    month_link = (f'<ul class="stat-dataset_list-detail">2025-Base Consumer Price Index '
+                  f'{label} Monthly Survey date '
+                  f'{__import__("datetime").datetime.strptime(survey, "%Y-%m").strftime("%Y%b.")} '
+                  f'Update date {edition}<a data-release_count="{2 if tokyo else 1}" '
+                  f'href="{file_url}">Excel</a></ul>').encode()
+    index = (f'<a href="{listing_url}&year={survey[:4]}0&month=230709{survey[5:]}&toukei=00200573'
+             f'&tstat=000001243876">'
+             f'{__import__("datetime").datetime.strptime(survey, "%Y-%m").strftime("%b.")}</a>').encode()
+
+    discovered = jp_discovery.Edition(
+        edition, period, "preliminary" if tokyo else "final", "08:30",
+        "https://www.e-stat.go.jp/en/stat-search/files",
+    )
+    monkeypatch.setattr(jp_discovery, "discover", lambda client, selected: [discovered])
+
+    class Client:
+        def get(self, provider, url, params=None):
+            if url == CPI_INDEX:
+                body = index
+            elif url.startswith(listing_url):
+                body = month_link
+            elif url == file_url:
+                body = output.getvalue()
+            else:
+                raise AssertionError(url)
+            return Document(body, url, edition + "T00:01:00Z", hashlib.sha256(body).hexdigest())
+
+    with run_at(edition + "T12:00:00Z") as pending:
+        rows = japan_macro.fetch(Client(), family, period)
+
+    assert pending == {}
+    assert rows
+    assert {row.edition for row in rows} == {edition}
+    assert {row.period for row in rows} == {period}
+
+
+def test_march_2027_tankan_discovery_reaches_generalised_pdf_parser(monkeypatch):
+    """Exercise Q1 and 2027 through discovery, fetch and the production parser."""
+    edition = jp_discovery.Edition(
+        "2027-04-01", "2027-Q1", "final", "08:50",
+        "https://www.boj.or.jp/en/statistics/tk/gaiyo/2027/tka2703.pdf",
+    )
+    monkeypatch.setattr(jp_discovery, "discover", lambda client, family: [edition])
+    extracted = (
+        "Tankan Summary (March 2027) 214th Short-Term Economic Survey of "
+        "Enterprises in Japan April 1, 2027 "
+        '1. Business Conditions DI ("favorable" - "unfavorable"), % points '
+        "Large Enterprises Medium-sized Enterprises Small Enterprises "
+        "Changes Changes Changes Changes Changes Changes Manufacturing "
+        "10 11 12 2 13 1"
+    )
+
+    class Page:
+        def extract_text(self):
+            return extracted
+
+    class Reader:
+        def __init__(self, stream):
+            self.pages = [Page()]
+
+    monkeypatch.setattr("pypdf.PdfReader", Reader)
+
+    class Client:
+        def get(self, provider, url, params=None):
+            body = b"%PDF-synthetic-tankan"
+            return Document(body, url, "2027-04-01T00:01:00Z", hashlib.sha256(body).hexdigest())
+
+    with run_at("2027-04-01T12:00:00Z") as pending:
+        rows = japan_macro.fetch(Client(), "jp_tankan", "2027-01")
+
+    assert pending == {}
+    assert [(row.edition, row.period, row.value) for row in rows] == [
+        ("2027-04-01", "2027-Q1", 12.0)
+    ]
+
+
+def _fetch_discovered_fixture(monkeypatch, family, edition, body, period, *, published=None):
+    url = "https://issuer.example/2027/" + family
+    discovered = jp_discovery.Edition(
+        edition, period, "preliminary" if family == "jp_industrial_production" else "final",
+        "08:50", url, published_value=published,
+    )
+    monkeypatch.setattr(jp_discovery, "discover", lambda client, selected: [discovered])
+
+    class Client:
+        def get(self, provider, requested, params=None):
+            payload = b"<html>discovery evidence</html>" if requested == jp_discovery.METI else body
+            return Document(payload, requested, edition + "T00:01:00Z",
+                            hashlib.sha256(payload).hexdigest())
+
+    with run_at(edition + "T12:00:00Z") as pending:
+        rows = japan_macro.fetch(Client(), family, "2027-01")
+    assert pending == {}
+    assert rows and {row.edition for row in rows} == {edition}
+    assert {row.period for row in rows} == {period}
+    return rows
+
+
+def test_2027_industrial_production_rollover_uses_synthesised_workbook(monkeypatch):
+    from openpyxl import load_workbook
+    fixture = Path(__file__).parent / "fixtures/japan_tier1/meti_iip_gsm1e.xlsx"
+    workbook = load_workbook(fixture)
+    sheet = workbook["Production"]
+    production = next(row for row in range(1, sheet.max_row + 1)
+                      if sheet.cell(row, 1).value == 1000000000)
+    prior = sheet.cell(production, sheet.max_column).value
+    column = sheet.max_column + 1
+    sheet.cell(3, column).value = "p 202703"
+    sheet.cell(production, column).value = prior * 1.022
+    stream = BytesIO()
+    workbook.save(stream)
+    workbook.close()
+
+    rows = _fetch_discovered_fixture(
+        monkeypatch, "jp_industrial_production", "2027-04-30",
+        stream.getvalue(), "2027-03", published="2.2",
+    )
+    assert [(row.indicator_id, row.value) for row in rows] == [
+        ("jp_industrial_production_mm", 2.2)
+    ]
+
+
+def test_2027_unemployment_rollover_uses_synthesised_workbook(monkeypatch):
+    from openpyxl import load_workbook
+    fixture = Path(__file__).parent / "fixtures/japan_tier1/statjp_cpi_file_000031831358.xlsx"
+    workbook = load_workbook(fixture)
+    sheet = workbook["季節調整値"]
+    row = sheet.max_row + 1
+    sheet.cell(row, 1).value = 2027
+    sheet.cell(row, 2).value = "3月"
+    sheet.cell(row, 20).value = 2.6
+    stream = BytesIO()
+    workbook.save(stream)
+    workbook.close()
+
+    rows = _fetch_discovered_fixture(
+        monkeypatch, "jp_unemployment", "2027-04-30", stream.getvalue(), "2027-03"
+    )
+    assert [(row.indicator_id, row.value) for row in rows] == [
+        ("jp_unemployment_rate", 2.6)
+    ]
+
+
+def test_2027_household_spending_rollover_uses_synthesised_workbook(monkeypatch):
+    from openpyxl import Workbook
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet["A1"] = "Two-or-more-person Households"
+    sheet["A2"] = "Consumption expenditures"
+    sheet["I5"] = 2027.03
+    sheet["I91"] = 1.7
+    stream = BytesIO()
+    workbook.save(stream)
+    workbook.close()
+
+    rows = _fetch_discovered_fixture(
+        monkeypatch, "jp_household_spending", "2027-05-10", stream.getvalue(), "2027-03"
+    )
+    assert [(row.indicator_id, row.value) for row in rows] == [
+        ("jp_household_spending_yy", 1.7)
+    ]
+
+
+def test_2027_oecd_cli_rollover_uses_synthesised_sdmx(monkeypatch):
+    fixture = Path(__file__).parent / "fixtures/japan_tier1/oecd_cli_jpn.csv"
+    body = fixture.read_bytes().replace(b"2026-10", b"2027-03")
+    rows = _fetch_discovered_fixture(
+        monkeypatch, "jp_oecd_cli", "2027-04-09", body, "2027-03"
+    )
+    assert [(row.indicator_id, row.value) for row in rows] == [
+        ("JP_OECD_CLI", 100.2095)
+    ]

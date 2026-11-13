@@ -56,7 +56,7 @@ def cpi_archive_listing(document, family, edition):
     label = "Subgroup Index for Ku-area of Tokyo" if tokyo else "Subgroup Index for Japan"
     from .bls import shift_month
     survey = shift_month(period, -1) if tokyo else period
-    require("2025-Base Consumer Price Index", plain(document.body.decode("utf-8")))
+    require(r"20\d{2}-Base Consumer Price Index", plain(document.body.decode("utf-8")))
     url = ARCHIVES[family][edition]
     found = []
     for group in page.find_all("ul"):
@@ -121,7 +121,13 @@ GDP_MENUS = {
     "2026-08-17": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262/gdemenuea.html",
     "2026-09-08": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262_2/gdemenuea.html",
 }
-TRADE_STYLE = "https://www.customs.go.jp/toukei/shinbun/trade-st_e/2026/d1201e.xsl"
+def trade_style_url(edition):
+    """Return the stylesheet beside the edition's annual trade archive."""
+    return f"https://www.customs.go.jp/toukei/shinbun/trade-st_e/{edition[:4]}/d1201e.xsl"
+
+
+# Historical fixture anchor; live editions use ``trade_style_url``.
+TRADE_STYLE = trade_style_url("2026-10-21")
 
 
 def gdp_archive_listing(archive, menu, edition):
@@ -140,9 +146,14 @@ def gdp_archive_listing(archive, menu, edition):
     stamp = stamp.replace(" 0", " ")
     if len(matches) != 1:
         raise FetchError("ESRI GDP archive edition needs review")
-    require(re.escape(stamp) + r" Quarterly Estimates of GDP for Apr\.-Jun\.2026 \(The " +
+    period, _, _ = reviewed("jp_gdp", edition)
+    year, quarter = period.split("-Q")
+    quarter_label = {"1": r"Jan\.-Mar\.", "2": r"Apr\.-Jun\.",
+                     "3": r"Jul\.-Sep\.", "4": r"Oct\.-Dec\."}[quarter]
+    release_label = quarter_label + re.escape(year)
+    require(re.escape(stamp) + r" Quarterly Estimates of GDP for " + release_label + r" \(The " +
             ordinal + r" preliminary Estimates\)", matches[0])
-    require(r"Apr\.-Jun\.2026 \(The " + ("1st" if stage == "preliminary" else "2nd") +
+    require(release_label + r" \(The " + ("1st" if stage == "preliminary" else "2nd") +
             r" preliminary\)", plain(menu.body.decode("utf-8")))
     links = [link for link in Page(menu.body).root.find_all("a")
              if "https://www.esri.cao.go.jp" + link.get("href") == ARCHIVES["jp_gdp"][edition]]
@@ -185,9 +196,11 @@ def parse_gdp(document, since, archives):
     return [observation(document, "jp_gdp", edition, "jp_gdp_qq", rates[period], "csv")] if in_window(period, since) else []
 
 
-def trade_stylesheet(document):
+def trade_stylesheet(document, edition=None):
     """The publisher's XML presentation defines both units and NSA basis."""
-    if document.url != TRADE_STYLE:
+    expected = trade_style_url(edition) if edition else None
+    pattern = r"https://www\.customs\.go\.jp/toukei/shinbun/trade-st_e/20\d{2}/d1201e\.xsl"
+    if (expected and document.url != expected) or (not expected and not re.fullmatch(pattern, document.url)):
         raise FetchError("MOF trade stylesheet URL needs review")
     text = plain(document.body.decode("utf-8"))
     require(r"Ministry of Finance", text)
@@ -358,10 +371,17 @@ def parse(document, family, since="1900-01", *, archives=None, edition=None,
         if not document.body.startswith(b"%PDF"):
             raise FetchError("BOJ Tankan PDF format needs review")
         body = re.sub(r"\s+", " ", PdfReader(BytesIO(document.body)).pages[0].extract_text())
-        stamp = require(r"Tankan Summary \((June|September|December) 2026\) \d+th Short-Term Economic Survey of Enterprises in Japan (\w+ \d{1,2}, 2026)", body)
-        edition = datetime.strptime(stamp[2], "%B %d, %Y").date().isoformat()
+        stamp = require(
+            r"Tankan Summary \((March|June|September|December) (20\d{2})\) "
+            r"\d+th Short-Term Economic Survey of Enterprises in Japan "
+            r"(\w+ \d{1,2}, 20\d{2})", body,
+        )
+        edition = datetime.strptime(stamp[3], "%B %d, %Y").date().isoformat()
         period, _, _ = reviewed(family, edition)
-        if document.url != archives.get(edition) or stamp[1] != {"Q2": "June", "Q3": "September", "Q4": "December"}[period[-2:]]:
+        survey_year, quarter = period.split("-Q")
+        survey_month = {"1": "March", "2": "June", "3": "September", "4": "December"}[quarter]
+        if (document.url != archives.get(edition) or stamp[1] != survey_month or
+                stamp[2] != survey_year):
             raise FetchError("BOJ Tankan survey period or URL needs review")
         require(r'1\. Business Conditions DI \("favorable" - "unfavorable"\), % points Large Enterprises Medium-sized Enterprises Small Enterprises', body)
         # Large enterprises occupy the first six columns: previous actual,
