@@ -38,7 +38,10 @@ JOBS = {
     "treasury_fiscal": "daily 15:45 PT",
     "gpr": "daily 14:10 PT (proposed, disabled)",
     "eia_inventories": "daily 14:00 PT (proposed, disabled)",
-    "econ_calendar": "retired/frozen since 2026-09-25; former daily 06:00 PT",
+    "econ_calendar": (
+        "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; "
+        "calendar now collected by LazyCommittee); former daily 06:00 PT"
+    ),
     "alfred_backfill": "manual/on demand; intended hour 22:00 PT, no automatic trigger",
     "weekly_earnings_watchlist": "Sunday 15:00 PT",
     "weekly_earnings_daily": "Monday-Friday 22:30 PT",
@@ -500,7 +503,11 @@ def build_rows(config_dir=CONFIG_DIR):
             _row(
                 dict(
                     e,
-                    retired="Collection disabled since 2026-09-25; retained/frozen historical tables",
+                    retired=(
+                        "Retired 2026-11-11: hub collector removed (collection stopped "
+                        "2026-09-25); the calendar is collected by LazyCommittee. "
+                        "Historical tables retained/frozen"
+                    ),
                 ),
                 id=e["key"],
                 table="calendar_indicators",

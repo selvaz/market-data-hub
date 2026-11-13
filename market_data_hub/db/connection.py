@@ -283,8 +283,8 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # v10 -> v11: calendar_indicator_aliases, which records what each
         # source means by a name instead of recomputing it from a regex.
         # Additive in the same way. The table starts empty; seeding it from
-        # the bindings already in calendar_observations is a deliberate act
-        # (econ_calendar.aliases.seed_from_observations), not a migration:
+        # the bindings already in calendar_observations was a deliberate act
+        # (the retired econ_calendar.aliases.seed_from_observations), not a migration:
         # importing those bindings is a claim that they are right, and that
         # claim belongs to whoever runs it.
         current = 11

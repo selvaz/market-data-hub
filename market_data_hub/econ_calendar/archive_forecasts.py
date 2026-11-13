@@ -12,7 +12,7 @@ import json
 from pathlib import Path
 from typing import Union
 
-from market_data_hub.econ_calendar.collect.forexfactory import paese_iso
+from market_data_hub.econ_calendar.ff_archive import paese_iso
 from market_data_hub.macro_releases.consensus import _snapshot_bytes, manifest_hashes
 from market_data_hub.macro_releases.read_times import timestamp
 

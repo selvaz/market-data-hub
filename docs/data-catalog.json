@@ -915,14 +915,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Building Approvals m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -936,14 +936,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -957,14 +957,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -978,14 +978,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Employment Change",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -999,14 +999,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1020,14 +1020,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "RBA Rate Decision",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1041,14 +1041,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Retail Sales m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1062,14 +1062,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Trade Balance",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1083,14 +1083,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1104,14 +1104,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Wage Price Index q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1125,14 +1125,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1146,14 +1146,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "IGP-M",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1167,14 +1167,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Industrial Production m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1188,14 +1188,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "IPCA m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1209,14 +1209,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "IPCA y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1230,14 +1230,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Retail Sales m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1251,14 +1251,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Selic Rate (Copom)",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1272,14 +1272,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Trade Balance",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1293,14 +1293,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1314,14 +1314,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "BoC Rate Decision",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1335,14 +1335,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Core CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1356,14 +1356,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1377,14 +1377,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Employment Change",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1398,14 +1398,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1419,14 +1419,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Housing Starts",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1440,14 +1440,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Ivey PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1461,14 +1461,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Manufacturing Sales m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1482,14 +1482,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1503,14 +1503,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Retail Sales m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1524,14 +1524,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Trade Balance",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1545,14 +1545,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1566,14 +1566,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1587,14 +1587,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1608,14 +1608,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1629,14 +1629,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1650,14 +1650,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1671,14 +1671,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1692,14 +1692,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Exports y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1713,14 +1713,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Fixed Asset Investment",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1734,14 +1734,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1755,14 +1755,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Imports y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1776,14 +1776,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Industrial Production y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1797,14 +1797,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "New Yuan Loans",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1818,14 +1818,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Loan Prime Rate 1y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1839,14 +1839,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "M2 Money Supply y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1860,14 +1860,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Caixin/RatingDog Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1881,14 +1881,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Caixin/RatingDog Services PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1902,14 +1902,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "NBS Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1923,14 +1923,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "NBS Non-Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1944,14 +1944,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "PPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1965,14 +1965,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Retail Sales y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -1986,14 +1986,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Trade Balance",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2007,14 +2007,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "German CPI m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2028,14 +2028,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "German CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2049,14 +2049,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "German Factory Orders m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2070,14 +2070,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Ifo Business Climate (DE)",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2091,14 +2091,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "German Industrial Production m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2112,14 +2112,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "German Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2133,14 +2133,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "German Services PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2154,14 +2154,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "German Retail Sales m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2175,14 +2175,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "ZEW Economic Sentiment (DE)",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2196,14 +2196,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Core HICP y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2217,14 +2217,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "ECB Rate Decision",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2238,14 +2238,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Employment Change q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2259,14 +2259,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2280,14 +2280,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "HICP y/y (flash)",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2301,14 +2301,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Industrial Production m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2322,14 +2322,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2343,14 +2343,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Services PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2364,14 +2364,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Retail Sales m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2385,14 +2385,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Sentix Investor Confidence",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2406,14 +2406,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2427,14 +2427,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2448,14 +2448,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Exports",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2469,14 +2469,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2490,14 +2490,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Imports",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2511,14 +2511,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Industrial Production y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2532,14 +2532,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2553,14 +2553,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Services PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2574,14 +2574,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "RBI Repo Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2595,14 +2595,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Trade Balance",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2616,14 +2616,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "WPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2637,14 +2637,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "BoJ Rate Decision",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2658,14 +2658,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "National Core CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2679,14 +2679,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "National CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2700,14 +2700,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Average Cash Earnings y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2721,14 +2721,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2742,14 +2742,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Industrial Production m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2763,14 +2763,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Core Machinery Orders m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2784,14 +2784,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2805,14 +2805,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Retail Sales y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2826,14 +2826,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Tankan Large Manufacturers",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2847,14 +2847,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Tokyo CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2868,14 +2868,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Trade Balance",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2889,14 +2889,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2910,14 +2910,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "BoK Base Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2931,14 +2931,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2952,14 +2952,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Exports y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2973,14 +2973,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Exports First 20 Days",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -2994,14 +2994,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3015,14 +3015,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Industrial Production y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3036,14 +3036,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Trade Balance",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3057,14 +3057,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3078,14 +3078,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Banxico Rate Decision",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3099,14 +3099,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Core CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3120,14 +3120,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3141,14 +3141,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3162,14 +3162,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3183,14 +3183,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Industrial Production y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3204,14 +3204,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Remittances",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3225,14 +3225,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Retail Sales y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3246,14 +3246,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Trade Balance",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3267,14 +3267,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3288,14 +3288,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "RBNZ Official Cash Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3309,14 +3309,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CBC Discount Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3330,14 +3330,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3351,14 +3351,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Export Orders y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3372,14 +3372,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Exports y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3393,14 +3393,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3414,14 +3414,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Industrial Production y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3435,14 +3435,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Trade Balance",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3456,14 +3456,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3477,14 +3477,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "BoE Bank Rate Decision",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3498,14 +3498,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Claimant Count Change",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3519,14 +3519,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Core CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3540,14 +3540,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3561,14 +3561,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Average Earnings",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3582,14 +3582,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3603,14 +3603,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP q/q",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3624,14 +3624,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3645,14 +3645,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Services PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3666,14 +3666,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Public Sector Net Borrowing",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3687,14 +3687,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Retail Sales m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3708,14 +3708,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "ILO Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3729,14 +3729,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "ADP Non-Farm Employment Change",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3750,14 +3750,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Initial Jobless Claims",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3771,14 +3771,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Core CPI m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3792,14 +3792,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Core CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3813,14 +3813,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Core PCE Price Index m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3834,14 +3834,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3855,14 +3855,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "CPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3876,14 +3876,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Durable Goods Orders",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3897,14 +3897,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Average Hourly Earnings y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3918,14 +3918,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Factory Orders m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3939,14 +3939,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Fed Funds Rate Decision",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3960,14 +3960,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "GDP q/q annualizzato",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -3981,14 +3981,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Housing Starts",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4002,14 +4002,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Industrial Production m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4023,14 +4023,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "ISM Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4044,14 +4044,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "ISM Manufacturing Prices",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4065,14 +4065,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "ISM Services PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4086,14 +4086,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "JOLTS Job Openings",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4107,14 +4107,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Non-Farm Payrolls",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4128,14 +4128,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "S&P Global Manufacturing PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4149,14 +4149,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "S&P Global Services PMI",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4170,14 +4170,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "PPI y/y",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4191,14 +4191,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Retail Sales m/m",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4212,14 +4212,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Trade Balance",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4233,14 +4233,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "U. Michigan Sentiment",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -4254,14 +4254,14 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "lag_basis": "declared; 2026-10-31 inventory estimate",
       "name": "Unemployment Rate",
       "notes": "",
       "status": "retired",
-      "status_reason": "Collection disabled since 2026-09-25; retained/frozen historical tables",
+      "status_reason": "Retired 2026-11-11: hub collector removed (collection stopped 2026-09-25); the calendar is collected by LazyCommittee. Historical tables retained/frozen",
       "store": "hub",
       "table": "calendar_indicators"
     },
@@ -41940,7 +41940,7 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "point_in_time": "Frozen since 2026-09-25. Observations retain provider + vintage_date; filter vintage_date <= cutoff before choosing the latest per event/provider. Event metadata and aliases are current state.",
@@ -41960,7 +41960,7 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "point_in_time": "Frozen since 2026-09-25. Observations retain provider + vintage_date; filter vintage_date <= cutoff before choosing the latest per event/provider. Event metadata and aliases are current state.",
@@ -41979,7 +41979,7 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "point_in_time": "Frozen since 2026-09-25. Observations retain provider + vintage_date; filter vintage_date <= cutoff before choosing the latest per event/provider. Event metadata and aliases are current state.",
@@ -42000,7 +42000,7 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "point_in_time": "Frozen since 2026-09-25. Observations retain provider + vintage_date; filter vintage_date <= cutoff before choosing the latest per event/provider. Event metadata and aliases are current state.",
@@ -42019,7 +42019,7 @@
       "jobs": [
         {
           "name": "econ_calendar",
-          "schedule_pt": "retired/frozen since 2026-09-25; former daily 06:00 PT"
+          "schedule_pt": "retired 2026-11-11 (collector removed; collection stopped 2026-09-25; calendar now collected by LazyCommittee); former daily 06:00 PT"
         }
       ],
       "point_in_time": "Frozen since 2026-09-25. Observations retain provider + vintage_date; filter vintage_date <= cutoff before choosing the latest per event/provider. Event metadata and aliases are current state.",

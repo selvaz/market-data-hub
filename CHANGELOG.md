@@ -7,6 +7,9 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Removed
+- Hub economic-calendar collector retired (owner decision 2026-11-11; collection had stopped 2026-09-25): the calendar is collected by LazyCommittee, one source per concept. Removed `econ_calendar/collect/` (myfxbook, consolidation, matching, timezones, the FF CSV collector), `aliases`, `ingest`, `reference`, `macro_bridge`, `validate`, `config/econ_calendar_aliases.yaml`, the `calendar` and `validate` extras and their tests. `run_econ_calendar.py` now accepts only `--archive-only`. Kept for live readers: `econ_calendar.catalog` (catalogue and discovery over the frozen `calendar_*` tables), `econ_calendar.archive_forecasts`, and the raw FF archive, moved from `econ_calendar.collect.forexfactory` to `econ_calendar.ff_archive`. The `calendar_*` tables and their data are untouched; the data catalogue marks the dataset retired.
+
 ## [0.3.28] — 2026-11-12
 
 ### Added

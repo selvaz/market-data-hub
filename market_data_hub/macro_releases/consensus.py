@@ -17,7 +17,7 @@ import re
 import sqlite3
 from zoneinfo import ZoneInfo
 
-from market_data_hub.econ_calendar.collect.forexfactory import (
+from market_data_hub.econ_calendar.ff_archive import (
     DEFAULT_RAW_DIR,
     MANIFEST_NAME,
     load_snapshots,

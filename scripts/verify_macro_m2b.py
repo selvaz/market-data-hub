@@ -18,7 +18,7 @@ import sys
 import tempfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from market_data_hub.econ_calendar.collect.forexfactory import load_snapshots
+from market_data_hub.econ_calendar.ff_archive import load_snapshots
 from market_data_hub.macro_releases import consensus, open_writer
 from market_data_hub.macro_releases.catalogue import FAMILIES
 from market_data_hub.macro_releases.run_daily import preview_store

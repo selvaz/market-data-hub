@@ -308,8 +308,9 @@ How to read the tables:
   catalogue indicator ids that map to the card. `ms:` is the hub `macro_series` table, `es:` the
   `econ_state.db` store named by the approved table (it is not part of this repository), `cal:` an economic-
   calendar indicator key (`calendar_indicators.indicator_key`; the tables `calendar_indicators`,
-  `calendar_events` and `calendar_observations` live in the configured hub DuckDB database and are written by
-  `run_econ_calendar.py` from the catalogue `config/econ_calendar.yaml`), `pan:` the cross-country
+  `calendar_events` and `calendar_observations` live in the configured hub DuckDB database; they are frozen
+  history since 2026-09-25 and their hub collector was retired on 2026-11-11, the calendar now being collected
+  by LazyCommittee; the catalogue is `config/econ_calendar.yaml`), `pan:` the cross-country
   `macro_panel`, `hub:` another hub table and `cat:` the planned catalogue (not downloaded). Ids are shown as
   recorded on the card; this page does not verify that each id is present in its store (see the coverage
   report). Some `cal:` ids come from the approved table and are not keys of the catalogue above. Notes copy

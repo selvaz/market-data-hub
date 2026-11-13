@@ -1,5 +1,12 @@
 # Forex Factory raw archive
 
+The hub economic-calendar collector was retired on 2026-11-11 (the calendar is
+collected by LazyCommittee). This archive is what survives of it: the writer is
+`market_data_hub.econ_calendar.ff_archive.archive_raw`, run daily by the
+scheduled task `InvestmentCommittee_EconRawArchive`, and the archive is read by
+`macro_releases.consensus` and `econ_calendar.archive_forecasts`.
+`run_econ_calendar.py` accepts only `--archive-only`.
+
 Run from this checkout with the approved Python interpreter:
 
 ```powershell
@@ -8,7 +15,7 @@ Run from this checkout with the approved Python interpreter:
 
 The default destination is `C:\ProgramData\InvestmentCommittee\econ_calendar\raw`.
 Override it with `--raw-dir <directory>`. No `--db` is needed. Archive mode
-returns before the ingestion path, opens no DB, takes no `market_data` lock,
+opens no DB, takes no `market_data` lock,
 and performs one GET of `ff_calendar_thisweek.json` (30-second timeout) and at
 most one retry (see Retry). It preserves the response body bytes without parsing or formatting.
 

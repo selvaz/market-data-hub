@@ -3172,7 +3172,7 @@ indicators:
   rationale: 'The first inflation-targeting central bank, and still one that moves in larger steps than its peers: for a multi-asset book it is a carry and a currency, not a growth signal.'
   # The decision arrives inside a block of four rows -- rate, rate statement,
   # monetary policy statement, press conference -- of which only this one
-  # carries a number. The other three are ruled out by name in
+  # carries a number. The other three were ruled out by name in the retired
   # econ_calendar_aliases.yaml; the exclusions here are the second lock, so a
   # commentary row cannot land on the decision even if a ruling is removed.
   match_rules: 'official cash|rbnz;rate'
