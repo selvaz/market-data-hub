@@ -608,8 +608,8 @@ def live_rows(eod_map: dict, quotes: dict, now=None) -> list[dict]:
     return rows
 
 
-def run_live(con, cfg: dict, run_id: str) -> None:
-    """Inject provisional US session rows; retain clock dating elsewhere."""
+def run_live(con, cfg: dict, run_id: str, *, now: Optional[datetime] = None) -> None:
+    """Inject provisional rows dated by each quote's reported session."""
     if not cfg.get("live", {}).get("enabled", False):
         _log("LIVE: disabled in settings")
         return
@@ -656,24 +656,12 @@ def run_live(con, cfg: dict, run_id: str) -> None:
     by_listing = {r.listing_id: (pd.Timestamp(r.date).date(), r.adj_close, r.close)
                   for r in eod.itertuples()}
     eod_map = {sym: by_listing[lid] for sym, lid in listing_ids.items() if lid in by_listing}
-    session_syms = [s for s in eod_map if s in scoped]
-    rows = live_rows(eod_map, yh.get_live_quotes_batch(session_syms)) if session_syms else []
-
-    # H2 will map FX, overnight futures and crypto to instrument-aware
-    # sessions. Until then keep their pre-PR behavior: UTC collector date,
-    # prior live-price API, no new date guard and no cleanup.
-    legacy_syms = [s for s in eod_map if s not in scoped]
-    legacy_prices = yh.get_live_prices_batch(legacy_syms) if legacy_syms else {}
-    for sym in legacy_syms:
-        price = legacy_prices.get(sym)
-        if price is None:
-            continue
-        _, adj_eod, close_eod = eod_map[sym]
-        adj_live = yh.adjusted_live_price(price, adj_eod, close_eod)
-        if adj_live is not None:
-            rows.append({"date": date.fromisoformat(_today()), "symbol": sym,
-                         "close": price, "adj_close": adj_live, "source": "yahoo",
-                         "is_live": True, "updated_at": datetime.now(timezone.utc)})
+    # The H0 contract is the date of the regular session that produced the
+    # price, derived from Yahoo's regularMarketTime and exchange offset.  It
+    # applies equally to foreign listings and continuously traded instruments;
+    # the collector's UTC/local calendar date is never a session substitute.
+    session_syms = list(eod_map)
+    rows = live_rows(eod_map, yh.get_live_quotes_batch(session_syms), now=now)
     for row in rows:
         row["listing_id"] = listing_ids[row["symbol"]]
     n_ok = len(rows)
@@ -777,7 +765,11 @@ def run(mode: str = "full", sources: Optional[List[str]] = None,
                                 start_year=int(sy[:4]) if sy else None)
             if "factors" in active:
                 run_factors(con, cfg, run_id)
-            if mode == "full" and cfg.get("live", {}).get("enabled"):
+            # An explicit source restriction is a write boundary.  Live prices
+            # are part of the Yahoo price source, not a source-independent
+            # epilogue (notably, ``--sources fred`` must not touch them).
+            if (mode == "full" and "yahoo" in active
+                    and cfg.get("live", {}).get("enabled")):
                 run_live(con, cfg, run_id)
 
         _log("Rebuilding coverage_report...")

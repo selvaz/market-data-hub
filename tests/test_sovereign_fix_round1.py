@@ -186,7 +186,8 @@ def test_unexpected_failure_keeps_remaining_daily_steps_running(monkeypatch, tmp
     result = runner.run(sources=['sovereign_yields', 'binance', 'macro_panel', 'factors'],
                         end='2026-10-18', db_path=tmp_db)
     assert result == 2
-    assert calls == ['old', 'run_binance', 'run_macro_panel', 'run_factors', 'run_live',
+    # A restricted non-price run must not execute the live Yahoo epilogue.
+    assert calls == ['old', 'run_binance', 'run_macro_panel', 'run_factors',
                      'coverage', 'macro_coverage']
     if failure != 'log_write':
         with get_conn(tmp_db) as con:
