@@ -9,7 +9,7 @@ import requests
 from market_data_hub.macro_releases import open_writer
 from market_data_hub.macro_releases.adapters import persist
 from market_data_hub.macro_releases.boj_policy import HOST, RSS, fetch, parse
-from market_data_hub.macro_releases.schedule import RUN_INSTANT
+from market_data_hub.macro_releases.schedule import PENDING_DETAILS, PENDING_EDITIONS, RUN_INSTANT
 from market_data_hub.macro_releases.http import Document
 from market_data_hub.macro_releases.models import utc
 from test_macro_m9c import GOLDEN, document, parse as parse_case
@@ -209,3 +209,25 @@ def test_narrow_window_still_uses_current_year_statement_as_baseline():
     decision = rows[0].policy_decision
     assert decision["rates"]["overnight_call_rate"]["change_bp"] == 25.0
     assert decision["supporting_sources"][0]["decision_date"] == "2027-01-23"
+
+
+def test_due_december_decision_missing_from_listing_is_reported_pending():
+    listing = b'<a href="/en/mopo/mpmdeci/mpr_2026/k261030a.pdf">October</a>'
+
+    class Client:
+        def get(self, provider, url, params=None):
+            body = b"<rss><channel></channel></rss>" if url == RSS else listing
+            return Document(body, url, "2026-12-19T00:00:00Z",
+                            hashlib.sha256(body).hexdigest())
+
+    run_token = RUN_INSTANT.set("2026-12-19T00:00:00Z")
+    pending_token = PENDING_EDITIONS.set({})
+    details_token = PENDING_DETAILS.set({})
+    try:
+        assert fetch(Client(), "boj_policy", "2026-12") == []
+        assert PENDING_EDITIONS.get()["boj_policy", "2026-12-18"] == "needs_review"
+        assert PENDING_DETAILS.get()["boj_policy", "2026-12-18"]["category"] == "not_yet_listed"
+    finally:
+        PENDING_DETAILS.reset(details_token)
+        PENDING_EDITIONS.reset(pending_token)
+        RUN_INSTANT.reset(run_token)

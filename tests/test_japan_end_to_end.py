@@ -475,20 +475,26 @@ def test_2027_unemployment_rollover_uses_synthesised_workbook(monkeypatch):
     ]
 
 
-def test_2027_household_spending_rollover_uses_synthesised_workbook(monkeypatch):
+@pytest.mark.parametrize("numeric_period,period,edition", [
+    (2027.09, "2027-09", "2027-11-10"),
+    (2027.10, "2027-10", "2027-12-10"),
+    (2027.11, "2027-11", "2028-01-10"),
+])
+def test_2027_household_spending_rollover_uses_synthesised_workbook(
+        monkeypatch, numeric_period, period, edition):
     from openpyxl import Workbook
     workbook = Workbook()
     sheet = workbook.active
     sheet["A1"] = "Two-or-more-person Households"
     sheet["A2"] = "Consumption expenditures"
-    sheet["I5"] = 2027.03
+    sheet["I5"] = numeric_period
     sheet["I91"] = 1.7
     stream = BytesIO()
     workbook.save(stream)
     workbook.close()
 
     rows = _fetch_discovered_fixture(
-        monkeypatch, "jp_household_spending", "2027-05-10", stream.getvalue(), "2027-03"
+        monkeypatch, "jp_household_spending", edition, stream.getvalue(), period
     )
     assert [(row.indicator_id, row.value) for row in rows] == [
         ("jp_household_spending_yy", 1.7)

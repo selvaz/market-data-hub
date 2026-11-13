@@ -7,10 +7,10 @@ from xml.etree import ElementTree
 from zoneinfo import ZoneInfo
 
 from .http import FetchError
-from .policy import change, observation, require_origin, reviewed
+from .policy import change, due_editions, observation, require_origin, reviewed
 from .policy_editions import EDITIONS
 from .tier1_publications import publication_text, require
-from .schedule import run_date
+from .schedule import mark_pending, note_review, run_date
 
 HOST = "https://www.boj.or.jp"
 RSS = HOST + "/en/rss/whatsnew.xml"
@@ -99,6 +99,11 @@ def fetch(client, family, since):
 
     current_year = index_statements(listing, year)
     indexed.update(current_year)
+    for edition in due_editions(family, since):
+        if edition not in current_year:
+            mark_pending(family, edition, "needs_review")
+            note_review(family, edition, "not_yet_listed",
+                        "Due BOJ statement absent from issuer listing")
     predecessor = {}
     if year > max(int(d[:4]) for d in EDITIONS[family]):
         previous_year = year - 1

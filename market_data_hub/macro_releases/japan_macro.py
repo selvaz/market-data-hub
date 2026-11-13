@@ -352,9 +352,11 @@ def parse_statjp_fies_workbook(body):
         if "Two-or-more-person Households" not in text or "Consumption expenditures" not in text:
             raise FetchError("Statistics Bureau FIES population or measure needs review")
         period, value = sheet["I5"].value, sheet["I91"].value
-        if not re.fullmatch(r"20\d{4}", str(period).replace(".", "")) or isinstance(value, bool) or not isinstance(value, (int, float)):
+        printed_period = (f"{period:.2f}" if isinstance(period, (int, float))
+                          and not isinstance(period, bool) else str(period))
+        if not re.fullmatch(r"20\d{4}", printed_period.replace(".", "")) or isinstance(value, bool) or not isinstance(value, (int, float)):
             raise FetchError("Statistics Bureau FIES period or real annual rate needs review")
-        stamp = str(period).replace(".", "")
+        stamp = printed_period.replace(".", "")
         return stamp[:4] + "-" + stamp[4:], float(value)
     finally:
         workbook.close()
