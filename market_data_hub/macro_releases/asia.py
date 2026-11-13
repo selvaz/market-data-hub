@@ -56,6 +56,7 @@ def fetch_archives(client, family, since, provider, archives, parse):
             urls[item.edition_date] = item.document_url
     token = DISCOVERED_EDITIONS.set({(family, item.edition_date): editions[item.edition_date] for item in live})
     cache = {}
+    moving_urls = {item.document_url for item in live}
     from .asia_discovery import publication_url
     try:
       for edition, (period, _, _) in due(editions, family=family).items():
@@ -64,6 +65,12 @@ def fetch_archives(client, family, since, provider, archives, parse):
             # The live discovery result is authoritative for moving resources;
             # archive resolvers continue to bind CPI/GDP/MOF edition files.
             known = urls.get(edition)
+            # A latest-file URL is evidence only for the edition currently
+            # advertised by the issuer.  Older editions that used the same
+            # moving resource were already collected; fetching that URL again
+            # would validate them against the replacement file.
+            if edition not in discovered and known in moving_urls:
+                continue
             if family == "jp_gdp" and known == GDP:
                 # The schedule establishes the edition, but it is not a data
                 # document and must not select the reviewed-menu shortcut.

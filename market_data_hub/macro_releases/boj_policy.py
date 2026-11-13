@@ -128,7 +128,10 @@ def fetch(client, family, since):
     EDITIONS[family] = {
         **original,
         **predecessor,
-        **{d: (d, "final", None) for d in discovered},
+        # Parsing needs the complete issuer calendar even when collection was
+        # requested for a narrower window: the statement immediately before
+        # ``since`` is still the baseline for the first collected decision.
+        **{d: (d, "final", None) for d in current_year},
     }
     try:
       for edition in discovered:

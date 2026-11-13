@@ -170,3 +170,42 @@ def test_january_listing_uses_previous_year_statement_only_as_baseline():
     assert (rows[0].edition, rows[0].value) == ("2028-01-23", 0.75)
     assert f"{HOST}/en/mopo/mpmdeci/mpr_2027/k271218a.htm" in client.requested
     assert rows[0].policy_decision["supporting_sources"][0]["decision_date"] == "2027-12-18"
+
+
+def test_narrow_window_still_uses_current_year_statement_as_baseline():
+    listing = (
+        b'<a href="/en/mopo/mpmdeci/mpr_2027/k270123a.htm">January</a>'
+        b'<a href="/en/mopo/mpmdeci/mpr_2027/k270319a.htm">March</a>'
+    )
+
+    def statement_body(stamp, rate):
+        return (f'''<html>{stamp} Bank of Japan Statement on Monetary Policy
+          Policy Board of the Bank of Japan decided, by a unanimous vote, to set the following guideline
+          The Bank will encourage the uncollateralized overnight call rate to remain at around {rate} percent
+        </html>''').encode()
+
+    urls = {
+        f"{HOST}/en/mopo/mpmdeci/mpr_2027/index.htm": listing,
+        f"{HOST}/en/mopo/mpmdeci/mpr_2026/index.htm": (
+            b'<a href="/en/mopo/mpmdeci/mpr_2026/k261218a.htm">December</a>'
+        ),
+        f"{HOST}/en/mopo/mpmdeci/mpr_2027/k270123a.htm": statement_body("January 23, 2027", "0.5"),
+        f"{HOST}/en/mopo/mpmdeci/mpr_2027/k270319a.htm": statement_body("March 19, 2027", "0.75"),
+        RSS: b"<rss><channel></channel></rss>",
+    }
+
+    class Client:
+        def get(self, provider, url, params=None):
+            body = urls[url]
+            return Document(body, url, "2027-03-19T08:00:00Z", hashlib.sha256(body).hexdigest())
+
+    token = RUN_INSTANT.set("2027-03-19T08:00:00Z")
+    try:
+        rows = fetch(Client(), "boj_policy", "2027-03")
+    finally:
+        RUN_INSTANT.reset(token)
+
+    assert [(row.edition, row.value) for row in rows] == [("2027-03-19", 0.75)]
+    decision = rows[0].policy_decision
+    assert decision["rates"]["overnight_call_rate"]["change_bp"] == 25.0
+    assert decision["supporting_sources"][0]["decision_date"] == "2027-01-23"

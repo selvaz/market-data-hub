@@ -133,10 +133,11 @@ def test_next_edition_wins_when_moving_url_is_shared(monkeypatch, family):
     monkeypatch.setattr(jp_discovery, "discover", lambda unused, selected: [edition])
     archives = {"2027-03-31": moving_url}
 
-    with run_at("2027-05-01T00:00:00Z"):
+    with run_at("2027-05-01T00:00:00Z") as pending:
         rows = asia.fetch_archives(client, family, "2027-03", "issuer", archives, fake_parser)
 
     assert [(row.edition, row.period) for row in rows] == [("2027-04-30", "2027-03")]
+    assert pending == {}
 
 
 def test_next_meti_edition_uses_html_rate_and_workbook_validation():
