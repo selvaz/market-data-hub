@@ -99,7 +99,10 @@ def fetch(client, family, since):
 
     current_year = index_statements(listing, year)
     indexed.update(current_year)
-    for edition in due_editions(family, since):
+    # A listing is scoped to one calendar year.  The daily lookback can still
+    # include reviewed decisions from the prior year, but their absence here
+    # says nothing about whether those statements were published.
+    for edition in (d for d in due_editions(family, since) if d[:4] == str(year)):
         if edition not in current_year:
             mark_pending(family, edition, "needs_review")
             note_review(family, edition, "not_yet_listed",
