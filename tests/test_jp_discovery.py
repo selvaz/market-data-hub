@@ -7,6 +7,7 @@ import pytest
 
 from market_data_hub.macro_releases.http import Document, FetchError
 from market_data_hub.macro_releases import jp_discovery as discovery
+from market_data_hub.macro_releases.schedule import due, release_instant
 
 FIX = Path(__file__).parent / "fixtures/japan_tier1/discovery"
 URLS = {
@@ -31,7 +32,9 @@ def test_new_editions_and_issuer_precision():
     fies = discovery.discover(client, "jp_household_spending")[0]
     tankan = discovery.discover(client, "jp_tankan")[0]
     oecd = discovery.discover(client, "jp_oecd_cli")[0]
-    assert (meti.edition_date, meti.period, meti.release_time) == ("2026-10-30", "2026-09", "8:50")
+    assert (meti.edition_date, meti.period, meti.release_time, meti.published_value) == (
+        "2026-10-30", "2026-09", "08:50", "2.2"
+    )
     assert (fies.edition_date, fies.period, fies.precision) == ("2026-11-10", "2026-09", "date")
     assert (tankan.edition_date, tankan.period) == ("2026-10-01", "2026-Q3")
     assert (oecd.edition_date, oecd.period, oecd.precision) == ("2026-11-13", "2026-10", "observed")
@@ -87,3 +90,23 @@ def test_meti_missing_workbook_fails_closed():
     doc = Document(body, discovery.METI, "2026-10-30T00:00:00Z", "hash")
     with pytest.raises(FetchError, match="workbook link needs review"):
         discovery.parse_meti(doc)
+
+
+def test_meti_fixture_clock_schedules_the_next_discovered_edition():
+    latest, next_edition = discovery.discover(Client(), "jp_industrial_production")
+    editions = {
+        item.edition_date: (item.period, item.stage, item.release_time)
+        for item in (latest, next_edition)
+    }
+
+    assert next_edition.release_time == "08:50"
+    assert release_instant(
+        next_edition.edition_date,
+        editions[next_edition.edition_date],
+        family="jp_industrial_production",
+    ).isoformat() == "2026-11-29T23:50:00+00:00"
+    assert list(due(
+        editions,
+        "2026-11-29T23:50:00Z",
+        family="jp_industrial_production",
+    )) == ["2026-10-30", "2026-11-30"]

@@ -348,7 +348,8 @@ def parse_statjp_fies_workbook(body):
 
 
 
-def parse(document, family, since="1900-01", *, archives=None):
+def parse(document, family, since="1900-01", *, archives=None, edition=None,
+          discovery=None, discovery_document=None):
     archives = ARCHIVES[family] if archives is None else archives
     if family == "jp_trade_balance":
         return parse_trade(document, since, archives)
@@ -368,18 +369,27 @@ def parse(document, family, since="1900-01", *, archives=None):
         row = require(r"Changes Changes Changes Changes Changes Changes Manufacturing ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+) ([+-]?\d+)", body)
         return [observation(document, family, edition, "jp_tankan_large_manufacturers_di", row[3], "pdf_table")] if in_window(period, since) else []
     if family == "jp_industrial_production":
-        period, value, preliminary = parse_meti_iip_workbook(document.body)
-        edition = next((d for d, u in archives.items() if u == document.url), None)
+        period, calculated, preliminary = parse_meti_iip_workbook(document.body)
+        edition = edition or next((d for d, u in archives.items() if u == document.url), None)
         expected, stage, _ = reviewed(family, edition)
         if period != expected:
             from .jp_discovery import moving_status
             raise FetchError("moving publication " + moving_status(expected, period))
         if stage != ("preliminary" if preliminary else "final"):
             raise FetchError("METI IIP edition needs review")
-        return [observation(document, family, edition, "jp_industrial_production_mm", str(value), "xlsx_table")]
+        if (discovery is None or discovery_document is None or
+                discovery.edition_date != edition or discovery.published_value is None):
+            raise FetchError("METI IIP published monthly rate evidence needs review")
+        published = discovery.published_value
+        if abs(float(published) - calculated) > 0.1:
+            raise FetchError("METI IIP workbook validation disagrees with published rate")
+        return [observation(
+            discovery_document, family, edition, "jp_industrial_production_mm",
+            published, "html_table",
+        )]
     if family == "jp_oecd_cli":
         period, value = parse_oecd_sdmx(document.body, {"STRUCTURE_ID": "DSD_STES@DF_CLI(4.1)", "REF_AREA": "JPN", "FREQ": "M", "MEASURE": "LI", "UNIT_MEASURE": "IX", "ACTIVITY": "_Z", "ADJUSTMENT": "AA", "TRANSFORMATION": "IX", "TIME_HORIZ": "_Z", "METHODOLOGY": "H"})
-        edition = next((d for d, u in archives.items() if u == document.url), None)
+        edition = edition or next((d for d, u in archives.items() if u == document.url), None)
         expected = reviewed(family, edition)[0]
         if expected != period:
             from .jp_discovery import moving_status
@@ -390,7 +400,7 @@ def parse(document, family, since="1900-01", *, archives=None):
         return [replace(row, precision="observed", published_at=document.retrieved_at)]
     if family == "jp_unemployment":
         period, value = parse_statjp_lfs_workbook(document.body)
-        edition = next((d for d, u in archives.items() if u == document.url), None)
+        edition = edition or next((d for d, u in archives.items() if u == document.url), None)
         expected = reviewed(family, edition)[0]
         if expected != period:
             from .jp_discovery import moving_status
@@ -398,7 +408,7 @@ def parse(document, family, since="1900-01", *, archives=None):
         return [observation(document, family, edition, "jp_unemployment_rate", str(value), "xlsx_table")]
     if family == "jp_household_spending":
         period, value = parse_statjp_fies_workbook(document.body)
-        edition = next((d for d, u in archives.items() if u == document.url), None)
+        edition = edition or next((d for d, u in archives.items() if u == document.url), None)
         expected = reviewed(family, edition)[0]
         if expected != period:
             from .jp_discovery import moving_status

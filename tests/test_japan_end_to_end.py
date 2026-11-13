@@ -2,10 +2,13 @@
 from contextlib import contextmanager
 from dataclasses import replace
 import hashlib
+from io import BytesIO
+from pathlib import Path
 
 import pytest
 
 from market_data_hub.macro_releases import asia, jp_discovery
+from market_data_hub.macro_releases import japan_macro
 from market_data_hub.macro_releases.http import Document, FetchError
 from market_data_hub.macro_releases.schedule import RUN_INSTANT, PENDING_EDITIONS
 
@@ -40,9 +43,8 @@ class NextMonthClient:
         return Document(body, url, "2027-04-30T00:01:00Z", hashlib.sha256(body).hexdigest())
 
 
-def fake_parser(document, family, since, *, archives):
+def fake_parser(document, family, since, *, archives, edition, **unused):
     period, printed = document.body.decode().split(",")
-    edition = next(d for d, url in archives.items() if url == document.url)
     expected = asia.reviewed(family, edition)[0]
     if period != expected:
         raise FetchError("moving publication " + jp_discovery.moving_status(expected, period))
@@ -92,3 +94,92 @@ def test_old_period_from_moving_file_stays_pending(monkeypatch, today, reason):
         rows = asia.fetch_archives(client, family, "2027-01", "issuer", {}, fake_parser)
         assert rows == []
         assert pending[family, "2027-04-30"] == reason
+
+
+@pytest.mark.parametrize("family", ["jp_industrial_production", "jp_household_spending"])
+def test_next_edition_wins_when_moving_url_is_shared(monkeypatch, family):
+    client = NextMonthClient("2027-03")
+    moving_url = client.data_url
+    edition = jp_discovery.Edition(
+        "2027-04-30", "2027-03", "final", "08:30", moving_url
+    )
+    monkeypatch.setattr(jp_discovery, "discover", lambda unused, selected: [edition])
+    archives = {"2027-03-31": moving_url}
+
+    with run_at("2027-05-01T00:00:00Z"):
+        rows = asia.fetch_archives(client, family, "2027-03", "issuer", archives, fake_parser)
+
+    assert [(row.edition, row.period) for row in rows] == [("2027-04-30", "2027-03")]
+
+
+def test_next_meti_edition_uses_html_rate_and_workbook_validation():
+    from openpyxl import load_workbook
+
+    fixture = Path(__file__).parent / "fixtures/japan_tier1"
+    page = (fixture / "discovery/meti_iip_latest.html").read_bytes()
+    page = page.replace(b"September 2026", b"October 2026")
+    page = page.replace(b"October 30, 2026", b"November 30, 2026")
+    page = page.replace(b"<td>2.2</td>", b"<td>2.3</td>", 1)
+    workbook = load_workbook(fixture / "meti_iip_gsm1e.xlsx")
+    sheet = workbook["Production"]
+    new_column = sheet.max_column + 1
+    sheet.cell(3, new_column).value = "p 202610"
+    production = next(row for row in range(1, sheet.max_row + 1)
+                      if sheet.cell(row, 1).value == 1000000000)
+    sheet.cell(production, new_column).value = 106.5
+    output = BytesIO()
+    workbook.save(output)
+    workbook.close()
+
+    class FixtureClient:
+        def get(self, provider, url, params=None):
+            body = page if url == jp_discovery.METI else output.getvalue()
+            return Document(body, url, "2026-11-30T00:01:00Z", hashlib.sha256(body).hexdigest())
+
+    with run_at("2026-11-30T00:01:00Z"):
+        rows = japan_macro.fetch(FixtureClient(), "jp_industrial_production", "2026-10")
+
+    assert len(rows) == 1
+    row = rows[0]
+    assert (row.edition, row.period, row.printed, row.value) == (
+        "2026-11-30", "2026-10", "2.3", 2.3
+    )
+    assert row.method == "html_table"
+    assert row.document.url == jp_discovery.METI
+
+
+def test_gdp_schedule_editions_follow_archive_links():
+    schedule = (Path(__file__).parent /
+                "fixtures/japan_tier1/discovery/esri_gdp_schedule.html").read_bytes()
+    archive = b'''<table>
+      <tr><td>Nov 16, 2026 <a href="qe263/gdemenuea.html">Quarterly Estimates of GDP for Jul.-Sep.2026 (The First preliminary Estimates)</a></td></tr>
+      <tr><td>Dec 8, 2026 <a href="qe263_2/gdemenuea.html">Quarterly Estimates of GDP for Jul.-Sep.2026 (The Second preliminary Estimates)</a></td></tr>
+    </table>'''
+    csv_body = (
+        'x\n"Real, Seasonally Adjusted Series (Quarter-to-Quarter Percent Change)",(%)\n'
+        "x\nx\nx\n,GDP(Expenditure Approach)\nx\n2026/ 7- 9.,0.5\n"
+    ).encode("cp932")
+
+    class GdpClient:
+        def get(self, provider, url, params=None):
+            if url == jp_discovery.GDP:
+                body = schedule
+            elif url == japan_macro.GDP_ARCHIVE:
+                body = archive
+            elif url.endswith("gdemenuea.html"):
+                suffix = "1" if "/qe263/" in url else "2"
+                body = (f'<a href="../../../../../../../../jp/sna/data/data_list/sokuhou/files/2026/'
+                        f'qe263{"" if suffix == "1" else "_2"}/tables/ritu-jk263{suffix}.csv">'
+                        'Real, Seasonally Adjusted Series (Quarter-to-Quarter) (csv: 1KB)</a>').encode()
+            else:
+                body = csv_body
+            return Document(body, url, "2026-12-08T00:01:00Z", hashlib.sha256(body).hexdigest())
+
+    with run_at("2026-12-08T00:01:00Z") as pending:
+        rows = japan_macro.fetch(GdpClient(), "jp_gdp", "2026-07")
+
+    assert pending == {}
+    assert [(row.edition, row.period, row.value) for row in rows] == [
+        ("2026-11-16", "2026-Q3", 0.5),
+        ("2026-12-08", "2026-Q3", 0.5),
+    ]

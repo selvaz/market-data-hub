@@ -42,6 +42,11 @@ def fetch_archives(client, family, since, provider, archives, parse):
     editions = dict(EDITIONS[family])
     live = (discover(client, family) if family in FAMILIES and
             not getattr(client, "replay_mode", False) else [])
+    discovered = {item.edition_date: item for item in live}
+    discovery_document = None
+    if family == "jp_industrial_production" and live:
+        from .jp_discovery import METI
+        discovery_document = client.get(provider, METI)
     for item in live:
         editions[item.edition_date] = (item.period, item.stage, item.release_time or "00:00")
         # A generic issuer listing is discovery evidence, not a data file.  In
@@ -58,6 +63,10 @@ def fetch_archives(client, family, since, provider, archives, parse):
             # The live discovery result is authoritative for moving resources;
             # archive resolvers continue to bind CPI/GDP/MOF edition files.
             known = urls.get(edition)
+            if family == "jp_gdp" and known == GDP:
+                # The schedule establishes the edition, but it is not a data
+                # document and must not select the reviewed-menu shortcut.
+                known = None
             discovered_file = (known is not None and edition in {item.edition_date for item in live}
                                and "stat-search/files" not in known and known != GDP)
             url = (known if family in {"jp_industrial_production", "jp_unemployment",
@@ -71,7 +80,10 @@ def fetch_archives(client, family, since, provider, archives, parse):
             doc = get_edition(client, provider, url, family, edition)
             if doc is None:
                 continue
-            rows = parse(doc, family, since, archives=urls)
+            rows = parse(
+                doc, family, since, archives=urls, edition=edition,
+                discovery=discovered.get(edition), discovery_document=discovery_document,
+            )
             if not rows or {r.edition for r in rows} != {edition}:
                 raise FetchError("Asia requested publication edition needs review")
           except (FetchError, ValueError, KeyError, TypeError, IndexError, BadZipFile) as exc:

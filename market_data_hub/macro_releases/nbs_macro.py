@@ -57,7 +57,7 @@ def metadata(document, family, archives):
     return page, edition, period, title
 
 
-def parse(document, family="cn_cpi", since="1900-01", *, archives=None):
+def parse(document, family="cn_cpi", since="1900-01", *, archives=None, **unused):
     archives = ARCHIVES[family] if archives is None else archives
     page, edition, period, title = metadata(document, family, archives)
     if family == "cn_gdp":

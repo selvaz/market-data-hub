@@ -28,6 +28,7 @@ class Edition:
     release_time: str | None
     document_url: str
     precision: str = "exact"
+    published_value: str | None = None
 
 
 METI = "https://www.meti.go.jp/english/statistics/tyo/iip/index.html"
@@ -78,8 +79,20 @@ def parse_meti(document):
     links = list(dict.fromkeys(links))
     if len(links) != 1:
         raise FetchError("METI IIP latest workbook link needs review")
+    rates = []
+    for row in Page(document.body).root.find_all("tr"):
+        cells = [plain(cell.text()) for cell in row.find_all("th") + row.find_all("td")]
+        if cells and cells[0] == "Production" and len(cells) == 5:
+            rates.append(cells[2])
+    if len(rates) != 1 or not re.fullmatch(r"[+-]?\d+\.\d", rates[0]):
+        raise FetchError("METI IIP published monthly rate needs review")
     url = links[0]
-    return Edition(_date(match[4]), _month(match[1], match[2]), "preliminary", match[3], url)
+    hour, minute = match[3].split(":")
+    clock = f"{int(hour):02d}:{minute}"
+    return Edition(
+        _date(match[4]), _month(match[1], match[2]), "preliminary", clock, url,
+        published_value=rates[0],
+    )
 
 
 def parse_fies(document):
@@ -176,9 +189,11 @@ def parse_gdp(document):
         if not match or not re.search(r"20\d{2}", cells[1]):
             continue
         quarter = {"Jan.-Mar.": 1, "Apr.-Jun.": 2, "Jul.-Sep.": 3, "Oct.-Dec.": 4}[match[1]]
+        clock = re.search(r"\d{1,2}:\d{2}", cells[2]).group()
+        clock = clock.zfill(5)
         found.append(Edition(_date(cells[1]), f"{match[2]}-Q{quarter}",
                              "preliminary" if match[3].lower() == "first" else "revised",
-                             re.search(r"\d{1,2}:\d{2}", cells[2]).group(), GDP, "exact"))
+                             clock, GDP, "exact"))
     return found
 
 

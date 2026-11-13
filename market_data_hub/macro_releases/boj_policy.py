@@ -86,11 +86,27 @@ def fetch(client, family, since):
     listing_url = f"{HOST}/en/mopo/mpmdeci/mpr_{year}/index.htm"
     listing = client.get("boj", listing_url)
     indexed = {BASELINE: BASELINE_URL}
-    yy = str(year)[2:]
-    pattern = rb'href="(/en/mopo/mpmdeci/(?:mpr|state)_' + str(year).encode() + rb'/k(' + yy.encode() + rb'\d{4})a\.(?:pdf|htm))"'
-    for path, digits in re.findall(pattern, listing.body):
-        edition = datetime.strptime(digits.decode(), "%y%m%d").date().isoformat()
-        indexed[edition] = HOST + path.decode()
+
+    def index_statements(document, listing_year):
+        yy = str(listing_year)[2:]
+        pattern = (rb'href="(/en/mopo/mpmdeci/(?:mpr|state)_' +
+                   str(listing_year).encode() + rb'/k(' + yy.encode() +
+                   rb'\d{4})a\.(?:pdf|htm))"')
+        return {
+            datetime.strptime(digits.decode(), "%y%m%d").date().isoformat(): HOST + path.decode()
+            for path, digits in re.findall(pattern, document.body)
+        }
+
+    indexed.update(index_statements(listing, year))
+    if year > 2026:
+        previous_year = year - 1
+        previous_listing = client.get(
+            "boj", f"{HOST}/en/mopo/mpmdeci/mpr_{previous_year}/index.htm"
+        )
+        previous = index_statements(previous_listing, previous_year)
+        if previous:
+            last = max(previous)
+            indexed[last] = previous[last]
     feed = client.get("boj", RSS)
     documents = {}
     def get(edition):

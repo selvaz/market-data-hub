@@ -8,7 +8,8 @@ import requests
 
 from market_data_hub.macro_releases import open_writer
 from market_data_hub.macro_releases.adapters import persist
-from market_data_hub.macro_releases.boj_policy import RSS, parse
+from market_data_hub.macro_releases.boj_policy import HOST, RSS, fetch, parse
+from market_data_hub.macro_releases.schedule import RUN_INSTANT
 from market_data_hub.macro_releases.http import Document
 from market_data_hub.macro_releases.models import utc
 from test_macro_m9c import GOLDEN, document, parse as parse_case
@@ -128,3 +129,43 @@ def test_contradictory_exact_boj_time_still_conflicts(tmp_path):
             with store.batch():
                 persist(store, [changed])
         assert_exact(card(store))
+
+
+def test_january_listing_loads_previous_year_statement():
+    current_listing = b'<a href="/en/mopo/mpmdeci/mpr_2027/k270123a.htm">January</a>'
+    previous_listing = b'<a href="/en/mopo/mpmdeci/mpr_2026/k261218a.htm">December</a>'
+
+    def statement_body(stamp, rate):
+        return (f'''<html>{stamp} Bank of Japan Statement on Monetary Policy
+          Policy Board of the Bank of Japan decided, by a unanimous vote, to set the following guideline
+          The Bank will encourage the uncollateralized overnight call rate to remain at around {rate} percent
+        </html>''').encode()
+
+    urls = {
+        f"{HOST}/en/mopo/mpmdeci/mpr_2027/index.htm": current_listing,
+        f"{HOST}/en/mopo/mpmdeci/mpr_2026/index.htm": previous_listing,
+        f"{HOST}/en/mopo/mpmdeci/mpr_2027/k270123a.htm": statement_body("January 23, 2027", "0.75"),
+        f"{HOST}/en/mopo/mpmdeci/mpr_2026/k261218a.htm": statement_body("December 18, 2026", "0.5"),
+        RSS: b"<rss><channel></channel></rss>",
+    }
+
+    class JanuaryClient:
+        def __init__(self):
+            self.requested = []
+
+        def get(self, provider, url, params=None):
+            self.requested.append(url)
+            body = urls[url]
+            return Document(body, url, "2027-01-23T08:00:00Z", hashlib.sha256(body).hexdigest())
+
+    client = JanuaryClient()
+    token = RUN_INSTANT.set("2027-01-23T08:00:00Z")
+    try:
+        rows = fetch(client, "boj_policy", "2027-01")
+    finally:
+        RUN_INSTANT.reset(token)
+
+    assert len(rows) == 1
+    assert (rows[0].edition, rows[0].value) == ("2027-01-23", 0.75)
+    assert f"{HOST}/en/mopo/mpmdeci/mpr_2026/k261218a.htm" in client.requested
+    assert rows[0].policy_decision["supporting_sources"][0]["decision_date"] == "2026-12-18"
