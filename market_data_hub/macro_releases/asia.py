@@ -75,7 +75,7 @@ def fetch_archives(client, family, since, provider, archives, parse):
                    else publication_url(client, family, edition, known, cache))
             if url is None:
                 mark_pending(family, edition, "not_yet_published" if publication_grace(family, edition)
-                             else "scheduled_unreviewed")
+                             else "scheduled_unreviewed", metadata=editions[edition])
                 continue
             urls[edition] = url
             doc = get_edition(client, provider, url, family, edition)
@@ -96,11 +96,11 @@ def fetch_archives(client, family, since, provider, archives, parse):
             if delayed:
                 if family in FAMILIES:
                     from .jp_discovery import pending_reason
-                    mark_pending(family, edition, pending_reason(edition))
+                    mark_pending(family, edition, pending_reason(edition), metadata=editions[edition])
                 else:
-                    mark_pending(family, edition, "not_yet_published")
+                    mark_pending(family, edition, "not_yet_published", metadata=editions[edition])
             else:
-                mark_pending(family, edition, "needs_review")
+                mark_pending(family, edition, "needs_review", metadata=editions[edition])
             continue
           out.extend(rows)
     finally:

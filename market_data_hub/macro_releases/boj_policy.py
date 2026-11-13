@@ -99,6 +99,7 @@ def fetch(client, family, since):
 
     current_year = index_statements(listing, year)
     indexed.update(current_year)
+    predecessor = {}
     if year > max(int(d[:4]) for d in EDITIONS[family]):
         previous_year = year - 1
         previous_listing = client.get(
@@ -108,6 +109,7 @@ def fetch(client, family, since):
         if previous:
             last = max(previous)
             indexed[last] = previous[last]
+            predecessor[last] = (last, "final", None)
     feed = client.get("boj", RSS)
     documents = {}
     def get(edition):
@@ -123,7 +125,11 @@ def fetch(client, family, since):
     # complete edition registry and therefore must never enter collection.
     discovered = sorted(d for d in current_year if d[:7] >= since and d <= run_date())
     original = EDITIONS[family]
-    EDITIONS[family] = {**original, **{d: (d, "final", None) for d in discovered}}
+    EDITIONS[family] = {
+        **original,
+        **predecessor,
+        **{d: (d, "final", None) for d in discovered},
+    }
     try:
       for edition in discovered:
         rows = parse(get(edition), get(previous_edition(edition)), family, since, feed=feed)

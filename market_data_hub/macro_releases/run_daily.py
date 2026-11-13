@@ -29,7 +29,8 @@ from .lease import LeaseBusy, LeaseLost, RunLease
 from .migrations import migrate
 from .ons import ONSAdapter
 from . import run_log
-from .schedule import RUN_INSTANT, PENDING_DETAILS, PENDING_EDITIONS, edition_status, family_editions, run_instant
+from .schedule import (RUN_INSTANT, PENDING_DETAILS, PENDING_EDITIONS,
+                       PENDING_EDITION_METADATA, edition_status, family_editions, run_instant)
 from .policy import PolicyAdapter
 from .tier1_publications import Tier1Adapter
 from .housing import HousingAdapter
@@ -277,12 +278,14 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
         instant = run_instant(run_at if run_at is not None else result["fetch_until"])
         token = RUN_INSTANT.set(instant)
         pending_token = PENDING_EDITIONS.set({})
+        pending_metadata_token = PENDING_EDITION_METADATA.set({})
         details_token = PENDING_DETAILS.set({})
         try:
             batch = (fetch_daily(client, family, result["fetch_since"]) if ADAPTERS[family] is DISCOVERY_ADAPTERS[family]
                      else FamilyFetch(observations=list(ADAPTERS[family](client).fetch([family], result["fetch_since"]))))
             calendar = family_editions(family)
             pending = PENDING_EDITIONS.get()
+            pending_metadata = PENDING_EDITION_METADATA.get()
             details = PENDING_DETAILS.get()
             result["review_details"] = [
                 dict(edition=e, status=pending.get((f, e), "needs_review"), **detail)
@@ -290,19 +293,28 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
             # Editions outside the reviewed calendar (an exhausted calendar).
             result["unlisted_reviews"] = sorted(
                 e for (f, e), reason in pending.items()
-                if f == family and e not in calendar and reason == "needs_review")
+                if (f == family and e not in calendar and reason == "needs_review" and
+                    (f, e) not in pending_metadata))
             if calendar:
                 result["scheduled_editions"] = [dict(edition=d, period=p, stage=s, time=t,
                     status=pending.get((family, d)) if pending.get((family, d)) in
-                        {"scheduled_unreviewed", "needs_review"} else "scheduled",
+                        {"scheduled_unreviewed", "needs_review", "overdue"} else "scheduled",
                     **({"reason": pending[family, d]} if (family, d) in pending else {}))
                     for d, (p, s, t) in calendar.items()
                     if edition_status(d, metadata=(p, s, t), family=family) == "scheduled"]
+            result.setdefault("scheduled_editions", []).extend(
+                dict(edition=d, period=metadata[0], stage=metadata[1], time=metadata[2],
+                     status=reason, reason=reason)
+                for (f, d), metadata in sorted(pending_metadata.items())
+                if f == family and d not in calendar
+                for reason in [pending[f, d]]
+            )
             # An endpoint exposing a reviewed edition early does not make it due.
             batch.observations = [o for o in batch.observations if o.edition not in calendar or
                 edition_status(o.edition, metadata=calendar[o.edition], family=family) == "due"]
         finally:
             PENDING_DETAILS.reset(details_token)
+            PENDING_EDITION_METADATA.reset(pending_metadata_token)
             PENDING_EDITIONS.reset(pending_token)
             RUN_INSTANT.reset(token)
             STORED_EDITIONS.reset(collected_token)
@@ -320,8 +332,8 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
             with store.batch():
                 persist_review(store, batch, family, None if dry_run else run_id)
                 result.update(persist_counts(store, observations))
-                edition_reviews = ["edition_needs_review:" + e["edition"] for e in
-                    result.get("scheduled_editions", []) if e["status"] == "needs_review"]
+                edition_reviews = ["edition_" + e["status"] + ":" + e["edition"] for e in
+                    result.get("scheduled_editions", []) if e["status"] in {"needs_review", "overdue"}]
                 edition_reviews += ["edition_needs_review:" + e for e in result.pop("unlisted_reviews", [])]
                 result["status"] = "needs_review" if batch.issues or edition_reviews else "ok" if result["vintages_added"] else "no_change"
                 if batch.issues:
@@ -331,7 +343,7 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
                 if result["status"] == "needs_review":
                     result["error_category"] = "verification" if batch.issues else next(
                         (d["category"] for d in result["review_details"] if d["status"] == "needs_review"),
-                        "parser_rejected")
+                        "calendar_exhausted")
                 if not result["review_details"]:
                     result.pop("review_details")
                 if not dry_run:

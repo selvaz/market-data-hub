@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 RUN_INSTANT = ContextVar("macro_release_run_instant", default=None)
 PENDING_EDITIONS = ContextVar("macro_release_pending_editions", default=None)
+PENDING_EDITION_METADATA = ContextVar("macro_release_pending_edition_metadata", default=None)
 # Why a due edition has no vintage: {(family, edition): {"category", "message"}}.
 PENDING_DETAILS = ContextVar("macro_release_pending_details", default=None)
 REVIEW_CATEGORIES = ("parser_rejected", "not_yet_listed", "issuer_http_error", "issuer_unavailable",
@@ -78,10 +79,13 @@ def publication_grace(family, edition):
     return timedelta(0) <= age < timedelta(hours=6)
 
 
-def mark_pending(family, edition, reason="not_yet_published"):
+def mark_pending(family, edition, reason="not_yet_published", *, metadata=None):
     pending = PENDING_EDITIONS.get()
     if pending is not None:
         pending[family, edition] = reason
+    pending_metadata = PENDING_EDITION_METADATA.get()
+    if pending_metadata is not None and metadata is not None:
+        pending_metadata[family, edition] = metadata
 
 
 def note_review(family, edition, category, message):

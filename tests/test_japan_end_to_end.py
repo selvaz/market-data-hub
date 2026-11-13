@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from market_data_hub.macro_releases import asia, jp_discovery
+from market_data_hub.macro_releases import asia, jp_discovery, open_writer, run_daily
 from market_data_hub.macro_releases import japan_macro
 from market_data_hub.macro_releases.http import Document, FetchError
 from market_data_hub.macro_releases.schedule import RUN_INSTANT, PENDING_EDITIONS
@@ -95,6 +95,32 @@ def test_old_period_from_moving_file_stays_pending(monkeypatch, today, reason):
         rows = asia.fetch_archives(client, family, "2027-01", "issuer", {}, fake_parser)
         assert rows == []
         assert pending[family, "2027-04-30"] == reason
+
+
+def test_overdue_discovered_meti_edition_is_visible_in_daily_report(tmp_path):
+    fixture = Path(__file__).parent / "fixtures/japan_tier1"
+    page = (fixture / "discovery/meti_iip_latest.html").read_bytes()
+    workbook = (fixture / "meti_iip_gsm1e.xlsx").read_bytes()
+
+    class FixtureClient:
+        def get(self, provider, url, params=None):
+            body = page if url == jp_discovery.METI else workbook
+            return Document(body, url, "2026-12-03T00:00:00Z",
+                            hashlib.sha256(body).hexdigest())
+
+    family = "jp_industrial_production"
+    result = run_daily.collect_family(
+        lambda: open_writer(tmp_path / "macro.sqlite"), FixtureClient(), "daily", family,
+        {family: {"fetch_since": "2026-09", "fetch_until": "2026-12-03T00:00:00Z"}},
+        dry_run=True,
+    )[family]
+
+    assert result["status"] == "needs_review"
+    assert any(
+        item["edition"] == "2026-11-30" and item["reason"] == "overdue"
+        for item in result["scheduled_editions"]
+    )
+    assert "edition_overdue:2026-11-30" in result["review_reasons"]
 
 
 @pytest.mark.parametrize("family", ["jp_industrial_production", "jp_household_spending"])
