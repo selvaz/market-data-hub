@@ -4,7 +4,8 @@ The parsers deliberately use dates printed by issuers.  Retrieval time is not
 an edition date, except for OECD CLI whose SDMX response has no publication
 timestamp; that exception is marked ``observed``.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from contextvars import ContextVar
 from datetime import date, datetime, timedelta
 import calendar
 import json
@@ -14,6 +15,7 @@ from urllib.parse import urljoin
 from .http import FetchError
 from .nbs_housing import Page
 from .tier1_publications import plain
+from .schedule import run_date
 
 
 @dataclass(frozen=True)
@@ -34,6 +36,9 @@ CPI = "https://www.stat.go.jp/english/data/cpi/1581-z.html"
 CPI_SCHEDULE = "https://www.stat.go.jp/english/data/cpi/1582.html"
 GDP = "https://www.esri.cao.go.jp/en/sna/kouhyou/kouhyou_top.html"
 TANKAN = "https://www.boj.or.jp/en/statistics/tk/index.htm"
+OECD_FIRST_SEEN = ContextVar("japan_oecd_first_seen", default={})
+
+
 OECD = "https://sdmx.oecd.org/public/rest/v1/data/OECD.SDD.STES,DSD_STES@DF_CLI,4.1/JPN.M.LI.IX._Z.AA.IX._Z.H"
 
 
@@ -68,7 +73,10 @@ def parse_meti(document):
         raise FetchError("METI IIP latest-release identity needs review")
     links = [urljoin(document.url, a.get("href")) for a in Page(document.body).root.find_all("a")
              if a.get("href") and ("gsm1e.xlsx" in a.get("href") or "b2020_gsm1e.xlsx" in a.get("href"))]
-    url = links[0] if links else "https://www.meti.go.jp/english/statistics/tyo/iip/xls/b2020_gsm1e.xlsx"
+    links = list(dict.fromkeys(links))
+    if len(links) != 1:
+        raise FetchError("METI IIP latest workbook link needs review")
+    url = links[0]
     return Edition(_date(match[4]), _month(match[1], match[2]), "preliminary", match[3], url)
 
 
@@ -88,8 +96,38 @@ def _schedule_rows(document):
             yield cells
 
 
+def lfs_listing_url(document):
+    """Return the e-Stat historical-data listing linked by the LFS latest page."""
+    links = [urljoin(document.url, link.get("href")) for link in Page(document.body).root.find_all("a")
+             if link.get("href") and "e-stat.go.jp/en/stat-search/files" in link.get("href")
+             and "tclass2=000001226852" in link.get("href")]
+    if len(links) != 1:
+        raise FetchError("LFS e-Stat historical listing needs review")
+    return links[0]
+
+
+def resolve_lfs_workbooks(document, editions):
+    """Bind LFS release dates/periods to e-Stat workbook ``statInfId`` links."""
+    groups = Page(document.body).root.find_all("ul")
+    resolved = {}
+    for edition in editions:
+        label = datetime.strptime(edition.period, "%Y-%m").strftime("%Y %B")
+        candidates = []
+        for group in groups:
+            text = plain(group.text())
+            if label not in text or edition.edition_date not in text:
+                continue
+            for link in group.find_all("a"):
+                href = link.get("href") or ""
+                if "file-download" in href and "statInfId=" in href and "fileKind=0" in href:
+                    candidates.append(urljoin(document.url, href))
+        if len(set(candidates)) == 1:
+            resolved[edition.edition_date] = replace(edition, document_url=candidates[0])
+    return [resolved.get(item.edition_date, item) for item in editions]
+
+
 def parse_lfs(document, *, today=None):
-    today = today or date.today()
+    today = today or date.fromisoformat(run_date())
     year = today.year
     found = []
     for cells in _schedule_rows(document):
@@ -110,7 +148,7 @@ def parse_lfs(document, *, today=None):
 
 def parse_cpi_schedule(document):
     found = {"jp_cpi": [], "jp_tokyo_cpi": []}
-    year = date.today().year
+    year = date.fromisoformat(run_date()).year
     for cells in _schedule_rows(document):
         if len(cells) < 4:
             continue
@@ -171,8 +209,11 @@ def parse_oecd(document):
                .get("dimensions", {}).get("observation", [{}])[0].get("values", [])]
     if not observations or not periods:
         raise FetchError("OECD CLI latest observation needs review")
-    observed = datetime.fromisoformat(document.retrieved_at.replace("Z", "+00:00")).date().isoformat()
-    return Edition(observed, max(periods), "final", None, document.url, "observed")
+    period = max(periods)
+    observed = OECD_FIRST_SEEN.get().get(period)
+    if observed is None:
+        observed = datetime.fromisoformat(document.retrieved_at.replace("Z", "+00:00")).date().isoformat()
+    return Edition(observed, period, "final", None, document.url, "observed")
 
 
 def discover(client, family, *, today=None):
@@ -184,8 +225,10 @@ def discover(client, family, *, today=None):
         latest = parse_fies(_get(client, "statjp", FIES))
         return [latest, lagged_next(family, latest)]
     if family == "jp_unemployment":
-        _get(client, "statjp", LFS)  # live latest page identifies the moving resource
-        return parse_lfs(_get(client, "statjp", LFS_SCHEDULE), today=today)
+        latest = _get(client, "statjp", LFS)
+        scheduled = parse_lfs(_get(client, "statjp", LFS_SCHEDULE), today=today)
+        listing = _get(client, "statjp", lfs_listing_url(latest))
+        return resolve_lfs_workbooks(listing, scheduled)
     if family in {"jp_cpi", "jp_tokyo_cpi"}:
         _get(client, "statjp", CPI)  # latest page plus annual issuer schedule
         return parse_cpi_schedule(_get(client, "statjp", CPI_SCHEDULE))[family]
@@ -212,7 +255,7 @@ def moving_status(expected_period, returned_period):
 
 def pending_reason(edition_date, *, today=None, grace_days=1):
     """Make a missed issuer date visible after a small publication grace."""
-    today = today or date.today()
+    today = today or date.fromisoformat(run_date())
     expected = date.fromisoformat(edition_date)
     return "overdue" if today > expected + timedelta(days=grace_days) else "not_yet_published"
 

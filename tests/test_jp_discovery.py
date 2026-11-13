@@ -58,3 +58,33 @@ def test_meti_403_is_transport_error():
             raise FetchError("meti: HTTP 403")
     with pytest.raises(FetchError, match="meti: HTTP 403"):
         discovery.discover(Forbidden(), "jp_industrial_production")
+
+
+def test_lfs_resolves_per_edition_estat_workbook_and_preserves_unresolved():
+    scheduled = [
+        discovery.Edition("2026-10-30", "2026-09", "final", "08:30", "https://www.e-stat.go.jp/en/stat-search/files", "date"),
+        discovery.Edition("2026-11-27", "2026-10", "final", "08:30", "https://www.e-stat.go.jp/en/stat-search/files", "date"),
+    ]
+    body = b'''<ul><li>2026 October Update date 2026-11-27</li>
+      <a href="/en/stat-search/file-download?statInfId=000031999999&amp;fileKind=0">Excel</a></ul>'''
+    doc = Document(body, "https://www.e-stat.go.jp/en/stat-search/files?x=1", "2026-11-27T00:00:00Z", "hash")
+    result = discovery.resolve_lfs_workbooks(doc, scheduled)
+    assert result[0].document_url == "https://www.e-stat.go.jp/en/stat-search/files"
+    assert result[1].document_url == "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000031999999&fileKind=0"
+
+
+def test_oecd_reuses_first_seen_date_for_same_period():
+    token = discovery.OECD_FIRST_SEEN.set({"2026-10": "2026-11-09"})
+    try:
+        edition = discovery.discover(Client(), "jp_oecd_cli")[0]
+    finally:
+        discovery.OECD_FIRST_SEEN.reset(token)
+    assert (edition.edition_date, edition.period) == ("2026-11-09", "2026-10")
+
+
+def test_meti_missing_workbook_fails_closed():
+    original = (FIX / "meti_iip_latest.html").read_bytes()
+    body = original.replace(b"b2020_gsm1e.xlsx", b"missing.xlsx")
+    doc = Document(body, discovery.METI, "2026-10-30T00:00:00Z", "hash")
+    with pytest.raises(FetchError, match="workbook link needs review"):
+        discovery.parse_meti(doc)

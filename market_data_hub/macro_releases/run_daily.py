@@ -263,6 +263,17 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
             with writer() as store:
                 collected = stored_official_editions(store)
         collected_token = STORED_EDITIONS.set(collected)
+        from .jp_discovery import OECD_FIRST_SEEN
+        oecd_seen = {}
+        if family == "jp_oecd_cli":
+            with writer() as store:
+                rows = store.conn.execute(
+                    "SELECT r.reference_period, MIN(r.first_seen_at) "
+                    "FROM readings r JOIN release_events e ON e.id=r.release_event_id "
+                    "WHERE e.family='jp_oecd_cli' GROUP BY r.reference_period"
+                ).fetchall()
+                oecd_seen = {row[0]: row[1][:10] for row in rows}
+        oecd_token = OECD_FIRST_SEEN.set(oecd_seen)
         instant = run_instant(run_at if run_at is not None else result["fetch_until"])
         token = RUN_INSTANT.set(instant)
         pending_token = PENDING_EDITIONS.set({})
@@ -295,6 +306,7 @@ def collect_family(writer, client, run_id, family, windows, *, lease=None, dry_r
             PENDING_EDITIONS.reset(pending_token)
             RUN_INSTANT.reset(token)
             STORED_EDITIONS.reset(collected_token)
+            OECD_FIRST_SEEN.reset(oecd_token)
         observations = batch.observations
         if not observations and not batch.issues and not result.get("scheduled_editions") and not collected:
             raise FetchError("No observations in requested window")

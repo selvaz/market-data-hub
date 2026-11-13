@@ -71,6 +71,7 @@ def test_family_calendars_and_golden_completeness():
 
 
 class Replay:
+    replay_mode = True
     def __init__(self, **kwargs):
         self.requests = []
 
@@ -83,7 +84,7 @@ class Replay:
             meta = json.loads(path.read_text())
             if meta["url"] == url:
                 return document(path.name.removesuffix(".meta.json"))
-        raise AssertionError("Unrecorded issuer URL: " + url)
+        raise FetchError("Unrecorded issuer URL")
 
 
 @pytest.mark.parametrize("family", GOLDEN_FAMILIES)

@@ -26,7 +26,7 @@ def observation(doc, family, edition, indicator, printed, method="html", *, valu
 
 
 def fetch_archives(client, family, since, provider, archives, parse):
-    from .jp_discovery import FAMILIES, discover
+    from .jp_discovery import FAMILIES, GDP, discover
     from .asia_editions import DISCOVERED_EDITIONS
     if family not in FAMILIES and run_date() > "2026-12-31":
         raise FetchError("Asia issuer reviewed horizon exhausted; needs review")
@@ -40,17 +40,14 @@ def fetch_archives(client, family, since, provider, archives, parse):
     out = []
     urls = dict(archives)
     editions = dict(EDITIONS[family])
-    try:
-        live = discover(client, family) if family in FAMILIES else []
-    except AssertionError as exc:
-        # Historical offline replay sets predate the discovery-page captures.
-        # A real HttpClient reports FetchError and never takes this path.
-        if "Unrecorded issuer URL" not in str(exc):
-            raise
-        live = []
+    live = (discover(client, family) if family in FAMILIES and
+            not getattr(client, "replay_mode", False) else [])
     for item in live:
         editions[item.edition_date] = (item.period, item.stage, item.release_time or "00:00")
-        urls[item.edition_date] = item.document_url
+        # A generic issuer listing is discovery evidence, not a data file.  In
+        # particular, never replace a reviewed e-Stat workbook with HTML.
+        if "stat-search/files" not in item.document_url or item.edition_date not in urls:
+            urls[item.edition_date] = item.document_url
     token = DISCOVERED_EDITIONS.set({(family, item.edition_date): editions[item.edition_date] for item in live})
     cache = {}
     from .asia_discovery import publication_url
@@ -61,8 +58,10 @@ def fetch_archives(client, family, since, provider, archives, parse):
             # The live discovery result is authoritative for moving resources;
             # archive resolvers continue to bind CPI/GDP/MOF edition files.
             known = urls.get(edition)
+            discovered_file = (known is not None and edition in {item.edition_date for item in live}
+                               and "stat-search/files" not in known and known != GDP)
             url = (known if family in {"jp_industrial_production", "jp_unemployment",
-                    "jp_household_spending", "jp_tankan", "jp_oecd_cli"}
+                    "jp_household_spending", "jp_tankan", "jp_oecd_cli"} or discovered_file
                    else publication_url(client, family, edition, known, cache))
             if url is None:
                 mark_pending(family, edition, "not_yet_published" if publication_grace(family, edition)
@@ -104,6 +103,8 @@ class AsiaAdapter:
         from . import nbs_macro, japan_macro
         client = self.client
         class PublicClient:
+            replay_mode = getattr(client, "replay_mode", False)
+
             def get(self, provider, url, params=None):
                 requested = url
                 parts = urlsplit(url)

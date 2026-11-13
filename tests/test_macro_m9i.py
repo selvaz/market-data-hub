@@ -72,6 +72,7 @@ def test_calendars_and_two_editions_per_family():
 
 
 class Replay:
+    replay_mode = True
     def __init__(self, **kwargs):
         self.requests = []
 
@@ -83,7 +84,7 @@ class Replay:
         for path in ROOT.glob("*.meta.json"):
             if json.loads(path.read_text())["url"] == url:
                 return document(path.name.removesuffix(".meta.json"))
-        raise AssertionError("Unrecorded issuer URL: " + url)
+        raise FetchError("Unrecorded issuer URL")
 
 
 @contextmanager

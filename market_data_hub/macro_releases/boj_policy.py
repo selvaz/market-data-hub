@@ -1,5 +1,5 @@
 """BOJ policy-board statements; meeting hours are never publication times."""
-from datetime import datetime, date
+from datetime import datetime
 from email.utils import parsedate_to_datetime
 import re
 from urllib.parse import urlsplit
@@ -10,6 +10,7 @@ from .http import FetchError
 from .policy import change, due_editions, observation, require_origin, reviewed
 from .policy_editions import EDITIONS
 from .tier1_publications import publication_text, require
+from .schedule import run_date
 
 HOST = "https://www.boj.or.jp"
 RSS = HOST + "/en/rss/whatsnew.xml"
@@ -81,7 +82,7 @@ def parse(document, previous, family="boj_policy", since="1900-01", *, feed=None
 
 
 def fetch(client, family, since):
-    year = date.today().year
+    year = int(run_date()[:4])
     listing_url = f"{HOST}/en/mopo/mpmdeci/mpr_{year}/index.htm"
     listing = client.get("boj", listing_url)
     indexed = {BASELINE: BASELINE_URL}
@@ -101,7 +102,7 @@ def fetch(client, family, since):
     out = []
     # The live current-year listing is the edition registry. Curated rows remain
     # anchors, but they do not bound the calendar or require a hard-coded year.
-    discovered = sorted(d for d in indexed if d != BASELINE and d[:7] >= since and d <= date.today().isoformat())
+    discovered = sorted(d for d in indexed if d != BASELINE and d[:7] >= since and d <= run_date())
     original = EDITIONS[family]
     EDITIONS[family] = {**original, **{d: (d, "final", None) for d in discovered}}
     try:

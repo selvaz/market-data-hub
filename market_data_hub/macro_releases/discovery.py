@@ -352,6 +352,8 @@ def fetch_daily(client, family, since):
     documents = []
     reasons = []
     class Capture:
+        replay_mode = getattr(client, "replay_mode", False)
+
         def get(self, *args, **kwargs):
             doc = client.get(*args, **kwargs)
             documents.append(doc)
