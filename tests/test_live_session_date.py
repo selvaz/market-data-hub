@@ -1,5 +1,6 @@
 """Live rows carry the session date of their price, never the collector's clock date."""
 
+from contextlib import nullcontext
 from datetime import date, datetime, time, timedelta, timezone
 
 import duckdb
@@ -9,6 +10,7 @@ import pytest
 from market_data_hub import runner
 from market_data_hub.db.connection import apply_schema
 from market_data_hub.db.identity import AmbiguousSymbolError, ensure_listing
+from market_data_hub.db.live_cleanup import remove_wrong_dated_live_duplicates
 from market_data_hub.db.upsert import upsert
 from market_data_hub.sources.yahoo_direct import session_date_of
 
@@ -73,7 +75,7 @@ def _seed(con, symbol, day, *, price=100.0, adj_close=None, live=False,
 
 
 def _run_live(con, monkeypatch, entries=None, quotes=None, prices=None,
-              today="2026-11-11"):
+              today="2026-11-11", now=None):
     entries = entries if entries is not None else [{"symbol": "SPY", "asset_class": "EQUITY"}]
     calls = {}
 
@@ -90,7 +92,7 @@ def _run_live(con, monkeypatch, entries=None, quotes=None, prices=None,
     monkeypatch.setattr(runner.yh, "get_live_quotes_batch", fetch_quotes)
     monkeypatch.setattr(runner.yh, "get_live_prices_batch", fetch_prices)
     cfg = {"live": {"enabled": True, "asset_classes": list({e["asset_class"] for e in entries})}}
-    runner.run_live(con, cfg, "test-live")
+    runner.run_live(con, cfg, "test-live", now=now)
     return calls
 
 
@@ -146,7 +148,8 @@ def test_partial_daily_bar_cannot_trigger_cleanup(live_db, monkeypatch):
     ("^N225", "EQUITY", "2026-11-10", "2026-11-10"),
     ("VFINX", "EQUITY", "2026-11-10", "2026-11-10"),
 ])
-def test_out_of_scope_keeps_legacy_dates_and_rows(live_db, monkeypatch, symbol, kind, day, settled):
+def test_every_instrument_uses_its_quote_session_date(
+        live_db, monkeypatch, symbol, kind, day, settled):
     _seed(live_db, symbol, "2026-10-01", live=True)
     _seed(live_db, symbol, settled)
     entry = {"symbol": symbol, "asset_class": kind}
@@ -155,9 +158,80 @@ def test_out_of_scope_keeps_legacy_dates_and_rows(live_db, monkeypatch, symbol, 
     calls = _run_live(live_db, monkeypatch, entries=[entry],
                       quotes={symbol: (111, day)}, prices={symbol: 112})
     assert live_db.execute("SELECT close, is_live FROM prices_daily WHERE date = '2026-10-01'").fetchone() == (100, True)
-    assert live_db.execute("SELECT close, is_live FROM prices_daily WHERE date = '2026-11-11'").fetchone() == (112, True)
-    assert symbol not in calls.get("session", [])
-    assert calls["legacy"] == [symbol]
+    expected = [(100, False)] if day == settled else [(111, True)]
+    assert live_db.execute(
+        "SELECT close, is_live FROM prices_daily WHERE date = ?", [day]
+    ).fetchall() == expected
+    assert calls["session"] == [symbol]
+    assert "legacy" not in calls
+
+
+def test_2347_pacific_uses_listing_sessions_not_collectors_tomorrow(
+        live_db, monkeypatch):
+    """07:47 UTC is still 23:47 on 11/12 in America/Los_Angeles."""
+    entries = [
+        {"symbol": "SPY", "asset_class": "EQUITY"},
+        {"symbol": "EXSA.DE", "asset_class": "EQUITY"},
+        {"symbol": "EURUSD=X", "asset_class": "FX"},
+    ]
+    for entry in entries:
+        _seed(live_db, entry["symbol"], "2026-11-11")
+    clock = datetime(2026, 11, 13, 7, 47, tzinfo=timezone.utc)
+    _run_live(
+        live_db, monkeypatch, entries=entries, now=clock,
+        quotes={
+            "SPY": (110, "2026-11-12"),
+            "EXSA.DE": (120, "2026-11-12"),
+            # H0 uses the quote's session date for 24-hour instruments too.
+            "EURUSD=X": (1.16, "2026-11-13"),
+        },
+    )
+    dates = dict(live_db.execute(
+        "SELECT symbol, date::VARCHAR FROM prices_daily WHERE is_live"
+    ).fetchall())
+    assert dates == {
+        "SPY": "2026-11-12",
+        "EXSA.DE": "2026-11-12",
+        "EURUSD=X": "2026-11-13",
+    }
+
+
+def test_wrong_dated_duplicate_cleanup_is_dry_run_and_idempotent(live_db):
+    _seed(live_db, "SPY", "2026-11-12", price=110, live=True)
+    _seed(live_db, "SPY", "2026-11-13", price=110, live=True)
+    assert remove_wrong_dated_live_duplicates(
+        live_db, "2026-11-13"
+    ) == 1
+    assert live_db.execute("SELECT count(*) FROM prices_daily").fetchone() == (2,)
+    assert remove_wrong_dated_live_duplicates(
+        live_db, "2026-11-13", dry_run=False
+    ) == 1
+    assert remove_wrong_dated_live_duplicates(
+        live_db, "2026-11-13", dry_run=False
+    ) == 0
+
+
+def test_fred_source_restriction_does_not_run_live(monkeypatch):
+    con = duckdb.connect()
+    apply_schema(con)
+    calls = []
+    monkeypatch.setattr(runner, "get_settings", lambda: {
+        "live": {"enabled": True}, "backfill_start": {}
+    })
+    monkeypatch.setattr(runner, "db_write_lock", lambda _path: nullcontext())
+    monkeypatch.setattr(runner, "get_conn", lambda _path: con)
+    monkeypatch.setattr(
+        runner, "run_fred", lambda *_args, **_kwargs: calls.append("fred")
+    )
+    monkeypatch.setattr(
+        runner, "run_live", lambda *_args, **_kwargs: calls.append("live")
+    )
+    monkeypatch.setattr(runner, "rebuild_coverage", lambda *_args: 0)
+    monkeypatch.setattr(runner, "rebuild_macro_panel_coverage", lambda *_args: 0)
+    monkeypatch.setattr(runner, "get_countries", lambda: [])
+
+    assert runner.run(sources=["fred"], db_path="unused.duckdb") == 0
+    assert calls == ["fred"]
 
 
 def test_retired_listing_cannot_block_active_listing(live_db, monkeypatch):

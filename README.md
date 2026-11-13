@@ -116,16 +116,14 @@ python validate_macro_panel.py            # sample of 5 countries
 python validate_macro_panel.py --full     # all 64 countries
 ```
 
-Live US cash prices carry the exchange-local date of the regular-session
-quote and remain provisional (`is_live=TRUE`), including the post-close price
-for day D used by digests. The scope is the configured universe's US-listed
-stocks/ETFs (including bond, commodity and FX ETFs) and explicitly recognized
-NYSE/Nasdaq/Cboe cash indices. Foreign venue suffixes, history proxies, spot FX,
-futures and crypto stay on the previous live-price API and UTC collector-date
-behavior, without the new date guard or cleanup. **Known limitation:** their
-dates are not reliable trading-session labels; H2's latest-value layer will
-provide instrument-aware session mapping, including London FX date conventions
-and CME Sunday-evening trading belonging to Monday.
+Every live price carries the exchange-local date of the regular session quote
+and remains provisional (`is_live=TRUE`). Yahoo's `regularMarketTime` and
+exchange offset define that date for US and foreign listings, spot FX, futures
+and crypto; the collector's UTC or local calendar date is never substituted.
+For continuously traded instruments this means the session date reported by
+the venue/provider (for example, CME Sunday-evening trading belongs to
+Monday). A source-restricted daily run injects live prices only when `yahoo`
+is among the requested sources.
 
 The guard resolves each requested symbol to one active listing, rejects
 ambiguous active mappings, and compares the quote with that listing's latest
@@ -141,6 +139,11 @@ Cleanup uses the same baseline and only removes live rows of requested, active,
 in-scope listings dated on or before their latest completed daily bar. The
 16:00 rule is conservative on early-close days; exchange holiday/early-close
 calendars also belong to the later instrument-aware mapping.
+
+To inspect exact duplicated live prices left by the collector-date bug, run
+`python scripts/cleanup_wrong_dated_live.py --db PATH --date YYYY-MM-DD`.
+It is a dry run unless `--apply` is supplied; the explicit incident date and
+exact preceding-live-row match keep the idempotent repair narrowly scoped.
 
 The Ray Dalio-style debt-cycle / growth-inflation regime classifier and the
 5-engine country risk architecture live in the separate
