@@ -4,6 +4,8 @@ The parsers deliberately use dates printed by issuers.  Retrieval time is not
 an edition date, except for OECD CLI whose SDMX response has no publication
 timestamp; that exception is marked ``observed``.
 """
+from __future__ import annotations
+
 from dataclasses import dataclass, replace
 from contextvars import ContextVar
 from datetime import date, datetime, timedelta
