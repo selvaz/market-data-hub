@@ -65,7 +65,7 @@ SANITY_BANDS = {
     "jp_cpi_yy": 10, "jp_core_cpi_yy": 10,
     "jp_gdp_qq": 20,
     "jp_industrial_production_mm": 30, "JP_OECD_CLI": 120,
-    "jp_unemployment_rate": 15, "jp_household_spending_yy": 30, "jp_policy_rate": 20,
+    "jp_unemployment_rate": 15, "jp_household_spending_yy": 30,
     "cn_gdp_yy": 20,
     "cn_industrial_production_yy": 30, "cn_retail_sales_yy": 30,
     "cn_nbs_manufacturing_pmi": 20,

@@ -1,4 +1,5 @@
 """Narrow official Japan release tables, with independently printed editions."""
+from dataclasses import replace
 from datetime import datetime
 from io import BytesIO, StringIO
 import csv
@@ -33,13 +34,12 @@ ARCHIVES = {
     "jp_oecd_cli": {"2026-11-09": "https://sdmx.oecd.org/public/rest/v1/data/OECD.SDD.STES,DSD_STES@DF_CLI,4.1/JPN.M.LI.IX._Z.AA.IX._Z.H?startPeriod=2026-01&format=csvfilewithlabels"},
     "jp_unemployment": {"2026-10-30": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000031831358&fileKind=0"},
     "jp_household_spending": {"2026-11-10": "https://www.stat.go.jp/data/kakei/sokuhou/tsuki/zuhyou/fies_t1.xlsx"},
-    "jp_policy_rate": {"2026-11-10": "https://stats.bis.org/api/v1/data/WS_CBPOL/D.JP?startPeriod=2026-09-01&format=csv"},
     "jp_gdp": {
         "2026-08-17": "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe262/tables/ritu-jk2621.csv",
         "2026-09-08": "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe262_2/tables/ritu-jk2622.csv",
     },
 }
-PROVIDERS = {"jp_industrial_production": "meti", "jp_oecd_cli": "oecd", "jp_unemployment": "statjp", "jp_household_spending": "statjp", "jp_policy_rate": "bis", "jp_gdp": "esri", "jp_cpi": "statjp", "jp_tokyo_cpi": "statjp", "jp_tankan": "boj", "jp_trade_balance": "mof"}
+PROVIDERS = {"jp_industrial_production": "meti", "jp_oecd_cli": "oecd", "jp_unemployment": "statjp", "jp_household_spending": "statjp", "jp_gdp": "esri", "jp_cpi": "statjp", "jp_tokyo_cpi": "statjp", "jp_tankan": "boj", "jp_trade_balance": "mof"}
 CPI_LISTINGS = {
     "2026-08-28": "https://www.e-stat.go.jp/en/stat-search/files?page=1&layout=datalist&year=20260&month=23070907&toukei=00200573&tstat=000001243876&tclass1=000001243877&cycle=1&tclass2val=0",
     "2026-10-02": "https://www.e-stat.go.jp/en/stat-search/files?page=1&layout=datalist&lid=000001490251",
@@ -294,28 +294,6 @@ def parse_oecd_sdmx(body, expected):
     return periods[latest], values[latest]
 
 
-def parse_boj_tankan_api(body):
-    """Parse the exact BoJ Tankan actual large-manufacturer history."""
-    import json
-    try:
-        payload = json.loads(body)
-        series = payload["RESULTSET"]
-    except (UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError) as exc:
-        raise FetchError("BOJ Tankan JSON format needs review") from exc
-    if (payload.get("STATUS") != 200 or len(series) != 1 or
-            series[0].get("SERIES_CODE") != "TK99F1000601GCQ01000" or
-            series[0].get("NAME_OF_TIME_SERIES") != "D.I./Business Conditions/Large Enterprises/Manufacturing/Actual result" or
-            series[0].get("UNIT") != "% points" or series[0].get("FREQUENCY") != "QUARTERLY"):
-        raise FetchError("BOJ Tankan series identity needs review")
-    dates = series[0].get("VALUES", {}).get("SURVEY_DATES", [])
-    values = series[0].get("VALUES", {}).get("VALUES", [])
-    if len(dates) != len(values) or not dates or dates != sorted(dates) or any(str(d)[-2:] not in {"01", "02", "03", "04"} for d in dates):
-        raise FetchError("BOJ Tankan quarterly observations need review")
-    if isinstance(values[-1], bool) or not isinstance(values[-1], (int, float)):
-        raise FetchError("BOJ Tankan value needs review")
-    stamp = str(dates[-1])
-    return stamp[:4] + "-Q" + str(int(stamp[-2:])), float(values[-1])
-
 
 def parse_statjp_lfs_workbook(body):
     """Parse the Statistics Bureau SA unemployment rate, both sexes, age 15+."""
@@ -369,23 +347,6 @@ def parse_statjp_fies_workbook(body):
         workbook.close()
 
 
-def parse_bis_policy_csv(body):
-    """Parse BIS WS_CBPOL D.JP as the BoJ policy-target daily state."""
-    try:
-        rows = list(csv.DictReader(StringIO(body.decode("utf-8-sig"))))
-    except (UnicodeError, csv.Error) as exc:
-        raise FetchError("BIS policy CSV format needs review") from exc
-    selected = [r for r in rows if r.get("FREQ") == "D" and r.get("REF_AREA") == "JP"]
-    if not selected or len(selected) != len(rows) or any(r.get("SOURCE_REF") != "Bank of Japan" for r in selected):
-        raise FetchError("BIS Japan policy series identity needs review")
-    periods = [r.get("TIME_PERIOD", "") for r in selected]
-    if periods != sorted(periods) or len(periods) != len(set(periods)) or not all(re.fullmatch(r"\d{4}-\d{2}-\d{2}", p) for p in periods):
-        raise FetchError("BIS Japan policy periods need review")
-    try:
-        return periods[-1], float(selected[-1]["OBS_VALUE"])
-    except (KeyError, ValueError) as exc:
-        raise FetchError("BIS Japan policy value needs review") from exc
-
 
 def parse(document, family, since="1900-01", *, archives=None):
     archives = ARCHIVES[family] if archives is None else archives
@@ -410,33 +371,39 @@ def parse(document, family, since="1900-01", *, archives=None):
         period, value, preliminary = parse_meti_iip_workbook(document.body)
         edition = next((d for d, u in archives.items() if u == document.url), None)
         expected, stage, _ = reviewed(family, edition)
-        if period != expected or stage != ("preliminary" if preliminary else "final"):
+        if period != expected:
+            from .jp_discovery import moving_status
+            raise FetchError("moving publication " + moving_status(expected, period))
+        if stage != ("preliminary" if preliminary else "final"):
             raise FetchError("METI IIP edition needs review")
         return [observation(document, family, edition, "jp_industrial_production_mm", str(value), "xlsx_table")]
     if family == "jp_oecd_cli":
         period, value = parse_oecd_sdmx(document.body, {"STRUCTURE_ID": "DSD_STES@DF_CLI(4.1)", "REF_AREA": "JPN", "FREQ": "M", "MEASURE": "LI", "UNIT_MEASURE": "IX", "ACTIVITY": "_Z", "ADJUSTMENT": "AA", "TRANSFORMATION": "IX", "TIME_HORIZ": "_Z", "METHODOLOGY": "H"})
         edition = next((d for d, u in archives.items() if u == document.url), None)
-        if reviewed(family, edition)[0] != period:
-            raise FetchError("OECD CLI edition needs review")
-        return [observation(document, family, edition, "JP_OECD_CLI", str(value), "sdmx_csv")]
+        expected = reviewed(family, edition)[0]
+        if expected != period:
+            from .jp_discovery import moving_status
+            raise FetchError("moving publication " + moving_status(expected, period))
+        row = observation(document, family, edition, "JP_OECD_CLI", str(value), "sdmx_csv")
+        # OECD's SDMX payload carries the observation period but no issuer
+        # publication timestamp.  The discovery edition is collector-observed.
+        return [replace(row, precision="observed", published_at=document.retrieved_at)]
     if family == "jp_unemployment":
         period, value = parse_statjp_lfs_workbook(document.body)
         edition = next((d for d, u in archives.items() if u == document.url), None)
-        if reviewed(family, edition)[0] != period:
-            raise FetchError("Statistics Bureau LFS edition needs review")
+        expected = reviewed(family, edition)[0]
+        if expected != period:
+            from .jp_discovery import moving_status
+            raise FetchError("moving publication " + moving_status(expected, period))
         return [observation(document, family, edition, "jp_unemployment_rate", str(value), "xlsx_table")]
     if family == "jp_household_spending":
         period, value = parse_statjp_fies_workbook(document.body)
         edition = next((d for d, u in archives.items() if u == document.url), None)
-        if reviewed(family, edition)[0] != period:
-            raise FetchError("Statistics Bureau FIES edition needs review")
+        expected = reviewed(family, edition)[0]
+        if expected != period:
+            from .jp_discovery import moving_status
+            raise FetchError("moving publication " + moving_status(expected, period))
         return [observation(document, family, edition, "jp_household_spending_yy", str(value), "xlsx_table")]
-    if family == "jp_policy_rate":
-        period, value = parse_bis_policy_csv(document.body)
-        edition = next((d for d, u in archives.items() if u == document.url), None)
-        if reviewed(family, edition)[0] != period:
-            raise FetchError("BIS policy state edition needs review")
-        return [observation(document, family, edition, "jp_policy_rate", str(value), "sdmx_csv")]
     if family in {"jp_cpi", "jp_tokyo_cpi"}:
         return parse_cpi(document, family, since, archives)
     if family == "jp_gdp":

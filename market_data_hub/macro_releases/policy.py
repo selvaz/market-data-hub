@@ -68,7 +68,7 @@ class PolicyAdapter:
         self.client = client
 
     def fetch(self, families, since):
-        if run_date() > "2026-12-31":
+        if run_date() > "2026-12-31" and any(f != "boj_policy" for f in families):
             raise FetchError("Central-bank edition calendar beyond 2026 needs review")
         from . import fomc, ecb_policy, boe_policy, boc_policy, pboc_lpr, boj_policy
         adapters = {"fomc": fomc, "ecb_policy": ecb_policy, "boe_policy": boe_policy,

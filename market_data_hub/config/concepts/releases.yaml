@@ -1278,16 +1278,3 @@ concepts:
     role: primary
     max_age_business_days: 57
     convention: issuer published FIES real y/y, two-or-more-person households
-- concept: jp_policy_rate
-  family: releases
-  label: BoJ short-term policy target, daily state
-  unit: '% per annum'
-  frequency: D
-  calendar: country:JP
-  decimals: 2
-  sources:
-  - kind: release
-    id: jp_policy_rate
-    role: primary
-    max_age_business_days: 10
-    convention: BIS WS_CBPOL D.JP end-of-period target state sourced from BoJ

@@ -1,5 +1,5 @@
 """BOJ policy-board statements; meeting hours are never publication times."""
-from datetime import datetime
+from datetime import datetime, date
 from email.utils import parsedate_to_datetime
 import re
 from urllib.parse import urlsplit
@@ -12,7 +12,6 @@ from .policy_editions import EDITIONS
 from .tier1_publications import publication_text, require
 
 HOST = "https://www.boj.or.jp"
-LISTING = HOST + "/en/mopo/mpmdeci/mpr_2026/index.htm"
 RSS = HOST + "/en/rss/whatsnew.xml"
 BASELINE = "2025-12-19"
 BASELINE_URL = HOST + "/en/mopo/mpmdeci/mpr_2025/k251219a.pdf"
@@ -82,11 +81,14 @@ def parse(document, previous, family="boj_policy", since="1900-01", *, feed=None
 
 
 def fetch(client, family, since):
-    listing = client.get("boj", LISTING)
+    year = date.today().year
+    listing_url = f"{HOST}/en/mopo/mpmdeci/mpr_{year}/index.htm"
+    listing = client.get("boj", listing_url)
     indexed = {BASELINE: BASELINE_URL}
-    for path, digits in re.findall(rb'href="(/en/mopo/mpmdeci/(?:mpr|state)_2026/k(26\d{4})a\.(?:pdf|htm))"', listing.body):
+    yy = str(year)[2:]
+    pattern = rb'href="(/en/mopo/mpmdeci/(?:mpr|state)_' + str(year).encode() + rb'/k(' + yy.encode() + rb'\d{4})a\.(?:pdf|htm))"'
+    for path, digits in re.findall(pattern, listing.body):
         edition = datetime.strptime(digits.decode(), "%y%m%d").date().isoformat()
-        reviewed(family, edition)
         indexed[edition] = HOST + path.decode()
     feed = client.get("boj", RSS)
     documents = {}
@@ -97,9 +99,17 @@ def fetch(client, family, since):
             documents[edition] = client.get("boj", indexed[edition])
         return documents[edition]
     out = []
-    for edition in due_editions(family, since):
+    # The live current-year listing is the edition registry. Curated rows remain
+    # anchors, but they do not bound the calendar or require a hard-coded year.
+    discovered = sorted(d for d in indexed if d != BASELINE and d[:7] >= since and d <= date.today().isoformat())
+    original = EDITIONS[family]
+    EDITIONS[family] = {**original, **{d: (d, "final", None) for d in discovered}}
+    try:
+      for edition in discovered:
         rows = parse(get(edition), get(previous_edition(edition)), family, since, feed=feed)
         if {o.edition for o in rows} != {edition}:
             raise FetchError("BOJ requested statement edition needs review")
         out += rows
+    finally:
+        EDITIONS[family] = original
     return out

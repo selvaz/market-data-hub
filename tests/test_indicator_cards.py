@@ -674,7 +674,7 @@ def test_certified_coverage_and_explicit_source_gaps(capsys):
         assert report["certified_families"][family]["unmapped"] == []
     assert report["documented_certified_gaps"] == {}
     assert report["macro_releases"] == {
-        "mapped": 138,
+        "mapped": len(INDICATORS),
         "total": len(INDICATORS),
         "unmapped": [],
     }

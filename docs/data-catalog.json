@@ -40574,30 +40574,6 @@
       "table": "value_vintages"
     },
     {
-      "distributor": "BIS/BOJ direct",
-      "expected_lag_days": 7,
-      "families": [
-        "jp_policy_rate"
-      ],
-      "frequency": "D",
-      "history_start": "CLI --since; scheduled rolling 24-month lookback, no fixed floor",
-      "id": "jp_policy_rate",
-      "issuer": "BIS/BOJ",
-      "jobs": [
-        {
-          "name": "macro_releases_daily",
-          "schedule_pt": "daily 06:30 PT"
-        }
-      ],
-      "lag_basis": "declared; 2026-10-31 inventory estimate",
-      "name": "BIS WS_CBPOL daily end-of-period state of the BoJ uncollateralised overnight call-rate target",
-      "notes": "",
-      "status": "active",
-      "status_reason": "",
-      "store": "macro_releases.sqlite",
-      "table": "value_vintages"
-    },
-    {
       "distributor": "BOJ direct",
       "expected_lag_days": 1,
       "families": [
@@ -43427,7 +43403,7 @@
       "primary_key": [
         "id"
       ],
-      "series_count": 138,
+      "series_count": 137,
       "status": "active",
       "status_reason": "",
       "store": "macro_releases.sqlite",

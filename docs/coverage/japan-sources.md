@@ -1,5 +1,28 @@
 # Japan: step 1 test-download report
 
+## Live edition-discovery method
+
+Japan tier-1 collection now treats the reviewed edition tables only as anchors.
+METI IIP supplies period, preliminary stage, release date and 08:50 time on its
+latest report (requests use a browser User-Agent and English language header).
+Statistics Bureau FIES prints period and release date on its latest page; LFS
+and national/Tokyo CPI combine their live result pages with the Bureau's annual
+schedules. ESRI's schedule supplies GDP quarter, first/second preliminary
+stage, date and 08:50 time, including dates in the next calendar year. The BoJ
+Tankan listing supplies survey period, release date and the summary document.
+Moving files are accepted only when their returned period equals the discovered
+edition; a prior period stays pending and a later period requires review.
+
+The collector records an overdue pending reason after a scheduled issuer date
+and grace period. METI and FIES, which expose the next issue through a moving
+latest page rather than a full parseable calendar, use their documented normal
+month-end and two-month/10th-day lags. OECD CLI is the sole exception to
+issuer-dated editions: SDMX has no release timestamp, so a newly observed
+period receives the collector's first-observed date and precision `observed`.
+FRED remains a secondary series. MOF trade balance remains curated because its
+repository route is a dated publication index rather than a reliable live
+latest-release contract; it retains the existing reviewed-horizon gate.
+
 Test date: **13 November 2026**. Live download evidence was collected at 12:34-12:43 UTC on the specified Windows machine. Scope: source discovery, test downloads and integration proposals only. No repository files, configuration, databases or scheduled jobs were changed.
 
 **Result: all nine required indicators have a tested, free, key-free machine-readable route.** Use ESRI, Statistics Bureau/e-Stat public files, METI, OECD SDMX and BoJ. BIS supplies a key-free policy-target time series. An e-Stat API application ID is optional for this coverage, because its public CSV/XLSX downloads work without one. Some mirrors are older, have different coverage or carry different revisions; those differences are recorded below.

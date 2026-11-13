@@ -90,7 +90,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | macro_releases.sqlite | [schedule_versions](#catalog-macro_releases-sqlite-schedule_versions) | 0 |
 | macro_releases.sqlite | [schema_compatibility](#catalog-macro_releases-sqlite-schema_compatibility) | 0 |
 | macro_releases.sqlite | [source_series](#catalog-macro_releases-sqlite-source_series) | 0 |
-| macro_releases.sqlite | [value_vintages](#catalog-macro_releases-sqlite-value_vintages) | 138 |
+| macro_releases.sqlite | [value_vintages](#catalog-macro_releases-sqlite-value_vintages) | 137 |
 | macro_releases.sqlite | [worklist_resolutions](#catalog-macro_releases-sqlite-worklist_resolutions) | 0 |
 | macro_releases.sqlite | [worklist_reverts](#catalog-macro_releases-sqlite-worklist_reverts) | 0 |
 
@@ -2701,7 +2701,6 @@ Published numeric measure vintages, preserving reference period, issuer publicat
 | jp_household_spending_yy | FIES real annual change in consumption expenditure, two-or-more-person households | StatisticsBureauJP | StatisticsBureauJP direct | M | 41 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_housing_starts_yy | MLIT national new residential housing starts, published unadjusted annual percent change; excludes nonresidential starts and the separate SAAR monthly change | MLIT | MLIT direct | M | 31 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_industrial_production_mm | Mining and manufacturing production, issuer-published month-to-month percent change; preliminary status retained | METI | METI direct | M | 30 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
-| jp_policy_rate | BIS WS_CBPOL daily end-of-period state of the BoJ uncollateralised overnight call-rate target | BIS/BOJ | BIS/BOJ direct | D | 7 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_tankan_large_manufacturers_di | Tankan large manufacturing enterprises, current business conditions DI; issuer summary prints actual favourable-minus-unfavourable balance, not forecast; adjustment not stated in source table | BOJ | BOJ direct | Q | 1 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_tokyo_core_cpi_yy | Ku-area of Tokyo CPI excluding fresh food, published preliminary 12-month rate; explicit M9d1 brief addition, distinct from national CPI | StatisticsBureauJP | StatisticsBureauJP direct | M | 0 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_trade_balance | Balance of customs-cleared exports and imports, not seasonally adjusted, billions of JPY; published balance converted from millions; detailed exports with provisional imports remain revised, not final | MOF | MOF direct | M | 20 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |

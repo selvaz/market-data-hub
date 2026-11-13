@@ -46,12 +46,6 @@ def test_oecd_exact_series_keys_and_latest_values():
         japan_macro.parse_oecd_sdmx(broken, cli)
 
 
-def test_boj_tankan_numeric_history():
-    assert japan_macro.parse_boj_tankan_api((FIX / "boj_tankan_large_mfg.json").read_bytes()) == ("2026-Q3", 24.0)
-    broken = (FIX / "boj_tankan_large_mfg.json").read_bytes().replace(b"Actual result", b"Forecast")
-    with pytest.raises(FetchError, match="identity"):
-        japan_macro.parse_boj_tankan_api(broken)
-
 
 def test_statistics_bureau_cpi_and_lfs_workbooks():
     cpi_rows = japan_macro.parse(doc("statjp_fies_file_000040513539.xlsx"), "jp_cpi")
@@ -59,12 +53,6 @@ def test_statistics_bureau_cpi_and_lfs_workbooks():
         ("jp_cpi_yy", "2026-09", 2.1), ("jp_core_cpi_yy", "2026-09", 2.1)]
     assert japan_macro.parse_statjp_lfs_workbook((FIX / "statjp_cpi_file_000031831358.xlsx").read_bytes()) == ("2026-09", 2.4)
 
-
-def test_bis_daily_policy_target_state():
-    assert japan_macro.parse_bis_policy_csv((FIX / "bis_cbpol_jp.csv").read_bytes()) == ("2026-11-10", 1.25)
-    broken = (FIX / "bis_cbpol_jp.csv").read_bytes().replace(b"Bank of Japan", b"Other bank", 1)
-    with pytest.raises(FetchError, match="identity"):
-        japan_macro.parse_bis_policy_csv(broken)
 
 
 def test_household_fixture_manifest_does_not_mislabel_cpi_as_fies():

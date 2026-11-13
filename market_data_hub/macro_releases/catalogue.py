@@ -219,8 +219,6 @@ ASIA_FAMILIES = {
         definition="Labour Force Survey unemployment rate, both sexes, age 15 years and over")],
     "jp_household_spending": [measure("jp_household_spending_yy", "StatisticsBureauJP", "JPN", "yy", "NSA",
         definition="FIES real annual change in consumption expenditure, two-or-more-person households")],
-    "jp_policy_rate": [measure("jp_policy_rate", "BIS/BOJ", "JPN", "level", "n/a", "% per annum", frequency="D",
-        definition="BIS WS_CBPOL daily end-of-period state of the BoJ uncollateralised overnight call-rate target")],
     "cn_gdp": [measure("cn_gdp_yy", "NBS", "CHN", "yy", "NSA", frequency="Q",
         definition="Real GDP, published cumulative year-over-year percent change at constant prices; Q2 is first half, Q3 first three quarters; preliminary accounting stage per explicit M9d1 brief")],
     "cn_activity": [
@@ -323,7 +321,7 @@ EXPECTED_LAG_DAYS = {
     "us_construction_spending": 36, "us_fhfa_hpi": 57, "jp_trade_balance": 20,
     "jp_tankan": 1, "jp_tokyo_cpi": 0, "jp_cpi": 22, "jp_gdp": 47,
     "jp_industrial_production": 30, "jp_oecd_cli": 9, "jp_unemployment": 30,
-    "jp_household_spending": 41, "jp_policy_rate": 7,
+    "jp_household_spending": 41,
     "cn_gdp": 19, "cn_activity": 19, "cn_nbs_pmi": 0, "cn_cpi": 14,
     "mx_cpi": 8, "banxico_policy": 0, "bcb_policy": 0,
     # Eurostat refreshes national datasets after the national releases.

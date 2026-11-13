@@ -26,17 +26,44 @@ def observation(doc, family, edition, indicator, printed, method="html", *, valu
 
 
 def fetch_archives(client, family, since, provider, archives, parse):
-    if run_date() > "2026-12-31":
+    from .jp_discovery import FAMILIES, discover
+    from .asia_editions import DISCOVERED_EDITIONS
+    if family not in FAMILIES and run_date() > "2026-12-31":
         raise FetchError("Asia issuer reviewed horizon exhausted; needs review")
+    # Do not hit live pages before the first relevant anchored release instant.
+    # Once an anchor is relevant (and after the anchor horizon), discovery owns
+    # continuation without a future-date ceiling.
+    anchored_due = due(EDITIONS[family], family=family)
+    if family in FAMILIES and run_date() <= max(EDITIONS[family]) and not any(
+            in_window(meta[0], since) for meta in anchored_due.values()):
+        return []
     out = []
     urls = dict(archives)
+    editions = dict(EDITIONS[family])
+    try:
+        live = discover(client, family) if family in FAMILIES else []
+    except AssertionError as exc:
+        # Historical offline replay sets predate the discovery-page captures.
+        # A real HttpClient reports FetchError and never takes this path.
+        if "Unrecorded issuer URL" not in str(exc):
+            raise
+        live = []
+    for item in live:
+        editions[item.edition_date] = (item.period, item.stage, item.release_time or "00:00")
+        urls[item.edition_date] = item.document_url
+    token = DISCOVERED_EDITIONS.set({(family, item.edition_date): editions[item.edition_date] for item in live})
     cache = {}
     from .asia_discovery import publication_url
-    for edition, (period, _, _) in due(EDITIONS[family], family=family).items():
-        if not in_window(period, since):
-            continue
-        try:
-            url = publication_url(client, family, edition, urls.get(edition), cache)
+    try:
+      for edition, (period, _, _) in due(editions, family=family).items():
+        if in_window(period, since):
+          try:
+            # The live discovery result is authoritative for moving resources;
+            # archive resolvers continue to bind CPI/GDP/MOF edition files.
+            known = urls.get(edition)
+            url = (known if family in {"jp_industrial_production", "jp_unemployment",
+                    "jp_household_spending", "jp_tankan", "jp_oecd_cli"}
+                   else publication_url(client, family, edition, known, cache))
             if url is None:
                 mark_pending(family, edition, "not_yet_published" if publication_grace(family, edition)
                              else "scheduled_unreviewed")
@@ -48,15 +75,24 @@ def fetch_archives(client, family, since, provider, archives, parse):
             rows = parse(doc, family, since, archives=urls)
             if not rows or {r.edition for r in rows} != {edition}:
                 raise FetchError("Asia requested publication edition needs review")
-        except (FetchError, ValueError, KeyError, TypeError, IndexError, BadZipFile) as exc:
+          except (FetchError, ValueError, KeyError, TypeError, IndexError, BadZipFile) as exc:
             # Reject this edition without losing successfully validated editions.
             # Transport/authentication failures still stop the issuer family.
             if isinstance(exc, FetchError) and str(exc).startswith(provider + ": ") and str(exc) != provider + ": HTTP 404":
                 raise
-            mark_pending(family, edition, "not_yet_published" if
-                str(exc) == provider + ": HTTP 404" and publication_grace(family, edition) else "needs_review")
+            delayed = (str(exc) == provider + ": HTTP 404" and publication_grace(family, edition)) or str(exc).endswith("not_yet_published")
+            if delayed:
+                if family in FAMILIES:
+                    from .jp_discovery import pending_reason
+                    mark_pending(family, edition, pending_reason(edition))
+                else:
+                    mark_pending(family, edition, "not_yet_published")
+            else:
+                mark_pending(family, edition, "needs_review")
             continue
-        out.extend(rows)
+          out.extend(rows)
+    finally:
+        DISCOVERED_EDITIONS.reset(token)
     return out
 
 
