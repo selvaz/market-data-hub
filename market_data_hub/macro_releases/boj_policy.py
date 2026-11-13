@@ -7,7 +7,7 @@ from xml.etree import ElementTree
 from zoneinfo import ZoneInfo
 
 from .http import FetchError
-from .policy import change, due_editions, observation, require_origin, reviewed
+from .policy import change, observation, require_origin, reviewed
 from .policy_editions import EDITIONS
 from .tier1_publications import publication_text, require
 from .schedule import run_date

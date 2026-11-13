@@ -1,5 +1,4 @@
 """Offline contracts for live Japan edition discovery."""
-from dataclasses import replace
 from datetime import date
 import hashlib
 from pathlib import Path
