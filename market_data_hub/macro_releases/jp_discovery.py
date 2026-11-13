@@ -230,7 +230,8 @@ def parse_oecd(document):
     observed = OECD_FIRST_SEEN.get().get(period)
     if observed is None:
         observed = datetime.fromisoformat(document.retrieved_at.replace("Z", "+00:00")).date().isoformat()
-    return Edition(observed, period, "final", None, document.url, "observed")
+    data_url = OECD + "?format=csvfilewithlabels"
+    return Edition(observed, period, "final", None, data_url, "observed")
 
 
 def discover(client, family, *, today=None):

@@ -131,7 +131,7 @@ def test_contradictory_exact_boj_time_still_conflicts(tmp_path):
         assert_exact(card(store))
 
 
-def test_january_listing_loads_previous_year_statement():
+def test_january_listing_uses_previous_year_statement_only_as_baseline():
     current_listing = b'<a href="/en/mopo/mpmdeci/mpr_2027/k270123a.htm">January</a>'
     previous_listing = b'<a href="/en/mopo/mpmdeci/mpr_2026/k261218a.htm">December</a>'
 
@@ -161,7 +161,8 @@ def test_january_listing_loads_previous_year_statement():
     client = JanuaryClient()
     token = RUN_INSTANT.set("2027-01-23T08:00:00Z")
     try:
-        rows = fetch(client, "boj_policy", "2027-01")
+        # The daily runner uses a 24-month lookback, which includes December.
+        rows = fetch(client, "boj_policy", "2025-01")
     finally:
         RUN_INSTANT.reset(token)
 

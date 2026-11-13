@@ -97,7 +97,8 @@ def fetch(client, family, since):
             for path, digits in re.findall(pattern, document.body)
         }
 
-    indexed.update(index_statements(listing, year))
+    current_year = index_statements(listing, year)
+    indexed.update(current_year)
     if year > 2026:
         previous_year = year - 1
         previous_listing = client.get(
@@ -118,7 +119,9 @@ def fetch(client, family, since):
     out = []
     # The live current-year listing is the edition registry. Curated rows remain
     # anchors, but they do not bound the calendar or require a hard-coded year.
-    discovered = sorted(d for d in indexed if d != BASELINE and d[:7] >= since and d <= run_date())
+    # Previous-year entries are predecessor evidence only.  They are not a
+    # complete edition registry and therefore must never enter collection.
+    discovered = sorted(d for d in current_year if d[:7] >= since and d <= run_date())
     original = EDITIONS[family]
     EDITIONS[family] = {**original, **{d: (d, "final", None) for d in discovered}}
     try:

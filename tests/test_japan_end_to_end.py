@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from dataclasses import replace
 import hashlib
 from io import BytesIO
+import json
 from pathlib import Path
 
 import pytest
@@ -148,6 +149,39 @@ def test_next_meti_edition_uses_html_rate_and_workbook_validation():
     assert row.document.url == jp_discovery.METI
 
 
+def test_discovered_november_oecd_edition_fetches_csv_observation():
+    fixture = Path(__file__).parent / "fixtures/japan_tier1/oecd_cli_jpn.csv"
+    csv_body = fixture.read_bytes().replace(b"2026-10", b"2026-11")
+    discovery = {
+        "data": {
+            "dataSets": [{"observations": {"0": [100.3]}}],
+            "structure": {"dimensions": {"observation": [{"values": [{"id": "2026-11"}]}]}},
+        }
+    }
+
+    class OecdClient:
+        def __init__(self):
+            self.requests = []
+
+        def get(self, provider, url, params=None):
+            self.requests.append((url, params))
+            body = json.dumps(discovery).encode() if params else csv_body
+            # Match HttpClient: request parameters are not retained in Document.url.
+            return Document(body, url, "2026-11-15T00:01:00Z", hashlib.sha256(body).hexdigest())
+
+    client = OecdClient()
+    with run_at("2026-11-15T00:01:00Z"):
+        rows = japan_macro.fetch(client, "jp_oecd_cli", "2026-11")
+
+    assert [(row.edition, row.period, row.value) for row in rows] == [
+        ("2026-11-15", "2026-11", 100.2095)
+    ]
+    assert client.requests == [
+        (jp_discovery.OECD, {"lastNObservations": "1", "format": "jsondata"}),
+        (jp_discovery.OECD + "?format=csvfilewithlabels", None),
+    ]
+
+
 def test_gdp_schedule_editions_follow_archive_links():
     schedule = (Path(__file__).parent /
                 "fixtures/japan_tier1/discovery/esri_gdp_schedule.html").read_bytes()
@@ -183,3 +217,54 @@ def test_gdp_schedule_editions_follow_archive_links():
         ("2026-11-16", "2026-Q3", 0.5),
         ("2026-12-08", "2026-Q3", 0.5),
     ]
+
+
+def test_2027_q4_gdp_editions_resolve_period_derived_csv_links():
+    schedule = (Path(__file__).parent /
+                "fixtures/japan_tier1/discovery/esri_gdp_schedule.html").read_bytes()
+    archive_url = "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/toukei_2026.html"
+    archive = b'''<table>
+      <tr><td>Feb 15, 2027 <a href="qe264/gdemenuea.html">Quarterly Estimates of GDP for Oct.-Dec.2026 (The First preliminary Estimates)</a></td></tr>
+      <tr><td>Mar 9, 2027 <a href="qe264_2/gdemenuea.html">Quarterly Estimates of GDP for Oct.-Dec.2026 (The Second preliminary Estimates)</a></td></tr>
+    </table>'''
+    csv_body = (
+        'x\n"Real, Seasonally Adjusted Series (Quarter-to-Quarter Percent Change)",(%)\n'
+        "x\nx\nx\n,GDP(Expenditure Approach)\nx\n2026/ 10-12.,0.7\n"
+    ).encode("cp932")
+    csv_urls = {
+        "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe264/tables/ritu-jk2641.csv",
+        "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe264_2/tables/ritu-jk2642.csv",
+    }
+
+    class GdpRolloverClient:
+        def __init__(self):
+            self.requested = []
+
+        def get(self, provider, url, params=None):
+            self.requested.append(url)
+            if url == jp_discovery.GDP:
+                body = schedule
+            elif url == archive_url:
+                body = archive
+            elif url.endswith("gdemenuea.html"):
+                revised = "_2/" in url
+                directory = "qe264_2" if revised else "qe264"
+                number = "2" if revised else "1"
+                body = (f'<a href="../../../../../../../../jp/sna/data/data_list/sokuhou/files/'
+                        f'2026/{directory}/tables/ritu-jk264{number}.csv">'
+                        'Real, Seasonally Adjusted Series (Quarter-to-Quarter) (csv: 1KB)</a>').encode()
+            else:
+                assert url in csv_urls
+                body = csv_body
+            return Document(body, url, "2027-03-09T00:01:00Z", hashlib.sha256(body).hexdigest())
+
+    client = GdpRolloverClient()
+    with run_at("2027-03-09T00:01:00Z") as pending:
+        rows = japan_macro.fetch(client, "jp_gdp", "2026-10")
+
+    assert pending == {}
+    assert [(row.edition, row.period, row.value) for row in rows] == [
+        ("2027-02-15", "2026-Q4", 0.7),
+        ("2027-03-09", "2026-Q4", 0.7),
+    ]
+    assert csv_urls <= set(client.requested)

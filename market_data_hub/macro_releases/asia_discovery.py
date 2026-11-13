@@ -103,14 +103,22 @@ def cpi_listing(client, cache, family, edition):
 
 def gdp_link(client, cache, edition, known):
     from .japan_macro import GDP_ARCHIVE, GDP_MENUS, gdp_archive_listing
-    archive = get(client, cache, "esri", GDP_ARCHIVE)
     if known:
+        archive = get(client, cache, "esri", GDP_ARCHIVE)
         gdp_archive_listing(archive, get(client, cache, "esri", GDP_MENUS[edition]), edition)
         return known
     period, stage, _ = reviewed("jp_gdp", edition)
+    year, quarter = period.split("-Q")
+    archive_url = (
+        f"https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/{year}/toukei_{year}.html"
+    )
+    archive = get(client, cache, "esri", archive_url)
     stamp = datetime.strptime(edition, "%Y-%m-%d").strftime("%b %d, %Y").replace(" 0", " ")
-    label = {"Q2": "Apr.-Jun.", "Q3": "Jul.-Sep."}[period[-2:]] + period[:4]
+    label = {"1": "Jan.-Mar.", "2": "Apr.-Jun.", "3": "Jul.-Sep.",
+             "4": "Oct.-Dec."}[quarter] + year
     ordinal = "First" if stage == "preliminary" else "Second"
+    stem = f"qe{year[2:]}{quarter}"
+    directory = stem + ("" if stage == "preliminary" else "_2")
     menus = set()
     for row in Page(archive.body).root.find_all("tr"):
         if not plain(row.text()).startswith(stamp + " "):
@@ -118,8 +126,9 @@ def gdp_link(client, cache, edition, known):
         for link in row.find_all("a"):
             if plain(link.text()) != "Quarterly Estimates of GDP for " + label + " (The " + ordinal + " preliminary Estimates)":
                 continue
-            url = urljoin(GDP_ARCHIVE, link.get("href"))
-            if not re.fullmatch(r"https://www\.esri\.cao\.go\.jp/en/sna/data/sokuhou/files/2026/qe\d+(?:_2)?/gdemenuea\.html", url):
+            url = urljoin(archive_url, link.get("href"))
+            expected_menu = f"https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/{year}/{directory}/gdemenuea.html"
+            if url != expected_menu:
                 raise FetchError("ESRI GDP edition menu URL needs review")
             menus.add(url)
     menu = unique(menus)
@@ -130,8 +139,10 @@ def gdp_link(client, cache, edition, known):
         if not plain(link.text()).startswith("Real, Seasonally Adjusted Series (Quarter-to-Quarter) (csv:"):
             continue
         url = urljoin(menu, link.get("href"))
-        directory = menu.split("/2026/")[1].split("/")[0]
-        if not re.fullmatch(r"https://www\.esri\.cao\.go\.jp/jp/sna/data/data_list/sokuhou/files/2026/" + re.escape(directory) + r"/tables/ritu-jk\d+\.csv", url):
+        expected_csv = (f"https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/"
+                        f"{year}/{directory}/tables/ritu-jk{year[2:]}{quarter}"
+                        f"{'1' if stage == 'preliminary' else '2'}.csv")
+        if url != expected_csv:
             raise FetchError("ESRI GDP rate CSV URL needs review")
         urls.add(url)
     return unique(urls)
