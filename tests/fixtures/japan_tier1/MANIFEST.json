@@ -1,0 +1,137 @@
+[
+ {
+  "file": "esri_gdp_qq_ritu-jk2622.csv",
+  "url": "https://www.esri.cao.go.jp/jp/sna/data/data_list/sokuhou/files/2026/qe262_2/tables/ritu-jk2622.csv",
+  "status": 200,
+  "bytes": 19152,
+  "content_type": "text/csv",
+  "sha256": "a89548a5adfd178b2af4c926da5ba64f792c005ca3e9d1639e7816f75eb64705",
+  "retrieved_at": "2026-11-13T13:06:35.479370Z"
+ },
+ {
+  "file": "esri_gdemenuea.html",
+  "url": "https://www.esri.cao.go.jp/en/sna/data/sokuhou/files/2026/qe262_2/gdemenuea.html",
+  "status": 200,
+  "bytes": 33645,
+  "content_type": "text/html",
+  "sha256": "ab04c8fb657b5d5ea04539f994c8bab03f86d8505c18018af2208cb81e4b9aa0",
+  "retrieved_at": "2026-11-13T13:06:36.555728Z"
+ },
+ {
+  "file": "meti_iip_result.html",
+  "url": "https://www.meti.go.jp/english/statistics/tyo/iip/b2020_result-2.html",
+  "status": 200,
+  "bytes": 22543,
+  "content_type": "text/html",
+  "sha256": "334ac70a28db95aa0ce2d4c8ad7c1285600aa183b3fb01005512b5e3d3a2f278",
+  "retrieved_at": "2026-11-13T13:06:37.467610Z"
+ },
+ {
+  "file": "meti_iip_gsm1e.xlsx",
+  "url": "https://www.meti.go.jp/english/statistics/tyo/iip/xls/b2020_gsm1e.xlsx",
+  "status": 200,
+  "bytes": 366085,
+  "content_type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "sha256": "801e0e8771993a658991485d8fb0e448dac53eece18cc1f3868f585bd36c1fba",
+  "retrieved_at": "2026-11-13T13:06:38.999757Z"
+ },
+ {
+  "file": "oecd_cli_jpn.csv",
+  "url": "https://sdmx.oecd.org/public/rest/v1/data/OECD.SDD.STES,DSD_STES@DF_CLI,4.1/JPN.M.LI.IX._Z.AA.IX._Z.H?startPeriod=2026-01&format=csvfilewithlabels",
+  "status": 200,
+  "bytes": 3201,
+  "content_type": "application/vnd.sdmx.data+csv; version=2; labels=name; charset=utf-8",
+  "sha256": "4a569ded30a21dd2afdda67c9eab9c5aa6760c076f76eabc2fc4c9fb5a2aa6ca",
+  "retrieved_at": "2026-11-13T13:06:39.525037Z"
+ },
+ {
+  "file": "oecd_unemp_kei_jpn.csv",
+  "url": "https://sdmx.oecd.org/public/rest/v1/data/OECD.SDD.STES,DSD_KEI@DF_KEI,4.0/JPN.M.UNEMP.PT_LF._T.Y._Z?startPeriod=2026-01&format=csvfilewithlabels",
+  "status": 200,
+  "bytes": 2864,
+  "content_type": "application/vnd.sdmx.data+csv; version=2; charset=utf-8; labels=name",
+  "sha256": "6f2d100684a95641227c5bbc6657d349189ad67259773d0c2d183e15d58a1775",
+  "retrieved_at": "2026-11-13T13:06:40.010961Z"
+ },
+ {
+  "file": "oecd_cpi_c2018_jpn.csv",
+  "url": "https://sdmx.oecd.org/public/rest/v1/data/OECD.SDD.TPS,DSD_PRICES_COICOP2018@DF_PRICES_C2018_ALL,1.0/JPN.M.N.CPI.PA._T.N.GY?startPeriod=2026-01&format=csvfilewithlabels",
+  "status": 200,
+  "bytes": 3402,
+  "content_type": "application/vnd.sdmx.data+csv; version=2; charset=utf-8; labels=name",
+  "sha256": "e8469e279a140d7a216b1d479a726f06a86073fe04e7788cacbca3bbf74f1cea",
+  "retrieved_at": "2026-11-13T13:06:40.576494Z"
+ },
+ {
+  "file": "oecd_retail_jpn.csv",
+  "url": "https://sdmx.oecd.org/public/rest/v1/data/OECD.SDD.STES,DSD_STES@DF_INDSERV,4.3/JPN.M.TOVM.IX.G47.Y._Z._Z.N?lastNObservations=12&format=csvfilewithlabels",
+  "status": 200,
+  "bytes": 4594,
+  "content_type": "application/vnd.sdmx.data+csv; version=2; charset=utf-8; labels=name",
+  "sha256": "2221f67f8fb6c8587e7263e2a9109429b78da4f2247ffbe97512b36c5a593daa",
+  "retrieved_at": "2026-11-13T13:06:41.165899Z"
+ },
+ {
+  "file": "boj_tankan_large_mfg.json",
+  "url": "https://www.stat-search.boj.or.jp/api/v1/getDataCode?format=json&lang=en&db=CO&code=TK99F1000601GCQ01000&startDate=202401",
+  "status": 200,
+  "bytes": 664,
+  "content_type": "application/json; charset=utf-8",
+  "sha256": "73514c2ad2c37339e9a2a888ba16dd69f534efb82ff77e13b32ed799ebdd6e97",
+  "retrieved_at": "2026-11-13T13:06:42.303812Z"
+ },
+ {
+  "file": "boj_tankan_summary_2609.pdf",
+  "url": "https://www.boj.or.jp/en/statistics/tk/gaiyo/2026/tka2609.pdf",
+  "status": 200,
+  "bytes": 229883,
+  "content_type": "application/pdf",
+  "sha256": "7498131a48ac437feda88fc59d1ee41de089e1881997d827ce7dc1ce45b4090f",
+  "retrieved_at": "2026-11-13T13:06:42.626322Z"
+ },
+ {
+  "file": "boj_mpm_decision_261030.pdf",
+  "url": "https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2026/k261030a.pdf",
+  "status": 200,
+  "bytes": 175859,
+  "content_type": "application/pdf",
+  "sha256": "f62859324bd87cc493b9bd2ec09b9030012602cfe66b7298543ad7cffc97a044",
+  "retrieved_at": "2026-11-13T13:06:42.937284Z"
+ },
+ {
+  "file": "bis_cbpol_jp.csv",
+  "url": "https://stats.bis.org/api/v1/data/WS_CBPOL/D.JP?startPeriod=2026-09-01&format=csv",
+  "status": 200,
+  "bytes": 127915,
+  "content_type": "text/csv;charset=UTF-8",
+  "sha256": "4641a181412cde5f3efc4c071e7cf757d85f7bd1af168e1413596b401f17eee2",
+  "retrieved_at": "2026-11-13T13:06:43.110562Z"
+ },
+ {
+  "file": "statjp_cpi_file_000031831358.xlsx",
+  "url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000031831358&fileKind=0",
+  "status": 200,
+  "bytes": 283616,
+  "content_type": "application/octet-stream",
+  "sha256": "c20cdc21e0527b705a47cde516a2a86bfeca3bdadf1fc924fb50d491633377dc",
+  "retrieved_at": "2026-11-13T13:06:45.138786Z"
+ },
+ {
+  "file": "statjp_lfs_file_000040482953.csv",
+  "url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040482953&fileKind=1",
+  "status": 200,
+  "bytes": 236191,
+  "content_type": "text/csv;charset=UTF-8",
+  "sha256": "214b4ae990a976ddf393983cb464dff1b655f112e50f3e4a15c59e19b22a7887",
+  "retrieved_at": "2026-11-13T13:06:46.782752Z"
+ },
+ {
+  "file": "statjp_fies_file_000040513539.xlsx",
+  "url": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040513539&fileKind=4",
+  "status": 200,
+  "bytes": 1020710,
+  "content_type": "application/octet-stream",
+  "sha256": "4dbac2f5550427cfa9401b6c2959739f764dd3e5543eecca2d37248d37ea3cb8",
+  "retrieved_at": "2026-11-13T13:06:48.936683Z"
+ }
+]

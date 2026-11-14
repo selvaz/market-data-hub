@@ -7586,7 +7586,7 @@
         "measurement": "H",
         "mechanism": "n.a."
       },
-      "flag": "never captured",
+      "flag": "",
       "frequency": "M",
       "ids": {
         "cal": [
@@ -7604,15 +7604,13 @@
         "pan": []
       },
       "key": "jp_cpi",
-      "known_failure_modes": [
-        "never captured"
-      ],
+      "known_failure_modes": [],
       "nature": "HARD",
-      "rationale": "BoJ price-stability target is headline CPI.",
+      "rationale": "BoJ price-stability target is headline CPI; national published y/y workbook is collected.",
       "raw_ids": "cal:jp_cpi_mm_sa; cat:jp_cpi_yy",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
-      "source": "MIC",
+      "source": "Statistics Bureau Japan",
       "theme": "Inflation",
       "timing": {
         "basis": "DEFINITION",
@@ -7634,7 +7632,7 @@
         "measurement": "H",
         "mechanism": "n.a."
       },
-      "flag": "never captured",
+      "flag": "",
       "frequency": "M",
       "ids": {
         "cal": [
@@ -7652,15 +7650,13 @@
         "pan": []
       },
       "key": "jp_cpi_core",
-      "known_failure_modes": [
-        "never captured"
-      ],
+      "known_failure_modes": [],
       "nature": "HARD",
       "rationale": "Japanese 'core' keeps energy and processed food; not the US basket (review §3).",
       "raw_ids": "cal:jp_core_cpi,jp_core_cpi_mm_sa; cat:jp_core_cpi_yy",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
-      "source": "MIC",
+      "source": "Statistics Bureau Japan",
       "theme": "Inflation",
       "timing": {
         "basis": "DEFINITION",
@@ -7801,7 +7797,7 @@
       "raw_ids": "cal:jp_tankan; cat:jp_tankan_large_manufacturers_di",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
-      "source": "BoJ",
+      "source": "BoJ API; BoJ summary PDF",
       "theme": "Growth / activity",
       "timing": {
         "basis": "HYPOTHESIS",
@@ -7816,7 +7812,7 @@
       }
     },
     {
-      "concept": "BoJ policy rate decision",
+      "concept": "BoJ policy rate decision and daily target state",
       "country": "JPN",
       "evidence": {
         "local_timing": "none",
@@ -7830,7 +7826,8 @@
           "jp_boj"
         ],
         "cat": [
-          "boj_policy_rate_decision"
+          "boj_policy_rate_decision",
+          "jp_policy_rate"
         ],
         "derived_ms": [],
         "es": [],
@@ -7845,7 +7842,7 @@
       ],
       "nature": "POLICY",
       "rationale": "Current state.",
-      "raw_ids": "cal:jp_boj; cat:boj_policy_rate_decision",
+      "raw_ids": "cal:jp_boj; cat:boj_policy_rate_decision,jp_policy_rate",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
       "source": "BoJ",
@@ -14143,7 +14140,9 @@
         "derived_ms": [],
         "es": [],
         "hub": [],
-        "ms": [],
+        "ms": [
+          "JPNRGDPEXP"
+        ],
         "notes": [],
         "pan": []
       },
@@ -14151,7 +14150,7 @@
       "known_failure_modes": [],
       "nature": "HARD",
       "rationale": "Real GDP q/q, not annualised; ESRI first and second estimates are stages. No local timing evidence. Source: https://www.esri.cao.go.jp/en/sna/sokuhou/sokuhou_top.html (issuer reference in catalogo-tier1.toml).",
-      "raw_ids": "cat:jp_gdp_qq",
+      "raw_ids": "ms:JPNRGDPEXP; cat:jp_gdp_qq",
       "revision_behaviour": "Not specified in approved row.",
       "secondary": [],
       "source": "Cabinet Office (ESRI)",
@@ -19154,11 +19153,15 @@
         "cal": [
           "jp_unemp"
         ],
-        "cat": [],
+        "cat": [
+          "jp_unemployment_rate"
+        ],
         "derived_ms": [],
         "es": [],
         "hub": [],
-        "ms": [],
+        "ms": [
+          "LRUNTTTTJPM156S"
+        ],
         "notes": [],
         "pan": []
       },
@@ -19168,9 +19171,11 @@
       ],
       "nature": "HARD",
       "rationale": "The seed records Unemployment Rate; its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release. No local cycle timing test. Source: https://www.stat.go.jp/english/",
-      "raw_ids": "cal:jp_unemp",
+      "raw_ids": "cal:jp_unemp; ms:LRUNTTTTJPM156S; cat:jp_unemployment_rate",
       "revision_behaviour": "its exact transform, adjustment, revision practice and issuer release dates should be checked against the published release.",
-      "secondary": [],
+      "secondary": [
+        "OECD/FRED distributor"
+      ],
       "source": "Statistics Bureau",
       "theme": "Labour",
       "timing": {
@@ -21200,10 +21205,105 @@
         "relationship_keys": [],
         "screen_note": "not tested"
       }
+    },
+    {
+      "concept": "OECD composite leading indicator (amplitude adjusted)",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "separate source vintages; no splicing",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "JP_OECD_CLI"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [
+          "JPNLOLITOAASTSAM"
+        ],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_oecd_cli",
+      "known_failure_modes": [
+        "separate source vintages",
+        "no splicing"
+      ],
+      "nature": "SOFT",
+      "rationale": "OECD harmonised amplitude-adjusted CLI, long-run average 100; FRED is a separately reconciled secondary snapshot.",
+      "raw_ids": "ms:JPNLOLITOAASTSAM; cat:JP_OECD_CLI",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [
+        "FRED distributor"
+      ],
+      "source": "OECD",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": "HYPOTHESIS",
+        "class": "LEAD",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "business cycle (OECD reference series)",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
+    },
+    {
+      "concept": "Real household consumption expenditure, y/y",
+      "country": "JPN",
+      "evidence": {
+        "local_timing": "none",
+        "measurement": "M",
+        "mechanism": "mixed"
+      },
+      "flag": "two-or-more-person households only",
+      "frequency": "M",
+      "ids": {
+        "cal": [],
+        "cat": [
+          "jp_household_spending_yy"
+        ],
+        "derived_ms": [],
+        "es": [],
+        "hub": [],
+        "ms": [],
+        "notes": [],
+        "pan": []
+      },
+      "key": "jp_household_spending",
+      "known_failure_modes": [
+        "two-or-more-person households only"
+      ],
+      "nature": "HARD",
+      "rationale": "FIES consumption expenditure, real y/y, NSA; not retail sales and not the nominal yen level.",
+      "raw_ids": "cat:jp_household_spending_yy",
+      "revision_behaviour": "Not specified in approved row.",
+      "secondary": [],
+      "source": "Statistics Bureau Japan (FIES)",
+      "theme": "Growth / activity",
+      "timing": {
+        "basis": null,
+        "class": "UNKNOWN",
+        "class_pair": null,
+        "descriptive_peak": null,
+        "matched_turning_point_leads": "not estimated",
+        "predictive_screen": [],
+        "reference": "Japanese household consumption",
+        "relationship_keys": [],
+        "screen_note": "not tested"
+      }
     }
   ],
   "classification_version": "v2.3",
   "schema_version": 1,
-  "source_table_sha256": "605fd87a5b5d9461076c01f04ca328eb29637bba87fc109697767b6412b9bc7e",
-  "timing_extract_sha256": "2f19428959a3e28e3ebce52c8eddd13e98518bf05ef97db4377a00f7e2a9d63b"
+  "source_table_sha256": "9fb22ab6d6feecbae1752b6e3918a93e1471704251f83fa9b1d4d95f3293be32",
+  "timing_extract_sha256": "9ce90a9412bc8b5c8fe88809f9fee090754fb2e59dc3ee73396d2757f1cfb646"
 }

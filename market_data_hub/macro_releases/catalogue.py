@@ -211,6 +211,14 @@ ASIA_FAMILIES = {
             definition="National Consumer Price Index excluding fresh food, issuer-published 12-month rate of change")],
     "jp_gdp": [measure("jp_gdp_qq", "ESRI", "JPN", "qq", "SA", frequency="Q",
         definition="Real GDP, issuer-published quarter-to-quarter percent change, seasonally adjusted; first and second Quarterly Estimates")],
+    "jp_industrial_production": [measure("jp_industrial_production_mm", "METI", "JPN", "mm", "SA",
+        definition="Mining and manufacturing production, issuer-published month-to-month percent change; preliminary status retained")],
+    "jp_oecd_cli": [measure("JP_OECD_CLI", "OECD", "JPN", "level", "SA", "index", frequency="M",
+        definition="OECD harmonised composite leading indicator, amplitude adjusted, long-run average 100")],
+    "jp_unemployment": [measure("jp_unemployment_rate", "StatisticsBureauJP", "JPN", "level", "SA",
+        definition="Labour Force Survey unemployment rate, both sexes, age 15 years and over")],
+    "jp_household_spending": [measure("jp_household_spending_yy", "StatisticsBureauJP", "JPN", "yy", "NSA",
+        definition="FIES real annual change in consumption expenditure, two-or-more-person households")],
     "cn_gdp": [measure("cn_gdp_yy", "NBS", "CHN", "yy", "NSA", frequency="Q",
         definition="Real GDP, published cumulative year-over-year percent change at constant prices; Q2 is first half, Q3 first three quarters; preliminary accounting stage per explicit M9d1 brief")],
     "cn_activity": [
@@ -312,6 +320,8 @@ EXPECTED_LAG_DAYS = {
     "us_pending_home_sales": 29, "us_existing_home_sales": 23, "us_pmms": 1,
     "us_construction_spending": 36, "us_fhfa_hpi": 57, "jp_trade_balance": 20,
     "jp_tankan": 1, "jp_tokyo_cpi": 0, "jp_cpi": 22, "jp_gdp": 47,
+    "jp_industrial_production": 30, "jp_oecd_cli": 9, "jp_unemployment": 30,
+    "jp_household_spending": 41,
     "cn_gdp": 19, "cn_activity": 19, "cn_nbs_pmi": 0, "cn_cpi": 14,
     "mx_cpi": 8, "banxico_policy": 0, "bcb_policy": 0,
     # Eurostat refreshes national datasets after the national releases.

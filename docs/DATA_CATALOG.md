@@ -50,7 +50,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
 | hub | [macro_panel_vintage](#catalog-hub-macro_panel_vintage) | 0 |
-| hub | [macro_series](#catalog-hub-macro_series) | 319 |
+| hub | [macro_series](#catalog-hub-macro_series) | 322 |
 | hub | [macro_series_vintage](#catalog-hub-macro_series_vintage) | 0 |
 | hub | [market_breadth_snapshots](#catalog-hub-market_breadth_snapshots) | 1 |
 | hub | [prices_daily](#catalog-hub-prices_daily) | 163 |
@@ -90,7 +90,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | macro_releases.sqlite | [schedule_versions](#catalog-macro_releases-sqlite-schedule_versions) | 0 |
 | macro_releases.sqlite | [schema_compatibility](#catalog-macro_releases-sqlite-schema_compatibility) | 0 |
 | macro_releases.sqlite | [source_series](#catalog-macro_releases-sqlite-source_series) | 0 |
-| macro_releases.sqlite | [value_vintages](#catalog-macro_releases-sqlite-value_vintages) | 133 |
+| macro_releases.sqlite | [value_vintages](#catalog-macro_releases-sqlite-value_vintages) | 137 |
 | macro_releases.sqlite | [worklist_resolutions](#catalog-macro_releases-sqlite-worklist_resolutions) | 0 |
 | macro_releases.sqlite | [worklist_reverts](#catalog-macro_releases-sqlite-worklist_reverts) | 0 |
 
@@ -1751,6 +1751,9 @@ Single-value observations: FRED, NY Fed ACM, official sovereign curves and Tradi
 | IRLTLT01ZAM156N | RATES \| ZAF \| 10-Year Government Bond Yield (OECD via FRED) | OECD Main Economic Indicators (national source agencies) | FRED | M | 60 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ITALOLITOAASTSAM | MACRO \| IT \| OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100) | OECD (via FRED) | FRED | M | 45 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | ITA_BTP10_MOT | Nearest 10y nominal fixed-rate BTP, MOT published gross yield | Borsa Italiana | Borsa Italiana direct | D | 3 | 2023-01-01 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
+| JPNLOLITOAASTSAM | MACRO \| JP \| OECD Composite Leading Indicator (Amplitude Adjusted, Long-Term Average = 100) | OECD (via FRED) | FRED | M | 45 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| JPNRGDPEXP | MACRO \| JP \| Real GDP Expenditure Approach (Billions of Chained 2015 Yen, SA) | Cabinet Office, Japan (via FRED) | FRED | Q | 70 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
+| LRUNTTTTJPM156S | MACRO \| JP \| Unemployment Rate Age 15+, SA | Statistics Bureau Japan (via OECD/FRED) | FRED | M | 30 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | M2SL | MACRO \| US \| M2 Money Stock | Fed H.6 | FRED | M | 30 | 1776-07-04 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT; fred_morning daily 23:45 PT | active |
 | MOF_JGB_10Y | Japan MoF 10Y constant maturity YTM, semiannual compounding | Japan MoF | Japan MoF direct | D | 1 | 1986-07-05 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
 | MOF_JGB_15Y | Japan MoF 15Y constant maturity YTM, semiannual compounding | Japan MoF | Japan MoF direct | D | 1 | 1991-08-30 | daily_eu18 daily 09:00 PT; daily_usclose daily 13:15 PT | active |
@@ -2623,6 +2626,7 @@ Published numeric measure vintages, preserving reference period, issuer publicat
 
 | ID | Name | Issuer | Distributor | Frequency | Expected lag (days, declared) | History floor | Job / schedule (PT) | Status / reason |
 |---|---|---|---|---|---:|---|---|---|
+| JP_OECD_CLI | OECD harmonised composite leading indicator, amplitude adjusted, long-run average 100 | OECD | OECD direct | M | 9 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | banxico_overnight_rate_decision | Banco de México target for the overnight interbank interest rate, issuer decision | Banxico | Banxico direct | E | 0 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | bcb_selic_rate_decision | Copom Selic target, percent per annum, from the decision statement; not the realized overnight rate | BCB | BCB direct | E | 0 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | boc_overnight_rate_decision | Target for the overnight rate set by the Bank of Canada | BoC | BoC direct | E | 0 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
@@ -2694,10 +2698,13 @@ Published numeric measure vintages, preserving reference period, issuer publicat
 | jp_core_cpi_yy | National Consumer Price Index excluding fresh food, issuer-published 12-month rate of change | StatisticsBureauJP | StatisticsBureauJP direct | M | 22 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_cpi_yy | National all-items Consumer Price Index, issuer-published 12-month rate of change | StatisticsBureauJP | StatisticsBureauJP direct | M | 22 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_gdp_qq | Real GDP, issuer-published quarter-to-quarter percent change, seasonally adjusted; first and second Quarterly Estimates | ESRI | ESRI direct | Q | 47 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| jp_household_spending_yy | FIES real annual change in consumption expenditure, two-or-more-person households | StatisticsBureauJP | StatisticsBureauJP direct | M | 41 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_housing_starts_yy | MLIT national new residential housing starts, published unadjusted annual percent change; excludes nonresidential starts and the separate SAAR monthly change | MLIT | MLIT direct | M | 31 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| jp_industrial_production_mm | Mining and manufacturing production, issuer-published month-to-month percent change; preliminary status retained | METI | METI direct | M | 30 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_tankan_large_manufacturers_di | Tankan large manufacturing enterprises, current business conditions DI; issuer summary prints actual favourable-minus-unfavourable balance, not forecast; adjustment not stated in source table | BOJ | BOJ direct | Q | 1 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_tokyo_core_cpi_yy | Ku-area of Tokyo CPI excluding fresh food, published preliminary 12-month rate; explicit M9d1 brief addition, distinct from national CPI | StatisticsBureauJP | StatisticsBureauJP direct | M | 0 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | jp_trade_balance | Balance of customs-cleared exports and imports, not seasonally adjusted, billions of JPY; published balance converted from millions; detailed exports with provisional imports remain revised, not final | MOF | MOF direct | M | 20 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
+| jp_unemployment_rate | Labour Force Survey unemployment rate, both sexes, age 15 years and over | StatisticsBureauJP | StatisticsBureauJP direct | M | 30 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | mx_core_cpi_yy | Monthly subyacente INPC, issuer-printed annual percent change; excludes volatile or non-market prices | INEGI | INEGI direct | M | 8 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | mx_cpi_yy | Monthly all-items INPC, issuer-printed annual percent change | INEGI | INEGI direct | M | 8 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |
 | nbp_reference_rate_decision | NBP reference rate (minimum money market intervention rate) set by the Monetary Policy Council; value and effective date from the NBP interest-rate table | NBP | NBP direct | E | 0 | CLI --since; scheduled rolling 24-month lookback, no fixed floor | macro_releases_daily daily 06:30 PT | active |

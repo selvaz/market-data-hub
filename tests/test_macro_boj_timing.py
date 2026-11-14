@@ -1,14 +1,16 @@
 """A rolling RSS feed enriches BOJ clocks without revising decision PDFs."""
 from dataclasses import replace
+from datetime import datetime
 import hashlib
 import sqlite3
 
 import pytest
 import requests
 
-from market_data_hub.macro_releases import open_writer
+from market_data_hub.macro_releases import open_writer, run_daily
 from market_data_hub.macro_releases.adapters import persist
-from market_data_hub.macro_releases.boj_policy import RSS, parse
+from market_data_hub.macro_releases.boj_policy import HOST, RSS, fetch, parse
+from market_data_hub.macro_releases.schedule import PENDING_DETAILS, PENDING_EDITIONS, RUN_INSTANT
 from market_data_hub.macro_releases.http import Document
 from market_data_hub.macro_releases.models import utc
 from test_macro_m9c import GOLDEN, document, parse as parse_case
@@ -128,3 +130,174 @@ def test_contradictory_exact_boj_time_still_conflicts(tmp_path):
             with store.batch():
                 persist(store, [changed])
         assert_exact(card(store))
+
+
+def test_january_listing_uses_previous_year_statement_only_as_baseline():
+    current_listing = b'<a href="/en/mopo/mpmdeci/mpr_2028/k280123a.htm">January</a>'
+    previous_listing = b'<a href="/en/mopo/mpmdeci/mpr_2027/k271218a.htm">December</a>'
+
+    def statement_body(stamp, rate):
+        return (f'''<html>{stamp} Bank of Japan Statement on Monetary Policy
+          Policy Board of the Bank of Japan decided, by a unanimous vote, to set the following guideline
+          The Bank will encourage the uncollateralized overnight call rate to remain at around {rate} percent
+        </html>''').encode()
+
+    urls = {
+        f"{HOST}/en/mopo/mpmdeci/mpr_2028/index.htm": current_listing,
+        f"{HOST}/en/mopo/mpmdeci/mpr_2027/index.htm": previous_listing,
+        f"{HOST}/en/mopo/mpmdeci/mpr_2028/k280123a.htm": statement_body("January 23, 2028", "0.75"),
+        f"{HOST}/en/mopo/mpmdeci/mpr_2027/k271218a.htm": statement_body("December 18, 2027", "0.5"),
+        RSS: b"<rss><channel></channel></rss>",
+    }
+
+    class JanuaryClient:
+        def __init__(self):
+            self.requested = []
+
+        def get(self, provider, url, params=None):
+            self.requested.append(url)
+            body = urls[url]
+            return Document(body, url, "2028-01-23T08:00:00Z", hashlib.sha256(body).hexdigest())
+
+    client = JanuaryClient()
+    token = RUN_INSTANT.set("2028-01-23T08:00:00Z")
+    try:
+        # The daily runner uses a 24-month lookback, which includes December.
+        rows = fetch(client, "boj_policy", "2025-01")
+    finally:
+        RUN_INSTANT.reset(token)
+
+    assert len(rows) == 1
+    assert (rows[0].edition, rows[0].value) == ("2028-01-23", 0.75)
+    assert f"{HOST}/en/mopo/mpmdeci/mpr_2027/k271218a.htm" in client.requested
+    assert rows[0].policy_decision["supporting_sources"][0]["decision_date"] == "2027-12-18"
+
+
+def test_narrow_window_still_uses_current_year_statement_as_baseline():
+    listing = (
+        b'<a href="/en/mopo/mpmdeci/mpr_2027/k270123a.htm">January</a>'
+        b'<a href="/en/mopo/mpmdeci/mpr_2027/k270319a.htm">March</a>'
+    )
+
+    def statement_body(stamp, rate):
+        return (f'''<html>{stamp} Bank of Japan Statement on Monetary Policy
+          Policy Board of the Bank of Japan decided, by a unanimous vote, to set the following guideline
+          The Bank will encourage the uncollateralized overnight call rate to remain at around {rate} percent
+        </html>''').encode()
+
+    urls = {
+        f"{HOST}/en/mopo/mpmdeci/mpr_2027/index.htm": listing,
+        f"{HOST}/en/mopo/mpmdeci/mpr_2026/index.htm": (
+            b'<a href="/en/mopo/mpmdeci/mpr_2026/k261218a.htm">December</a>'
+        ),
+        f"{HOST}/en/mopo/mpmdeci/mpr_2027/k270123a.htm": statement_body("January 23, 2027", "0.5"),
+        f"{HOST}/en/mopo/mpmdeci/mpr_2027/k270319a.htm": statement_body("March 19, 2027", "0.75"),
+        RSS: b"<rss><channel></channel></rss>",
+    }
+
+    class Client:
+        def get(self, provider, url, params=None):
+            body = urls[url]
+            return Document(body, url, "2027-03-19T08:00:00Z", hashlib.sha256(body).hexdigest())
+
+    token = RUN_INSTANT.set("2027-03-19T08:00:00Z")
+    try:
+        rows = fetch(Client(), "boj_policy", "2027-03")
+    finally:
+        RUN_INSTANT.reset(token)
+
+    assert [(row.edition, row.value) for row in rows] == [("2027-03-19", 0.75)]
+    decision = rows[0].policy_decision
+    assert decision["rates"]["overnight_call_rate"]["change_bp"] == 25.0
+    assert decision["supporting_sources"][0]["decision_date"] == "2027-01-23"
+
+
+def test_due_december_decision_missing_from_listing_is_reported_pending():
+    listing = b'<a href="/en/mopo/mpmdeci/mpr_2026/k261030a.pdf">October</a>'
+
+    class Client:
+        def get(self, provider, url, params=None):
+            body = b"<rss><channel></channel></rss>" if url == RSS else listing
+            return Document(body, url, "2026-12-19T00:00:00Z",
+                            hashlib.sha256(body).hexdigest())
+
+    run_token = RUN_INSTANT.set("2026-12-19T00:00:00Z")
+    pending_token = PENDING_EDITIONS.set({})
+    details_token = PENDING_DETAILS.set({})
+    try:
+        assert fetch(Client(), "boj_policy", "2026-12") == []
+        assert PENDING_EDITIONS.get()["boj_policy", "2026-12-18"] == "needs_review"
+        assert PENDING_DETAILS.get()["boj_policy", "2026-12-18"]["category"] == "not_yet_listed"
+    finally:
+        PENDING_DETAILS.reset(details_token)
+        PENDING_EDITIONS.reset(pending_token)
+        RUN_INSTANT.reset(run_token)
+
+
+def test_january_collection_does_not_report_collected_prior_year_as_unlisted(tmp_path):
+    decisions = [
+        "2026-01-23", "2026-03-19", "2026-04-28", "2026-06-16",
+        "2026-07-31", "2026-09-18", "2026-10-30", "2026-12-18",
+    ]
+    rates = {"2025-12-19": 0.5, **{stamp: 0.5 for stamp in decisions},
+             "2027-01-22": 0.75}
+
+    def statement_body(stamp):
+        printed = datetime.strptime(stamp, "%Y-%m-%d").strftime("%B %d, %Y")
+        return (f"<html>{printed} Bank of Japan Statement on Monetary Policy "
+                "Policy Board of the Bank of Japan decided, by a unanimous vote, "
+                "to set the following guideline The Bank will encourage the "
+                "uncollateralized overnight call rate to remain at around "
+                f"{rates[stamp]} percent</html>").encode()
+
+    def listing(year, stamps):
+        return b"".join(
+            (f'<a href="/en/mopo/mpmdeci/mpr_{year}/k{stamp[2:4]}'
+             f'{stamp[5:7]}{stamp[8:10]}a.htm">statement</a>').encode()
+            for stamp in stamps
+        )
+
+    class Client:
+        def get(self, provider, url, params=None):
+            if url == RSS:
+                body = b"<rss><channel></channel></rss>"
+            elif url.endswith("mpr_2027/index.htm"):
+                body = listing(2027, ["2027-01-22"])
+            elif url.endswith("mpr_2026/index.htm"):
+                body = listing(2026, decisions)
+            elif url == "https://www.boj.or.jp/en/mopo/mpmdeci/mpr_2025/k251219a.pdf":
+                body = statement_body("2025-12-19")
+            else:
+                digits = url.rsplit("/k", 1)[1][:6]
+                body = statement_body(
+                    f"20{digits[:2]}-{digits[2:4]}-{digits[4:6]}"
+                )
+            return Document(body, url, "2027-01-22T08:00:00Z",
+                            hashlib.sha256(body).hexdigest())
+
+    path = tmp_path / "boj-2027.sqlite"
+    token = RUN_INSTANT.set("2026-12-19T00:00:00Z")
+    try:
+        old_rows = fetch(Client(), "boj_policy", "2025-01")
+    finally:
+        RUN_INSTANT.reset(token)
+    with open_writer(path) as store:
+        persist(store, old_rows)
+
+    family = "boj_policy"
+    result = run_daily.collect_family(
+        lambda: open_writer(path), Client(), "2027-rollover", family,
+        {family: {"fetch_since": "2025-01", "fetch_until": "2027-01-22T08:00:00Z"}},
+        dry_run=True,
+    )[family]
+
+    assert result["status"] == "ok", result
+    assert result["vintages_added"] == 1
+    assert result.get("review_details", []) == []
+    with open_writer(path) as store:
+        editions = [row[0] for row in store.conn.execute(
+            "SELECT e.edition FROM value_vintages v "
+            "JOIN release_events e ON e.id=v.release_event_id "
+            "WHERE e.family='boj_policy' ORDER BY e.edition"
+        )]
+    assert editions == decisions + ["2027-01-22"]

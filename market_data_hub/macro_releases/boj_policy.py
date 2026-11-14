@@ -10,9 +10,9 @@ from .http import FetchError
 from .policy import change, due_editions, observation, require_origin, reviewed
 from .policy_editions import EDITIONS
 from .tier1_publications import publication_text, require
+from .schedule import mark_pending, note_review, run_date
 
 HOST = "https://www.boj.or.jp"
-LISTING = HOST + "/en/mopo/mpmdeci/mpr_2026/index.htm"
 RSS = HOST + "/en/rss/whatsnew.xml"
 BASELINE = "2025-12-19"
 BASELINE_URL = HOST + "/en/mopo/mpmdeci/mpr_2025/k251219a.pdf"
@@ -82,12 +82,42 @@ def parse(document, previous, family="boj_policy", since="1900-01", *, feed=None
 
 
 def fetch(client, family, since):
-    listing = client.get("boj", LISTING)
+    year = int(run_date()[:4])
+    listing_url = f"{HOST}/en/mopo/mpmdeci/mpr_{year}/index.htm"
+    listing = client.get("boj", listing_url)
     indexed = {BASELINE: BASELINE_URL}
-    for path, digits in re.findall(rb'href="(/en/mopo/mpmdeci/(?:mpr|state)_2026/k(26\d{4})a\.(?:pdf|htm))"', listing.body):
-        edition = datetime.strptime(digits.decode(), "%y%m%d").date().isoformat()
-        reviewed(family, edition)
-        indexed[edition] = HOST + path.decode()
+
+    def index_statements(document, listing_year):
+        yy = str(listing_year)[2:]
+        pattern = (rb'href="(/en/mopo/mpmdeci/(?:mpr|state)_' +
+                   str(listing_year).encode() + rb'/k(' + yy.encode() +
+                   rb'\d{4})a\.(?:pdf|htm))"')
+        return {
+            datetime.strptime(digits.decode(), "%y%m%d").date().isoformat(): HOST + path.decode()
+            for path, digits in re.findall(pattern, document.body)
+        }
+
+    current_year = index_statements(listing, year)
+    indexed.update(current_year)
+    # A listing is scoped to one calendar year.  The daily lookback can still
+    # include reviewed decisions from the prior year, but their absence here
+    # says nothing about whether those statements were published.
+    for edition in (d for d in due_editions(family, since) if d[:4] == str(year)):
+        if edition not in current_year:
+            mark_pending(family, edition, "needs_review")
+            note_review(family, edition, "not_yet_listed",
+                        "Due BOJ statement absent from issuer listing")
+    predecessor = {}
+    if year > max(int(d[:4]) for d in EDITIONS[family]):
+        previous_year = year - 1
+        previous_listing = client.get(
+            "boj", f"{HOST}/en/mopo/mpmdeci/mpr_{previous_year}/index.htm"
+        )
+        previous = index_statements(previous_listing, previous_year)
+        if previous:
+            last = max(previous)
+            indexed[last] = previous[last]
+            predecessor[last] = (last, "final", None)
     feed = client.get("boj", RSS)
     documents = {}
     def get(edition):
@@ -97,9 +127,26 @@ def fetch(client, family, since):
             documents[edition] = client.get("boj", indexed[edition])
         return documents[edition]
     out = []
-    for edition in due_editions(family, since):
+    # The live current-year listing is the edition registry. Curated rows remain
+    # anchors, but they do not bound the calendar or require a hard-coded year.
+    # Previous-year entries are predecessor evidence only.  They are not a
+    # complete edition registry and therefore must never enter collection.
+    discovered = sorted(d for d in current_year if d[:7] >= since and d <= run_date())
+    original = EDITIONS[family]
+    EDITIONS[family] = {
+        **original,
+        **predecessor,
+        # Parsing needs the complete issuer calendar even when collection was
+        # requested for a narrower window: the statement immediately before
+        # ``since`` is still the baseline for the first collected decision.
+        **{d: (d, "final", None) for d in current_year},
+    }
+    try:
+      for edition in discovered:
         rows = parse(get(edition), get(previous_edition(edition)), family, since, feed=feed)
         if {o.edition for o in rows} != {edition}:
             raise FetchError("BOJ requested statement edition needs review")
         out += rows
+    finally:
+        EDITIONS[family] = original
     return out

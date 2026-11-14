@@ -150,7 +150,7 @@ class HttpClient:
         self.limiters = {p: RateLimiter(p, rate_directory, interval=15.0 if p == "eurostat" else 1.0,
                                      daily_limit=500 if p == "bls" else None,
                                      persistent=persistent_rates)
-                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich", "fed", "ecb", "boe", "boj", "pboc", "boc", "fhfa", "nar", "spglobal", "freddiemac", "destatis", "cmhc", "mlit", "nbs", "esri", "statjp", "mof", "bcb", "banxico", "inegi", "nbp")}
+                         for p in ("bls", "bea", "fred", "eurostat", "ons", "dol", "census", "ecfin", "umich", "fed", "ecb", "boe", "boj", "pboc", "boc", "fhfa", "nar", "spglobal", "freddiemac", "destatis", "cmhc", "mlit", "nbs", "esri", "statjp", "meti", "oecd", "mof", "bcb", "banxico", "inegi", "nbp")}
 
     def request(self, provider, url, *, params=None, payload=None) -> Document:
         safe_url = urlsplit(url)
@@ -171,7 +171,8 @@ class HttpClient:
                     "POST" if payload is not None else "GET", url,
                     params=params, json=payload, timeout=(10, 45),
                     verify=certifi.where(), allow_redirects=False,
-                    **({"headers": {"User-Agent": "Mozilla/5.0"}} if provider in {"boe", "cmhc"} else {}),
+                    **({"headers": {"User-Agent": "Mozilla/5.0", **({"Accept-Language": "en"} if provider == "meti" else {})}}
+                       if provider in {"boe", "cmhc", "meti"} else {}),
                 )
             except requests.exceptions.SSLError:
                 raise FetchError(f"{provider}: TLS verification failed") from None
