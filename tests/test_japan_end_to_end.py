@@ -237,6 +237,26 @@ def test_discovered_november_oecd_edition_fetches_csv_observation():
     ]
 
 
+def test_reviewed_oecd_snapshot_matches_its_first_live_observation():
+    fixture = Path(__file__).parent / "fixtures/japan_tier1"
+    latest = (fixture / "discovery/oecd_cli_last1.json").read_bytes()
+    csv_body = (fixture / "oecd_cli_jpn.csv").read_bytes()
+
+    class OecdClient:
+        def get(self, provider, url, params=None):
+            body = latest if params else csv_body
+            return Document(body, url, "2026-11-13T13:54:03+00:00",
+                            hashlib.sha256(body).hexdigest())
+
+    with run_at("2026-11-13T13:54:03Z"):
+        rows = japan_macro.fetch(OecdClient(), "jp_oecd_cli", "2026-10")
+
+    assert [(row.edition, row.period, row.precision, row.published_at)
+            for row in rows] == [(
+                "2026-11-13", "2026-10", "observed", "2026-11-13T13:54:03+00:00",
+            )]
+
+
 def test_gdp_schedule_editions_follow_archive_links():
     schedule = (Path(__file__).parent /
                 "fixtures/japan_tier1/discovery/esri_gdp_schedule.html").read_bytes()

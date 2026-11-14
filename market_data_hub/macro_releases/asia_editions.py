@@ -45,7 +45,7 @@ EDITIONS = {
         "2026-12-08": ("2026-Q3", "revised", "08:50"),
     },
     "jp_industrial_production": {"2026-10-30": ("2026-09", "preliminary", "08:50")},
-    "jp_oecd_cli": {"2026-11-09": ("2026-10", "final", "00:00")},
+    "jp_oecd_cli": {"2026-11-13": ("2026-10", "final", "00:00")},
     "jp_unemployment": {"2026-10-30": ("2026-09", "final", "08:30")},
     "jp_household_spending": {"2026-11-10": ("2026-09", "final", "08:30")},
     "cn_gdp": {

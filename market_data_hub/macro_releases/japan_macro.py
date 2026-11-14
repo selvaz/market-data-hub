@@ -31,7 +31,7 @@ ARCHIVES = {
         "2026-10-23": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000040513539&fileKind=4",
     },
     "jp_industrial_production": {"2026-10-30": "https://www.meti.go.jp/english/statistics/tyo/iip/xls/b2020_gsm1e.xlsx"},
-    "jp_oecd_cli": {"2026-11-09": "https://sdmx.oecd.org/public/rest/v1/data/OECD.SDD.STES,DSD_STES@DF_CLI,4.1/JPN.M.LI.IX._Z.AA.IX._Z.H?startPeriod=2026-01&format=csvfilewithlabels"},
+    "jp_oecd_cli": {"2026-11-13": "https://sdmx.oecd.org/public/rest/v1/data/OECD.SDD.STES,DSD_STES@DF_CLI,4.1/JPN.M.LI.IX._Z.AA.IX._Z.H?startPeriod=2026-01&format=csvfilewithlabels"},
     "jp_unemployment": {"2026-10-30": "https://www.e-stat.go.jp/en/stat-search/file-download?statInfId=000031831358&fileKind=0"},
     "jp_household_spending": {"2026-11-10": "https://www.stat.go.jp/data/kakei/sokuhou/tsuki/zuhyou/fies_t1.xlsx"},
     "jp_gdp": {
