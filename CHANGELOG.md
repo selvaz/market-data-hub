@@ -7,6 +7,25 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.3.29] — 2026-11-14
+
+### Added
+- Japan tier-1 macro coverage (#200): ESRI GDP q/q, METI industrial production
+  m/m (with the preliminary flag), OECD composite leading indicator (FRED
+  `JPNLOLITOAASTSAM` kept as the secondary, no splicing), BoJ Tankan large
+  manufacturers DI, Statistics Bureau CPI and core CPI y/y, Labour Force Survey
+  unemployment rate and FIES real household spending y/y. Every family fails
+  closed on its own; tests run on fixtures captured from the issuers.
+
+### Fixed
+- `macro_releases`: LatAm `needs_review` parsers fixed, review reasons persisted,
+  superseded reviews closed (#191).
+
+### Changed
+- ForexFactory US consensus links pinned for IP, capacity utilisation, retail
+  sales, CPI y/y and average hourly earnings, with regression fixtures (#193).
+- CI pins the test matrix to ubuntu-24.04 (#197).
+
 ### Removed
 - Hub economic-calendar collector retired (owner decision 2026-11-11; collection had stopped 2026-09-25): the calendar is collected by LazyCommittee, one source per concept. Removed `econ_calendar/collect/` (myfxbook, consolidation, matching, timezones, the FF CSV collector), `aliases`, `ingest`, `reference`, `macro_bridge`, `validate`, `config/econ_calendar_aliases.yaml`, the `calendar` and `validate` extras and their tests. `run_econ_calendar.py` now accepts only `--archive-only`. Kept for live readers: `econ_calendar.catalog` (catalogue and discovery over the frozen `calendar_*` tables), `econ_calendar.archive_forecasts`, and the raw FF archive, moved from `econ_calendar.collect.forexfactory` to `econ_calendar.ff_archive`. The `calendar_*` tables and their data are untouched; the data catalogue marks the dataset retired.
 
