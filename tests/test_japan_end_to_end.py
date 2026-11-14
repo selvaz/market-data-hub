@@ -123,6 +123,34 @@ def test_overdue_discovered_meti_edition_is_visible_in_daily_report(tmp_path):
     assert "edition_overdue:2026-11-30" in result["review_reasons"]
 
 
+def test_discovered_edition_404_in_grace_is_reported_with_metadata(tmp_path, monkeypatch):
+    family = "jp_industrial_production"
+    data_url = "https://issuer.example/2027-04-30.xlsx"
+    edition = jp_discovery.Edition(
+        "2027-04-30", "2027-03", "preliminary", "08:30", data_url
+    )
+    monkeypatch.setattr(jp_discovery, "discover", lambda unused, selected: [edition])
+
+    class ListingWithPendingData:
+        def get(self, provider, url, params=None):
+            if url == data_url:
+                raise FetchError(provider + ": HTTP 404")
+            body = b"<html>edition listing</html>"
+            return Document(body, url, "2027-04-30T01:00:00Z", hashlib.sha256(body).hexdigest())
+
+    result = run_daily.collect_family(
+        lambda: open_writer(tmp_path / "macro.sqlite"), ListingWithPendingData(), "daily", family,
+        {family: {"fetch_since": "2027-01", "fetch_until": "2027-04-30T01:00:00Z"}},
+        dry_run=True,
+    )[family]
+
+    assert result["status"] == "no_change"
+    assert result["scheduled_editions"] == [{
+        "edition": "2027-04-30", "period": "2027-03", "stage": "preliminary",
+        "time": "08:30", "status": "not_yet_published", "reason": "not_yet_published",
+    }]
+
+
 @pytest.mark.parametrize("family", ["jp_industrial_production", "jp_household_spending"])
 def test_next_edition_wins_when_moving_url_is_shared(monkeypatch, family):
     client = NextMonthClient("2027-03")

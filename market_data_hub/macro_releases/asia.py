@@ -87,6 +87,9 @@ def fetch_archives(client, family, since, provider, archives, parse):
             urls[edition] = url
             doc = get_edition(client, provider, url, family, edition)
             if doc is None:
+                # get_edition records the grace-period 404, but only this
+                # family loop knows metadata learned from live discovery.
+                mark_pending(family, edition, metadata=editions[edition])
                 continue
             rows = parse(
                 doc, family, since, archives=urls, edition=edition,
