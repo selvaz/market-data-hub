@@ -2,6 +2,7 @@
 
 from contextlib import nullcontext
 from datetime import date, datetime, time, timedelta, timezone
+import sys
 
 import duckdb
 import pandas as pd
@@ -10,9 +11,13 @@ import pytest
 from market_data_hub import runner
 from market_data_hub.db.connection import apply_schema
 from market_data_hub.db.identity import AmbiguousSymbolError, ensure_listing
-from market_data_hub.db.live_cleanup import remove_wrong_dated_live_duplicates
+from market_data_hub.db.live_cleanup import (
+    remove_non_trading_day_live_rows,
+    remove_wrong_dated_live_duplicates,
+)
 from market_data_hub.db.upsert import upsert
 from market_data_hub.sources.yahoo_direct import session_date_of
+from scripts import cleanup_wrong_dated_live
 
 NY_WINTER = -5 * 3600
 
@@ -94,6 +99,24 @@ def _run_live(con, monkeypatch, entries=None, quotes=None, prices=None,
     cfg = {"live": {"enabled": True, "asset_classes": list({e["asset_class"] for e in entries})}}
     runner.run_live(con, cfg, "test-live", now=now)
     return calls
+
+
+@pytest.mark.parametrize("settled_day", ["2026-11-12", "2026-11-13"])
+def test_saturday_writer_uses_friday_quote_or_skips(live_db, monkeypatch, settled_day):
+    _seed(live_db, "SPY", settled_day)
+    quote_day = session_date_of({
+        "regularMarketTime": _epoch(2026, 11, 13, 21, 0),
+        "gmtoffset": NY_WINTER,
+    })
+    _run_live(
+        live_db, monkeypatch, today="2026-11-14",
+        now=datetime(2026, 11, 14, 13, 32, tzinfo=timezone.utc),
+        quotes={"SPY": (110, quote_day)},
+    )
+    rows = live_db.execute(
+        "SELECT date::VARCHAR, close FROM prices_daily WHERE is_live"
+    ).fetchall()
+    assert rows == ([("2026-11-13", 110)] if settled_day == "2026-11-12" else [])
 
 
 def test_superseded_live_rows_are_deleted(live_db, monkeypatch):
@@ -209,6 +232,76 @@ def test_wrong_dated_duplicate_cleanup_is_dry_run_and_idempotent(live_db):
     assert remove_wrong_dated_live_duplicates(
         live_db, "2026-11-13", dry_run=False
     ) == 0
+
+
+def test_non_trading_day_cleanup_is_scoped_dry_run_and_idempotent(live_db):
+    # No preceding live row; both matching and different settled prices qualify.
+    for symbol, price in [("SPY", 110), ("TLT", 100)]:
+        _seed(live_db, symbol, "2026-11-13")
+        _seed(live_db, symbol, "2026-11-14", price=price, live=True)
+        _seed(live_db, symbol, "2026-11-15", live=True)
+    _seed(live_db, "NOHISTORY", "2026-11-14", live=True)
+    _seed(live_db, "LIVEONLY", "2026-11-13", live=True)
+    _seed(live_db, "LIVEONLY", "2026-11-14", price=101, live=True)
+    _seed(live_db, "FUTURE", "2026-11-14", live=True)
+    _seed(live_db, "FUTURE", "2026-11-16")
+    _seed(live_db, "SETTLED", "2026-11-13")
+    _seed(live_db, "SETTLED", "2026-11-14")
+    # Same symbol, different listing: cannot borrow SPY's settled history.
+    other = ensure_listing(live_db, "SPY", provider="other")
+    _seed(live_db, "SPY", "2026-11-14", listing_id=other, live=True)
+    before = live_db.execute(
+        "SELECT * FROM prices_daily ORDER BY listing_id, date"
+    ).fetchall()
+    assert remove_wrong_dated_live_duplicates(live_db, "2026-11-14") == 0
+    assert remove_non_trading_day_live_rows(live_db, "2026-11-14") == 2
+    assert live_db.execute(
+        "SELECT * FROM prices_daily ORDER BY listing_id, date"
+    ).fetchall() == before
+    assert remove_non_trading_day_live_rows(
+        live_db, date(2026, 11, 14), dry_run=False
+    ) == 2
+    after = live_db.execute(
+        "SELECT * FROM prices_daily ORDER BY listing_id, date"
+    ).fetchall()
+    # Only the two intended listing/date keys disappeared.
+    assert after == [row for row in before if not (
+        row[0] == date(2026, 11, 14) and row[1] != other
+        and row[2] in {"SPY", "TLT"}
+    )]
+    assert remove_non_trading_day_live_rows(live_db, "2026-11-14") == 0
+    assert remove_non_trading_day_live_rows(live_db, "2026-11-14", dry_run=False) == 0
+
+
+def test_non_trading_day_cleanup_preserves_listing_with_same_day_settlement():
+    # Exercise the explicit same-day guard even on an unkeyed legacy table.
+    with duckdb.connect() as con:
+        con.execute("CREATE TABLE prices_daily(date DATE, listing_id VARCHAR, is_live BOOLEAN)")
+        con.execute("INSERT INTO prices_daily VALUES "
+                    "('2026-11-13', 'spy', FALSE), ('2026-11-14', 'spy', FALSE), "
+                    "('2026-11-14', 'spy', TRUE)")
+        assert remove_non_trading_day_live_rows(con, "2026-11-14", dry_run=False) == 0
+        assert con.execute("SELECT count(*) FROM prices_daily").fetchone() == (3,)
+
+
+def test_cleanup_cli_non_trading_day_is_opt_in(tmp_db, monkeypatch, capsys):
+    with duckdb.connect(tmp_db) as con:
+        apply_schema(con)
+        _seed(con, "SPY", "2026-11-13")
+        _seed(con, "SPY", "2026-11-14", price=110, live=True)
+    argv = ["cleanup_wrong_dated_live.py", "--db", tmp_db, "--date", "2026-11-14"]
+    for flags, output, remaining in [
+        ([], "would delete 0 exact live duplicate(s)", 1),
+        (["--non-trading-day"], "would delete 1 non-trading-day live row(s)", 1),
+        (["--non-trading-day", "--apply"], "deleted 1 non-trading-day live row(s)", 0),
+        (["--non-trading-day", "--apply"], "deleted 0 non-trading-day live row(s)", 0),
+    ]:
+        monkeypatch.setattr(sys, "argv", argv + flags)
+        assert cleanup_wrong_dated_live.main() == 0
+        assert capsys.readouterr().out.strip() == output + " dated 2026-11-14"
+        with duckdb.connect(tmp_db, read_only=True) as con:
+            assert con.execute("SELECT count(*) FROM prices_daily WHERE is_live").fetchone() == (remaining,)
+            assert con.execute("SELECT count(*) FROM prices_daily WHERE NOT is_live").fetchone() == (1,)
 
 
 def test_fred_source_restriction_does_not_run_live(monkeypatch):

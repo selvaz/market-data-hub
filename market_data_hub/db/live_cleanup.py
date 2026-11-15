@@ -1,4 +1,4 @@
-"""Targeted maintenance for duplicated, wrong-dated provisional prices."""
+"""Targeted maintenance for wrong-dated provisional prices."""
 
 from __future__ import annotations
 
@@ -41,6 +41,43 @@ def remove_wrong_dated_live_duplicates(con, wrong_date: Union[date, str], *,
             candidates
             + "DELETE FROM prices_daily bad USING previous p "
               "WHERE bad.date = p.date AND bad.listing_id = p.listing_id",
+            [wrong_date],
+        )
+    return count
+
+
+def remove_non_trading_day_live_rows(con, wrong_date: Union[date, str], *,
+                                     dry_run: bool = True) -> int:
+    """Count or remove live rows on an explicitly confirmed non-trading date.
+
+    The operator must establish that ``wrong_date`` was not a trading session
+    for the affected listings; this function does not infer exchange calendars.
+    Require settled history for the same listing before that date and no
+    settled row on it. Prices need not match, and prior live rows are irrelevant.
+    """
+    candidates = """
+        SELECT bad.date, bad.listing_id
+        FROM prices_daily bad
+        WHERE bad.is_live = TRUE AND bad.date = ?
+          AND EXISTS (
+              SELECT 1 FROM prices_daily settled
+              WHERE settled.listing_id = bad.listing_id
+                AND settled.is_live = FALSE AND settled.date < bad.date
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM prices_daily settled
+              WHERE settled.listing_id = bad.listing_id
+                AND settled.is_live = FALSE AND settled.date = bad.date
+          )
+    """
+    count = con.execute(
+        "SELECT count(*) FROM (" + candidates + ")", [wrong_date]
+    ).fetchone()[0]
+    if not dry_run and count:
+        con.execute(
+            "DELETE FROM prices_daily bad USING (" + candidates + ") p "
+            "WHERE bad.is_live = TRUE AND bad.date = p.date "
+            "AND bad.listing_id = p.listing_id",
             [wrong_date],
         )
     return count
