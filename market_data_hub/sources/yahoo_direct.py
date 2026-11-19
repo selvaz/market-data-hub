@@ -89,8 +89,11 @@ def _parse(symbol: str, j: dict) -> pd.DataFrame:
                   .notna().any(axis=1)]
         out = out.reset_index(drop=True)
         meta = res.get("meta") or {}
+        name = meta.get("longName") or meta.get("shortName")
+        if name:
+            out.attrs["name"] = name
         out.attrs.update({key: meta[source] for key, source in (
-            ("name", "longName"), ("exchange", "exchangeName"),
+            ("exchange", "exchangeName"),
             ("currency", "currency")) if meta.get(source)})
         return out
     except Exception:
