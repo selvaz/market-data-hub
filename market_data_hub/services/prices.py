@@ -54,6 +54,18 @@ _currency_for_symbol = _identity.currency_for_symbol
 
 _DEFAULT_PROVIDER = "yahoo"
 
+# Yahoo chart labels and common names for the warehouse's operating venues.
+_YAHOO_EXCHANGE_MICS = {
+    "NMS": "XNAS",
+    "NGM": "XNAS",
+    "NCM": "XNAS",
+    "NASDAQ": "XNAS",
+    "NYQ": "XNYS",
+    "NYSE": "XNYS",
+    "PAR": "XPAR",
+    "MIL": "XMIL",
+}
+
 
 class AmbiguousInstrumentError(ValueError):
     """Raised when a write capability receives a query matching >1 listing."""
@@ -274,10 +286,11 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
                      provider_symbol: Optional[str] = None,
                      db_path: Optional[str] = None, verify: bool = True,
                      verification_fetch=None, sec_resolve=None) -> Dict[str, Any]:
-    """Register an ARBITRARY single name not present in listings/config
-    (audit CA-05): the caller supplies the identity — exchange, currency,
-    provider symbol — and gets a listing_id back; ingestion then goes through
-    the normal ensure_price_history job.
+    """Register a listing for use by the normal ensure_price_history job.
+
+    Verification prefers provider metadata. For Yahoo, known venue aliases
+    are resolved to the warehouse exchange code, and unmapped provider labels
+    that are not MIC-shaped leave the supplied exchange in place.
 
     Idempotent: re-registering the same (symbol, provider, exchange) returns
     the existing listing (created=False). A second venue for the same
@@ -296,6 +309,7 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
     currency = currency.strip().upper()
     provider_symbol = provider_symbol or symbol
     hints = {"name": name, "exchange": exchange, "currency": currency}
+    exchange_aliases = _YAHOO_EXCHANGE_MICS if provider == _DEFAULT_PROVIDER else {}
     checked: List[Dict[str, Any]] = []
     if verify:
         verification = _verify_listing(
@@ -307,22 +321,34 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
                     "checked": checked}
         authoritative = verification["metadata"]
         name = authoritative.get("name")
-        exchange = authoritative.get("exchange", exchange).strip().upper()
+        reported_exchange = authoritative.get("exchange", "").strip().upper()
+        reported_exchange = exchange_aliases.get(reported_exchange, reported_exchange)
+        if reported_exchange and (provider != _DEFAULT_PROVIDER or
+                                  (len(reported_exchange) == 4 and reported_exchange.isalnum())):
+            exchange = reported_exchange
         currency = authoritative.get("currency", currency).strip().upper()
 
+    # Also look for rows written with a legacy venue label. Prefer an exact
+    # match to the selected exchange when both spellings already exist.
+    venue = exchange_aliases.get(exchange, exchange)
+    equivalent_exchanges = [venue] + [
+        label for label, mic in exchange_aliases.items() if mic == venue
+    ]
     with db_write_lock(db_path):
         con = get_conn(db_path)
         try:
             now = _now()
             row = con.execute("""
-                SELECT listing_id, instrument_id, currency FROM listings
+                SELECT listing_id, instrument_id, currency, exchange FROM listings
                 WHERE symbol = ? AND provider = ?
-                  AND coalesce(exchange, '') = ? AND active_to IS NULL
-            """, [symbol, provider, exchange]).fetchone()
+                  AND upper(trim(exchange)) = ANY(?) AND active_to IS NULL
+                ORDER BY (upper(trim(exchange)) = ?) DESC, listing_id
+                LIMIT 1
+            """, [symbol, provider, equivalent_exchanges, exchange]).fetchone()
             if row:
                 _record_registration_hints(con, row[0], hints, now)
                 return {"listing_id": row[0], "instrument_id": row[1],
-                        "symbol": symbol, "exchange": exchange,
+                        "symbol": symbol, "exchange": row[3],
                         "currency": row[2], "provider": provider,
                         "registered": True, "created": False}
 

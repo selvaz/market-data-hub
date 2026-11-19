@@ -451,17 +451,44 @@ def test_default_fetch_carries_yahoo_metadata(tmp_db, monkeypatch):
     monkeypatch.setattr(yahoo_direct, "_creq", object())
     result = svc.register_listing("TEST.PA", exchange="caller", currency="gbp",
                                   name="Caller", db_path=tmp_db)
-    assert result["exchange"] == "PAR" and result["currency"] == "EUR"
+    assert result["exchange"] == "XPAR" and result["currency"] == "EUR"
     con = get_conn(tmp_db, read_only=True)
     try:
         assert con.execute("""
             SELECT name, exchange, currency FROM listings JOIN instruments USING (instrument_id)
-        """).fetchone() == ("Provider SA", "PAR", "EUR")
+        """).fetchone() == ("Provider SA", "XPAR", "EUR")
         assert con.execute("""
             SELECT name_hint, exchange_hint, currency_hint FROM listing_registration_hints
         """).fetchone() == ("Caller", "CALLER", "GBP")
     finally:
         con.close()
+
+
+@pytest.mark.parametrize(("stored_exchange", "provider_exchange"), [
+    ("XNAS", "NMS"),
+    ("NMS", "NMS"),
+    ("XNAS", "UNMAPPED"),
+])
+def test_verified_registration_reuses_existing_yahoo_venue(
+        tmp_db, stored_exchange, provider_exchange):
+    original = svc.register_listing("AAPL", exchange=stored_exchange, currency="USD",
+                                    db_path=tmp_db, verify=False)
+
+    def provider_fetch(symbols, start, end):
+        frame = pd.DataFrame({"close": [10.0]})
+        frame.attrs.update(exchange=provider_exchange, currency="USD")
+        return {symbols[0]: frame}
+
+    repeated = svc.register_listing(
+        "AAPL", exchange="XNAS", currency="USD", db_path=tmp_db,
+        verification_fetch=provider_fetch, sec_resolve=lambda symbol: {})
+
+    assert repeated["created"] is False
+    assert repeated["listing_id"] == original["listing_id"]
+    assert repeated["exchange"] == stored_exchange
+    assert [row["listing_id"] for row in svc.resolve_instrument("AAPL", db_path=tmp_db)] == [
+        original["listing_id"]
+    ]
 
 
 def test_numeric_cik_does_not_confirm_ticker(tmp_db):
