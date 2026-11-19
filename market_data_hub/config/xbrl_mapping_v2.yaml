@@ -6,18 +6,25 @@
 # v1 stays loadable unchanged (mappings are immutable per version). Concepts
 # are tried IN ORDER; the first one with data for a period wins.
 #
-# Debt lines (no double counting inside one line, a line takes ONE concept
-# per period, never a sum):
-#   short_term_debt: DebtCurrent is the issuer's TOTAL current debt (it already
-#     contains the current portion of long-term debt, short-term borrowings and
-#     commercial paper), so it goes first. LongTermDebtCurrent, ShortTermBorrowings
-#     and CommercialPaper are COMPONENTS, used only as fallbacks when DebtCurrent
-#     is absent; an issuer that reports several components without DebtCurrent
-#     is therefore understated. Read the per-value `concept` provenance.
-#   long_term_debt: LongTermDebtNoncurrent is the non-current part. The
-#     fallbacks LongTermDebt and LongTermDebtAndCapitalLeaseObligations can
-#     include the current portion, so long_term_debt + short_term_debt may
-#     double count the current portion when a fallback concept was used.
+# Totals vs components (a line takes ONE concept per period and never sums, so
+# a fallback to a component would silently understate a total):
+#   cost_of_revenue: TOTAL concepts only (CostOfRevenue,
+#     CostOfGoodsAndServicesSold). CostOfGoodsSold and CostOfServices are
+#     components, exposed as the separate lines cost_of_goods_sold and
+#     cost_of_services; an issuer that reports only the two components has an
+#     empty cost_of_revenue, and the caller adds the two lines.
+#   short_term_debt: TOTAL current debt only (DebtCurrent). Components are
+#     separate lines: current_portion_long_term_debt (LongTermDebtCurrent,
+#     LongTermDebtAndCapitalLeaseObligationsCurrent), commercial_paper
+#     (CommercialPaper) and short_term_borrowings (ShortTermBorrowings,
+#     OtherShortTermBorrowings, LoansAndNotesPayable). KO reports no
+#     DebtCurrent (checked in the FY2025 facts): its short_term_debt is empty
+#     and the caller sums the component lines, checking each `concept`.
+#   long_term_debt: LongTermDebtNoncurrent, then
+#     LongTermDebtAndCapitalLeaseObligations (the NON-current amount per
+#     us-gaap; KO uses it), then LongTermDebt last. LongTermDebt can include
+#     the current portion, so when its `concept` appears, long_term_debt plus
+#     short_term_debt may double count the current portion.
 #
 # `liabilities` keeps the v1 concept only: the pipeline has no derived
 # (computed) lines, so no fallback such as Assets - Equity. Issuers that omit
@@ -60,7 +67,13 @@ statement_lines:
     concepts:
       - CostOfRevenue
       - CostOfGoodsAndServicesSold
+  cost_of_goods_sold:
+    statement: income
+    concepts:
       - CostOfGoodsSold
+  cost_of_services:
+    statement: income
+    concepts:
       - CostOfServices
   gross_profit:
     statement: income
@@ -74,12 +87,24 @@ statement_lines:
     statement: balance
     concepts:
       - LongTermDebtNoncurrent
-      - LongTermDebt
       - LongTermDebtAndCapitalLeaseObligations
+      - LongTermDebt
   short_term_debt:
     statement: balance
     concepts:
       - DebtCurrent
+  current_portion_long_term_debt:
+    statement: balance
+    concepts:
       - LongTermDebtCurrent
-      - ShortTermBorrowings
+      - LongTermDebtAndCapitalLeaseObligationsCurrent
+  commercial_paper:
+    statement: balance
+    concepts:
       - CommercialPaper
+  short_term_borrowings:
+    statement: balance
+    concepts:
+      - ShortTermBorrowings
+      - OtherShortTermBorrowings
+      - LoansAndNotesPayable
