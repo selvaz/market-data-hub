@@ -19,9 +19,10 @@
 #     (CommercialPaper) and short_term_borrowings (ShortTermBorrowings,
 #     OtherShortTermBorrowings, LoansAndNotesPayable). KO reports no
 #     DebtCurrent (checked in the FY2025 facts): its short_term_debt is empty
-#     and the caller sums the component lines, checking each `concept`:
-#     leave commercial_paper out when short_term_borrowings resolved to
-#     ShortTermBorrowings, a total that can already include commercial paper.
+#     and its components stay separate. Components can overlap by issuer
+#     (ShortTermBorrowings or LongTermDebtCurrent may include commercial
+#     paper), so the hub never sums them; check each `concept` against the
+#     filing before adding components.
 #   long_term_debt: LongTermDebtNoncurrent, then
 #     LongTermDebtAndCapitalLeaseObligations (the NON-current amount per
 #     us-gaap; KO uses it), then LongTermDebt last. LongTermDebt can include

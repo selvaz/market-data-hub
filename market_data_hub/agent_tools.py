@@ -239,10 +239,12 @@ def tool_get_statement(query: str, statement: str = "", periods: int = 8,
     Caveats: a line takes ONE concept per period and is never a sum, so
     totals and components are separate lines. cost_of_revenue and
     short_term_debt are totals only (empty when the issuer reports components
-    only: add cost_of_goods_sold + cost_of_services; for short-term debt add
-    current_portion_long_term_debt + short_term_borrowings + commercial_paper,
-    except leave commercial_paper out when short_term_borrowings' concept is
-    ShortTermBorrowings, a total that can already include commercial paper).
+    only). Component lines (cost_of_goods_sold, cost_of_services,
+    current_portion_long_term_debt, commercial_paper, short_term_borrowings)
+    can overlap depending on how the issuer reports (e.g. ShortTermBorrowings
+    or LongTermDebtCurrent may already include commercial paper): the hub
+    never sums them, and a caller must check each value's `concept` against
+    the filing before adding components.
     long_term_debt may fall back to LongTermDebt, which can include the
     current portion: check each value's `concept` before summing debt lines
     or computing leverage."""
