@@ -512,6 +512,14 @@ CREATE TABLE IF NOT EXISTS listings (
     updated_at      TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS listing_registration_hints (
+    listing_id    VARCHAR NOT NULL,
+    name_hint     VARCHAR,
+    exchange_hint VARCHAR,
+    currency_hint VARCHAR,
+    recorded_at  TIMESTAMP NOT NULL
+);
+
 -- Curated-universe classification ("anagrafica"), keyed by symbol (joins
 -- listings.symbol / prices_daily.symbol directly -- no synthetic id, since
 -- there is exactly one classification row per config-universe symbol).

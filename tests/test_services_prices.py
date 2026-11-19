@@ -332,18 +332,18 @@ def test_register_listing_enables_arbitrary_single_name(tmp_db):
                              db_path=tmp_db)
 
     reg = svc.register_listing("NEWCO", exchange="XNAS", currency="USD",
-                               name="New Co", db_path=tmp_db)
+                               name="New Co", db_path=tmp_db, verify=False)
     assert reg["created"] is True and reg["listing_id"].startswith("lst_")
 
     # idempotent: same (symbol, provider, exchange) -> same listing
     again = svc.register_listing("NEWCO", exchange="XNAS", currency="USD",
-                                 db_path=tmp_db)
+                                 db_path=tmp_db, verify=False)
     assert again["created"] is False
     assert again["listing_id"] == reg["listing_id"]
 
     # second venue -> its OWN listing, not an overwrite
     milan = svc.register_listing("NEWCO", exchange="XMIL", currency="EUR",
-                                 db_path=tmp_db)
+                                 db_path=tmp_db, verify=False)
     assert milan["created"] is True
     assert milan["listing_id"] != reg["listing_id"]
 
@@ -356,6 +356,73 @@ def test_register_listing_enables_arbitrary_single_name(tmp_db):
     assert res["status"] == "completed" and res["rows_added"] == 5
     assert svc.get_price_summary(reg["listing_id"],
                                  db_path=tmp_db)["n_obs"] == 5
+
+
+def test_register_unknown_symbol_writes_nothing(tmp_db):
+    def empty_fetch(symbols, start, end):
+        return {symbols[0]: pd.DataFrame()}
+
+    def unknown_sec(symbol):
+        raise ValueError(symbol)
+
+    result = svc.register_listing(
+        "ZZQXW", exchange="NASDAQ", currency="USD", db_path=tmp_db,
+        verification_fetch=empty_fetch, sec_resolve=unknown_sec)
+
+    assert result["registered"] is False
+    assert result["reason"] == "unknown_symbol"
+    assert [item["source"] for item in result["checked"]] == [
+        "price_provider", "sec_ticker_map"]
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        counts = [con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                  for table in ("listings", "instruments", "identifier_aliases",
+                                "ingestion_jobs", "ingestion_runs")]
+    finally:
+        con.close()
+    assert counts == [0, 0, 0, 0, 0]
+
+
+def test_register_known_symbol_uses_provider_metadata_and_records_hints(tmp_db):
+    def known_fetch(symbols, start, end):
+        frame = pd.DataFrame({"close": [10.0]})
+        frame.attrs.update(name="Authoritative SA", exchange="XPAR",
+                           currency="EUR")
+        return {symbols[0]: frame}
+
+    result = svc.register_listing(
+        "KNOWN", exchange="CALLER", currency="EUR", name="LLM Name",
+        db_path=tmp_db, verification_fetch=known_fetch)
+
+    assert result["registered"] is True
+    assert result["exchange"] == "XPAR"
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        stored = con.execute("""
+            SELECT i.name, l.exchange, l.currency
+            FROM listings l JOIN instruments i USING (instrument_id)
+        """).fetchone()
+        hints = con.execute("""
+            SELECT name_hint, exchange_hint, currency_hint
+            FROM listing_registration_hints
+        """).fetchone()
+    finally:
+        con.close()
+    assert stored == ("Authoritative SA", "XPAR", "EUR")
+    assert hints == ("LLM Name", "CALLER", "EUR")
+
+
+def test_prune_dry_run_lists_empty_offline_listing(tmp_db):
+    listing = svc.register_listing(
+        "EMPTY", exchange="XNAS", currency="USD", db_path=tmp_db,
+        verify=False)
+
+    result = svc.prune_empty_listings(
+        dry_run=True, older_than_minutes=-1, db_path=tmp_db)
+
+    assert result["count"] == 1
+    assert result["listings"][0]["listing_id"] == listing["listing_id"]
+    assert svc.resolve_instrument(listing["listing_id"], db_path=tmp_db)
 
 
 def test_fetch_runs_without_holding_the_writer_lock(tmp_db, monkeypatch):

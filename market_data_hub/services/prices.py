@@ -22,7 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, List, Optional
 
 import duckdb
@@ -206,11 +206,58 @@ def _register_listing(con, cand: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+def _verify_listing(symbol: str, provider_symbol: str, exchange: str,
+                    currency: str, fetch: Optional[FetchFn] = None,
+                    sec_resolve=None) -> Dict[str, Any]:
+    """Probe the selected provider and (for US securities) the SEC map.
+
+    Provider frames may expose authoritative ``name``, ``exchange`` and
+    ``currency`` values through ``DataFrame.attrs``.  Absence of those attrs
+    does not invalidate a non-empty quote/history response.
+    """
+    fetch = fetch or _default_fetch
+    end = _now().date()
+    start = end - timedelta(days=10)
+    checked: List[Dict[str, Any]] = []
+    metadata: Dict[str, Any] = {}
+    try:
+        frame = fetch([provider_symbol], start.isoformat(), end.isoformat()).get(
+            provider_symbol)
+        confirmed = frame is not None and not frame.empty
+        checked.append({"source": "price_provider", "confirmed": confirmed})
+        if confirmed:
+            metadata.update({k: frame.attrs[k] for k in
+                             ("name", "exchange", "currency")
+                             if frame.attrs.get(k)})
+    except Exception as exc:  # verification failure must never create rows
+        checked.append({"source": "price_provider", "confirmed": False,
+                        "error": type(exc).__name__})
+
+    is_us = currency.upper() == "USD" or exchange.upper() in {
+        "NASDAQ", "NYSE", "XNAS", "XNYS", "ARCX", "AMEX", "XASE"
+    }
+    if is_us:
+        try:
+            if sec_resolve is None:
+                from market_data_hub.services.financials import _resolve_cik_via_sec
+                sec_resolve = _resolve_cik_via_sec
+            hit = sec_resolve(symbol)
+            checked.append({"source": "sec_ticker_map", "confirmed": True})
+            if hit.get("name"):
+                metadata["name"] = hit["name"]
+        except Exception as exc:
+            checked.append({"source": "sec_ticker_map", "confirmed": False,
+                            "error": type(exc).__name__})
+    return {"confirmed": any(x["confirmed"] for x in checked),
+            "checked": checked, "metadata": metadata}
+
+
 def register_listing(symbol: str, *, exchange: str, currency: str,
                      kind: str = "EQUITY", name: Optional[str] = None,
                      provider: str = _DEFAULT_PROVIDER,
                      provider_symbol: Optional[str] = None,
-                     db_path: Optional[str] = None) -> Dict[str, Any]:
+                     db_path: Optional[str] = None, verify: bool = True,
+                     verification_fetch=None, sec_resolve=None) -> Dict[str, Any]:
     """Register an ARBITRARY single name not present in listings/config
     (audit CA-05): the caller supplies the identity — exchange, currency,
     provider symbol — and gets a listing_id back; ingestion then goes through
@@ -231,6 +278,21 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
             f"exchange and currency (identity is never guessed)")
     exchange = exchange.strip()
     currency = currency.strip().upper()
+    provider_symbol = provider_symbol or symbol
+    hints = {"name": name, "exchange": exchange, "currency": currency}
+    checked: List[Dict[str, Any]] = []
+    if verify:
+        verification = _verify_listing(
+            symbol, provider_symbol, exchange, currency,
+            fetch=verification_fetch, sec_resolve=sec_resolve)
+        checked = verification["checked"]
+        if not verification["confirmed"]:
+            return {"registered": False, "reason": "unknown_symbol",
+                    "checked": checked}
+        authoritative = verification["metadata"]
+        name = authoritative.get("name")
+        exchange = authoritative.get("exchange", exchange)
+        currency = authoritative.get("currency", currency).upper()
 
     with db_write_lock(db_path):
         con = get_conn(db_path)
@@ -277,13 +339,68 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
                                   WHERE namespace = 'ticker' AND value = ?
                                     AND target_type = 'listing' AND target_id = ?)
             """, [symbol, listing_id, now, symbol, listing_id])
+            con.execute("""
+                INSERT INTO listing_registration_hints
+                    (listing_id, name_hint, exchange_hint, currency_hint,
+                     recorded_at)
+                VALUES (?, ?, ?, ?, ?)
+            """, [listing_id, hints["name"], hints["exchange"],
+                  hints["currency"], now])
             return {"listing_id": listing_id, "instrument_id": instrument_id,
                     "symbol": symbol, "exchange": exchange,
                     "currency": currency, "provider": provider,
                     "provider_symbol": provider_symbol or symbol,
-                    "registered": True, "created": True}
+                    "registered": True, "created": True, "checked": checked,
+                    "hints": hints}
         finally:
             con.close()
+
+
+def list_empty_listings(*, older_than_minutes: int = 60,
+                        db_path: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Return stale listings having neither prices nor SEC company facts."""
+    cutoff = _now() - timedelta(minutes=older_than_minutes)
+    con = get_conn(db_path, read_only=True)
+    try:
+        rows = con.execute("""
+            SELECT l.listing_id, l.instrument_id, l.symbol, l.exchange,
+                   l.currency, l.provider, l.created_at
+            FROM listings l JOIN instruments i USING (instrument_id)
+            WHERE l.created_at < ?
+              AND NOT EXISTS (SELECT 1 FROM prices_daily p
+                              WHERE p.listing_id = l.listing_id)
+              AND (i.issuer_id IS NULL OR NOT EXISTS (
+                  SELECT 1 FROM issuers iss JOIN sec_company_facts f
+                    ON f.cik = iss.cik WHERE iss.issuer_id = i.issuer_id))
+            ORDER BY l.created_at, l.listing_id
+        """, [cutoff]).fetchall()
+    finally:
+        con.close()
+    cols = ["listing_id", "instrument_id", "symbol", "exchange", "currency",
+            "provider", "created_at"]
+    return [dict(zip(cols, row)) for row in rows]
+
+
+def prune_empty_listings(*, dry_run: bool = True, older_than_minutes: int = 60,
+                         db_path: Optional[str] = None) -> Dict[str, Any]:
+    """List, or safely remove, stale empty listings and orphan instruments."""
+    candidates = list_empty_listings(older_than_minutes=older_than_minutes,
+                                     db_path=db_path)
+    if dry_run or not candidates:
+        return {"dry_run": dry_run, "count": len(candidates),
+                "listings": candidates}
+    ids = [item["listing_id"] for item in candidates]
+    with db_write_lock(db_path):
+        con = get_conn(db_path)
+        try:
+            marks = ",".join("?" for _ in ids)
+            con.execute(f"DELETE FROM listing_registration_hints WHERE listing_id IN ({marks})", ids)
+            con.execute(f"DELETE FROM identifier_aliases WHERE target_type = 'listing' AND target_id IN ({marks})", ids)
+            con.execute(f"DELETE FROM listings WHERE listing_id IN ({marks})", ids)
+            con.execute("DELETE FROM instruments WHERE NOT EXISTS (SELECT 1 FROM listings l WHERE l.instrument_id = instruments.instrument_id)")
+        finally:
+            con.close()
+    return {"dry_run": False, "count": len(candidates), "listings": candidates}
 
 
 # --------------------------------------------------------------------- ensure

@@ -23,7 +23,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 32
+SCHEMA_VERSION = 33
 
 
 class DatabaseNotConfigured(RuntimeError):
@@ -522,6 +522,10 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
         # earnings estimate_currency columns are added before apply_schema()
         # above; old rows stay NULL (unknown), never backfilled.
         current = 32
+    if current < 33:
+        # Caller-supplied listing metadata is retained as non-authoritative
+        # provenance in the table created by apply_schema().
+        current = 33
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
