@@ -240,10 +240,9 @@ def tool_get_statement(query: str, statement: str = "", periods: int = 8,
     totals and components are separate lines. cost_of_revenue and
     short_term_debt are totals only (empty when the issuer reports components
     only: add cost_of_goods_sold + cost_of_services; for short-term debt add
-    current_portion_long_term_debt + short_term_borrowings, and add
-    commercial_paper only when short_term_borrowings' concept is
-    OtherShortTermBorrowings or LoansAndNotesPayable — ShortTermBorrowings is a
-    total that can already include commercial paper).
+    current_portion_long_term_debt + short_term_borrowings + commercial_paper,
+    except leave commercial_paper out when short_term_borrowings' concept is
+    ShortTermBorrowings, a total that can already include commercial paper).
     long_term_debt may fall back to LongTermDebt, which can include the
     current portion: check each value's `concept` before summing debt lines
     or computing leverage."""
