@@ -42548,6 +42548,18 @@
       "table": "issuers"
     },
     {
+      "description": "Distinct caller-supplied name, exchange and currency hints recorded during listing registration; non-authoritative provenance, separate from provider-confirmed identity.",
+      "doc": "ARCHITECTURE.md",
+      "jobs": [],
+      "point_in_time": "Current state/upserted data; no historical as-known-at reconstruction from this table alone.",
+      "primary_key": [],
+      "series_count": 0,
+      "status": "active",
+      "status_reason": "",
+      "store": "hub",
+      "table": "listing_registration_hints"
+    },
+    {
       "description": "Exchange listings linking symbols to stable instruments; daily prices use listing_id.",
       "doc": "ARCHITECTURE.md",
       "jobs": [],

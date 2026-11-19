@@ -82,6 +82,7 @@ HUB_TABLES = {
     "issuers": "Issuer identity registry and SEC CIK mapping; company universe is populated on demand.",
     "instruments": "Stable instrument identities and issuer links, independent of listing symbols.",
     "listings": "Exchange listings linking symbols to stable instruments; daily prices use listing_id.",
+    "listing_registration_hints": "Distinct caller-supplied name, exchange and currency hints recorded during listing registration; non-authoritative provenance, separate from provider-confirmed identity.",
     "etf_classification": "Config-derived ETF asset class and geographical classification.",
     "identifier_aliases": "External identifier aliases with validity intervals and identity targets.",
     "ingestion_runs": "Service ingestion request provenance and outcomes.",
