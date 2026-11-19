@@ -425,6 +425,146 @@ def test_prune_dry_run_lists_empty_offline_listing(tmp_db):
     assert svc.resolve_instrument(listing["listing_id"], db_path=tmp_db)
 
 
+def test_default_fetch_carries_yahoo_metadata(tmp_db, monkeypatch):
+    from market_data_hub.sources import yahoo_direct
+
+    now = pd.Timestamp('2024-01-10', tz='UTC')
+    monkeypatch.setattr(svc, '_now', lambda: now.to_pydatetime())
+
+    class Response:
+        status_code = 200
+
+        def json(self):
+            return {"chart": {"result": [{
+                "timestamp": [int(now.timestamp())],
+                "meta": {"longName": "Provider SA", "exchangeName": "PAR",
+                         "currency": "EUR"},
+                "indicators": {"quote": [{"open": [1], "high": [1],
+                                            "low": [1], "close": [1], "volume": [1]}]},
+            }]}}
+
+    class Session:
+        def get(self, *args, **kwargs):
+            return Response()
+
+    monkeypatch.setattr(yahoo_direct, "_session", lambda: Session())
+    monkeypatch.setattr(yahoo_direct, "_creq", object())
+    result = svc.register_listing("TEST.PA", exchange="caller", currency="gbp",
+                                  name="Caller", db_path=tmp_db)
+    assert result["exchange"] == "PAR" and result["currency"] == "EUR"
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        assert con.execute("""
+            SELECT name, exchange, currency FROM listings JOIN instruments USING (instrument_id)
+        """).fetchone() == ("Provider SA", "PAR", "EUR")
+        assert con.execute("""
+            SELECT name_hint, exchange_hint, currency_hint FROM listing_registration_hints
+        """).fetchone() == ("Caller", "CALLER", "GBP")
+    finally:
+        con.close()
+
+
+def test_numeric_cik_does_not_confirm_ticker(tmp_db):
+    result = svc.register_listing(
+        "9999999999", exchange="XNAS", currency="USD", db_path=tmp_db,
+        verification_fetch=lambda symbols, start, end: {})
+    assert result["registered"] is False
+    assert not any(item["confirmed"] for item in result["checked"])
+    con = get_conn(tmp_db)
+    try:
+        for table in ("listings", "instruments", "identifier_aliases",
+                      "ingestion_jobs", "ingestion_runs", "listing_registration_hints"):
+            assert con.execute(f"SELECT count(*) FROM {table}").fetchone()[0] == 0
+    finally:
+        con.close()
+
+
+def test_sec_ticker_match_can_confirm_without_prices(tmp_db):
+    result = svc.register_listing(
+        "KNOWN", exchange="XNAS", currency="USD", db_path=tmp_db,
+        verification_fetch=lambda symbols, start, end: {},
+        sec_resolve=lambda symbol: {"cik": "0000000001", "ticker": symbol,
+                                    "name": "Known Corporation"})
+    assert result["registered"] is True
+    assert result["checked"][-1] == {"source": "sec_ticker_map", "confirmed": True}
+
+
+def test_repeat_registration_returns_stored_currency_and_records_hints(tmp_db):
+    svc.register_listing("REPEAT", exchange="xnas", currency="USD",
+                         db_path=tmp_db, verify=False)
+    result = svc.register_listing("REPEAT", exchange="XNAS", currency="EUR",
+                                  name="New hint", db_path=tmp_db, verify=False)
+    svc.register_listing("REPEAT", exchange="XNAS", currency="EUR",
+                         name="New hint", db_path=tmp_db, verify=False)
+    assert result["created"] is False and result["currency"] == "USD"
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        assert con.execute("SELECT count(*) FROM listing_registration_hints").fetchone()[0] == 2
+    finally:
+        con.close()
+
+
+def test_prune_removes_only_empty_listing_and_related_ledger(tmp_db):
+    empty = svc.register_listing("EMPTY", exchange="XNAS", currency="USD",
+                                 db_path=tmp_db, verify=False)
+    active = svc.register_listing("ACTIVE", exchange="XNAS", currency="USD",
+                                  db_path=tmp_db, verify=False)
+    svc.ensure_price_history(empty["listing_id"], db_path=tmp_db,
+                             fetch=lambda symbols, start, end: {})
+    con = get_conn(tmp_db)
+    try:
+        con.execute("INSERT INTO instruments (instrument_id, kind) VALUES ('unrelated', 'OTHER')")
+        req = json.dumps({"listing_id": active["listing_id"]})
+        con.execute("INSERT INTO ingestion_runs (run_id, kind, input_json, status) "
+                    "VALUES ('active_run', 'price_history', ?, 'running')", [req])
+    finally:
+        con.close()
+    result = svc.prune_empty_listings(dry_run=False, older_than_minutes=-1, db_path=tmp_db)
+    assert [item["listing_id"] for item in result["listings"]] == [empty["listing_id"]]
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        assert con.execute("SELECT instrument_id FROM instruments ORDER BY instrument_id").fetchall() == sorted(
+            [(active["instrument_id"],), ("unrelated",)])
+        assert con.execute("SELECT count(*) FROM ingestion_jobs").fetchone()[0] == 0
+        assert con.execute("SELECT run_id FROM ingestion_runs").fetchall() == [("active_run",)]
+        assert con.execute("SELECT count(*) FROM listing_registration_hints").fetchone()[0] == 1
+    finally:
+        con.close()
+
+
+@pytest.mark.parametrize("payload", ["prices", "facts"])
+def test_prune_selects_candidates_after_acquiring_lock(tmp_db, monkeypatch, payload):
+    from contextlib import contextmanager
+
+    listing = svc.register_listing("RACE", exchange="XNAS", currency="USD",
+                                   db_path=tmp_db, verify=False)
+    real_lock = svc.db_write_lock
+
+    @contextmanager
+    def payload_arrives_before_lock(db_path):
+        con = get_conn(db_path)
+        try:
+            if payload == "prices":
+                con.execute("INSERT INTO prices_daily (date, listing_id, symbol, close) "
+                            "VALUES ('2024-01-01', ?, 'RACE', 10)", [listing["listing_id"]])
+            else:
+                con.execute("INSERT INTO issuers (issuer_id, cik) VALUES ('issuer', '0000000001')")
+                con.execute("UPDATE instruments SET issuer_id = 'issuer' WHERE instrument_id = ?",
+                            [listing["instrument_id"]])
+                con.execute("INSERT INTO sec_company_facts "
+                            "(fact_id, cik, taxonomy, concept, unit, end_date) VALUES "
+                            "('fact', '0000000001', 'us-gaap', 'Assets', 'USD', '2024-01-01')")
+        finally:
+            con.close()
+        with real_lock(db_path):
+            yield
+
+    monkeypatch.setattr(svc, "db_write_lock", payload_arrives_before_lock)
+    result = svc.prune_empty_listings(dry_run=False, older_than_minutes=-1, db_path=tmp_db)
+    assert result["count"] == 0
+    assert svc.resolve_instrument(listing["listing_id"], db_path=tmp_db)
+
+
 def test_fetch_runs_without_holding_the_writer_lock(tmp_db, monkeypatch):
     """Audit CA-06: a slow provider must not block other writers — the fetch
     phase runs with NO writer lock held."""

@@ -242,14 +242,30 @@ def _verify_listing(symbol: str, provider_symbol: str, exchange: str,
                 from market_data_hub.services.financials import _resolve_cik_via_sec
                 sec_resolve = _resolve_cik_via_sec
             hit = sec_resolve(symbol)
-            checked.append({"source": "sec_ticker_map", "confirmed": True})
-            if hit.get("name"):
+            confirmed = bool(hit.get("ticker"))
+            checked.append({"source": "sec_ticker_map", "confirmed": confirmed})
+            if confirmed and hit.get("name"):
                 metadata["name"] = hit["name"]
         except Exception as exc:
             checked.append({"source": "sec_ticker_map", "confirmed": False,
                             "error": type(exc).__name__})
     return {"confirmed": any(x["confirmed"] for x in checked),
             "checked": checked, "metadata": metadata}
+
+
+def _record_registration_hints(con, listing_id: str, hints: Dict[str, Any], now) -> None:
+    """Retain distinct caller hints without duplicating an identical registration."""
+    con.execute("""
+        INSERT INTO listing_registration_hints
+            (listing_id, name_hint, exchange_hint, currency_hint, recorded_at)
+        SELECT ?, ?, ?, ?, ?
+        WHERE NOT EXISTS (
+            SELECT 1 FROM listing_registration_hints WHERE listing_id = ?
+                AND name_hint IS NOT DISTINCT FROM ?
+                AND exchange_hint IS NOT DISTINCT FROM ?
+                AND currency_hint IS NOT DISTINCT FROM ?)
+    """, [listing_id, hints["name"], hints["exchange"], hints["currency"], now,
+          listing_id, hints["name"], hints["exchange"], hints["currency"]])
 
 
 def register_listing(symbol: str, *, exchange: str, currency: str,
@@ -276,7 +292,7 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
         raise ValueError(
             f"registering the unknown symbol {symbol!r} requires explicit "
             f"exchange and currency (identity is never guessed)")
-    exchange = exchange.strip()
+    exchange = exchange.strip().upper()
     currency = currency.strip().upper()
     provider_symbol = provider_symbol or symbol
     hints = {"name": name, "exchange": exchange, "currency": currency}
@@ -291,22 +307,23 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
                     "checked": checked}
         authoritative = verification["metadata"]
         name = authoritative.get("name")
-        exchange = authoritative.get("exchange", exchange)
-        currency = authoritative.get("currency", currency).upper()
+        exchange = authoritative.get("exchange", exchange).strip().upper()
+        currency = authoritative.get("currency", currency).strip().upper()
 
     with db_write_lock(db_path):
         con = get_conn(db_path)
         try:
             now = _now()
             row = con.execute("""
-                SELECT listing_id, instrument_id FROM listings
+                SELECT listing_id, instrument_id, currency FROM listings
                 WHERE symbol = ? AND provider = ?
                   AND coalesce(exchange, '') = ? AND active_to IS NULL
             """, [symbol, provider, exchange]).fetchone()
             if row:
+                _record_registration_hints(con, row[0], hints, now)
                 return {"listing_id": row[0], "instrument_id": row[1],
                         "symbol": symbol, "exchange": exchange,
-                        "currency": currency, "provider": provider,
+                        "currency": row[2], "provider": provider,
                         "registered": True, "created": False}
 
             instrument_id = _stable_id("ins", symbol)
@@ -339,13 +356,7 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
                                   WHERE namespace = 'ticker' AND value = ?
                                     AND target_type = 'listing' AND target_id = ?)
             """, [symbol, listing_id, now, symbol, listing_id])
-            con.execute("""
-                INSERT INTO listing_registration_hints
-                    (listing_id, name_hint, exchange_hint, currency_hint,
-                     recorded_at)
-                VALUES (?, ?, ?, ?, ?)
-            """, [listing_id, hints["name"], hints["exchange"],
-                  hints["currency"], now])
+            _record_registration_hints(con, listing_id, hints, now)
             return {"listing_id": listing_id, "instrument_id": instrument_id,
                     "symbol": symbol, "exchange": exchange,
                     "currency": currency, "provider": provider,
@@ -358,24 +369,36 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
 
 def list_empty_listings(*, older_than_minutes: int = 60,
                         db_path: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Return stale listings having neither prices nor SEC company facts."""
-    cutoff = _now() - timedelta(minutes=older_than_minutes)
+    """Return stale listings without prices, SEC facts, or active price ingestion."""
     con = get_conn(db_path, read_only=True)
     try:
-        rows = con.execute("""
-            SELECT l.listing_id, l.instrument_id, l.symbol, l.exchange,
-                   l.currency, l.provider, l.created_at
-            FROM listings l JOIN instruments i USING (instrument_id)
-            WHERE l.created_at < ?
-              AND NOT EXISTS (SELECT 1 FROM prices_daily p
-                              WHERE p.listing_id = l.listing_id)
-              AND (i.issuer_id IS NULL OR NOT EXISTS (
-                  SELECT 1 FROM issuers iss JOIN sec_company_facts f
-                    ON f.cik = iss.cik WHERE iss.issuer_id = i.issuer_id))
-            ORDER BY l.created_at, l.listing_id
-        """, [cutoff]).fetchall()
+        return _empty_listings(con, older_than_minutes)
     finally:
         con.close()
+
+
+def _empty_listings(con, older_than_minutes: int) -> List[Dict[str, Any]]:
+    cutoff = _now() - timedelta(minutes=older_than_minutes)
+    rows = con.execute("""
+        SELECT l.listing_id, l.instrument_id, l.symbol, l.exchange,
+               l.currency, l.provider, l.created_at
+        FROM listings l JOIN instruments i USING (instrument_id)
+        WHERE l.created_at < ?
+          AND NOT EXISTS (SELECT 1 FROM prices_daily p
+                          WHERE p.listing_id = l.listing_id)
+          AND (i.issuer_id IS NULL OR NOT EXISTS (
+              SELECT 1 FROM issuers iss JOIN sec_company_facts f
+                ON f.cik = iss.cik WHERE iss.issuer_id = i.issuer_id))
+          AND NOT EXISTS (SELECT 1 FROM ingestion_runs r
+              WHERE r.kind = 'price_history' AND r.status = 'running'
+                AND json_extract_string(try_cast(r.input_json AS JSON),
+                                        '$.listing_id') = l.listing_id)
+          AND NOT EXISTS (SELECT 1 FROM ingestion_jobs j
+              WHERE j.kind = 'price_history' AND j.status IN ('running', 'queued')
+                AND json_extract_string(try_cast(j.request_json AS JSON),
+                                        '$.listing_id') = l.listing_id)
+        ORDER BY l.created_at, l.listing_id
+    """, [cutoff]).fetchall()
     cols = ["listing_id", "instrument_id", "symbol", "exchange", "currency",
             "provider", "created_at"]
     return [dict(zip(cols, row)) for row in rows]
@@ -383,21 +406,43 @@ def list_empty_listings(*, older_than_minutes: int = 60,
 
 def prune_empty_listings(*, dry_run: bool = True, older_than_minutes: int = 60,
                          db_path: Optional[str] = None) -> Dict[str, Any]:
-    """List, or safely remove, stale empty listings and orphan instruments."""
-    candidates = list_empty_listings(older_than_minutes=older_than_minutes,
-                                     db_path=db_path)
-    if dry_run or not candidates:
+    """Remove stale empty listings, their price ledger, and their orphan instruments.
+
+    Eligibility is selected in the deletion transaction under the writer lock.
+    Active ingestion is excluded because its fetch runs without that lock.
+    """
+    if dry_run:
+        candidates = list_empty_listings(older_than_minutes=older_than_minutes,
+                                         db_path=db_path)
         return {"dry_run": dry_run, "count": len(candidates),
                 "listings": candidates}
-    ids = [item["listing_id"] for item in candidates]
     with db_write_lock(db_path):
         con = get_conn(db_path)
         try:
+            con.execute("BEGIN TRANSACTION")
+            candidates = _empty_listings(con, older_than_minutes)
+            ids = [item["listing_id"] for item in candidates]
+            if not ids:
+                con.execute("COMMIT")
+                return {"dry_run": False, "count": 0, "listings": []}
             marks = ",".join("?" for _ in ids)
+            for table, column in (("ingestion_jobs", "request_json"),
+                                  ("ingestion_runs", "input_json")):
+                con.execute(f"DELETE FROM {table} WHERE kind = 'price_history' AND "
+                            f"json_extract_string(try_cast({column} AS JSON), '$.listing_id') "
+                            f"IN ({marks})", ids)
             con.execute(f"DELETE FROM listing_registration_hints WHERE listing_id IN ({marks})", ids)
             con.execute(f"DELETE FROM identifier_aliases WHERE target_type = 'listing' AND target_id IN ({marks})", ids)
             con.execute(f"DELETE FROM listings WHERE listing_id IN ({marks})", ids)
-            con.execute("DELETE FROM instruments WHERE NOT EXISTS (SELECT 1 FROM listings l WHERE l.instrument_id = instruments.instrument_id)")
+            instrument_ids = list({item["instrument_id"] for item in candidates})
+            instrument_marks = ",".join("?" for _ in instrument_ids)
+            con.execute(f"DELETE FROM instruments WHERE instrument_id IN ({instrument_marks}) "
+                        "AND NOT EXISTS (SELECT 1 FROM listings l WHERE "
+                        "l.instrument_id = instruments.instrument_id)", instrument_ids)
+            con.execute("COMMIT")
+        except Exception:
+            con.execute("ROLLBACK")
+            raise
         finally:
             con.close()
     return {"dry_run": False, "count": len(candidates), "listings": candidates}

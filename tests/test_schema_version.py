@@ -78,6 +78,18 @@ def test_migrate_is_idempotent(tmp_db):
     con.close()
 
 
+def test_migrate_adds_registration_hint_index_to_v33_database(tmp_db):
+    con = C.get_conn()
+    try:
+        con.execute("DROP INDEX idx_listing_registration_hints_listing")
+        con.execute("UPDATE schema_meta SET value = '33' WHERE key = 'schema_version'")
+        assert C.migrate(con) == C.SCHEMA_VERSION
+        assert con.execute("SELECT count(*) FROM duckdb_indexes() "
+                           "WHERE index_name = 'idx_listing_registration_hints_listing'").fetchone()[0] == 1
+    finally:
+        con.close()
+
+
 def test_migrate_adds_alias_file_ownership_column_to_v22_database(tmp_db):
     con = C.get_conn()
     con.execute("ALTER TABLE calendar_indicator_aliases DROP COLUMN seeded_from_file")

@@ -519,6 +519,8 @@ CREATE TABLE IF NOT EXISTS listing_registration_hints (
     currency_hint VARCHAR,
     recorded_at  TIMESTAMP NOT NULL
 );
+CREATE INDEX IF NOT EXISTS idx_listing_registration_hints_listing
+    ON listing_registration_hints (listing_id);
 
 -- Curated-universe classification ("anagrafica"), keyed by symbol (joins
 -- listings.symbol / prices_daily.symbol directly -- no synthetic id, since
