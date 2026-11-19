@@ -18,10 +18,17 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   last handle, so cross-process file locking and the advisory writer lock are
   unchanged. Read-only handles refuse write statements even on a shared
   read-write instance; `migrate()` runs once per open instead of on every
-  read-write call. New `open_existing()` (no create, no migrate, no wait)
-  replaces the direct `duckdb.connect(read_only=True)` calls in the DataSpace
-  health check, `catalog_live`, `alfred_backfill` and
-  `scripts/resolve_duplicate_listings.py`.
+  read-write call. Calls that return the connection return the handle, so
+  chains stay guarded; relations come back guarded and keep their handle
+  alive; `cursor()` returns another tracked handle. Every in-process wait is
+  bounded and raises `SharedDatabaseBusy`; a thread holding a read-only
+  handle that asks for the advisory writer lock is refused at once (lock
+  ordering). New `open_existing()` (read-only; no create, no migrate, one
+  attempt across processes, at most 5 s in-process) replaces the direct
+  `duckdb.connect(read_only=True)` calls in the DataSpace health check,
+  `catalog_live`, `alfred_backfill` and `scripts/resolve_duplicate_listings.py`.
+  A read-write instance stays read-write (exclusive file lock) until its last
+  handle closes, even when only readers remain.
 
 ## [0.3.29] — 2026-11-14
 

@@ -160,3 +160,184 @@ def test_open_existing_does_not_create(tmp_path):
     with pytest.raises(FileNotFoundError):
         C.open_existing(str(tmp_path / "absent.duckdb"))
     assert not (tmp_path / "absent.duckdb").exists()
+
+
+def _wait_until(predicate, timeout=10.0):
+    end = time.monotonic() + timeout
+    while not predicate():
+        if time.monotonic() > end:
+            raise AssertionError("condition not reached")
+        time.sleep(0.01)
+
+
+def _key(path):
+    return C._registry_key(path)
+
+
+def test_timed_out_writer_wakes_readers_queued_behind_it(db, monkeypatch):
+    # A reader queued behind a writer must re-check when that writer gives up;
+    # without the wake-up it would sleep for its whole budget.
+    monkeypatch.setattr(C, "_WRITER_LOCK_WAIT_S", 0.5)
+    monkeypatch.setattr(C, "_READER_LOCK_WAIT_S", 60.0)
+    holder = C.get_conn(db, read_only=True)
+    outcome: dict = {}
+
+    def write():
+        try:
+            C.get_conn(db).close()
+        except C.SharedDatabaseBusy:
+            outcome["writer"] = "timed out"
+
+    def read():
+        _wait_until(lambda: C._WRITERS_WAITING.get(_key(db)))
+        with C.get_conn(db, read_only=True) as con:
+            outcome["reader"] = con.execute("SELECT count(*) FROM stress").fetchone()
+        outcome["reader_at"] = time.monotonic()
+
+    w = threading.Thread(target=write)
+    r = threading.Thread(target=read)
+    t0 = time.monotonic()
+    w.start()
+    r.start()
+    w.join(timeout=30)
+    r.join(timeout=30)
+    holder.close()
+    assert not w.is_alive() and not r.is_alive()
+    assert outcome["writer"] == "timed out"
+    assert outcome["reader"] == (0,)
+    assert outcome["reader_at"] - t0 < 10, "queued reader was not woken"
+
+
+def test_chained_calls_stay_guarded_and_keep_the_handle_alive(db):
+    with C.get_conn(db, read_only=True) as reader:
+        result = reader.execute("SELECT 1")
+        assert result is reader
+        with pytest.raises(C.ReadOnlyViolation):
+            result.execute("DELETE FROM stress")
+        rel = reader.sql("SELECT * FROM stress")
+        with pytest.raises(C.ReadOnlyViolation):
+            rel.insert_into("stress")
+        with pytest.raises(C.ReadOnlyViolation):
+            reader.table("stress").filter("i > 0").insert([1, 1])
+        with pytest.raises(C.ReadOnlyViolation):
+            rel.query("v", "DROP TABLE stress")
+        assert rel.filter("i > 0").fetchall() == []
+    # No name keeps the handle: the chain alone must keep its cursor open.
+    for _ in range(20):
+        assert C.get_conn(db).execute("SELECT 42").fetchone() == (42,)
+        assert C.get_conn(db, read_only=True).sql("SELECT 7").fetchall() == [(7,)]
+        gc.collect()
+    gc.collect()
+
+
+def test_cursor_returns_a_tracked_handle(db):
+    parent = C.get_conn(db, read_only=True)
+    child = parent.cursor()
+    assert isinstance(child, C.HubConnection) and child.read_only
+    with pytest.raises(C.ReadOnlyViolation):
+        child.execute("INSERT INTO stress VALUES (1, 1)")
+    parent.close()
+    # The child is counted: the instance stays open for it, then goes.
+    assert child.execute("SELECT count(*) FROM stress").fetchone() == (0,)
+    assert C._REGISTRY[_key(db)].refs == 1
+    child.close()
+    assert C._REGISTRY == {}
+    with pytest.raises(duckdb.ConnectionException):
+        parent.cursor()
+
+
+def test_open_existing_never_opens_the_instance_read_write(db, monkeypatch):
+    # A writer is queued behind a read-only instance; when it drains, an
+    # open_existing() reader must not open the next (read-write) instance
+    # itself, because that would hand the writer an unmigrated database.
+    migrations = []
+    real_migrate = C.migrate
+    monkeypatch.setattr(C, "migrate", lambda con: migrations.append(1) or real_migrate(con))
+    holder = C.get_conn(db, read_only=True)
+    got: dict = {}
+
+    def write():
+        with C.get_conn(db) as con:
+            con.execute("INSERT INTO stress VALUES (5, 5)")
+            got["writer"] = True
+
+    def peek():
+        with C.open_existing(db) as con:
+            got["peek_ro"] = con.read_only
+            got["peek_mode_ro"] = C._REGISTRY[_key(db)].read_only
+
+    w = threading.Thread(target=write)
+    w.start()
+    _wait_until(lambda: C._WRITERS_WAITING.get(_key(db)))
+    p = threading.Thread(target=peek)
+    p.start()
+    time.sleep(0.2)
+    holder.close()
+    w.join(timeout=30)
+    p.join(timeout=30)
+    assert not w.is_alive() and not p.is_alive()
+    assert got["writer"] is True
+    assert got["peek_ro"] is True
+    assert got["peek_mode_ro"] is False  # it joined the writer's instance
+    assert migrations == [1]  # the read-write instance was migrated once
+
+
+def test_open_existing_does_not_wait_long_for_another_opener(db, monkeypatch):
+    monkeypatch.setattr(C, "_OPEN_EXISTING_WAIT_S", 0.3)
+    release = threading.Event()
+    real_open_root = C._open_root
+
+    def slow_open_root(*args, **kwargs):
+        release.wait(30)
+        return real_open_root(*args, **kwargs)
+
+    monkeypatch.setattr(C, "_open_root", slow_open_root)
+    opener = threading.Thread(target=lambda: C.get_conn(db).close())
+    opener.start()
+    _wait_until(lambda: _key(db) in C._REGISTRY)
+    t0 = time.monotonic()
+    with pytest.raises(C.SharedDatabaseBusy):
+        C.open_existing(db)
+    assert time.monotonic() - t0 < 5
+    release.set()
+    opener.join(timeout=30)
+    assert not opener.is_alive()
+
+
+def test_reader_taking_the_writer_lock_fails_fast_instead_of_deadlocking(db, monkeypatch):
+    from market_data_hub.lock import db_write_lock
+
+    monkeypatch.setattr(C, "_WRITER_LOCK_WAIT_S", 30.0)
+    reader_has_handle = threading.Event()
+    writer_has_lock = threading.Event()
+    outcome: dict = {}
+
+    def reader():
+        with C.get_conn(db, read_only=True):
+            reader_has_handle.set()
+            writer_has_lock.wait(10)
+            _wait_until(lambda: C._WRITERS_WAITING.get(_key(db)))
+            t0 = time.monotonic()
+            try:
+                with db_write_lock(db, timeout=20):
+                    outcome["reader"] = "got the lock"
+            except C.SharedDatabaseBusy:
+                outcome["reader"] = "refused"
+            outcome["reader_s"] = time.monotonic() - t0
+
+    def writer():
+        reader_has_handle.wait(10)
+        with db_write_lock(db, timeout=20):
+            writer_has_lock.set()
+            with C.get_conn(db) as con:
+                con.execute("INSERT INTO stress VALUES (7, 7)")
+                outcome["writer"] = "wrote"
+
+    threads = [threading.Thread(target=reader), threading.Thread(target=writer)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+    assert not any(t.is_alive() for t in threads), "lock-ordering deadlock"
+    assert outcome["reader"] == "refused" and outcome["reader_s"] < 5
+    assert outcome["writer"] == "wrote"

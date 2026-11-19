@@ -773,6 +773,13 @@ _WRITE_STATEMENT_TYPES = frozenset({
 _TEMP_CREATE = re.compile(
     r"^\s*CREATE\s+(?:OR\s+REPLACE\s+)?TEMP(?:ORARY)?\b", re.IGNORECASE
 )
+#: Relation methods that write to the database.
+_RELATION_WRITE_METHODS = frozenset({
+    "create", "insert", "insert_into", "to_table", "update",
+})
+#: How long open_existing() waits for another thread of this process that is
+#: opening or closing the same file, or for a queued writer, before giving up.
+_OPEN_EXISTING_WAIT_S = 5.0
 
 
 class ReadOnlyViolation(duckdb.InvalidInputException):
@@ -780,7 +787,7 @@ class ReadOnlyViolation(duckdb.InvalidInputException):
 
 
 class SharedDatabaseBusy(duckdb.IOException):
-    """A writer could not upgrade the in-process read-only instance in time."""
+    """The in-process shared instance could not be obtained in time."""
 
 
 def _check_read_only(query: Any) -> None:
@@ -810,29 +817,32 @@ class _SharedDatabase:
     * The instance is opened by the first caller and closed when the last
       handle on it is closed (or garbage collected), so the file lock other
       processes see is held no longer than before this registry existed.
-      While it is being opened or closed the entry stays registered and
-      ``opening`` is set, so nobody else touches the file meanwhile.
+      While it is being opened or closed the entry stays registered with
+      ``busy`` set, so nobody else touches the file meanwhile.
     * Its mode is read-only only while every caller in the process asked for
       read-only. A read-only request arriving while a read-write instance is
-      open is served from that instance through a guarded handle.
+      open is served from that instance through a guarded handle. A
+      read-write instance stays read-write until its last handle closes, even
+      if only readers remain (it keeps the exclusive file lock meanwhile).
     * A read-write request arriving while a read-only instance is open waits,
       on the writer budget, for the read-only handles to drain and then opens
       the file read-write. New readers queue behind a waiting writer unless
       their thread already holds a handle here (that would deadlock), and
       an instance opened while a writer is queued is opened read-write.
-    * ``migrate()`` runs once, when the instance is opened read-write, while
-      every other caller for that path waits; concurrent DDL from several
-      threads is what DuckDB cannot serialise for us.
+    * A read-write instance is only ever opened by :func:`get_conn`, which
+      runs ``migrate()`` once on it before any handle exists; concurrent DDL
+      from several threads is what DuckDB cannot serialise for us.
+    * Every wait is bounded and raises :class:`SharedDatabaseBusy`.
     """
 
-    __slots__ = ("key", "read_only", "root", "refs", "opening", "holders")
+    __slots__ = ("key", "read_only", "root", "refs", "busy", "holders")
 
     def __init__(self, key: str, read_only: bool) -> None:
         self.key = key
         self.read_only = read_only
         self.root: Optional[duckdb.DuckDBPyConnection] = None
         self.refs = 0
-        self.opening = True
+        self.busy = True  # being opened
         self.holders: dict[int, int] = {}  # thread ident -> open handles
 
 
@@ -846,15 +856,90 @@ def _registry_key(path: str) -> str:
     return os.path.normcase(os.path.realpath(path))
 
 
+def thread_holds_read_only_instance(db_path: Optional[str] = None) -> bool:
+    """Whether this thread holds a handle on a read-only shared instance.
+
+    Such a thread can never become a writer on that file until it closes its
+    handles: a writer would wait for them to drain. ``lock.db_write_lock``
+    uses this to fail fast instead of waiting on the advisory lock, which a
+    writer holding it while waiting for this thread's handles would never
+    release (a lock-ordering deadlock).
+    """
+    key = _registry_key(resolve_db_path(db_path))
+    me = threading.get_ident()
+    with _REGISTRY_COND:
+        entry = _REGISTRY.get(key)
+        return bool(entry is not None and entry.read_only
+                    and entry.holders.get(me, 0) > 0)
+
+
+class _GuardedRelation:
+    """A DuckDB relation that keeps its handle alive and honours read-only.
+
+    A relation is evaluated lazily on its connection; holding the owning
+    handle stops garbage collection from closing that cursor underneath it.
+    """
+
+    __slots__ = ("_rel", "_owner")
+
+    def __init__(self, rel: duckdb.DuckDBPyRelation, owner: "HubConnection") -> None:
+        self._rel = rel
+        self._owner = owner
+
+    def __getattr__(self, name: str) -> Any:
+        if self._owner._read_only and name in _RELATION_WRITE_METHODS:
+            raise ReadOnlyViolation(
+                f"Cannot call {name}() through a read-only market-data-hub connection")
+        attr = getattr(self._rel, name)
+        if name == "query" and self._owner._read_only:
+            def query(view_name: str, sql_query: str, *a: Any, **k: Any) -> Any:
+                _check_read_only(sql_query)
+                return _wrap(self._owner, attr(view_name, sql_query, *a, **k))
+            return query
+        return _wrapping(self._owner, attr) if callable(attr) else attr
+
+    def __getitem__(self, item: Any) -> Any:
+        return _wrap(self._owner, self._rel[item])
+
+    def __len__(self) -> int:
+        return len(self._rel)
+
+    def __repr__(self) -> str:
+        return repr(self._rel)
+
+    def __str__(self) -> str:
+        return str(self._rel)
+
+
+def _wrap(owner: "HubConnection", value: Any) -> Any:
+    if isinstance(value, duckdb.DuckDBPyRelation):
+        return _GuardedRelation(value, owner)
+    if value is owner._cursor:
+        return owner
+    return value
+
+
+def _wrapping(owner: "HubConnection", fn: Any) -> Any:
+    def call(*args: Any, **kwargs: Any) -> Any:
+        return _wrap(owner, fn(*args, **kwargs))
+    call.__name__ = getattr(fn, "__name__", "call")
+    call.__doc__ = getattr(fn, "__doc__", None)
+    return call
+
+
 class HubConnection:
     """A per-caller cursor on the shared database instance for one file.
 
-    Behaves like a ``duckdb.DuckDBPyConnection`` (attribute access is
-    delegated to the underlying cursor). ``close()`` closes only this cursor;
-    the shared instance is closed when its last handle goes. A handle opened
-    with ``read_only=True`` refuses write statements even when the shared
-    instance is read-write. Like any DuckDB connection, one handle must not
-    be used by two threads at the same time: open one per thread or call.
+    Behaves like a ``duckdb.DuckDBPyConnection``: attribute access is
+    delegated to the underlying cursor, calls that return the connection
+    return this handle (so ``con.execute(...).fetchone()`` chains stay
+    guarded and keep the handle alive), relations come back wrapped, and
+    ``cursor()`` returns another tracked handle. ``close()`` closes only this
+    handle; the shared instance is closed when its last handle goes. A
+    handle opened with ``read_only=True`` refuses write statements even when
+    the shared instance is read-write. Like any DuckDB connection, one handle
+    must not be used by two threads at the same time: open one per thread or
+    call.
     """
 
     def __init__(self, entry: Optional[_SharedDatabase],
@@ -873,34 +958,44 @@ class HubConnection:
     def closed(self) -> bool:
         return self._closed
 
-    def execute(self, query: Any, *args: Any, **kwargs: Any):
+    def execute(self, query: Any, *args: Any, **kwargs: Any) -> Any:
         if self._read_only:
             _check_read_only(query)
-        return self._cursor.execute(query, *args, **kwargs)
+        return _wrap(self, self._cursor.execute(query, *args, **kwargs))
 
-    def executemany(self, query: Any, *args: Any, **kwargs: Any):
+    def executemany(self, query: Any, *args: Any, **kwargs: Any) -> Any:
         if self._read_only:
             _check_read_only(query)
-        return self._cursor.executemany(query, *args, **kwargs)
+        return _wrap(self, self._cursor.executemany(query, *args, **kwargs))
 
-    def sql(self, query: Any, *args: Any, **kwargs: Any):
+    def sql(self, query: Any, *args: Any, **kwargs: Any) -> Any:
         if self._read_only:
             _check_read_only(query)
-        return self._cursor.sql(query, *args, **kwargs)
+        return _wrap(self, self._cursor.sql(query, *args, **kwargs))
 
-    def query(self, query: Any, *args: Any, **kwargs: Any):
+    def query(self, query: Any, *args: Any, **kwargs: Any) -> Any:
         if self._read_only:
             _check_read_only(query)
-        return self._cursor.query(query, *args, **kwargs)
+        return _wrap(self, self._cursor.query(query, *args, **kwargs))
 
-    def append(self, *args: Any, **kwargs: Any):
+    def append(self, *args: Any, **kwargs: Any) -> Any:
         if self._read_only:
             raise ReadOnlyViolation(
                 "Cannot append through a read-only market-data-hub connection")
-        return self._cursor.append(*args, **kwargs)
+        return _wrap(self, self._cursor.append(*args, **kwargs))
+
+    def cursor(self) -> "HubConnection":
+        """Another handle on the same instance, tracked like any other."""
+        if self._closed:
+            raise duckdb.ConnectionException("Connection already closed!")
+        if self._entry is None:  # private in-memory database
+            return HubConnection(None, self._cursor.cursor(), self._read_only)
+        with _REGISTRY_COND:
+            return _hand_out(self._entry, self._read_only, threading.get_ident())
 
     def __getattr__(self, name: str) -> Any:
-        return getattr(self._cursor, name)
+        attr = getattr(self._cursor, name)
+        return _wrapping(self, attr) if callable(attr) else attr
 
     def close(self) -> None:
         if self._closed:
@@ -947,7 +1042,7 @@ def _release(entry: Optional[_SharedDatabase], thread: int) -> None:
             # closed: a caller that opened a fresh instance in another mode
             # before root.close() returned would meet the very configuration
             # error this registry exists to prevent.
-            entry.opening = True
+            entry.busy = True
             root = entry.root
             entry.root = None
         else:
@@ -962,12 +1057,20 @@ def _release(entry: Optional[_SharedDatabase], thread: int) -> None:
                 _REGISTRY_COND.notify_all()
 
 
-def _open_root(path: str, *, read_only: bool, create: bool, wait: bool
+def _open_root(path: str, *, read_only: bool, create: bool
                ) -> duckdb.DuckDBPyConnection:
-    """Open the file for a new shared instance (no registry lock held)."""
-    if not os.path.exists(path):
-        if not create:
+    """Open the file for a new shared instance (no registry lock held).
+
+    ``create`` is the get_conn path: create a missing file, wait out other
+    processes, and migrate a read-write instance. Without it (open_existing)
+    the file must exist and is opened read-only in one attempt.
+    """
+    if not create:
+        assert read_only, "open_existing never opens a read-write instance"
+        if not os.path.exists(path):
             raise FileNotFoundError(f"database file does not exist: {path}")
+        return duckdb.connect(path, read_only=True)
+    if not os.path.exists(path):
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         if read_only:
             # A reader on a nonexistent DB: create it once in write mode. Two
@@ -979,35 +1082,32 @@ def _open_root(path: str, *, read_only: bool, create: bool, wait: bool
                 apply_schema(tmp)
             finally:
                 tmp.close()
-    if not wait:
-        return duckdb.connect(path, read_only=read_only)
     if read_only:
         return _connect_read_only_waiting(path)
     con = _connect_read_write_waiting(path)
-    if create:
-        try:
-            # migrate() also calls apply_schema() internally, then walks any
-            # pending `if current < N:` ladder steps (e.g. ALTER TABLE ADD
-            # COLUMN) that CREATE TABLE IF NOT EXISTS alone can't apply to a
-            # table that already exists.
-            migrate(con)
-            # Flush the schema work before any cursor exists. Otherwise a
-            # cursor that later updates rows and then alters a constraint
-            # (SET NOT NULL) fails with "Cannot create index with outstanding
-            # updates" while the root connection is alive.
-            con.execute("CHECKPOINT")
-        except BaseException:
-            con.close()
-            raise
+    try:
+        # migrate() also calls apply_schema() internally, then walks any
+        # pending `if current < N:` ladder steps (e.g. ALTER TABLE ADD
+        # COLUMN) that CREATE TABLE IF NOT EXISTS alone can't apply to a
+        # table that already exists.
+        migrate(con)
+        # Flush the schema work before any cursor exists. Otherwise a cursor
+        # that later updates rows and then alters a constraint (SET NOT
+        # NULL) fails with "Cannot create index with outstanding updates"
+        # while the root connection is alive.
+        con.execute("CHECKPOINT")
+    except BaseException:
+        con.close()
+        raise
     return con
 
 
-def _acquire(path: str, *, read_only: bool, create: bool, wait: bool
+def _acquire(path: str, *, read_only: bool, create: bool, budget_s: float
              ) -> HubConnection:
     key = _registry_key(path)
     me = threading.get_ident()
-    deadline = time.monotonic() + _WRITER_LOCK_WAIT_S
-    waiting = False
+    deadline = time.monotonic() + budget_s
+    waiting = False  # counted in _WRITERS_WAITING
     with _REGISTRY_COND:
         try:
             while True:
@@ -1015,34 +1115,38 @@ def _acquire(path: str, *, read_only: bool, create: bool, wait: bool
                 if entry is None:
                     # Once a writer is queued, the next instance is opened
                     # read-write so the writer is not starved by readers.
-                    mode = read_only and not _WRITERS_WAITING.get(key)
-                    entry = _SharedDatabase(key, mode)
-                    _REGISTRY[key] = entry
-                    break  # we open it, outside the lock
-                if entry.opening:
-                    _REGISTRY_COND.wait()
-                    continue
-                mine = entry.holders.get(me, 0) > 0
-                if entry.read_only and not read_only:
-                    if mine:
-                        raise SharedDatabaseBusy(
-                            "this thread holds a read-only market-data-hub "
-                            "connection on the same file; close it before "
-                            "opening a read-write one")
-                    remaining = deadline - time.monotonic()
-                    if remaining <= 0:
-                        raise SharedDatabaseBusy(
-                            "read-only market-data-hub connections in this "
-                            "process did not close within the writer budget")
-                    if not waiting:
-                        _WRITERS_WAITING[key] = _WRITERS_WAITING.get(key, 0) + 1
-                        waiting = True
-                    _REGISTRY_COND.wait(remaining)
-                    continue
-                if entry.read_only and _WRITERS_WAITING.get(key) and not mine:
-                    _REGISTRY_COND.wait()  # do not starve a queued writer
-                    continue
-                return _hand_out(entry, read_only, me)
+                    mode_ro = read_only and not _WRITERS_WAITING.get(key)
+                    if create or mode_ro:
+                        entry = _SharedDatabase(key, mode_ro)
+                        _REGISTRY[key] = entry
+                        break  # we open it, outside the lock
+                    # open_existing() never opens read-write (that would skip
+                    # migrate()); the queued writer opens it, then we join.
+                    reason = "a queued writer to open the file"
+                elif entry.busy:
+                    reason = "another thread opening or closing the file"
+                else:
+                    mine = entry.holders.get(me, 0) > 0
+                    if entry.read_only and not read_only:
+                        if mine:
+                            raise SharedDatabaseBusy(
+                                "this thread holds a read-only market-data-hub "
+                                "connection on the same file; close it before "
+                                "opening a read-write one")
+                        if not waiting:
+                            _WRITERS_WAITING[key] = _WRITERS_WAITING.get(key, 0) + 1
+                            waiting = True
+                        reason = "read-only connections in this process to close"
+                    elif entry.read_only and _WRITERS_WAITING.get(key) and not mine:
+                        reason = "a queued writer"  # do not starve it
+                    else:
+                        return _hand_out(entry, read_only, me)
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise SharedDatabaseBusy(
+                        f"timed out after {budget_s:g}s waiting for {reason} "
+                        f"({os.path.basename(path)})")
+                _REGISTRY_COND.wait(remaining)
         finally:
             if waiting:
                 left = _WRITERS_WAITING[key] - 1
@@ -1050,13 +1154,15 @@ def _acquire(path: str, *, read_only: bool, create: bool, wait: bool
                     _WRITERS_WAITING[key] = left
                 else:
                     del _WRITERS_WAITING[key]
+                # Readers may be queued behind this writer; whether it got a
+                # handle, timed out or failed, they must re-check now.
+                _REGISTRY_COND.notify_all()
 
-    # We own a placeholder in the "opening" state: open the file without
-    # holding the registry lock (opening may wait minutes for another
-    # process), then publish it or withdraw the placeholder.
+    # We own a placeholder in the busy state: open the file without holding
+    # the registry lock (opening may wait minutes for another process), then
+    # publish it or withdraw the placeholder.
     try:
-        root = _open_root(path, read_only=entry.read_only, create=create,
-                          wait=wait)
+        root = _open_root(path, read_only=entry.read_only, create=create)
     except BaseException:
         with _REGISTRY_COND:
             if _REGISTRY.get(key) is entry:
@@ -1065,7 +1171,7 @@ def _acquire(path: str, *, read_only: bool, create: bool, wait: bool
         raise
     with _REGISTRY_COND:
         entry.root = root
-        entry.opening = False
+        entry.busy = False
         try:
             return _hand_out(entry, read_only, me)
         finally:
@@ -1078,7 +1184,7 @@ def _acquire(path: str, *, read_only: bool, create: bool, wait: bool
 
 def _hand_out(entry: _SharedDatabase, read_only: bool, me: int) -> HubConnection:
     """A new handle on an open entry (registry lock held)."""
-    assert entry.root is not None
+    assert entry.root is not None and not entry.busy
     cursor = entry.root.cursor()
     entry.refs += 1
     entry.holders[me] = entry.holders.get(me, 0) + 1
@@ -1104,15 +1210,20 @@ def get_conn(
         con = duckdb.connect(path)
         migrate(con)
         return HubConnection(None, con, read_only)
-    return _acquire(path, read_only=read_only, create=True, wait=True)
+    budget = _READER_LOCK_WAIT_S if read_only else _WRITER_LOCK_WAIT_S
+    return _acquire(path, read_only=read_only, create=True, budget_s=budget)
 
 
-def open_existing(path: str, *, read_only: bool = True) -> HubConnection:
-    """Open an existing hub file without creating, migrating or waiting.
+def open_existing(path: str) -> HubConnection:
+    """Open an existing hub file read-only without creating or migrating it.
 
     For health checks and tools that must not create a missing database:
     raises ``FileNotFoundError`` when the file is absent and DuckDB's own
-    error when another process holds it. Shares the in-process instance like
-    :func:`get_conn`, so it is safe next to concurrent writers.
+    error when another process holds it (one attempt, no waiting). Within
+    this process it shares the instance like :func:`get_conn`, so it is safe
+    next to concurrent writers; it waits at most ``_OPEN_EXISTING_WAIT_S``
+    for another thread opening or closing the file, then raises
+    :class:`SharedDatabaseBusy`.
     """
-    return _acquire(str(path), read_only=read_only, create=False, wait=False)
+    return _acquire(str(path), read_only=True, create=False,
+                    budget_s=_OPEN_EXISTING_WAIT_S)

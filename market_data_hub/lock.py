@@ -13,7 +13,11 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator, Optional
 
-from market_data_hub.db.connection import resolve_db_path
+from market_data_hub.db.connection import (
+    SharedDatabaseBusy,
+    resolve_db_path,
+    thread_holds_read_only_instance,
+)
 
 # Default seconds to wait for a concurrent writer before giving up. Kept short:
 # if another writer holds the DB, the right move is to skip this run cleanly
@@ -39,6 +43,15 @@ def db_write_lock(db_path: Optional[str] = None,
     ``filelock`` is not installed the lock is a no-op (best effort), so the
     pipeline still runs in minimal environments / the offline test suite.
     """
+    # Lock ordering inside one process: a writer that holds this lock waits
+    # for read-only handles on the shared instance to close. A thread that
+    # holds such a handle and now waits for this lock would never get it, so
+    # refuse at once; it could not open the database read-write anyway.
+    if thread_holds_read_only_instance(db_path):
+        raise SharedDatabaseBusy(
+            "this thread holds a read-only market-data-hub connection on the "
+            "same file; close it before taking the writer lock")
+
     try:
         from filelock import FileLock, Timeout
     except ImportError:  # pragma: no cover - filelock listed in requirements
