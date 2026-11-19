@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import sqlite3
 
-import duckdb
+from market_data_hub.db.connection import open_existing
 
 
 def period_end(value, frequency):
@@ -165,6 +165,6 @@ def observe(catalog, paths):
                 conn.execute("PRAGMA query_only=ON")
                 _observe_macro(conn, catalog)
         else:
-            with closing(duckdb.connect(str(path), read_only=True)) as conn:
+            with closing(open_existing(str(path))) as conn:
                 _observe_hub(conn, catalog)
         catalog["live_sources"].append(dict(store=store, path=str(path)))

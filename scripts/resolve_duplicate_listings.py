@@ -21,7 +21,11 @@ import duckdb
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from market_data_hub.db.connection import get_conn, resolve_db_path  # noqa: E402
+from market_data_hub.db.connection import (  # noqa: E402
+    get_conn,
+    open_existing,
+    resolve_db_path,
+)
 from market_data_hub.db.identity import (  # noqa: E402
     duplicate_active_listings,
     resolve_empty_duplicate_listing,
@@ -69,11 +73,11 @@ def main(argv: Optional[List[str]] = None) -> int:
         print("DRY RUN (read_only=True); no database changes will be made.")
         # Do not use get_conn(read_only=True) here: that convenience helper
         # creates and initializes a missing database before opening it.
-        # DuckDB's direct read_only connection also protects against the file
+        # open_existing() never creates, so it also protects against the file
         # disappearing between the existence check and connection.
         try:
-            con = duckdb.connect(db_path, read_only=True)
-        except duckdb.Error as exc:
+            con = open_existing(db_path)
+        except (duckdb.Error, OSError) as exc:
             parser.error(f"could not open database read-only at {db_path}: {exc}")
         try:
             rows = duplicate_active_listings(con, symbol=args.symbol)

@@ -129,9 +129,12 @@ class MarketDataSource:
             )
 
         try:
-            import duckdb
+            # Through the shared in-process instance: a plain read-only
+            # connect fails with a configuration error while this process
+            # also holds a read-write connection on the same file.
+            from market_data_hub.db.connection import open_existing
 
-            con = duckdb.connect(path, read_only=True)
+            con = open_existing(path)
             try:
                 rows = con.execute(
                     "SELECT column_name FROM information_schema.columns "

@@ -7,6 +7,22 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Fixed
+- In-process DuckDB access is safe under concurrency (D52). `get_conn` keeps
+  one shared database instance per resolved file in each process and hands
+  every caller its own cursor (`HubConnection`), so a `read_only=True` request
+  next to a live read-write connection no longer fails with "different
+  configuration than existing connections". The instance is opened read-only
+  only while every caller asked for read-only; a writer waits (on the writer
+  budget) for read-only handles to drain, and the instance closes with its
+  last handle, so cross-process file locking and the advisory writer lock are
+  unchanged. Read-only handles refuse write statements even on a shared
+  read-write instance; `migrate()` runs once per open instead of on every
+  read-write call. New `open_existing()` (no create, no migrate, no wait)
+  replaces the direct `duckdb.connect(read_only=True)` calls in the DataSpace
+  health check, `catalog_live`, `alfred_backfill` and
+  `scripts/resolve_duplicate_listings.py`.
+
 ## [0.3.29] — 2026-11-14
 
 ### Added
