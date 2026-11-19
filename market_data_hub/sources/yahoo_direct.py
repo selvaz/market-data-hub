@@ -87,7 +87,15 @@ def _parse(symbol: str, j: dict) -> pd.DataFrame:
         out = out.dropna(subset=["date"])
         out = out[out[["open", "high", "low", "close", "adj_close"]]
                   .notna().any(axis=1)]
-        return out.reset_index(drop=True)
+        out = out.reset_index(drop=True)
+        meta = res.get("meta") or {}
+        name = meta.get("longName") or meta.get("shortName")
+        if name:
+            out.attrs["name"] = name
+        out.attrs.update({key: meta[source] for key, source in (
+            ("exchange", "exchangeName"),
+            ("currency", "currency")) if meta.get(source)})
+        return out
     except Exception:
         return pd.DataFrame(columns=_OUT_COLS)
 

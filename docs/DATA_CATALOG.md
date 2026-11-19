@@ -46,6 +46,7 @@ Topic guides: [Macro indicators](macro-indicators.md), [Macro releases](macro-re
 | hub | [ingestion_runs](#catalog-hub-ingestion_runs) | 0 |
 | hub | [instruments](#catalog-hub-instruments) | 0 |
 | hub | [issuers](#catalog-hub-issuers) | 0 |
+| hub | [listing_registration_hints](#catalog-hub-listing_registration_hints) | 0 |
 | hub | [listings](#catalog-hub-listings) | 0 |
 | hub | [macro_panel](#catalog-hub-macro_panel) | 83 |
 | hub | [macro_panel_coverage](#catalog-hub-macro_panel_coverage) | 0 |
@@ -1441,6 +1442,19 @@ Issuer identity registry and SEC CIK mapping; company universe is populated on d
 
 - Store: `hub`; table: `issuers`.
 - Primary key: `issuer_id`.
+- Status: active.
+- Point-in-time / vintages: Current state/upserted data; no historical as-known-at reconstruction from this table alone.
+- Collection: hub pipeline / services; supporting state, no independent external collection schedule.
+- Guide: [ARCHITECTURE.md](ARCHITECTURE.md).
+
+<a id="catalog-hub-listing_registration_hints"></a>
+
+## hub / listing_registration_hints
+
+Distinct caller-supplied name, exchange and currency hints recorded during listing registration; non-authoritative provenance, separate from provider-confirmed identity.
+
+- Store: `hub`; table: `listing_registration_hints`.
+- Primary key: none declared (append-only operational log).
 - Status: active.
 - Point-in-time / vintages: Current state/upserted data; no historical as-known-at reconstruction from this table alone.
 - Collection: hub pipeline / services; supporting state, no independent external collection schedule.

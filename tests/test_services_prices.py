@@ -332,18 +332,18 @@ def test_register_listing_enables_arbitrary_single_name(tmp_db):
                              db_path=tmp_db)
 
     reg = svc.register_listing("NEWCO", exchange="XNAS", currency="USD",
-                               name="New Co", db_path=tmp_db)
+                               name="New Co", db_path=tmp_db, verify=False)
     assert reg["created"] is True and reg["listing_id"].startswith("lst_")
 
     # idempotent: same (symbol, provider, exchange) -> same listing
     again = svc.register_listing("NEWCO", exchange="XNAS", currency="USD",
-                                 db_path=tmp_db)
+                                 db_path=tmp_db, verify=False)
     assert again["created"] is False
     assert again["listing_id"] == reg["listing_id"]
 
     # second venue -> its OWN listing, not an overwrite
     milan = svc.register_listing("NEWCO", exchange="XMIL", currency="EUR",
-                                 db_path=tmp_db)
+                                 db_path=tmp_db, verify=False)
     assert milan["created"] is True
     assert milan["listing_id"] != reg["listing_id"]
 
@@ -356,6 +356,240 @@ def test_register_listing_enables_arbitrary_single_name(tmp_db):
     assert res["status"] == "completed" and res["rows_added"] == 5
     assert svc.get_price_summary(reg["listing_id"],
                                  db_path=tmp_db)["n_obs"] == 5
+
+
+def test_register_unknown_symbol_writes_nothing(tmp_db):
+    def empty_fetch(symbols, start, end):
+        return {symbols[0]: pd.DataFrame()}
+
+    def unknown_sec(symbol):
+        raise ValueError(symbol)
+
+    result = svc.register_listing(
+        "ZZQXW", exchange="NASDAQ", currency="USD", db_path=tmp_db,
+        verification_fetch=empty_fetch, sec_resolve=unknown_sec)
+
+    assert result["registered"] is False
+    assert result["reason"] == "unknown_symbol"
+    assert [item["source"] for item in result["checked"]] == [
+        "price_provider", "sec_ticker_map"]
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        counts = [con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0]
+                  for table in ("listings", "instruments", "identifier_aliases",
+                                "ingestion_jobs", "ingestion_runs")]
+    finally:
+        con.close()
+    assert counts == [0, 0, 0, 0, 0]
+
+
+def test_register_known_symbol_uses_provider_metadata_and_records_hints(tmp_db):
+    def known_fetch(symbols, start, end):
+        frame = pd.DataFrame({"close": [10.0]})
+        frame.attrs.update(name="Authoritative SA", exchange="XPAR",
+                           currency="EUR")
+        return {symbols[0]: frame}
+
+    result = svc.register_listing(
+        "KNOWN", exchange="CALLER", currency="EUR", name="LLM Name",
+        db_path=tmp_db, verification_fetch=known_fetch)
+
+    assert result["registered"] is True
+    assert result["exchange"] == "XPAR"
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        stored = con.execute("""
+            SELECT i.name, l.exchange, l.currency
+            FROM listings l JOIN instruments i USING (instrument_id)
+        """).fetchone()
+        hints = con.execute("""
+            SELECT name_hint, exchange_hint, currency_hint
+            FROM listing_registration_hints
+        """).fetchone()
+    finally:
+        con.close()
+    assert stored == ("Authoritative SA", "XPAR", "EUR")
+    assert hints == ("LLM Name", "CALLER", "EUR")
+
+
+def test_prune_dry_run_lists_empty_offline_listing(tmp_db):
+    listing = svc.register_listing(
+        "EMPTY", exchange="XNAS", currency="USD", db_path=tmp_db,
+        verify=False)
+
+    result = svc.prune_empty_listings(
+        dry_run=True, older_than_minutes=-1, db_path=tmp_db)
+
+    assert result["count"] == 1
+    assert result["listings"][0]["listing_id"] == listing["listing_id"]
+    assert svc.resolve_instrument(listing["listing_id"], db_path=tmp_db)
+
+
+def test_default_fetch_carries_yahoo_metadata(tmp_db, monkeypatch):
+    from market_data_hub.sources import yahoo_direct
+
+    now = pd.Timestamp('2024-01-10', tz='UTC')
+    monkeypatch.setattr(svc, '_now', lambda: now.to_pydatetime())
+
+    class Response:
+        status_code = 200
+
+        def json(self):
+            return {"chart": {"result": [{
+                "timestamp": [int(now.timestamp())],
+                "meta": {"longName": "Provider SA", "exchangeName": "PAR",
+                         "currency": "EUR"},
+                "indicators": {"quote": [{"open": [1], "high": [1],
+                                            "low": [1], "close": [1], "volume": [1]}]},
+            }]}}
+
+    class Session:
+        def get(self, *args, **kwargs):
+            return Response()
+
+    monkeypatch.setattr(yahoo_direct, "_session", lambda: Session())
+    monkeypatch.setattr(yahoo_direct, "_creq", object())
+    result = svc.register_listing("TEST.PA", exchange="caller", currency="gbp",
+                                  name="Caller", db_path=tmp_db)
+    assert result["exchange"] == "XPAR" and result["currency"] == "EUR"
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        assert con.execute("""
+            SELECT name, exchange, currency FROM listings JOIN instruments USING (instrument_id)
+        """).fetchone() == ("Provider SA", "XPAR", "EUR")
+        assert con.execute("""
+            SELECT name_hint, exchange_hint, currency_hint FROM listing_registration_hints
+        """).fetchone() == ("Caller", "CALLER", "GBP")
+    finally:
+        con.close()
+
+
+@pytest.mark.parametrize(("stored_exchange", "provider_exchange"), [
+    ("XNAS", "NMS"),
+    ("NMS", "NMS"),
+    ("XNAS", "UNMAPPED"),
+])
+def test_verified_registration_reuses_existing_yahoo_venue(
+        tmp_db, stored_exchange, provider_exchange):
+    original = svc.register_listing("AAPL", exchange=stored_exchange, currency="USD",
+                                    db_path=tmp_db, verify=False)
+
+    def provider_fetch(symbols, start, end):
+        frame = pd.DataFrame({"close": [10.0]})
+        frame.attrs.update(exchange=provider_exchange, currency="USD")
+        return {symbols[0]: frame}
+
+    repeated = svc.register_listing(
+        "AAPL", exchange="XNAS", currency="USD", db_path=tmp_db,
+        verification_fetch=provider_fetch, sec_resolve=lambda symbol: {})
+
+    assert repeated["created"] is False
+    assert repeated["listing_id"] == original["listing_id"]
+    assert repeated["exchange"] == stored_exchange
+    assert [row["listing_id"] for row in svc.resolve_instrument("AAPL", db_path=tmp_db)] == [
+        original["listing_id"]
+    ]
+
+
+def test_numeric_cik_does_not_confirm_ticker(tmp_db):
+    result = svc.register_listing(
+        "9999999999", exchange="XNAS", currency="USD", db_path=tmp_db,
+        verification_fetch=lambda symbols, start, end: {})
+    assert result["registered"] is False
+    assert not any(item["confirmed"] for item in result["checked"])
+    con = get_conn(tmp_db)
+    try:
+        for table in ("listings", "instruments", "identifier_aliases",
+                      "ingestion_jobs", "ingestion_runs", "listing_registration_hints"):
+            assert con.execute(f"SELECT count(*) FROM {table}").fetchone()[0] == 0
+    finally:
+        con.close()
+
+
+def test_sec_ticker_match_can_confirm_without_prices(tmp_db):
+    result = svc.register_listing(
+        "KNOWN", exchange="XNAS", currency="USD", db_path=tmp_db,
+        verification_fetch=lambda symbols, start, end: {},
+        sec_resolve=lambda symbol: {"cik": "0000000001", "ticker": symbol,
+                                    "name": "Known Corporation"})
+    assert result["registered"] is True
+    assert result["checked"][-1] == {"source": "sec_ticker_map", "confirmed": True}
+
+
+def test_repeat_registration_returns_stored_currency_and_records_hints(tmp_db):
+    svc.register_listing("REPEAT", exchange="xnas", currency="USD",
+                         db_path=tmp_db, verify=False)
+    result = svc.register_listing("REPEAT", exchange="XNAS", currency="EUR",
+                                  name="New hint", db_path=tmp_db, verify=False)
+    svc.register_listing("REPEAT", exchange="XNAS", currency="EUR",
+                         name="New hint", db_path=tmp_db, verify=False)
+    assert result["created"] is False and result["currency"] == "USD"
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        assert con.execute("SELECT count(*) FROM listing_registration_hints").fetchone()[0] == 2
+    finally:
+        con.close()
+
+
+def test_prune_removes_only_empty_listing_and_related_ledger(tmp_db):
+    empty = svc.register_listing("EMPTY", exchange="XNAS", currency="USD",
+                                 db_path=tmp_db, verify=False)
+    active = svc.register_listing("ACTIVE", exchange="XNAS", currency="USD",
+                                  db_path=tmp_db, verify=False)
+    svc.ensure_price_history(empty["listing_id"], db_path=tmp_db,
+                             fetch=lambda symbols, start, end: {})
+    con = get_conn(tmp_db)
+    try:
+        con.execute("INSERT INTO instruments (instrument_id, kind) VALUES ('unrelated', 'OTHER')")
+        req = json.dumps({"listing_id": active["listing_id"]})
+        con.execute("INSERT INTO ingestion_runs (run_id, kind, input_json, status) "
+                    "VALUES ('active_run', 'price_history', ?, 'running')", [req])
+    finally:
+        con.close()
+    result = svc.prune_empty_listings(dry_run=False, older_than_minutes=-1, db_path=tmp_db)
+    assert [item["listing_id"] for item in result["listings"]] == [empty["listing_id"]]
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        assert con.execute("SELECT instrument_id FROM instruments ORDER BY instrument_id").fetchall() == sorted(
+            [(active["instrument_id"],), ("unrelated",)])
+        assert con.execute("SELECT count(*) FROM ingestion_jobs").fetchone()[0] == 0
+        assert con.execute("SELECT run_id FROM ingestion_runs").fetchall() == [("active_run",)]
+        assert con.execute("SELECT count(*) FROM listing_registration_hints").fetchone()[0] == 1
+    finally:
+        con.close()
+
+
+@pytest.mark.parametrize("payload", ["prices", "facts"])
+def test_prune_selects_candidates_after_acquiring_lock(tmp_db, monkeypatch, payload):
+    from contextlib import contextmanager
+
+    listing = svc.register_listing("RACE", exchange="XNAS", currency="USD",
+                                   db_path=tmp_db, verify=False)
+    real_lock = svc.db_write_lock
+
+    @contextmanager
+    def payload_arrives_before_lock(db_path):
+        con = get_conn(db_path)
+        try:
+            if payload == "prices":
+                con.execute("INSERT INTO prices_daily (date, listing_id, symbol, close) "
+                            "VALUES ('2024-01-01', ?, 'RACE', 10)", [listing["listing_id"]])
+            else:
+                con.execute("INSERT INTO issuers (issuer_id, cik) VALUES ('issuer', '0000000001')")
+                con.execute("UPDATE instruments SET issuer_id = 'issuer' WHERE instrument_id = ?",
+                            [listing["instrument_id"]])
+                con.execute("INSERT INTO sec_company_facts "
+                            "(fact_id, cik, taxonomy, concept, unit, end_date) VALUES "
+                            "('fact', '0000000001', 'us-gaap', 'Assets', 'USD', '2024-01-01')")
+        finally:
+            con.close()
+        with real_lock(db_path):
+            yield
+
+    monkeypatch.setattr(svc, "db_write_lock", payload_arrives_before_lock)
+    result = svc.prune_empty_listings(dry_run=False, older_than_minutes=-1, db_path=tmp_db)
+    assert result["count"] == 0
+    assert svc.resolve_instrument(listing["listing_id"], db_path=tmp_db)
 
 
 def test_fetch_runs_without_holding_the_writer_lock(tmp_db, monkeypatch):

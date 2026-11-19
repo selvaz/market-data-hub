@@ -29,7 +29,7 @@ def _make_bci_duplicate(db_path: str) -> tuple[str, str]:
     duplicate = register_listing(
         "BCI", exchange="NYSE", currency="USD", kind="ETF",
         name="abrdn Bloomberg All Commodity Strategy K-1 Free ETF",
-        db_path=db_path)
+        db_path=db_path, verify=False)
     return keep_id, duplicate["listing_id"]
 
 

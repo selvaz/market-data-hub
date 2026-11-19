@@ -48,6 +48,16 @@ def test_parse_falls_back_to_close_when_adjclose_missing():
     assert df.iloc[0]["adj_close"] == 101.5
 
 
+def test_parse_falls_back_to_short_name_when_long_name_missing():
+    chart = _chart_json(
+        timestamps=[1704067200], opens=[100.0], highs=[102.0], lows=[99.0],
+        closes=[101.5], adjcloses=[101.0], volumes=[1000],
+    )
+    chart["chart"]["result"][0]["meta"] = {"shortName": "Example SA"}
+
+    assert yd._parse("EX.PA", chart).attrs["name"] == "Example SA"
+
+
 def test_parse_drops_rows_with_no_price_data():
     j = _chart_json(
         timestamps=[1704067200, 1704153600],

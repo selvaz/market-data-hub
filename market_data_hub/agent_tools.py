@@ -381,6 +381,7 @@ def tool_ensure_financials(query: str, allow_write: bool = False) -> str:
 def tool_register_listing(symbol: str, exchange: str, currency: str,
                           kind: str = "EQUITY", name: str = "",
                           provider: str = "yahoo", provider_symbol: str = "",
+                          verify: bool = True,
                           allow_write: bool = False) -> str:
     """Register an ARBITRARY single name the hub does not know yet (audit
     CA-05). WRITE capability gated by allow_write=True. The identity is
@@ -397,7 +398,7 @@ def tool_register_listing(symbol: str, exchange: str, currency: str,
             return _json(_prices.register_listing(
                 symbol, exchange=exchange, currency=currency, kind=kind,
                 name=name or None, provider=provider,
-                provider_symbol=provider_symbol or None))
+                provider_symbol=provider_symbol or None, verify=verify))
     except ValueError as ex:
         return _json({"error": str(ex)})
 
