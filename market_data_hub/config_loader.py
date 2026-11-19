@@ -59,9 +59,10 @@ def get_etf_index_map() -> List[Dict[str, Any]]:
 
 
 @lru_cache(maxsize=None)
-def get_xbrl_mapping(version: int = 1) -> Dict[str, Any]:
+def get_xbrl_mapping(version: int = 2) -> Dict[str, Any]:
     """Versioned XBRL concept -> statement line mapping (plan v3.1 Fase 3).
-    Mappings are immutable per version: new semantics -> new file + version."""
+    Mappings are immutable per version: new semantics -> new file + version.
+    Default is the latest version (2); v1 stays loadable unchanged."""
     return _load_yaml(f"xbrl_mapping_v{version}.yaml")
 
 

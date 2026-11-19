@@ -200,23 +200,32 @@ def tool_get_financials_coverage(query: str = "") -> str:
 
 
 def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
-                             limit: int = 25) -> str:
+                             limit: int = 25, mapping_version: int = 2) -> str:
     """XBRL company facts for ONE issuer from the hub DB (read-only, no
     network, max 100 rows). Every value carries unit, period, fiscal
     year/period, form, accession and filed date, so it is verifiable.
 
     query: CIK, ticker or issuer_id (must be ingested already).
-    line:  mapped statement line — revenue | net_income | assets |
-           liabilities | equity | operating_cash_flow (versioned mapping).
+    line:  mapped statement line (mapping v2) — revenue | cost_of_revenue |
+           gross_profit | operating_income | net_income | assets |
+           liabilities | equity | long_term_debt | short_term_debt |
+           operating_cash_flow, plus component lines cost_of_goods_sold,
+           cost_of_services, current_portion_long_term_debt,
+           commercial_paper, short_term_borrowings.
+    mapping_version: 2 (default) or 1 (the original 6 lines).
     forms: optional comma-separated filter, e.g. "10-K" or "10-K,10-Q"."""
     from market_data_hub.services import financials as _fin
     return _json(_fin.get_facts(
-        query, line=line or None, forms=_split(forms) or None, limit=limit))
+        query, line=line or None, forms=_split(forms) or None, limit=limit,
+        mapping_version=mapping_version))
 
 
-def tool_get_statement(query: str, statement: str = "", periods: int = 8) -> str:
+def tool_get_statement(query: str, statement: str = "", periods: int = 8,
+                       mapping_version: int = 2) -> str:
     """Standardized ANNUAL statement lines for ONE issuer (revenue,
-    net_income, assets, liabilities, equity, operating_cash_flow), ready for
+    cost_of_revenue, gross_profit, operating_income, net_income, assets,
+    liabilities, equity, long_term_debt, short_term_debt,
+    operating_cash_flow, plus component lines; mapping v2), ready for
     period-over-period comparison — margins, leverage, cash conversion —
     WITHOUT raw XBRL/HTML. Derived from the hub's facts via the versioned
     mapping; each value carries concept, accession and filed date, and
@@ -224,10 +233,25 @@ def tool_get_statement(query: str, statement: str = "", periods: int = 8) -> str
     network, max 12 periods.
 
     query:     CIK, ticker or issuer_id (ingested via tool_ensure_financials).
-    statement: optional filter — income | balance | cash_flow."""
+    statement: optional filter — income | balance | cash_flow.
+    mapping_version: 2 (default) or 1 (the original 6 lines, reproducible).
+
+    Caveats: a line takes ONE concept per period and is never a sum, so
+    totals and components are separate lines. cost_of_revenue and
+    short_term_debt are totals only (empty when the issuer reports components
+    only). Component lines (cost_of_goods_sold, cost_of_services,
+    current_portion_long_term_debt, commercial_paper, short_term_borrowings)
+    can overlap depending on how the issuer reports (e.g. ShortTermBorrowings
+    or LongTermDebtCurrent may already include commercial paper): the hub
+    never sums them, and a caller must check each value's `concept` against
+    the filing before adding components.
+    long_term_debt may fall back to LongTermDebt, which can include the
+    current portion: check each value's `concept` before summing debt lines
+    or computing leverage."""
     from market_data_hub.services import financials as _fin
     return _json(_fin.get_statement(query, statement=statement or None,
-                                    periods=periods))
+                                    periods=periods,
+                                    mapping_version=mapping_version))
 
 
 def tool_get_ingestion_health() -> str:

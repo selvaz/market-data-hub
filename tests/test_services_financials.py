@@ -192,7 +192,7 @@ def test_get_facts_mapped_line_and_bounds(tmp_db):
     assert fact["accession"] == "0000320193-24-000123"
     assert fact["filed_date"].startswith("2024-11-01")
     assert fact["end_date"].startswith("2024-09-28")
-    assert out["mapping"]["version"] == 1
+    assert out["mapping"]["version"] == 2
 
     out = fin.get_facts("AAPL", line="not_a_line", db_path=tmp_db)
     assert "unknown statement line" in out["error"]
@@ -308,12 +308,15 @@ def test_get_statement_periods_restatement_and_concept_fallback(tmp_db):
     assert 30.0 not in [v["value"] for v in rev.values()]
     # instant (balance) line present with no duration filter applied
     assert out["lines"]["assets"]["2024-09-28"]["value"] == 500.0
-    assert out["mapping"]["version"] == 1
+    assert out["mapping"]["version"] == 2
 
     # statement filter + period cap
     out = fin.get_statement("AAPL", statement="balance", periods=1,
                             db_path=tmp_db)
-    assert set(out["lines"]) == {"assets", "liabilities", "equity"}
+    assert set(out["lines"]) == {"assets", "liabilities", "equity",
+                                 "long_term_debt", "short_term_debt",
+                                 "current_portion_long_term_debt",
+                                 "commercial_paper", "short_term_borrowings"}
     assert len(out["lines"]["assets"]) == 1
 
 
@@ -348,3 +351,115 @@ def test_tool_layer_gating(tmp_db):
     assert "allow_write" in out["error"]
     out = json.loads(at.tool_get_financials_coverage())
     assert out == []
+
+
+def _ko_like_facts():
+    """KO-like issuer: no plain Liabilities, CostOfGoodsAndServicesSold,
+    GrossProfit, OperatingIncomeLoss, LongTermDebtNoncurrent, DebtCurrent and
+    LongTermDebtCurrent (a component that must NOT override DebtCurrent)."""
+    def dur(val):
+        return {"units": {"USD": [{"start": "2024-12-28", "end": "2025-12-31",
+                                   "val": val, "fy": 2025, "fp": "FY",
+                                   "form": "10-K", "filed": "2026-02-20",
+                                   "accn": "acc-ko"}]}}
+
+    def inst(val):
+        return {"units": {"USD": [{"end": "2025-12-31", "val": val, "fy": 2025,
+                                   "fp": "FY", "form": "10-K",
+                                   "filed": "2026-02-20", "accn": "acc-ko"}]}}
+    return {"cik": 320193, "facts": {"us-gaap": {
+        "CostOfGoodsAndServicesSold": dur(60.0),
+        "GrossProfit": dur(40.0),
+        "OperatingIncomeLoss": dur(15.0),
+        "LongTermDebtNoncurrent": inst(30.0),
+        "DebtCurrent": inst(7.0),
+        "LongTermDebtCurrent": inst(3.0),
+    }}}
+
+
+def test_mapping_v2_resolves_margin_and_leverage_lines(tmp_db):
+    _ensure(tmp_db, fetch_facts=lambda cik: _ko_like_facts())
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert out["mapping"]["version"] == 2
+    ln = out["lines"]
+    end = "2025-12-31"
+    assert ln["cost_of_revenue"][end]["value"] == 60.0
+    assert ln["cost_of_revenue"][end]["concept"] == "CostOfGoodsAndServicesSold"
+    assert ln["gross_profit"][end]["value"] == 40.0
+    assert ln["operating_income"][end]["value"] == 15.0
+    assert ln["long_term_debt"][end]["value"] == 30.0
+    # total current debt wins over its component (no double counting)
+    assert ln["short_term_debt"][end]["value"] == 7.0
+    assert ln["short_term_debt"][end]["concept"] == "DebtCurrent"
+    # the component is its own line, never a fallback of the total
+    assert ln["current_portion_long_term_debt"][end]["value"] == 3.0
+    # no derived lines: absent Liabilities stays empty
+    assert ln["liabilities"] == {}
+    facts = fin.get_facts("AAPL", line="gross_profit", db_path=tmp_db)
+    assert facts["n_returned"] == 1 and facts["mapping"]["version"] == 2
+
+
+def test_mapping_v1_unchanged_and_explicit(tmp_db):
+    from market_data_hub.config_loader import get_xbrl_mapping
+    v1 = get_xbrl_mapping(1)
+    assert v1["version"] == 1
+    assert set(v1["statement_lines"]) == {
+        "revenue", "net_income", "assets", "liabilities", "equity",
+        "operating_cash_flow"}
+    v2 = get_xbrl_mapping(2)
+    for key, cfg in v1["statement_lines"].items():
+        assert v2["statement_lines"][key] == cfg
+    _ensure(tmp_db, fetch_facts=lambda cik: _ko_like_facts())
+    out = fin.get_statement("AAPL", mapping_version=1, db_path=tmp_db)
+    assert out["mapping"]["version"] == 1
+    assert "gross_profit" not in out["lines"]
+
+
+def test_mapping_v2_totals_vs_components_ko_shape(tmp_db):
+    """KO FY2025 shape: no DebtCurrent, no CostOfRevenue total; components
+    stay on their own lines and totals stay empty (never a partial sum)."""
+    def inst(v):
+        return {"units": {"USD": [{"end": "2025-12-31", "val": v, "fy": 2025,
+                                   "fp": "FY", "form": "10-K",
+                                   "filed": "2026-02-20", "accn": "a"}]}}
+
+    def dur(v):
+        return {"units": {"USD": [{"start": "2025-01-01", "end": "2025-12-31",
+                                   "val": v, "fy": 2025, "fp": "FY",
+                                   "form": "10-K", "filed": "2026-02-20",
+                                   "accn": "a"}]}}
+    facts = {"cik": 320193, "facts": {"us-gaap": {
+        "CostOfGoodsSold": dur(5.0), "CostOfServices": dur(2.0),
+        "LongTermDebtAndCapitalLeaseObligations": inst(42.0),
+        "LongTermDebt": inst(44.0),
+        "LongTermDebtAndCapitalLeaseObligationsCurrent": inst(1.8),
+        "CommercialPaper": inst(1.5), "OtherShortTermBorrowings": inst(0.06),
+    }}}
+    _ensure(tmp_db, fetch_facts=lambda cik: facts)
+    ln = fin.get_statement("AAPL", db_path=tmp_db)["lines"]
+    end = "2025-12-31"
+    assert ln["cost_of_revenue"] == {} and ln["short_term_debt"] == {}
+    assert ln["cost_of_goods_sold"][end]["value"] == 5.0
+    assert ln["cost_of_services"][end]["value"] == 2.0
+    # non-current concept beats LongTermDebt (which includes the current part)
+    assert ln["long_term_debt"][end]["value"] == 42.0
+    assert ln["current_portion_long_term_debt"][end]["value"] == 1.8
+    assert ln["commercial_paper"][end]["value"] == 1.5
+    assert ln["short_term_borrowings"][end]["value"] == 0.06
+
+
+def test_tool_layer_accepts_mapping_version(monkeypatch):
+    from market_data_hub import agent_tools as at
+    seen = {}
+    monkeypatch.setattr(fin, "get_statement",
+                        lambda q, **kw: seen.update(st=kw) or {})
+    monkeypatch.setattr(fin, "get_facts",
+                        lambda q, **kw: seen.update(fa=kw) or {})
+    at.tool_get_statement("AAPL")
+    at.tool_get_financial_facts("AAPL")
+    assert seen["st"]["mapping_version"] == 2
+    assert seen["fa"]["mapping_version"] == 2
+    at.tool_get_statement("AAPL", mapping_version=1)
+    at.tool_get_financial_facts("AAPL", mapping_version=1)
+    assert seen["st"]["mapping_version"] == 1
+    assert seen["fa"]["mapping_version"] == 1
