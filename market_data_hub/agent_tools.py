@@ -206,8 +206,10 @@ def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
     year/period, form, accession and filed date, so it is verifiable.
 
     query: CIK, ticker or issuer_id (must be ingested already).
-    line:  mapped statement line — revenue | net_income | assets |
-           liabilities | equity | operating_cash_flow (versioned mapping).
+    line:  mapped statement line (mapping v2) — revenue | cost_of_revenue |
+           gross_profit | operating_income | net_income | assets |
+           liabilities | equity | long_term_debt | short_term_debt |
+           operating_cash_flow.
     forms: optional comma-separated filter, e.g. "10-K" or "10-K,10-Q"."""
     from market_data_hub.services import financials as _fin
     return _json(_fin.get_facts(
@@ -216,7 +218,9 @@ def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
 
 def tool_get_statement(query: str, statement: str = "", periods: int = 8) -> str:
     """Standardized ANNUAL statement lines for ONE issuer (revenue,
-    net_income, assets, liabilities, equity, operating_cash_flow), ready for
+    cost_of_revenue, gross_profit, operating_income, net_income, assets,
+    liabilities, equity, long_term_debt, short_term_debt,
+    operating_cash_flow; mapping v2), ready for
     period-over-period comparison — margins, leverage, cash conversion —
     WITHOUT raw XBRL/HTML. Derived from the hub's facts via the versioned
     mapping; each value carries concept, accession and filed date, and

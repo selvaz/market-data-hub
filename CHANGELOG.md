@@ -7,6 +7,12 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- XBRL mapping v2 (`xbrl_mapping_v2.yaml`): v1 lines plus `cost_of_revenue`, `gross_profit`, `operating_income`, `long_term_debt` and `short_term_debt`, so gross/operating margin and debt-to-equity can be computed from `get_statement`. `short_term_debt` prefers total `DebtCurrent` over its components to avoid double counting; `liabilities` is unchanged (no derived lines; issuers without the plain `Liabilities` concept stay empty). Rationale documented in the file header.
+
+### Changed
+- `get_statement`, `get_facts` and `get_xbrl_mapping` now default to mapping version 2 (so the `datahub_get_statement` / `datahub_get_financial_facts` tools expose the new lines). v1 stays loadable unchanged with `mapping_version=1`; the response carries the version used.
+
 ## [0.3.29] — 2026-11-14
 
 ### Added

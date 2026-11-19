@@ -1,0 +1,85 @@
+# ============================================================================
+# XBRL concept -> standardized statement line mapping, VERSION 2.
+#
+# = every v1 line, unchanged, plus cost_of_revenue, gross_profit,
+# operating_income, long_term_debt and short_term_debt (margins and leverage).
+# v1 stays loadable unchanged (mappings are immutable per version). Concepts
+# are tried IN ORDER; the first one with data for a period wins.
+#
+# Debt lines (no double counting inside one line, a line takes ONE concept
+# per period, never a sum):
+#   short_term_debt: DebtCurrent is the issuer's TOTAL current debt (it already
+#     contains the current portion of long-term debt, short-term borrowings and
+#     commercial paper), so it goes first. LongTermDebtCurrent, ShortTermBorrowings
+#     and CommercialPaper are COMPONENTS, used only as fallbacks when DebtCurrent
+#     is absent; an issuer that reports several components without DebtCurrent
+#     is therefore understated. Read the per-value `concept` provenance.
+#   long_term_debt: LongTermDebtNoncurrent is the non-current part. The
+#     fallbacks LongTermDebt and LongTermDebtAndCapitalLeaseObligations can
+#     include the current portion, so long_term_debt + short_term_debt may
+#     double count the current portion when a fallback concept was used.
+#
+# `liabilities` keeps the v1 concept only: the pipeline has no derived
+# (computed) lines, so no fallback such as Assets - Equity. Issuers that omit
+# the plain Liabilities concept (e.g. KO) have an empty line; compute the
+# difference downstream from `assets` and `equity` if needed.
+# ============================================================================
+version: 2
+taxonomy: us-gaap
+statement_lines:
+  revenue:
+    statement: income
+    concepts:
+      - RevenueFromContractWithCustomerExcludingAssessedTax
+      - Revenues
+      - SalesRevenueNet
+  net_income:
+    statement: income
+    concepts:
+      - NetIncomeLoss
+  assets:
+    statement: balance
+    concepts:
+      - Assets
+  liabilities:
+    statement: balance
+    concepts:
+      - Liabilities
+  equity:
+    statement: balance
+    concepts:
+      - StockholdersEquity
+      - StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest
+  operating_cash_flow:
+    statement: cash_flow
+    concepts:
+      - NetCashProvidedByUsedInOperatingActivities
+      - NetCashProvidedByUsedInOperatingActivitiesContinuingOperations
+  cost_of_revenue:
+    statement: income
+    concepts:
+      - CostOfRevenue
+      - CostOfGoodsAndServicesSold
+      - CostOfGoodsSold
+      - CostOfServices
+  gross_profit:
+    statement: income
+    concepts:
+      - GrossProfit
+  operating_income:
+    statement: income
+    concepts:
+      - OperatingIncomeLoss
+  long_term_debt:
+    statement: balance
+    concepts:
+      - LongTermDebtNoncurrent
+      - LongTermDebt
+      - LongTermDebtAndCapitalLeaseObligations
+  short_term_debt:
+    statement: balance
+    concepts:
+      - DebtCurrent
+      - LongTermDebtCurrent
+      - ShortTermBorrowings
+      - CommercialPaper
