@@ -17,12 +17,15 @@ from __future__ import annotations
 import math
 import os
 import re
+import json
 import threading
 import time
 import weakref
+from collections import deque
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Iterator, Optional
 
 import duckdb
 
@@ -799,7 +802,65 @@ def _refuse(what: str) -> ReadOnlyViolation:
         f"Cannot {what} through a read-only market-data-hub connection")
 
 
+#: Functions that change database state even inside a SELECT (sequences,
+#: checkpoints called as table functions). ``currval`` only reads.
+_STATE_CHANGING_FUNCTIONS = frozenset({
+    "nextval", "setval", "checkpoint", "force_checkpoint",
+})
+_STATE_CHANGING_HINT = re.compile(
+    r"\b(?:nextval|setval|checkpoint|force_checkpoint)\b", re.IGNORECASE)
+_AST_CON: Optional[duckdb.DuckDBPyConnection] = None
+_AST_LOCK = threading.Lock()
+
+
+def _function_names(sql: str) -> Optional[set]:
+    """Every function name in a SELECT, from DuckDB's own serialised AST.
+
+    ``None`` when DuckDB cannot serialise it (callers then refuse).
+    """
+    global _AST_CON
+    with _AST_LOCK:
+        if _AST_CON is None:
+            _AST_CON = duckdb.connect(":memory:")
+        try:
+            row = _AST_CON.execute("SELECT json_serialize_sql(?)", [sql]).fetchone()
+        except duckdb.Error:
+            return None
+    if row is None:
+        return None
+    tree = json.loads(row[0])
+    if tree.get("error"):
+        return None
+    names: set = set()
+    stack: list = [tree]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, dict):
+            name = node.get("function_name")
+            if isinstance(name, str):
+                names.add(name.lower())
+            stack.extend(node.values())
+        elif isinstance(node, list):
+            stack.extend(node)
+    return names
+
+
 def _check_statement(kind: str, text: str) -> None:
+    """Refuse a statement that could change the database.
+
+    Scope: this is a safety net that keeps read-only callers honest when
+    they share a read-write instance, not a security boundary. It parses
+    with DuckDB (statement types, and function names from the serialised
+    AST of SELECTs that mention a state-changing function); anything it
+    cannot classify on that path is refused rather than allowed.
+    """
+    if kind == "SELECT" and _STATE_CHANGING_HINT.search(text):
+        names = _function_names(text)
+        if names is None:
+            raise _refuse("execute a SELECT whose functions cannot be classified")
+        hit = names & _STATE_CHANGING_FUNCTIONS
+        if hit:
+            raise _refuse(f"call {', '.join(sorted(hit))}()")
     if kind in _WRITE_STATEMENT_TYPES:
         raise _refuse(f'execute a statement of type "{kind}"')
     if kind == "CREATE" and not _TEMP_CREATE.match(text):
@@ -880,6 +941,7 @@ class _GuardedRelation:
         return self._hub._wrapping(attr) if callable(attr) else attr
 
     def query(self, virtual_table_name: str, sql_query: str) -> Any:
+        self._hub._use()
         if self._hub._read_only:
             _check_read_only(sql_query)
         return self._hub._wrap(self._rel.query(virtual_table_name, sql_query))
@@ -888,6 +950,7 @@ class _GuardedRelation:
         self._rel.close()
 
     def __getitem__(self, item: Any) -> Any:
+        self._hub._use()
         return self._hub._wrap(self._rel[item])
 
     def __len__(self) -> int:
@@ -949,6 +1012,42 @@ class _SharedDatabase:
 
 _REGISTRY: dict[str, _SharedDatabase] = {}
 _REGISTRY_COND = threading.Condition(threading.Lock())
+#: Entries whose handle was garbage collected, waiting to be released. A
+#: finaliser can run on any thread at any allocation -- including a thread
+#: that holds the (non-reentrant) registry lock -- so ``__del__`` never
+#: blocks on the lock: it queues the release here and drains the queue only
+#: if it can take the lock without waiting. Whoever holds the lock drains
+#: the queue right after releasing it (``_registry()``).
+_PENDING_RELEASES: "deque[_SharedDatabase]" = deque()
+
+
+@contextmanager
+def _registry() -> Iterator[threading.Condition]:
+    """Hold the registry lock; drain finalised releases once it is free."""
+    cond = _REGISTRY_COND
+    try:
+        with cond:
+            yield cond
+    finally:
+        _drain_pending_releases()
+
+
+def _drain_pending_releases() -> None:
+    while _PENDING_RELEASES:
+        cond = _REGISTRY_COND
+        if not cond.acquire(blocking=False):
+            return  # the holder drains when it lets go
+        closing = []
+        try:
+            while _PENDING_RELEASES:
+                entry = _PENDING_RELEASES.popleft()
+                root = _release_locked(entry)
+                if root is not None:
+                    closing.append((entry, root))
+        finally:
+            cond.release()
+        for entry, root in closing:
+            _finish_close(entry, root)
 #: Writers queued per key, waiting for a read-only instance to drain.
 _WRITERS_WAITING: dict[str, int] = {}
 
@@ -969,7 +1068,7 @@ def thread_holds_read_only_instance(db_path: Optional[str] = None) -> bool:
     """
     key = _registry_key(resolve_db_path(db_path))
     me = threading.get_ident()
-    with _REGISTRY_COND:
+    with _registry():
         entry = _REGISTRY.get(key)
         return bool(entry is not None and entry.read_only and entry.used_by(me))
 
@@ -1096,7 +1195,7 @@ class HubConnection:
             raise duckdb.ConnectionException("Connection already closed!")
         if self._entry is None:  # private in-memory database
             return HubConnection(None, self._cursor.cursor(), self._read_only)
-        with _REGISTRY_COND:
+        with _registry():
             return _hand_out(self._entry, self._read_only)
 
     duplicate = cursor
@@ -1125,9 +1224,19 @@ class HubConnection:
 
     def __del__(self) -> None:
         # A forgotten handle must not pin the file for the life of the
-        # process: before the registry, garbage collection closed it.
+        # process: before the registry, garbage collection closed it. This
+        # may run on a thread that holds the registry lock, so never wait for
+        # it here: close the cursor, queue the release, drain if free.
         try:
-            self.close()
+            if self._closed:
+                return
+            self._closed = True
+            try:
+                self._cursor.close()
+            finally:
+                if self._entry is not None:
+                    _PENDING_RELEASES.append(self._entry)
+                    _drain_pending_releases()
         except Exception:
             pass
 
@@ -1151,29 +1260,40 @@ del _name
 # --- acquire / release ---------------------------------------------------------
 
 def _release(entry: Optional[_SharedDatabase]) -> None:
+    """Release one handle explicitly (never called with the lock held)."""
     if entry is None:
         return
-    root = None
-    with _REGISTRY_COND:
-        entry.refs -= 1
-        if entry.refs <= 0 and _REGISTRY.get(entry.key) is entry:
-            # Keep the entry registered, marked busy, until the file is really
-            # closed: a caller that opened a fresh instance in another mode
-            # before root.close() returned would meet the very configuration
-            # error this registry exists to prevent.
-            entry.busy = True
-            root = entry.root
-            entry.root = None
-        else:
-            _REGISTRY_COND.notify_all()
+    with _registry():
+        root = _release_locked(entry)
     if root is not None:
-        try:
-            root.close()
-        finally:
-            with _REGISTRY_COND:
-                if _REGISTRY.get(entry.key) is entry:
-                    del _REGISTRY[entry.key]
-                _REGISTRY_COND.notify_all()
+        _finish_close(entry, root)
+
+
+def _release_locked(entry: _SharedDatabase) -> Optional[duckdb.DuckDBPyConnection]:
+    """Count one handle out (lock held); the root to close if it was the last."""
+    entry.refs -= 1
+    if entry.refs <= 0 and _REGISTRY.get(entry.key) is entry:
+        # Keep the entry registered, marked busy, until the file is really
+        # closed: a caller that opened a fresh instance in another mode
+        # before root.close() returned would meet the very configuration
+        # error this registry exists to prevent.
+        entry.busy = True
+        root = entry.root
+        entry.root = None
+        return root
+    _REGISTRY_COND.notify_all()
+    return None
+
+
+def _finish_close(entry: _SharedDatabase, root: duckdb.DuckDBPyConnection) -> None:
+    """Close the instance and withdraw its entry (lock not held)."""
+    try:
+        root.close()
+    finally:
+        with _registry():
+            if _REGISTRY.get(entry.key) is entry:
+                del _REGISTRY[entry.key]
+            _REGISTRY_COND.notify_all()
 
 
 def _open_root(path: str, *, read_only: bool, create: bool
@@ -1229,7 +1349,7 @@ def _acquire(path: str, *, read_only: bool, create: bool, budget_s: float
     me = threading.get_ident()
     deadline = time.monotonic() + budget_s
     waiting = False  # counted in _WRITERS_WAITING
-    with _REGISTRY_COND:
+    with _registry() as cond:
         try:
             while True:
                 entry = _REGISTRY.get(key)
@@ -1264,7 +1384,7 @@ def _acquire(path: str, *, read_only: bool, create: bool, budget_s: float
                     raise SharedDatabaseBusy(
                         f"timed out after {budget_s:g}s waiting for {reason} "
                         f"({os.path.basename(path)})")
-                _REGISTRY_COND.wait(remaining)
+                cond.wait(remaining)
         finally:
             if waiting:
                 left = _WRITERS_WAITING[key] - 1
@@ -1282,12 +1402,12 @@ def _acquire(path: str, *, read_only: bool, create: bool, budget_s: float
     try:
         root = _open_root(path, read_only=read_only, create=create)
     except BaseException:
-        with _REGISTRY_COND:
+        with _registry():
             if _REGISTRY.get(key) is entry:
                 del _REGISTRY[key]
             _REGISTRY_COND.notify_all()
         raise
-    with _REGISTRY_COND:
+    with _registry():
         entry.root = root
         entry.busy = False
         try:

@@ -317,8 +317,13 @@ def test_a_reader_queued_with_a_writer_never_opens_read_write(
     r.join(timeout=30)
     assert not w.is_alive() and not r.is_alive()
     assert got["writer"] is True and got["reader_ro"] is True
-    assert got["instance_ro"] is False  # it joined the writer's instance
-    assert opens == [("writer", False)]
+    # Either the reader joined the writer's instance, or the writer had
+    # already closed and the reader opened a fresh read-only one. Never may
+    # the reader open read-write or migrate.
+    if got["instance_ro"]:
+        assert opens == [("writer", False), ("reader", True)]
+    else:
+        assert opens == [("writer", False)]
     assert migrations == ["writer"]
 
 
@@ -469,3 +474,102 @@ def test_handle_passed_to_another_thread_still_breaks_the_lock_cycle(db, watched
     assert outcome["b"] == "refused" and outcome["b_s"] < 5
     assert outcome["writer"] == "wrote"
     assert a_checked["holds"] is False  # the creator handed it over
+
+
+def test_finalising_a_handle_while_the_registry_lock_is_held_does_not_deadlock(db):
+    # A finaliser can run on a thread that holds the registry lock (an
+    # allocation under the lock triggers garbage collection, or the scan in
+    # used_by() drops the last reference). It must queue the release, not
+    # wait for the lock it is already holding.
+    done = threading.Event()
+
+    def run():
+        handle = C.get_conn(db, read_only=True)
+        with C._REGISTRY_COND:
+            del handle  # last reference: __del__ runs here, lock held
+            gc.collect()
+            assert C._REGISTRY[_key(db)].refs == 1  # release is queued, not lost
+        C._drain_pending_releases()
+        done.set()
+
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    t.join(timeout=30)
+    assert done.is_set(), "finaliser deadlocked on the registry lock"
+    assert C._REGISTRY == {}
+
+
+def test_handles_dropped_during_ownership_scans_never_deadlock(db):
+    # Stress the same race without forcing it: threads drop handles without
+    # closing them (some in reference cycles, finalised by gc on whichever
+    # thread runs it) while others scan ownership under the lock.
+    stop = threading.Event()
+    errors: list[BaseException] = []
+
+    def dropper():
+        while not stop.is_set():
+            try:
+                h = C.get_conn(db, read_only=True)
+                h.execute("SELECT 1")
+                cycle: list = [h]
+                cycle.append(cycle)
+                del h, cycle
+            except BaseException as exc:  # noqa: BLE001
+                errors.append(exc)
+
+    def scanner():
+        while not stop.is_set():
+            try:
+                C.thread_holds_read_only_instance(db)
+                gc.collect()
+            except BaseException as exc:  # noqa: BLE001
+                errors.append(exc)
+
+    threads = [threading.Thread(target=dropper, daemon=True) for _ in range(3)]
+    threads += [threading.Thread(target=scanner, daemon=True) for _ in range(2)]
+    for t in threads:
+        t.start()
+    time.sleep(3)
+    stop.set()
+    for t in threads:
+        t.join(timeout=30)
+    assert not any(t.is_alive() for t in threads), "deadlock under finalisation"
+    assert errors == []
+    gc.collect()
+    C._drain_pending_releases()
+    assert C._REGISTRY == {}
+
+
+def test_relation_query_moves_ownership_to_the_using_thread(db):
+    handle = C.get_conn(db, read_only=True)
+    rel = handle.sql("SELECT * FROM stress")
+    seen = {}
+
+    def other():
+        rel.query("v", "SELECT count(*) FROM v").fetchall()
+        seen["holds"] = C.thread_holds_read_only_instance(db)
+
+    t = threading.Thread(target=other)
+    t.start()
+    t.join(timeout=30)
+    assert seen["holds"] is True
+    assert C.thread_holds_read_only_instance(db) is False
+    handle.close()
+
+
+def test_read_only_guard_refuses_state_changing_functions(db):
+    with C.get_conn(db) as writer:
+        writer.execute("CREATE SEQUENCE seq START 1")
+        with C.get_conn(db, read_only=True) as reader:
+            for sql in ("SELECT nextval('seq')",
+                        "SELECT main.setval('seq', 10)",
+                        "SELECT * FROM (SELECT nextval('seq') AS n) t",
+                        "SELECT * FROM checkpoint()",
+                        "SELECT * FROM force_checkpoint()"):
+                with pytest.raises(C.ReadOnlyViolation):
+                    reader.execute(sql)
+            # Mentioning the names is not calling them; currval only reads.
+            assert reader.execute("SELECT 'nextval(' AS x").fetchone() == ("nextval(",)
+        assert writer.execute("SELECT nextval('seq')").fetchone() == (1,)
+        with C.get_conn(db, read_only=True) as reader:
+            assert reader.execute("SELECT currval('seq')").fetchone() == (1,)
