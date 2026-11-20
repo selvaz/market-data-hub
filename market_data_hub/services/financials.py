@@ -13,6 +13,13 @@ services.financials — SEC issuer resolution, filings & facts (plan v3.1 Fase 3
   - get_facts()                 read-only, bounded: raw facts, filterable by
                                 mapped statement line (xbrl_mapping_vN.yaml).
 
+Resolution rule (D63/D67): SEC's company_tickers map is authoritative, except
+where config/sec_overrides.yaml pins a ticker to the filer that holds the 10-K
+history (XOM: SEC points at a new holding-company filer with no annual
+statements). get_statement also falls back to a predecessor / same-ticker
+filer when the resolved one has no annual facts, and reports it under
+"resolution". Class-share tickers are matched as BRK.B and BRK-B alike.
+
 The mapping is versioned; the tool answer always carries unit, period,
 accession and filed date so every number is verifiable (plan §4.2 acceptance).
 """
@@ -21,7 +28,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import duckdb
@@ -31,6 +38,10 @@ from market_data_hub.db.connection import get_conn
 from market_data_hub.lock import db_write_lock
 
 _FILING_FORMS = ["10-K", "10-Q", "20-F", "8-K"]   # metadata kept for these
+_ANNUAL_FORMS = ("10-K", "20-F", "10-K/A", "20-F/A")
+_ANNUAL_FORMS_SQL = "(" + ",".join(f"'{f}'" for f in _ANNUAL_FORMS) + ")"
+_STALE_DAYS = 200      # a line whose latest period trails the issuer's latest
+                       # fiscal year end by more than this is flagged stale
 
 
 class UnknownIssuerError(ValueError):
@@ -71,17 +82,26 @@ def resolve_issuer(query: str, db_path: Optional[str] = None
         else:
             # ticker -> listing -> instrument -> issuer, or a direct
             # ticker alias recorded on the issuer at ingestion time
+            from market_data_hub.sources.sec import ticker_variants
+            variants = ticker_variants(q)
+            ph = ",".join("?" * len(variants))
             where = ("(i.issuer_id IN (SELECT ins.issuer_id FROM listings l "
                      "JOIN instruments ins USING (instrument_id) "
-                     "WHERE upper(l.symbol) = upper(?)) "
+                     f"WHERE upper(l.symbol) IN ({ph})) "
                      "OR i.issuer_id IN (SELECT target_id FROM identifier_aliases "
                      "WHERE namespace = 'ticker' AND target_type = 'issuer' "
-                     "AND upper(value) = upper(?)))")
-            params = [q, q]
+                     f"AND upper(value) IN ({ph})))")
+            params = variants + variants
         try:
+            # several issuers can share a ticker (old + new filer): prefer
+            # the one that holds annual-report facts, then the oldest row
             row = con.execute(f"""
                 SELECT i.issuer_id, i.cik, i.name, i.sic, i.fiscal_year_end
                 FROM issuers i WHERE {where}
+                ORDER BY EXISTS (SELECT 1 FROM sec_company_facts f
+                                 WHERE f.cik = i.cik
+                                   AND f.form IN {_ANNUAL_FORMS_SQL}) DESC,
+                         i.created_at, i.issuer_id
             """, params).fetchone()
         except duckdb.CatalogException:
             row = None                      # pre-v5 DB opened read-only
@@ -99,12 +119,26 @@ def _resolve_cik_via_sec(query: str) -> Dict[str, Any]:
     q = query.strip()
     if q.isdigit():
         return {"cik": sec.normalize_cik(q), "name": None, "ticker": None}
+    pinned = _override_cik(q)
     tickers = sec.company_tickers_to_map(sec.fetch_company_tickers())
-    hit = tickers.get(q.upper())
+    hit = next((tickers[v] for v in sec.ticker_variants(q) if v in tickers),
+               None)
     if hit is None:
         raise UnknownIssuerError(
             f"{query!r} is neither a CIK nor a ticker known to SEC EDGAR")
-    return {"cik": hit["cik"], "name": hit["name"], "ticker": q.upper()}
+    out = {"cik": hit["cik"], "name": hit["name"], "ticker": q.upper()}
+    if pinned and pinned != hit["cik"]:
+        # SEC points at a different (new) filer; the pin holds the 10-K history
+        out.update({"cik": pinned, "sec_cik": hit["cik"], "override": True})
+    return out
+
+
+def _override_cik(ticker: str) -> Optional[str]:
+    """Pinned CIK for a ticker (config/sec_overrides.yaml), any spelling."""
+    from market_data_hub.config_loader import get_sec_overrides
+    from market_data_hub.sources.sec import ticker_variants
+    pins = get_sec_overrides()["ticker_cik"]
+    return next((pins[v] for v in ticker_variants(ticker) if v in pins), None)
 
 
 def _register_issuer(con, cik: str, name: Optional[str],
@@ -128,20 +162,25 @@ def _register_issuer(con, cik: str, name: Optional[str],
                             AND target_type = 'issuer' AND target_id = ?)
     """, [cik, issuer_id, now, cik, issuer_id])
     if ticker:
-        con.execute("""
-            INSERT INTO identifier_aliases (namespace, value, target_type,
-                                            target_id, valid_from, valid_to,
-                                            updated_at)
-            SELECT 'ticker', ?, 'issuer', ?, NULL, NULL, ?
-            WHERE NOT EXISTS (SELECT 1 FROM identifier_aliases
-                              WHERE namespace = 'ticker' AND value = ?
-                                AND target_type = 'issuer' AND target_id = ?)
-        """, [ticker, issuer_id, now, ticker, issuer_id])
-        con.execute("""
+        from market_data_hub.sources.sec import ticker_variants
+        variants = ticker_variants(ticker)       # BRK.B and BRK-B alike
+        for v in variants:
+            con.execute("""
+                INSERT INTO identifier_aliases (namespace, value, target_type,
+                                                target_id, valid_from, valid_to,
+                                                updated_at)
+                SELECT 'ticker', ?, 'issuer', ?, NULL, NULL, ?
+                WHERE NOT EXISTS (SELECT 1 FROM identifier_aliases
+                                  WHERE namespace = 'ticker' AND value = ?
+                                    AND target_type = 'issuer' AND target_id = ?)
+            """, [v, issuer_id, now, v, issuer_id])
+        ph = ",".join("?" * len(variants))
+        con.execute(f"""
             UPDATE instruments SET issuer_id = ?, updated_at = ?
             WHERE issuer_id IS NULL AND instrument_id IN (
-                SELECT instrument_id FROM listings WHERE upper(symbol) = upper(?))
-        """, [issuer_id, now, ticker])
+                SELECT instrument_id FROM listings
+                WHERE upper(symbol) IN ({ph}))
+        """, [issuer_id, now] + variants)
     return issuer_id
 
 
@@ -163,8 +202,15 @@ def ensure_filings_and_facts(query: str, *, requester: str = "python",
     fetch_facts = fetch_facts or sec.fetch_company_facts
     resolve = resolve or _resolve_cik_via_sec
 
+    pinned = None if query.strip().isdigit() else _override_cik(query)
     local = resolve_issuer(query, db_path=db_path)
-    if local and local.get("cik"):
+    if pinned:
+        # explicit pin (config/sec_overrides.yaml): the filer with the 10-K
+        # history beats both a stale local alias and SEC's new-filer mapping
+        ident = {"cik": pinned, "name": None, "ticker": query.strip().upper()}
+        if local and local.get("cik") == pinned:
+            ident["name"] = local.get("name")
+    elif local and local.get("cik"):
         ident = {"cik": local["cik"], "name": local.get("name"),
                  "ticker": None if query.strip().isdigit() else query.strip().upper()}
     else:
@@ -410,11 +456,23 @@ def get_statement(query: str, statement: Optional[str] = None,
 
     Output is bounded (max 12 periods) and carries provenance per value:
     concept, accession, filed date — plus the mapping version used.
+
+    Staleness (D65): `line_status[line]` gives `latest_period` and `stale`.
+    A line is stale when its latest period trails the response-level
+    `latest_period` (the issuer's latest fiscal year end across all lines)
+    by more than _STALE_DAYS; it then also carries `stale_since` (that period
+    end) and the response lists a warning. Stale values must not be presented
+    as current.
+
+    Resolution (D63): when the resolved filer has no annual facts, a
+    predecessor / same-ticker filer that does is used instead; `resolution`
+    says which CIK was resolved, which was used, and why.
     """
     iss = resolve_issuer(query, db_path=db_path)
     if iss is None:
         return {"error": f"issuer {query!r} not in the hub; run "
                          f"ensure_filings_and_facts first", "lines": {}}
+    iss, resolution = _annual_history_filer(iss, db_path)
     mapping = get_xbrl_mapping(mapping_version)
     lines_cfg = mapping.get("statement_lines") or {}
     if statement:
@@ -456,12 +514,90 @@ def get_statement(query: str, statement: Optional[str] = None,
             all_ends.update(keep)
     finally:
         con.close()
-    return {"issuer": iss,
-            "mapping": {"version": mapping.get("version"),
-                        "taxonomy": mapping.get("taxonomy")},
-            "frequency": "annual",
-            "periods": sorted(all_ends, reverse=True)[:periods],
-            "lines": lines}
+
+    # staleness: compare each line's latest period with the issuer's latest
+    # fiscal year end seen in this response (lines are never dropped)
+    issuer_latest = max(all_ends) if all_ends else None
+    line_status: Dict[str, Dict[str, Any]] = {}
+    warnings: List[str] = []
+    for line_key, per in lines.items():
+        latest = max(per) if per else None
+        stale = bool(latest and issuer_latest and (
+            date.fromisoformat(issuer_latest) - date.fromisoformat(latest)
+        ).days > _STALE_DAYS)
+        st: Dict[str, Any] = {"latest_period": latest, "stale": stale}
+        if stale:
+            st["stale_since"] = latest
+            warnings.append(
+                f"{line_key}: latest value is for period {latest}, older than "
+                f"the issuer's latest fiscal year {issuer_latest}; not current")
+        line_status[line_key] = st
+    out: Dict[str, Any] = {
+        "issuer": iss,
+        "mapping": {"version": mapping.get("version"),
+                    "taxonomy": mapping.get("taxonomy")},
+        "frequency": "annual",
+        "latest_period": issuer_latest,
+        "periods": sorted(all_ends, reverse=True)[:periods],
+        "lines": lines,
+        "line_status": line_status}
+    if warnings:
+        out["warnings"] = warnings
+    if resolution:
+        out["resolution"] = resolution
+    return out
+
+
+def _annual_history_filer(iss: Dict[str, Any], db_path: Optional[str]):
+    """(issuer, resolution). Keep the resolved filer when it holds annual
+    facts; otherwise fall back to a configured predecessor CIK, then to
+    another issuer sharing a ticker alias, whichever has annual facts."""
+    from market_data_hub.config_loader import get_sec_overrides
+    con = get_conn(db_path, read_only=True)
+    try:
+        def has_annual(cik: str) -> bool:
+            return con.execute(
+                "SELECT 1 FROM sec_company_facts WHERE cik = ? "
+                f"AND form IN {_ANNUAL_FORMS_SQL} LIMIT 1", [cik]
+            ).fetchone() is not None
+
+        if has_annual(iss["cik"]):
+            return iss, None
+        cands: List[tuple] = []
+        pred = get_sec_overrides()["cik_predecessors"].get(iss["cik"])
+        if pred:
+            cands.append((pred, "configured predecessor (sec_overrides.yaml)"))
+        for (cik,) in con.execute("""
+            SELECT DISTINCT i2.cik FROM identifier_aliases a1
+            JOIN identifier_aliases a2 ON a2.namespace = 'ticker'
+                 AND a2.target_type = 'issuer'
+                 AND upper(a2.value) = upper(a1.value)
+                 AND a2.target_id <> a1.target_id
+            JOIN issuers i2 ON i2.issuer_id = a2.target_id
+            WHERE a1.namespace = 'ticker' AND a1.target_type = 'issuer'
+              AND a1.target_id = ? AND i2.cik IS NOT NULL
+        """, [iss["issuer_id"]]).fetchall():
+            cands.append((cik, "same ticker, holds annual facts"))
+        for cik, why in cands:
+            if cik != iss["cik"] and has_annual(cik):
+                row = con.execute(
+                    "SELECT issuer_id, cik, name, sic, fiscal_year_end "
+                    "FROM issuers WHERE cik = ?", [cik]).fetchone()
+                used = (dict(zip(["issuer_id", "cik", "name", "sic",
+                                  "fiscal_year_end"], row)) if row
+                        else {"issuer_id": None, "cik": cik, "name": None,
+                              "sic": None, "fiscal_year_end": None})
+                return used, {
+                    "resolved_cik": iss["cik"], "used_cik": cik,
+                    "fallback": True,
+                    "reason": "resolved filer has no annual (10-K/20-F) "
+                              f"facts; using {why}"}
+    finally:
+        con.close()
+    return iss, {"resolved_cik": iss["cik"], "used_cik": iss["cik"],
+                 "fallback": False,
+                 "reason": "resolved filer has no annual facts and no "
+                           "fallback filer was found"}
 
 
 def get_facts(query: str, line: Optional[str] = None,

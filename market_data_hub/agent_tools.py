@@ -247,7 +247,16 @@ def tool_get_statement(query: str, statement: str = "", periods: int = 8,
     the filing before adding components.
     long_term_debt may fall back to LongTermDebt, which can include the
     current portion: check each value's `concept` before summing debt lines
-    or computing leverage."""
+    or computing leverage.
+
+    STALENESS: `line_status[line]` = {latest_period, stale[, stale_since]}.
+    `latest_period` (top level) is the issuer's latest fiscal year end; a line
+    whose newest value is more than ~200 days older than it has stale=true and
+    a `warnings` entry. NEVER present a stale value as current: say it is from
+    period `stale_since`, or omit it.
+    RESOLUTION: when the ticker's filer has no 10-K/20-F facts (e.g. a new
+    holding-company filer), the response uses the predecessor/same-ticker
+    filer that does and explains it under `resolution`."""
     from market_data_hub.services import financials as _fin
     return _json(_fin.get_statement(query, statement=statement or None,
                                     periods=periods,

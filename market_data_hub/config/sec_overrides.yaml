@@ -1,0 +1,22 @@
+# SEC ticker -> CIK resolution overrides.
+#
+# SEC's company_tickers.json is authoritative for "who trades under ticker X
+# today", but after a corporate reorganisation it can point the ticker at a NEW
+# holding-company filer that has only a few filings and no 10-K history, while
+# the annual-report history stays under the historical filer's CIK. Example
+# (found live, D63): XOM maps to CIK 0002115436 (new filer, 8 filings, no
+# annual statements); the 10-K history is under Exxon Mobil's CIK 0000034088.
+#
+# Rule (applied in services.financials, documented in its module docstring):
+#   1. ticker_cik: an explicit ticker -> CIK pin wins over SEC's mapping, for
+#      both ingestion (ensure_filings_and_facts) and local resolution.
+#   2. cik_predecessors: successor CIK -> predecessor CIK. get_statement falls
+#      back to the predecessor when the resolved filer has no annual (10-K /
+#      20-F) facts, and says so in the response ("resolution").
+#   3. Without an entry, get_statement also falls back to another issuer that
+#      shares a ticker alias and does hold annual facts.
+# Tickers are upper-case, class shares with a dash (BRK-B). CIKs are 10 digits.
+ticker_cik:
+  XOM: "0000034088"
+cik_predecessors:
+  "0002115436": "0000034088"

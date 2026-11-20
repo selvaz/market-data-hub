@@ -117,6 +117,19 @@ def normalize_cik(cik: Any) -> str:
     return digits.zfill(10)
 
 
+def ticker_variants(ticker: str) -> List[str]:
+    """Upper-cased spellings of a ticker for SEC lookups. EDGAR writes class
+    shares with a dash (BRK-B) while many sources use a dot (BRK.B): the
+    first element is the SEC (dash) form, then the dot form, then the input
+    as given. Duplicates removed, order stable."""
+    t = str(ticker).strip().upper()
+    out: List[str] = []
+    for v in (t.replace(".", "-").replace("/", "-"), t.replace("-", "."), t):
+        if v and v not in out:
+            out.append(v)
+    return out
+
+
 def fetch_company_tickers() -> Dict[str, Any]:
     return get_json("https://www.sec.gov/files/company_tickers.json")
 

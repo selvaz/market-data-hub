@@ -67,6 +67,18 @@ def get_xbrl_mapping(version: int = 2) -> Dict[str, Any]:
 
 
 @lru_cache(maxsize=1)
+def get_sec_overrides() -> Dict[str, Any]:
+    """SEC ticker->CIK pins and successor->predecessor CIK map
+    (sec_overrides.yaml); see that file for the rule."""
+    raw = _load_yaml("sec_overrides.yaml")
+    return {"ticker_cik": {str(k).upper(): str(v).zfill(10)
+                           for k, v in (raw.get("ticker_cik") or {}).items()},
+            "cik_predecessors": {str(k).zfill(10): str(v).zfill(10)
+                                 for k, v in (raw.get("cik_predecessors")
+                                              or {}).items()}}
+
+
+@lru_cache(maxsize=1)
 def get_fred_series() -> List[Dict[str, Any]]:
     fred: List[Dict[str, Any]] = _load_yaml("macro_series.yaml").get("fred", [])
     return fred
