@@ -18,12 +18,17 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   last handle, so cross-process file locking and the advisory writer lock are
   unchanged. Read-only handles refuse write statements even on a shared
   read-write instance; `migrate()` runs once per open instead of on every
-  read-write call. Calls that return the connection return the handle, so
-  chains stay guarded; relations come back guarded and keep their handle
-  alive; `cursor()` returns another tracked handle. Every in-process wait is
-  bounded and raises `SharedDatabaseBusy`; a thread holding a read-only
-  handle that asks for the advisory writer lock is refused at once (lock
-  ordering). New `open_existing()` (read-only; no create, no migrate, one
+  read-write call, and only a read-write request ever opens (and migrates)
+  a read-write instance. `HubConnection` exposes an explicit allow-list of
+  DuckDB methods (anything else raises `AttributeError`); SQL entry points
+  (`execute`, `executemany`, `sql`, `query`, `from_query`) are checked on
+  read-only handles; calls that return the connection return the handle, so
+  chains stay guarded; relations come back guarded, keep their handle alive
+  and expose only classified methods; `cursor()`/`duplicate()` return
+  tracked handles. Every in-process wait is bounded and raises
+  `SharedDatabaseBusy`. A handle belongs to the thread that last used it; a
+  thread using a read-only handle that asks for the advisory writer lock is
+  refused at once (lock ordering). New `open_existing()` (read-only; no create, no migrate, one
   attempt across processes, at most 5 s in-process) replaces the direct
   `duckdb.connect(read_only=True)` calls in the DataSpace health check,
   `catalog_live`, `alfred_backfill` and `scripts/resolve_duplicate_listings.py`.

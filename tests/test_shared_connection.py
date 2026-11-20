@@ -246,14 +246,51 @@ def test_cursor_returns_a_tracked_handle(db):
         parent.cursor()
 
 
-def test_open_existing_never_opens_the_instance_read_write(db, monkeypatch):
-    # A writer is queued behind a read-only instance; when it drains, an
-    # open_existing() reader must not open the next (read-write) instance
-    # itself, because that would hand the writer an unmigrated database.
-    migrations = []
-    real_migrate = C.migrate
-    monkeypatch.setattr(C, "migrate", lambda con: migrations.append(1) or real_migrate(con))
-    holder = C.get_conn(db, read_only=True)
+class _WatchedCondition(threading.Condition):
+    """The registry condition, recording which threads are blocked in it."""
+
+    def __init__(self):
+        super().__init__(threading.Lock())
+        self.waiting = set()
+
+    def wait(self, timeout=None):
+        me = threading.get_ident()
+        self.waiting.add(me)
+        try:
+            return super().wait(timeout)
+        finally:
+            self.waiting.discard(me)
+
+
+@pytest.fixture
+def watched(db, monkeypatch):
+    cond = _WatchedCondition()
+    monkeypatch.setattr(C, "_REGISTRY_COND", cond)
+    return cond
+
+
+@pytest.mark.parametrize("opener", ["open_existing", "get_conn_read_only"])
+@pytest.mark.parametrize("attempt", range(5))
+def test_a_reader_queued_with_a_writer_never_opens_read_write(
+        db, watched, monkeypatch, opener, attempt):
+    # A writer is queued behind a read-only instance and a reader is queued
+    # behind the writer. When the instance drains, both race for the empty
+    # slot: the reader must never open the (read-write) instance itself or
+    # migrate it -- only the writer may -- and must then join it.
+    holder = C.get_conn(db, read_only=True)  # the read-only instance
+    opens, migrations = [], []
+    real_open_root, real_migrate = C._open_root, C.migrate
+
+    def open_root(path, *, read_only, create):
+        opens.append((threading.current_thread().name, read_only))
+        return real_open_root(path, read_only=read_only, create=create)
+
+    def migrate(con):
+        migrations.append(threading.current_thread().name)
+        return real_migrate(con)
+
+    monkeypatch.setattr(C, "_open_root", open_root)
+    monkeypatch.setattr(C, "migrate", migrate)
     got: dict = {}
 
     def write():
@@ -261,25 +298,28 @@ def test_open_existing_never_opens_the_instance_read_write(db, monkeypatch):
             con.execute("INSERT INTO stress VALUES (5, 5)")
             got["writer"] = True
 
-    def peek():
-        with C.open_existing(db) as con:
-            got["peek_ro"] = con.read_only
-            got["peek_mode_ro"] = C._REGISTRY[_key(db)].read_only
+    def read():
+        con = (C.open_existing(db) if opener == "open_existing"
+               else C.get_conn(db, read_only=True))
+        with con:
+            got["reader_ro"] = con.read_only
+            got["instance_ro"] = C._REGISTRY[_key(db)].read_only
 
-    w = threading.Thread(target=write)
+    monkeypatch.setattr(C, "_OPEN_EXISTING_WAIT_S", 30.0)
+    w = threading.Thread(target=write, name="writer")
+    r = threading.Thread(target=read, name="reader")
     w.start()
-    _wait_until(lambda: C._WRITERS_WAITING.get(_key(db)))
-    p = threading.Thread(target=peek)
-    p.start()
-    time.sleep(0.2)
+    _wait_until(lambda: w.ident in watched.waiting)
+    r.start()
+    _wait_until(lambda: r.ident in watched.waiting)  # queued, not sleeping on luck
     holder.close()
     w.join(timeout=30)
-    p.join(timeout=30)
-    assert not w.is_alive() and not p.is_alive()
-    assert got["writer"] is True
-    assert got["peek_ro"] is True
-    assert got["peek_mode_ro"] is False  # it joined the writer's instance
-    assert migrations == [1]  # the read-write instance was migrated once
+    r.join(timeout=30)
+    assert not w.is_alive() and not r.is_alive()
+    assert got["writer"] is True and got["reader_ro"] is True
+    assert got["instance_ro"] is False  # it joined the writer's instance
+    assert opens == [("writer", False)]
+    assert migrations == ["writer"]
 
 
 def test_open_existing_does_not_wait_long_for_another_opener(db, monkeypatch):
@@ -341,3 +381,91 @@ def test_reader_taking_the_writer_lock_fails_fast_instead_of_deadlocking(db, mon
     assert not any(t.is_alive() for t in threads), "lock-ordering deadlock"
     assert outcome["reader"] == "refused" and outcome["reader_s"] < 5
     assert outcome["writer"] == "wrote"
+
+
+def test_from_query_duplicate_and_unknown_attributes_cannot_bypass_the_guard(db):
+    with C.get_conn(db) as writer, C.get_conn(db, read_only=True) as reader:
+        with pytest.raises(C.ReadOnlyViolation):
+            reader.from_query("DELETE FROM stress")
+        with pytest.raises(C.ReadOnlyViolation):
+            reader.execute(duckdb.extract_statements("INSERT INTO stress VALUES (1, 1)")[0])
+        with pytest.raises(C.ReadOnlyViolation):
+            reader.execute("COPY stress FROM 'nowhere.csv'")
+        with pytest.raises(C.ReadOnlyViolation):
+            reader.execute("CHECKPOINT")
+        with pytest.raises(C.ReadOnlyViolation):
+            reader.checkpoint()
+        with pytest.raises(C.ReadOnlyViolation):
+            reader.sql("SELECT 1 AS a").create_view("v")
+        dup = reader.duplicate()
+        assert isinstance(dup, C.HubConnection) and dup.read_only
+        assert C._REGISTRY[_key(db)].refs == 3
+        with pytest.raises(C.ReadOnlyViolation):
+            dup.execute("INSERT INTO stress VALUES (1, 1)")
+        dup.close()
+        for name in ("install_extension", "load_extension", "query_progress",
+                     "register_filesystem", "no_such_method"):
+            with pytest.raises(AttributeError, match="not exposed"):
+                getattr(reader, name)
+        with pytest.raises(AttributeError, match="not exposed"):
+            reader.sql("SELECT 1 AS a").brand_new_relation_method
+        # Reads still work through the allow-list.
+        assert reader.from_query("SELECT count(*) FROM stress").fetchone() == (0,)
+        assert reader.table("stress").count("*").fetchone() == (0,)
+        assert reader.execute("SELECT 1").description[0][0] == "1"
+        writer.execute("INSERT INTO stress VALUES (1, 1)")
+        assert writer.execute("SELECT count(*) FROM stress").fetchone() == (1,)
+
+
+def test_handle_passed_to_another_thread_still_breaks_the_lock_cycle(db, watched):
+    # Ownership follows use: thread A creates a read-only handle and hands it
+    # to B; B uses it, so B (not A) is the thread that must not wait for the
+    # advisory writer lock while a writer holding it waits for that handle.
+    from market_data_hub.lock import db_write_lock
+
+    handoff, a_checked = [], {}
+    created = threading.Event()
+    writer_waiting = threading.Event()
+    outcome: dict = {}
+
+    def thread_a():
+        handoff.append(C.get_conn(db, read_only=True))
+        created.set()
+        writer_waiting.wait(30)
+        a_checked["holds"] = C.thread_holds_read_only_instance(db)
+
+    def thread_b():
+        created.wait(30)
+        con = handoff[0]
+        con.execute("SELECT count(*) FROM stress").fetchone()
+        writer_waiting.wait(30)
+        t0 = time.monotonic()
+        try:
+            with db_write_lock(db, timeout=20):
+                outcome["b"] = "got the lock"
+        except C.SharedDatabaseBusy:
+            outcome["b"] = "refused"
+        outcome["b_s"] = time.monotonic() - t0
+        con.close()
+
+    def writer():
+        created.wait(30)
+        with db_write_lock(db, timeout=20):
+            w = threading.current_thread().ident
+            threading.Thread(
+                target=lambda: (_wait_until(lambda: w in watched.waiting),
+                                writer_waiting.set()),
+                daemon=True).start()
+            with C.get_conn(db) as con:
+                con.execute("INSERT INTO stress VALUES (8, 8)")
+                outcome["writer"] = "wrote"
+
+    threads = [threading.Thread(target=f) for f in (thread_a, thread_b, writer)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join(timeout=60)
+    assert not any(t.is_alive() for t in threads), "lock-ordering deadlock"
+    assert outcome["b"] == "refused" and outcome["b_s"] < 5
+    assert outcome["writer"] == "wrote"
+    assert a_checked["holds"] is False  # the creator handed it over
