@@ -7,7 +7,25 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-11-20
+
+Minor release (pre-1.0 semver: a minor bump marks a change consumers must check):
+the default XBRL mapping moves from v1 to v3, so `get_statement` / `get_facts`
+return more lines by default; `get_conn` now hands out a `HubConnection` handle
+(explicit allow-list of DuckDB methods) instead of a raw DuckDB connection; the
+schema moves from version 32 to 34 (`listing_registration_hints`), migrated on
+the first read-write open.
+
 ### Added
+- Listing registration (D25, #206): Yahoo metadata is carried through the production
+  fetch path and an SEC ticker-map match is required; caller-supplied name, exchange
+  and currency hints are recorded in the new `listing_registration_hints` table
+  (non-authoritative provenance, in the data catalogue); Yahoo exchange labels are
+  normalised to warehouse venue codes so an equivalent venue reuses its listing;
+  Yahoo `shortName` is used when `longName` is missing; empty-listing pruning
+  rechecks eligibility under the writer lock and removes the related price ledgers.
+- Cleanup: opt-in removal of live rows dated on a non-trading day
+  (`scripts/cleanup_wrong_dated_live.py`, #205).
 - XBRL mapping v3 (`xbrl_mapping_v3.yaml`): v2 lines unchanged plus a `derived_lines` mechanism and the first derived line, `liabilities_derived` = `LiabilitiesAndStockholdersEquity` minus equity (equity including the noncontrolling interest, fallback `StockholdersEquity`). It is filled per period only where the filed `liabilities` line has no value (AMZN, LLY, ABBV, MRK, TMO, ABT, ORCL, INTC, AMD, DIS, CMCSA, VZ, WMT, TGT, MCD, NKE do not file `Liabilities`) and is a separate key, so a filed value is never overwritten. Every derived value carries `derived: true`, the `formula` and `inputs` (concept, accession, filed date of the minuend and the subtrahend). `get_facts(line='liabilities_derived')` returns the input facts. The `datahub_get_statement` docstring tells agents to say a value is derived. See `docs/XBRL_MAPPING_VERSIONS.md`.
 
 - XBRL mapping v2 (`xbrl_mapping_v2.yaml`): v1 lines plus `cost_of_revenue`, `gross_profit`, `operating_income`, `long_term_debt` and `short_term_debt`, so gross/operating margin and debt-to-equity can be computed from `get_statement`. Totals and components are separate lines (a line never sums): `cost_of_revenue` and `short_term_debt` hold totals only (`CostOfRevenue`/`CostOfGoodsAndServicesSold`, `DebtCurrent`), with components as `cost_of_goods_sold`, `cost_of_services`, `current_portion_long_term_debt`, `commercial_paper` and `short_term_borrowings`; `long_term_debt` prefers the non-current concepts (KO reports `LongTermDebtAndCapitalLeaseObligations`); `liabilities` is unchanged (no derived lines; issuers without the plain `Liabilities` concept stay empty). Rationale documented in the file header.
