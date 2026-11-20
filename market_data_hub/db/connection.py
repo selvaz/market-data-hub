@@ -995,7 +995,10 @@ class _GuardedRelation:
     def query(self, virtual_table_name: str, sql_query: str) -> Any:
         self._hub._use()
         if self._hub._read_only:
-            _check_read_only(sql_query)
+            # DuckDB < 1.5 implements relation.query() by creating a
+            # persistent view named virtual_table_name: a write. Refuse it on
+            # read-only handles whatever the version; use con.sql() instead.
+            raise _refuse("call relation.query() (it creates a view)")
         return self._hub._wrap(self._rel.query(virtual_table_name, sql_query))
 
     def close(self) -> None:

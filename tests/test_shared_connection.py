@@ -23,6 +23,8 @@ def db(tmp_path):
     with C.get_conn(path) as con:
         con.execute("CREATE TABLE stress (thread INTEGER, i INTEGER)")
     yield path
+    gc.collect()
+    C._drain_pending_releases()  # releases queued by finalisers
     assert C._REGISTRY == {}, "a handle leaked the shared instance"
 
 
@@ -540,21 +542,29 @@ def test_handles_dropped_during_ownership_scans_never_deadlock(db):
     assert C._REGISTRY == {}
 
 
-def test_relation_query_moves_ownership_to_the_using_thread(db):
+def test_relation_use_moves_ownership_to_the_using_thread(db):
     handle = C.get_conn(db, read_only=True)
-    rel = handle.sql("SELECT * FROM stress")
-    seen = {}
+    try:
+        rel = handle.sql("SELECT * FROM stress")
+        seen = {}
 
-    def other():
-        rel.query("v", "SELECT count(*) FROM v").fetchall()
-        seen["holds"] = C.thread_holds_read_only_instance(db)
+        def other():
+            try:
+                seen["rows"] = len(rel)
+                seen["holds"] = C.thread_holds_read_only_instance(db)
+            except BaseException as exc:  # noqa: BLE001 - surfaced below
+                seen["error"] = exc
 
-    t = threading.Thread(target=other)
-    t.start()
-    t.join(timeout=30)
-    assert seen["holds"] is True
-    assert C.thread_holds_read_only_instance(db) is False
-    handle.close()
+        t = threading.Thread(target=other)
+        t.start()
+        t.join(timeout=30)
+        assert seen == {"rows": 0, "holds": True}
+        assert C.thread_holds_read_only_instance(db) is False
+        # relation.query() creates a view on DuckDB < 1.5: refused when read-only.
+        with pytest.raises(C.ReadOnlyViolation):
+            rel.query("v", "SELECT count(*) FROM v")
+    finally:
+        handle.close()
 
 
 def test_read_only_guard_refuses_state_changing_functions(db):
