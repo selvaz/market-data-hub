@@ -460,8 +460,62 @@ def get_financials_coverage(query: Optional[str] = None,
     return rows
 
 
+def _read_concepts(con, cik: str,
+                   concepts: List[str]) -> Dict[str, Dict[str, Any]]:
+    """period end -> {value, concept, accession, filed_date}: concepts tried in
+    order (earlier wins), latest filed row per period (annual 10-K/20-F)."""
+    per_period: Dict[str, Dict[str, Any]] = {}
+    for concept in concepts:
+        rows = con.execute("""
+            SELECT end_date, value, concept, accession, filed_date,
+                   start_date
+            FROM sec_company_facts
+            WHERE cik = ? AND concept = ? AND unit = 'USD'
+              AND form IN ('10-K', '20-F', '10-K/A', '20-F/A')
+              AND (start_date IS NULL
+                   OR datediff('day', start_date, end_date) BETWEEN 330 AND 400)
+            QUALIFY row_number() OVER (
+                PARTITION BY end_date ORDER BY filed_date DESC) = 1
+            ORDER BY end_date DESC
+        """, [cik, concept]).fetchall()
+        for end, value, cpt, accn, filed, _start in rows:
+            key = end.isoformat()
+            if key not in per_period:   # earlier concept wins
+                per_period[key] = {
+                    "value": value, "concept": cpt, "accession": accn,
+                    "filed_date": filed.isoformat() if filed else None}
+    return per_period
+
+
+def _derive_line(con, cik: str, dcfg: Dict[str, Any],
+                 filed_lines: Dict[str, Dict[str, Any]]
+                 ) -> Dict[str, Dict[str, Any]]:
+    """Derived line (mapping v3 `derived_lines`): minuend - subtrahend per
+    period, only where the `only_if_absent` filed line has no value. Each
+    value is labelled derived and carries the inputs' provenance."""
+    absent = dcfg.get("only_if_absent")
+    have = filed_lines.get(absent, {}) if absent else {}
+    minu = _read_concepts(con, cik, dcfg["minuend"])
+    subs = [(c, _read_concepts(con, cik, [c])) for c in dcfg["subtrahends"]]
+    out: Dict[str, Dict[str, Any]] = {}
+    for end, m in minu.items():
+        if end in have:
+            continue
+        for _c, per in subs:                    # first with data wins
+            sub = per.get(end)
+            if sub is None:
+                continue
+            out[end] = {
+                "value": m["value"] - sub["value"],
+                "derived": True,
+                "formula": dcfg["formula"],
+                "inputs": {"minuend": m, "subtrahend": sub}}
+            break
+    return out
+
+
 def get_statement(query: str, statement: Optional[str] = None,
-                  periods: int = 8, mapping_version: int = 2,
+                  periods: int = 8, mapping_version: int = 3,
                   db_path: Optional[str] = None) -> Dict[str, Any]:
     """Standardized ANNUAL statement lines for one issuer, derived on read
     from the append-only facts through the versioned mapping (plan Fase 4).
@@ -472,6 +526,13 @@ def get_statement(query: str, statement: Optional[str] = None,
     supersede on read, history stays intact in sec_company_facts). Duration
     lines (income/cash flow) require a ~annual window so quarterly and
     comparative stubs are excluded; balance lines are instants.
+
+    Derived lines (mapping v3, `derived_lines`): e.g. `liabilities_derived` =
+    LiabilitiesAndStockholdersEquity - equity, filled only for periods where
+    the filed `liabilities` line is absent, never overwriting a filed value.
+    Every derived value has `derived: true`, the `formula` and `inputs`
+    (concept, accession, filed date of each input). Callers must say it is
+    derived, not filed.
 
     Output is bounded (max 12 periods) and carries provenance per value:
     concept, accession, filed date — plus the mapping version used.
@@ -516,28 +577,10 @@ def get_statement(query: str, statement: Optional[str] = None,
         lines: Dict[str, Dict[str, Any]] = {}
         all_ends: set = set()
         issuer_latest_all: Optional[str] = None
+        filed_all: Dict[str, Dict[str, Any]] = {}
         for line_key, cfg in all_cfg.items():
-            per_period: Dict[str, Dict[str, Any]] = {}
-            for concept in cfg["concepts"]:
-                rows = con.execute("""
-                    SELECT end_date, value, concept, accession, filed_date,
-                           start_date
-                    FROM sec_company_facts
-                    WHERE cik = ? AND concept = ? AND unit = 'USD'
-                      AND form IN ('10-K', '20-F', '10-K/A', '20-F/A')
-                      AND (start_date IS NULL
-                           OR datediff('day', start_date, end_date) BETWEEN 330 AND 400)
-                    QUALIFY row_number() OVER (
-                        PARTITION BY end_date ORDER BY filed_date DESC) = 1
-                    ORDER BY end_date DESC
-                """, [iss["cik"], concept]).fetchall()
-                for end, value, cpt, accn, filed, _start in rows:
-                    key = end.isoformat()
-                    if key not in per_period:   # earlier concept wins
-                        per_period[key] = {
-                            "value": value, "concept": cpt,
-                            "accession": accn,
-                            "filed_date": filed.isoformat() if filed else None}
+            per_period = _read_concepts(con, iss["cik"], cfg["concepts"])
+            filed_all[line_key] = per_period
             keep = sorted(per_period, reverse=True)[:periods]
             if per_period:
                 top = max(per_period)
@@ -547,6 +590,13 @@ def get_statement(query: str, statement: Optional[str] = None,
                 continue            # read only to anchor the staleness check
             lines[line_key] = {k: per_period[k] for k in keep}
             all_ends.update(keep)
+        for dkey, dcfg in (mapping.get("derived_lines") or {}).items():
+            if statement and dcfg.get("statement") != statement:
+                continue
+            dper = _derive_line(con, iss["cik"], dcfg, filed_all)
+            dkeep = sorted(dper, reverse=True)[:periods]
+            lines[dkey] = {k: dper[k] for k in dkeep}
+            all_ends.update(dkeep)
     finally:
         con.close()
 
@@ -641,7 +691,7 @@ def _annual_history_filer(iss: Dict[str, Any], db_path: Optional[str]):
 def get_facts(query: str, line: Optional[str] = None,
               concepts: Optional[List[str]] = None,
               forms: Optional[List[str]] = None,
-              limit: int = _MAX_FACT_ROWS, mapping_version: int = 2,
+              limit: int = _MAX_FACT_ROWS, mapping_version: int = 3,
               db_path: Optional[str] = None) -> Dict[str, Any]:
     """Bounded raw facts for one issuer, newest filings first.
 
@@ -657,6 +707,10 @@ def get_facts(query: str, line: Optional[str] = None,
     if line:
         mapping = get_xbrl_mapping(mapping_version)
         entry = (mapping.get("statement_lines") or {}).get(line)
+        dentry = (mapping.get("derived_lines") or {}).get(line)
+        if entry is None and dentry is not None:
+            entry = {"concepts": list(dentry["minuend"])
+                     + list(dentry["subtrahends"])}
         if entry is None:
             return {"error": f"unknown statement line {line!r} in mapping "
                              f"v{mapping_version}", "facts": []}
