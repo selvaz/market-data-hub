@@ -463,3 +463,350 @@ def test_tool_layer_accepts_mapping_version(monkeypatch):
     at.tool_get_financial_facts("AAPL", mapping_version=1)
     assert seen["st"]["mapping_version"] == 1
     assert seen["fa"]["mapping_version"] == 1
+
+
+# ------------------------------------------------- SEC resolution (D63/D65/D67)
+def _facts_for(cik_int, *, annual=True, ni_year=2024, assets_year=2024):
+    form = "10-K" if annual else "8-K"
+    return {"cik": cik_int, "facts": {"us-gaap": {
+        "NetIncomeLoss": {"units": {"USD": [
+            {"start": f"{ni_year - 1}-01-01", "end": f"{ni_year - 1}-12-31",
+             "val": 3116.0, "fy": ni_year - 1, "fp": "FY", "form": form,
+             "filed": f"{ni_year}-02-01", "accn": f"a-ni-{ni_year}"}]}},
+        "Assets": {"units": {"USD": [
+            {"end": f"{assets_year - 1}-12-31", "val": 900.0,
+             "fy": assets_year - 1, "fp": "FY", "form": form,
+             "filed": f"{assets_year}-02-01", "accn": f"a-as-{assets_year}"}]}},
+    }}}
+
+
+def _subs(cik_int):
+    return {"cik": cik_int, "filings": {"recent": {
+        "accessionNumber": [f"{cik_int}-24-000001"], "form": ["10-K"],
+        "filingDate": ["2024-02-01"], "reportDate": ["2023-12-31"],
+        "primaryDocument": ["x.htm"]}}}
+
+
+def test_get_statement_flags_stale_lines(tmp_db):
+    # net income only up to FY2012 while assets reach FY2023 (MA / AT&T shape)
+    facts = _facts_for(320193, ni_year=2013, assets_year=2024)
+    _ensure(tmp_db, fetch_facts=lambda cik: facts)
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert out["latest_period"] == "2023-12-31"
+    ni = out["line_status"]["net_income"]
+    assert ni == {"latest_period": "2012-12-31", "stale": True,
+                  "stale_since": "2012-12-31"}
+    assert out["line_status"]["assets"] == {"latest_period": "2023-12-31",
+                                            "stale": False}
+    assert any("net_income" in w for w in out["warnings"])
+    # empty lines are neither stale nor dropped
+    assert out["line_status"]["revenue"] == {"latest_period": None,
+                                             "stale": False}
+
+
+def test_get_statement_current_lines_have_no_warnings(tmp_db):
+    facts = _facts_for(320193, ni_year=2024, assets_year=2024)
+    _ensure(tmp_db, fetch_facts=lambda cik: facts)
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert "warnings" not in out
+    assert not any(v["stale"] for v in out["line_status"].values())
+
+
+def test_statement_docstring_documents_staleness():
+    from market_data_hub import agent_tools
+    doc = agent_tools.tool_get_statement.__doc__
+    assert "stale" in doc and "line_status" in doc
+
+
+def test_ticker_variants_class_shares():
+    assert sec.ticker_variants("BRK.B") == ["BRK-B", "BRK.B"]
+    assert sec.ticker_variants("brk-b") == ["BRK-B", "BRK.B"]
+    assert sec.ticker_variants("XOM") == ["XOM"]
+
+
+_TICKER_PAYLOAD = {
+    "0": {"cik_str": 1067983, "ticker": "BRK-B", "title": "BERKSHIRE HATHAWAY"},
+    "1": {"cik_str": 2115436, "ticker": "XOM", "title": "Exxon Mobil Corp"},
+}
+
+
+def test_resolve_cik_via_sec_normalises_class_share(monkeypatch):
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: _TICKER_PAYLOAD)
+    hit = fin._resolve_cik_via_sec("BRK.B")
+    assert hit["cik"] == "0001067983"
+    assert hit["ticker"] == "BRK.B"
+
+
+def test_resolve_cik_via_sec_applies_pin_over_new_filer(monkeypatch):
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: _TICKER_PAYLOAD)
+    hit = fin._resolve_cik_via_sec("XOM")
+    assert hit["cik"] == "0000034088"          # historical filer with 10-Ks
+    assert hit["sec_cik"] == "0002115436"      # what SEC says, exposed
+    assert hit["override"] is True
+
+
+def test_ensure_by_class_share_ticker_links_listing(tmp_db, monkeypatch):
+    from market_data_hub.services import prices as svc
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: _TICKER_PAYLOAD)
+    con = get_conn(tmp_db)
+    try:
+        cand = svc._register_listing(con, {
+            "symbol": "BRK-B", "kind": "EQUITY", "name": "Berkshire",
+            "exchange": None, "currency": None, "provider": "yahoo"})
+    finally:
+        con.close()
+    res = fin.ensure_filings_and_facts(
+        "BRK.B", db_path=tmp_db,
+        fetch_submissions=lambda cik: _subs(1067983),
+        fetch_facts=lambda cik: _facts_for(1067983))
+    assert res["cik"] == "0001067983"
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        linked = con.execute(
+            "SELECT issuer_id FROM instruments WHERE instrument_id = ?",
+            [cand["instrument_id"]]).fetchone()[0]
+    finally:
+        con.close()
+    assert linked == res["issuer_id"]
+    # both spellings resolve locally
+    assert fin.resolve_issuer("BRK.B", db_path=tmp_db)["cik"] == "0001067983"
+    assert fin.resolve_issuer("BRK-B", db_path=tmp_db)["cik"] == "0001067983"
+
+
+def test_xom_pin_ingests_historical_filer_and_statement_has_lines(
+        tmp_db, monkeypatch):
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: _TICKER_PAYLOAD)
+    seen = []
+
+    def subs(cik):
+        seen.append(cik)
+        return _subs(34088)
+    res = fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=subs,
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert res["cik"] == "0000034088" and seen == ["0000034088"]
+    out = fin.get_statement("XOM", db_path=tmp_db)
+    assert out["issuer"]["cik"] == "0000034088"
+    assert out["lines"]["assets"]
+
+
+def _holdco_then_predecessor(tmp_db):
+    """Holdco ingested first (8-K facts only), then the predecessor filer
+    with the 10-K history; both carry the ticker alias ZZZ."""
+    _ensure(tmp_db, resolve=lambda q: {"cik": "0002115436", "name": "HoldCo",
+                                       "ticker": "ZZZ"},
+            fetch_submissions=lambda cik: _subs(2115436),
+            fetch_facts=lambda cik: _facts_for(2115436, annual=False))
+    fin.ensure_filings_and_facts(
+        "0000034088", db_path=tmp_db,
+        fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    con = get_conn(tmp_db)
+    try:
+        iss = con.execute("SELECT issuer_id FROM issuers WHERE cik = ?",
+                          ["0000034088"]).fetchone()[0]
+        con.execute("INSERT INTO identifier_aliases VALUES "
+                    "('ticker','ZZZ','issuer',?,NULL,NULL,now())", [iss])
+    finally:
+        con.close()
+
+
+def test_get_statement_without_any_annual_history_says_so(tmp_db):
+    _ensure(tmp_db, resolve=lambda q: {"cik": "0002115436", "name": "HoldCo",
+                                       "ticker": "ZZZ"},
+            fetch_submissions=lambda cik: _subs(2115436),
+            fetch_facts=lambda cik: _facts_for(2115436, annual=False))
+    out = fin.get_statement("ZZZ", db_path=tmp_db)
+    assert out["resolution"]["fallback"] is False
+    assert out["lines"]["assets"] == {}
+
+
+def test_get_statement_falls_back_only_via_configured_predecessor(tmp_db):
+    _holdco_then_predecessor(tmp_db)
+    # 0002115436 has a cik_predecessors entry -> explicit fallback
+    out = fin.get_statement("0002115436", db_path=tmp_db)
+    res = out["resolution"]
+    assert (res["resolved_cik"], res["used_cik"], res["fallback"]) == (
+        "0002115436", "0000034088", True)
+    assert out["issuer"]["cik"] == "0000034088"
+    assert out["lines"]["assets"]
+
+
+def test_no_generic_shared_ticker_fallback(tmp_db):
+    """A reused ticker must not reach an unrelated old issuer: two issuers
+    share ZZZ, neither has a cik_predecessors entry -> no fallback, and the
+    ticker resolves as before (no 'has annual facts' preference)."""
+    _ensure(tmp_db, resolve=lambda q: {"cik": "0000999991", "name": "NewCo",
+                                       "ticker": "ZZZ"},
+            fetch_submissions=lambda cik: _subs(999991),
+            fetch_facts=lambda cik: _facts_for(999991, annual=False))
+    fin.ensure_filings_and_facts(
+        "0000888881", db_path=tmp_db,
+        fetch_submissions=lambda cik: _subs(888881),
+        fetch_facts=lambda cik: _facts_for(888881))
+    con = get_conn(tmp_db)
+    try:
+        iss = con.execute("SELECT issuer_id FROM issuers WHERE cik = ?",
+                          ["0000888881"]).fetchone()[0]
+        con.execute("INSERT INTO identifier_aliases VALUES "
+                    "('ticker','ZZZ','issuer',?,NULL,NULL,now())", [iss])
+    finally:
+        con.close()
+    out = fin.get_statement("0000999991", db_path=tmp_db)
+    assert out["issuer"]["cik"] == "0000999991"
+    assert out["resolution"]["fallback"] is False
+    assert out["lines"]["assets"] == {}
+
+
+def test_pinned_ticker_reads_follow_the_pin(tmp_db):
+    # XOM not ingested under the pinned CIK yet -> nothing local to return
+    _ensure(tmp_db, resolve=lambda q: {"cik": "0002115436", "name": "HoldCo",
+                                       "ticker": "XOM"},
+            fetch_submissions=lambda cik: _subs(2115436),
+            fetch_facts=lambda cik: _facts_for(2115436, annual=False))
+    assert fin.resolve_issuer("XOM", db_path=tmp_db) is None
+    fin.ensure_filings_and_facts(
+        "0000034088", db_path=tmp_db,
+        fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert fin.resolve_issuer("XOM", db_path=tmp_db)["cik"] == "0000034088"
+
+
+def test_ensure_returns_pin_provenance(tmp_db, monkeypatch):
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: _TICKER_PAYLOAD)
+    res = fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert res["override"] is True
+    assert res["sec_cik"] == "0002115436"
+    again = fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert again["reused"] and again["override"] and \
+        again["sec_cik"] == "0002115436"
+
+
+def test_staleness_uses_all_statements_even_when_filtered(tmp_db):
+    # income reaches FY2012 only; balance sheet reaches FY2023
+    facts = _facts_for(320193, ni_year=2013, assets_year=2024)
+    _ensure(tmp_db, fetch_facts=lambda cik: facts)
+    out = fin.get_statement("AAPL", statement="income", db_path=tmp_db)
+    assert out["latest_period"] == "2023-12-31"
+    assert out["line_status"]["net_income"]["stale"] is True
+    assert "assets" not in out["lines"]
+    assert out["periods"] == ["2012-12-31"]       # requested lines only
+
+
+def _ni_assets_facts(ni_end, assets_end):
+    return {"cik": 320193, "facts": {"us-gaap": {
+        "NetIncomeLoss": {"units": {"USD": [
+            {"start": ni_end.replace(ni_end[:4], str(int(ni_end[:4]) - 1)),
+             "end": ni_end, "val": 1.0, "fy": 2020, "fp": "FY",
+             "form": "10-K", "filed": "2025-03-01", "accn": "a1"}]}},
+        "Assets": {"units": {"USD": [
+            {"end": assets_end, "val": 2.0, "fy": 2020, "fp": "FY",
+             "form": "10-K", "filed": "2025-03-01", "accn": "a2"}]}},
+    }}}
+
+
+def test_stale_boundary_is_200_days(tmp_db):
+    # income 2023-12-31; assets 2024-07-18 is exactly 200 days later: fresh
+    _ensure(tmp_db, fetch_facts=lambda c: _ni_assets_facts(
+        "2023-12-31", "2024-07-18"))
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert out["line_status"]["net_income"]["stale"] is False
+
+
+def test_stale_boundary_201_days_is_stale(tmp_db):
+    _ensure(tmp_db, fetch_facts=lambda c: _ni_assets_facts(
+        "2023-12-31", "2024-07-19"))
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert out["line_status"]["net_income"]["stale"] is True
+
+
+def test_fiscal_year_change_does_not_flag_prior_full_year(tmp_db):
+    # FYE moved from Sept to Dec: last full-year duration ends 2024-09-28, the
+    # transition-period balance sheet is 2024-12-31 (94 days later)
+    _ensure(tmp_db, fetch_facts=lambda c: _ni_assets_facts(
+        "2024-09-28", "2024-12-31"))
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert out["latest_period"] == "2024-12-31"
+    assert out["line_status"]["net_income"]["stale"] is False
+    assert "warnings" not in out
+
+
+def test_pinned_read_exposes_override_and_ingestion_keeps_sec_name(
+        tmp_db, monkeypatch):
+    payload = {"1": {"cik_str": 2115436, "ticker": "XOM",
+                     "title": "Exxon Mobil Corp"}}
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: payload)
+    res = fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert res["override"] is True
+    # SEC-provided name is kept on first ingestion of the pinned filer
+    assert fin.resolve_issuer("XOM", db_path=tmp_db)["name"] == "Exxon Mobil Corp"
+    out = fin.get_statement("XOM", db_path=tmp_db)
+    r = out["resolution"]
+    assert r["override"] is True and r["pinned_cik"] == "0000034088"
+    assert r["used_cik"] == "0000034088" and r["fallback"] is False
+    # an unpinned ticker/CIK read carries no resolution when nothing happened
+    assert "resolution" not in fin.get_statement("0000034088", db_path=tmp_db)
+
+
+def test_sec_cik_reported_when_sec_returns_the_pinned_cik(tmp_db, monkeypatch):
+    payload = {"1": {"cik_str": 34088, "ticker": "XOM", "title": "Exxon"}}
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: payload)
+    res = fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert res["sec_cik"] == "0000034088"
+
+
+def test_register_issuer_fills_null_name_only(tmp_db):
+    con = get_conn(tmp_db)
+    try:
+        iid = fin._register_issuer(con, "0000000042", None, None)
+        fin._register_issuer(con, "0000000042", "Filled Inc", None)
+        fin._register_issuer(con, "0000000042", "Other Name", None)
+        name = con.execute("SELECT name FROM issuers WHERE issuer_id = ?",
+                           [iid]).fetchone()[0]
+    finally:
+        con.close()
+    assert name == "Filled Inc"
+
+
+def _ingest_pinned_xom(tmp_db, monkeypatch):
+    payload = {"1": {"cik_str": 2115436, "ticker": "XOM", "title": "Exxon"}}
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: payload)
+    fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+
+
+def test_get_facts_and_coverage_disclose_pin(tmp_db, monkeypatch):
+    _ingest_pinned_xom(tmp_db, monkeypatch)
+    facts = fin.get_facts("XOM", db_path=tmp_db)
+    r = facts["resolution"]
+    assert r["override"] is True and r["pinned_cik"] == "0000034088"
+    assert r["used_cik"] == "0000034088"
+    cov = fin.get_financials_coverage("XOM", db_path=tmp_db)
+    assert cov and all(c["resolution"]["override"] is True for c in cov)
+    assert cov[0]["resolution"]["pinned_cik"] == "0000034088"
+    # reads by CIK or without a query carry no pin disclosure
+    assert "resolution" not in fin.get_facts("0000034088", db_path=tmp_db)
+    assert all("resolution" not in c for c in
+               fin.get_financials_coverage("0000034088", db_path=tmp_db))
+    assert all("resolution" not in c for c in
+               fin.get_financials_coverage(db_path=tmp_db))
+
+
+def test_agent_tools_pass_pin_disclosure_through(tmp_db, monkeypatch):
+    from market_data_hub import agent_tools
+    _ingest_pinned_xom(tmp_db, monkeypatch)
+    facts = json.loads(agent_tools.tool_get_financial_facts("XOM"))
+    assert facts["resolution"]["override"] is True
+    cov = json.loads(agent_tools.tool_get_financials_coverage("XOM"))
+    assert cov[0]["resolution"]["pinned_cik"] == "0000034088"
+    stmt = json.loads(agent_tools.tool_get_statement("XOM"))
+    assert stmt["resolution"]["override"] is True

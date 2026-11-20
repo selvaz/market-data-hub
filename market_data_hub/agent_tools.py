@@ -194,7 +194,9 @@ def tool_get_price_summary(query: str, start: str = "", end: str = "") -> str:
 def tool_get_financials_coverage(query: str = "") -> str:
     """SEC coverage in the hub: which issuers have filings/facts ingested,
     how many, which forms, freshness. query: CIK, ticker or issuer_id; empty
-    for all covered issuers. Read-only, no network."""
+    for all covered issuers. Read-only, no network. A ticker pinned by the hub
+    config (e.g. XOM) adds `resolution` (override, pinned_cik, used_cik) to
+    each row."""
     from market_data_hub.services import financials as _fin
     return _json(_fin.get_financials_coverage(query or None))
 
@@ -213,7 +215,9 @@ def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
            cost_of_services, current_portion_long_term_debt,
            commercial_paper, short_term_borrowings.
     mapping_version: 2 (default) or 1 (the original 6 lines).
-    forms: optional comma-separated filter, e.g. "10-K" or "10-K,10-Q"."""
+    forms: optional comma-separated filter, e.g. "10-K" or "10-K,10-Q".
+    A ticker pinned by the hub config (e.g. XOM) adds `resolution`
+    (override, pinned_cik, used_cik) to the answer."""
     from market_data_hub.services import financials as _fin
     return _json(_fin.get_facts(
         query, line=line or None, forms=_split(forms) or None, limit=limit,
@@ -247,7 +251,18 @@ def tool_get_statement(query: str, statement: str = "", periods: int = 8,
     the filing before adding components.
     long_term_debt may fall back to LongTermDebt, which can include the
     current portion: check each value's `concept` before summing debt lines
-    or computing leverage."""
+    or computing leverage.
+
+    STALENESS: `line_status[line]` = {latest_period, stale[, stale_since]}.
+    `latest_period` (top level) is the issuer's latest fiscal year end; a line
+    whose newest value is more than ~200 days older than it has stale=true and
+    a `warnings` entry. NEVER present a stale value as current: say it is from
+    period `stale_since`, or omit it.
+    RESOLUTION: when the resolved filer has no 10-K/20-F facts and the hub
+    config names a predecessor CIK (e.g. a new holding-company filer), the
+    response uses that predecessor and explains it under `resolution`.
+    `latest_period` is computed across all statements, even when `statement`
+    filters the lines."""
     from market_data_hub.services import financials as _fin
     return _json(_fin.get_statement(query, statement=statement or None,
                                     periods=periods,
