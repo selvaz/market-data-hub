@@ -8,6 +8,9 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 ## [Unreleased]
 
 ### Added
+- Schema v35 backfills missing instrument names from linked issuer names without
+  overwriting existing names, and listing registration returns the resulting
+  known instrument name in `hints.name` (D74).
 - Listing names from price-source metadata are persisted by registration and
   price-history collection without replacing an existing name; linking a
   listing to an SEC issuer now backfills a still-missing name (D66).

@@ -34,7 +34,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 # Current schema version. Bump this whenever schema.sql changes shape and add a
 # matching `if current < N:` branch in migrate() below.
-SCHEMA_VERSION = 34
+SCHEMA_VERSION = 35
 
 
 class DatabaseNotConfigured(RuntimeError):
@@ -540,6 +540,20 @@ def migrate(con: duckdb.DuckDBPyConnection) -> int:
     if current < 34:
         # apply_schema() adds the listing registration hint lookup index.
         current = 34
+    if current < 35:
+        # Existing issuer links predate the name propagation added to the
+        # registration/linking paths. Fill only missing instrument names;
+        # curated or provider-derived names are never replaced.
+        con.execute("""
+            UPDATE instruments AS instrument
+            SET name = issuer.name,
+                updated_at = current_timestamp
+            FROM issuers AS issuer
+            WHERE instrument.issuer_id = issuer.issuer_id
+              AND instrument.name IS NULL
+              AND issuer.name IS NOT NULL
+        """)
+        current = 35
     if current < SCHEMA_VERSION:
         current = SCHEMA_VERSION
 
