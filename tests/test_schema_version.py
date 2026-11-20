@@ -90,6 +90,40 @@ def test_migrate_adds_registration_hint_index_to_v33_database(tmp_db):
         con.close()
 
 
+def test_migrate_backfills_instrument_names_without_overwriting(tmp_db):
+    con = C.get_conn()
+    try:
+        con.execute("""
+            INSERT INTO issuers (issuer_id, name) VALUES
+                ('named-issuer', 'Issuer Name'),
+                ('unnamed-issuer', NULL)
+        """)
+        con.execute("""
+            INSERT INTO instruments (instrument_id, issuer_id, kind, name) VALUES
+                ('missing-name', 'named-issuer', 'EQUITY', NULL),
+                ('curated-name', 'named-issuer', 'EQUITY', 'Curated Name'),
+                ('no-source-name', 'unnamed-issuer', 'EQUITY', NULL)
+        """)
+        con.execute("UPDATE schema_meta SET value = '34' WHERE key = 'schema_version'")
+
+        assert C.migrate(con) == C.SCHEMA_VERSION
+        assert con.execute(
+            "SELECT instrument_id, name FROM instruments ORDER BY instrument_id"
+        ).fetchall() == [
+            ('curated-name', 'Curated Name'),
+            ('missing-name', 'Issuer Name'),
+            ('no-source-name', None),
+        ]
+
+        # The data migration is safe to run again and still preserves names.
+        assert C.migrate(con) == C.SCHEMA_VERSION
+        assert con.execute(
+            "SELECT name FROM instruments WHERE instrument_id = 'curated-name'"
+        ).fetchone()[0] == 'Curated Name'
+    finally:
+        con.close()
+
+
 def test_migrate_adds_alias_file_ownership_column_to_v22_database(tmp_db):
     con = C.get_conn()
     con.execute("ALTER TABLE calendar_indicator_aliases DROP COLUMN seeded_from_file")

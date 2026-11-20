@@ -285,6 +285,24 @@ def _record_registration_hints(con, listing_id: str, hints: Dict[str, Any], now)
           listing_id, hints["name"], hints["exchange"], hints["currency"]])
 
 
+def _registered_name(con, instrument_id: str, now) -> Optional[str]:
+    """Return, and persist when needed, the best known instrument name."""
+    con.execute("""
+        UPDATE instruments AS instrument
+        SET name = issuer.name, updated_at = ?
+        FROM issuers AS issuer
+        WHERE instrument.instrument_id = ?
+          AND instrument.issuer_id = issuer.issuer_id
+          AND instrument.name IS NULL
+          AND issuer.name IS NOT NULL
+    """, [now, instrument_id])
+    row = con.execute(
+        "SELECT name FROM instruments WHERE instrument_id = ?",
+        [instrument_id],
+    ).fetchone()
+    return row[0] if row else None
+
+
 def register_listing(symbol: str, *, exchange: str, currency: str,
                      kind: str = "EQUITY", name: Optional[str] = None,
                      provider: str = _DEFAULT_PROVIDER,
@@ -313,7 +331,7 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
     exchange = exchange.strip().upper()
     currency = currency.strip().upper()
     provider_symbol = provider_symbol or symbol
-    hints = {"name": name, "exchange": exchange, "currency": currency}
+    caller_hints = {"name": name, "exchange": exchange, "currency": currency}
     exchange_aliases = _YAHOO_EXCHANGE_MICS if provider == _DEFAULT_PROVIDER else {}
     checked: List[Dict[str, Any]] = []
     if verify:
@@ -356,11 +374,13 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
                         UPDATE instruments SET name = ?, updated_at = ?
                         WHERE instrument_id = ? AND name IS NULL
                     """, [name, now, row[1]])
-                _record_registration_hints(con, row[0], hints, now)
+                _record_registration_hints(con, row[0], caller_hints, now)
+                registered_name = _registered_name(con, row[1], now)
                 return {"listing_id": row[0], "instrument_id": row[1],
                         "symbol": symbol, "exchange": row[3],
                         "currency": row[2], "provider": provider,
-                        "registered": True, "created": False}
+                        "registered": True, "created": False,
+                        "hints": {**caller_hints, "name": registered_name}}
 
             instrument_id = _stable_id("ins", symbol)
             base = _stable_id("lst", symbol, provider)
@@ -397,13 +417,14 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
                                   WHERE namespace = 'ticker' AND value = ?
                                     AND target_type = 'listing' AND target_id = ?)
             """, [symbol, listing_id, now, symbol, listing_id])
-            _record_registration_hints(con, listing_id, hints, now)
+            _record_registration_hints(con, listing_id, caller_hints, now)
+            registered_name = _registered_name(con, instrument_id, now)
             return {"listing_id": listing_id, "instrument_id": instrument_id,
                     "symbol": symbol, "exchange": exchange,
                     "currency": currency, "provider": provider,
                     "provider_symbol": provider_symbol or symbol,
                     "registered": True, "created": True, "checked": checked,
-                    "hints": hints}
+                    "hints": {**caller_hints, "name": registered_name}}
         finally:
             con.close()
 

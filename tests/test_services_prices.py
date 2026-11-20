@@ -374,12 +374,14 @@ def test_register_listing_enables_arbitrary_single_name(tmp_db):
     reg = svc.register_listing("NEWCO", exchange="XNAS", currency="USD",
                                name="New Co", db_path=tmp_db, verify=False)
     assert reg["created"] is True and reg["listing_id"].startswith("lst_")
+    assert reg["hints"]["name"] == "New Co"
 
     # idempotent: same (symbol, provider, exchange) -> same listing
     again = svc.register_listing("NEWCO", exchange="XNAS", currency="USD",
                                  db_path=tmp_db, verify=False)
     assert again["created"] is False
     assert again["listing_id"] == reg["listing_id"]
+    assert again["hints"]["name"] == "New Co"
 
     # second venue -> its OWN listing, not an overwrite
     milan = svc.register_listing("NEWCO", exchange="XMIL", currency="EUR",
@@ -456,6 +458,7 @@ def test_register_known_symbol_uses_provider_metadata_and_records_hints(tmp_db):
 
     assert result["registered"] is True
     assert result["exchange"] == "XPAR"
+    assert result["hints"]["name"] == "Authoritative SA"
     con = get_conn(tmp_db, read_only=True)
     try:
         stored = con.execute("""
@@ -574,6 +577,37 @@ def test_sec_ticker_match_can_confirm_without_prices(tmp_db):
                                     "name": "Known Corporation"})
     assert result["registered"] is True
     assert result["checked"][-1] == {"source": "sec_ticker_map", "confirmed": True}
+    assert result["hints"]["name"] == "Known Corporation"
+
+
+def test_repeat_registration_returns_name_from_linked_issuer(tmp_db):
+    first = svc.register_listing(
+        "ISSUER", exchange="XNAS", currency="USD", db_path=tmp_db, verify=False)
+    con = get_conn(tmp_db)
+    try:
+        con.execute(
+            "INSERT INTO issuers (issuer_id, name) VALUES ('issuer-id', 'Issuer Inc.')"
+        )
+        con.execute(
+            "UPDATE instruments SET issuer_id = 'issuer-id' WHERE instrument_id = ?",
+            [first["instrument_id"]],
+        )
+    finally:
+        con.close()
+
+    result = svc.register_listing(
+        "ISSUER", exchange="XNAS", currency="USD", db_path=tmp_db, verify=False)
+
+    assert result["created"] is False
+    assert result["hints"]["name"] == "Issuer Inc."
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        assert con.execute(
+            "SELECT name FROM instruments WHERE instrument_id = ?",
+            [first["instrument_id"]],
+        ).fetchone()[0] == "Issuer Inc."
+    finally:
+        con.close()
 
 
 def test_repeat_registration_returns_stored_currency_and_records_hints(tmp_db):
