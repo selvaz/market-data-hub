@@ -774,3 +774,39 @@ def test_register_issuer_fills_null_name_only(tmp_db):
     finally:
         con.close()
     assert name == "Filled Inc"
+
+
+def _ingest_pinned_xom(tmp_db, monkeypatch):
+    payload = {"1": {"cik_str": 2115436, "ticker": "XOM", "title": "Exxon"}}
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: payload)
+    fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+
+
+def test_get_facts_and_coverage_disclose_pin(tmp_db, monkeypatch):
+    _ingest_pinned_xom(tmp_db, monkeypatch)
+    facts = fin.get_facts("XOM", db_path=tmp_db)
+    r = facts["resolution"]
+    assert r["override"] is True and r["pinned_cik"] == "0000034088"
+    assert r["used_cik"] == "0000034088"
+    cov = fin.get_financials_coverage("XOM", db_path=tmp_db)
+    assert cov and all(c["resolution"]["override"] is True for c in cov)
+    assert cov[0]["resolution"]["pinned_cik"] == "0000034088"
+    # reads by CIK or without a query carry no pin disclosure
+    assert "resolution" not in fin.get_facts("0000034088", db_path=tmp_db)
+    assert all("resolution" not in c for c in
+               fin.get_financials_coverage("0000034088", db_path=tmp_db))
+    assert all("resolution" not in c for c in
+               fin.get_financials_coverage(db_path=tmp_db))
+
+
+def test_agent_tools_pass_pin_disclosure_through(tmp_db, monkeypatch):
+    from market_data_hub import agent_tools
+    _ingest_pinned_xom(tmp_db, monkeypatch)
+    facts = json.loads(agent_tools.tool_get_financial_facts("XOM"))
+    assert facts["resolution"]["override"] is True
+    cov = json.loads(agent_tools.tool_get_financials_coverage("XOM"))
+    assert cov[0]["resolution"]["pinned_cik"] == "0000034088"
+    stmt = json.loads(agent_tools.tool_get_statement("XOM"))
+    assert stmt["resolution"]["override"] is True

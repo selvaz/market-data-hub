@@ -194,7 +194,9 @@ def tool_get_price_summary(query: str, start: str = "", end: str = "") -> str:
 def tool_get_financials_coverage(query: str = "") -> str:
     """SEC coverage in the hub: which issuers have filings/facts ingested,
     how many, which forms, freshness. query: CIK, ticker or issuer_id; empty
-    for all covered issuers. Read-only, no network."""
+    for all covered issuers. Read-only, no network. A ticker pinned by the hub
+    config (e.g. XOM) adds `resolution` (override, pinned_cik, used_cik) to
+    each row."""
     from market_data_hub.services import financials as _fin
     return _json(_fin.get_financials_coverage(query or None))
 
@@ -213,7 +215,9 @@ def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
            cost_of_services, current_portion_long_term_debt,
            commercial_paper, short_term_borrowings.
     mapping_version: 2 (default) or 1 (the original 6 lines).
-    forms: optional comma-separated filter, e.g. "10-K" or "10-K,10-Q"."""
+    forms: optional comma-separated filter, e.g. "10-K" or "10-K,10-Q".
+    A ticker pinned by the hub config (e.g. XOM) adds `resolution`
+    (override, pinned_cik, used_cik) to the answer."""
     from market_data_hub.services import financials as _fin
     return _json(_fin.get_facts(
         query, line=line or None, forms=_split(forms) or None, limit=limit,

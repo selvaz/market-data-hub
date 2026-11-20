@@ -432,7 +432,10 @@ _MAX_PERIODS = 12           # plan §5.3: statement <= 12 periods
 
 def get_financials_coverage(query: Optional[str] = None,
                             db_path: Optional[str] = None) -> List[Dict[str, Any]]:
-    """sec_coverage rows (all issuers, or one resolved via resolve_issuer)."""
+    """sec_coverage rows (all issuers, or one resolved via resolve_issuer).
+    For a ticker pinned in sec_overrides.yaml each row carries `resolution`
+    (override, pinned_cik, used_cik)."""
+    pin_res = None
     con = get_conn(db_path, read_only=True)
     try:
         try:
@@ -442,6 +445,7 @@ def get_financials_coverage(query: Optional[str] = None,
                     return []
                 df = con.execute("SELECT * FROM sec_coverage WHERE issuer_id = ?",
                                  [iss["issuer_id"]]).fetch_df()
+                pin_res = _with_pin_disclosure(query, iss)
             else:
                 df = con.execute(
                     "SELECT * FROM sec_coverage ORDER BY last_filed DESC"
@@ -450,7 +454,10 @@ def get_financials_coverage(query: Optional[str] = None,
             return []
     finally:
         con.close()
-    return json.loads(df.to_json(orient="records", date_format="iso"))
+    rows = json.loads(df.to_json(orient="records", date_format="iso"))
+    if pin_res:                 # each row says the ticker was resolved by a pin
+        rows = [{**r, "resolution": pin_res} for r in rows]
+    return rows
 
 
 def get_statement(query: str, statement: Optional[str] = None,
@@ -492,14 +499,7 @@ def get_statement(query: str, statement: Optional[str] = None,
         return {"error": f"issuer {query!r} not in the hub; run "
                          f"ensure_filings_and_facts first", "lines": {}}
     iss, resolution = _annual_history_filer(iss, db_path)
-    q = query.strip()
-    pin = None if q.isdigit() or q.startswith("iss_") else _override_cik(q)
-    if pin:     # a pinned ticker is always reported, fallback or not
-        resolution = {**(resolution or {
-            "resolved_cik": iss["cik"], "used_cik": iss["cik"],
-            "fallback": False,
-            "reason": "ticker pinned in sec_overrides.yaml"}),
-            "override": True, "pinned_cik": pin}
+    resolution = _with_pin_disclosure(query, iss, resolution)
     mapping = get_xbrl_mapping(mapping_version)
     all_cfg = mapping.get("statement_lines") or {}
     lines_cfg = all_cfg
@@ -581,6 +581,23 @@ def get_statement(query: str, statement: Optional[str] = None,
     if resolution:
         out["resolution"] = resolution
     return out
+
+
+def _with_pin_disclosure(query: str, iss: Dict[str, Any],
+                         resolution: Optional[Dict[str, Any]] = None
+                         ) -> Optional[Dict[str, Any]]:
+    """Shared by every local read: when `query` is a ticker pinned in
+    sec_overrides.yaml, return a `resolution` block with override=True,
+    pinned_cik and used_cik (merged into `resolution` if a fallback already
+    produced one); otherwise return `resolution` unchanged."""
+    q = query.strip()
+    pin = None if q.isdigit() or q.startswith("iss_") else _override_cik(q)
+    if not pin:
+        return resolution
+    base = resolution or {"resolved_cik": iss["cik"], "used_cik": iss["cik"],
+                          "fallback": False,
+                          "reason": "ticker pinned in sec_overrides.yaml"}
+    return {**base, "override": True, "pinned_cik": pin}
 
 
 def _annual_history_filer(iss: Dict[str, Any], db_path: Optional[str]):
@@ -671,7 +688,12 @@ def get_facts(query: str, line: Optional[str] = None,
         """, params).fetch_df()
     finally:
         con.close()
-    return {"issuer": iss, "mapping": mapping_used,
-            "n_total": int(total), "n_returned": int(len(df)),
-            "truncated": bool(total > len(df)),
-            "facts": json.loads(df.to_json(orient="records", date_format="iso"))}
+    out: Dict[str, Any] = {
+        "issuer": iss, "mapping": mapping_used,
+        "n_total": int(total), "n_returned": int(len(df)),
+        "truncated": bool(total > len(df)),
+        "facts": json.loads(df.to_json(orient="records", date_format="iso"))}
+    resolution = _with_pin_disclosure(query, iss)
+    if resolution:
+        out["resolution"] = resolution
+    return out
