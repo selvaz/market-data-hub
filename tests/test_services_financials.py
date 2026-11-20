@@ -733,3 +733,44 @@ def test_fiscal_year_change_does_not_flag_prior_full_year(tmp_db):
     assert out["latest_period"] == "2024-12-31"
     assert out["line_status"]["net_income"]["stale"] is False
     assert "warnings" not in out
+
+
+def test_pinned_read_exposes_override_and_ingestion_keeps_sec_name(
+        tmp_db, monkeypatch):
+    payload = {"1": {"cik_str": 2115436, "ticker": "XOM",
+                     "title": "Exxon Mobil Corp"}}
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: payload)
+    res = fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert res["override"] is True
+    # SEC-provided name is kept on first ingestion of the pinned filer
+    assert fin.resolve_issuer("XOM", db_path=tmp_db)["name"] == "Exxon Mobil Corp"
+    out = fin.get_statement("XOM", db_path=tmp_db)
+    r = out["resolution"]
+    assert r["override"] is True and r["pinned_cik"] == "0000034088"
+    assert r["used_cik"] == "0000034088" and r["fallback"] is False
+    # an unpinned ticker/CIK read carries no resolution when nothing happened
+    assert "resolution" not in fin.get_statement("0000034088", db_path=tmp_db)
+
+
+def test_sec_cik_reported_when_sec_returns_the_pinned_cik(tmp_db, monkeypatch):
+    payload = {"1": {"cik_str": 34088, "ticker": "XOM", "title": "Exxon"}}
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: payload)
+    res = fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert res["sec_cik"] == "0000034088"
+
+
+def test_register_issuer_fills_null_name_only(tmp_db):
+    con = get_conn(tmp_db)
+    try:
+        iid = fin._register_issuer(con, "0000000042", None, None)
+        fin._register_issuer(con, "0000000042", "Filled Inc", None)
+        fin._register_issuer(con, "0000000042", "Other Name", None)
+        name = con.execute("SELECT name FROM issuers WHERE issuer_id = ?",
+                           [iid]).fetchone()[0]
+    finally:
+        con.close()
+    assert name == "Filled Inc"

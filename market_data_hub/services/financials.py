@@ -152,6 +152,10 @@ def _register_issuer(con, cik: str, name: Optional[str],
         SELECT ?, ?, ?, NULL, NULL, ?, ?
         WHERE NOT EXISTS (SELECT 1 FROM issuers WHERE issuer_id = ?)
     """, [issuer_id, cik, name, now, now, issuer_id])
+    if name:        # fill a missing name only; never overwrite an existing one
+        con.execute("UPDATE issuers SET name = ?, updated_at = ? "
+                    "WHERE issuer_id = ? AND name IS NULL",
+                    [name, now, issuer_id])
     con.execute("""
         INSERT INTO identifier_aliases (namespace, value, target_type,
                                         target_id, valid_from, valid_to, updated_at)
@@ -210,13 +214,13 @@ def ensure_filings_and_facts(query: str, *, requester: str = "python",
         ident = {"cik": pinned, "name": None, "ticker": query.strip().upper()}
         if local and local.get("cik") == pinned:
             ident["name"] = local.get("name")
-        try:    # expose what SEC itself says (network; best effort)
+        try:    # what SEC itself says (network; best effort)
             sec_hit = resolve(query)
             sec_cik = sec_hit.get("sec_cik") or sec_hit.get("cik")
+            ident["name"] = ident["name"] or sec_hit.get("name")
         except Exception:
             sec_cik = None
-        pin_info = {"override": True,
-                    "sec_cik": sec_cik if sec_cik != pinned else None}
+        pin_info = {"override": True, "sec_cik": sec_cik}
     elif local and local.get("cik"):
         ident = {"cik": local["cik"], "name": local.get("name"),
                  "ticker": None if query.strip().isdigit() else query.strip().upper()}
@@ -476,12 +480,26 @@ def get_statement(query: str, statement: Optional[str] = None,
     Resolution (D63): when the resolved filer has no annual facts and
     sec_overrides.yaml names a predecessor CIK that has, that predecessor is
     used; `resolution` says which CIK was resolved, which was used, and why.
+    A ticker pinned in sec_overrides.yaml always gets `resolution` with
+    `override: true` and `pinned_cik`, even when no fallback was needed.
+
+    Limit: staleness uses one 200-day tolerance. A fiscal-year-end change
+    whose transition gap exceeds it flags the older full-year lines as stale
+    (conservative: the caller sees the period and decides).
     """
     iss = resolve_issuer(query, db_path=db_path)
     if iss is None:
         return {"error": f"issuer {query!r} not in the hub; run "
                          f"ensure_filings_and_facts first", "lines": {}}
     iss, resolution = _annual_history_filer(iss, db_path)
+    q = query.strip()
+    pin = None if q.isdigit() or q.startswith("iss_") else _override_cik(q)
+    if pin:     # a pinned ticker is always reported, fallback or not
+        resolution = {**(resolution or {
+            "resolved_cik": iss["cik"], "used_cik": iss["cik"],
+            "fallback": False,
+            "reason": "ticker pinned in sec_overrides.yaml"}),
+            "override": True, "pinned_cik": pin}
     mapping = get_xbrl_mapping(mapping_version)
     all_cfg = mapping.get("statement_lines") or {}
     lines_cfg = all_cfg
