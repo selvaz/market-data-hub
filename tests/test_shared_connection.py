@@ -611,7 +611,8 @@ def test_relation_expressions_cannot_call_state_changing_functions(db):
                          lambda: rel.aggregate("max(nextval('seq2'))"),
                          lambda: rel.order("nextval('seq2')"),
                          lambda: rel.select("i", "nextval('seq2')"),
-                         lambda: reader.table_function("checkpoint")):
+                         lambda: reader.table_function("checkpoint"),
+                         lambda: rel.select(duckdb.FunctionExpression("nextval", duckdb.ConstantExpression("seq2")))):
                 with pytest.raises(C.ReadOnlyViolation):
                     call()
             # Ordinary expressions still work.

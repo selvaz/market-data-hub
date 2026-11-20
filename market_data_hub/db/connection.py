@@ -853,6 +853,15 @@ def _iter_strings(value: Any) -> Iterator[str]:
             yield from _iter_strings(item)
 
 
+def _contains_expression_object(value: Any) -> bool:
+    expression_type = getattr(duckdb, "Expression", None)
+    if expression_type is not None and isinstance(value, expression_type):
+        return True
+    if isinstance(value, (list, tuple)):
+        return any(_contains_expression_object(item) for item in value)
+    return False
+
+
 def _check_expression_args(where: str, args: Any, kwargs: Any) -> None:
     """Refuse SQL expression arguments that call state-changing functions.
 
@@ -861,6 +870,11 @@ def _check_expression_args(where: str, args: Any, kwargs: Any) -> None:
     mentions a state-changing function is parsed as ``SELECT <expr>``; a
     call to one, or a string DuckDB cannot classify, is refused.
     """
+    for value in list(args) + list(kwargs.values()):
+        if _contains_expression_object(value):
+            # DuckDB Expression objects (FunctionExpression, ...) cannot be
+            # classified from text; refuse them on read-only handles.
+            raise _refuse(f"pass a DuckDB Expression object to {where}")
     for text in _iter_strings(list(args) + list(kwargs.values())):
         if not _STATE_CHANGING_HINT.search(text):
             continue
