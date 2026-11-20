@@ -398,6 +398,26 @@ def test_register_listing_enables_arbitrary_single_name(tmp_db):
                                  db_path=tmp_db)["n_obs"] == 5
 
 
+def test_new_venue_fills_existing_unnamed_instrument(tmp_db):
+    first = svc.register_listing(
+        "MULTI", exchange="XNAS", currency="USD", name=None,
+        db_path=tmp_db, verify=False)
+
+    second = svc.register_listing(
+        "MULTI", exchange="XMIL", currency="EUR", name="Multi Venue SA",
+        db_path=tmp_db, verify=False)
+
+    assert second["created"] is True
+    assert second["listing_id"] != first["listing_id"]
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        assert con.execute(
+            "SELECT name FROM instruments WHERE instrument_id = ?",
+            [first["instrument_id"]]).fetchone()[0] == "Multi Venue SA"
+    finally:
+        con.close()
+
+
 def test_register_unknown_symbol_writes_nothing(tmp_db):
     def empty_fetch(symbols, start, end):
         return {symbols[0]: pd.DataFrame()}

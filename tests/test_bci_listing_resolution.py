@@ -204,3 +204,39 @@ def test_yahoo_run_reports_ambiguous_symbol_and_continues(tmp_db, monkeypatch):
     assert by_symbol["SPY"] == ("ok", None)
     assert "BCI" not in stored_symbols
     assert "SPY" in stored_symbols
+
+
+def test_yahoo_run_stores_fetched_name_when_config_name_is_missing(
+        tmp_db, monkeypatch):
+    from market_data_hub import runner
+
+    monkeypatch.setattr(
+        runner, "get_yahoo_tickers",
+        lambda: [{"symbol": "UNNAMED", "asset_class": "EQUITY"}])
+    monkeypatch.setattr(runner.time, "sleep", lambda _: None)
+
+    frame = pd.DataFrame([{
+        "date": dt.date(2025, 1, 2), "symbol": "UNNAMED",
+        "open": 1.0, "high": 1.1, "low": 0.9, "close": 1.0,
+        "adj_close": 1.0, "volume": 100,
+    }])
+    frame.attrs["name"] = "Provider Supplied Name"
+    monkeypatch.setattr(
+        runner.yh, "yahoo_batch",
+        lambda symbols, start, end, **kwargs: {"UNNAMED": frame})
+    cfg = {
+        "incremental": {"tail_refresh_days": 5},
+        "backfill_start": {"yahoo": "2017-01-01"},
+        "parallelism": {"yahoo_workers": 1, "yahoo_batch_sleep": 0},
+    }
+
+    con = get_conn(tmp_db)
+    try:
+        runner.run_yahoo(con, cfg, "named-run", end="2025-01-03")
+        assert con.execute("""
+            SELECT i.name
+            FROM instruments i JOIN listings l USING (instrument_id)
+            WHERE l.symbol = 'UNNAMED' AND l.provider = 'yahoo'
+        """).fetchone()[0] == "Provider Supplied Name"
+    finally:
+        con.close()
