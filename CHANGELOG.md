@@ -7,6 +7,11 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- Listing names from price-source metadata are persisted by registration and
+  price-history collection without replacing an existing name; linking a
+  listing to an SEC issuer now backfills a still-missing name (D66).
+
 ## [0.4.0] — 2026-11-20
 
 Minor release (pre-1.0 semver: a minor bump marks a change consumers must check):

@@ -164,19 +164,20 @@ def test_ensure_links_existing_listing_to_issuer(tmp_db):
     con = get_conn(tmp_db)
     try:
         cand = svc._register_listing(con, {
-            "symbol": "AAPL", "kind": "EQUITY", "name": "Apple",
+            "symbol": "AAPL", "kind": "EQUITY", "name": None,
             "exchange": None, "currency": None, "provider": "yahoo"})
     finally:
         con.close()
     res = _ensure(tmp_db)
     con = get_conn(tmp_db, read_only=True)
     try:
-        linked = con.execute(
-            "SELECT issuer_id FROM instruments WHERE instrument_id = ?",
-            [cand["instrument_id"]]).fetchone()[0]
+        linked, name = con.execute(
+            "SELECT issuer_id, name FROM instruments WHERE instrument_id = ?",
+            [cand["instrument_id"]]).fetchone()
     finally:
         con.close()
     assert linked == res["issuer_id"]
+    assert name == "Apple Inc."
     # resolve by ticker now walks listing -> instrument -> issuer, locally
     assert fin.resolve_issuer("AAPL", db_path=tmp_db)["cik"] == CIK
 

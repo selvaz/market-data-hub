@@ -196,6 +196,11 @@ def _register_listing(con, cand: Dict[str, Any]) -> Dict[str, Any]:
         WHERE NOT EXISTS (SELECT 1 FROM instruments WHERE instrument_id = ?)
     """, [instrument_id, cand.get("kind") or "OTHER", cand.get("name"),
           now, now, instrument_id])
+    if cand.get("name"):
+        con.execute("""
+            UPDATE instruments SET name = ?, updated_at = ?
+            WHERE instrument_id = ? AND name IS NULL
+        """, [cand["name"], now, instrument_id])
     con.execute("""
         INSERT INTO listings (listing_id, instrument_id, symbol, exchange,
                               currency, provider, provider_symbol,
@@ -346,6 +351,11 @@ def register_listing(symbol: str, *, exchange: str, currency: str,
                 LIMIT 1
             """, [symbol, provider, equivalent_exchanges, exchange]).fetchone()
             if row:
+                if name:
+                    con.execute("""
+                        UPDATE instruments SET name = ?, updated_at = ?
+                        WHERE instrument_id = ? AND name IS NULL
+                    """, [name, now, row[1]])
                 _record_registration_hints(con, row[0], hints, now)
                 return {"listing_id": row[0], "instrument_id": row[1],
                         "symbol": symbol, "exchange": row[3],
@@ -566,6 +576,7 @@ def ensure_price_history(query: str, start: Optional[str] = None,
         provider_symbol = cand.get("provider_symbol") or symbol
         frames = fetch([provider_symbol], start, end)
         df = frames.get(provider_symbol)
+        source_name = df.attrs.get("name") if df is not None else None
         if df is not None and not df.empty:
             df = df.copy()
             df["symbol"] = symbol
@@ -588,6 +599,11 @@ def ensure_price_history(query: str, start: Optional[str] = None,
                 if df is not None and not df.empty:
                     added, updated = upsert(con, "prices_daily", df,
                                             outer_txn=True)
+                if source_name:
+                    con.execute("""
+                        UPDATE instruments SET name = ?, updated_at = ?
+                        WHERE instrument_id = ? AND name IS NULL
+                    """, [source_name, _now(), cand["instrument_id"]])
                 payload_hash = (
                     hashlib.sha256(
                         pd.util.hash_pandas_object(df).values.tobytes()
