@@ -202,19 +202,19 @@ def tool_get_financials_coverage(query: str = "") -> str:
 
 
 def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
-                             limit: int = 25, mapping_version: int = 2) -> str:
+                             limit: int = 25, mapping_version: int = 3) -> str:
     """XBRL company facts for ONE issuer from the hub DB (read-only, no
     network, max 100 rows). Every value carries unit, period, fiscal
     year/period, form, accession and filed date, so it is verifiable.
 
     query: CIK, ticker or issuer_id (must be ingested already).
-    line:  mapped statement line (mapping v2) — revenue | cost_of_revenue |
+    line:  mapped statement line (mapping v3) — revenue | cost_of_revenue |
            gross_profit | operating_income | net_income | assets |
-           liabilities | equity | long_term_debt | short_term_debt |
+           liabilities | liabilities_derived (v3, derived) | equity | long_term_debt | short_term_debt |
            operating_cash_flow, plus component lines cost_of_goods_sold,
            cost_of_services, current_portion_long_term_debt,
            commercial_paper, short_term_borrowings.
-    mapping_version: 2 (default) or 1 (the original 6 lines).
+    mapping_version: 3 (default), 2 or 1 (the original 6 lines).
     forms: optional comma-separated filter, e.g. "10-K" or "10-K,10-Q".
     A ticker pinned by the hub config (e.g. XOM) adds `resolution`
     (override, pinned_cik, used_cik) to the answer."""
@@ -225,11 +225,11 @@ def tool_get_financial_facts(query: str, line: str = "", forms: str = "",
 
 
 def tool_get_statement(query: str, statement: str = "", periods: int = 8,
-                       mapping_version: int = 2) -> str:
+                       mapping_version: int = 3) -> str:
     """Standardized ANNUAL statement lines for ONE issuer (revenue,
     cost_of_revenue, gross_profit, operating_income, net_income, assets,
     liabilities, equity, long_term_debt, short_term_debt,
-    operating_cash_flow, plus component lines; mapping v2), ready for
+    operating_cash_flow, plus component lines; mapping v3), ready for
     period-over-period comparison — margins, leverage, cash conversion —
     WITHOUT raw XBRL/HTML. Derived from the hub's facts via the versioned
     mapping; each value carries concept, accession and filed date, and
@@ -238,7 +238,17 @@ def tool_get_statement(query: str, statement: str = "", periods: int = 8,
 
     query:     CIK, ticker or issuer_id (ingested via tool_ensure_financials).
     statement: optional filter — income | balance | cash_flow.
-    mapping_version: 2 (default) or 1 (the original 6 lines, reproducible).
+    mapping_version: 3 (default), 2 or 1 (the original 6 lines, reproducible).
+
+    DERIVED VALUES (mapping v3): `liabilities_derived` is COMPUTED, not
+    filed: LiabilitiesAndStockholdersEquity minus equity, present only for
+    periods where the issuer files no plain Liabilities (e.g. AMZN, LLY,
+    ABBV, MRK, ORCL, WMT). Each value has derived=true, `formula` and
+    `inputs` (concept, accession, filed date). An agent MUST say it is
+    derived when quoting it, and prefer the filed `liabilities` value when
+    both exist. If inputs.subtrahend.concept is StockholdersEquity (no
+    noncontrolling-interest-inclusive total), the result also contains any
+    noncontrolling/redeemable interest.
 
     Caveats: a line takes ONE concept per period and is never a sum, so
     totals and components are separate lines. cost_of_revenue and

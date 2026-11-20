@@ -192,7 +192,7 @@ def test_get_facts_mapped_line_and_bounds(tmp_db):
     assert fact["accession"] == "0000320193-24-000123"
     assert fact["filed_date"].startswith("2024-11-01")
     assert fact["end_date"].startswith("2024-09-28")
-    assert out["mapping"]["version"] == 2
+    assert out["mapping"]["version"] == 3
 
     out = fin.get_facts("AAPL", line="not_a_line", db_path=tmp_db)
     assert "unknown statement line" in out["error"]
@@ -308,12 +308,12 @@ def test_get_statement_periods_restatement_and_concept_fallback(tmp_db):
     assert 30.0 not in [v["value"] for v in rev.values()]
     # instant (balance) line present with no duration filter applied
     assert out["lines"]["assets"]["2024-09-28"]["value"] == 500.0
-    assert out["mapping"]["version"] == 2
+    assert out["mapping"]["version"] == 3
 
     # statement filter + period cap
     out = fin.get_statement("AAPL", statement="balance", periods=1,
                             db_path=tmp_db)
-    assert set(out["lines"]) == {"assets", "liabilities", "equity",
+    assert set(out["lines"]) == {"assets", "liabilities", "liabilities_derived", "equity",
                                  "long_term_debt", "short_term_debt",
                                  "current_portion_long_term_debt",
                                  "commercial_paper", "short_term_borrowings"}
@@ -380,7 +380,7 @@ def _ko_like_facts():
 def test_mapping_v2_resolves_margin_and_leverage_lines(tmp_db):
     _ensure(tmp_db, fetch_facts=lambda cik: _ko_like_facts())
     out = fin.get_statement("AAPL", db_path=tmp_db)
-    assert out["mapping"]["version"] == 2
+    assert out["mapping"]["version"] == 3
     ln = out["lines"]
     end = "2025-12-31"
     assert ln["cost_of_revenue"][end]["value"] == 60.0
@@ -396,7 +396,7 @@ def test_mapping_v2_resolves_margin_and_leverage_lines(tmp_db):
     # no derived lines: absent Liabilities stays empty
     assert ln["liabilities"] == {}
     facts = fin.get_facts("AAPL", line="gross_profit", db_path=tmp_db)
-    assert facts["n_returned"] == 1 and facts["mapping"]["version"] == 2
+    assert facts["n_returned"] == 1 and facts["mapping"]["version"] == 3
 
 
 def test_mapping_v1_unchanged_and_explicit(tmp_db):
@@ -457,8 +457,8 @@ def test_tool_layer_accepts_mapping_version(monkeypatch):
                         lambda q, **kw: seen.update(fa=kw) or {})
     at.tool_get_statement("AAPL")
     at.tool_get_financial_facts("AAPL")
-    assert seen["st"]["mapping_version"] == 2
-    assert seen["fa"]["mapping_version"] == 2
+    assert seen["st"]["mapping_version"] == 3
+    assert seen["fa"]["mapping_version"] == 3
     at.tool_get_statement("AAPL", mapping_version=1)
     at.tool_get_financial_facts("AAPL", mapping_version=1)
     assert seen["st"]["mapping_version"] == 1
@@ -810,3 +810,153 @@ def test_agent_tools_pass_pin_disclosure_through(tmp_db, monkeypatch):
     assert cov[0]["resolution"]["pinned_cik"] == "0000034088"
     stmt = json.loads(agent_tools.tool_get_statement("XOM"))
     assert stmt["resolution"]["override"] is True
+
+
+# ------------------------------------------------- mapping v3: derived lines
+def _amzn_like_facts(with_liabilities=False, nci=True):
+    def inst(val, accn="acc-amzn", filed="2026-02-06"):
+        return {"units": {"USD": [{"end": "2025-12-31", "val": val,
+                                   "fy": 2025, "fp": "FY", "form": "10-K",
+                                   "filed": filed, "accn": accn}]}}
+    g = {"LiabilitiesAndStockholdersEquity": inst(1000.0),
+         "StockholdersEquity": inst(400.0, "acc-eq", "2026-02-07")}
+    if nci:
+        g["StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"] = inst(410.0)
+    if with_liabilities:
+        g["Liabilities"] = inst(555.0)
+    return {"cik": 320193, "facts": {"us-gaap": g}}
+
+
+def test_mapping_v3_derived_liabilities_with_provenance(tmp_db):
+    _ensure(tmp_db, fetch_facts=lambda cik: _amzn_like_facts())
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert out["mapping"]["version"] == 3
+    assert out["lines"]["liabilities"] == {}
+    d = out["lines"]["liabilities_derived"]["2025-12-31"]
+    assert d["value"] == 590.0                      # 1000 - 410 (incl. NCI)
+    assert d["derived"] is True
+    assert d["formula"] == "LiabilitiesAndStockholdersEquity - equity"
+    mi, su = d["inputs"]["minuend"], d["inputs"]["subtrahend"]
+    assert mi["concept"] == "LiabilitiesAndStockholdersEquity"
+    assert mi["accession"] == "acc-amzn" and mi["filed_date"] == "2026-02-06"
+    assert su["concept"] == ("StockholdersEquityIncludingPortionAttributable"
+                             "ToNoncontrollingInterest")
+    assert su["value"] == 410.0
+    assert out["line_status"]["liabilities_derived"]["stale"] is False
+    # statement filter keeps the derived balance line, drops it for income
+    assert "liabilities_derived" in fin.get_statement(
+        "AAPL", statement="balance", db_path=tmp_db)["lines"]
+    assert "liabilities_derived" not in fin.get_statement(
+        "AAPL", statement="income", db_path=tmp_db)["lines"]
+
+
+def test_mapping_v3_derived_falls_back_to_stockholders_equity(tmp_db):
+    _ensure(tmp_db, fetch_facts=lambda cik: _amzn_like_facts(nci=False))
+    d = fin.get_statement("AAPL", db_path=tmp_db)[
+        "lines"]["liabilities_derived"]["2025-12-31"]
+    assert d["value"] == 600.0
+    assert d["inputs"]["subtrahend"]["concept"] == "StockholdersEquity"
+    assert d["inputs"]["subtrahend"]["accession"] == "acc-eq"
+
+
+def test_mapping_v3_no_derived_when_liabilities_filed(tmp_db):
+    _ensure(tmp_db, fetch_facts=lambda cik: _amzn_like_facts(
+        with_liabilities=True))
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert out["lines"]["liabilities"]["2025-12-31"]["value"] == 555.0
+    assert "derived" not in out["lines"]["liabilities"]["2025-12-31"]
+    assert out["lines"]["liabilities_derived"] == {}
+
+
+def test_mapping_v1_v2_have_no_derived_lines(tmp_db):
+    from market_data_hub.config_loader import get_xbrl_mapping
+    v2, v3 = get_xbrl_mapping(2), get_xbrl_mapping(3)
+    assert "derived_lines" not in get_xbrl_mapping(1)
+    assert "derived_lines" not in v2
+    assert v3["statement_lines"] == v2["statement_lines"]
+    _ensure(tmp_db, fetch_facts=lambda cik: _amzn_like_facts())
+    for ver in (1, 2):
+        out = fin.get_statement("AAPL", mapping_version=ver, db_path=tmp_db)
+        assert "liabilities_derived" not in out["lines"]
+        assert out["mapping"]["version"] == ver
+    facts = fin.get_facts("AAPL", line="liabilities_derived", db_path=tmp_db)
+    assert facts["n_returned"] >= 2 and facts["mapping"]["version"] == 3
+
+
+def _liab_facts(**concepts):
+    """concept -> list of (unit, end, start, val, filed, accn) entries."""
+    g = {}
+    for name, entries in concepts.items():
+        units = {}
+        for unit, end, start, val, filed, accn in entries:
+            row = {"end": end, "val": val, "fy": 2025, "fp": "FY",
+                   "form": "10-K", "filed": filed, "accn": accn}
+            if start:
+                row["start"] = start
+            units.setdefault(unit, []).append(row)
+        g[name] = {"units": units}
+    return {"cik": 320193, "facts": {"us-gaap": g}}
+
+
+def _derived(tmp_db, **concepts):
+    _ensure(tmp_db, fetch_facts=lambda cik: _liab_facts(**concepts))
+    return fin.get_statement("AAPL", db_path=tmp_db)["lines"][
+        "liabilities_derived"]
+
+
+_E = "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"
+
+
+def test_derived_requires_same_end_date(tmp_db):
+    out = _derived(
+        tmp_db,
+        LiabilitiesAndStockholdersEquity=[
+            ("USD", "2025-12-31", None, 1000.0, "2026-02-06", "a1")],
+        **{_E: [("USD", "2024-12-31", None, 400.0, "2026-02-06", "a1")]})
+    assert out == {}
+
+
+def test_derived_uses_latest_filed_restatement(tmp_db):
+    out = _derived(
+        tmp_db,
+        LiabilitiesAndStockholdersEquity=[
+            ("USD", "2025-12-31", None, 1000.0, "2026-02-06", "a1"),
+            ("USD", "2025-12-31", None, 1100.0, "2026-05-01", "a2")],
+        **{_E: [("USD", "2025-12-31", None, 400.0, "2026-02-06", "a1")]})
+    d = out["2025-12-31"]
+    assert d["value"] == 700.0
+    assert d["inputs"]["minuend"]["accession"] == "a2"
+
+
+def test_derived_ignores_non_usd_inputs(tmp_db):
+    out = _derived(
+        tmp_db,
+        LiabilitiesAndStockholdersEquity=[
+            ("USD", "2025-12-31", None, 1000.0, "2026-02-06", "a1")],
+        **{_E: [("EUR", "2025-12-31", None, 400.0, "2026-02-06", "a1")]})
+    assert out == {}
+
+
+def test_derived_ignores_duration_facts(tmp_db):
+    # a later-filed annual-duration fact with the same end date must not win
+    out = _derived(
+        tmp_db,
+        LiabilitiesAndStockholdersEquity=[
+            ("USD", "2025-12-31", None, 1000.0, "2026-02-06", "a1"),
+            ("USD", "2025-12-31", "2025-01-01", 5000.0, "2026-05-01", "a2")],
+        **{_E: [
+            ("USD", "2025-12-31", None, 400.0, "2026-02-06", "a1"),
+            ("USD", "2025-12-31", "2025-01-01", 9.0, "2026-05-01", "a2")]})
+    d = out["2025-12-31"]
+    assert d["value"] == 600.0
+    assert d["inputs"]["minuend"]["accession"] == "a1"
+    assert d["inputs"]["subtrahend"]["accession"] == "a1"
+
+
+def test_derived_duration_only_input_gives_nothing(tmp_db):
+    out = _derived(
+        tmp_db,
+        LiabilitiesAndStockholdersEquity=[
+            ("USD", "2025-12-31", "2025-01-01", 5000.0, "2026-05-01", "a2")],
+        **{_E: [("USD", "2025-12-31", None, 400.0, "2026-02-06", "a1")]})
+    assert out == {}
