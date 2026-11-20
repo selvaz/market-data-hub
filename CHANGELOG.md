@@ -36,9 +36,9 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
   thread using a read-only handle that asks for the advisory writer lock is
   refused at once (lock ordering). A garbage-collected handle never waits for
   the registry lock (its release is queued and drained once the lock is
-  free). The read-only guard also refuses SELECTs calling `nextval`,
-  `setval` or checkpoint table functions; it is a safety net, not a
-  security boundary. New `open_existing()` (read-only; no create, no migrate, one
+  free; waiters drain it too). The read-only guard also refuses SELECTs
+  and relation expressions calling `nextval`, `setval` or checkpoint table
+  functions; it is a safety net, not a security boundary. New `open_existing()` (read-only; no create, no migrate, one
   attempt across processes, at most 5 s in-process) replaces the direct
   `duckdb.connect(read_only=True)` calls in the DataSpace health check,
   `catalog_live`, `alfred_backfill` and `scripts/resolve_duplicate_listings.py`.

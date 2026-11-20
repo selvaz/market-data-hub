@@ -845,6 +845,33 @@ def _function_names(sql: str) -> Optional[set]:
     return names
 
 
+def _iter_strings(value: Any) -> Iterator[str]:
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            yield from _iter_strings(item)
+
+
+def _check_expression_args(where: str, args: Any, kwargs: Any) -> None:
+    """Refuse SQL expression arguments that call state-changing functions.
+
+    Relation methods (project, filter, aggregate, order, join, ...) and a
+    few connection methods take SQL expressions as strings. Each string that
+    mentions a state-changing function is parsed as ``SELECT <expr>``; a
+    call to one, or a string DuckDB cannot classify, is refused.
+    """
+    for text in _iter_strings(list(args) + list(kwargs.values())):
+        if not _STATE_CHANGING_HINT.search(text):
+            continue
+        names = _function_names(f"SELECT {text}")
+        if names is None:
+            raise _refuse(f"pass an unclassifiable expression to {where}")
+        hit = names & _STATE_CHANGING_FUNCTIONS
+        if hit:
+            raise _refuse(f"call {', '.join(sorted(hit))}() via {where}")
+
+
 def _check_statement(kind: str, text: str) -> None:
     """Refuse a statement that could change the database.
 
@@ -938,7 +965,18 @@ class _GuardedRelation:
                 f"relation.{name} is not exposed by market-data-hub connections "
                 "(classify it in _RELATION_READ_METHODS or _RELATION_WRITE_METHODS)")
         attr = getattr(self._rel, name)
-        return self._hub._wrapping(attr) if callable(attr) else attr
+        if not callable(attr):
+            return attr
+        if self._hub._read_only:
+            hub = self._hub
+
+            def checked(*args: Any, **kwargs: Any) -> Any:
+                hub._use()
+                _check_expression_args(f"relation.{name}()", args, kwargs)
+                return hub._wrap(attr(*args, **kwargs))
+            checked.__name__ = name
+            return checked
+        return self._hub._wrapping(attr)
 
     def query(self, virtual_table_name: str, sql_query: str) -> Any:
         self._hub._use()
@@ -954,12 +992,15 @@ class _GuardedRelation:
         return self._hub._wrap(self._rel[item])
 
     def __len__(self) -> int:
+        self._hub._use()
         return len(self._rel)
 
     def __repr__(self) -> str:
+        self._hub._use()
         return repr(self._rel)
 
     def __str__(self) -> str:
+        self._hub._use()
         return str(self._rel)
 
 
@@ -1032,6 +1073,31 @@ def _registry() -> Iterator[threading.Condition]:
         _drain_pending_releases()
 
 
+def _drain_pending_releases_locked() -> None:
+    """Process queued releases while already holding the registry lock.
+
+    For waiters: a finaliser that ran on a thread holding the lock queued
+    its release and could not drain it; ``cond.wait()`` would then release
+    the lock without anyone processing it. The root is closed under the
+    lock here, which only delays other registry callers briefly.
+    """
+    while _PENDING_RELEASES:
+        entry = _PENDING_RELEASES.popleft()
+        root = _release_locked(entry)
+        if root is not None:
+            try:
+                root.close()
+            finally:
+                if _REGISTRY.get(entry.key) is entry:
+                    del _REGISTRY[entry.key]
+                _REGISTRY_COND.notify_all()
+
+
+#: Longest single sleep of a waiter, so a release queued by a finaliser
+#: while nobody could drain it is picked up promptly.
+_WAIT_SLICE_S = 0.2
+
+
 def _drain_pending_releases() -> None:
     while _PENDING_RELEASES:
         cond = _REGISTRY_COND
@@ -1089,6 +1155,11 @@ def _sql_method(name: str) -> Any:
 def _plain_method(name: str) -> Any:
     def method(self: "HubConnection", *args: Any, **kwargs: Any) -> Any:
         self._use()
+        if self._read_only:
+            if (name == "table_function" and args and isinstance(args[0], str)
+                    and args[0].lower() in _STATE_CHANGING_FUNCTIONS):
+                raise _refuse(f"call {args[0]}() via table_function()")
+            _check_expression_args(f"{name}()", args, kwargs)
         return self._wrap(getattr(self._cursor, name)(*args, **kwargs))
     method.__name__ = name
     method.__doc__ = f"``DuckDBPyConnection.{name}``."
@@ -1352,6 +1423,7 @@ def _acquire(path: str, *, read_only: bool, create: bool, budget_s: float
     with _registry() as cond:
         try:
             while True:
+                _drain_pending_releases_locked()
                 entry = _REGISTRY.get(key)
                 if entry is None:
                     if not read_only or not _WRITERS_WAITING.get(key):
@@ -1384,7 +1456,7 @@ def _acquire(path: str, *, read_only: bool, create: bool, budget_s: float
                     raise SharedDatabaseBusy(
                         f"timed out after {budget_s:g}s waiting for {reason} "
                         f"({os.path.basename(path)})")
-                cond.wait(remaining)
+                cond.wait(min(remaining, _WAIT_SLICE_S))
         finally:
             if waiting:
                 left = _WRITERS_WAITING[key] - 1

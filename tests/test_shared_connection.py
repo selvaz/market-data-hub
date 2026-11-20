@@ -573,3 +573,49 @@ def test_read_only_guard_refuses_state_changing_functions(db):
         assert writer.execute("SELECT nextval('seq')").fetchone() == (1,)
         with C.get_conn(db, read_only=True) as reader:
             assert reader.execute("SELECT currval('seq')").fetchone() == (1,)
+
+
+def test_writer_picks_up_a_release_queued_while_nobody_could_drain_it(db, monkeypatch):
+    # The last reader's handle is finalised on a thread holding the registry
+    # lock, so its release is only queued. A writer waiting for readers to
+    # drain must process that queue itself instead of sleeping its budget.
+    monkeypatch.setattr(C, "_WRITER_LOCK_WAIT_S", 60.0)
+    reader = C.get_conn(db, read_only=True)
+    got: dict = {}
+
+    def write():
+        t0 = time.monotonic()
+        with C.get_conn(db) as con:
+            con.execute("INSERT INTO stress VALUES (3, 3)")
+        got["s"] = time.monotonic() - t0
+
+    w = threading.Thread(target=write, daemon=True)
+    w.start()
+    _wait_until(lambda: C._WRITERS_WAITING.get(_key(db)))
+    with C._REGISTRY_COND:  # raw: leaving this block drains nothing
+        del reader  # finaliser runs here and can only queue the release
+        gc.collect()
+        assert len(C._PENDING_RELEASES) == 1
+    w.join(timeout=30)
+    assert not w.is_alive(), "writer slept through a queued release"
+    assert got["s"] < 10
+
+
+def test_relation_expressions_cannot_call_state_changing_functions(db):
+    with C.get_conn(db) as writer:
+        writer.execute("CREATE SEQUENCE seq2 START 1")
+        with C.get_conn(db, read_only=True) as reader:
+            rel = reader.table("stress")
+            for call in (lambda: rel.project("nextval('seq2') AS n"),
+                         lambda: rel.filter("setval('seq2', 5) > 0"),
+                         lambda: rel.aggregate("max(nextval('seq2'))"),
+                         lambda: rel.order("nextval('seq2')"),
+                         lambda: rel.select("i", "nextval('seq2')"),
+                         lambda: reader.table_function("checkpoint")):
+                with pytest.raises(C.ReadOnlyViolation):
+                    call()
+            # Ordinary expressions still work.
+            assert rel.project("i + 1 AS j").filter("j > 0").fetchall() == []
+            assert len(rel) == 0
+        # The sequence was never advanced through the read-only handle.
+        assert writer.execute("SELECT nextval('seq2')").fetchone() == (1,)
