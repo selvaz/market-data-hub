@@ -592,7 +592,7 @@ def test_xom_pin_ingests_historical_filer_and_statement_has_lines(
 
 def _holdco_then_predecessor(tmp_db):
     """Holdco ingested first (8-K facts only), then the predecessor filer
-    with the 10-K history, sharing the ticker alias ZZZ."""
+    with the 10-K history; both carry the ticker alias ZZZ."""
     _ensure(tmp_db, resolve=lambda q: {"cik": "0002115436", "name": "HoldCo",
                                        "ticker": "ZZZ"},
             fetch_submissions=lambda cik: _subs(2115436),
@@ -621,20 +621,115 @@ def test_get_statement_without_any_annual_history_says_so(tmp_db):
     assert out["lines"]["assets"] == {}
 
 
-def test_get_statement_falls_back_to_filer_with_annual_facts(tmp_db):
+def test_get_statement_falls_back_only_via_configured_predecessor(tmp_db):
     _holdco_then_predecessor(tmp_db)
+    # 0002115436 has a cik_predecessors entry -> explicit fallback
     out = fin.get_statement("0002115436", db_path=tmp_db)
     res = out["resolution"]
     assert (res["resolved_cik"], res["used_cik"], res["fallback"]) == (
         "0002115436", "0000034088", True)
     assert out["issuer"]["cik"] == "0000034088"
     assert out["lines"]["assets"]
-    # the configured predecessor works with no shared alias at all
-    used, info = fin._annual_history_filer(
-        {"issuer_id": "iss_x", "cik": "0002115436"}, tmp_db)
-    assert info["fallback"] and used["cik"] == "0000034088"
 
 
-def test_resolve_issuer_prefers_filer_with_annual_facts(tmp_db):
-    _holdco_then_predecessor(tmp_db)
-    assert fin.resolve_issuer("ZZZ", db_path=tmp_db)["cik"] == "0000034088"
+def test_no_generic_shared_ticker_fallback(tmp_db):
+    """A reused ticker must not reach an unrelated old issuer: two issuers
+    share ZZZ, neither has a cik_predecessors entry -> no fallback, and the
+    ticker resolves as before (no 'has annual facts' preference)."""
+    _ensure(tmp_db, resolve=lambda q: {"cik": "0000999991", "name": "NewCo",
+                                       "ticker": "ZZZ"},
+            fetch_submissions=lambda cik: _subs(999991),
+            fetch_facts=lambda cik: _facts_for(999991, annual=False))
+    fin.ensure_filings_and_facts(
+        "0000888881", db_path=tmp_db,
+        fetch_submissions=lambda cik: _subs(888881),
+        fetch_facts=lambda cik: _facts_for(888881))
+    con = get_conn(tmp_db)
+    try:
+        iss = con.execute("SELECT issuer_id FROM issuers WHERE cik = ?",
+                          ["0000888881"]).fetchone()[0]
+        con.execute("INSERT INTO identifier_aliases VALUES "
+                    "('ticker','ZZZ','issuer',?,NULL,NULL,now())", [iss])
+    finally:
+        con.close()
+    out = fin.get_statement("0000999991", db_path=tmp_db)
+    assert out["issuer"]["cik"] == "0000999991"
+    assert out["resolution"]["fallback"] is False
+    assert out["lines"]["assets"] == {}
+
+
+def test_pinned_ticker_reads_follow_the_pin(tmp_db):
+    # XOM not ingested under the pinned CIK yet -> nothing local to return
+    _ensure(tmp_db, resolve=lambda q: {"cik": "0002115436", "name": "HoldCo",
+                                       "ticker": "XOM"},
+            fetch_submissions=lambda cik: _subs(2115436),
+            fetch_facts=lambda cik: _facts_for(2115436, annual=False))
+    assert fin.resolve_issuer("XOM", db_path=tmp_db) is None
+    fin.ensure_filings_and_facts(
+        "0000034088", db_path=tmp_db,
+        fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert fin.resolve_issuer("XOM", db_path=tmp_db)["cik"] == "0000034088"
+
+
+def test_ensure_returns_pin_provenance(tmp_db, monkeypatch):
+    monkeypatch.setattr(sec, "fetch_company_tickers", lambda: _TICKER_PAYLOAD)
+    res = fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert res["override"] is True
+    assert res["sec_cik"] == "0002115436"
+    again = fin.ensure_filings_and_facts(
+        "XOM", db_path=tmp_db, fetch_submissions=lambda cik: _subs(34088),
+        fetch_facts=lambda cik: _facts_for(34088))
+    assert again["reused"] and again["override"] and \
+        again["sec_cik"] == "0002115436"
+
+
+def test_staleness_uses_all_statements_even_when_filtered(tmp_db):
+    # income reaches FY2012 only; balance sheet reaches FY2023
+    facts = _facts_for(320193, ni_year=2013, assets_year=2024)
+    _ensure(tmp_db, fetch_facts=lambda cik: facts)
+    out = fin.get_statement("AAPL", statement="income", db_path=tmp_db)
+    assert out["latest_period"] == "2023-12-31"
+    assert out["line_status"]["net_income"]["stale"] is True
+    assert "assets" not in out["lines"]
+    assert out["periods"] == ["2012-12-31"]       # requested lines only
+
+
+def _ni_assets_facts(ni_end, assets_end):
+    return {"cik": 320193, "facts": {"us-gaap": {
+        "NetIncomeLoss": {"units": {"USD": [
+            {"start": ni_end.replace(ni_end[:4], str(int(ni_end[:4]) - 1)),
+             "end": ni_end, "val": 1.0, "fy": 2020, "fp": "FY",
+             "form": "10-K", "filed": "2025-03-01", "accn": "a1"}]}},
+        "Assets": {"units": {"USD": [
+            {"end": assets_end, "val": 2.0, "fy": 2020, "fp": "FY",
+             "form": "10-K", "filed": "2025-03-01", "accn": "a2"}]}},
+    }}}
+
+
+def test_stale_boundary_is_200_days(tmp_db):
+    # income 2023-12-31; assets 2024-07-18 is exactly 200 days later: fresh
+    _ensure(tmp_db, fetch_facts=lambda c: _ni_assets_facts(
+        "2023-12-31", "2024-07-18"))
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert out["line_status"]["net_income"]["stale"] is False
+
+
+def test_stale_boundary_201_days_is_stale(tmp_db):
+    _ensure(tmp_db, fetch_facts=lambda c: _ni_assets_facts(
+        "2023-12-31", "2024-07-19"))
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert out["line_status"]["net_income"]["stale"] is True
+
+
+def test_fiscal_year_change_does_not_flag_prior_full_year(tmp_db):
+    # FYE moved from Sept to Dec: last full-year duration ends 2024-09-28, the
+    # transition-period balance sheet is 2024-12-31 (94 days later)
+    _ensure(tmp_db, fetch_facts=lambda c: _ni_assets_facts(
+        "2024-09-28", "2024-12-31"))
+    out = fin.get_statement("AAPL", db_path=tmp_db)
+    assert out["latest_period"] == "2024-12-31"
+    assert out["line_status"]["net_income"]["stale"] is False
+    assert "warnings" not in out

@@ -13,8 +13,10 @@
 #   2. cik_predecessors: successor CIK -> predecessor CIK. get_statement falls
 #      back to the predecessor when the resolved filer has no annual (10-K /
 #      20-F) facts, and says so in the response ("resolution").
-#   3. Without an entry, get_statement also falls back to another issuer that
-#      shares a ticker alias and does hold annual facts.
+#      There is NO generic fallback (no shared-ticker or name matching): a
+#      reused ticker must never resolve to an unrelated old issuer.
+#   3. Local reads of a pinned ticker (resolve_issuer) resolve only to the
+#      pinned CIK, so reads agree with ingestion.
 # Tickers are upper-case, class shares with a dash (BRK-B). CIKs are 10 digits.
 ticker_cik:
   XOM: "0000034088"

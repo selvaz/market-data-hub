@@ -254,9 +254,11 @@ def tool_get_statement(query: str, statement: str = "", periods: int = 8,
     whose newest value is more than ~200 days older than it has stale=true and
     a `warnings` entry. NEVER present a stale value as current: say it is from
     period `stale_since`, or omit it.
-    RESOLUTION: when the ticker's filer has no 10-K/20-F facts (e.g. a new
-    holding-company filer), the response uses the predecessor/same-ticker
-    filer that does and explains it under `resolution`."""
+    RESOLUTION: when the resolved filer has no 10-K/20-F facts and the hub
+    config names a predecessor CIK (e.g. a new holding-company filer), the
+    response uses that predecessor and explains it under `resolution`.
+    `latest_period` is computed across all statements, even when `statement`
+    filters the lines."""
     from market_data_hub.services import financials as _fin
     return _json(_fin.get_statement(query, statement=statement or None,
                                     periods=periods,
