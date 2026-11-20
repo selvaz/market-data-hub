@@ -13,10 +13,12 @@ agent tools take `mapping_version`.
 
 ## Default version
 
-v3 is the default. It only adds a new key (`liabilities_derived`) to the
-`get_statement` response and leaves every v2 line byte-for-byte identical, so
-callers that ignore unknown lines are unaffected. Pass `mapping_version=2` or
-`1` to reproduce older output.
+v3 is the default. Every v2 line is identical, but a v3 `get_statement`
+response also has the derived key `liabilities_derived` in `lines`, in
+`line_status` (so it can raise a staleness `warnings` entry) and, because its
+period ends join the response, possibly in `periods`. Callers that iterate all
+lines must handle the extra key. Pass `mapping_version=2` or `1` to reproduce
+older output.
 
 ## Derived lines (v3)
 
@@ -26,6 +28,9 @@ WMT, TGT, MCD, NKE) never file the plain `Liabilities` concept.
 
 Rules:
 
+- Inputs are instant (balance-sheet) USD facts only: duration facts and other
+  units are ignored. Both inputs must have the same period end; the latest
+  filed fact per period wins for each.
 - Computed per period, only where the filed `liabilities` line has no value.
 - A separate key: a filed value is never overwritten, and `liabilities` itself
   is never filled by a computation.

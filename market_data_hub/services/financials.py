@@ -460,10 +460,15 @@ def get_financials_coverage(query: Optional[str] = None,
     return rows
 
 
-def _read_concepts(con, cik: str,
-                   concepts: List[str]) -> Dict[str, Dict[str, Any]]:
+def _read_concepts(con, cik: str, concepts: List[str],
+                   instant_only: bool = False) -> Dict[str, Dict[str, Any]]:
     """period end -> {value, concept, accession, filed_date}: concepts tried in
-    order (earlier wins), latest filed row per period (annual 10-K/20-F)."""
+    order (earlier wins), latest filed row per period (annual 10-K/20-F).
+    instant_only: balance-sheet facts only (start_date NULL), so a duration
+    fact with the same end date can never win."""
+    period_sql = ("start_date IS NULL" if instant_only else
+                  "(start_date IS NULL OR datediff('day', start_date, "
+                  "end_date) BETWEEN 330 AND 400)")
     per_period: Dict[str, Dict[str, Any]] = {}
     for concept in concepts:
         rows = con.execute("""
@@ -472,8 +477,7 @@ def _read_concepts(con, cik: str,
             FROM sec_company_facts
             WHERE cik = ? AND concept = ? AND unit = 'USD'
               AND form IN ('10-K', '20-F', '10-K/A', '20-F/A')
-              AND (start_date IS NULL
-                   OR datediff('day', start_date, end_date) BETWEEN 330 AND 400)
+              AND """ + period_sql + """
             QUALIFY row_number() OVER (
                 PARTITION BY end_date ORDER BY filed_date DESC) = 1
             ORDER BY end_date DESC
@@ -495,8 +499,9 @@ def _derive_line(con, cik: str, dcfg: Dict[str, Any],
     value is labelled derived and carries the inputs' provenance."""
     absent = dcfg.get("only_if_absent")
     have = filed_lines.get(absent, {}) if absent else {}
-    minu = _read_concepts(con, cik, dcfg["minuend"])
-    subs = [(c, _read_concepts(con, cik, [c])) for c in dcfg["subtrahends"]]
+    minu = _read_concepts(con, cik, dcfg["minuend"], instant_only=True)
+    subs = [(c, _read_concepts(con, cik, [c], instant_only=True))
+            for c in dcfg["subtrahends"]]
     out: Dict[str, Dict[str, Any]] = {}
     for end, m in minu.items():
         if end in have:

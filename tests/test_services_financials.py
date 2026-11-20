@@ -881,3 +881,82 @@ def test_mapping_v1_v2_have_no_derived_lines(tmp_db):
         assert out["mapping"]["version"] == ver
     facts = fin.get_facts("AAPL", line="liabilities_derived", db_path=tmp_db)
     assert facts["n_returned"] >= 2 and facts["mapping"]["version"] == 3
+
+
+def _liab_facts(**concepts):
+    """concept -> list of (unit, end, start, val, filed, accn) entries."""
+    g = {}
+    for name, entries in concepts.items():
+        units = {}
+        for unit, end, start, val, filed, accn in entries:
+            row = {"end": end, "val": val, "fy": 2025, "fp": "FY",
+                   "form": "10-K", "filed": filed, "accn": accn}
+            if start:
+                row["start"] = start
+            units.setdefault(unit, []).append(row)
+        g[name] = {"units": units}
+    return {"cik": 320193, "facts": {"us-gaap": g}}
+
+
+def _derived(tmp_db, **concepts):
+    _ensure(tmp_db, fetch_facts=lambda cik: _liab_facts(**concepts))
+    return fin.get_statement("AAPL", db_path=tmp_db)["lines"][
+        "liabilities_derived"]
+
+
+_E = "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"
+
+
+def test_derived_requires_same_end_date(tmp_db):
+    out = _derived(
+        tmp_db,
+        LiabilitiesAndStockholdersEquity=[
+            ("USD", "2025-12-31", None, 1000.0, "2026-02-06", "a1")],
+        **{_E: [("USD", "2024-12-31", None, 400.0, "2026-02-06", "a1")]})
+    assert out == {}
+
+
+def test_derived_uses_latest_filed_restatement(tmp_db):
+    out = _derived(
+        tmp_db,
+        LiabilitiesAndStockholdersEquity=[
+            ("USD", "2025-12-31", None, 1000.0, "2026-02-06", "a1"),
+            ("USD", "2025-12-31", None, 1100.0, "2026-05-01", "a2")],
+        **{_E: [("USD", "2025-12-31", None, 400.0, "2026-02-06", "a1")]})
+    d = out["2025-12-31"]
+    assert d["value"] == 700.0
+    assert d["inputs"]["minuend"]["accession"] == "a2"
+
+
+def test_derived_ignores_non_usd_inputs(tmp_db):
+    out = _derived(
+        tmp_db,
+        LiabilitiesAndStockholdersEquity=[
+            ("USD", "2025-12-31", None, 1000.0, "2026-02-06", "a1")],
+        **{_E: [("EUR", "2025-12-31", None, 400.0, "2026-02-06", "a1")]})
+    assert out == {}
+
+
+def test_derived_ignores_duration_facts(tmp_db):
+    # a later-filed annual-duration fact with the same end date must not win
+    out = _derived(
+        tmp_db,
+        LiabilitiesAndStockholdersEquity=[
+            ("USD", "2025-12-31", None, 1000.0, "2026-02-06", "a1"),
+            ("USD", "2025-12-31", "2025-01-01", 5000.0, "2026-05-01", "a2")],
+        **{_E: [
+            ("USD", "2025-12-31", None, 400.0, "2026-02-06", "a1"),
+            ("USD", "2025-12-31", "2025-01-01", 9.0, "2026-05-01", "a2")]})
+    d = out["2025-12-31"]
+    assert d["value"] == 600.0
+    assert d["inputs"]["minuend"]["accession"] == "a1"
+    assert d["inputs"]["subtrahend"]["accession"] == "a1"
+
+
+def test_derived_duration_only_input_gives_nothing(tmp_db):
+    out = _derived(
+        tmp_db,
+        LiabilitiesAndStockholdersEquity=[
+            ("USD", "2025-12-31", "2025-01-01", 5000.0, "2026-05-01", "a2")],
+        **{_E: [("USD", "2025-12-31", None, 400.0, "2026-02-06", "a1")]})
+    assert out == {}
