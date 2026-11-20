@@ -148,6 +148,11 @@ def ensure_listing(con, symbol: str, *, kind: str = "OTHER",
         SELECT ?, NULL, ?, ?, ?, ?
         WHERE NOT EXISTS (SELECT 1 FROM instruments WHERE instrument_id = ?)
     """, [instrument_id, kind, name, now, now, instrument_id])
+    if name:
+        con.execute("""
+            UPDATE instruments SET name = ?, updated_at = ?
+            WHERE instrument_id = ? AND name IS NULL
+        """, [name, now, instrument_id])
     con.execute("""
         INSERT INTO listings (listing_id, instrument_id, symbol, exchange,
                               currency, provider, provider_symbol,

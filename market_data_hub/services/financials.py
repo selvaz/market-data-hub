@@ -184,6 +184,19 @@ def _register_issuer(con, cik: str, name: Optional[str],
                 SELECT instrument_id FROM listings
                 WHERE upper(symbol) IN ({ph}))
         """, [issuer_id, now] + variants)
+        # A listing may predate SEC resolution.  Once linked, use the issuer's
+        # persisted name as a backfill, while preserving any source-provided
+        # or operator-supplied instrument name already present.
+        con.execute(f"""
+            UPDATE instruments SET name = (
+                SELECT name FROM issuers WHERE issuer_id = ?
+            ), updated_at = ?
+            WHERE issuer_id = ? AND name IS NULL
+              AND (SELECT name FROM issuers WHERE issuer_id = ?) IS NOT NULL
+              AND instrument_id IN (
+                  SELECT instrument_id FROM listings
+                  WHERE upper(symbol) IN ({ph}))
+        """, [issuer_id, now, issuer_id, issuer_id] + variants)
     return issuer_id
 
 

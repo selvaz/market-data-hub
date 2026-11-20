@@ -37,6 +37,13 @@ def _failing_fetch(symbols, start, end):
     raise RuntimeError("provider down")
 
 
+def _named_fetch(symbols, start, end):
+    frames = _fake_fetch(symbols, start, end)
+    for frame in frames.values():
+        frame.attrs["name"] = "Price Source Name"
+    return frames
+
+
 def test_ensure_resolves_registers_ingests_and_is_idempotent(tmp_db):
     # SPY is in the config universe but has no identity rows nor prices yet.
     res = svc.ensure_price_history("SPY", start="2024-01-01", end="2024-01-31",
@@ -69,6 +76,39 @@ def test_ensure_resolves_registers_ingests_and_is_idempotent(tmp_db):
         assert con.execute(
             "SELECT COUNT(*) FROM prices_daily WHERE symbol = 'SPY'"
         ).fetchone()[0] == 5
+    finally:
+        con.close()
+
+
+def test_ensure_stores_source_metadata_name_without_overwriting(tmp_db):
+    listing = svc.register_listing(
+        "NAMED", exchange="XNAS", currency="USD", name=None,
+        db_path=tmp_db, verify=False)
+    result = svc.ensure_price_history(
+        listing["listing_id"], start="2024-01-01", end="2024-01-31",
+        db_path=tmp_db, fetch=_named_fetch)
+    con = get_conn(tmp_db)
+    try:
+        instrument_id = con.execute(
+            "SELECT instrument_id FROM listings WHERE listing_id = ?",
+            [result["listing_id"]]).fetchone()[0]
+        assert con.execute(
+            "SELECT name FROM instruments WHERE instrument_id = ?",
+            [instrument_id]).fetchone()[0] == "Price Source Name"
+
+        con.execute("UPDATE instruments SET name = 'Curated Name' "
+                    "WHERE instrument_id = ?", [instrument_id])
+    finally:
+        con.close()
+
+    svc.ensure_price_history(
+        listing["listing_id"], start="2024-02-01", end="2024-02-29", force=True,
+        db_path=tmp_db, fetch=_named_fetch)
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        assert con.execute(
+            "SELECT name FROM instruments WHERE instrument_id = ?",
+            [instrument_id]).fetchone()[0] == "Curated Name"
     finally:
         con.close()
 
@@ -356,6 +396,26 @@ def test_register_listing_enables_arbitrary_single_name(tmp_db):
     assert res["status"] == "completed" and res["rows_added"] == 5
     assert svc.get_price_summary(reg["listing_id"],
                                  db_path=tmp_db)["n_obs"] == 5
+
+
+def test_new_venue_fills_existing_unnamed_instrument(tmp_db):
+    first = svc.register_listing(
+        "MULTI", exchange="XNAS", currency="USD", name=None,
+        db_path=tmp_db, verify=False)
+
+    second = svc.register_listing(
+        "MULTI", exchange="XMIL", currency="EUR", name="Multi Venue SA",
+        db_path=tmp_db, verify=False)
+
+    assert second["created"] is True
+    assert second["listing_id"] != first["listing_id"]
+    con = get_conn(tmp_db, read_only=True)
+    try:
+        assert con.execute(
+            "SELECT name FROM instruments WHERE instrument_id = ?",
+            [first["instrument_id"]]).fetchone()[0] == "Multi Venue SA"
+    finally:
+        con.close()
 
 
 def test_register_unknown_symbol_writes_nothing(tmp_db):

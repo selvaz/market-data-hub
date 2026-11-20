@@ -131,6 +131,9 @@ def run_yahoo(con, cfg: dict, run_id: str, *, start_override: Optional[str] = No
         for sym, df in batch.items():
             st = datetime.now(timezone.utc)
             t_sym = time.perf_counter()
+            source_name = df.attrs.get("name") if df is not None else None
+            if source_name:
+                ensure_listing(con, sym, name=source_name)
             if df is None or df.empty:
                 log_run(con, run_id=run_id, started_at=st, source="yahoo",
                         symbol=sym, rows_added=0, rows_updated=0,
