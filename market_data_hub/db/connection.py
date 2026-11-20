@@ -4,6 +4,12 @@ connection.py — centralized access to the DuckDB database.
 
 The DB path is configurable via settings.yaml or the MARKET_DATA_DB environment
 variable. The schema is applied (idempotently) on first open.
+
+In-process sharing: DuckDB refuses to open one file twice in the same process
+with different configurations (for example ``read_only=True`` while a
+read-write connection is alive). :func:`get_conn` therefore keeps one shared
+database instance per resolved path and hands every caller its own cursor
+wrapped in a :class:`HubConnection`. See ``_SharedDatabase`` for the rules.
 """
 
 from __future__ import annotations
@@ -11,10 +17,15 @@ from __future__ import annotations
 import math
 import os
 import re
+import json
+import threading
 import time
+import weakref
+from collections import deque
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
+from typing import Any, Iterator, Optional
 
 import duckdb
 
@@ -754,36 +765,793 @@ def _connect_read_write_waiting(path: str) -> duckdb.DuckDBPyConnection:
     )
 
 
+# ---------------------------------------------------------------------------
+# In-process sharing of one DuckDB instance per file
+# ---------------------------------------------------------------------------
+
+#: Statement types a read-only handle refuses outright. DuckDB enforces this
+#: natively on a read-only database; the guard gives the same answer when a
+#: read-only request is served from a read-write instance shared with a
+#: writer. CREATE (TEMP allowed), COPY (``COPY (query) TO`` allowed) and
+#: CALL/PRAGMA (checkpoints refused) are refined in ``_check_read_only``.
+_WRITE_STATEMENT_TYPES = frozenset({
+    "INSERT", "UPDATE", "DELETE", "ALTER", "DROP", "VACUUM", "COPY_DATABASE",
+    "ATTACH", "DETACH", "MERGE_INTO", "CREATE_FUNC", "ANALYZE",
+})
+_TEMP_CREATE = re.compile(
+    r"^\s*CREATE\s+(?:OR\s+REPLACE\s+)?TEMP(?:ORARY)?\b", re.IGNORECASE
+)
+_COPY_QUERY_TO = re.compile(r"^\s*COPY\s*\(", re.IGNORECASE)
+_CHECKPOINT = re.compile(r"\b(?:FORCE_?\s*)?CHECKPOINT\b", re.IGNORECASE)
+
+#: How long open_existing() waits for another thread of this process that is
+#: opening or closing the same file, or for a queued writer, before giving up.
+_OPEN_EXISTING_WAIT_S = 5.0
+
+
+class ReadOnlyViolation(duckdb.InvalidInputException):
+    """A write was attempted through a handle opened with ``read_only=True``."""
+
+
+class SharedDatabaseBusy(duckdb.IOException):
+    """The in-process shared instance could not be obtained in time."""
+
+
+def _refuse(what: str) -> ReadOnlyViolation:
+    return ReadOnlyViolation(
+        f"Cannot {what} through a read-only market-data-hub connection")
+
+
+#: Functions that change database state even inside a SELECT (sequences,
+#: checkpoints called as table functions). ``currval`` only reads.
+_STATE_CHANGING_FUNCTIONS = frozenset({
+    "nextval", "setval", "checkpoint", "force_checkpoint",
+})
+_STATE_CHANGING_HINT = re.compile(
+    r"\b(?:nextval|setval|checkpoint|force_checkpoint)\b", re.IGNORECASE)
+_AST_CON: Optional[duckdb.DuckDBPyConnection] = None
+_AST_LOCK = threading.Lock()
+
+
+def _function_names(sql: str) -> Optional[set]:
+    """Every function name in a SELECT, from DuckDB's own serialised AST.
+
+    ``None`` when DuckDB cannot serialise it (callers then refuse).
+    """
+    global _AST_CON
+    with _AST_LOCK:
+        if _AST_CON is None:
+            _AST_CON = duckdb.connect(":memory:")
+        try:
+            row = _AST_CON.execute("SELECT json_serialize_sql(?)", [sql]).fetchone()
+        except duckdb.Error:
+            return None
+    if row is None:
+        return None
+    tree = json.loads(row[0])
+    if tree.get("error"):
+        return None
+    names: set = set()
+    stack: list = [tree]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, dict):
+            name = node.get("function_name")
+            if isinstance(name, str):
+                names.add(name.lower())
+            stack.extend(node.values())
+        elif isinstance(node, list):
+            stack.extend(node)
+    return names
+
+
+def _iter_strings(value: Any) -> Iterator[str]:
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            yield from _iter_strings(item)
+
+
+def _contains_expression_object(value: Any) -> bool:
+    expression_type = getattr(duckdb, "Expression", None)
+    if expression_type is not None and isinstance(value, expression_type):
+        return True
+    if isinstance(value, (list, tuple)):
+        return any(_contains_expression_object(item) for item in value)
+    return False
+
+
+def _check_expression_args(where: str, args: Any, kwargs: Any) -> None:
+    """Refuse SQL expression arguments that call state-changing functions.
+
+    Relation methods (project, filter, aggregate, order, join, ...) and a
+    few connection methods take SQL expressions as strings. Each string that
+    mentions a state-changing function is parsed as ``SELECT <expr>``; a
+    call to one, or a string DuckDB cannot classify, is refused.
+    """
+    for value in list(args) + list(kwargs.values()):
+        if _contains_expression_object(value):
+            # DuckDB Expression objects (FunctionExpression, ...) cannot be
+            # classified from text; refuse them on read-only handles.
+            raise _refuse(f"pass a DuckDB Expression object to {where}")
+    for text in _iter_strings(list(args) + list(kwargs.values())):
+        if not _STATE_CHANGING_HINT.search(text):
+            continue
+        names = _function_names(f"SELECT {text}")
+        if names is None:
+            raise _refuse(f"pass an unclassifiable expression to {where}")
+        hit = names & _STATE_CHANGING_FUNCTIONS
+        if hit:
+            raise _refuse(f"call {', '.join(sorted(hit))}() via {where}")
+
+
+def _check_statement(kind: str, text: str) -> None:
+    """Refuse a statement that could change the database.
+
+    Scope: this is a safety net that keeps read-only callers honest when
+    they share a read-write instance, not a security boundary. It parses
+    with DuckDB (statement types, and function names from the serialised
+    AST of SELECTs that mention a state-changing function); anything it
+    cannot classify on that path is refused rather than allowed.
+    """
+    if kind == "SELECT" and _STATE_CHANGING_HINT.search(text):
+        names = _function_names(text)
+        if names is None:
+            raise _refuse("execute a SELECT whose functions cannot be classified")
+        hit = names & _STATE_CHANGING_FUNCTIONS
+        if hit:
+            raise _refuse(f"call {', '.join(sorted(hit))}()")
+    if kind in _WRITE_STATEMENT_TYPES:
+        raise _refuse(f'execute a statement of type "{kind}"')
+    if kind == "CREATE" and not _TEMP_CREATE.match(text):
+        raise _refuse('execute a statement of type "CREATE" (non-TEMP)')
+    if kind == "COPY" and not _COPY_QUERY_TO.match(text):
+        raise _refuse('execute "COPY" (only "COPY (query) TO" is allowed)')
+    if kind in ("CALL", "PRAGMA") and _CHECKPOINT.search(text):
+        raise _refuse("checkpoint")
+
+
+def _check_read_only(query: Any) -> None:
+    """Refuse anything that could write, parsed by DuckDB's own parser."""
+    if isinstance(query, duckdb.Statement):
+        _check_statement(query.type.name, query.query)
+        return
+    if not isinstance(query, str):
+        raise _refuse(f"execute a {type(query).__name__} (only SQL text is checked)")
+    try:
+        statements = duckdb.extract_statements(query)
+    except duckdb.Error:
+        return  # executing it fails in the same parser; let DuckDB say why
+    for stmt in statements:
+        _check_statement(stmt.type.name, stmt.query)
+
+
+# --- relations ---------------------------------------------------------------
+
+#: Relation methods that write to the database (``create_view`` and
+#: ``to_view`` create persistent views: verified on a read-only database).
+_RELATION_WRITE_METHODS = frozenset({
+    "create", "create_view", "insert", "insert_into", "to_table", "to_view",
+    "update",
+})
+#: Relation methods and attributes that only read. An explicit list rather
+#: than a fall-through: a method a future DuckDB adds is unavailable until
+#: someone classifies it here.
+_RELATION_READ_METHODS = frozenset("""
+    aggregate alias any_value apply arg_max arg_min arrow avg bit_and bit_or
+    bit_xor bitstring_agg bool_and bool_or columns count cross cume_dist
+    dense_rank describe description df distinct dtypes except_ execute explain
+    favg fetch_arrow_reader fetch_arrow_table fetch_df_chunk fetch_record_batch
+    fetchall fetchdf fetchmany fetchnumpy fetchone filter first first_value
+    fsum geomean histogram intersect join lag last last_value lead limit list
+    map max mean median min mode n_tile nth_value order percent_rank pl
+    product project quantile quantile_cont quantile_disc rank rank_dense
+    row_number select select_dtypes select_types set_alias shape show sort
+    sql_query std stddev stddev_pop stddev_samp string_agg sum tf
+    to_arrow_reader to_arrow_table to_csv to_df to_parquet torch type types
+    union unique value_counts var var_pop var_samp variance write_csv
+    write_parquet
+""".split())
+
+
+class _GuardedRelation:
+    """A DuckDB relation bound to a :class:`HubConnection`.
+
+    It holds the handle, so garbage collection cannot close the cursor a
+    lazily evaluated relation still needs; it exposes only classified
+    methods; and on a read-only handle it refuses the writing ones. Methods
+    returning relations return guarded relations.
+    """
+
+    __slots__ = ("_rel", "_hub")
+
+    def __init__(self, rel: duckdb.DuckDBPyRelation, hub: "HubConnection") -> None:
+        self._rel = rel
+        self._hub = hub
+
+    def __getattr__(self, name: str) -> Any:
+        if name in _RELATION_WRITE_METHODS:
+            if self._hub._read_only:
+                raise _refuse(f"call relation.{name}()")
+        elif name not in _RELATION_READ_METHODS:
+            raise AttributeError(
+                f"relation.{name} is not exposed by market-data-hub connections "
+                "(classify it in _RELATION_READ_METHODS or _RELATION_WRITE_METHODS)")
+        attr = getattr(self._rel, name)
+        if not callable(attr):
+            return attr
+        if self._hub._read_only:
+            hub = self._hub
+
+            def checked(*args: Any, **kwargs: Any) -> Any:
+                hub._use()
+                _check_expression_args(f"relation.{name}()", args, kwargs)
+                return hub._wrap(attr(*args, **kwargs))
+            checked.__name__ = name
+            return checked
+        return self._hub._wrapping(attr)
+
+    def query(self, virtual_table_name: str, sql_query: str) -> Any:
+        self._hub._use()
+        if self._hub._read_only:
+            # DuckDB < 1.5 implements relation.query() by creating a
+            # persistent view named virtual_table_name: a write. Refuse it on
+            # read-only handles whatever the version; use con.sql() instead.
+            raise _refuse("call relation.query() (it creates a view)")
+        return self._hub._wrap(self._rel.query(virtual_table_name, sql_query))
+
+    def close(self) -> None:
+        self._rel.close()
+
+    def __getitem__(self, item: Any) -> Any:
+        self._hub._use()
+        return self._hub._wrap(self._rel[item])
+
+    def __len__(self) -> int:
+        self._hub._use()
+        return len(self._rel)
+
+    def __repr__(self) -> str:
+        self._hub._use()
+        return repr(self._rel)
+
+    def __str__(self) -> str:
+        self._hub._use()
+        return str(self._rel)
+
+
+# --- the shared instance -----------------------------------------------------
+
+class _SharedDatabase:
+    """One open DuckDB database instance for one file in this process.
+
+    Rules (all state is guarded by ``_REGISTRY_COND``):
+
+    * The instance is opened by the first caller and closed when the last
+      handle on it is closed (or garbage collected), so the file lock other
+      processes see is held no longer than before this registry existed.
+      While it is being opened or closed the entry stays registered with
+      ``busy`` set, so nobody else touches the file meanwhile.
+    * Only a read-write request (:func:`get_conn` without ``read_only``)
+      ever opens a read-write instance, and it runs ``migrate()`` on it
+      before any handle exists. A read-only request joins whatever instance
+      is open (through a guarded handle if it is read-write), opens a
+      read-only instance when no writer is queued, or waits for the queued
+      writer's instance. It never opens read-write and never migrates.
+    * A read-write request arriving while a read-only instance is open waits,
+      on the writer budget, for the read-only handles to drain. New readers
+      queue behind a waiting writer unless their thread uses a handle here
+      (that would deadlock).
+    * A read-write instance stays read-write until its last handle closes,
+      even when only readers remain; it keeps the exclusive file lock
+      meanwhile.
+    * Every wait is bounded and raises :class:`SharedDatabaseBusy`.
+
+    Thread ownership: a handle belongs to the thread that last used it
+    (created it, called a method on it, or entered it). Ownership decides
+    whether a thread "holds" a read-only instance, for the same-thread
+    upgrade check and for ``lock.db_write_lock``'s fail-fast.
+    """
+
+    __slots__ = ("key", "read_only", "root", "refs", "busy", "handles")
+
+    def __init__(self, key: str, read_only: bool) -> None:
+        self.key = key
+        self.read_only = read_only
+        self.root: Optional[duckdb.DuckDBPyConnection] = None
+        self.refs = 0
+        self.busy = True  # being opened
+        self.handles: "weakref.WeakSet[HubConnection]" = weakref.WeakSet()
+
+    def used_by(self, thread: int) -> bool:
+        return any(h._user == thread and not h._closed for h in list(self.handles))
+
+
+_REGISTRY: dict[str, _SharedDatabase] = {}
+_REGISTRY_COND = threading.Condition(threading.Lock())
+#: Entries whose handle was garbage collected, waiting to be released. A
+#: finaliser can run on any thread at any allocation -- including a thread
+#: that holds the (non-reentrant) registry lock -- so ``__del__`` never
+#: blocks on the lock: it queues the release here and drains the queue only
+#: if it can take the lock without waiting. Whoever holds the lock drains
+#: the queue right after releasing it (``_registry()``).
+_PENDING_RELEASES: "deque[_SharedDatabase]" = deque()
+
+
+@contextmanager
+def _registry() -> Iterator[threading.Condition]:
+    """Hold the registry lock; drain finalised releases once it is free."""
+    cond = _REGISTRY_COND
+    try:
+        with cond:
+            yield cond
+    finally:
+        _drain_pending_releases()
+
+
+def _drain_pending_releases_locked() -> None:
+    """Process queued releases while already holding the registry lock.
+
+    For waiters: a finaliser that ran on a thread holding the lock queued
+    its release and could not drain it; ``cond.wait()`` would then release
+    the lock without anyone processing it. The root is closed under the
+    lock here, which only delays other registry callers briefly.
+    """
+    while _PENDING_RELEASES:
+        entry = _PENDING_RELEASES.popleft()
+        root = _release_locked(entry)
+        if root is not None:
+            try:
+                root.close()
+            finally:
+                if _REGISTRY.get(entry.key) is entry:
+                    del _REGISTRY[entry.key]
+                _REGISTRY_COND.notify_all()
+
+
+#: Longest single sleep of a waiter, so a release queued by a finaliser
+#: while nobody could drain it is picked up promptly.
+_WAIT_SLICE_S = 0.2
+
+
+def _drain_pending_releases() -> None:
+    while _PENDING_RELEASES:
+        cond = _REGISTRY_COND
+        if not cond.acquire(blocking=False):
+            return  # the holder drains when it lets go
+        closing = []
+        try:
+            while _PENDING_RELEASES:
+                entry = _PENDING_RELEASES.popleft()
+                root = _release_locked(entry)
+                if root is not None:
+                    closing.append((entry, root))
+        finally:
+            cond.release()
+        for entry, root in closing:
+            _finish_close(entry, root)
+#: Writers queued per key, waiting for a read-only instance to drain.
+_WRITERS_WAITING: dict[str, int] = {}
+
+
+def _registry_key(path: str) -> str:
+    return os.path.normcase(os.path.realpath(path))
+
+
+def thread_holds_read_only_instance(db_path: Optional[str] = None) -> bool:
+    """Whether this thread uses a handle on a read-only shared instance.
+
+    Such a thread can never become a writer on that file until the handle is
+    closed: a writer waits for read-only handles to drain. ``db_write_lock``
+    uses this to fail fast instead of waiting on the advisory lock, which a
+    writer holding it while waiting for that handle would never release (a
+    lock-ordering deadlock). "Uses" follows the ownership rule documented on
+    ``_SharedDatabase``: the thread that last used the handle.
+    """
+    key = _registry_key(resolve_db_path(db_path))
+    me = threading.get_ident()
+    with _registry():
+        entry = _REGISTRY.get(key)
+        return bool(entry is not None and entry.read_only and entry.used_by(me))
+
+
+# --- the handle ----------------------------------------------------------------
+
+def _sql_method(name: str) -> Any:
+    def method(self: "HubConnection", query: Any, *args: Any, **kwargs: Any) -> Any:
+        self._use()
+        if self._read_only:
+            _check_read_only(query)
+        return self._wrap(getattr(self._cursor, name)(query, *args, **kwargs))
+    method.__name__ = name
+    method.__doc__ = f"``DuckDBPyConnection.{name}``, read-only checked."
+    return method
+
+
+def _plain_method(name: str) -> Any:
+    def method(self: "HubConnection", *args: Any, **kwargs: Any) -> Any:
+        self._use()
+        if self._read_only:
+            if (name == "table_function" and args and isinstance(args[0], str)
+                    and args[0].lower() in _STATE_CHANGING_FUNCTIONS):
+                raise _refuse(f"call {args[0]}() via table_function()")
+            _check_expression_args(f"{name}()", args, kwargs)
+        return self._wrap(getattr(self._cursor, name)(*args, **kwargs))
+    method.__name__ = name
+    method.__doc__ = f"``DuckDBPyConnection.{name}``."
+    return method
+
+
+def _write_method(name: str) -> Any:
+    def method(self: "HubConnection", *args: Any, **kwargs: Any) -> Any:
+        self._use()
+        if self._read_only:
+            raise _refuse(f"call {name}()")
+        return self._wrap(getattr(self._cursor, name)(*args, **kwargs))
+    method.__name__ = name
+    method.__doc__ = f"``DuckDBPyConnection.{name}``; refused when read-only."
+    return method
+
+
+def _result_property(name: str) -> property:
+    def getter(self: "HubConnection") -> Any:
+        return getattr(self._cursor, name)
+    getter.__name__ = name
+    return property(getter, doc=f"``DuckDBPyConnection.{name}``.")
+
+
+#: SQL entry points: the statement is parsed and checked on read-only handles.
+_HUB_SQL_METHODS = ("execute", "executemany", "sql", "query", "from_query")
+#: Reads of the pending result, relation constructors over files, frames or
+#: existing tables/views, and connection-local session state (temporary
+#: registrations, Python UDFs, transactions). None of them writes the file.
+_HUB_PLAIN_METHODS = (
+    "fetchone", "fetchall", "fetchmany", "fetchdf", "fetch_df", "fetchnumpy",
+    "fetch_df_chunk", "fetch_arrow_table", "fetch_record_batch", "df", "pl",
+    "arrow", "tf", "torch", "to_arrow_table", "to_arrow_reader",
+    "table", "view", "values", "table_function", "read_csv", "read_json",
+    "read_parquet", "from_df", "from_arrow", "from_parquet", "from_csv_auto",
+    "register", "unregister", "create_function", "remove_function",
+    "begin", "commit", "rollback", "get_table_names", "extract_statements",
+    "interrupt",
+)
+#: Methods that write without SQL text.
+_HUB_WRITE_METHODS = ("append", "checkpoint")
+#: Plain attributes of the pending result.
+_HUB_PROPERTIES = ("description", "rowcount")
+
+
+class HubConnection:
+    """A per-caller cursor on the shared database instance for one file.
+
+    Exposes an explicit allow-list of ``duckdb.DuckDBPyConnection`` methods
+    (see ``_HUB_*`` above); anything else raises ``AttributeError`` rather
+    than reaching the raw cursor. SQL is checked on read-only handles with
+    DuckDB's parser; calls returning the connection return this handle (so
+    ``con.execute(...).fetchone()`` chains stay guarded and keep the handle
+    alive); relations come back as guarded relations; ``cursor()`` and
+    ``duplicate()`` return further tracked handles. ``close()`` closes only
+    this handle; the shared instance closes with its last handle. Like any
+    DuckDB connection, one handle must not be used by two threads at once.
+    """
+
+    def __init__(self, entry: Optional[_SharedDatabase],
+                 cursor: duckdb.DuckDBPyConnection, read_only: bool) -> None:
+        self._entry = entry
+        self._cursor = cursor
+        self._read_only = read_only
+        self._user = threading.get_ident()
+        self._closed = False
+
+    # -- bookkeeping --------------------------------------------------------
+    def _use(self) -> None:
+        self._user = threading.get_ident()
+
+    def _wrap(self, value: Any) -> Any:
+        if value is self._cursor:
+            return self
+        if isinstance(value, duckdb.DuckDBPyRelation):
+            return _GuardedRelation(value, self)
+        if isinstance(value, duckdb.DuckDBPyConnection):
+            # Defensive: no exposed method returns another connection, and
+            # an untracked one must never escape.
+            value.close()
+            raise TypeError("an untracked DuckDB connection would escape the registry")
+        return value
+
+    def _wrapping(self, fn: Any) -> Any:
+        def call(*args: Any, **kwargs: Any) -> Any:
+            self._use()
+            return self._wrap(fn(*args, **kwargs))
+        call.__name__ = getattr(fn, "__name__", "call")
+        return call
+
+    # -- public surface -----------------------------------------------------
+    @property
+    def read_only(self) -> bool:
+        return self._read_only
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
+
+    def cursor(self) -> "HubConnection":
+        """Another handle on the same instance, tracked like any other."""
+        self._use()
+        if self._closed:
+            raise duckdb.ConnectionException("Connection already closed!")
+        if self._entry is None:  # private in-memory database
+            return HubConnection(None, self._cursor.cursor(), self._read_only)
+        with _registry():
+            return _hand_out(self._entry, self._read_only)
+
+    duplicate = cursor
+
+    def __getattr__(self, name: str) -> Any:
+        raise AttributeError(
+            f"HubConnection.{name} is not exposed: market-data-hub connections "
+            "allow only classified DuckDB methods (see _HUB_* in "
+            "market_data_hub/db/connection.py)")
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        try:
+            self._cursor.close()
+        finally:
+            _release(self._entry)
+
+    def __enter__(self) -> "HubConnection":
+        self._use()
+        return self
+
+    def __exit__(self, *exc: Any) -> None:
+        self.close()
+
+    def __del__(self) -> None:
+        # A forgotten handle must not pin the file for the life of the
+        # process: before the registry, garbage collection closed it. This
+        # may run on a thread that holds the registry lock, so never wait for
+        # it here: close the cursor, queue the release, drain if free.
+        try:
+            if self._closed:
+                return
+            self._closed = True
+            try:
+                self._cursor.close()
+            finally:
+                if self._entry is not None:
+                    _PENDING_RELEASES.append(self._entry)
+                    _drain_pending_releases()
+        except Exception:
+            pass
+
+    def __repr__(self) -> str:
+        mode = "read-only" if self._read_only else "read-write"
+        state = "closed" if self._closed else "open"
+        return f"<HubConnection {mode} {state}>"
+
+
+for _name in _HUB_SQL_METHODS:
+    setattr(HubConnection, _name, _sql_method(_name))
+for _name in _HUB_PLAIN_METHODS:
+    setattr(HubConnection, _name, _plain_method(_name))
+for _name in _HUB_WRITE_METHODS:
+    setattr(HubConnection, _name, _write_method(_name))
+for _name in _HUB_PROPERTIES:
+    setattr(HubConnection, _name, _result_property(_name))
+del _name
+
+
+# --- acquire / release ---------------------------------------------------------
+
+def _release(entry: Optional[_SharedDatabase]) -> None:
+    """Release one handle explicitly (never called with the lock held)."""
+    if entry is None:
+        return
+    with _registry():
+        root = _release_locked(entry)
+    if root is not None:
+        _finish_close(entry, root)
+
+
+def _release_locked(entry: _SharedDatabase) -> Optional[duckdb.DuckDBPyConnection]:
+    """Count one handle out (lock held); the root to close if it was the last."""
+    entry.refs -= 1
+    if entry.refs <= 0 and _REGISTRY.get(entry.key) is entry:
+        # Keep the entry registered, marked busy, until the file is really
+        # closed: a caller that opened a fresh instance in another mode
+        # before root.close() returned would meet the very configuration
+        # error this registry exists to prevent.
+        entry.busy = True
+        root = entry.root
+        entry.root = None
+        return root
+    _REGISTRY_COND.notify_all()
+    return None
+
+
+def _finish_close(entry: _SharedDatabase, root: duckdb.DuckDBPyConnection) -> None:
+    """Close the instance and withdraw its entry (lock not held)."""
+    try:
+        root.close()
+    finally:
+        with _registry():
+            if _REGISTRY.get(entry.key) is entry:
+                del _REGISTRY[entry.key]
+            _REGISTRY_COND.notify_all()
+
+
+def _open_root(path: str, *, read_only: bool, create: bool
+               ) -> duckdb.DuckDBPyConnection:
+    """Open the file for a new shared instance (no registry lock held).
+
+    Read-write (only ever for :func:`get_conn` writers): create a missing
+    file, wait out other processes, migrate, checkpoint. Read-only with
+    ``create`` (get_conn readers): create a missing file with the schema,
+    then wait out other processes. Read-only without ``create``
+    (open_existing): the file must exist; one attempt.
+    """
+    if not read_only:
+        assert create, "only get_conn writers open a read-write instance"
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        con = _connect_read_write_waiting(path)
+        try:
+            # migrate() also calls apply_schema() internally, then walks any
+            # pending `if current < N:` ladder steps (e.g. ALTER TABLE ADD
+            # COLUMN) that CREATE TABLE IF NOT EXISTS alone can't apply to a
+            # table that already exists.
+            migrate(con)
+            # Flush the schema work before any cursor exists. Otherwise a
+            # cursor that later updates rows and then alters a constraint
+            # (SET NOT NULL) fails with "Cannot create index with
+            # outstanding updates" while the root connection is alive.
+            con.execute("CHECKPOINT")
+        except BaseException:
+            con.close()
+            raise
+        return con
+    if not create:
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"database file does not exist: {path}")
+        return duckdb.connect(path, read_only=True)
+    if not os.path.exists(path):
+        # A reader on a nonexistent DB: create it once with the schema (the
+        # behaviour get_conn(read_only=True) always had). Two processes can
+        # see the file missing at the same instant, and the loser meets the
+        # winner's lock -- the same contention as anywhere else, so it waits.
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        tmp = _connect_read_write_waiting(path)
+        try:
+            apply_schema(tmp)
+        finally:
+            tmp.close()
+    return _connect_read_only_waiting(path)
+
+
+def _acquire(path: str, *, read_only: bool, create: bool, budget_s: float
+             ) -> HubConnection:
+    key = _registry_key(path)
+    me = threading.get_ident()
+    deadline = time.monotonic() + budget_s
+    waiting = False  # counted in _WRITERS_WAITING
+    with _registry() as cond:
+        try:
+            while True:
+                _drain_pending_releases_locked()
+                entry = _REGISTRY.get(key)
+                if entry is None:
+                    if not read_only or not _WRITERS_WAITING.get(key):
+                        entry = _SharedDatabase(key, read_only)
+                        _REGISTRY[key] = entry
+                        break  # we open it, outside the lock
+                    # A reader never opens read-write: the queued writer
+                    # opens (and migrates) the instance, then we join it.
+                    reason = "a queued writer to open the file"
+                elif entry.busy:
+                    reason = "another thread opening or closing the file"
+                else:
+                    mine = entry.used_by(me)
+                    if entry.read_only and not read_only:
+                        if mine:
+                            raise SharedDatabaseBusy(
+                                "this thread uses a read-only market-data-hub "
+                                "connection on the same file; close it before "
+                                "opening a read-write one")
+                        if not waiting:
+                            _WRITERS_WAITING[key] = _WRITERS_WAITING.get(key, 0) + 1
+                            waiting = True
+                        reason = "read-only connections in this process to close"
+                    elif entry.read_only and _WRITERS_WAITING.get(key) and not mine:
+                        reason = "a queued writer"  # do not starve it
+                    else:
+                        return _hand_out(entry, read_only)
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise SharedDatabaseBusy(
+                        f"timed out after {budget_s:g}s waiting for {reason} "
+                        f"({os.path.basename(path)})")
+                cond.wait(min(remaining, _WAIT_SLICE_S))
+        finally:
+            if waiting:
+                left = _WRITERS_WAITING[key] - 1
+                if left:
+                    _WRITERS_WAITING[key] = left
+                else:
+                    del _WRITERS_WAITING[key]
+                # Readers may be queued behind this writer; whether it got a
+                # handle, timed out or failed, they must re-check now.
+                _REGISTRY_COND.notify_all()
+
+    # We own a placeholder in the busy state: open the file without holding
+    # the registry lock (opening may wait minutes for another process), then
+    # publish it or withdraw the placeholder.
+    try:
+        root = _open_root(path, read_only=read_only, create=create)
+    except BaseException:
+        with _registry():
+            if _REGISTRY.get(key) is entry:
+                del _REGISTRY[key]
+            _REGISTRY_COND.notify_all()
+        raise
+    with _registry():
+        entry.root = root
+        entry.busy = False
+        try:
+            return _hand_out(entry, read_only)
+        finally:
+            if entry.refs == 0:  # cursor() failed: do not leave it pinned
+                del _REGISTRY[key]
+                entry.root = None
+                root.close()
+            _REGISTRY_COND.notify_all()
+
+
+def _hand_out(entry: _SharedDatabase, read_only: bool) -> HubConnection:
+    """A new handle on an open entry (registry lock held)."""
+    assert entry.root is not None and not entry.busy
+    cursor = entry.root.cursor()
+    entry.refs += 1
+    handle = HubConnection(entry, cursor, read_only)
+    entry.handles.add(handle)
+    return handle
+
+
 def get_conn(
     db_path: Optional[str] = None, *, read_only: bool = False
-) -> duckdb.DuckDBPyConnection:
+) -> HubConnection:
     """
     Open (creating if absent) the DuckDB database and ensure the schema.
 
     read_only=True for readers (reader.py, diagnose.py) so multiple processes
     can read in parallel without locking.
+
+    Within one process every call for the same file shares one database
+    instance and gets its own cursor, so readers and writers on different
+    threads never trip DuckDB's "different configuration" error. Close the
+    handle when done; it never closes the instance under another caller.
     """
     path = resolve_db_path(db_path)
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-
-    if read_only and not os.path.exists(path):
-        # A reader on a nonexistent DB: create it once in write mode. Two
-        # readers can see the file missing at the same instant, and the loser
-        # of that race meets the winner's lock -- the same contention as
-        # anywhere else, so it waits here too rather than failing outright.
-        tmp = _connect_read_write_waiting(path)
-        apply_schema(tmp)
-        tmp.close()
-
-    if read_only:
-        con = _connect_read_only_waiting(path)
-    else:
-        con = _connect_read_write_waiting(path)
-    if not read_only:
-        # migrate() also calls apply_schema() internally, then walks any
-        # pending `if current < N:` ladder steps (e.g. ALTER TABLE ADD COLUMN)
-        # that CREATE TABLE IF NOT EXISTS alone can't apply to a table that
-        # already exists. Plain apply_schema() here would silently leave an
-        # existing DB on an old column shape forever.
+    if path == ":memory:" or path.startswith(":memory:"):
+        con = duckdb.connect(path)
         migrate(con)
-    return con
+        return HubConnection(None, con, read_only)
+    budget = _READER_LOCK_WAIT_S if read_only else _WRITER_LOCK_WAIT_S
+    return _acquire(path, read_only=read_only, create=True, budget_s=budget)
+
+
+def open_existing(path: str) -> HubConnection:
+    """Open an existing hub file read-only without creating or migrating it.
+
+    For health checks and tools that must not create a missing database:
+    raises ``FileNotFoundError`` when the file is absent and DuckDB's own
+    error when another process holds it (one attempt, no waiting). Within
+    this process it shares the instance like :func:`get_conn`, so it is safe
+    next to concurrent writers; it waits at most ``_OPEN_EXISTING_WAIT_S``
+    for another thread opening or closing the file, or for a queued writer,
+    then raises :class:`SharedDatabaseBusy`.
+    """
+    return _acquire(str(path), read_only=True, create=False,
+                    budget_s=_OPEN_EXISTING_WAIT_S)

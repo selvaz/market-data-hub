@@ -8,12 +8,11 @@ import json
 from pathlib import Path
 import time
 
-import duckdb
 import pandas as pd
 import requests
 import yaml
 
-from market_data_hub.db.connection import get_conn, resolve_db_path
+from market_data_hub.db.connection import get_conn, open_existing, resolve_db_path
 from market_data_hub.db.upsert import upsert
 from market_data_hub.lock import db_write_lock
 from market_data_hub.sources.alfred import (
@@ -134,7 +133,7 @@ def _checkpoint(db_path, series_id, since):
     # Avoid get_conn(read_only=True)'s create-if-absent behavior, especially dry-run.
     if not Path(db_path).exists():
         return None
-    with closing(duckdb.connect(db_path, read_only=True)) as con:
+    with closing(open_existing(db_path)) as con:
         exists = con.execute(
             "SELECT 1 FROM information_schema.tables "
             "WHERE table_name = 'alfred_backfill_progress'").fetchone()
@@ -149,7 +148,7 @@ def _checkpoint(db_path, series_id, since):
 def _pending(db_path, series_id, since):
     if not Path(db_path).exists():
         return None
-    with closing(duckdb.connect(db_path, read_only=True)) as con:
+    with closing(open_existing(db_path)) as con:
         if not con.execute("SELECT 1 FROM information_schema.tables "
                            "WHERE table_name = 'alfred_backfill_pending'").fetchone():
             return None

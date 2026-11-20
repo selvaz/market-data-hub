@@ -13,6 +13,38 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 ### Changed
 - `get_statement`, `get_facts` and `get_xbrl_mapping` now default to mapping version 2 (so the `datahub_get_statement` / `datahub_get_financial_facts` tools expose the new lines). v1 stays loadable unchanged with `mapping_version=1`; the response carries the version used. `tool_get_statement` and `tool_get_financial_facts` accept `mapping_version` (default 2, 1 accepted).
 
+### Fixed
+- In-process DuckDB access is safe under concurrency (D52). `get_conn` keeps
+  one shared database instance per resolved file in each process and hands
+  every caller its own cursor (`HubConnection`), so a `read_only=True` request
+  next to a live read-write connection no longer fails with "different
+  configuration than existing connections". The instance is opened read-only
+  only while every caller asked for read-only; a writer waits (on the writer
+  budget) for read-only handles to drain, and the instance closes with its
+  last handle, so cross-process file locking and the advisory writer lock are
+  unchanged. Read-only handles refuse write statements even on a shared
+  read-write instance; `migrate()` runs once per open instead of on every
+  read-write call, and only a read-write request ever opens (and migrates)
+  a read-write instance. `HubConnection` exposes an explicit allow-list of
+  DuckDB methods (anything else raises `AttributeError`); SQL entry points
+  (`execute`, `executemany`, `sql`, `query`, `from_query`) are checked on
+  read-only handles; calls that return the connection return the handle, so
+  chains stay guarded; relations come back guarded, keep their handle alive
+  and expose only classified methods; `cursor()`/`duplicate()` return
+  tracked handles. Every in-process wait is bounded and raises
+  `SharedDatabaseBusy`. A handle belongs to the thread that last used it; a
+  thread using a read-only handle that asks for the advisory writer lock is
+  refused at once (lock ordering). A garbage-collected handle never waits for
+  the registry lock (its release is queued and drained once the lock is
+  free; waiters drain it too). The read-only guard also refuses SELECTs
+  and relation expressions calling `nextval`, `setval` or checkpoint table
+  functions; it is a safety net, not a security boundary. New `open_existing()` (read-only; no create, no migrate, one
+  attempt across processes, at most 5 s in-process) replaces the direct
+  `duckdb.connect(read_only=True)` calls in the DataSpace health check,
+  `catalog_live`, `alfred_backfill` and `scripts/resolve_duplicate_listings.py`.
+  A read-write instance stays read-write (exclusive file lock) until its last
+  handle closes, even when only readers remain.
+
 ## [0.3.29] — 2026-11-14
 
 ### Added
