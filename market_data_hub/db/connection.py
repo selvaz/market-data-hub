@@ -1007,6 +1007,13 @@ def _write_method(name: str) -> Any:
     return method
 
 
+def _result_property(name: str) -> property:
+    def getter(self: "HubConnection") -> Any:
+        return getattr(self._cursor, name)
+    getter.__name__ = name
+    return property(getter, doc=f"``DuckDBPyConnection.{name}``.")
+
+
 #: SQL entry points: the statement is parsed and checked on read-only handles.
 _HUB_SQL_METHODS = ("execute", "executemany", "sql", "query", "from_query")
 #: Reads of the pending result, relation constructors over files, frames or
@@ -1137,8 +1144,7 @@ for _name in _HUB_PLAIN_METHODS:
 for _name in _HUB_WRITE_METHODS:
     setattr(HubConnection, _name, _write_method(_name))
 for _name in _HUB_PROPERTIES:
-    setattr(HubConnection, _name,
-            property(lambda self, _n=_name: getattr(self._cursor, _n)))
+    setattr(HubConnection, _name, _result_property(_name))
 del _name
 
 

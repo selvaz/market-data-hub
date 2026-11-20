@@ -7,6 +7,12 @@ ecosystem repositories is set by `LazyTools/ecosystem/compatibility.toml`.
 
 ## [Unreleased]
 
+### Added
+- XBRL mapping v2 (`xbrl_mapping_v2.yaml`): v1 lines plus `cost_of_revenue`, `gross_profit`, `operating_income`, `long_term_debt` and `short_term_debt`, so gross/operating margin and debt-to-equity can be computed from `get_statement`. Totals and components are separate lines (a line never sums): `cost_of_revenue` and `short_term_debt` hold totals only (`CostOfRevenue`/`CostOfGoodsAndServicesSold`, `DebtCurrent`), with components as `cost_of_goods_sold`, `cost_of_services`, `current_portion_long_term_debt`, `commercial_paper` and `short_term_borrowings`; `long_term_debt` prefers the non-current concepts (KO reports `LongTermDebtAndCapitalLeaseObligations`); `liabilities` is unchanged (no derived lines; issuers without the plain `Liabilities` concept stay empty). Rationale documented in the file header.
+
+### Changed
+- `get_statement`, `get_facts` and `get_xbrl_mapping` now default to mapping version 2 (so the `datahub_get_statement` / `datahub_get_financial_facts` tools expose the new lines). v1 stays loadable unchanged with `mapping_version=1`; the response carries the version used. `tool_get_statement` and `tool_get_financial_facts` accept `mapping_version` (default 2, 1 accepted).
+
 ### Fixed
 - In-process DuckDB access is safe under concurrency (D52). `get_conn` keeps
   one shared database instance per resolved file in each process and hands

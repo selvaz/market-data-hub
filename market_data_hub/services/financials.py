@@ -396,7 +396,7 @@ def get_financials_coverage(query: Optional[str] = None,
 
 
 def get_statement(query: str, statement: Optional[str] = None,
-                  periods: int = 8, mapping_version: int = 1,
+                  periods: int = 8, mapping_version: int = 2,
                   db_path: Optional[str] = None) -> Dict[str, Any]:
     """Standardized ANNUAL statement lines for one issuer, derived on read
     from the append-only facts through the versioned mapping (plan Fase 4).
@@ -467,7 +467,7 @@ def get_statement(query: str, statement: Optional[str] = None,
 def get_facts(query: str, line: Optional[str] = None,
               concepts: Optional[List[str]] = None,
               forms: Optional[List[str]] = None,
-              limit: int = _MAX_FACT_ROWS, mapping_version: int = 1,
+              limit: int = _MAX_FACT_ROWS, mapping_version: int = 2,
               db_path: Optional[str] = None) -> Dict[str, Any]:
     """Bounded raw facts for one issuer, newest filings first.
 
